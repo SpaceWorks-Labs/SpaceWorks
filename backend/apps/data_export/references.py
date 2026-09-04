@@ -137,6 +137,7 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("tenant_migration.SourceMigrationGate", "actor"),
         ("tenant_migration.TenantDumpCapture", "requested_by"),
         ("makerspaces.MakerspaceWaiver", "created_by"),
+        ("makerspaces.Station", "created_by"),
         ("makerspaces.MembershipRequest", "user"),
         ("makerspaces.MembershipRequest", "requested_by"),
         ("makerspaces.MembershipRequest", "invited_by"),
@@ -173,6 +174,9 @@ RELATIONAL_USER_FIELDS = frozenset(
 
 USER_EDGES = {}
 _EXCLUDED_USER_EDGE_REASONS = {
+    ("makerspaces.Station", "created_by"): (
+        "Station provisioning provenance is omitted from every tenant export."
+    ),
     ("tenant_migration.TenantImportJob", "actor"): (
         "Target-side import coordination attribution must not contribute to a tenant "
         "archive's global user closure."

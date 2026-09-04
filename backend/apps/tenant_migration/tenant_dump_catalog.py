@@ -49,7 +49,9 @@ class TenantDumpCatalogError(AssertionError):
 # CertificationGrant, BookableSpace.machine_type and MemberProfile.show_certifications (phase 5);
 # again for phase 6: Refund, loan settings/deposit_amount, MembershipPlan/Term, InvitationRequest,
 # Makerspace.lapsed_members_cannot_borrow, ReportSchedule/ReportDelivery.
-CATALOG_SCHEMA_SHA256 = "d7caf0b78fd4e358699600ede5cea478d4cef8f5921b3e6a7d604887060a7916"
+# Re-blessed for phase 9a after replacing the event credential table with shared
+# Station/StationCredential metadata plus the explicit event-owned binding.
+CATALOG_SCHEMA_SHA256 = "6619e09467f331fb3a7dacedf20f01327923dca85f10226a0f30bef96dc3c93e"
 
 
 def catalog_models(apps_registry=apps):

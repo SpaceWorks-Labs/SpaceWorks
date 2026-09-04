@@ -23,6 +23,7 @@ EXPORTED_MODEL_FIELDS = {
     "events.EventCollaborator": "id event makerspace status invited_by responded_by created_at responded_at source_series_collaboration",
     "events.EventRegistration": "id event checkin_token name email phone member registered_via_makerspace payment_via_makerspace host_waiver host_waiver_accepted_at host_waiver_version_accepted email_exact_hash email_hash_generation custom_answers status calendar_sequence calendar_updated_at created_at",
     "events.EventCheckInEvent": "id makerspace event registration operation_id source attended_at recorded_at actor session_id station_version",
+    "events.EventStationBinding": "id event station created_at",
     "events.EventFeedbackSurvey": "id event title thank_you_text questions is_open certificate_enabled answered_question_ids opened_at closed_at created_at updated_at",
     "events.EventFeedbackResponse": "id survey registration answers_snapshot certificate_requested created_at",
     "events.EventAttendanceCertificate": "id response registration serial revision recipient_name event_title event_starts_at event_ends_at issuer_name object_key content_type size_bytes sha256 status issued_at rendered_at revoked_at revoked_by revocation_reason",
@@ -85,6 +86,7 @@ EXPORTED_MODEL_FIELDS = {
     "makerspaces.MembershipPlan": "id makerspace name interval custom_days amount currency is_active created_at updated_at",
     "makerspaces.MembershipTerm": "id membership plan starts_at ends_at status renewal_payment created_by created_at",
     "makerspaces.InvitationRequest": "id makerspace name email phone message status handled_by handled_at created_at",
+    "makerspaces.Station": "id makerspace kind name created_by created_at updated_at",
     "notifications.Notification": "id makerspace level event title body url_path read_at created_at",
     "operations.InventoryAdjustment": "id makerspace stocktake transfer product asset delta_available delta_damaged delta_lost reason created_by created_at",
     "operations.QrPrintBatch": "id makerspace title status created_by created_at printed_at",
@@ -119,8 +121,8 @@ GLOBAL_MODELS = {
 }
 
 OMITTED_MODELS = {
-    "events.EventCheckInStationCredential": (
-        "Live event-station authentication authority; a restored tenant must rotate a new PIN."
+    "makerspaces.StationCredential": (
+        "Live Station authentication authority; a portable tenant must rotate a new PIN."
     ),
     "events.MemberCalendarFeed": (
         "Deployment-local bearer credential over member registration history; restored tenants must reissue it."

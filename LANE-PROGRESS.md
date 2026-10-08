@@ -21,9 +21,15 @@ Lane scratch file -- drop it before merge.
 - Main batch, pre-fix tree: 28 failed (27 catalog digest, 1 KeyError), 1654 passed, 2 xfailed.
 - Re-run of the 11 failing files + materialization/verification files, post-fix: 68 passed, 2 xfailed.
 
-## Mid-flight
-- Final full main batch on the squashed tree: first attempt died on Docker host OOM, second cut off
-  by the Docker restart (~01:00 IST). Re-running.
+- FINAL, squashed tree (code = 1ba32cf0): main batch 1682 passed, 2 xfailed, 0 failed (25m24s);
+  tests/tombstone with the profile: 182 passed.
+- OpenAPI: regenerated schema equals the committed snapshot except a pre-existing dev drift
+  (MakerspaceArchiveRequest.status `default`), so no regeneration for 9a.
 
-## Next
-- If green: final report. Before merge: drop this file; renumber 0073 if another makerspaces 0073 lands first.
+## Mid-flight
+- Nothing. Lane complete.
+
+## Next (owner, at merge)
+- Drop this file and the wip commits that carry it.
+- Renumber makerspaces 0073_shared_station if another lane's makerspaces 0073 merges first
+  (update events 0023 dependency and tests/events/test_station_core_migration.py with it).

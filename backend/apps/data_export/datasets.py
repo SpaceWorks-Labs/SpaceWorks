@@ -3,6 +3,7 @@
 from django.apps import apps
 
 from .fields import FIELDS
+from .datasets_7c import LABEL_DATASET_SPECS
 from .models import EXPORTED_MODELS
 from .types import Column, Dataset, Fidelity, Omitted, TenantPredicate, Transformed
 
@@ -122,6 +123,9 @@ DATASET_SPECS = {
     "warranty.Warranty": ("warranty/warranties.csv", P(("makerspace",), ("asset__makerspace", "machine__makerspace"))),
     "warranty.WarrantyDocument": ("warranty/documents.csv", P(("warranty__makerspace",))),
 }
+
+
+DATASET_SPECS.update(LABEL_DATASET_SPECS)
 
 
 def _columns(fidelity, label):

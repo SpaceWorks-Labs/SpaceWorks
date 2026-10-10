@@ -1,12 +1,15 @@
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.boxes.models import Box, QrCode
 from apps.inventory import availability
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 from apps.makerspaces import limits
+from apps.makerspaces.models import Makerspace
 from apps.operations.models import QrPrintBatch, QrPrintBatchItem
 
 
@@ -19,7 +22,12 @@ def _target_label(qr):
     return InventoryProduct.objects.get(pk=qr.target_id).name
 
 
+@transaction.atomic
 def add_qr_to_batch(batch, qr, label_text="", sort_order=None):
+    # Serialize both insert and relabel against the first send/print transition.
+    batch = QrPrintBatch.objects.select_for_update().get(pk=batch.pk)
+    if batch.status != QrPrintBatch.Status.DRAFT:
+        raise ValidationError("Only draft QR print batches can be modified.")
     if qr.makerspace_id != batch.makerspace_id:
         raise ValidationError("QR code belongs to a different makerspace.")
     resolved_label = label_text or _target_label(qr)
@@ -76,6 +84,11 @@ def _assets_missing_active_qr(product, limit):
 def generate_assets_with_qr(actor, product, data):
     created = []
     with transaction.atomic():
+        # Label sending locks makerspace before batch. Generation may add missing
+        # asset QRs to a batch before check_quota takes its makerspace lock; taking
+        # that lock here prevents the reverse batch -> makerspace deadlock.
+        spaces = rbac.scope_by_action(actor, rbac.Action.MANAGE_QR, Makerspace.objects.all(), field="id")
+        get_object_or_404(spaces.select_for_update(), pk=product.makerspace_id)
         product = InventoryProduct.objects.select_for_update().get(pk=product.pk)
         if product.tracking_mode != TrackingMode.INDIVIDUAL:
             product.tracking_mode = TrackingMode.INDIVIDUAL
@@ -138,4 +151,3 @@ def mark_batch_printed(actor, batch):
         locked.save(update_fields=["status", "printed_at"])
         audit.record(actor, "qr_print_batch.printed", makerspace=locked.makerspace, target=locked)
         return locked
-

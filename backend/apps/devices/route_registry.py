@@ -38,6 +38,10 @@ DEVICE_ROUTES = {
     ),
 }
 
+from apps.devices.route_registry_7c import label_routes  # noqa: E402
+
+DEVICE_ROUTES.update(label_routes(DeviceRoute, DEVICE_SIGNATURE))
+
 
 def entry_for(request):
     match = getattr(request, "resolver_match", None)

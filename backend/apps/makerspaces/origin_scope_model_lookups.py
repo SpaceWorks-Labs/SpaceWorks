@@ -1,6 +1,7 @@
 """Static model-backed origin scopes, split from request resolution logic."""
 
 BASE_MODEL_LOOKUPS = {
+    'admin-label-command-list': ('operations.QrPrintBatch', 'makerspace_id'),
     'admin-membership-request-approve': ('makerspaces.MembershipRequest', 'makerspace_id'),
     'admin-membership-request-revoke': ('makerspaces.MembershipRequest', 'makerspace_id'),
     'admin-membership-revoke-m2': ('makerspaces.MakerspaceMembership', 'makerspace_id'),

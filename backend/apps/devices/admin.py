@@ -48,3 +48,5 @@ if not app_is_tombstoned("devices"):
     admin.site.register(Device, DeviceAdmin)
     admin.site.register(DeviceEnrollment, DeviceEnrollmentAdmin)
     admin.site.register(DeviceEvent, DeviceEventAdmin)
+
+from apps.devices import admin_labels  # noqa: E402, F401 -- registration side effects

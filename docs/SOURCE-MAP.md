@@ -199,6 +199,10 @@
 - `backend/apps/warranty/`, `apps/maintenance/`, `apps/events/`, `apps/bookings/`, `apps/forms_schema/`,
   `apps/encryption/`, `apps/procurement/`, `apps/notifications/`, `apps/operations/report_registry.py` — the
   remaining FabLab + governance modules.
+- `backend/apps/devices/models_labels.py`, `services_label_*`, `label_access.py`,
+  `views_labels.py`, `serializers_labels.py`, and `*_7c` catalog siblings own label
+  commands/results. The generic 7b command service owns delivery leases. See
+  [the label contract](device-label-commands.md); bytes use `operations/qr_zip.py`.
 - `backend/tests/` — pytest behavior tests (external behavior, not implementation).
 - `frontend/src/features/inventory/` — public catalog/detail/self-checkout + `ProductCard`/
   `AvailabilityBadge`. `frontend/src/features/staff/` — staff console panels; grouped nav via

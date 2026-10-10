@@ -222,6 +222,11 @@ EXPECTED = dict(
 )
 
 
+from tests.tenant_migration.authority_expectations_7c import LABEL_EXPECTED
+
+EXPECTED.update(LABEL_EXPECTED)
+
+
 @pytest.mark.parametrize("edge, expected", EXPECTED.items())
 def test_every_section_3a_field_has_its_exact_literal_disposition(edge, expected):
     assert FIELD_POLICIES[edge].dispositions == expected

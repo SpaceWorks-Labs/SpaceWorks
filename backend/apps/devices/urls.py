@@ -5,6 +5,7 @@ from apps.devices.views_enrollment import (
     DeviceEnrollmentCompleteView,
 )
 from apps.devices.views_heartbeat import DeviceHeartbeatView
+from apps.devices.urls_7c import label_urlpatterns
 from apps.devices.views_identity import (
     DeviceDetailView,
     DeviceEnrollmentCreateView,
@@ -41,3 +42,4 @@ urlpatterns = [
     ),
     path("device/heartbeat", DeviceHeartbeatView.as_view(), name="device-heartbeat"),
 ]
+urlpatterns += label_urlpatterns

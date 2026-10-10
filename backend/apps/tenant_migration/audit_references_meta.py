@@ -5,6 +5,7 @@ from .audit_references_targets import (
     AuditReferenceDisposition,
 )
 from .audit_references_meta_devices import DEVICE_AUDIT_EDGES
+from .audit_references_meta_7c import LABEL_AUDIT_EDGES
 from .audit_references_meta_membership import MEMBERSHIP_AUDIT_EDGES
 from .audit_references_meta_payments import PAYMENT_AUDIT_EDGES
 from .audit_references_meta_phase5 import PHASE5_AUDIT_EDGES
@@ -28,6 +29,7 @@ S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 # name no PK map because they are provider identifiers, omitted-model identifiers, or
 # polymorphic references whose live binding must not be asserted.
 AUDIT_META_REFERENCES = {
+    **LABEL_AUDIT_EDGES,
     **_reference(R, "apiclients.ApiKeyRequest", ("api_client.created", "api_key_request_id")),
     **_reference(R, "apiclients.ApiClient", ("api_key_request.approved", "api_client_id")),
     **_reference(

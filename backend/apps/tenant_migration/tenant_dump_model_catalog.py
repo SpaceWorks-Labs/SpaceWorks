@@ -3,6 +3,7 @@
 from apps.data_export.models import OMITTED_MODELS
 
 from .tenant_dump_types import ModelDisposition, ModelRule, TableRule
+from .catalog_7c import LABEL_PROJECTED_MODELS
 
 
 FIRST_PARTY_APP_LABELS = frozenset(
@@ -63,6 +64,8 @@ PROJECTED_MODEL_LABELS = frozenset(
     tenant_migration.ExternalTenantReference warranty.Warranty
     warranty.WarrantyDocument""".split()
 )
+
+PROJECTED_MODEL_LABELS |= LABEL_PROJECTED_MODELS
 
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 

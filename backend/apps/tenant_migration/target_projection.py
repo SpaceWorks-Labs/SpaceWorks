@@ -183,10 +183,12 @@ TARGET_FIELD_PROJECTION = {
 }
 
 from .target_projection_devices import DEVICE_FIELD_RESETS  # noqa: E402
+from .target_projection_7c import label_projections  # noqa: E402
 
 TARGET_FIELD_PROJECTION.update({
     edge: TargetField(value, reason=reason) for edge, (value, reason) in DEVICE_FIELD_RESETS.items()
 })
+TARGET_FIELD_PROJECTION.update(label_projections(TargetField))
 
 
 ROW_POLICIES = {

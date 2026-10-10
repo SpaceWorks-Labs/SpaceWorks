@@ -25,6 +25,11 @@ class DeviceEvent(models.Model):
         ROTATED = "rotated", "Rotated"
         REVOKED = "revoked", "Revoked"
         HEARTBEAT = "heartbeat", "Heartbeat"
+        LABEL_COMMAND_CREATED = "label_command_created", "Label command created"
+        LABEL_CONTENT_DOWNLOADED = "label_content_downloaded", "Label content downloaded"
+        LABEL_COMMAND_SUCCEEDED = "label_command_succeeded", "Label command succeeded"
+        LABEL_COMMAND_RETRY_SCHEDULED = "label_command_retry_scheduled", "Label command retry scheduled"
+        LABEL_COMMAND_FAILED = "label_command_failed", "Label command failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     makerspace = models.ForeignKey(

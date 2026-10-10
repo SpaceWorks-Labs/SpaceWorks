@@ -9,6 +9,7 @@ the typed ``device_id`` audit metadata are what get remapped.
 """
 
 from django.apps import apps
+from .references_7c import LABEL_SNAPSHOT_FIELDS
 
 SOURCE_LOCAL_SNAPSHOT_FIELDS = frozenset(
     ("devices.DeviceEvent", name)
@@ -17,6 +18,7 @@ SOURCE_LOCAL_SNAPSHOT_FIELDS = frozenset(
         "service_request_id_snapshot", "qr_batch_id_snapshot",
     )
 )
+SOURCE_LOCAL_SNAPSHOT_FIELDS |= LABEL_SNAPSHOT_FIELDS
 
 
 def validate_source_snapshot_fields(error_class, *, raw_scalar_references, exported_fields):

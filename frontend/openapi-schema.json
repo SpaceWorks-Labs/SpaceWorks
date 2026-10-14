@@ -98511,14 +98511,9 @@
               }
             ],
             "readOnly": true
-          },
-          "registration_id": {
-            "type": "integer",
-            "readOnly": true
           }
         },
         "required": [
-          "registration_id",
           "status"
         ]
       },

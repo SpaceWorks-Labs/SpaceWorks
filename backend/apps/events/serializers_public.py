@@ -164,7 +164,6 @@ class PublicEventRegistrationInputSerializer(
 
 
 class PublicEventRegistrationResponseSerializer(serializers.Serializer):
-    registration_id = serializers.IntegerField(source="pk", read_only=True)
     status = serializers.ChoiceField(
         choices=(
             EventRegistration.Status.PENDING_APPROVAL,

@@ -28,8 +28,9 @@ class Command(BaseCommand):
             from django.conf import settings
             from apps.makerspaces.models import Makerspace
             from apps.makerspaces.setup_areas import edition_for
+            from apps.makerspaces.servability import servable_queryset
             selected = set()
-            for row in Makerspace.objects.filter(archived_at__isnull=True, lifecycle_state="active"):
+            for row in servable_queryset(Makerspace.objects.all()):
                 selected.update(key for key, state in area_status(row).items() if state != "off")
             self.stdout.write(edition_for(selected, organization=settings.SPACEWORKS_EDITION == "organization"))
             return

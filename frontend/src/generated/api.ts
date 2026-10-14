@@ -7719,7 +7719,6 @@ export type PublicEventRegistrationInput = {
 
 export type PublicEventRegistrationResponse = {
   "status": PublicEventRegistrationResponseStatusEnum;
-  "registration_id": number;
 };
 
 export type PublicEventRegistrationResponseStatusEnum = "pending_approval" | "registered" | "waitlisted";

@@ -154,9 +154,8 @@ class PublicEventRegistrationView(APIView):
                 **registration_data,
             )
         except DuplicateRegistration as exc:
-            owned = EventRegistration.objects.filter(event=event, member=request.user).first()
             return Response(
-                PublicEventRegistrationResponseSerializer(owned).data if owned else {'status': exc.fresh_status},
+                {'status': exc.fresh_status},
                 status=status.HTTP_201_CREATED,
             )
         return Response(

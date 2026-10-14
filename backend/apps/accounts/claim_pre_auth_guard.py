@@ -68,6 +68,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     # bearer token, so the budget keys on that token rather than the caller.
     "apps.events.throttles.EventCalendarFeedTokenThrottle": {"get_cache_key"},
     "apps.events.throttles.EventCalendarFeedIpThrottle": {"get_cache_key"},
+    # Ticket renders only set a per-user scope/rate; all lifecycle methods are DRF's.
+    "apps.events.views_ticket.TicketRenderThrottle": set(),
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},

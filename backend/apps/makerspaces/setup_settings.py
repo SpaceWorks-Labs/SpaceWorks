@@ -39,9 +39,12 @@ def save_plan(actor, space, values):
         creating = row is None
         row = serializer.save(makerspace=space)
         row.full_clean()
-        audit.record(actor, "membership_plan.created" if creating else "membership_plan.updated",
-                     makerspace=space, target=row, meta={"plan_id": row.pk,
-                     "fields": sorted(serializer.validated_data)})
+        if creating:
+            audit.record(actor, "membership_plan.created", makerspace=space, target=row,
+                         meta={"plan_id": row.pk})
+        else:
+            audit.record(actor, "membership_plan.updated", makerspace=space, target=row,
+                         meta={"plan_id": row.pk, "fields": sorted(serializer.validated_data)})
     return row
 
 

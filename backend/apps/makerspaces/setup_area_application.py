@@ -23,8 +23,10 @@ class SettingsCreatedDuringLock(Exception):
 
 
 def validate_answers(answers):
-    if not isinstance(answers, dict) or set(answers) - {"areas", "settings", "request_access", "without", "configure_areas"}:
+    if not isinstance(answers, dict) or set(answers) - {"areas", "settings", "request_access", "without", "configure_areas", "enable_area_features"}:
         raise ValidationError("Use an object with areas, settings, request_access and optional without.")
+    if "enable_area_features" in answers and type(answers["enable_area_features"]) is not bool:
+        raise ValidationError({"enable_area_features": "Use a boolean."})
     areas = answers.get("areas")
     if not isinstance(areas, list) or any(not isinstance(key, str) or key not in AREAS for key in areas):
         raise ValidationError({"areas": "Choose registered setup areas."})
@@ -68,6 +70,7 @@ def validate_answers(answers):
 @transaction.atomic
 def apply_areas(actor, space, answers):
     areas, settings, mode, without, configuring = validate_answers(answers)
+    enable_area_features = answers.get("enable_area_features", False)
     require_action(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk)
     assert_write_allowed(space.pk)
     # Checkout/profile writers take payment-settings before the makerspace. Match that
@@ -99,7 +102,7 @@ def apply_areas(actor, space, answers):
     for key in sorted(wanted):
         install_module(space, key, actor)
     features = set(features_for(areas, wanted))
-    if "configure_areas" in answers:
+    if "configure_areas" in answers and not enable_area_features:
         # Standalone switches and always-installed modules also hold intentional
         # choices; an absent key in enabled_features is a stored opt-out.
         preserved_parents = previous_modules | {None}
@@ -119,6 +122,10 @@ def apply_areas(actor, space, answers):
             features.add(key)
         else:
             features.discard(key)
+    if enable_area_features:
+        # MFA is a standalone security choice, never part of the everything preset.
+        features.discard("security.staff_mfa_required")
+        features |= previous_features & {"security.staff_mfa_required"}
     if "inventory" not in areas:
         if "configure_areas" in answers:
             # Hiding lending is not cancelling the policy/charges on tools already

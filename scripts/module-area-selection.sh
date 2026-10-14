@@ -46,10 +46,14 @@ module_change_one() {
         for ((index=0; index<${#SETUP_AREAS[@]}; index++)); do
           printf '  %d) %s: current %s; selected %s\n' "$((index+1))" "${SETUP_AREA_LABELS[index]}" "${states[index]}" "${selected[index]}"
         done
-        read -r -p 'Toggle area numbers, or Enter to review: ' input || return 1
+        read -r -p 'Toggle area numbers, a = all, n = none, or Enter to review: ' input || return 1
         input="${input%$'\r'}"
         [[ -n "$input" ]] || break
         for token in $input; do
+          case "$token" in
+            a|A) for ((index=0; index<${#selected[@]}; index++)); do selected[index]=Y; done; continue ;;
+            n|N) for ((index=0; index<${#selected[@]}; index++)); do selected[index]=N; done; continue ;;
+          esac
           [[ "$token" =~ ^[1-8]$ ]] || { module_warn "Unknown area number '$token'."; continue; }
           index=$((token-1))
           [[ "${selected[index]}" == Y ]] && selected[index]=N || selected[index]=Y
@@ -93,13 +97,16 @@ module_change_one() {
     done
     module_confirm_removals "$slug" "$disabled" || return 1
   fi
-  # Configure only newly enabled areas; existing settings and feature switches stay.
+  # Configure only newly enabled areas; all mode enables features but keeps settings.
   local configuring='[' comma=''
   for key in "${newly[@]}"; do configuring+="$comma\"$key\""; comma=,; done
   configuring+=']'
   local document
   document="$(setup_areas_json)"
   document="${document%\}} ,\"configure_areas\":$configuring}"
+  if [[ "${MODULE_MODE:-interactive}" == all ]]; then
+    document="${document%\}},\"enable_area_features\":true}"
+  fi
   printf '%s\n' "$document" | ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
     python manage.py apply_setup_areas --makerspace "$slug" --answers-json - \
     || { module_warn "Area changes failed for $slug; transaction rolled back."; return 1; }

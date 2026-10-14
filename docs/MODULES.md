@@ -12,7 +12,8 @@ happens to its data.
 
 ## Areas used by setup
 
-Setup asks yes/no about eight areas before its summary. Inventory & lending and Machines default
+Setup first asks whether to enable every area (default no). Yes selects all eight areas and still
+asks their normal follow-ups in order; no asks yes/no about each area. Inventory & lending and Machines default
 to yes; the other six default to no. An existing events/bookings edition defaults to its corresponding
 area plus Membership, Online payments and Reports, preserving built-in accounts, checkout and reporting;
 Inventory and Machines are off. Areas enable every child feature supported by the selected
@@ -36,7 +37,10 @@ off clears `loans.enabled` while keeping core. Optional-module uninstall retains
 receipts and offline settlement work without Online payments. See the
 [follow-up questions and defaults](setup-for-makerspaces.md#area-follow-up-questions).
 
-The change menu shows on/partial/off and asks follow-ups only for newly enabled areas. Automation
+The change menu shows on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks
+follow-ups only for newly enabled areas. `--all-modules` enables all eight areas and every supported
+feature, keeping existing settings and staff MFA unchanged. Newly enabled areas get defaults;
+`--without` exclusions still apply, and unavailable modules are reported rather than installed. Automation
 can use `--areas=inventory,machines` (empty selects core and always-on services only), `--all-modules`,
 `--without=key1,key2`, `--makerspace`, `--all-makerspaces`, and `--confirm-removals`.
 Module-key CLI commands and legacy `setup_instance --profile` remain available; the questionnaire

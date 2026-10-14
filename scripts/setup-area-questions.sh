@@ -153,11 +153,15 @@ ask_setup_areas() {
   local index key default incoming="${SPACEWORKS_EDITION:-makerspace}"
   AREA_SETTING_RECORDS=(); SETUP_SELECTED_AREAS=''; REQUEST_ACCESS=accounts; AREA_CREATE_PLAN=N
   AREA_CURRENCY_ASKED=0; AREA_root_currency=''
+  question AREA_ALL 'Enable every area (inventory, machines, events, bookings, membership, online payments, reports, chat alerts)?' N choices:Y,y,yes,YES,N,n,no,NO || return 1
   for ((index=0; index<${#SETUP_AREAS[@]}; index++)); do
     key="${SETUP_AREAS[index]}"; default=N
     case "$incoming:$key" in makerspace:inventory|makerspace:machines|organization:inventory|organization:machines|events:events|bookings:bookings|events:membership|events:payments|events:reports|bookings:membership|bookings:payments|bookings:reports) default=Y ;; esac
     echo "${SETUP_AREA_LABELS[index]} enables every module and supported feature in this area."
-    question AREA_ENABLE "Use ${SETUP_AREA_LABELS[index]}?" "$default" choices:Y,y,yes,YES,N,n,no,NO || return 1
+    AREA_ENABLE=Y
+    if ! area_yes "$AREA_ALL"; then
+      question AREA_ENABLE "Use ${SETUP_AREA_LABELS[index]}?" "$default" choices:Y,y,yes,YES,N,n,no,NO || return 1
+    fi
     if area_yes "$AREA_ENABLE"; then
       SETUP_SELECTED_AREAS+="${SETUP_SELECTED_AREAS:+,}$key"
       "ask_${key}_settings" || return 1

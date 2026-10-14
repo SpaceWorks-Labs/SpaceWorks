@@ -225,7 +225,8 @@ treated as a safe live deployment.
 
 ## Area follow-up questions
 
-The eight area questions occur in this order, before the summary. Each yes immediately asks the
+First, "Enable every area?" [y/N] selects all eight areas when answered yes, while still asking
+their normal follow-ups in order. No keeps the individual area questions below. Each yes immediately asks the
 applicable follow-ups. Enter accepts the bracketed default. All answers appear in the summary and
 private answers file. Areas map to [modules and features](MODULES.md#areas-used-by-setup). An existing events/bookings edition
 preselects its corresponding area plus Membership, Online payments and Reports, keeping built-in
@@ -264,7 +265,10 @@ Bookings similarly derives `bookings`. Other combinations derive `makerspace`; t
 question overrides the label to `organization`, without changing tenancy.
 
 Change areas through installer menu 2/3 or `scripts/update.sh --modules-only`. The menu shows
-on/partial/off, asks settings only for newly enabled areas, then confirms. Optional uninstalls
+on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks settings only for newly
+enabled areas, then confirms. `--all-modules` enables every area and every supported feature in it;
+existing settings and staff MFA are kept, newly enabled areas get defaults, and `--without` exclusions
+still apply. Unavailable modules are reported rather than installed. Optional uninstalls
 retain all data; Inventory off disables `loans.enabled`. Automation can select an exact set using
 `--areas=inventory,machines`, or retain the existing `--all-modules`, `--without=...`,
 `--makerspace`, `--all-makerspaces` and `--confirm-removals` flags.

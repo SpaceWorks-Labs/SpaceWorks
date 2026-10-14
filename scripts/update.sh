@@ -82,7 +82,7 @@ Usage: scripts/update.sh [--force] [--version <version>] [module options]
   --version <version>       deploy this exact published main release of the configured repository
   --modules                 interactively review current areas (on/partial/off)
   --modules-only            change modules without checking for a release
-  --all-modules             enable every area and supported feature
+  --all-modules             enable every area and every supported feature in it; existing settings are kept
   --areas=inventory,machines,...  select exactly these areas (empty = core and always-on only)
   --without=key1,key2       keep current state, or all modules, except these keys
   --makerspace <slug>       target one makerspace

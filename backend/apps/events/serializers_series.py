@@ -8,6 +8,7 @@ from apps.inventory import public_image_storage
 
 
 from .serializers_ticketing import TicketInputSerializer
+from .serializers_event_authority import EventAuthorityFields
 
 class EventSeriesWriteSerializer(serializers.Serializer):
     registration_audience = serializers.ChoiceField(choices=("members", "accounts", "invite"), required=False)
@@ -40,7 +41,7 @@ class EventSeriesWriteSerializer(serializers.Serializer):
     effective_from = serializers.DateTimeField(required=False, write_only=True)
 
 
-class EventSeriesSummarySerializer(serializers.ModelSerializer):
+class EventSeriesSummarySerializer(EventAuthorityFields, serializers.ModelSerializer):
     makerspace_id = serializers.IntegerField(read_only=True)
     next_occurrence_at = serializers.SerializerMethodField()
     future_occurrence_count = serializers.SerializerMethodField()
@@ -48,7 +49,7 @@ class EventSeriesSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = EventSeries
         fields = (
-            "id", "public_token", "makerspace_id", "title", "status",
+            "id", "staff_permissions", "can_manage_staff", "public_token", "makerspace_id", "title", "status",
             "recurrence_timezone", "dtstart_local_date", "dtstart_local_time",
             "recurrence_rule", "duration_minutes", "revision", "next_occurrence_at",
             "future_occurrence_count", "last_materialized_at",

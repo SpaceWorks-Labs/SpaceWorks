@@ -35,6 +35,7 @@ export function StaffWorkspace({
   setTab,
   signOut,
   singleTenantLocked,
+  lockedMakerspaceId,
   user,
 }: {
   activeMakerspace?: Makerspace;
@@ -50,6 +51,7 @@ export function StaffWorkspace({
   setTab: (tab: string) => void;
   signOut: () => Promise<void>;
   singleTenantLocked: boolean;
+  lockedMakerspaceId?: number;
   user: StaffAuthUser;
 }) {
   const location = useLocation();
@@ -70,9 +72,10 @@ export function StaffWorkspace({
     canUseToBuy,
     canViewAudit,
     defaultTab,
+    grantOnly,
     handoutOnly,
     printingOnly,
-  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly);
+  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly, Boolean(user.event_grants?.length));
   const visibleMakerspaces =
     singleTenantLocked && activeMakerspace
       ? [activeMakerspace]
@@ -131,9 +134,9 @@ export function StaffWorkspace({
           user={user}
         />
 
-        {activeMakerspace ? <CommandPalette key={activeMakerspace.id} makerspaceId={activeMakerspace.id} makerspaceSlug={activeMakerspace.slug} allowedTabs={moduleAllowedTabs} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} ownerName={user.username} actions={actions} isSuperadmin={isSuperadmin} /> : null}
+        {activeMakerspace && !grantOnly ? <CommandPalette key={activeMakerspace.id} makerspaceId={activeMakerspace.id} makerspaceSlug={activeMakerspace.slug} allowedTabs={moduleAllowedTabs} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} ownerName={user.username} actions={actions} isSuperadmin={isSuperadmin} /> : null}
         <div className="min-w-0 p-5 pb-28" id="main-content" tabIndex={-1}>
-          {activeMakerspace ? <JobTray makerspaceId={activeMakerspace.id} /> : null}
+          {activeMakerspace && !grantOnly ? <JobTray makerspaceId={activeMakerspace.id} /> : null}
           {activeMakerspace && canManageMakerspace && activeTab === "dashboard" ? <SetupChecklist key={`${user.username}:${activeMakerspace.id}`} makerspace={activeMakerspace} owner={user.username} allowedTabs={moduleAllowedTabs} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} /> : null}
           {routeTabDenied ? (
             <EmptyState
@@ -172,6 +175,7 @@ export function StaffWorkspace({
               canSeePrinting={canSeePrinting}
               canViewAudit={canViewAudit}
               singleTenantLocked={singleTenantLocked}
+              lockedMakerspaceId={lockedMakerspaceId}
             />
           )}
         </div>

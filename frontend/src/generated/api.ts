@@ -99,6 +99,7 @@ export const openApiPaths = [
   "/api/public/{makerspace_slug}/inventory/{id}/",
   "/api/public/{makerspace_slug}/inventory/{id}/watch/",
   "/api/public/{makerspace_slug}/stats/",
+  "/api/v1/admin/accessible-events/",
   "/api/v1/admin/analytics/{report_key}",
   "/api/v1/admin/api-clients/{id}",
   "/api/v1/admin/api-clients/{id}/rotate-secret",
@@ -153,6 +154,12 @@ export const openApiPaths = [
   "/api/v1/admin/event-series/{id}/image",
   "/api/v1/admin/event-series/{id}/occurrences/",
   "/api/v1/admin/event-series/{id}/publish/",
+  "/api/v1/admin/event-series/{id}/staff-grants/",
+  "/api/v1/admin/event-series/{id}/staff-invites/",
+  "/api/v1/admin/event-staff-grants/{id}/",
+  "/api/v1/admin/event-staff-grants/{id}/revoke/",
+  "/api/v1/admin/event-staff-invites/redeem/",
+  "/api/v1/admin/event-staff-invites/{id}/revoke/",
   "/api/v1/admin/events/{id}/",
   "/api/v1/admin/events/{id}/badge-template/",
   "/api/v1/admin/events/{id}/badges.pdf",
@@ -176,6 +183,8 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/promo-codes/",
   "/api/v1/admin/events/{id}/publish/",
   "/api/v1/admin/events/{id}/registrations/",
+  "/api/v1/admin/events/{id}/staff-grants/",
+  "/api/v1/admin/events/{id}/staff-invites/",
   "/api/v1/admin/events/{id}/ticket-types/",
   "/api/v1/admin/evidence/{id}",
   "/api/v1/admin/inventory/needs-fix",
@@ -1248,6 +1257,7 @@ export type AuthUserPayload = {
   "is_superuser": boolean;
   "must_change_password": boolean;
   "makerspaces": Array<AuthMembership>;
+  "event_grants"?: Array<GrantedEventEntry>;
 };
 
 export type AvailabilityEnum = "Available" | "Limited" | "Full";
@@ -2578,6 +2588,8 @@ export type EventAdmin = {
   "updated_at": string;
   "registration_counts": EventRegistrationCounts;
   "organizers": Array<EventOrganizerSummary>;
+  "staff_permissions": Array<string>;
+  "can_manage_staff": boolean;
 };
 
 export type EventAttendanceMark = {
@@ -2590,6 +2602,8 @@ export type EventAttendanceReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<EventAttendanceRow>;
 };
+
+export type EventAttendanceResult = EventRegistrationAdmin | EventCheckInResult;
 
 export type EventAttendanceRow = {
   "makerspace_id"?: number;
@@ -2625,6 +2639,13 @@ export type EventCheckInResolveResponse = {
   "host_waiver_state": HostWaiverStateEnum;
   "event_status": string;
   "confirmable": boolean;
+};
+
+export type EventCheckInResult = {
+  "id": number;
+  "event_id": number;
+  "name": string;
+  "status": string;
 };
 
 export type EventCollaborationInbox = {
@@ -2761,6 +2782,8 @@ export type EventSeriesDetail = {
   "created_by_id": number | null;
   "created_at": string;
   "image_url": string;
+  "staff_permissions": Array<string>;
+  "can_manage_staff": boolean;
 };
 
 export type EventSeriesListResponse = {
@@ -2794,6 +2817,8 @@ export type EventSeriesSummary = {
   "last_materialized_at": string | null;
   "last_generation_error_code": string;
   "updated_at": string;
+  "staff_permissions": Array<string>;
+  "can_manage_staff": boolean;
 };
 
 export type EventSeriesWrite = {
@@ -3075,6 +3100,16 @@ export type GenericAnalyticsReport = {
 
 export type GenericObject = {
   "detail"?: string;
+};
+
+export type GrantedEventEntry = {
+  "event_id": number | null;
+  "series_id": number | null;
+  "makerspace_id": number;
+  "makerspace_slug": string;
+  "title": string;
+  "source": "event_grant";
+  "permissions": Array<"edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule">;
 };
 
 export type HardwareRequestError = {
@@ -5486,6 +5521,7 @@ export type OidcBrowserLoginResponse = {
 export type OidcBrowserLoginResult = OidcBrowserLoginResponse | MFAChallengeResponse;
 
 export type OidcBrowserStart = {
+  "surface"?: Surface356Enum;
   "redirect_uri": string;
   "email"?: string;
   "makerspace_slug"?: string;
@@ -6930,6 +6966,10 @@ export type PatchedSchedule = {
   "next_due"?: string;
   "blind"?: boolean;
   "is_active"?: boolean;
+};
+
+export type PatchedStaffGrantPermissions = {
+  "permissions"?: Array<"edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule">;
 };
 
 export type PatchedTimingPolicy = {
@@ -9113,6 +9153,74 @@ export type StaffBookingInput = {
   "custom_answers"?: unknown | null;
   "member_id": number;
   "note"?: string;
+};
+
+export type StaffGrant = {
+  "id": number;
+  "makerspace": number;
+  "event": number | null;
+  "series": number | null;
+  "user": number;
+  "permissions": Array<"edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule">;
+  "granted_by": number | null;
+  "created_at": string;
+  "revoked_at": string | null;
+  "revoked_by": number | null;
+};
+
+export type StaffGrantInvite = {
+  "id": number;
+  "makerspace": number;
+  "event": number | null;
+  "series": number | null;
+  "permissions": Array<"edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule">;
+  "created_by": number | null;
+  "created_at": string;
+  "expires_at": string;
+  "redeemed_at": string | null;
+  "revoked_at": string | null;
+};
+
+export type StaffGrantInviteCreated = {
+  "id": number;
+  "makerspace": number;
+  "event": number | null;
+  "series": number | null;
+  "permissions": Array<"edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule">;
+  "created_by": number | null;
+  "created_at": string;
+  "expires_at": string;
+  "redeemed_at": string | null;
+  "revoked_at": string | null;
+  "token": string;
+};
+
+export type StaffGrantInviteInput = {
+  "permissions": Array<"edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule">;
+  "email"?: string;
+  "send_email"?: boolean;
+};
+
+export type StaffGrantInviteList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<StaffGrantInvite>;
+};
+
+export type StaffGrantList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<StaffGrant>;
+};
+
+export type StaffGrantPermissions = {
+  "permissions": Array<"edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule">;
+};
+
+export type StaffGrantRedeem = {
+  "token": string;
 };
 
 export type StaffInvitation = {

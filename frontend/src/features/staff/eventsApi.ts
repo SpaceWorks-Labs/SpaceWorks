@@ -62,6 +62,7 @@ export function useEventInvalidation(makerspaceId: number, eventId?: number) {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       ...(eventId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
       ]),
@@ -79,6 +80,7 @@ export function useCreateEvent(makerspaceId: number) {
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(created.id) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
     ]); },
   });
 }
@@ -94,6 +96,7 @@ export function useUpdateEvent(makerspaceId: number, eventId: number) {
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
     ]); },
   });
 }
@@ -109,6 +112,7 @@ export function useReplaceEventOrganizers(makerspaceId: number, eventId: number)
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       queryClient.invalidateQueries({ queryKey: ["public-organization"] }),
     ]),
   });

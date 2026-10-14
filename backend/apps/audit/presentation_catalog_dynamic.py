@@ -155,6 +155,7 @@ WRAPPER_SITE_PREFIXES = {
     "machines/services_consumables.py": ("machine.",),
     "makerspaces/admin_images.py": ("makerspace.logo_", "makerspace.cover_",),
     "makerspaces/membership_verification.py": ("membership.can_",),
+    "makerspaces/resource_grants_services.py": ("event.staff_grant_",),
     "payments/connect.py": ("payments.connect_",),
     "tenant_migration/source_gate.py": ("tenant_migration.source_gate_",),
 }

@@ -20,6 +20,7 @@ from apps.admin_api.serializers_inventory import (
 from apps.events import services_images
 from apps.events.serializers_admin import EventAdminSerializer
 from apps.events.views_admin import _manageable_event
+from apps.events.event_permissions import EDIT_DETAILS
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
@@ -48,7 +49,7 @@ class EventImageView(APIView):
         },
     )
     def post(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         content_type = serializer.validated_data["content_type"]
@@ -86,7 +87,7 @@ class EventImageView(APIView):
     )
     @transaction.atomic
     def put(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageAttachRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
@@ -140,6 +141,6 @@ class EventImageView(APIView):
         },
     )
     def delete(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, EDIT_DETAILS)
         event = services_images.remove_image(event, request.user)
         return self._response(request, event)

@@ -54,6 +54,7 @@ const TAB_MODULES: Record<string, string[]> = {
 // request. Tabs that do have their own key need no entry: the server already omits a
 // tombstoned app's key from `enabled_modules`.
 const TAB_APPS: Record<string, string> = {
+  granted: "events",
   organized: "events",
   warranty: "warranty",
   migration: "tenant_migration",
@@ -74,6 +75,7 @@ const TAB_PATHS: Record<string, string> = {
   migration: "tenant-migration",
   cards: "member-cards",
   organized: "organized-events",
+  granted: "assigned-events",
   "organization-analytics": "organization-analytics",
 };
 
@@ -141,7 +143,7 @@ export function staffBasePath(guestOnly: boolean) {
 // on the inventory tab, not 404. Relaxing it globally would change how every existing
 // bookmark resolves, so the exception is opt-in and currently holds exactly one tab.
 const TABS_WITH_SUBPATHS = new Set(["machines"]);
-const GLOBAL_TABS = new Set(["organizations", "platform-dashboard"]);
+const GLOBAL_TABS = new Set(["organizations", "platform-dashboard", "granted"]);
 
 export function staffTabPath(
   tab: string,

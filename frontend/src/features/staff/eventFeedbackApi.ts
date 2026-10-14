@@ -65,7 +65,7 @@ function useInvalidateFeedback(eventId: number, makerspaceId: number) {
 export function useConfigureFeedbackSurvey(eventId: number, makerspaceId: number) {
   const invalidate = useInvalidateFeedback(eventId, makerspaceId);
   return useMutation({
-    mutationFn: (payload: Pick<FeedbackSurvey, "title" | "thank_you_text" | "questions" | "certificate_enabled">) =>
+    mutationFn: (payload: Pick<FeedbackSurvey, "title" | "thank_you_text" | "questions"> & Partial<Pick<FeedbackSurvey, "certificate_enabled">>) =>
       staffRequest<FeedbackSurvey>(path("/admin/events/{id}/feedback-survey/", eventId), {
         method: "PUT", body: JSON.stringify(payload),
       }),

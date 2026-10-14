@@ -19,14 +19,15 @@ function safeFilename(title: string) {
   return `${title.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-|-$/g, "") || "event"}-badges.pdf`;
 }
 
-export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAttended, onIncludeAttended }: {
+export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAttended, onIncludeAttended, canEdit = true, canPrint = true }: {
   event: StaffEvent;
   makerspaceId: number;
   selectedIds: number[];
   includeAttended: boolean;
   onIncludeAttended: (value: boolean) => void;
+  canEdit?: boolean; canPrint?: boolean;
 }) {
-  const templateQuery = useEventBadgeTemplate(event.id);
+  const templateQuery = useEventBadgeTemplate(event.id, canEdit);
   const save = useSaveEventBadgeTemplate(makerspaceId, event.id);
   const generate = useGenerateEventBadges(event.id);
   const [draft, setDraft] = useState<BadgeTemplate | null>(null);
@@ -63,11 +64,11 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
   return <div className="my-4 rounded-md border border-line p-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h4 className="font-semibold text-ink">Attendee badges</h4><p className="text-xs text-muted">Each QR contains that registration’s existing check-in credential.</p></div>
-      <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>Preview</button>
-      <button className="desk-button-primary" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: savePdf })}>{generate.isPending ? "Generating…" : `Download PDF (${selectedIds.length})`}</button></div>
+      {canPrint ? <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>Preview</button>
+      <button className="desk-button-primary" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: savePdf })}>{generate.isPending ? "Generating…" : `Download PDF (${selectedIds.length})`}</button></div> : null}
     </div>
-    <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={includeAttended} onChange={(e) => onIncludeAttended(e.target.checked)} />Allow attended registrations</label>
-    {draft ? <details className="mt-3"><summary className="cursor-pointer font-semibold text-ink">Badge template</summary>
+    {canPrint ? <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={includeAttended} onChange={(e) => onIncludeAttended(e.target.checked)} />Allow attended registrations</label> : null}
+    {canEdit && draft ? <details className="mt-3"><summary className="cursor-pointer font-semibold text-ink">Badge template</summary>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="text-sm">Paper<select className="desk-input mt-1 w-full" value={draft.paper_size} onChange={(e) => setDraft({ ...draft, paper_size: e.target.value as BadgeTemplate["paper_size"] })}><option value="A4">A4</option><option value="LETTER">Letter</option></select></label>
         <label className="text-sm">Orientation<select className="desk-input mt-1 w-full" value={draft.orientation} onChange={(e) => setDraft({ ...draft, orientation: e.target.value as BadgeTemplate["orientation"] })}><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>

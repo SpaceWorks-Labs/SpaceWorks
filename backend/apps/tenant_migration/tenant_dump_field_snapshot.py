@@ -6,6 +6,8 @@ override in tenant_dump_authority.py before the catalog guard will pass.
 """
 
 FIRST_PARTY_FIELD_NAMES = {
+    "events.EventStaffGrant": frozenset("id makerspace event series permissions created_at revoked_at user granted_by revoked_by".split()),
+    "events.EventStaffGrantInvite": frozenset("id makerspace event series permissions created_at revoked_at token_digest email_digest created_by expires_at redeemed_at redeemed_by".split()),
     "makerspaces.SpacePackProfile": frozenset("id name pack created_at updated_at".split()),
     "makerspaces.MakerspaceLoanPolicy": frozenset("id makerspace default_loan_days loan_renewal_mode loan_max_renewals loan_renewal_days loan_max_active loan_max_items loan_reminder_offsets_hours loan_escalate_overdue_days updated_at".split()),
     'notifications.NotificationInboxRow': frozenset('id makerspace user feature event event_key title summary link read_at created_at'.split()),
@@ -27,7 +29,7 @@ FIRST_PARTY_FIELD_NAMES = {
     'accounts.DeviceRefreshToken': frozenset('blacklisted_at created_at expires_at family id jti rotated_at token_fingerprint'.split()),
     'accounts.PlatformLoginMethods': frozenset('id password_enabled phone_enabled self_registration_enabled social_enabled updated_at'.split()),
     'accounts.MemberClaimCode': frozenset('absolute_expires_at code_digest consumed_at consumed_ip expires_at failed_attempts id issued_at issued_by membership revoked_at revoked_by session_id'.split()),
-    'accounts.OidcBrowserAttempt': frozenset('code_verifier consumed_at created_at expires_at id intended_membership intended_user nonce_digest origin provider redirect_uri state_digest'.split()),
+    'accounts.OidcBrowserAttempt': frozenset('code_verifier consumed_at created_at expires_at id intended_membership intended_user nonce_digest origin provider redirect_uri state_digest surface'.split()),
     'accounts.PhoneVerificationChallenge': frozenset('code_digest consumed_at created_at expires_at failed_attempts id last_sent_at phone_e164 purpose user'.split()),
     'accounts.PasswordResetEnvelope': frozenset('attempts claim_expires_at claim_owner claimed_at consumed_at credential_fingerprint digest digest_is_live email_fingerprint email_normalized expires_at generation id requested_at status superseded_at terminal_at user'.split()),
     'accounts.SocialIdentity': frozenset('created_at id provider provider_sub updated_at user'.split()),

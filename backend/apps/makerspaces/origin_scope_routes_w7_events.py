@@ -1,4 +1,11 @@
 EVENT_MODEL_LOOKUPS = {
+    "admin-event-staff-grants": ("events.Event", "makerspace_id"),
+    "admin-event-staff-invites": ("events.Event", "makerspace_id"),
+    "admin-series-staff-grants": ("events.EventSeries", "makerspace_id"),
+    "admin-series-staff-invites": ("events.EventSeries", "makerspace_id"),
+    "admin-event-staff-grant-detail": ("events.EventStaffGrant", "makerspace_id"),
+    "admin-event-staff-grant-revoke": ("events.EventStaffGrant", "makerspace_id"),
+    "admin-event-staff-invite-revoke": ("events.EventStaffGrantInvite", "makerspace_id"),
     "admin-event-invites": ("events.Event", "makerspace_id"),
     "admin-event-invite-revoke": ("events.EventInvite", "makerspace_id"),
     "admin-event-tickets": ("events.Event", "makerspace_id"),

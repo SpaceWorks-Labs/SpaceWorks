@@ -8,6 +8,25 @@
 
 ## Current source map (real paths)
 
+Event staff authority lives in `events/event_authority.py`, with its permission vocabulary
+in `event_permissions.py` and concrete typed event/series grants in `models_staff_grants.py`.
+`services_staff_grants.py` adapts the always-present
+`makerspaces/resource_grants_services.py` invite lifecycle; abstract fields and validation
+are in `makerspaces/resource_grants_models.py`. `resource_grant_sources.py` is the query-free
+runtime discovery registry consulted by account sign-in, auth payloads and MFA. Events
+registers its `staff_payload.py` source only while active; retention and purge continue
+to own concrete event rows after tombstoning. `views_staff_grants.py`,
+`serializers_staff_grants.py` and `urls_staff_grants.py` own invite/grant management and
+redemption; `views_accessible_events.py` lists only events the actor can access.
+`registration_view_errors.py` holds registration error schemas shared by the registration
+and eligible-member views, keeping their imports independent.
+`staff_grant_locks.py` stabilizes creator authority under user, role, membership and organizer
+locks; `serializers_event_authority.py` adds the shared permissions/manager projection to
+event and series serializers. `event_authority_page.py` resolves list-page authority in
+batches; list views pass its results through serializer context, while details keep
+per-object checks. Discovery includes series entries with `event_id=null`,
+so a granted series remains reachable before it has occurrences.
+
 WP1 event access and ticketing lives in `events/registration_access.py`, `invites.py`,
 `ticketing.py` and `promos.py`; `participant_access.py` limits account ticket reads to
 the owned registration. New model, serializer and route files are indexed in

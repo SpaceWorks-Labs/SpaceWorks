@@ -12,11 +12,14 @@ from apps.events.badge_templates import (
     MAX_BADGES,
     MAX_PAGES,
     MAX_TEXT_LENGTH,
+    SAFE_FIELDS,
     normalize_badge_template,
     page_layout,
 )
 from apps.events.exceptions import EventInvalidTransition
 from apps.events.models import Event, EventRegistration
+from apps.events import event_authority
+from apps.events.event_permissions import MANAGE_REGISTRATIONS
 from apps.makerspaces.guards import require_module_locked
 
 
@@ -109,6 +112,9 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
         template_override if template_override is not None else locked.badge_template,
         locked,
     )
+    # Check the effective, locked template before reading any registration PII.
+    if set(normalized["fields"]) - SAFE_FIELDS:
+        event_authority.require(actor, locked, MANAGE_REGISTRATIONS)
     _width, _height, columns, rows = page_layout(normalized)
     pages = (len(registration_ids) + columns * rows - 1) // (columns * rows)
     if pages > MAX_PAGES:

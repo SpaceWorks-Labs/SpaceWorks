@@ -82,6 +82,7 @@ def _delete_object_graph(makerspace):
         EventSeries,
         EventSeriesCollaborator,
         EventStationBinding,
+        EventStaffGrant, EventStaffGrantInvite,
     )
     from apps.hardware_requests.models import HardwareRequest, ReplayCommand
     from apps.hardware_requests.models import PublicToolLoan, RequesterAccountability
@@ -236,6 +237,8 @@ def _delete_object_graph(makerspace):
         ).delete()
         EventFeedbackSurvey.objects.filter(event__makerspace=makerspace).delete()
         StationCredential.objects.filter(station__makerspace=makerspace).delete()
+        EventStaffGrantInvite.objects.filter(makerspace=makerspace).delete()
+        EventStaffGrant.objects.filter(makerspace=makerspace).delete()
         EventStationBinding.objects.filter(station__makerspace=makerspace).delete()
         EventCheckInEvent.objects.filter(makerspace=makerspace).delete()
         # Registrations otherwise survive until the final makerspace cascade. Delete

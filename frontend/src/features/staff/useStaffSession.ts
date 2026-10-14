@@ -40,6 +40,10 @@ export function useStaffSession(guestOnly: boolean) {
   const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge>();
   const [selected, setSelectedState] = useState<number | null>(() => readStoredMakerspace());
   const [restoring, setRestoring] = useState(true);
+  const [oidcCallback] = useState(() => {
+    const query = new URLSearchParams(window.location.search);
+    return ["code", "state", "error"].some((key) => query.has(key));
+  });
   const routeMakerspaceSlug = staffMakerspaceSlugFromPath(location.pathname, guestOnly);
   const routeMakerspaceSlugRef = useRef(routeMakerspaceSlug);
   const singleTenantLocked = tenant.mode === "single" && tenant.makerspaceId !== null;
@@ -90,6 +94,9 @@ export function useStaffSession(guestOnly: boolean) {
   useEffect(() => {
     let active = true;
 
+    // Finish the pending provider login before consulting any previous cookie.
+    if (oidcCallback) { setRestoring(false); return; }
+
     async function restoreSession() {
       const refreshed = await refreshAccessToken();
       if (refreshed) {
@@ -114,7 +121,7 @@ export function useStaffSession(guestOnly: boolean) {
     return () => {
       active = false;
     };
-  }, [hydrateUser]);
+  }, [hydrateUser, oidcCallback]);
 
   const login = useMutation({
     mutationFn: (payload: { username: string; password: string }) =>

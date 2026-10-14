@@ -138,6 +138,7 @@ export async function beginOidcBrowser(
   slug: string,
   email: string,
   makerspaceSlug: string,
+  surface: SocialSurface = "member",
 ) {
   const redirectUri = `${window.location.origin}${window.location.pathname}`;
   const started = await publicV1Request<OidcStartResult>(
@@ -146,6 +147,7 @@ export async function beginOidcBrowser(
       method: "POST",
       body: JSON.stringify({
         redirect_uri: redirectUri,
+        surface,
         ...(email.trim() ? { email: email.trim() } : {}),
         ...(makerspaceSlug ? { makerspace_slug: makerspaceSlug } : {}),
       }),

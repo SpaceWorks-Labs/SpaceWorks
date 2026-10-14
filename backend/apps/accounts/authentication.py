@@ -182,7 +182,7 @@ MEMBER_SURFACE_PREFIXES = CLAIM_REACHABLE_PREFIXES + ("/api/v1/integrations/push
 
 
 def _member_surface_path_allowed(path):
-    return path.startswith(MEMBER_SURFACE_PREFIXES)
+    return path.rstrip("/") == "/api/v1/admin/event-staff-invites/redeem" or path.startswith(MEMBER_SURFACE_PREFIXES)
 
 
 def _verification_path_allowed(path):

@@ -14,9 +14,11 @@ from django.utils import timezone
 
 from apps.accounts.models import OidcBrowserAttempt
 from apps.accounts.models_oidc import provider_key
+from apps.accounts.models_social import SocialSurface
 from apps.accounts.social_nonces import request_origin
 from apps.audit import services as audit
-from apps.makerspaces.cors import member_origin_is_registered
+from apps.makerspaces.cors import member_origin_is_registered, staff_origin_is_registered
+from apps.makerspaces.origin_scope import AMBIGUOUS_STAFF_ORIGIN_SCOPE, staff_origin_scope
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.servability import servable_queryset
 
@@ -32,19 +34,25 @@ class StartedOidcAttempt:
     nonce: str
 
 
-def start_attempt(request, provider, document, *, redirect_uri, email="", makerspace_slug=""):
+def start_attempt(request, provider, document, *, redirect_uri, email="", makerspace_slug="",
+                  surface=SocialSurface.MEMBER):
     origin = request_origin(request)
-    if not member_origin_is_registered(origin) or not _valid_redirect(redirect_uri, origin):
+    trusted = (staff_origin_is_registered(origin) if surface == SocialSurface.STAFF
+               else member_origin_is_registered(origin))
+    if not trusted or not _valid_redirect(redirect_uri, origin):
+        raise OidcAttemptRejected()
+    if surface == SocialSurface.STAFF and staff_origin_scope(request) is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
         raise OidcAttemptRejected()
     state = secrets.token_urlsafe(48)
     nonce = secrets.token_urlsafe(48)
     verifier = secrets.token_urlsafe(64)
-    user_id, membership_id = _transition_binding(
+    user_id, membership_id = (None, None) if surface == SocialSurface.STAFF else _transition_binding(
         request, email=email, makerspace_slug=makerspace_slug
     )
     with transaction.atomic():
         attempt = OidcBrowserAttempt.objects.create(
             provider=provider.provider_key,
+            surface=surface,
             state_digest=_digest("state", state),
             nonce_digest=_digest("nonce", nonce),
             code_verifier=verifier,
@@ -59,7 +67,7 @@ def start_attempt(request, provider, document, *, redirect_uri, email="", makers
             actor,
             "auth.oidc_browser_attempt_started",
             target=attempt,
-            meta={"provider": provider.provider_key, "transition": bool(user_id)},
+            meta={"provider": provider.provider_key, "surface": surface, "transition": bool(user_id)},
         )
     challenge = base64.urlsafe_b64encode(
         hashlib.sha256(verifier.encode()).digest()
@@ -101,6 +109,9 @@ def consume_attempt(request, *, state, nonce):
             and row.origin == request_origin(request)
             and hmac.compare_digest(row.nonce_digest, _digest("nonce", nonce))
         )
+        if valid and row.surface == SocialSurface.STAFF:
+            valid = (staff_origin_is_registered(row.origin)
+                     and staff_origin_scope(request) is not AMBIGUOUS_STAFF_ORIGIN_SCOPE)
         if row is not None and row.consumed_at is None:
             row.consumed_at = now
             row.save(update_fields=["consumed_at"])

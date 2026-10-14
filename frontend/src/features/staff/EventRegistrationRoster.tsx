@@ -16,6 +16,7 @@ import {
   type StaffEvent,
 } from "./eventsApi";
 import { eventErrorText } from "./eventUi";
+import { eventAccess } from "./eventStaffPermissions";
 
 export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEnabled }: {
   event: StaffEvent;
@@ -25,6 +26,7 @@ export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEna
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [includeAttended, setIncludeAttended] = useState(false);
+  const access = eventAccess(event);
   const rows = useEventRegistrations(event.id, page);
   const approve = useApproveEventRegistration(makerspaceId, event.id);
   const reject = useRejectEventRegistration(makerspaceId, event.id);
@@ -54,8 +56,8 @@ export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEna
     {rows.error ? <p className="text-sm text-danger">{eventErrorText(rows.error)}</p> : null}
     {rows.data && !rows.data.results.length ? <p className="text-sm text-muted">No registrations yet.</p> : null}
     <EventRegisterMember makerspaceId={makerspaceId} eventId={event.id} customForm={event.custom_form} audience={event.registration_audience} ticketsEnabled={event.ticketing_features?.includes("events.ticket_types")} promosEnabled={event.ticketing_features?.includes("events.promo_codes")} disabled={event.status !== "published" || !event.registration_open} />
-    {checkable ? <EventCheckInOperator makerspaceId={makerspaceId} eventId={event.id} offlineEnabled={offlineCheckInEnabled} /> : null}
-    {rows.data?.results.length ? <EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={selectedIds} includeAttended={includeAttended} onIncludeAttended={(value) => { setIncludeAttended(value); if (!value) setSelectedIds([]); }} /> : null}
+    {checkable && access.checkIn ? <EventCheckInOperator makerspaceId={makerspaceId} eventId={event.id} offlineEnabled={offlineCheckInEnabled} canManageStation={access.manager} /> : null}
+    {(access.edit || access.checkIn) && rows.data?.results.length ? <EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={selectedIds} includeAttended={includeAttended} onIncludeAttended={(value) => { setIncludeAttended(value); if (!value) setSelectedIds([]); }} canEdit={access.edit} canPrint={access.checkIn} /> : null}
     {rows.data?.results.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Event registration contact details and badge selection</caption><thead><tr><th className="eyebrow p-2">Badge</th><th className="eyebrow p-2">Name</th><th className="eyebrow p-2">Contact</th><th className="eyebrow p-2">Status</th><th className="eyebrow p-2">Action</th></tr></thead><tbody>
       {rows.data.results.map((row) => {
         const pending = pendingFor(row.id);
@@ -63,16 +65,16 @@ export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEna
         const cancellable = ["pending_approval", "registered", "waitlisted"].includes(row.status);
         const hasAction = cancellable || row.status === "attended";
         return <tr key={row.id} className="border-t border-line">
-          <td className="p-2"><input type="checkbox" aria-label={`Select ${row.name} for a badge`} disabled={row.status !== "registered" && !(includeAttended && row.status === "attended")} checked={selectedIds.includes(row.id)} onChange={(e) => setSelectedIds((ids) => e.target.checked ? [...ids, row.id] : ids.filter((id) => id !== row.id))} /></td>
-          <td className="p-2">{row.name}<PaymentReconcileActions makerspaceId={makerspaceId} payment={row.payment} invalidateKeys={[["event", event.id, "registrations"], ["event", event.id], ["events", makerspaceId]]} /></td>
+          <td className="p-2"><input type="checkbox" aria-label={`Select ${row.name} for a badge`} disabled={!access.checkIn || (!access.manager ? row.status !== "attended" : row.status !== "registered" && !(includeAttended && row.status === "attended"))} checked={selectedIds.includes(row.id)} onChange={(e) => setSelectedIds((ids) => e.target.checked ? [...ids, row.id] : ids.filter((id) => id !== row.id))} /></td>
+          <td className="p-2">{row.name}{access.manager ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={row.payment} invalidateKeys={[["event", event.id, "registrations"], ["event", event.id], ["events", makerspaceId]]} /> : null}</td>
           <td className="p-2"><a className="block hover:underline" href={`mailto:${row.email}`}>{row.email}</a><a className="block text-muted hover:underline" href={`tel:${row.phone}`}>{row.phone}</a></td>
           <td className="p-2"><StatusBadge status={row.status} /></td>
           <td className="p-2"><div className="flex flex-wrap gap-2">
             {cancellable ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => cancel.mutate(row.id)}>Cancel registration</button> : null}
             {row.status === "pending_approval" ? <><button className="desk-button-success" type="button" disabled={pending} onClick={() => approve.mutate(row.id)}>Approve</button><button className="desk-button-danger" type="button" disabled={pending} onClick={() => reject.mutate(row.id)}>Reject</button></> : null}
             {row.status === "waitlisted" && event.registration_requires_approval ? <><button className="desk-button-success" type="button" disabled={pending} onClick={() => promote.mutate(row.id)}>Promote</button><button className="desk-button-danger" type="button" disabled={pending} onClick={() => reject.mutate(row.id)}>Reject</button></> : null}
-            {row.status === "registered" && checkable ? <button className="desk-button-success" type="button" disabled={pending} onClick={() => attended.mutate(row.id)}>Mark attended</button> : null}
-            {row.status === "attended" ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => correct.mutate(row.id)}>Correct attendance</button> : null}
+            {access.checkIn && row.status === "registered" && checkable ? <button className="desk-button-success" type="button" disabled={pending} onClick={() => attended.mutate(row.id)}>Mark attended</button> : null}
+            {access.checkIn && row.status === "attended" ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => correct.mutate(row.id)}>Correct attendance</button> : null}
             {!hasAction ? "—" : null}
           </div>{rowError ? <p className="mt-1 text-xs text-danger" role="alert">{eventErrorText(rowError)}</p> : null}</td>
         </tr>;

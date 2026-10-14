@@ -37,7 +37,7 @@ from apps.makerspaces.module_purge_collectors_single_model import (
 
 def events_delete(makerspace, cursor):
     from apps.events.models import (
-        Event, EventCategory,
+        Event, EventCategory, EventStaffGrant, EventStaffGrantInvite,
         EventAttendanceCertificate,
         EventCheckInEvent,
         EventCollaborator,
@@ -51,6 +51,8 @@ def events_delete(makerspace, cursor):
     )
     from apps.makerspaces.models import Station, StationCredential
 
+    grants, grant_labels = _delete(EventStaffGrant.objects.filter(makerspace=makerspace))
+    invites, invite_labels = _delete(EventStaffGrantInvite.objects.filter(makerspace=makerspace))
     feeds, feed_labels = _delete(
         MemberCalendarFeed.objects.filter(membership__makerspace=makerspace)
     )
@@ -111,7 +113,7 @@ def events_delete(makerspace, cursor):
             | survey_labels | checkin_labels | registration_labels | event_labels
             | projected_collaboration_labels | series_collaboration_labels | series_labels
             | feed_labels | station_credential_labels | station_binding_labels
-            | station_labels | category_labels
+            | station_labels | category_labels | grant_labels | invite_labels
         ),
         event_series_collaboration_projections=projected_collaborations,
         event_series_collaborations=series_collaborations,
@@ -129,6 +131,8 @@ def events_delete(makerspace, cursor):
         event_series=series,
         event_categories=categories,
         event_calendar_feeds=feeds,
+        event_staff_grants=grants,
+        event_staff_grant_invites=invites,
     )
 
 

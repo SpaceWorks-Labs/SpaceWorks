@@ -30,6 +30,8 @@ EXPORTED_MODEL_FIELDS["bookings.Booking"] += " calendar_sequence calendar_update
 EXPORTED_MODEL_FIELDS["notifications.MemberNotificationPreference"] += " daily_digest"
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
+    "events.EventStaffGrant": "Event-scoped authority is reissued on the target; never portable.",
+    "events.EventStaffGrantInvite": "Deployment-local single-use credential; never portable.",
     **_PLATFORM_OMITTED_MODELS, **DEVICE_OMITTED_MODELS,
     **WP3_OMITTED_MODELS, **WP4_OMITTED,
 }

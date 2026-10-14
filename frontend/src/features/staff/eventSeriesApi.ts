@@ -28,6 +28,8 @@ export type EventSeriesPayload = {
   effective_from?: string;
 };
 export type EventSeries = Omit<EventSeriesPayload, "effective_from"> & {
+  staff_permissions?: import("./eventStaffPermissions").EventPermission[];
+  can_manage_staff?: boolean;
   id: number;
   public_token: string;
   makerspace_id: number;
@@ -88,6 +90,7 @@ function useInvalidate(makerspaceId: number, seriesId?: number) {
     client.invalidateQueries({ queryKey: eventSeriesKeys.list(makerspaceId) }),
     client.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
     client.invalidateQueries({ queryKey: organizedEventKeys.all }),
+    client.invalidateQueries({ queryKey: ["events", "accessible"] }),
     client.invalidateQueries({ queryKey: ["public-events"] }),
     client.invalidateQueries({ queryKey: ["member"] }),
     ...(seriesId ? [

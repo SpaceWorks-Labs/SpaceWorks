@@ -16,12 +16,14 @@ from apps.events.models_series import (
 )
 from apps.events.models_calendar import MemberCalendarFeed
 
+from .models_staff_grants import EventStaffGrant, EventStaffGrantInvite
 from .models_invites import EventInvite
 from .models_tickets import EventTicketType
 from .models_promos import EventPromoCode
 from .models_categories import EventCategory
 
 __all__ = [
+    "EventStaffGrant", "EventStaffGrantInvite",
     "EventInvite", "EventTicketType", "EventPromoCode", "EventCategory",
     "Event",
     "EventAttendanceCertificate",

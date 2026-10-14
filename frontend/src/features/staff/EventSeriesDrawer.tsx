@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
 import { EventSeriesCollaborators } from "./EventSeriesCollaborators";
+import { EventStaffAccess } from "./EventStaffAccess";
+import { eventAccess } from "./eventStaffPermissions";
 import { ImageUploader } from "./ImageUploader";
 import { EventSeriesFields, emptySeriesForm, seriesPayload, valuesForSeries } from "./EventSeriesForm";
 import {
@@ -19,6 +21,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
   onSelectOccurrence: (eventId: number) => void;
 }) {
   const query = useEventSeries(seriesId);
+  const access = eventAccess(query.data ?? { staff_permissions: [], can_manage_staff: false });
   const occurrences = useEventSeriesOccurrences(seriesId);
   const update = useUpdateEventSeries(makerspaceId, seriesId);
   const [values, setValues] = useState(emptySeriesForm);
@@ -33,7 +36,10 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const payload = seriesPayload(values);
-    update.mutate({ ...payload, ...(query.data?.status === "published" ? { effective_from: new Date().toISOString() } : {}) });
+    if (!query.data) return;
+    const original = seriesPayload(valuesForSeries(query.data));
+    const changed = Object.fromEntries(Object.entries(payload).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(original[key as keyof typeof original])));
+    update.mutate({ ...changed, ...(query.data.status === "published" ? { effective_from: new Date().toISOString() } : {}) });
   };
   return <>
     <DetailDrawer open title={query.data?.title ?? "Recurring series"} onClose={onClose}>
@@ -42,12 +48,12 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
       {query.data ? <div className="grid gap-5">
         <div className="flex flex-wrap items-center gap-2"><StatusBadge status={query.data.status} /><span className="text-sm text-muted">{query.data.future_occurrence_count} active occurrences · revision {query.data.revision}</span></div>
         {query.data.last_generation_error_code ? <div className="rounded-lg border border-danger bg-danger/10 p-3 text-sm text-danger" role="alert">Automatic extension needs attention ({query.data.last_generation_error_code}). Use Extend now after correcting the schedule.</div> : null}
-        <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} />
-        <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields values={values} setValues={setValues} disabled={terminal} />{!terminal ? <button className="desk-button-primary mt-3" type="submit" disabled={update.isPending}>Save future occurrences</button> : null}</form>
-        <div className="flex flex-wrap gap-2">{query.data.status === "draft" ? <button className="desk-button-primary" type="button" onClick={() => setConfirm("publish")}>Publish series</button> : null}{query.data.status === "published" ? <><button className="desk-button" type="button" onClick={() => setConfirm("extend")}>Extend now</button><button className="desk-button-success" type="button" onClick={() => setConfirm("complete")}>Complete series</button><button className="desk-button-danger" type="button" onClick={() => setConfirm("cancel")}>Cancel series</button></> : null}</div>
+        {access.edit ? <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} /> : null}
+        {access.edit || access.publish ? <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields values={values} setValues={setValues} disabled={terminal} canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />{!terminal ? <button className="desk-button-primary mt-3" type="submit" disabled={update.isPending}>Save future occurrences</button> : null}</form> : null}
+        {access.publish ? <div className="flex flex-wrap gap-2">{query.data.status === "draft" ? <button className="desk-button-primary" type="button" onClick={() => setConfirm("publish")}>Publish series</button> : null}{query.data.status === "published" ? <><button className="desk-button" type="button" onClick={() => setConfirm("extend")}>Extend now</button><button className="desk-button-success" type="button" onClick={() => setConfirm("complete")}>Complete series</button><button className="desk-button-danger" type="button" onClick={() => setConfirm("cancel")}>Cancel series</button></> : null}</div> : null}
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}
         <section><h3 className="title-section">Occurrences</h3><p className="mt-1 text-sm text-muted">Choose one occurrence to edit or cancel only that date.</p>{occurrences.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}<ul className="mt-3 space-y-2">{occurrences.data?.results.map((row) => <li key={row.id}><button className="desk-button-ghost w-full justify-between" type="button" onClick={() => onSelectOccurrence(row.id)}><span>{new Date(row.starts_at).toLocaleString()}</span><StatusBadge status={row.status} /></button></li>)}</ul></section>
-        <EventSeriesCollaborators seriesId={seriesId} makerspaceId={makerspaceId} />
+        {access.manager ? <><EventSeriesCollaborators seriesId={seriesId} makerspaceId={makerspaceId} /><EventStaffAccess target={{ kind: "series", id: seriesId }} /></> : null}
       </div> : null}
     </DetailDrawer>
     <ConfirmDialog open={confirm !== null} title={`${confirm ?? "Change"} recurring series`} message={`This will ${confirm ?? "change"} the series and its applicable occurrences.`} confirmLabel="Confirm" tone={confirm === "cancel" ? "danger" : "default"} pending={action.isPending} onCancel={() => setConfirm(null)} onConfirm={() => action.mutate(undefined, { onSettled: () => setConfirm(null) })} />

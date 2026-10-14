@@ -21,9 +21,10 @@ export type BadgeTemplate = {
   include_qr: boolean;
 };
 
-export function useEventBadgeTemplate(eventId: number) {
+export function useEventBadgeTemplate(eventId: number, enabled = true) {
   return useQuery({
     queryKey: eventKeys.badgeTemplate(eventId),
+    enabled,
     queryFn: () => staffRequest<BadgeTemplate>(`/admin/events/${eventId}/badge-template/`),
   });
 }

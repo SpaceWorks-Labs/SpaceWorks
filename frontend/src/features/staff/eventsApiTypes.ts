@@ -13,6 +13,8 @@ export type EventRegistrationStatus =
 export type EventRegistrationCounts = Record<EventRegistrationStatus, number>;
 
 export type StaffEvent = {
+  staff_permissions?: import("./eventStaffPermissions").EventPermission[];
+  can_manage_staff?: boolean;
   ticketing_features?: string[];
   id: number;
   makerspace_id: number;

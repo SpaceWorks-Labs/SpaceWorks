@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import QrScanner from "../../components/ui/QrScanner";
 import { StructuredApiError } from "../../lib/api";
+import { EventAttendanceTools } from "./EventAttendanceTools";
 import {
   useMarkEventAttended,
   useResolveEventCheckIn,
@@ -30,6 +31,7 @@ export default function EventCheckInScanner({
   const [resolved, setResolved] = useState<EventCheckInResolution | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
+  const [attendedId, setAttendedId] = useState<number | null>(null);
   const resolve = useResolveEventCheckIn(eventId);
   const attend = useMarkEventAttended(makerspaceId, eventId, "qr");
 
@@ -37,6 +39,7 @@ export default function EventCheckInScanner({
     setScanning(false);
     setError(null);
     setConfirmed(null);
+    setAttendedId(null);
     setResolved(null);
     try {
       setResolved(await resolve.mutateAsync(value.trim()));
@@ -60,6 +63,7 @@ export default function EventCheckInScanner({
     try {
       await attend.mutateAsync(resolved.registration_id);
       setConfirmed(`${resolved.name} checked in.`);
+      setAttendedId(resolved.registration_id);
       setResolved(null);
     } catch (cause) {
       if (cause instanceof StructuredApiError && cause.status === 409) {
@@ -171,6 +175,7 @@ export default function EventCheckInScanner({
       )}
 
       {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
+      {attendedId || resolved?.status === "attended" ? <EventAttendanceTools eventId={eventId} makerspaceId={makerspaceId} registrationId={attendedId ?? resolved!.registration_id} onCorrected={() => { setAttendedId(null); setConfirmed(null); setResolved(null); setScanning(true); }} /> : null}
 
       {/* Unmounted rather than hidden, so the camera stops and keyboard users cannot tab
           into a scanner they cannot see. */}

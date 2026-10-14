@@ -8,7 +8,7 @@ import { filterTabsByEnabledModules } from "./staffTabs";
 import { StaffPlatformTabContent } from "./StaffPlatformTabContent";
 import { Panel, type Makerspace } from "./panels/shared";
 import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
-import { PlatformDashboardPanel } from "./StaffTabLoaders";
+import { PlatformDashboardPanel, GrantedEventsPanel } from "./StaffTabLoaders";
 
 import { PaymentsPanel, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
@@ -38,6 +38,7 @@ export function StaffTabContent({
   canSeePrinting,
   canViewAudit,
   singleTenantLocked = false,
+  lockedMakerspaceId,
 }: {
   activeMakerspace?: Makerspace;
   activeTab: string;
@@ -65,12 +66,17 @@ export function StaffTabContent({
   canViewAudit: boolean;
   // Machines needs this for links; targetless organization panels need it as a mount gate.
   singleTenantLocked?: boolean;
+  lockedMakerspaceId?: number;
 }) {
   if (activeTab === "platform-dashboard" && isSuperadmin && !singleTenantLocked) {
     return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformDashboardPanel /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "organizations") {
     return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
+  }
+  if (activeTab === "granted" && currentUser.event_grants?.length) {
+    if (singleTenantLocked && lockedMakerspaceId === undefined) return <Panel title="No makerspace">Unable to resolve this makerspace.</Panel>;
+    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><GrantedEventsPanel grants={currentUser.event_grants} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /></Suspense></StaffPanelErrorBoundary>;
   }
   if (!activeMakerspace) {
     return <Panel title="No makerspace">Assign a makerspace to this account.</Panel>;

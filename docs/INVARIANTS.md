@@ -2238,6 +2238,43 @@ Load-bearing details that carried over unchanged:
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
+### Event-scoped staff grants
+
+`events/event_authority.py` is the staff event authority API: tenant `MANAGE_EVENTS`,
+unchanged organization organizer authority, relevant series authority and live scoped grants.
+`edit_details`, `manage_registrations`, `manage_invitations`, `check_in` and
+`publish_schedule` confer only their event operations. A grant never adds makerspace RBAC
+actions or widens `scope_by_makerspace`; list predicates admit only its event or series
+occurrences. Grant management, station PINs, collaboration, payments, deletion,
+certificate issue/revoke and analytics PDFs remain tenant/organizer operations.
+
+Concrete `EventStaffGrant` and `EventStaffGrantInvite` rows belong to events and use typed
+event/series FKs, exactly one target, and partial uniqueness for live grants. The abstract
+fields and locked create/redeem/update/revoke mechanism live in always-present
+`makerspaces/resource_grants_models.py` and `resource_grants_services.py`, parameterized
+by a domain adapter. Bookings can supply its own concrete models without importing events.
+Permission validation, HMAC-only token/contact digests and seven-day expiry are shared.
+Redemption locks the resource and invite, rechecks single use, expiry, revocation, resource
+servability, the creator's current management authority and non-escalation, and requires a
+matching verified account email for bound invitations. Raw tokens are returned once and
+may appear only in synchronous redacted invitation email links, never persisted outbox
+bodies, list responses or audit metadata. Every mutation records `event.staff_grant_*`.
+
+Account staff sign-in/refresh, workspace discovery and staff MFA consult the query-free
+`makerspaces/resource_grant_sources.py` registry, never events directly. An active app
+registers its source in `AppConfig.ready()`; a tombstoned app contributes no authority.
+Queries recheck grants on every request, including tenant/module and staff-origin scope.
+Granted events are projected with `source="event_grant"` and their permissions; no
+makerspace actions are manufactured. Organizer authority is unchanged.
+
+Both entire models are omitted at **both export fidelities** and `DROP` in tenant imports.
+They have no export datasets or target uniqueness materialization: a target must reissue
+all delegated authority and credentials. Their User FKs are explicitly excluded from user
+closure, and retained audit targets become inert source provenance. Email is never stored
+in these rows, only a deployment-local keyed digest, so they need no PII encryption mapping
+or S3 collector. Events module purge and whole-tenant purge delete both concrete models;
+retention registration survives tombstoning even though discovery and routes disappear.
+
 ### Event access, ticketing and discovery (WP1, 2026-10-11)
 
 - **Events no longer requires membership.** `members` remains the default audience. `accounts`

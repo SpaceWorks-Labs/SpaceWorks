@@ -11,6 +11,7 @@ from apps.accounts import audit_events
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.login_methods import self_registration_enabled, social_login_enabled
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
+from apps.accounts.models_social import SocialSurface
 from apps.accounts.oidc_browser_attempts import (
     OidcAttemptRejected,
     consume_attempt,
@@ -31,10 +32,11 @@ from apps.accounts.serializers_oidc_browser import (
     OidcBrowserStartSerializer,
 )
 from apps.accounts.services_social_identity import SocialResolutionError
-from apps.accounts.services_social_login import issue_social_session, social_audit_meta
+from apps.accounts.services_social_login import assert_staff_authority, issue_social_session, social_audit_meta
 from apps.accounts.social_jwt import SocialProviderUnavailable, SocialTokenError
 from apps.accounts.social_oidc import verify_oidc_token
 from apps.hardware_requests.exceptions import ErrorSerializer
+from apps.makerspaces.origin_scope import NO_STAFF_ORIGIN_SCOPE, staff_origin_scope
 
 
 def _error(code, status_code):
@@ -45,6 +47,7 @@ def _error(code, status_code):
         "provider_already_linked": "A different identity from that provider is already linked.",
         "account_link_required": "This provider does not allow automatic account linking.",
         "registration_disabled": "Account registration is not available.",
+        "staff_access_required": "Staff access is required.",
     }
     return Response(
         {"detail": messages.get(code, messages["social_invalid"]), "code": code},
@@ -136,19 +139,26 @@ class OidcBrowserCallbackView(APIView):
                 attempt,
                 claims,
                 allow_user_creation=self_registration_enabled(),
+                staff_validator=(lambda user: assert_staff_authority(user, request))
+                if attempt.surface == SocialSurface.STAFF else None,
             )
+            scope = staff_origin_scope(request)
+            staff_scope = None if scope is NO_STAFF_ORIGIN_SCOPE else str(scope)
             from apps.accounts.mfa_policy import needs_challenge
             from apps.accounts.mfa_challenges import start
             from apps.accounts.mfa_sessions import context
             if needs_challenge(user):
-                response = Response(start(user, context=context(request, surface="member")))
+                response = Response(start(user, context=context(
+                    request, surface=attempt.surface, staff_scope=staff_scope,
+                )))
                 response["Cache-Control"] = "no-store"
                 return response
             tokens = issue_social_session(
                 user,
-                surface="member",
+                surface=attempt.surface,
                 delivery="web",
                 nonce_row=attempt,
+                staff_scope=staff_scope,
             )
         except OidcAttemptRejected:
             return _error("social_invalid", 401)

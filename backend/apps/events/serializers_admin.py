@@ -122,7 +122,10 @@ class EventAttendanceMarkSerializer(serializers.Serializer):
     )
 
 
-class EventAdminSerializer(serializers.ModelSerializer):
+from .serializers_event_authority import EventAuthorityFields
+
+
+class EventAdminSerializer(EventAuthorityFields, serializers.ModelSerializer):
     ticketing_features = serializers.SerializerMethodField()
     makerspace_id = serializers.IntegerField(read_only=True)
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
@@ -137,7 +140,7 @@ class EventAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = (
-            'id',
+            'id', 'staff_permissions', 'can_manage_staff',
             'makerspace_id', 'ticketing_features',
             'series_summary',
             'series_revision',

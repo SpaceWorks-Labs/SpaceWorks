@@ -18,12 +18,13 @@ from apps.audit import services as audit
 from apps.makerspaces.models import MakerspaceMembership
 
 
-def resolve_browser_identity(attempt, claims, *, allow_user_creation):
+def resolve_browser_identity(attempt, claims, *, allow_user_creation, staff_validator=None):
     if attempt.intended_user_id is None:
         return resolve_social_identity(
             provider=attempt.provider,
             claims=claims,
-            surface=SocialSurface.MEMBER,
+            surface=attempt.surface,
+            staff_validator=staff_validator,
             allow_auto_link=claims.get("allow_auto_link", True),
             allow_user_creation=allow_user_creation,
         )

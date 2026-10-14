@@ -4842,7 +4842,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/EventRegistrationAdmin"
+                                    "$ref": "#/components/schemas/EventAttendanceResult"
                                 }
                             }
                         },
@@ -67468,6 +67468,1338 @@
                     }
                 }
             }
+        },
+        "/api/v1/admin/accessible-events/": {
+            "get": {
+                "operationId": "api_v1_admin_accessible_events_retrieve",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventListResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page_size",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/event-series/{id}/staff-grants/": {
+            "get": {
+                "operationId": "api_v1_admin_event_series_staff_grants_retrieve",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrantList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/event-series/{id}/staff-invites/": {
+            "get": {
+                "operationId": "api_v1_admin_event_series_staff_invites_retrieve",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrantInviteList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "api_v1_admin_event_series_staff_invites_create",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrantInviteCreated"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantInviteInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantInviteInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantInviteInput"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/admin/event-staff-grants/{id}/": {
+            "patch": {
+                "operationId": "api_v1_admin_event_staff_grants_{id}_partial_update",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrant"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStaffGrantPermissions"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStaffGrantPermissions"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStaffGrantPermissions"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/admin/event-staff-grants/{id}/revoke/": {
+            "post": {
+                "operationId": "api_v1_admin_event_staff_grants_revoke_create",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrant"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/event-staff-invites/redeem/": {
+            "post": {
+                "operationId": "api_v1_admin_event_staff_invites_redeem_create",
+                "tags": [
+                    "Events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrant"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantRedeem"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantRedeem"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantRedeem"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/admin/event-staff-invites/{id}/revoke/": {
+            "post": {
+                "operationId": "api_v1_admin_event_staff_invites_revoke_create",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrantInvite"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/events/{id}/staff-grants/": {
+            "get": {
+                "operationId": "api_v1_admin_events_staff_grants_retrieve",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrantList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/events/{id}/staff-invites/": {
+            "get": {
+                "operationId": "api_v1_admin_events_staff_invites_retrieve",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrantInviteList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "api_v1_admin_events_staff_invites_create",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffGrantInviteCreated"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantInviteInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantInviteInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffGrantInviteInput"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
         }
     },
     "components": {
@@ -69591,6 +70923,12 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/AuthMembership"
+                        }
+                    },
+                    "event_grants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GrantedEventEntry"
                         }
                     }
                 },
@@ -75154,6 +76492,17 @@
                             "$ref": "#/components/schemas/EventOrganizerSummary"
                         },
                         "readOnly": true
+                    },
+                    "staff_permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
+                    "can_manage_staff": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -75190,7 +76539,9 @@
                     "ticketing_features",
                     "timezone_name",
                     "title",
-                    "updated_at"
+                    "updated_at",
+                    "staff_permissions",
+                    "can_manage_staff"
                 ]
             },
             "EventAttendanceMark": {
@@ -75959,6 +77310,17 @@
                         "type": "string",
                         "format": "uri",
                         "readOnly": true
+                    },
+                    "staff_permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
+                    "can_manage_staff": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -75980,7 +77342,9 @@
                     "revision",
                     "status",
                     "title",
-                    "updated_at"
+                    "updated_at",
+                    "staff_permissions",
+                    "can_manage_staff"
                 ]
             },
             "EventSeriesListResponse": {
@@ -76125,6 +77489,17 @@
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true
+                    },
+                    "staff_permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
+                    "can_manage_staff": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -76143,7 +77518,9 @@
                     "revision",
                     "status",
                     "title",
-                    "updated_at"
+                    "updated_at",
+                    "staff_permissions",
+                    "can_manage_staff"
                 ]
             },
             "EventSeriesWrite": {
@@ -87332,6 +88709,14 @@
             "OidcBrowserStart": {
                 "type": "object",
                 "properties": {
+                    "surface": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Surface356Enum"
+                            }
+                        ],
+                        "default": "member"
+                    },
                     "redirect_uri": {
                         "type": "string",
                         "format": "uri",
@@ -105820,6 +107205,480 @@
                     "id",
                     "kind",
                     "name"
+                ]
+            },
+            "GrantedEventEntry": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "series_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "makerspace_slug": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "event_grant"
+                        ]
+                    },
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "edit_details",
+                                "manage_registrations",
+                                "manage_invitations",
+                                "check_in",
+                                "publish_schedule"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "event_id",
+                    "makerspace_id",
+                    "makerspace_slug",
+                    "permissions",
+                    "series_id",
+                    "source",
+                    "title"
+                ]
+            },
+            "PatchedStaffGrantPermissions": {
+                "type": "object",
+                "properties": {
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "edit_details",
+                                "manage_registrations",
+                                "manage_invitations",
+                                "check_in",
+                                "publish_schedule"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 5
+                    }
+                },
+                "required": []
+            },
+            "StaffGrant": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "event": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "series": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "user": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "edit_details",
+                                "manage_registrations",
+                                "manage_invitations",
+                                "check_in",
+                                "publish_schedule"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 5,
+                        "readOnly": true
+                    },
+                    "granted_by": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "revoked_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "revoked_by": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "event",
+                    "granted_by",
+                    "id",
+                    "makerspace",
+                    "permissions",
+                    "revoked_at",
+                    "revoked_by",
+                    "series",
+                    "user"
+                ]
+            },
+            "StaffGrantInvite": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "event": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "series": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "edit_details",
+                                "manage_registrations",
+                                "manage_invitations",
+                                "check_in",
+                                "publish_schedule"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 5,
+                        "readOnly": true
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "redeemed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "revoked_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "created_by",
+                    "event",
+                    "expires_at",
+                    "id",
+                    "makerspace",
+                    "permissions",
+                    "redeemed_at",
+                    "revoked_at",
+                    "series"
+                ]
+            },
+            "StaffGrantInviteCreated": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "event": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "series": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "edit_details",
+                                "manage_registrations",
+                                "manage_invitations",
+                                "check_in",
+                                "publish_schedule"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 5,
+                        "readOnly": true
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "redeemed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "revoked_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "token": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "created_by",
+                    "event",
+                    "expires_at",
+                    "id",
+                    "makerspace",
+                    "permissions",
+                    "redeemed_at",
+                    "revoked_at",
+                    "series",
+                    "token"
+                ]
+            },
+            "StaffGrantInviteInput": {
+                "type": "object",
+                "properties": {
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "edit_details",
+                                "manage_registrations",
+                                "manage_invitations",
+                                "check_in",
+                                "publish_schedule"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 5
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "default": ""
+                    },
+                    "send_email": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "permissions"
+                ]
+            },
+            "StaffGrantInviteList": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StaffGrantInvite"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "StaffGrantList": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StaffGrant"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "StaffGrantPermissions": {
+                "type": "object",
+                "properties": {
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "edit_details",
+                                "manage_registrations",
+                                "manage_invitations",
+                                "check_in",
+                                "publish_schedule"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 5
+                    }
+                },
+                "required": [
+                    "permissions"
+                ]
+            },
+            "StaffGrantRedeem": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "minLength": 32,
+                        "maxLength": 128
+                    }
+                },
+                "required": [
+                    "token"
+                ]
+            },
+            "EventCheckInResult": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "event_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "event_id",
+                    "id",
+                    "name",
+                    "status"
+                ]
+            },
+            "EventAttendanceResult": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/EventRegistrationAdmin"
+                    },
+                    {
+                        "$ref": "#/components/schemas/EventCheckInResult"
+                    }
                 ]
             }
         },

@@ -3,6 +3,8 @@
 from .unique_values_policy import REMAP, _policy
 
 
+# EventStaffGrant partial unique keys and EventStaffGrantInvite.token_digest need no
+# materialization rule: both entire models are DROP, so no source credential is inserted.
 EVENT_UNIQUE_RULES = {
     ("events.EventInvite", "event_invite_unique_code"): _policy(
         REMAP,

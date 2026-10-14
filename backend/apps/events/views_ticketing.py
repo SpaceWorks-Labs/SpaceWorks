@@ -8,6 +8,7 @@ from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit.services import record
 from apps.events.models import EventCategory, EventPromoCode
+from apps.events.event_permissions import MANAGE_REGISTRATIONS
 from apps.events.promos import create_promo, revoke_promo
 from apps.events.invites import require_feature
 from apps.events.ticketing import create_ticket
@@ -26,7 +27,7 @@ class EventTicketListView(APIView):
 
     @extend_schema(tags=["Admin events"], request=None, parameters=PAGE_PARAMETERS, responses={200: TicketListSerializer, **ERRORS})
     def get(self, request, pk):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
         require_feature(event, "events.ticket_types")
         return paginated(request, event.ticket_types.order_by("id"), TicketSerializer)
 

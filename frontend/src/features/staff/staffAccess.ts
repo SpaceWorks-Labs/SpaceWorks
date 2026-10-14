@@ -1,6 +1,6 @@
 const ALL_TABS = [
   "platform-dashboard", "usage",
-  "dashboard", "notifications", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "bookings", "members", "cards", "tobuy", "transfers",
+  "dashboard", "notifications", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "emailtemplates", "users", "platform", "audit",
   "devices", "email-logs", "payments", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
 ] as const;
@@ -29,6 +29,7 @@ export const TAB_LABELS: Record<string, string> = {
   devices: "Devices",
   events: "Events",
   organized: "Organized events",
+  granted: "Assigned events",
   bookings: "Bookings",
   members: "Members",
   cards: "Member cards",
@@ -56,7 +57,7 @@ export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
   { label: "Operate", tabs: ["dashboard", "notifications", "requests", "direct", "handover", "payments", "ledger", "transfers", "stocktake", "tobuy"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
   { label: "Machines", tabs: ["machines", "devices"] },
-  { label: "Events", tabs: ["events", "organized"] },
+  { label: "Events", tabs: ["events", "organized", "granted"] },
   { label: "Bookings", tabs: ["bookings"] },
   { label: "Members", tabs: ["members", "cards"] },
   { label: "Insights", tabs: ["reports", "organization-analytics", "accountability", "warranty", "audit"] },
@@ -79,6 +80,7 @@ export function getStaffAccess(
   isSuperadmin: boolean,
   singleTenantLocked: boolean,
   _isMachineOnly = false,
+  hasEventGrants = false,
 ) {
   const has = (action: string) => isSuperadmin || actions.includes(action);
   const canEditInventory = has("edit_inventory");
@@ -116,8 +118,12 @@ export function getStaffAccess(
   // finished work over, so a manager needs no separate grant.
   const canCollectServiceRequests = has("collect_service_request") || canManageMachines;
   const printingOnly = canSeePrinting && !canEditInventory && !canManageMakerspace;
-  const baseTabs = handoutOnly ? (["requests", "direct", "handover", "payments", "notifications"] as const) : ALL_TABS;
-  const allowedTabs: readonly string[] = governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
+  const baseTabs = handoutOnly ? (["requests", "direct", "handover", "payments", "notifications", "granted"] as const) : ALL_TABS;
+  const grantOnly = !isSuperadmin && actions.length === 0 && hasEventGrants;
+  // Central organization governance is independent of makerspace actions. An
+  // event grant adds a workspace without replacing that existing global surface.
+  const allowedTabs: readonly string[] = grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
+    if (tabName === "granted") return hasEventGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;
     if (tabName === "usage") return canManageMakerspace;
     if (tabName === "dashboard") return !handoutOnly && (isSuperadmin || canSeeDashboard);
@@ -174,6 +180,7 @@ export function getStaffAccess(
     return true;
   });
   return {
+    grantOnly,
     handoutOnly,
     printingOnly,
     canSeeHardware,

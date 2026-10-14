@@ -12,6 +12,7 @@ export const Ledger = lazy(() => import("./panels/Ledger").then((m) => ({ defaul
 export const MachinesPanel = lazy(() => import("./panels/MachinesPanel").then((m) => ({ default: m.MachinesPanel })));
 export const EventsPanel = lazy(() => import("./EventsPanel").then((m) => ({ default: m.EventsPanel })));
 export const OrganizedEventsPanel = lazy(() => import("./panels/OrganizedEventsPanel").then((m) => ({ default: m.OrganizedEventsPanel })));
+export const GrantedEventsPanel = lazy(() => import("./GrantedEventsPanel").then((m) => ({ default: m.GrantedEventsPanel })));
 export const OrganizationAnalyticsPanel = lazy(() => import("./panels/OrganizationAnalyticsPanel").then((m) => ({ default: m.OrganizationAnalyticsPanel })));
 export const OrganizationsPanel = lazy(() => import("./panels/OrganizationsPanel").then((m) => ({ default: m.OrganizationsPanel })));
 export const BookingsPanel = lazy(() => import("./BookingsPanel").then((m) => ({ default: m.BookingsPanel })));

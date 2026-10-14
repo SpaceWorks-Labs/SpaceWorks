@@ -33,6 +33,11 @@ class AuthorityRegistryError(AssertionError):
 
 APPS_DIR = Path(project_apps.__file__).resolve().parent
 AUTHORIZATION_SOURCES = (
+    APPS_DIR / "events" / "event_authority.py",
+    APPS_DIR / "events" / "event_authority_page.py",
+    APPS_DIR / "events" / "staff_grant_locks.py",
+    APPS_DIR / "makerspaces" / "resource_grant_sources.py",
+    APPS_DIR / "makerspaces" / "resource_grants_services.py",
     APPS_DIR / "accounts" / "rbac.py",
     APPS_DIR / "accounts" / "rbac_catalogue.py",
     APPS_DIR / "accounts" / "rbac_notifications.py",

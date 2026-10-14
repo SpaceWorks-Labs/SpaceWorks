@@ -24,7 +24,8 @@ from apps.events.serializers_admin import (
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
 from apps.events import services
 from apps.events.models import Event, EventRegistration
-from apps.events.organizer_authority import can_manage_event, organizer_event_q
+from apps.events import event_authority
+from apps.events.event_permissions import EDIT_DETAILS, PUBLISH_SCHEDULE, VIEW
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
@@ -65,54 +66,21 @@ def _visible_makerspace(actor, makerspace_id):
         ),
         pk=makerspace_id,
     )
-    require_module(makerspace, 'events')
-    if not rbac.can(actor, rbac.Action.MANAGE_EVENTS, makerspace.pk):
-        raise PermissionDenied()
+    event_authority.require_tenant(actor, makerspace)
     return makerspace
 
 
-def _manageable_event(actor, pk):
-    venue_scoped = rbac.scope_by_visibility_or_action(
-        actor,
-        rbac.Action.MANAGE_EVENTS,
-        Event.objects.all(),
-        field='makerspace_id',
-    )
-    event = get_object_or_404(
-        Event.objects.select_related('makerspace', 'series')
-        .prefetch_related('organizers__organization')
-        .filter(
-            Q(pk__in=venue_scoped.values('pk'))
-            | organizer_event_q(actor)
-        )
-        .distinct(),
-        pk=pk,
-    )
-    require_module(event.makerspace, 'events')
-    if not can_manage_event(actor, event):
-        raise PermissionDenied()
-    return event
+def _manageable_event(actor, pk, permission=None):
+    return event_authority.get_event(actor, pk, permission)
 
 
-def _manageable_registration(actor, pk):
-    venue_scoped = rbac.scope_by_visibility_or_action(
-        actor,
-        rbac.Action.MANAGE_EVENTS,
-        EventRegistration.objects.all(),
-        field='event__makerspace_id',
-    )
+def _manageable_registration(actor, pk, permission=None):
     registration = get_object_or_404(
-        EventRegistration.objects.select_related('event__makerspace')
-        .filter(
-            Q(pk__in=venue_scoped.values('pk'))
-            | organizer_event_q(actor, event_prefix='event__')
-        )
-        .distinct(),
-        pk=pk,
+        EventRegistration.objects.select_related('event__makerspace').filter(
+            event_id__in=event_authority.visible_events(actor, Event.objects.all()).values('pk'),
+        ), pk=pk,
     )
-    require_module(registration.event.makerspace, 'events')
-    if not can_manage_event(actor, registration.event):
-        raise PermissionDenied()
+    event_authority.require(actor, registration.event, permission)
     return registration
 
 
@@ -156,7 +124,7 @@ class EventDetailView(APIView):
         responses={200: EventAdminSerializer, **EVENT_SCOPED_ERRORS},
     )
     def get(self, request, pk, *args, **kwargs):
-        return Response(EventAdminSerializer(_manageable_event(request.user, pk)).data)
+        return Response(EventAdminSerializer(_manageable_event(request.user, pk, VIEW), context={"request": request}).data)
 
     @extend_schema(
         tags=['Admin events'],
@@ -170,15 +138,26 @@ class EventDetailView(APIView):
         },
     )
     def patch(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, VIEW)
         serializer = EventWriteSerializer(event, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        values = serializer.validated_data
+        fields = (set(values) - {"inherit_fields"}) | set(values.get("inherit_fields", []))
+        schedule_fields = {"starts_at", "ends_at"}
+        if fields & schedule_fields:
+            event_authority.require(request.user, event, PUBLISH_SCHEDULE)
+        if fields - schedule_fields or not fields:
+            event_authority.require(request.user, event, EDIT_DETAILS)
+        if not event_authority.can_manage_grants(request.user, event):
+            if ("payment_amount" in serializer.validated_data
+                    or "payment_amount" in serializer.validated_data.get("inherit_fields", [])):
+                raise PermissionDenied()
         event = services.update_event(
             event,
             actor=request.user,
             **serializer.validated_data,
         )
-        return Response(EventAdminSerializer(event).data)
+        return Response(EventAdminSerializer(event, context={"request": request}).data)
 
 
 class _EventActionView(APIView):
@@ -186,10 +165,10 @@ class _EventActionView(APIView):
     operation = None
 
     def execute(self, request, pk):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, PUBLISH_SCHEDULE)
         _validate_empty_action(request)
         event = self.operation(event, actor=request.user)
-        return Response(EventAdminSerializer(event).data)
+        return Response(EventAdminSerializer(event, context={"request": request}).data)
 
 
 class EventPublishView(_EventActionView):

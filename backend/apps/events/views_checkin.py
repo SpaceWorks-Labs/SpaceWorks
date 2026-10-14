@@ -21,6 +21,7 @@ from apps.events.serializers_checkin import (
 )
 from apps.events.throttles import EventCheckInResolveThrottle
 from apps.events.views_admin import _manageable_event
+from apps.events.event_permissions import CHECK_IN
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.member_activity_service import active_membership
@@ -51,7 +52,7 @@ class EventCheckInResolveView(APIView):
         },
     )
     def post(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, CHECK_IN)
         try:
             token = UUID(str(request.data["checkin_token"]))
         except (KeyError, TypeError, ValueError, AttributeError):

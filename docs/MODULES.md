@@ -185,6 +185,14 @@ Events can run with membership and the online payments rail off. Members-only re
 default audience; opt-in account registration, invitations, ticket types and promo codes
 support public workshops. Paid tickets still create core ledger charges for offline settlement.
 
+Event managers and organization organizers can invite staff to one event or series with
+selected permissions for details, registrations, invitations, check-in and scheduling.
+These staff can sign in and see only their granted events; grants confer no makerspace
+role or actions. Invitations expire after seven days and revocation applies immediately.
+Grants and invitation credentials are excluded from portable exports and imports;
+the destination must issue fresh access. Uninstall retains the rows, while events purge
+deletes them, including when the events app is tombstoned.
+
 ## Bookings
 
 ### bookings

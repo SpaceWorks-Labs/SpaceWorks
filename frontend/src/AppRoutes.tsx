@@ -19,6 +19,7 @@ const PublicBookingsPage = lazy(() => import("./features/bookings/PublicBookings
 const PublicItemPage = lazy(() => import("./features/inventory/PublicItemPage").then((m) => ({ default: m.PublicItemPage })));
 const PublicEventFeedbackPage = lazy(() => import("./features/inventory/PublicEventFeedbackPage").then((m) => ({ default: m.PublicEventFeedbackPage })));
 const PublicEventDetailPage = lazy(() => import("./features/inventory/PublicEventDetailPage").then((m) => ({ default: m.PublicEventDetailPage })));
+const MemberEventTicketPage = lazy(() => import("./features/events/MemberEventTicketPage").then((m) => ({ default: m.MemberEventTicketPage })));
 const PublicEventsPage = lazy(() => import("./features/inventory/PublicEventsPage").then((m) => ({ default: m.PublicEventsPage })));
 const PublicMachinesPage = lazy(() => import("./features/inventory/PublicMachinesPage").then((m) => ({ default: m.PublicMachinesPage })));
 const PublicSelfCheckoutPage = lazy(() => import("./features/inventory/PublicSelfCheckoutPage").then((m) => ({ default: m.PublicSelfCheckoutPage })));
@@ -92,6 +93,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/print" element={<PublicPrintRequestPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
+      <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/member/:memberTab" element={<MemberArea />} />
       <Route path="/stats" element={<PublicStatsPage />} />
       <Route path="/about" element={<AboutPage />} />
@@ -120,8 +122,10 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/print" element={<PublicPrintRequestPage />} />
       <Route path="/m/:slug/member" element={<MemberArea />} />
       <Route path="/m/:slug/member/account" element={<MemberAccountPage />} />
+      <Route path="/m/:slug/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
+      <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/m/:slug/member/:memberTab" element={<MemberArea />} />
       <Route path="/member/:memberTab" element={<MemberArea />} />
       <Route path="/m/:slug/stats" element={<PublicStatsPage />} />

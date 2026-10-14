@@ -95,6 +95,10 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
     )
     calendar_sequence = models.PositiveIntegerField(default=0)
     calendar_updated_at = models.DateTimeField(default=timezone.now)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    status_before_cancel = models.CharField(max_length=20, blank=True, default="")
+    # A tail restore must not rewrite the original registration creation time.
+    waitlist_position_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -2277,6 +2277,23 @@ retention registration survives tombstoning even though discovery and routes dis
 
 ### Event access, ticketing and discovery (WP1, 2026-10-11)
 
+- **Lane B staff tools (2026-10-15).** Duplication requires live `edit_details` authority,
+  creates a fresh draft identity, defaults to standalone, and never copies registrations,
+  credentials or grants. Optional series attachment requires management of that series.
+  The explicit adapter copies only declared children and fresh owned asset keys; durable
+  outer transactions roll back quota and clean failed copies. Shared helpers in makerspaces
+  and operations never import events, so bookings can reuse the mechanisms.
+- **Cancellation undo restores state, not money.** Cancellation records server-clock
+  provenance; legacy null provenance refuses undo. Within five minutes, event and ticket
+  locks serialize exact restore with registration and promotion. Any historical charge,
+  invite/promo consumption or newly required charge refuses it. Confirmed/approval restore
+  uses the registration admission helper; waitlist restore preserves its queue position,
+  except a later-created waiter's intervening promotion moves it to the tail. Creation time
+  remains intact. Refusals mutate nothing; restore audits and dispatches `registration_restored`.
+- **Ticket PNGs are owner-only, registered/attended-only, no-store, throttled and audited.**
+  Calendar formatting receives only authorized public fields. Public projections honor
+  `show_registration_count`, including suppressing exact ticket spots when counts are hidden.
+
 - **Events no longer requires membership.** `members` remains the default audience. `accounts`
   requires `events.account_registration` and `require_active_account`; `invite` requires
   `events.invites`, that same account guard, and a usable event-bound invite. Guest/no-account signup

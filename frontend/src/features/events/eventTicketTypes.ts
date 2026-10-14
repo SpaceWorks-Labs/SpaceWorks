@@ -8,6 +8,7 @@ export type EventTicket = {
 export type PublicEventDetail = {
   public_token: string; title: string; description: string;
   starts_at: string; ends_at: string; location: string;
+  show_registration_count?: boolean; registration_count?: number | null;
   capacity: number | null; payment_amount: string; currency: string;
   availability: "Available" | "Limited" | "Full";
   registration_audience?: "members" | "accounts" | "invite";

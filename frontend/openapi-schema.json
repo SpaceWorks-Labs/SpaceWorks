@@ -68800,6 +68800,617 @@
                     "required": true
                 }
             }
+        },
+        "/api/v1/admin/event-registrations/{id}/answers/": {
+            "patch": {
+                "operationId": "api_v1_admin_event_registrations_answers_partial_update",
+                "summary": "Edit validated custom registration answers",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventRegistrationAdmin"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedRegistrationAnswers"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedRegistrationAnswers"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedRegistrationAnswers"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/event-registrations/{id}/restore/": {
+            "post": {
+                "operationId": "api_v1_admin_event_registrations_restore_create",
+                "summary": "Exactly restore a cancellation within five minutes",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventRegistrationAdmin"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/duplicate/": {
+            "post": {
+                "operationId": "api_v1_admin_events_duplicate_create",
+                "summary": "Duplicate event into a standalone draft",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventAdmin"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EventDuplicate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EventDuplicate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EventDuplicate"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/feedback-survey/templates/": {
+            "post": {
+                "operationId": "api_v1_admin_events_feedback_survey_templates_create",
+                "summary": "Apply a feedback template before any response",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeedbackSurvey"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FeedbackTemplate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FeedbackTemplate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FeedbackTemplate"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/ticket.png": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_event_registrations_ticket_png_retrieve",
+                "summary": "Download the caller's registered or attended ticket",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member activity"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/ticket/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_event_registrations_ticket_retrieve",
+                "summary": "Read the caller's event ticket",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member activity"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberEventTicket"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -73773,6 +74384,15 @@
                         "type": "object",
                         "nullable": true,
                         "readOnly": true
+                    },
+                    "show_registration_count": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "registration_count": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -73795,9 +74415,11 @@
                     "payment_amount",
                     "promo_codes_enabled",
                     "registration_audience",
+                    "registration_count",
                     "registration_open",
                     "registration_requires_approval",
                     "series",
+                    "show_registration_count",
                     "starts_at",
                     "tags",
                     "ticket_selection_required",
@@ -76503,9 +77125,14 @@
                     "can_manage_staff": {
                         "type": "boolean",
                         "readOnly": true
+                    },
+                    "show_registration_count": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
+                    "can_manage_staff",
                     "cancellation_cutoff_hours",
                     "capacity",
                     "category_id",
@@ -76533,15 +77160,15 @@
                     "series_override_fields",
                     "series_revision",
                     "series_summary",
+                    "show_registration_count",
+                    "staff_permissions",
                     "starts_at",
                     "status",
                     "tags",
                     "ticketing_features",
                     "timezone_name",
                     "title",
-                    "updated_at",
-                    "staff_permissions",
-                    "can_manage_staff"
+                    "updated_at"
                 ]
             },
             "EventAttendanceMark": {
@@ -77082,9 +77709,26 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
                         "readOnly": true
+                    },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "restore_until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "status_before_cancel": {
+                        "type": "string",
+                        "readOnly": true
                     }
                 },
                 "required": [
+                    "cancelled_at",
                     "created_at",
                     "custom_answers",
                     "discount_amount",
@@ -77095,7 +77739,9 @@
                     "payment",
                     "phone",
                     "quoted_amount",
+                    "restore_until",
                     "status",
+                    "status_before_cancel",
                     "ticket_type_id"
                 ]
             },
@@ -77779,6 +78425,10 @@
                             "$ref": "#/components/schemas/InheritFieldsEnum"
                         },
                         "writeOnly": true
+                    },
+                    "show_registration_count": {
+                        "type": "boolean",
+                        "default": true
                     }
                 },
                 "required": [
@@ -92779,6 +93429,10 @@
                             "$ref": "#/components/schemas/InheritFieldsEnum"
                         },
                         "writeOnly": true
+                    },
+                    "show_registration_count": {
+                        "type": "boolean",
+                        "default": true
                     }
                 }
             },
@@ -97452,6 +98106,15 @@
                             }
                         },
                         "readOnly": true
+                    },
+                    "show_registration_count": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "registration_count": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -97471,9 +98134,11 @@
                     "promo_codes_enabled",
                     "public_token",
                     "registration_audience",
+                    "registration_count",
                     "registration_open",
                     "registration_requires_approval",
                     "series",
+                    "show_registration_count",
                     "starts_at",
                     "status",
                     "tags",
@@ -97534,9 +98199,14 @@
                             }
                         ],
                         "readOnly": true
+                    },
+                    "registration_id": {
+                        "type": "integer",
+                        "readOnly": true
                     }
                 },
                 "required": [
+                    "registration_id",
                     "status"
                 ]
             },
@@ -107679,6 +108349,135 @@
                     {
                         "$ref": "#/components/schemas/EventCheckInResult"
                     }
+                ]
+            },
+            "EventDuplicate": {
+                "type": "object",
+                "properties": {
+                    "attach_series": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                }
+            },
+            "FeedbackTemplate": {
+                "type": "object",
+                "properties": {
+                    "template": {
+                        "$ref": "#/components/schemas/TemplateEnum"
+                    }
+                },
+                "required": [
+                    "template"
+                ]
+            },
+            "MemberEventTicket": {
+                "type": "object",
+                "properties": {
+                    "registration_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "event": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketPublicFields"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "ticket_png_available": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "event",
+                    "registration_id",
+                    "status",
+                    "ticket_png_available"
+                ]
+            },
+            "PatchedRegistrationAnswers": {
+                "type": "object",
+                "properties": {
+                    "custom_answers": {
+                        "nullable": true
+                    }
+                }
+            },
+            "RegistrationAnswers": {
+                "type": "object",
+                "properties": {
+                    "custom_answers": {
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "custom_answers"
+                ]
+            },
+            "TemplateEnum": {
+                "enum": [
+                    "quick_pulse",
+                    "event_review",
+                    "session_speaker"
+                ],
+                "type": "string",
+                "description": "* `quick_pulse` - quick_pulse\n* `event_review` - event_review\n* `session_speaker` - session_speaker"
+            },
+            "TicketPublicFields": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "location": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "public_token": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "timezone_name": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "description",
+                    "ends_at",
+                    "location",
+                    "public_token",
+                    "starts_at",
+                    "status",
+                    "timezone_name",
+                    "title"
                 ]
             }
         },

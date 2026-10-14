@@ -9,6 +9,7 @@ urlconf in place instead, exactly as it does for the other two.
 """
 
 from django.urls import path
+from apps.events.views_ticket import MemberEventTicketView, MemberEventTicketPngView
 
 from apps.events.views_checkin import EventCheckInQrView
 from apps.events.views_registration_cancel import MemberEventRegistrationCancelView
@@ -23,6 +24,10 @@ from apps.events.views_member_events import (
 from apps.events.views_calendar import MemberEventCalendarFeedView, MemberEventCalendarView
 
 urlpatterns = [
+    path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/ticket/',
+         MemberEventTicketView.as_view(), name='member-event-ticket'),
+    path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/ticket.png',
+         MemberEventTicketPngView.as_view(), name='member-event-ticket-png'),
     path(
         'makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/cancel/',
         MemberEventRegistrationCancelView.as_view(),

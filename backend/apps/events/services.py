@@ -26,9 +26,9 @@ EVENT_FIELDS = frozenset(
      'location_kind', 'custom_form', 'capacity', 'is_public', 'payment_amount',
      'registration_requires_approval', 'registration_cutoff_at',
      'registration_cutoff_lead_minutes', 'cancellation_cutoff_hours', 'timezone_name',
-     'registration_audience', 'category_id', 'tags'}
+     'registration_audience', 'category_id', 'tags', 'show_registration_count'}
 )
-INHERITABLE_FIELDS = (EVENT_FIELDS - {"category_id", "tags"}) | {"image_key"}
+INHERITABLE_FIELDS = (EVENT_FIELDS - {"category_id", "tags", "show_registration_count"}) | {"image_key"}
 
 
 def _locked_event(event_id):
@@ -74,7 +74,7 @@ def create_event(
     payment_amount=0, registration_requires_approval=False,
     registration_cutoff_at=None, registration_cutoff_lead_minutes=None,
     timezone_name=None, cancellation_cutoff_hours=None,
-    registration_audience=None, category_id=None, tags=None,
+    registration_audience=None, category_id=None, tags=None, show_registration_count=True,
 ):
     locked_space = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
     require_module_locked(locked_space, "events")
@@ -82,6 +82,7 @@ def create_event(
         makerspace=locked_space,
         registration_audience=registration_audience or locked_space.event_default_registration_audience, category_id=category_id, tags=tags or [],
         created_by=actor,
+        show_registration_count=show_registration_count,
         title=title,
         description=description,
         starts_at=starts_at,
@@ -223,3 +224,7 @@ from apps.events.services_registration_state import (  # noqa: E402
 )
 from apps.events.services_checkin import mark_attended  # noqa: E402
 from apps.events.services_lifecycle import cancel, complete, publish  # noqa: E402
+from apps.events.services_registration_tools import (  # noqa: E402
+    edit_registration_answers,
+    restore_registration,
+)

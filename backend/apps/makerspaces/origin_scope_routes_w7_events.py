@@ -1,4 +1,8 @@
 EVENT_MODEL_LOOKUPS = {
+    "admin-event-duplicate": ("events.Event", "makerspace_id"),
+    "admin-event-feedback-template": ("events.Event", "makerspace_id"),
+    "admin-event-registration-answers": ("events.EventRegistration", "event__makerspace_id"),
+    "admin-event-registration-restore": ("events.EventRegistration", "event__makerspace_id"),
     "admin-event-staff-grants": ("events.Event", "makerspace_id"),
     "admin-event-staff-invites": ("events.Event", "makerspace_id"),
     "admin-series-staff-grants": ("events.EventSeries", "makerspace_id"),

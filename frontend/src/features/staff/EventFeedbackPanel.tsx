@@ -8,6 +8,8 @@ import {
   useConfigureFeedbackSurvey,
   useEventFeedbackSurvey,
   useOpenFeedbackSurvey,
+  useApplyFeedbackTemplate,
+  type FeedbackTemplate,
 } from "./eventFeedbackApi";
 import { EventFeedbackResponses } from "./EventFeedbackResponses";
 import { eventErrorText } from "./eventUi";
@@ -26,6 +28,8 @@ export function EventFeedbackPanel({ eventId, makerspaceId, canViewResponses = t
   const configure = useConfigureFeedbackSurvey(eventId, makerspaceId);
   const open = useOpenFeedbackSurvey(eventId, makerspaceId);
   const close = useCloseFeedbackSurvey(eventId, makerspaceId);
+  const template = useApplyFeedbackTemplate(eventId, makerspaceId);
+  const [selectedTemplate, setSelectedTemplate] = useState<FeedbackTemplate>("quick_pulse");
 
   useEffect(() => {
     if (!survey) return;
@@ -35,8 +39,9 @@ export function EventFeedbackPanel({ eventId, makerspaceId, canViewResponses = t
     setCertificateEnabled(survey.certificate_enabled);
   }, [survey?.id, survey?.is_open, survey?.answered_question_ids.join("|")]);
 
-  const error = configure.error || open.error || close.error;
-  const pending = configure.isPending || open.isPending || close.isPending;
+  const error = configure.error || open.error || close.error || template.error;
+  const pending = configure.isPending || open.isPending || close.isPending || template.isPending;
+  const hasResponses = (survey?.response_count ?? 0) > 0 || Boolean(survey?.answered_question_ids.length);
 
   return <section className="border-t border-line pt-5" aria-labelledby="feedback-title">
     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -47,6 +52,15 @@ export function EventFeedbackPanel({ eventId, makerspaceId, canViewResponses = t
     </div>
     {surveyQuery.isLoading ? <Skeleton className="mt-3 h-32 w-full" /> : null}
     {surveyQuery.error ? <p className="mt-3 text-sm text-danger">{eventErrorText(surveyQuery.error)}</p> : null}
+    {!surveyQuery.isLoading && !surveyQuery.error ? <div className="mt-4 grid gap-2">
+      <label className="grid gap-1 text-sm">Feedback template<select className="desk-input" value={selectedTemplate} disabled={pending || hasResponses} onChange={(e) => setSelectedTemplate(e.target.value as FeedbackTemplate)}>
+        <option value="quick_pulse">Quick pulse</option><option value="event_review">Event review</option><option value="session_speaker">Session &amp; speaker review</option>
+      </select></label>
+      <button className="desk-button w-fit" type="button" disabled={pending || hasResponses} onClick={() => template.mutate(selectedTemplate, { onSuccess: (next) => {
+        setTitle(next.title); setThankYou(next.thank_you_text); setQuestions(next.questions); setCertificateEnabled(next.certificate_enabled);
+      } })}>{template.isPending ? "Applying..." : "Apply template"}</button>
+      <p className="text-xs text-muted">{hasResponses ? "Templates cannot replace a survey once it has responses." : "Applying a template replaces the current survey questions."}</p>
+    </div> : null}
     {!surveyQuery.isLoading ? <form className="mt-4 grid gap-3" onSubmit={(event) => {
       event.preventDefault();
       configure.mutate({ title, thank_you_text: thankYou, questions, ...(canManageCertificates ? { certificate_enabled: certificateEnabled } : {}) });

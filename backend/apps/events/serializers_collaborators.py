@@ -90,6 +90,9 @@ from .serializers_ticketing_public import EventTicketingPublicSerializer
 
 
 class CollaborativeEventSerializer(EventTicketingPublicSerializer):
+    show_registration_count = serializers.BooleanField(read_only=True)
+    registration_count = serializers.SerializerMethodField()
+    get_registration_count = PublicEventSerializer.get_registration_count
     payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     currency = serializers.SerializerMethodField()
     get_currency = PublicEventSerializer.get_currency

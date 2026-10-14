@@ -73,6 +73,19 @@ export function useConfigureFeedbackSurvey(eventId: number, makerspaceId: number
   });
 }
 
+export type FeedbackTemplate = "quick_pulse" | "event_review" | "session_speaker";
+
+export function useApplyFeedbackTemplate(eventId: number, makerspaceId: number) {
+  const invalidate = useInvalidateFeedback(eventId, makerspaceId);
+  return useMutation({
+    mutationFn: (template: FeedbackTemplate) => staffRequest<FeedbackSurvey>(
+      path("/admin/events/{id}/feedback-survey/templates/", eventId),
+      { method: "POST", body: JSON.stringify({ template }) },
+    ),
+    onSuccess: invalidate,
+  });
+}
+
 function useSurveyAction(eventId: number, makerspaceId: number, action: "open" | "close") {
   const invalidate = useInvalidateFeedback(eventId, makerspaceId);
   return useMutation({

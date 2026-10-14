@@ -47,6 +47,7 @@ class EventWriteSerializer(serializers.Serializer):
         required=False,
     )
     is_public = serializers.BooleanField(default=False, required=False)
+    show_registration_count = serializers.BooleanField(default=True, required=False)
     registration_requires_approval = serializers.BooleanField(
         default=False, required=False,
     )
@@ -164,6 +165,7 @@ class EventAdminSerializer(EventAuthorityFields, serializers.ModelSerializer):
             'registration_open',
             'offline_checkin_enabled',
             'is_public',
+            'show_registration_count',
             'image_url',
             'status',
             'created_by_id',

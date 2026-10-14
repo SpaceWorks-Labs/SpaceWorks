@@ -89,6 +89,7 @@ class Event(models.Model):
         blank=True,
     )
     is_public = models.BooleanField(default=False)
+    show_registration_count = models.BooleanField(default=True)
     # Public-bucket object key for the event cover image. Managed only by the
     # dedicated image endpoints (never by the generic update path), so it is
     # deliberately absent from services.EVENT_FIELDS.

@@ -138,12 +138,14 @@ export const openApiPaths = [
   "/api/v1/admin/event-collaborations/{id}/respond/",
   "/api/v1/admin/event-invites/{id}/revoke/",
   "/api/v1/admin/event-promos/{id}/revoke/",
+  "/api/v1/admin/event-registrations/{id}/answers/",
   "/api/v1/admin/event-registrations/{id}/approve/",
   "/api/v1/admin/event-registrations/{id}/cancel/",
   "/api/v1/admin/event-registrations/{id}/correct-attendance/",
   "/api/v1/admin/event-registrations/{id}/mark-attended/",
   "/api/v1/admin/event-registrations/{id}/promote/",
   "/api/v1/admin/event-registrations/{id}/reject/",
+  "/api/v1/admin/event-registrations/{id}/restore/",
   "/api/v1/admin/event-series-collaborations/{id}/remove/",
   "/api/v1/admin/event-series-collaborations/{id}/respond/",
   "/api/v1/admin/event-series/{id}/",
@@ -172,11 +174,13 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/check-in/station/rotate/",
   "/api/v1/admin/events/{id}/collaborators/",
   "/api/v1/admin/events/{id}/complete/",
+  "/api/v1/admin/events/{id}/duplicate/",
   "/api/v1/admin/events/{id}/eligible-members/",
   "/api/v1/admin/events/{id}/feedback-responses/",
   "/api/v1/admin/events/{id}/feedback-survey/",
   "/api/v1/admin/events/{id}/feedback-survey/close/",
   "/api/v1/admin/events/{id}/feedback-survey/open/",
+  "/api/v1/admin/events/{id}/feedback-survey/templates/",
   "/api/v1/admin/events/{id}/image",
   "/api/v1/admin/events/{id}/invites/",
   "/api/v1/admin/events/{id}/organizers/",
@@ -643,6 +647,8 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/cancel/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/feedback/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/qr",
+  "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/ticket.png",
+  "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/ticket/",
   "/api/v1/member/makerspaces/{makerspace_id}/loans/{id}/renew",
   "/api/v1/member/makerspaces/{makerspace_id}/member-card",
   "/api/v1/member/makerspaces/{makerspace_id}/member-card/photo",
@@ -1920,6 +1926,8 @@ export type CollaborativeEvent = {
   "host_waiver": HostWaiver | null;
   "organizers": Array<EventOrganizerSummary>;
   "series": Record<string, unknown> | null;
+  "show_registration_count": boolean;
+  "registration_count": number | null;
 };
 
 export type CollaborativeEventRegistrationInput = {
@@ -2590,6 +2598,7 @@ export type EventAdmin = {
   "organizers": Array<EventOrganizerSummary>;
   "staff_permissions": Array<string>;
   "can_manage_staff": boolean;
+  "show_registration_count": boolean;
 };
 
 export type EventAttendanceMark = {
@@ -2684,6 +2693,10 @@ export type EventCollaboratorReplace = {
 
 export type EventDefaultRegistrationAudienceEnum = "members" | "accounts" | "invite";
 
+export type EventDuplicate = {
+  "attach_series"?: boolean;
+};
+
 export type EventEligibleMember = {
   "member_id": number;
   "display_name": string;
@@ -2731,6 +2744,9 @@ export type EventRegistrationAdmin = {
   "ticket_type_id": number | null;
   "quoted_amount": string | null;
   "discount_amount": string;
+  "cancelled_at": string | null;
+  "restore_until": string | null;
+  "status_before_cancel": string;
 };
 
 export type EventRegistrationAdminStatusEnum = "pending_approval" | "registered" | "waitlisted" | "rejected" | "cancelled" | "attended";
@@ -2875,6 +2891,7 @@ export type EventWrite = {
   "registration_cutoff_at"?: string | null;
   "registration_cutoff_lead_minutes"?: number | null;
   "inherit_fields"?: Array<InheritFieldsEnum>;
+  "show_registration_count"?: boolean;
 };
 
 export type EvidenceGetResponse = {
@@ -3050,6 +3067,10 @@ export type FeedbackSurveyWrite = {
   "thank_you_text"?: string;
   "questions": unknown;
   "certificate_enabled"?: boolean;
+};
+
+export type FeedbackTemplate = {
+  "template": TemplateEnum;
 };
 
 export type FeedIssued = {
@@ -4813,6 +4834,13 @@ export type MemberEventRegistrationActivity = {
 } | null;
 };
 
+export type MemberEventTicket = {
+  "registration_id": number;
+  "status": string;
+  "event": TicketPublicFields;
+  "ticket_png_available": boolean;
+};
+
 export type MemberKitPreviewInput = {
   "payload": string;
   "phase": PhaseEnum;
@@ -6474,6 +6502,7 @@ export type PatchedEventWrite = {
   "registration_cutoff_at"?: string | null;
   "registration_cutoff_lead_minutes"?: number | null;
   "inherit_fields"?: Array<InheritFieldsEnum>;
+  "show_registration_count"?: boolean;
 };
 
 export type PatchedEvidenceRetentionPatch = {
@@ -6887,6 +6916,10 @@ export type PatchedPreferenceWrite = {
 
 export type PatchedPrinterPoolVisibility = {
   "is_public"?: boolean;
+};
+
+export type PatchedRegistrationAnswers = {
+  "custom_answers"?: unknown | null;
 };
 
 export type PatchedReportSchedule = {
@@ -7635,6 +7668,8 @@ export type PublicEvent = {
   "public_token"?: string;
   "title"?: string;
 } | null;
+  "show_registration_count": boolean;
+  "registration_count": number | null;
 };
 
 export type PublicEventRegistrationInput = {
@@ -7648,6 +7683,7 @@ export type PublicEventRegistrationInput = {
 
 export type PublicEventRegistrationResponse = {
   "status": PublicEventRegistrationResponseStatusEnum;
+  "registration_id": number;
 };
 
 export type PublicEventRegistrationResponseStatusEnum = "pending_approval" | "registered" | "waitlisted";
@@ -8381,6 +8417,10 @@ export type Refund = {
 export type RefundProviderEnum = "stripe" | "razorpay" | "manual";
 
 export type RefundStatusEnum = "pending" | "succeeded" | "failed";
+
+export type RegistrationAnswers = {
+  "custom_answers": unknown | null;
+};
 
 export type Rehydrate = {
   "destination": number;
@@ -9563,6 +9603,8 @@ export type Telemetry = {
 
 export type TelemetryStateEnum = "idle" | "running" | "paused";
 
+export type TemplateEnum = "quick_pulse" | "event_review" | "session_speaker";
+
 export type TenantBootstrap = {
   "makerspace": TenantBootstrapMakerspace;
   "frontend": TenantBootstrapFrontend;
@@ -9674,6 +9716,17 @@ export type TicketList = {
   "next": string | null;
   "previous": string | null;
   "results": Array<Ticket>;
+};
+
+export type TicketPublicFields = {
+  "status": string;
+  "title": string;
+  "description": string;
+  "starts_at": string;
+  "ends_at": string;
+  "location": string;
+  "public_token": string;
+  "timezone_name": string;
 };
 
 export type TimelineActor = {

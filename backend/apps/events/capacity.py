@@ -67,8 +67,9 @@ def registration_spots_left(event, ticket=None):
     return min(limits) if limits else None
 
 
-def fresh_registration_status(event, ticket=None):
-    if event.registration_requires_approval:
+def fresh_registration_status(event, ticket=None, *, approval_granted=False):
+    """Choose admission state, retaining a proven approval during cancellation undo."""
+    if event.registration_requires_approval and not approval_granted:
         return EventRegistration.Status.PENDING_APPROVAL
     available = registration_spots_left(event, ticket)
     if available is None or available > 0:

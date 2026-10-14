@@ -17,6 +17,10 @@ EVENT_AUTHORITY_ENTRIES = tuple(
 ) + tuple(
     (edge, authority(D.PRESERVE, reason))
     for edge, reason in (
+        (("events.Event", "show_registration_count"), "Portable publication choice; public serializers suppress counts when false."),
+        (("events.EventRegistration", "cancelled_at"), "Historical cancellation provenance; the target server clock still enforces the five-minute window."),
+        (("events.EventRegistration", "status_before_cancel"), "Historical cancellation state; exact undo still requires live target authority and ordinary admission."),
+        (("events.EventRegistration", "waitlist_position_at"), "Portable FIFO position preserves the original queue or an audited tail restore."),
         (("makerspaces.Makerspace", "event_default_registration_audience"), "Portable event admission default; target module and feature gates still apply."),
         (("events.Event", "registration_audience"), "Portable event admission policy; target module and feature gates still apply."),
         (("events.EventSeries", "registration_audience"), "Portable series admission template; target module and feature gates still apply."),

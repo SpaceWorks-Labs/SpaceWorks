@@ -1,3 +1,4 @@
+import { EventCountdown } from "../events/EventCountdown";
 import { downloadEventCalendar } from "../events/eventCalendar";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -135,6 +136,8 @@ export function PublicEventsPage() {
           {item.image_url ? <img src={item.image_url} alt="" loading="lazy" className="h-48 w-full object-cover sm:h-56" /> : null}
           <div className="p-5">
           <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="title-panel"><Link to={tenantPath(`events/${item.public_token}`)}>{item.title}</Link></h3><p className="eyebrow mt-1"><time dateTime={item.starts_at}>{eventTime(item, discovery.timeZone)}</time></p>{item.location ? <p className="eyebrow mt-1">{item.location}</p> : null}</div><StatusBadge status={item.status} /></div>
+          <EventCountdown startsAt={item.starts_at} endsAt={item.ends_at} />
+          {item.show_registration_count !== false && item.registration_count != null ? <p className="mt-2 text-sm text-muted">{item.registration_count} registered</p> : null}
           {item.description ? <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-ink">{item.description}</p> : null}
           <dl className="mt-4 flex flex-wrap gap-4 text-sm"><EventPrice amount={item.payment_amount} currency={item.currency} tickets={item.ticket_types} ticketRequired={item.ticket_selection_required} /><div><dt className="eyebrow">Capacity</dt><dd className="font-mono font-semibold text-ink">{unlimited ? "Unlimited" : item.capacity}</dd></div><div><dt className="eyebrow">Availability</dt><dd className="font-mono font-semibold text-ink">{item.availability}</dd></div></dl>
           {!item.registration_open ? <p className="mt-4 text-sm font-semibold text-muted">Registration closed{item.effective_registration_cutoff_at ? ` · ${new Date(item.effective_registration_cutoff_at).toLocaleString()}` : ""}</p> : null}

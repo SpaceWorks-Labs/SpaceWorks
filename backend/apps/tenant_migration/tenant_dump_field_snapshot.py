@@ -244,6 +244,8 @@ FIRST_PARTY_FIELD_NAMES.update(LABEL_FIELD_NAMES)
 
 from .catalog_w7_events import extend_event_field_snapshot
 extend_event_field_snapshot(FIRST_PARTY_FIELD_NAMES)
+FIRST_PARTY_FIELD_NAMES["events.Event"] |= {"show_registration_count"}
+FIRST_PARTY_FIELD_NAMES["events.EventRegistration"] |= {"cancelled_at", "status_before_cancel", "waitlist_position_at"}
 
 from .catalog_wp3 import WP3_FIELD_NAMES, WP3_EXTRA_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(WP3_FIELD_NAMES)

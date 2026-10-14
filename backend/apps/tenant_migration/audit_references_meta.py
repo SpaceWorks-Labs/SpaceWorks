@@ -81,6 +81,7 @@ AUDIT_META_REFERENCES = {
         ("event.registration_rejected", "registration_id"),
         ("event.registration_promoted", "registration_id"),
         ("event.registration_cancelled", "registration_id"),
+        ("event.registration_restored", "registration_id"),
         ("event.registration_attended", "registration_id"),
     ),
     **_reference(
@@ -94,6 +95,7 @@ AUDIT_META_REFERENCES = {
     # the AST guard reports them as dynamic rather than as declared paths.
     **_reference(
         R, "events.Event",
+        ("event.duplicated", "source_event_id"),
         # All three organizer actions, not just the one the AST guard can see. The guard
         # only discovers literal action strings, and created/updated are chosen with a
         # conditional -- but portable import remaps meta ids by EXACT action/path, so an

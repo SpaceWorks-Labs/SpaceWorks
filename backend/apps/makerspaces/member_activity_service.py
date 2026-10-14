@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.db.models import Count, IntegerField, OuterRef, Q, Subquery
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -110,9 +111,11 @@ def _event_registrations(makerspace, member):
 
     waitlisted_before = EventRegistration.objects.filter(
         event_id=OuterRef("event_id"), status=EventRegistration.Status.WAITLISTED,
+    ).annotate(
+        queue_at=Coalesce("waitlist_position_at", "created_at"),
     ).filter(
-        Q(created_at__lt=OuterRef("created_at"))
-        | Q(created_at=OuterRef("created_at"), id__lte=OuterRef("id"))
+        Q(queue_at__lt=OuterRef("queue_at"))
+        | Q(queue_at=OuterRef("queue_at"), id__lte=OuterRef("id"))
     ).values("event_id").annotate(total=Count("id")).values("total")[:1]
     # Shares `registrations_for_space` with the profile surfaces deliberately. The
     # waitlist-position subquery above is per-EVENT and stays local, but the question
@@ -122,6 +125,7 @@ def _event_registrations(makerspace, member):
     rows = registrations_for_space(makerspace, member).select_related("event").prefetch_related(
         "event__feedback_survey", "feedback_responses__certificates",
     ).annotate(
+        queue_at=Coalesce("waitlist_position_at", "created_at"),
         waitlist_position=Subquery(waitlisted_before, output_field=IntegerField())
     ).only(
         "id", "checkin_token", "status", "created_at", "event__title",

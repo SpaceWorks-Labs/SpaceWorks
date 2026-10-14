@@ -86,7 +86,9 @@ class TenantDumpCatalogError(AssertionError):
 # literal snapshot reconstruction reproduced the previous pin before those additions;
 # Django's runtime catalog guard still verifies the complete graph on supported hosts.
 # OIDC browser attempts now bind the staff/member surface; these transient rows remain DROP.
-CATALOG_SCHEMA_SHA256 = "01d0f5a5b6f9800b9a26fdc63083d7ac5a187550cbdd0f3da31bedb52aa952ac"
+# Lane B publication choice and cancellation/FIFO provenance. Literal reconstruction
+# reproduced the preceding pin before adding these four fields.
+CATALOG_SCHEMA_SHA256 = "cec957eeaef57523e5ac51195fab2eb1ab63b4408b36ea90db5ca26f878661ae"
 
 
 def catalog_models(apps_registry=apps):

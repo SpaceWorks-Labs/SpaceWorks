@@ -41,6 +41,7 @@ export function PublicEventDetailPage() {
         <p>{new Date(event.starts_at).toLocaleString()} · {event.location}</p>
         {event.category ? <p className="text-sm text-muted">{event.category.name}</p> : null}
         {event.tags?.length ? <p className="text-sm text-muted">{event.tags.join(" · ")}</p> : null}
+        {event.show_registration_count !== false && event.registration_count != null ? <p className="text-sm text-muted">{event.registration_count} registered</p> : null}
         <p className="whitespace-pre-wrap">{event.description}</p>
         <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
         <button className="desk-button w-fit" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate(event)}>Add to calendar</button>

@@ -129,7 +129,8 @@ def _event_component(event, *, registration=None):
 
 
 def render_public_event_calendar(event):
-    if event.series_id and event.series.is_public:
+    if (event.series_id and event.series.is_public
+            and not event.series_occurrence_key.startswith("copy")):
         return render_public_series_calendar(event.series)
     method = "CANCEL" if event.status == Event.Status.CANCELLED else "PUBLISH"
     calendar = _calendar(event.title, method=method)
@@ -189,6 +190,23 @@ def _series_exception(series, event):
     return component
 
 
+def _series_copy_component(series, event):
+    if event.is_public:
+        return _event_component(event)
+    _Calendar, ICalEvent, _Timezone, _vRecur = _icalendar_types()
+    component = ICalEvent()
+    start = _series_local_start(series)
+    # Retire the independent UID using only public series fields, including times.
+    _add_common(
+        component, uid=f"event-{event.calendar_uid}@spaceworks",
+        title=series.title, description=series.description, location=series.location,
+        starts_at=start, ends_at=start + timedelta(minutes=series.duration_minutes),
+        status="CANCELLED", sequence=event.calendar_sequence,
+        updated_at=max(series.calendar_updated_at, event.calendar_updated_at),
+    )
+    return component
+
+
 def render_public_series_calendar(series):
     _Calendar, ICalEvent, _Timezone, vRecur = _icalendar_types()
     method = "CANCEL" if series.status == EventSeries.Status.CANCELLED else "PUBLISH"
@@ -220,8 +238,15 @@ def render_public_series_calendar(series):
         series_revision=series.revision,
         is_public=False,
     )
-    for event in exceptions.distinct().order_by("starts_at", "pk"):
+    for event in exceptions.exclude(series_occurrence_key__startswith="copy").distinct().order_by("starts_at", "pk"):
         calendar.add_component(_series_exception(series, event))
+    # Extra copies are independent of template overrides/revision. An old-revision
+    # cancellation must still retire the previously published independent UID.
+    copies = series.occurrences.filter(series_occurrence_key__startswith="copy").exclude(
+        status=Event.Status.DRAFT,
+    )
+    for event in copies.order_by("starts_at", "pk"):
+        calendar.add_component(_series_copy_component(series, event))
     return calendar.to_ical()
 
 

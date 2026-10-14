@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { useTenantPath } from "../../lib/tenant";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiPath } from "../../generated/api";
@@ -14,7 +16,7 @@ import {
   type CustomFormSchema,
 } from "../forms/customFormTypes";
 
-type RegistrationResult = { status: "pending_approval" | "registered" | "waitlisted" };
+type RegistrationResult = { registration_id?: number; id?: number; status: "pending_approval" | "registered" | "waitlisted" };
 
 const REGISTER_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/events/{public_token}/register/";
 
@@ -42,6 +44,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   tickets?: EventTicket[]; promoEnabled?: boolean; ticketRequired?: boolean; currency?: string;
 }) {
   const queryClient = useQueryClient();
+  const tenantPath = useTenantPath(makerspaceSlug);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [needsPhone, setNeedsPhone] = useState(false);
@@ -73,6 +76,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     return <div ref={successRef} className="rounded-lg border border-line bg-surface p-4 outline-none" role="status" tabIndex={-1}>
       <h3 className="title-section">{registration.data.status === "pending_approval" ? "Application awaiting approval" : registration.data.status === "waitlisted" ? "You’re on the waitlist" : "Registration received"}</h3>
       <p className="mt-1 text-sm text-muted">{registration.data.status === "pending_approval" ? "You will only be charged if a place is confirmed." : registration.data.status === "waitlisted" ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."}</p>
+      {registration.data.registration_id || registration.data.id ? <Link className="desk-button mt-3" to={tenantPath(`member/events/${registration.data.registration_id ?? registration.data.id}/ticket`)}>Open your event ticket</Link> : null}
     </div>;
   }
 

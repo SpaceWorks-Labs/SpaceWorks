@@ -186,6 +186,13 @@ MEMBER_CLAIM_ROUTES = {
         ownership=RowOwnership.MIXED_REFUSED,
     ),
     **_options("member-event-checkin-qr"),
+    **{(name, method): Refused(
+        "event tickets can contain foreign-hosted registrations and durable QR credentials",
+        ownership=RowOwnership.MIXED_REFUSED,
+    ) for name in ("member-event-ticket", "member-event-ticket-png")
+       for method in ("GET", "HEAD")},
+    **_options("member-event-ticket"),
+    **_options("member-event-ticket-png"),
     ("member-event-calendar", "GET"): Refused(
         "event calendars can contain foreign-hosted registration rows",
         ownership=RowOwnership.MIXED_REFUSED,

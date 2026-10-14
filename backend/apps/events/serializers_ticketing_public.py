@@ -56,7 +56,9 @@ class EventTicketingPublicSerializer(serializers.Serializer):
                     and (member or row.audience == "public")]
         else:
             rows = available_ticket_types(obj, getattr(request, "user", None))
-        return [{"id": row.pk, "name": row.name, "amount": str(row.amount), "audience": row.audience, "spots_left": registration_spots_left(obj, row)} for row in rows]
+        return [{"id": row.pk, "name": row.name, "amount": str(row.amount), "audience": row.audience,
+                 "spots_left": registration_spots_left(obj, row) if obj.show_registration_count else None}
+                for row in rows]
 
     @extend_schema_field(serializers.BooleanField())
     def get_promo_codes_enabled(self, obj):

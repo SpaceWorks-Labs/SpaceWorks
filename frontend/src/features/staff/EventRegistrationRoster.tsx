@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { EventRegistrationAnswers } from "./EventRegistrationAnswers";
+import { offerCancellationUndo, useRestoreRegistration } from "./eventToolsApi";
 import { Skeleton, StatusBadge } from "../../components/ui";
 import { EventCheckInOperator } from "./EventCheckInOperator";
 import { EventBadgeActions } from "./EventBadgeActions";
@@ -34,15 +36,16 @@ export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEna
   const attended = useMarkEventAttended(makerspaceId, event.id);
   const correct = useCorrectAttendance(makerspaceId, event.id);
   const cancel = useCancelEventRegistration(makerspaceId, event.id);
+  const restore = useRestoreRegistration(makerspaceId, event.id);
 
   function pendingFor(registrationId: number) {
-    return [approve, reject, promote, attended, correct, cancel].some(
+    return [approve, reject, promote, attended, correct, cancel, restore].some(
       (mutation) => mutation.isPending && mutation.variables === registrationId,
     );
   }
 
   function errorFor(registrationId: number) {
-    return [approve, reject, promote, attended, correct, cancel].find(
+    return [approve, reject, promote, attended, correct, cancel, restore].find(
       (mutation) => mutation.error && mutation.variables === registrationId,
     )?.error;
   }
@@ -70,12 +73,13 @@ export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEna
           <td className="p-2"><a className="block hover:underline" href={`mailto:${row.email}`}>{row.email}</a><a className="block text-muted hover:underline" href={`tel:${row.phone}`}>{row.phone}</a></td>
           <td className="p-2"><StatusBadge status={row.status} /></td>
           <td className="p-2"><div className="flex flex-wrap gap-2">
-            {cancellable ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => cancel.mutate(row.id)}>Cancel registration</button> : null}
+            {cancellable ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => cancel.mutate(row.id, { onSuccess: (cancelled) => offerCancellationUndo(cancelled, restore.mutateAsync) })}>Cancel registration</button> : null}
             {row.status === "pending_approval" ? <><button className="desk-button-success" type="button" disabled={pending} onClick={() => approve.mutate(row.id)}>Approve</button><button className="desk-button-danger" type="button" disabled={pending} onClick={() => reject.mutate(row.id)}>Reject</button></> : null}
             {row.status === "waitlisted" && event.registration_requires_approval ? <><button className="desk-button-success" type="button" disabled={pending} onClick={() => promote.mutate(row.id)}>Promote</button><button className="desk-button-danger" type="button" disabled={pending} onClick={() => reject.mutate(row.id)}>Reject</button></> : null}
             {access.checkIn && row.status === "registered" && checkable ? <button className="desk-button-success" type="button" disabled={pending} onClick={() => attended.mutate(row.id)}>Mark attended</button> : null}
             {access.checkIn && row.status === "attended" ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => correct.mutate(row.id)}>Correct attendance</button> : null}
             {!hasAction ? "—" : null}
+            {access.registrations ? <EventRegistrationAnswers row={row} schema={event.custom_form} makerspaceId={makerspaceId} eventId={event.id} /> : null}
           </div>{rowError ? <p className="mt-1 text-xs text-danger" role="alert">{eventErrorText(rowError)}</p> : null}</td>
         </tr>;
       })}

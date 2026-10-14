@@ -63,6 +63,7 @@ from apps.events.views_series_image import EventSeriesImageView
 from apps.events.views_badges import EventBadgePdfView, EventBadgeTemplateView
 
 urlpatterns = [
+    path("", include("apps.events.urls_staff_tools")),
     path("", include("apps.events.urls_staff_grants")),
     path("", include("apps.events.urls_checkin_admin")),
     path("", include("apps.events.urls_ticketing")),

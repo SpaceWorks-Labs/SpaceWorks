@@ -1,6 +1,7 @@
 """Transactional registration lifecycle transitions."""
 
 from django.db import transaction
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.events.capacity import registration_spots_left
@@ -13,6 +14,7 @@ from apps.events.service_payments import (
 )
 from apps.events.services_calendar import calendar_registration_changed
 from apps.makerspaces.guards import require_module_locked
+from apps.operations.cancellation_restore import record_cancellation
 
 
 def _boundary():
@@ -38,7 +40,7 @@ def _lock_waiters(event):
     return list(
         EventRegistration.objects.select_for_update()
         .filter(event=event, status=EventRegistration.Status.WAITLISTED)
-        .order_by("created_at", "id")
+        .order_by(Coalesce("waitlist_position_at", "created_at"), "id")
     )
 
 
@@ -181,8 +183,9 @@ def cancel_registration(registration, *, actor=None, member_cancel=False):
     ):
         raise EventInvalidTransition("This registration cannot be cancelled.")
     old_status = locked.status
+    provenance = record_cancellation(locked, now=timezone.now())
     locked.status = EventRegistration.Status.CANCELLED
-    locked.save(update_fields=["status"])
+    locked.save(update_fields=["status", *provenance])
     calendar_registration_changed(locked)
     services._audit(
         event,

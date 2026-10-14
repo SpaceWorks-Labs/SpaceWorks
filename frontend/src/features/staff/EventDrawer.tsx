@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
+import { EventDuplicateAction } from "./EventDuplicateAction";
 import { EventInvitesPanel } from "./EventInvitesPanel";
 import { EventTicketsPanel } from "./EventTicketsPanel";
 import { EventPromosPanel } from "./EventPromosPanel";
@@ -65,6 +66,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
       {eventQuery.error ? <EmptyState title="Unable to load event" description={eventErrorText(eventQuery.error)} /> : null}
       {event ? <div className="grid gap-5">
         <div className="flex flex-wrap items-center gap-2"><StatusBadge status={event.status} />{event.series_summary ? <span className="rounded-full border border-secondary px-2 py-1 text-xs font-semibold text-secondary-ink">Recurring · {event.series_summary.title}</span> : null}<span className="text-sm text-muted">{event.capacity === 0 ? "Unlimited capacity" : `${event.capacity} places`} · Registration {event.registration_open ? "open" : "closed"}</span></div>
+        {access.edit ? <EventDuplicateAction event={event} makerspaceId={makerspaceId} /> : null}
         {event.effective_registration_cutoff_at ? <p className="text-sm text-muted">Effective cutoff: <span className="font-mono">{new Date(event.effective_registration_cutoff_at).toLocaleString()}</span></p> : null}
         {access.edit ? <ImageUploader endpoint={`/admin/events/${eventId}/image`} currentUrl={event.image_url} label="Event photo (shown publicly)" shape="wide" disabled={readOnly} onChanged={invalidateEvent} /> : null}
         {access.edit || access.publish ? <form onSubmit={(e) => { e.preventDefault(); saveOccurrence(); }}>

@@ -23,6 +23,7 @@ PUBLIC_EVENT_FIELDS = (
     'location_kind',
     'custom_form',
     'capacity',
+    'show_registration_count', 'registration_count',
     'payment_amount',
     'currency',
     'availability',
@@ -55,6 +56,8 @@ class PublicEventSerializer(EventTicketingPublicSerializer):
     )
     custom_form = serializers.JSONField(allow_null=True, read_only=True)
     capacity = serializers.IntegerField(min_value=0, read_only=True)
+    show_registration_count = serializers.BooleanField(read_only=True)
+    registration_count = serializers.SerializerMethodField()
     payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     currency = serializers.SerializerMethodField()
     availability = serializers.SerializerMethodField()
@@ -68,6 +71,13 @@ class PublicEventSerializer(EventTicketingPublicSerializer):
     )
     organizers = EventOrganizerSummarySerializer(many=True, read_only=True)
     series = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_registration_count(self, obj):
+        if not obj.show_registration_count:
+            return None
+        from .capacity import confirmed_occupancy
+        return confirmed_occupancy(obj)
 
     @extend_schema_field(
         {
@@ -136,6 +146,7 @@ class PublicEventRegistrationInputSerializer(
 
 
 class PublicEventRegistrationResponseSerializer(serializers.Serializer):
+    registration_id = serializers.IntegerField(source="pk", read_only=True)
     status = serializers.ChoiceField(
         choices=(
             EventRegistration.Status.PENDING_APPROVAL,

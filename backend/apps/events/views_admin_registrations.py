@@ -12,6 +12,7 @@ from apps.events import services
 from apps.events import event_authority
 from apps.events.models import EventRegistration
 from apps.events.event_permissions import MANAGE_REGISTRATIONS, CHECK_IN
+from apps.events.services_registration_tools import annotate_registration_restore_history
 from apps.events.serializers_checkin import EventCheckInResultSerializer
 from apps.events.serializers_admin import (
     EventAttendanceMarkSerializer,
@@ -49,7 +50,9 @@ class EventRegistrationListView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
-        queryset = EventRegistration.objects.filter(event=event).order_by('created_at', 'id')
+        queryset = annotate_registration_restore_history(
+            EventRegistration.objects.filter(event=event).order_by('created_at', 'id')
+        )
         paginator = _RegistrationPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
         context = scoped_payment_context(

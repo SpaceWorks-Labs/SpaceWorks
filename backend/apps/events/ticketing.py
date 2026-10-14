@@ -33,7 +33,7 @@ def select_ticket(event, ticket_type_id, member):
             raise ValidationError({"ticket_type_id": "Choose an available ticket type."})
         return None
     require_feature(event, "events.ticket_types")
-    ticket = available_ticket_types(event, member).filter(pk=ticket_type_id).first()
+    ticket = available_ticket_types(event, member).select_for_update().filter(pk=ticket_type_id).first()
     if not ticket:
         raise NotFound("Ticket type not found.")
     return ticket

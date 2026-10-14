@@ -193,6 +193,15 @@ Grants and invitation credentials are excluded from portable exports and imports
 the destination must issue fresh access. Uninstall retains the rows, while events purge
 deletes them, including when the events app is tombstoned.
 
+The ordinary event tools also include draft duplication, validated registration-answer edits,
+five-minute cancellation undo, feedback starter templates, owned ticket PNG downloads and
+Google Calendar links. They use the Events module and the relevant staff permission; there
+is no additional feature switch. Duplication copies owned cover images to fresh keys and
+never copies participation or grants. Undo refuses historical charges, consumed invitations
+or discounts, closed admission and unavailable confirmed seats. Public registration counts
+can be hidden per event. Purge removes these event fields and copied images with their
+existing event records; uninstall retains them.
+
 ## Bookings
 
 ### bookings

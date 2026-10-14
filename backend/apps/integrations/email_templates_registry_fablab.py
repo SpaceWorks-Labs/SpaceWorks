@@ -46,6 +46,7 @@ EVENTS_KEYS = (
     "registration_approved",
     "registration_rejected",
     "registration_cancelled",
+    "registration_restored",
     "registration_promoted",
     "registration_attended",
     "series_published",
@@ -161,7 +162,7 @@ def _events_sample(bag, key):
             when="21 June 2026 18:00 to 20:00",
             location="Main workshop",
         ),
-        registration=bag(id=5, name="Alex Maker", status="confirmed"),
+        registration=bag(id=5, name="Alex Maker", status="registered"),
         next_steps=EVENTS_REQUESTER_BODIES[key],
     )
 

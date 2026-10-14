@@ -36,6 +36,7 @@ EVENTS_REQUESTER_SUBJECTS = {
     "registration_approved": "Your application for {{ event.title }} was approved",
     "registration_rejected": "Your application for {{ event.title }} was not approved",
     "registration_cancelled": "Your registration for {{ event.title }} was cancelled",
+    "registration_restored": "Your registration for {{ event.title }} was restored",
     "registration_promoted": "A place has opened up for {{ event.title }}",
     "registration_attended": "Your attendance at {{ event.title }} is recorded",
     "series_published": "{{ event.title }} recurring schedule published",
@@ -77,6 +78,11 @@ EVENTS_REQUESTER_BODIES = {
         "now confirmed."
     ),
     "registration_attended": "Your attendance has been recorded.",
+    "registration_restored": (
+        "Your cancellation was undone. Your current registration status is shown above. "
+        "Registered means your place is confirmed; waitlisted means you are in the queue; "
+        "pending_approval means staff still need to approve your application."
+    ),
     "series_published": "The recurring schedule is now published.",
     "series_cancelled": "The recurring schedule has been cancelled.",
     "series_completed": "The recurring schedule is complete.",
@@ -90,6 +96,8 @@ EVENTS_REQUESTER_TEXT = """Hello {{ registration.name|default:"there" }},
 Event: {{ event.title }}
 Time: {{ event.when }}
 {% if event.location %}Location: {{ event.location }}
+{% endif %}
+{% if event_name == "registration_restored" %}Registration status: {{ registration.status }}
 {% endif %}
 {{ next_steps }}
 """

@@ -127,10 +127,12 @@ def register(
         existing.payment_via_makerspace = via_makerspace or locked.makerspace
         existing.name, existing.email, existing.phone = name, normalized_email, phone
         existing.custom_answers, existing.status, existing.created_at = custom_answers, status, timezone.now()
+        existing.cancelled_at, existing.status_before_cancel, existing.waitlist_position_at = None, "", None
         _validate(existing)
         existing.save(update_fields=[
             "member", "registered_via_makerspace", "payment_via_makerspace", "name",
             "email", "phone", "custom_answers", "status", "created_at", *quote,
+            "cancelled_at", "status_before_cancel", "waitlist_position_at",
         ])
         calendar_registration_changed(existing)
         return _record_registration(locked, actor, existing, status)

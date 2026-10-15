@@ -28,7 +28,7 @@ export function ScannerPanel(props: { makerspace: Makerspace; isSuperadmin: bool
               : target.type === "product" ? `Product: ${target.name}`
               : `Asset: ${target.asset_tag} - ${target.product} (${target.status})`}
           </h3>
-          <StatusPill label={resolved.qr.status} />
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">QR #{resolved.qr.id}<StatusPill label={resolved.qr.status} /></p>
           <div className="desk-actions mt-3 flex flex-wrap gap-2 text-sm">
             {actions.includes("contents") && target.type === "box" ? (
               <button className="desk-button-ghost" type="button" disabled={loadContents.isPending} onClick={() => loadContents.mutate(target.id)}>View contents</button>

@@ -86,7 +86,7 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
   </>;
   if (openId) return <><DetailLayout title={selected?.notes || "Stocktake session"} back={{ label: "All counts", onClick: close }}
     identity={{ kind: "icon", icon: "Circle", tone: "accent" }} status={selected ? <StatusPill label={selected.status.replace(/_/g, " ")} /> : undefined}
-    meta={selected ? [selected.started_at ? <>Started <RelativeTime date={selected.started_at} /></> : "", selected.blind ? "Blind count" : "Expected shown"] : undefined}
+    meta={selected ? [`#${selected.id}`, selected.started_at ? <>Started <RelativeTime date={selected.started_at} /></> : "", selected.blind ? "Blind count" : "Expected shown"] : undefined}
     state={inventoryQueryState(session, "this count")} actions={{ primary: selected ? nextAction(selected) : undefined }}
     main={<CountSection makerspace={makerspace} stocktakeId={openId} readOnly={selected ? !canCount(selected.status) : undefined} />} />{detail}</>;
   return <ListLayout header={{ title: "Stocktake", subtitle: "Count what's on the shelves and fix the numbers.", primary: add,
@@ -97,7 +97,7 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
     filteredEmpty={{ message: list.values.status === "completed" ? "Nothing waiting for approval." : "No counts in this stage.", action: { label: "Clear filters", href: href("") } }}
     tabs={["", "draft", "counting", "completed", "approved", "applied", "cancelled"].map(key => ({ key, label: ({ "": "All", draft: "Draft", counting: "Counting", completed: "Needs approval", approved: "Ready to apply", applied: "Applied", cancelled: "Cancelled" } as Record<string, string>)[key], href: href(key) }))} activeTab={list.values.status}
     body={{ kind: "rows", rows: stocktakes.results.map(row => <ListRow key={row.id} title={row.notes || `Count of ${containers.data?.results.find(container => container.id === row.container)?.label ?? "all containers"}`}
-      identity={{ kind: "icon", icon: "Circle", tone: "accent" }} meta={<>{row.container ? containers.data?.results.find(container => container.id === row.container)?.label : "All containers"}{row.started_at ? <> · Started <RelativeTime date={row.started_at} /></> : null}{row.lines ? ` · ${row.lines.length} lines counted` : ""}</>}
+      identity={{ kind: "icon", icon: "Circle", tone: "accent" }} meta={<>#{row.id} · {row.container ? containers.data?.results.find(container => container.id === row.container)?.label : "All containers"}{row.started_at ? <> · Started <RelativeTime date={row.started_at} /></> : null}{row.lines ? ` · ${row.lines.length} lines counted` : ""}</>}
       onClick={() => setParams(current => { current.set("session", String(row.id)); return current; })}
       right={<div className="flex items-center gap-3"><StatusPill label={row.status.replace(/_/g, " ")} />
         {(() => { const next = canCount(row.status) ? undefined : nextAction(row);

@@ -103,7 +103,8 @@ export function IndividualAssets({ productId, makerspaceId, refreshInventory }: 
       { key: "actions", header: "", render: asset => <div className="flex flex-wrap items-center gap-2">
         <button className="desk-button-ghost" disabled={action.isPending || (asset.status !== "maintenance" && !["available", "damaged"].includes(asset.status))}
           onClick={() => action.mutate({ assetId: asset.id, action: asset.status === "maintenance" ? "repair" : "shelve" })}>{action.isPending && action.variables?.assetId === asset.id ? "Updating…" : asset.status === "maintenance" ? "Move back to inventory" : "To fix"}</button>
-        <OverflowMenu label={`Actions for ${asset.asset_tag}`} actions={[{ label: "Edit", onClick: () => setEditingAssetId(asset.id) }, { label: "QR history", onClick: () => setHistoryAssetId(asset.id) }]} />
+        <button className="desk-button-ghost" type="button" aria-label={`Edit ${asset.asset_tag}`} onClick={() => setEditingAssetId(asset.id)}>Edit</button>
+        <OverflowMenu label={`Actions for ${asset.asset_tag}`} actions={[{ label: "QR history", onClick: () => setHistoryAssetId(asset.id) }]} />
       </div> },
     ]} />}
     {action.error ? <ErrorBlock error={action.error} /> : null}

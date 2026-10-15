@@ -37,10 +37,12 @@ function failureMessage(error: StructuredApiError | null) {
   return error.detail ?? error.message;
 }
 
-export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "" }: {
+export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "", organisation }: {
   makerspaceSlug: string; publicToken: string; waitlist: boolean; approvalRequired: boolean;
   customForm: CustomFormSchema; audience?: "members" | "accounts" | "invite";
   tickets?: EventTicket[]; promoEnabled?: boolean; ticketRequired?: boolean; currency?: string;
+  /** The hosting makerspace's name, printed on the confirmation ticket. */
+  organisation: string;
 }) {
   const queryClient = useQueryClient();
   const [phone, setPhone] = useState("");
@@ -74,7 +76,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     const pending = registration.data.status === "pending_approval";
     const waitlisted = registration.data.status === "waitlisted";
     return <div ref={successRef} role="status" tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-      <TicketCard organisation="Space Works" title={pending ? "Application awaiting approval" : waitlisted ? "You’re on the waitlist" : "Registration received"}
+      <TicketCard organisation={organisation} title={pending ? "Application awaiting approval" : waitlisted ? "You’re on the waitlist" : "Registration received"}
         fields={[{ label: "Status", value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: "Next step", value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
         qr={<div className="grid h-full place-items-center rounded-xl bg-success-soft text-success-ink"><Icon name="CheckCircle" className="h-16 w-16" /></div>}
         caption={pending ? "You will only be charged if a place is confirmed." : waitlisted ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."} />

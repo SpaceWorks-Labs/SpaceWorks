@@ -1,0 +1,62 @@
+/* Device geometry: safe areas, the on-screen keyboard and phone field sizing.
+   index.html sets viewport-fit=cover (content may run under notches and the home indicator) and
+   interactive-widget=resizes-content (Android shrinks the layout viewport, so dvh-sized dialogs
+   and fixed bars stay above the keyboard). Everything that touches a screen edge pads for it here.
+
+   --shell-bottom-tabs: the height the shell's fixed bottom navigation occupies (0 when absent).
+   --shell-safe-bottom: the home-indicator inset a bottom bar still has to pad for itself. A bar
+   that sits on top of the bottom tabs needs none: the tabs already pad for the device inset. */
+[data-app-shell] { --shell-bottom-tabs: 0px; --shell-safe-bottom: env(safe-area-inset-bottom); }
+[data-app-shell][data-bottom-tabs] { --shell-bottom-tabs: calc(64px + env(safe-area-inset-bottom)); --shell-safe-bottom: 0px; }
+@media (min-width: 1024px) {
+  [data-app-shell][data-bottom-tabs] { --shell-bottom-tabs: 0px; --shell-safe-bottom: env(safe-area-inset-bottom); }
+}
+/* A touch keyboard is open: the bottom tabs step aside so the field and its action stay visible. */
+@media (pointer: coarse) and (max-width: 1023px) {
+  [data-app-shell][data-bottom-tabs]:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"]), textarea, select):focus) {
+    --shell-bottom-tabs: 0px; --shell-safe-bottom: env(safe-area-inset-bottom);
+  }
+  [data-app-shell][data-bottom-tabs]:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"]), textarea, select):focus) .sw-bottom-tabs {
+    display: none;
+  }
+}
+/* In-page anchors land below the sticky phone/tablet top bar instead of under it. */
+@media (max-width: 1023px) {
+  html:has([data-app-shell]) { scroll-padding-top: calc(4.5rem + env(safe-area-inset-top)); }
+}
+/* Overlays sit above the shell navigation, so their own bars only pad for the device inset. */
+.sw-overlay-layer { --shell-bottom-tabs: 0px; --shell-safe-bottom: env(safe-area-inset-bottom); }
+
+/* A sticky action bar at the bottom of a page, form, drawer or dialog body. */
+.sw-sticky-footer {
+  position: sticky;
+  bottom: var(--shell-bottom-tabs, 0px);
+  z-index: 10;
+  padding-bottom: calc(16px + var(--shell-safe-bottom, env(safe-area-inset-bottom)));
+}
+/* The same bar, but only on phones; from tablet up it returns to the normal flow. */
+@media (min-width: 768px) {
+  .sw-sticky-footer-mobile { position: static; padding-bottom: 16px; }
+}
+/* A bar fixed to the bottom of the viewport (phone action bars). */
+.sw-fixed-bottom-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: var(--shell-bottom-tabs, 0px);
+  z-index: 20;
+  padding-top: 12px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: calc(12px + var(--shell-safe-bottom, env(safe-area-inset-bottom)));
+}
+
+/* iOS zooms the page when a focused field's text is under 16px, so phones never get smaller field
+   text. Unlayered on purpose so it wins over text-sm/text-xs utilities; 1em keeps larger inherited
+   sizes (the 18px kiosk) and explicit large sizes are left alone. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]):not([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"], [class*="text-3xl"], [class*="text-4xl"]),
+  select:not([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"]),
+  textarea:not([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"]) {
+    font-size: max(16px, 1em);
+  }
+}

@@ -44,7 +44,7 @@
   .skip-link:focus-visible {
     @apply not-sr-only fixed left-4 top-4 z-[100] rounded-control border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-2 outline-offset-2 outline-focus;
   }
-  .desk-shell { @apply min-h-screen min-w-0 bg-bg text-ink; }
+  .desk-shell { @apply min-h-dvh min-w-0 bg-bg text-ink; }
   .desk-panel { @apply min-w-0 rounded-xl border border-line bg-panel; }
   .desk-input {
     @apply min-h-11 rounded-control border border-outline bg-panel dark:bg-surface px-3 py-2 text-body text-ink transition-colors duration-120 placeholder:text-muted hover:border-ink focus:border-accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;

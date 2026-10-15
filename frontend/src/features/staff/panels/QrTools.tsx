@@ -26,7 +26,8 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
     empty={{ message: "No label batches yet. Start one to print QR labels.", action: { label: "New batch", onClick: () => setBatchModalOpen(true) } }}
     body={{ kind: "rows", rows: batches.data?.results.map(item => <ListRow key={item.id} title={item.title} identity={{ kind: "date", date: item.created_at }} meta={<RelativeTime date={item.created_at} />} onClick={() => setBatchId(String(item.id))} />) }} detail={createDialog} />;
   return <DetailLayout title={batch.data?.title ?? "QR labels"} back={{ label: "All batches", onClick: () => setBatchId("") }} state={inventoryQueryState(batch, "this label batch")} meta={[`${batchItems.length} labels`]}
-    actions={{ primary: { label: "Download all (ZIP)", pending: downloadZip.isPending, pendingLabel: "Preparing…", disabled: !batchItems.length, disabledReason: "Add a label to this batch first.", onClick: () => downloadZip.mutate() } }}
+    actions={{ primary: { label: "Download all (ZIP)", pending: downloadZip.isPending, pendingLabel: "Preparing…", disabled: !batchItems.length, disabledReason: "Add a label to this batch first.", onClick: () => downloadZip.mutate() },
+      secondary: { label: "New batch", icon: "Plus", onClick: () => setBatchModalOpen(true) } }}
     main={<div className="grid gap-6">
         <ActionBox title="Add labels">
           <SegmentedControl label="Label type" value={labelMode} options={[{ value: "item", label: "Item" }, { value: "units", label: "Units" }, { value: "reprint", label: "Reprint a unit" }]} onChange={value => { setLabelMode(value); setProductId(""); setAssetId(""); }} />
@@ -103,7 +104,7 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
           </div>
           {downloadZip.isError ? <ErrorText message={(downloadZip.error as Error).message} /> : null}
         </div>
-
+        {createDialog}
     </div>} />;
 }
 

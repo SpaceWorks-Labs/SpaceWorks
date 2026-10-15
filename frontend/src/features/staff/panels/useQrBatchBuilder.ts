@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { downloadStaffFile, staffRequest } from "../../../lib/api";
@@ -17,7 +17,7 @@ export function useQrBatchBuilder({ makerspace }: { makerspace: Makerspace }) {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const batchId = params.get("batch") ?? "";
-  const setBatchId = (id: string) => setParams(current => { if (id) current.set("batch", id); else current.delete("batch"); return current; });
+  const setBatchId = (id: string, replace = false) => setParams(current => { if (id) current.set("batch", id); else current.delete("batch"); return current; }, { replace });
   const [labelMode, setLabelMode] = useState("item");
   const [batchTitle, setBatchTitle] = useState("QR labels");
   const [productId, setProductId] = useState("");
@@ -27,6 +27,15 @@ export function useQrBatchBuilder({ makerspace }: { makerspace: Makerspace }) {
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const batches = useStaffGet<ListResponse<Batch>>(["qr-batches", makerspace.id], `/admin/makerspace/${makerspace.id}/qr-print-batches`);
   const products = useStaffGet<ListResponse<Product>>(["inventory", makerspace.id], `/admin/makerspace/${makerspace.id}/inventory?page_size=1000`);
+  // Opening QR labels continues the most recent batch, as before the revamp. Only once per visit, so
+  // "All batches" still shows the list instead of bouncing straight back into a batch.
+  const autoSelected = useRef(Boolean(batchId));
+  const latestBatchId = batches.data?.results?.[0]?.id;
+  useEffect(() => {
+    if (autoSelected.current || latestBatchId === undefined) return;
+    autoSelected.current = true;
+    if (!batchId) setBatchId(String(latestBatchId), true);
+  }, [latestBatchId]); // first load only: setBatchId and batchId are deliberately read, not tracked
   const activeBatchId = Number(batchId) || 0;
   const selectedProductId = Number(productId) || 0;
   const batch = useStaffGet<BatchDetail>(["qr-batch", activeBatchId], `/admin/qr-print-batches/${activeBatchId}`, Boolean(activeBatchId));

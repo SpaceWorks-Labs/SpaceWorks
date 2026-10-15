@@ -18,6 +18,11 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
    destinationContainerNames,
  } = useStockTransfer({ makerspace, makerspaces, isSuperadmin, canEditInventory });
   return <ListLayout header={{ title: "Transfers", subtitle: "Stock moved between boxes and spaces.", primary: canCreate ? { label: "New transfer", onClick: () => { setStep("from"); setOpen(true); } } : undefined }}
+    callout={!canCreate ? { size: "inline", tone: "warn", lead: "Transfers are managed by inventory staff.", body: "This view is read-only." } : undefined}
+    filters={isSuperadmin && spaceOptions.length > 1 ? { views: <label className="relative flex h-11 min-w-0 items-center">
+      <span aria-hidden="true" className="pointer-events-none absolute left-3 text-sm text-muted">Makerspace:</span><span className="sr-only">Show transfers for makerspace</span>
+      <select className="desk-input h-11 w-full min-w-0 pl-28" value={sourceMakerspaceId} onChange={event => changeSource(Number(event.target.value))}>
+        {spaceOptions.map(space => <option key={space.id} value={space.id}>{space.name}</option>)}</select></label> } : undefined}
     state={inventoryQueryState(transfers, "transfers")} isEmpty={!transfers.results.length}
     empty={{ message: "No transfers yet. Move stock between boxes or spaces with New transfer.", action: canCreate ? { label: "New transfer", onClick: () => setOpen(true) } : undefined }}
     body={{ kind: "rows", rows: <TransferTable transfers={transfers.results} makerspaceNames={makerspaceNames} sourceContainerNames={sourceContainerNames} destinationContainerNames={destinationContainerNames} /> }}

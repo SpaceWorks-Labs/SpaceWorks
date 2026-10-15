@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { Field, ListRow, StatusPill, RelativeTime, ErrorText } from "../../../components/ui";
+import { ListRow, StatusPill, RelativeTime, ErrorText } from "../../../components/ui";
 import { downloadStaffFile } from "../../../lib/api";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import {
@@ -15,6 +15,7 @@ import {
   type SortDirection,
 } from "./LedgerParts";
 import { ListLayout } from "../../../components/layouts";
+import { ListSort } from "../../../components/layouts/ListSort";
 import { useSearchParams } from "react-router-dom";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { type Makerspace, useStaffGet } from "./shared";
@@ -88,21 +89,27 @@ export function Ledger({ makerspace, isSuperadmin }: { makerspace: Makerspace; i
 
   const tabHref = (value: string) => { const next = new URLSearchParams(params); next.set("source", value); return `?${next}`; };
   return <ListLayout header={{ title: "Ledger", subtitle: "Everything that's out right now.", meta: aggregate ? "Across all makerspaces" : makerspace.name,
+    secondary: isSuperadmin ? { label: aggregate ? "This makerspace only" : "All makerspaces", icon: "Building2", onClick: () => { if (aggregate && sort.key === "makerspace_id") setSort({ key: "due", direction: "asc" }); setAllMakerspaces(value => !value); } } : undefined,
     overflow: [{ label: "Export CSV", onClick: () => exportLedger("csv") }, { label: "Export Excel", onClick: () => exportLedger("xlsx") }] }}
     state={inventoryQueryState(ledger, "the ledger")} isEmpty={!rows.length} filtered={Boolean(filter || overdueOnly || sourceFilter)}
     empty={{ message: "Nothing is out right now. Loans appear here the moment they're handed over." }}
     filteredEmpty={{ message: "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => { setFilter(""); setOverdueOnly(false); setParams(current => { current.delete("source"); return current; }); } } }}
     stats={[{ label: "Items out on this page", value: itemCount }, { label: "Records", value: totalRows }]}
     tabs={[{ key: "", label: "All", href: tabHref("") }, { key: "reviewed", label: "Reviewed", href: tabHref("reviewed") }, { key: "self_checkout", label: "Self-checkout", href: tabHref("self_checkout") }, { key: "direct", label: "Direct", href: tabHref("direct") }]} activeTab={sourceFilter}
-    filters={{ search: { label: "Search ledger", value: filter, onChange: setFilter }, controls: <>
-      <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={overdueOnly} onChange={event => setOverdueOnly(event.target.checked)} />Overdue</label>
-      {isSuperadmin ? <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={allMakerspaces} onChange={event => setAllMakerspaces(event.target.checked)} />All makerspaces</label> : null}
-      <Field label="Sort ledger"><select className="desk-input" value={sort.key} onChange={event => setSortKey(event.target.value as SortKey)}>{["item_name", "holder", "quantity", "since", "due", "source", ...(aggregate ? ["makerspace_id"] : [])].map(key => <option key={key} value={key}>{key.replace(/_/g, " ")}</option>)}</select></Field>
-      <button className="desk-button" onClick={() => setSort(current => ({ ...current, direction: current.direction === "asc" ? "desc" : "asc" }))}>{sort.direction === "asc" ? "Ascending" : "Descending"}</button>
-    </> }}
+    filters={{ search: { label: "Search ledger", value: filter, onChange: setFilter },
+      sort: <div className="flex min-w-0 items-center gap-2">
+        <ListSort label="Sort ledger" value={sort.key} onChange={event => setSortKey(event.target.value as SortKey)} options={sortOptions(aggregate)} />
+        <button type="button" className="desk-button" onClick={() => setSort(current => ({ ...current, direction: current.direction === "asc" ? "desc" : "asc" }))}>{sort.direction === "asc" ? "Ascending" : "Descending"}</button>
+      </div>,
+      views: <button type="button" className={overdueOnly ? "desk-button-brand" : "desk-button"} aria-pressed={overdueOnly} onClick={() => setOverdueOnly(value => !value)}>Overdue only</button> }}
     body={{ kind: "rows", rows: rows.map((row, index) => <ListRow key={`${row.source}-${row.reference_id}-${index}`} title={`${row.item_name} ×${row.quantity}`}
       identity={{ kind: "avatar", name: row.holder, seed: row.holder }}
       meta={<>{row.holder} · {row.container ? `Box: ${row.container} · ` : ""}{sourceLabels[row.source]} · Out since {row.since ? <RelativeTime date={row.since} /> : "unknown"}<UnitLines row={row} />{aggregate ? ` · Makerspace ${row.makerspace_id}` : null}</>}
       right={<StatusPill tone={isOverdue(row.due, now) ? "danger" : "neutral"} label={isOverdue(row.due, now) ? `Overdue ${Math.max(1, Math.ceil((now - new Date(row.due!).getTime()) / 86400000))} days` : row.due ? `Due ${formatDate(row.due)}` : "No due date"} />} />) }}
     pagination={{ page, pageSize: LEDGER_PAGE_SIZE, count: totalRows, onChange: setPage }} detail={<ErrorText message={exportError} />} />;
+}
+
+const SORT_LABELS: Record<SortKey, string> = { item_name: "Item", holder: "Holder", quantity: "Quantity", since: "Out since", due: "Due date", source: "Source", makerspace_id: "Makerspace" };
+function sortOptions(aggregate: boolean) {
+  return (Object.keys(SORT_LABELS) as SortKey[]).filter(key => aggregate || key !== "makerspace_id").map(key => [key, SORT_LABELS[key]] as const);
 }

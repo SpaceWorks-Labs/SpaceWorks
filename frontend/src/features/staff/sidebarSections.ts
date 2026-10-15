@@ -13,7 +13,7 @@ type Definition = { key: string; label?: string; caption?: string; tabs: string[
 export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "home", tabs: ["dashboard", "notifications"] },
   { key: "desk", label: "Front desk", tabs: ["requests", "direct", "handover", "payments"] },
-  { key: "inventory", label: "Inventory", tabs: ["inventory", "needsfix", "stocktake", "transfers", "tobuy"], more: ["categories", "containers", "ledger", "warranty", "qr", "scanner", "bulk"] },
+  { key: "inventory", label: "Inventory", tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
   { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
   { key: "community", label: "Community", tabs: ["members", "events", "bookings"], more: ["cards"] },
   { key: "insights", label: "Insights", tabs: ["reports", "audit"], more: ["accountability"] },
@@ -23,7 +23,7 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
 ];
 const LABELS: Record<string, string> = {
   dashboard: "Home", notifications: "Inbox", handover: "Job pickups", inventory: "Items",
-  needsfix: "Repair shelf", tobuy: "To buy", ledger: "Stock ledger", qr: "QR tools",
+  needsfix: "Repair shelf", tobuy: "To buy", qr: "QR tools",
   "organization-analytics": "Org analytics", settings: "General", users: "Staff & roles", "email-logs": "Delivery log",
 };
 const ICONS: Record<string, LucideIcon> = {

@@ -145,7 +145,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
         </label>
         <label className="eyebrow grid gap-1">
           Performed at (optional)
-          <input className="desk-input" type="datetime-local" value={performedAt}
+          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <label className="eyebrow grid gap-1">
@@ -225,7 +225,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
         </label>
         <label className="eyebrow grid gap-1">
           Performed at (optional)
-          <input className="desk-input" type="datetime-local" value={performedAt}
+          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <label className="eyebrow grid gap-1">

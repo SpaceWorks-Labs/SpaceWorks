@@ -29,14 +29,15 @@ export function BookingRequests({ makerspaceId, spaceId, bookings, list, filters
       onChange={event => list.setFilter("ordering", event.target.value)}>
       <option value="starts_at">Starts first</option><option value="-starts_at">Starts last</option><option value="created_at">Created first</option>
     </select></label>
-    <div className="grid gap-3 sm:grid-cols-3">
+    {/* Date-time pickers need ~14rem; three abreast only once the page is wide enough for that. */}
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <label className="grid gap-1 text-sm">Status<select className="desk-input" value={filters.status ?? ""}
         onChange={event => setFilter("status", event.target.value as BookingFilters["status"])}>
         <option value="">All statuses</option>{["pending", "confirmed", "rejected", "cancelled", "completed", "no_show"].map(status =>
           <option key={status} value={status}>{status === "no_show" ? "No-show" : status[0].toUpperCase() + status.slice(1)}</option>)}
       </select></label>
-      <label className="grid gap-1 text-sm">Starts after<input className="desk-input" type="datetime-local" value={filters.starts_at ?? ""} onChange={event => setFilter("starts_at", event.target.value)} /></label>
-      <label className="grid gap-1 text-sm">Ends before<input className="desk-input" type="datetime-local" value={filters.ends_at ?? ""} onChange={event => setFilter("ends_at", event.target.value)} /></label>
+      <label className="grid gap-1 text-sm">Starts after<input className="desk-input w-full min-w-0" type="datetime-local" value={filters.starts_at ?? ""} onChange={event => setFilter("starts_at", event.target.value)} /></label>
+      <label className="grid gap-1 text-sm">Ends before<input className="desk-input w-full min-w-0" type="datetime-local" value={filters.ends_at ?? ""} onChange={event => setFilter("ends_at", event.target.value)} /></label>
     </div>
     <QueryContent state={opsQueryState(bookings, "bookings")} isEmpty={bookings.data?.results.length === 0}
       empty={{ message: "No matching bookings. Change the filters or create a booking." }}>

@@ -88,7 +88,7 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
   const fields = <>
     <fieldset className="min-w-0 grid gap-6" disabled={disabled || pending}>
       <BookableSpaceFields values={values} set={set} machineTypes={machineTypes} typesError={types.error?.message}
-        changeAvailability={changeAvailability} pagination={<div className="mt-2 flex gap-2">
+        changeAvailability={changeAvailability} pagination={<div className="mt-2 flex flex-wrap gap-2">
           <button className="desk-button-ghost" type="button" disabled={!types.data?.previous || types.isFetching} onClick={() => setTypePage(page => page - 1)}>Previous types</button>
           <button className="desk-button-ghost" type="button" disabled={!types.data?.next || types.isFetching} onClick={() => setTypePage(page => page + 1)}>Next types</button>
         </div>} />

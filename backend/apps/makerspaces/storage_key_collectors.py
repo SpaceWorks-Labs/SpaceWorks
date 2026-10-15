@@ -2,6 +2,7 @@
 
 
 def collect_private_object_keys(makerspace, *, include_coordination=True):
+    from apps.bookings.models_website import BookingResourcePageAsset
     from apps.evidence.models import EvidencePhoto
     from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork, EventPageAsset
     from apps.maintenance.models import MaintenanceLogDocument
@@ -19,6 +20,7 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
 
     for model, lookup in (
         (EventPageAsset, {"page__makerspace": makerspace}),
+        (BookingResourcePageAsset, {"page__space__makerspace": makerspace}),
         (EvidencePhoto, {"makerspace": makerspace}),
         (EventAttendanceCertificate, {"registration__event__makerspace": makerspace}),
         (WarrantyDocument, {"warranty__makerspace": makerspace}),

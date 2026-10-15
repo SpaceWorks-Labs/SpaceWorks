@@ -135,6 +135,7 @@ WRAPPER_SITE_PREFIXES = {
     "encryption/services.py": ("encryption.dek_",),
     "events/services_core.py": ("event.",),
     "events/services_broadcasts.py": ("event.broadcast.",),
+    "bookings/services_website.py": ("booking.website_",),
     "events/services_website.py": ("event.website_",),
     "integrations/broadcasts_delivery.py": ("event.broadcast.", "booking.broadcast."),
     "integrations/broadcasts_worker.py": ("event.broadcast.", "booking.broadcast."),

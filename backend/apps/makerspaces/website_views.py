@@ -4,7 +4,7 @@ from dataclasses import asdict
 from xml.sax.saxutils import escape
 
 from django.http import HttpResponse
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
@@ -72,7 +72,8 @@ class WebsiteEmbedView(WebsitePublicView):
         if not feature_enabled(subject.makerspace, f"{adapter.module}.embed"):
             from django.http import Http404
             raise Http404
-        return embed_response(adapter.card(subject), subject.makerspace.website_embed_origins)
+        return embed_response(adapter.card(subject), subject.makerspace.website_embed_origins,
+                              action_label=adapter.action_label)
 
 
 class WebsiteShareView(WebsitePublicView):
@@ -85,7 +86,10 @@ class WebsiteShareView(WebsitePublicView):
 
 
 class WebsiteDiscoverView(WebsitePublicView):
-    @extend_schema(tags=["Public websites"], auth=[], parameters=[DiscoveryFilters], responses={200: DiscoverySerializer, **ERRORS})
+    @extend_schema(tags=["Public websites"], auth=[], parameters=[DiscoveryFilters,
+        OpenApiParameter("kind", str, description="Booking resource kind (query filter); events use date filters instead."),
+        OpenApiParameter("location", str, description="Booking resource location contains this text."),
+    ], responses={200: DiscoverySerializer, **ERRORS})
     def get(self, request, kind):
         adapter = adapter_for(kind)
         filters = (adapter.filters or DiscoveryFilters)(data=request.query_params)

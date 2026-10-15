@@ -5,6 +5,9 @@ not a private contact/answer store; no scoped-PII field or encryption write fenc
 """
 
 FIELD_NAMES = {
+    'bookings.BookingResourcePage': frozenset('id space released revision updated_at'.split()),
+    'bookings.BookingResourcePageAsset': frozenset('id page object_key size_bytes alt_text created_at'.split()),
+    'bookings.BookingResourcePageSection': frozenset('id page kind slug title body url asset visibility position'.split()),
     'events.EventPage': frozenset('id makerspace event series released revision updated_at tagline accent_color section_order section_enabled venue'.split()),
     'events.EventPageAsset': frozenset('id page object_key size_bytes alt_text created_at'.split()),
     'events.EventPageSection': frozenset('id page kind slug title body url asset visibility position headline organization website_url linkedin_url x_url sponsor_tier icon'.split()),

@@ -25,7 +25,7 @@ certification gating. Staff MFA is a separate question.
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
-| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
+| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
@@ -260,6 +260,27 @@ the rows and objects; Events purge removes both. Portable imports retain editori
 and private objects but reset page release and framing origins for target-side review.
 
 ## Bookings
+
+Opt-in `bookings.website` adds resource detail pages with curated rules, amenities, FAQs,
+links, sponsors and private gallery images. Existing active/public resources retain their
+core catalogue and booking behavior when the feature is off or the page is unreleased.
+Only explicitly published sections and their images appear after a separate website
+release. Resource `edit_details` staff edit content/images; `publish_page` staff release
+or unrelease a saved revision. Neither permission can make a private resource public or
+activate it. Private previews are separate authorized, no-store reads.
+
+`bookings.embed` also defaults off and requires `bookings.website`. Released resource
+cards can be embedded only from the makerspace's exact HTTPS framing-origin allow-list;
+ordinary site pages continue to deny framing. Share cards use the existing public cover,
+never a private gallery image. `/discover/bookings` and sitemaps honor directory consent
+and verified custom domains separately from direct resource access. New discovery is
+paginated; the existing tenant resource list remains an array.
+
+Disabling either feature retains editorial data. Bookings module purge removes pages,
+sections and private gallery objects with their resource; whole-tenant purge also collects
+them. Resource clones copy assets into independent keys and start private/unreleased.
+Portable imports retain editorial content but reset release and framing trust for target
+review; deployment backups preserve the original graph.
 
 Opt-in `bookings.broadcasts` requires Notifications and Email and defaults off. Resource
 reservation managers can compose, preview, queue and cancel email campaigns for pending

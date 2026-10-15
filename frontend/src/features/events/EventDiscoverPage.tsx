@@ -15,7 +15,7 @@ export function EventDiscoverPage() {
     queryFn: () => publicV1Request<Results>(`/discover/events/?${new URLSearchParams(Object.fromEntries(Object.entries({ ...filters, page: String(page) }).filter(([, value]) => value)))}`),
   });
   return <main className="desk-shell min-h-screen p-5"><SkipLink /><div id="main-content" className="mx-auto grid max-w-5xl gap-5">
-    <Link className="desk-button w-fit" to="/">Home</Link><h1 className="title-page">Discover events</h1>
+    <Link className="desk-button w-fit" to="/">Home</Link><Link className="desk-button w-fit" to="/discover/bookings">Discover resources</Link><h1 className="title-page">Discover events</h1>
     <p className="text-muted">Public events from makerspaces on this deployment that opted into its directory.</p>
     <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); setPage(1); setFilters(draft); }}>
       <label>Search<input className="desk-input" maxLength={200} value={draft.q} onChange={(e) => setDraft({ ...draft, q: e.target.value })} /></label>

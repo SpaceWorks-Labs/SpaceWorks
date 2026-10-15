@@ -17,6 +17,7 @@ def _default(reason, *, allow_superadmin_override=False):
 from .target_projection_w7_events import EVENT_FIELD_PROJECTION
 
 TARGET_FIELD_PROJECTION = {
+    ("bookings.BookingResourcePage", "released"): TargetField(False, reason="Target staff explicitly release resource content."),
     ("events.EventCertificateArtwork", "version_id"): TargetField(
         "", reason="Source bucket version identity is replaced; SHA-256 pins imported bytes.",
     ),

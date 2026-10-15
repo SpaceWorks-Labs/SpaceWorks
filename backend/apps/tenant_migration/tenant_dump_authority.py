@@ -20,6 +20,8 @@ def _build(entries):
 
 AUTHORITY_FIELD_OVERRIDES = _build((
     *AUTHORITY_ENTRIES,
+    (("bookings.BookingResourcePage", "released"), authority(D.RESET, "Target staff explicitly release imported resource content.")),
+    (("bookings.BookingResourcePageSection", "visibility"), authority(D.PRESERVE, "Editorial intent travels behind reset release.")),
     *((("bookings.Booking", field), authority(D.PRESERVE,
         "Historical cancellation provenance; undo still requires live target authority, clock and exact ordinary admission."))
       for field in ("cancelled_at", "status_before_cancel")),

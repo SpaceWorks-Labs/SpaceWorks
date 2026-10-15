@@ -35,6 +35,7 @@ export const openApiTags = [
   "Backup destinations",
   "Backup recipients",
   "Backup recovery",
+  "Booking website",
   "Bookings",
   "Bulk import",
   "Containers",
@@ -73,6 +74,7 @@ export const openApiTags = [
   "Platform",
   "Presence",
   "Procurement",
+  "Public booking website",
   "Public bookings",
   "Public events",
   "Public inventory",
@@ -571,6 +573,10 @@ export const openApiPaths = [
   "/api/v1/admin/spaces/{id}/recurring-bookings/",
   "/api/v1/admin/spaces/{id}/staff-grants/",
   "/api/v1/admin/spaces/{id}/staff-invites/",
+  "/api/v1/admin/spaces/{id}/website/",
+  "/api/v1/admin/spaces/{id}/website/assets/",
+  "/api/v1/admin/spaces/{id}/website/assets/{asset_id}/",
+  "/api/v1/admin/spaces/{id}/website/release/",
   "/api/v1/admin/stock-transfers/{id}",
   "/api/v1/admin/stocktakes/{id}",
   "/api/v1/admin/stocktakes/{id}/apply-adjustments",
@@ -799,8 +805,11 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/presence-sessions/current/end",
   "/api/v1/public/{makerspace_slug}/requests",
   "/api/v1/public/{makerspace_slug}/spaces/",
+  "/api/v1/public/{makerspace_slug}/spaces/{public_token}/",
   "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/",
   "/api/v1/public/{makerspace_slug}/spaces/{public_token}/book/",
+  "/api/v1/public/{makerspace_slug}/spaces/{public_token}/website/",
+  "/api/v1/public/{makerspace_slug}/spaces/{public_token}/website/assets/{asset_id}/",
   "/api/v1/public/{makerspace_slug}/stats/",
   "/api/v1/public/{makerspace_slug}/tools/checklist",
   "/api/v1/public/{makerspace_slug}/tools/checkout",
@@ -1549,6 +1558,8 @@ export type BookableSpaceAdmin = {
   "checkin_enabled": boolean;
   "passes_enabled": boolean;
   "broadcasts_enabled": boolean;
+  "website_enabled": boolean;
+  "embed_enabled": boolean;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1747,6 +1758,14 @@ export type BookingPassTemplate = {
   "elements"?: Array<BookingPassElement>;
 };
 
+export type BookingPublicRules = {
+  "minimum_minutes": number;
+  "maximum_minutes": number;
+  "lead_minutes": number;
+  "advance_days": number;
+  "cancellation_cutoff_hours": number;
+};
+
 export type BookingReportMeta = {
   "source": string;
   "grain": string;
@@ -1897,6 +1916,61 @@ export type BookingUtilizationRow = {
   "window_hours": string | null;
   "reservation_utilization_percent": number | null;
   "no_show_rate_percent": number | null;
+};
+
+export type BookingWebsite = {
+  "public_url"?: string;
+  "embed_path"?: string;
+  "revision": number;
+  "released": boolean;
+  "sections": Array<BookingWebsiteSection>;
+  "assets"?: Array<BookingWebsiteAsset>;
+};
+
+export type BookingWebsiteAsset = {
+  "id": number;
+  "alt_text": string;
+  "size_bytes": number;
+};
+
+export type BookingWebsiteAssetInput = {
+  "file": string;
+  "alt_text": string;
+  "replace_id"?: number;
+};
+
+export type BookingWebsiteContentInput = {
+  "revision": number;
+  "sections": Array<BookingWebsiteSectionInput>;
+};
+
+export type BookingWebsiteReleaseInput = {
+  "revision": number;
+  "released": boolean;
+};
+
+export type BookingWebsiteSection = {
+  "kind": "rules" | "amenity" | "faq" | "link" | "sponsor" | "gallery";
+  "slug": string;
+  "title": string;
+  "body": string;
+  "url": string;
+  "asset_id": number | null;
+  "visibility": "draft" | "published";
+  "position": number;
+  "image_url": string | null;
+  "image_alt_text": string;
+};
+
+export type BookingWebsiteSectionInput = {
+  "kind": "rules" | "amenity" | "faq" | "link" | "sponsor" | "gallery";
+  "slug": string;
+  "title": string;
+  "body"?: string;
+  "url"?: string;
+  "asset_id"?: number | null;
+  "visibility"?: "draft" | "published";
+  "position"?: number;
 };
 
 export type Bounce = {
@@ -8165,6 +8239,24 @@ export type PublicBookingInput = {
   "starts_at": string;
   "ends_at": string;
   "custom_answers"?: unknown | null;
+};
+
+export type PublicBookingResource = {
+  "public_token": string;
+  "name": string;
+  "kind": Kind3bfEnum;
+  "description": string;
+  "capacity": number;
+  "location": string;
+  "image_url": string;
+  "approval_mode": ApprovalModeE35Enum;
+  "custom_form": unknown | null;
+  "show_public_availability": boolean;
+  "show_public_booker_names": boolean;
+  "payment_amount": string;
+  "currency": string;
+  "rules": BookingPublicRules;
+  "website": BookingWebsite | null;
 };
 
 export type PublicBookingResponse = {

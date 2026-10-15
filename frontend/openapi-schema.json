@@ -78497,7 +78497,7 @@
         "tags": [
           "Public websites"
         ],
-        "description": "Deployment-local directory-consenting public subjects, 24 per page. Domain adapter owns lifecycle rules; event counts follow show_registration_count.",
+        "description": "Deployment-local, directory-consented subjects, paginated 24. Events accept q/date_from/date_to; bookings accept q/kind/location/page and reject date filters. Does not widen direct visibility.",
         "parameters": [
           {
             "in": "path",
@@ -78538,6 +78538,22 @@
               "type": "integer",
               "minimum": 1
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking resource kind (query filter); events use date filters instead."
+          },
+          {
+            "in": "query",
+            "name": "location",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking resource location contains this text."
           }
         ],
         "responses": {
@@ -78997,6 +79013,927 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/": {
+      "get": {
+        "operationId": "admin_spaces_website_retrieve",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Private preview requires edit_details or publish_page; bookings.website required."
+      },
+      "put": {
+        "operationId": "admin_spaces_website_update",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires live edit_details under resource/tenant locks; revision match; audits revision only.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWebsiteContentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/release/": {
+      "post": {
+        "operationId": "admin_spaces_website_release_create",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires publish_page and current page revision. Release cannot activate a private/inactive resource.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWebsiteReleaseInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/assets/": {
+      "post": {
+        "operationId": "admin_spaces_website_assets_create",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsiteAsset"
+                }
+              }
+            }
+          }
+        },
+        "description": "edit_details; private multipart upload, 5 MB, single-frame 16 megapixels, sniffed/re-encoded WebP. Replacement must belong to this page.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWebsiteAssetInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/assets/{asset_id}/": {
+      "get": {
+        "operationId": "admin_spaces_website_assets_retrieve",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "description": "Separate edit_details-authorized private preview."
+      },
+      "delete": {
+        "operationId": "admin_spaces_website_assets_destroy",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No-store; public images also enforce live release and ownership."
+          }
+        },
+        "description": "edit_details; audit and post-commit object cleanup/quota release."
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/spaces/{public_token}/": {
+      "get": {
+        "operationId": "public_spaces_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Public booking website"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBookingResource"
+                }
+              }
+            }
+          }
+        },
+        "description": "Active public resource core with flat price and approved rule summaries. Website null unless feature enabled and released; no reservation identities or internal buffers."
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/spaces/{public_token}/website/": {
+      "get": {
+        "operationId": "public_spaces_website_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Public booking website"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Only live released page with published sections. Unreleased/private/disabled are uniform 404s."
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/spaces/{public_token}/website/assets/{asset_id}/": {
+      "get": {
+        "operationId": "public_spaces_website_assets_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "tags": [
+          "Public booking website"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "description": "Private image bytes require current public resource, feature, release and a published same-page reference. No object URLs."
       }
     }
   },
@@ -82139,6 +83076,14 @@
           "broadcasts_enabled": {
             "type": "boolean",
             "readOnly": true
+          },
+          "website_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "embed_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -82158,6 +83103,7 @@
           "custom_form",
           "description",
           "effective_requester_notifications_enabled",
+          "embed_enabled",
           "id",
           "image_url",
           "is_active",
@@ -82181,7 +83127,8 @@
           "staff_grants_enabled",
           "staff_permissions",
           "staff_tools_enabled",
-          "updated_at"
+          "updated_at",
+          "website_enabled"
         ]
       },
       "BookableSpaceBookingRules": {
@@ -121298,6 +122245,380 @@
           "id",
           "kind",
           "name"
+        ]
+      },
+      "BookingWebsiteSectionInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "rules",
+              "amenity",
+              "faq",
+              "link",
+              "sponsor",
+              "gallery"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "uri",
+            "default": ""
+          },
+          "asset_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "default": null
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title"
+        ],
+        "additionalProperties": false
+      },
+      "BookingWebsiteSection": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "rules",
+              "amenity",
+              "faq",
+              "link",
+              "sponsor",
+              "gallery"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "uri",
+            "default": ""
+          },
+          "asset_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "default": null
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "image_alt_text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title",
+          "body",
+          "url",
+          "asset_id",
+          "visibility",
+          "position",
+          "image_url",
+          "image_alt_text"
+        ]
+      },
+      "BookingWebsiteContentInput": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sections": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/BookingWebsiteSectionInput"
+            }
+          }
+        },
+        "required": [
+          "revision",
+          "sections"
+        ],
+        "additionalProperties": false
+      },
+      "BookingWebsiteReleaseInput": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "released": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revision",
+          "released"
+        ],
+        "additionalProperties": false
+      },
+      "BookingWebsiteAssetInput": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          },
+          "alt_text": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "replace_id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "file",
+          "alt_text"
+        ],
+        "additionalProperties": false
+      },
+      "BookingWebsiteAsset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "alt_text": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "alt_text",
+          "size_bytes"
+        ]
+      },
+      "BookingWebsite": {
+        "type": "object",
+        "properties": {
+          "public_url": {
+            "type": "string",
+            "format": "uri",
+            "readOnly": true
+          },
+          "embed_path": {
+            "type": "string",
+            "readOnly": true
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "released": {
+            "type": "boolean"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingWebsiteSection"
+            }
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingWebsiteAsset"
+            }
+          }
+        },
+        "required": [
+          "revision",
+          "released",
+          "sections"
+        ]
+      },
+      "BookingPublicRules": {
+        "type": "object",
+        "properties": {
+          "minimum_minutes": {
+            "type": "integer"
+          },
+          "maximum_minutes": {
+            "type": "integer"
+          },
+          "lead_minutes": {
+            "type": "integer"
+          },
+          "advance_days": {
+            "type": "integer"
+          },
+          "cancellation_cutoff_hours": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "minimum_minutes",
+          "maximum_minutes",
+          "lead_minutes",
+          "advance_days",
+          "cancellation_cutoff_hours"
+        ]
+      },
+      "PublicBookingResource": {
+        "type": "object",
+        "properties": {
+          "public_token": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Kind3bfEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "description": {
+            "type": "string",
+            "readOnly": true
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 0,
+            "readOnly": true
+          },
+          "location": {
+            "type": "string",
+            "readOnly": true
+          },
+          "image_url": {
+            "type": "string",
+            "readOnly": true
+          },
+          "approval_mode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalModeE35Enum"
+              }
+            ],
+            "readOnly": true
+          },
+          "custom_form": {
+            "readOnly": true,
+            "nullable": true
+          },
+          "show_public_availability": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "show_public_booker_names": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "payment_amount": {
+            "type": "string",
+            "format": "decimal"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/BookingPublicRules"
+          },
+          "website": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookingWebsite"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "approval_mode",
+          "capacity",
+          "currency",
+          "custom_form",
+          "description",
+          "image_url",
+          "kind",
+          "location",
+          "name",
+          "payment_amount",
+          "public_token",
+          "rules",
+          "show_public_availability",
+          "show_public_booker_names",
+          "website"
         ]
       }
     },

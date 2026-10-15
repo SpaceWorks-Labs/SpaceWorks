@@ -15,6 +15,8 @@ import { publicHome } from "./lib/publicHome";
 // route is first visited, so a lending-only install never downloads events, bookings or
 // machines code. The staff panels inside StaffApp are already lazy (StaffTabContent.tsx).
 const AboutPage = lazy(() => import("./features/AboutPage").then((m) => ({ default: m.AboutPage })));
+const PublicBookingResourcePage = lazy(() => import("./features/bookings/PublicBookingResourcePage").then((m) => ({ default: m.PublicBookingResourcePage })));
+const BookingDiscoverPage = lazy(() => import("./features/bookings/BookingDiscoverPage").then((m) => ({ default: m.BookingDiscoverPage })));
 const PublicBookingsPage = lazy(() => import("./features/bookings/PublicBookingsPage").then((m) => ({ default: m.PublicBookingsPage })));
 const PublicItemPage = lazy(() => import("./features/inventory/PublicItemPage").then((m) => ({ default: m.PublicItemPage })));
 const PublicEventFeedbackPage = lazy(() => import("./features/inventory/PublicEventFeedbackPage").then((m) => ({ default: m.PublicEventFeedbackPage })));
@@ -92,6 +94,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes><Route path="/member/archived" element={<ArchivedPayments />} /></Routes>;
   } else if (location.pathname.startsWith("/organization-invitations/redeem/")) {
     routes = <Routes><Route path="/organization-invitations/redeem/:token" element={<OrganizationInvitationRedeemPage />} /></Routes>;
+  } else if (location.pathname === "/discover/bookings") {
+    routes = <Routes><Route path="/discover/bookings" element={<BookingDiscoverPage />} /></Routes>;
   } else if (location.pathname === "/discover") {
     routes = <Routes><Route path="/discover" element={<EventDiscoverPage />} /></Routes>;
   } else if (mode === "single") {
@@ -112,6 +116,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/event-check-in/:stationToken" element={<EventCheckInStationPage />} />
       <Route path="/machines" element={<PublicMachinesPage />} />
       <Route path="/bookings" element={<PublicBookingsPage />} />
+      <Route path="/bookings/:resourceToken" element={<PublicBookingResourcePage />} />
+      <Route path="/m/:slug/bookings/:resourceToken" element={<PublicBookingResourcePage />} />
       <Route path="/print" element={<PublicPrintRequestPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
@@ -143,6 +149,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/event-check-in/:stationToken" element={<EventCheckInStationPage />} />
       <Route path="/m/:slug/machines" element={<PublicMachinesPage />} />
       <Route path="/m/:slug/bookings" element={<PublicBookingsPage />} />
+      <Route path="/m/:slug/bookings/:resourceToken" element={<PublicBookingResourcePage />} />
       <Route path="/m/:slug/admin/*" element={<StaffApp />} />
       <Route path="/m/:slug/print" element={<PublicPrintRequestPage />} />
       <Route path="/m/:slug/member" element={<MemberArea />} />

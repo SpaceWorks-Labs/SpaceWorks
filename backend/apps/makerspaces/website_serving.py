@@ -48,7 +48,7 @@ def private_image_response(key):
     return response
 
 
-def embed_response(card, origins):
+def embed_response(card, origins, *, action_label="Register"):
     from rest_framework.exceptions import ValidationError
     try:
         origins = validate_origins(origins)
@@ -62,7 +62,7 @@ def embed_response(card, origins):
             f'<title>{e(card.title)}</title><main><h1>{e(card.title)}</h1>'
             f'<p>{e(card.date)}</p><p>{e(card.location)}</p>'
             f'<p>{e(card.availability)}</p><p>{e(card.audience_label)}</p>'
-            f'<a href="{e(card.url)}" target="_blank" rel="noopener noreferrer">Register</a></main></html>')
+            f'<a href="{e(card.url)}" target="_blank" rel="noopener noreferrer">{e(action_label)}</a></main></html>')
     response = HttpResponse(html)
     response.xframe_options_exempt = True
     response["Content-Security-Policy"] = "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors " + " ".join(origins)

@@ -33,6 +33,7 @@ class WebsiteAdapter(Generic[Subject]):
     page: Callable[[Subject], Any]
     filters: type | None = None
     cards: Callable[[list[Subject]], list[PublicCard]] | None = None
+    action_label: str = "Register"
 
 
 _adapters: dict[str, WebsiteAdapter] = {}

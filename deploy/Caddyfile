@@ -21,6 +21,14 @@ import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
         rewrite * /share/events/{re.event_card.2}/
         reverse_proxy backend:8000
     }
+    @booking_crawler {
+        path_regexp booking_card ^/(m/[^/]+/)?bookings/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @booking_crawler {
+        rewrite * /share/bookings/{re.booking_card.2}/
+        reverse_proxy backend:8000
+    }
 
     @backend path /embed/* /share/* /sitemap.xml /robots.txt /api/* /static/* /docs* /redoc* /schema*
     reverse_proxy @backend backend:8000 {

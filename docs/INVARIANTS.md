@@ -2488,6 +2488,56 @@ preserving other domains; whole-tenant purge removes all. These models own no S3
 manual PDF bytes are streamed, never stored. Retention/encryption/purge declarations survive
 tombstoning while adapters, feature rows and report definitions disappear.
 
+### Booking public resource websites (BK-F)
+
+`bookings/website_visibility.py` owns the active/public resource predicate extracted
+unchanged from `views_public`. New core detail keeps existing direct visibility without
+adding central-directory consent. `bookings.website` and explicit page release additionally
+gate enhanced detail, images, embeds and share HTML. Only published sections and their
+referenced images are public. Private, inactive, foreign, disabled and unreleased enhanced
+content returns indistinguishable 404s. Public detail returns core fields and null website
+when the feature is off/unreleased; the legacy catalogue remains an array. Availability
+and booker-name flags keep their existing separate behavior. Approved public flat price,
+currency and duration/lead/horizon/cancellation summaries never expose internal buffers,
+machine links, notes, answers, contacts or reservation identities.
+
+`BookingResourcePage` belongs to one resource; its tenant is derived from that typed FK.
+Bounded rules/amenity/FAQ/link/sponsor/gallery sections and assets have immutable page
+ownership, with SQL guards for cross-page asset references and reparenting. Editorial
+text is deliberate publication data, not a new private-contact source; there are no User
+FKs or new scoped-PII/JSON fields. Restricted Markdown uses the shared React renderer with
+escaped HTML and HTTP(S)-only links. New features default off and are Bookings-parented.
+
+Content and private image changes require live `edit_details`; release/unrelease requires
+`publish_page`. Services acquire the source gate, resource and tenant/authority locks,
+then check revision and permission again. Publishing cannot make a resource public or
+active. Private previews are authorized no-store endpoints; public image IDs never grant
+draft access. Saves, release and image changes advance page revision and audit only that
+revision. Asset upload accepts no object keys, uses shared bounded staging/sniff/WebP/quota
+and rollback cleanup, and stores `bookings/website/<tenant>/<page>/...` privately.
+Replacement remaps section references to fresh keys and releases quota only after confirmed
+post-commit deletion. Cloning copies the page/sections/assets inside the existing durable
+clone transaction with independent keys and reset release; no authority/history is copied.
+
+The Bookings adapter consumes always-present makerspaces visibility, assets, directory,
+embed/share and clone mechanisms; it imports no Events services and has no event expiry
+rule. Discover/sitemap add public-site and directory consent. Custom-domain sitemaps use
+verified canonical resource URLs. Shared embeds require feature/release and a nonempty
+exact HTTPS framing policy, and use “Book a time”; nginx/Caddy retain default SPA framing
+denial through index fallback. Crawler routes use the existing public cover and shared
+escaped, noindex HTML. Live visibility checks precede cache reads; identity includes tenant,
+resource update and page release revision, so unrelease/visibility/module changes cannot
+revive cached content. Public analytics continues to use route templates, with private
+and credential routes excluded.
+
+All three concrete models have literal export fields, datasets, reference/unique policies,
+object ownership and retention registrations independent of runtime tombstoning. Portable
+import resets page release; typed imported asset metadata plus the same-tenant verified
+object journal proves ownership when keys retain source IDs. Deleted page audit targets
+remain inert source provenance. Module purge cascades page rows from `BookableSpace` and
+collects private keys/sizes; whole-tenant purge, storage reconciliation and backup/migration
+capture include gallery objects. The core payment ledger remains outside module purge.
+
 ### Booking clone, edits and cancellation undo (BK-B)
 
 `bookings.clone` and `bookings.staff_tools` are opt-in Bookings features with no

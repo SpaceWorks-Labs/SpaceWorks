@@ -324,7 +324,8 @@ while pack application explicitly asserts the target source gate before writes.
   `local_now`, `to_local`, `local_day_bounds`, `is_open` and `next_open_interval`
   (aware inputs, UTC half-open bounds; fold/gap policy in its docstring).
   `admin_api/views_makerspace_profile.py` serves audited, MANAGE_MAKERSPACE-scoped
-  `/admin/makerspace/<id>/profile`; currency uses `MakerspacePaymentSettings.default_currency`.
+  `/admin/makerspace/<id>/profile`; `profile_settings.py` shares its audited writer with setup.
+  Currency uses `MakerspacePaymentSettings.default_currency`.
   `origin_scope.py` (browser origin→tenant guard), `provisioning.py`/`hosting.py`, `secrets.py`.
   `models_stations.py` owns shared inert `Station` metadata plus the complete live
   `StationCredential` envelope; `station_credentials.py`, `station_sessions.py`, `station_security.py` and

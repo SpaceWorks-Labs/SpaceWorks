@@ -69,7 +69,7 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | HTTPS | LAN HTTP, automatic Caddy (domain/email), or your existing proxy |
 | How it runs | standard containers; single box is available for a local website over HTTP |
 | File storage | bundled Silo, or your S3 buckets/credentials/public image URL |
-| Areas | Inventory & lending and Machines default yes; Events, Bookings, Membership, Online payments, Reports and Chat default no. Each yes immediately asks its settings. |
+| Areas | Inventory & lending, Machines and Reports default yes; Events, Bookings, Membership, Online payments and Chat default no. Each yes immediately asks its settings. |
 | Web address people will type | `localhost` to start (you can change it later) |
 | Name of your makerspace | e.g. `Riverside Makerspace` |
 | Admin login username | `admin` is fine |
@@ -229,8 +229,10 @@ First, "Enable every area?" [y/N] selects all eight areas when answered yes, whi
 their normal follow-ups in order. No keeps the individual area questions below. Each yes immediately asks the
 applicable follow-ups. Enter accepts the bracketed default. All answers appear in the summary and
 private answers file. Areas map to [modules and features](MODULES.md#areas-used-by-setup). An existing events/bookings edition
-preselects its corresponding area plus Membership, Online payments and Reports, keeping built-in
-accounts, checkout and reporting; Inventory and Machines default off.
+preselects its corresponding area plus Membership, Online payments and Reports, keeping plans,
+checkout and reporting; Inventory and Machines default off. Core, backup, notifications, email and
+per-person accounts are always on. Accounts provide self sign-up, password/Google/Apple/phone
+sign-in and the member area. Membership adds plans, vouching, renewals and the mobile app.
 
 | Area question | Follow-ups in order (defaults) | Editable later |
 | --- | --- | --- |
@@ -240,7 +242,7 @@ accounts, checkout and reporting; Inventory and Machines default off.
 | Use Bookings? [y/N] | No numeric follow-up: buffers and cancellation cutoff belong to each bookable resource; there is no space-level default. Recurring bookings enabled. | Bookable resource editor |
 | Use Membership? [y/N] | Join mode [approval] (`approval/vouch/open/invite_only/closed`); if vouching: vouches [1], voucher tenure [30 days], pending applicants/voucher [3], vouch validity [30 days], vouches replace staff approval [y/N]; application form [Y/n] (editable question: why join); create first plan [y/N] (skippable); if chosen: name [Standard], interval [monthly] (`monthly/yearly/custom_days`), custom days [30] if applicable, amount [0.00], currency [usd], auto-renew [Y/n]; if renewing: open window [7 days], grace [0 days], retries [0], reminders before [14,7,1], after [none]. If lending is on, confirm who can submit requests [members]. | Membership admission and form builder, membership plans, Features |
 | Use Online payments? [y/N] | Checkout for chosen domains is enabled; default checkout currency [usd] if no earlier area set it; Stripe keys remain optional integration questions later. Money owed and receipts remain enabled without this area. | Payment settings |
-| Use Reports? [y/N] | Reports and saved views enabled; no numeric follow-ups. | Reports |
+| Use Reports? [Y/n] | Reports and analytics for every installed module, saved views and scheduled exports; no numeric follow-ups. | Reports |
 | Use Chat alerts? [y/N] | All five channels enabled and idle until configured; no token/URL questions here. | Integration settings |
 
 Next, always asked:
@@ -256,8 +258,8 @@ Next, always asked:
 
 The Membership module currently enforces members-only borrow requests. Enabling it explicitly
 confirms the earlier request-access answer as members. Disable Membership to admit other accounts
-or account-less requests. Inventory off skips borrowing questions, keeps the six core modules and
-hides lending without touching loan/evidence data. Enabling self-checkout or kiosk never bypasses
+or account-less requests; personal accounts remain on. Inventory off skips borrowing questions, keeps
+the six core modules and hides lending without touching loan/evidence data. Enabling self-checkout or kiosk never bypasses
 authentication, eligible-tool checks or evidence requirements.
 
 Only Events (with optional Membership/Payments/Reports/Chat) derives the `events` edition; only
@@ -269,6 +271,7 @@ on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks se
 enabled areas, then confirms. `--all-modules` enables every area and every supported feature in it;
 existing settings and staff MFA are kept, newly enabled areas get defaults, and `--without` exclusions
 still apply. Unavailable modules are reported rather than installed. Optional uninstalls
-retain all data; Inventory off disables `loans.enabled`. Automation can select an exact set using
+retain all data; Inventory off disables `loans.enabled`, and Membership off keeps personal accounts.
+Automation can select an exact set using
 `--areas=inventory,machines`, or retain the existing `--all-modules`, `--without=...`,
 `--makerspace`, `--all-makerspaces` and `--confirm-removals` flags.

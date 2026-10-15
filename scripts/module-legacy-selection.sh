@@ -89,4 +89,3 @@ module_legacy_change_one() {
   echo "Data is never deleted here; only purge_module_data can delete retained module data."
   return "$apply_failed"
 }
-

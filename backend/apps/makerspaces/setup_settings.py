@@ -8,6 +8,7 @@ from apps.makerspaces.models import MembershipPlan
 from apps.makerspaces.serializers_admission import AdmissionSettingsSerializer
 from .membership_admission_settings import settings_for, update_settings
 from .loan_policy_settings import update_loan_policy
+from .profile_settings import write_profile
 from .settings_validation import validate_settings as validate
 
 
@@ -39,18 +40,27 @@ def save_plan(actor, space, values):
         creating = row is None
         row = serializer.save(makerspace=space)
         row.full_clean()
+        fields = sorted(serializer.validated_data)
+        # Literal actions and meta keep the audit discovery guard able to see both.
         if creating:
             audit.record(actor, "membership_plan.created", makerspace=space, target=row,
-                         meta={"plan_id": row.pk})
+                         meta={"plan_id": row.pk, "fields": fields})
         else:
             audit.record(actor, "membership_plan.updated", makerspace=space, target=row,
-                         meta={"plan_id": row.pk, "fields": sorted(serializer.validated_data)})
+                         meta={"plan_id": row.pk, "fields": fields})
     return row
 
 
 def apply_settings(actor, space, settings):
     if "space" in settings:
-        space = save_space(actor, space, settings["space"])
+        values = dict(settings["space"])
+        if "timezone" in values:
+            from apps.admin_api.serializers_makerspace_profile import MakerspaceProfileSerializer
+            check = MakerspaceProfileSerializer(data={"timezone": values.pop("timezone")}, partial=True)
+            validate(check)
+            write_profile(actor, space, check.validated_data)
+        if values:
+            space = save_space(actor, space, values)
     if "loan_policy" in settings:
         from apps.admin_api.serializers_loan_policy import ReturnPolicySerializer
         from .models_loan_policy import MakerspaceLoanPolicy

@@ -15,10 +15,10 @@ module_change_one() {
     MODULE_AREAS_APPLIED=1
     return
   fi
-  output="$(${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
+  output="$(${COMPOSE[@]+${COMPOSE[@]+"${COMPOSE[@]}"}} run --rm --no-deps -T backend --role management \
     python manage.py apply_setup_areas --makerspace "$slug" --status 2>&1)" || { module_warn "$output"; return 1; }
   AREA_root_currency="$(printf '%s\n' "$output" | sed -n 's/.*"currency": *"\([a-z][a-z][a-z]\)".*/\1/p' | tail -n 1)"
-  for key in "${SETUP_AREAS[@]}"; do
+  for key in ${SETUP_AREAS[@]+"${SETUP_AREAS[@]}"}; do
     original="$(printf '%s\n' "$output" | sed -n "s/.*\"$key\": *\"\(on\|partial\|off\)\".*/\1/p" | tail -n 1)"
     [[ -n "$original" ]] || { module_warn 'Could not read current area state.'; return 1; }
     states+=("$original")
@@ -32,7 +32,7 @@ module_change_one() {
     areas)
       for ((index=0; index<${#selected[@]}; index++)); do selected[index]=N; done
       local requested=(); IFS=, read -ra requested <<< "${MODULE_AREAS:-}"
-      for token in "${requested[@]}"; do
+      for token in ${requested[@]+"${requested[@]}"}; do
         [[ -n "$token" ]] || continue
         count=0
         for ((index=0; index<${#SETUP_AREAS[@]}; index++)); do
@@ -69,7 +69,7 @@ module_change_one() {
   done
   if [[ "${MODULE_INTERACTIVE:-0}" == 1 ]]; then
     exec 3<&0
-    for key in "${newly[@]}"; do "ask_${key}_settings" || return 1; done
+    for key in ${newly[@]+"${newly[@]}"}; do "ask_${key}_settings" || return 1; done
     # Membership admission is asked when newly enabled; its borrow rule also applies
     # when Inventory is newly enabled on a space already running memberships.
     if [[ ",${SETUP_SELECTED_AREAS}," == *,inventory,* && ",${SETUP_SELECTED_AREAS}," == *,membership,* && -n "$REQUEST_ACCESS" ]]; then
@@ -91,7 +91,7 @@ module_change_one() {
     module_list_output "$slug" || return 1
     local without_keys=() disabled=0 key_count
     IFS=, read -ra without_keys <<< "$MODULE_WITHOUT"
-    for key in "${without_keys[@]}"; do
+    for key in ${without_keys[@]+"${without_keys[@]}"}; do
       key_count="$(printf '%s\n' "$MODULE_OUTPUT" | awk -v wanted="$key" '$1 == "+" && $2 == wanted {print 1}')"
       [[ "$key_count" != 1 ]] || disabled=$((disabled+1))
     done
@@ -99,7 +99,7 @@ module_change_one() {
   fi
   # Configure only newly enabled areas; all mode enables features but keeps settings.
   local configuring='[' comma=''
-  for key in "${newly[@]}"; do configuring+="$comma\"$key\""; comma=,; done
+  for key in ${newly[@]+"${newly[@]}"}; do configuring+="$comma\"$key\""; comma=,; done
   configuring+=']'
   local document
   document="$(setup_areas_json)"
@@ -107,7 +107,7 @@ module_change_one() {
   if [[ "${MODULE_MODE:-interactive}" == all ]]; then
     document="${document%\}},\"enable_area_features\":true}"
   fi
-  printf '%s\n' "$document" | ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
+  printf '%s\n' "$document" | ${COMPOSE[@]+${COMPOSE[@]+"${COMPOSE[@]}"}} run --rm --no-deps -T backend --role management \
     python manage.py apply_setup_areas --makerspace "$slug" --answers-json - \
     || { module_warn "Area changes failed for $slug; transaction rolled back."; return 1; }
   MODULE_AREAS_APPLIED=1
@@ -117,7 +117,7 @@ module_change_one() {
 module_refresh_edition() {
   [[ -f "$ROOT/.env" ]] || return 0
   local edition current temporary
-  edition="$(${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
+  edition="$(${COMPOSE[@]+${COMPOSE[@]+"${COMPOSE[@]}"}} run --rm --no-deps -T backend --role management \
     python manage.py apply_setup_areas --deployment-edition)" || return 1
   edition="$(printf '%s\n' "$edition" | tr -d '\r' | tail -n 1)"
   case "$edition" in makerspace|events|bookings|organization) ;; *) module_warn 'Could not derive deployment edition.'; return 1 ;; esac
@@ -128,11 +128,14 @@ module_refresh_edition() {
   printf '\nSPACEWORKS_EDITION=%s\n' "$edition" >> "$temporary"
   chmod 600 "$temporary"; mv -f -- "$temporary" "$ROOT/.env"
   local OPS_HOST_DIR="${OPS_DIR:-${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}}"
-  local tag="${MAKERSPACE_IMAGE_TAG:-$(tr -d '\r\n' < "$ROOT/.spaceworks-version")}" \
-    HOST_CONFIG_IMAGE
+  # Same tag fallbacks as scripts/spaceworks-compose.sh: environment, .env, the
+  # pinned version marker, then latest (a bash setup.sh install has no marker).
+  local tag="${MAKERSPACE_IMAGE_TAG:-$(repository_env_value MAKERSPACE_IMAGE_TAG)}" HOST_CONFIG_IMAGE
+  if [[ -z "$tag" && -f "$ROOT/.spaceworks-version" ]]; then tag="$(tr -d '[:space:]' < "$ROOT/.spaceworks-version")"; fi
+  tag="${tag:-latest}"
   HOST_CONFIG_IMAGE="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:$tag"
   source "$ROOT/scripts/setup-host-orchestration.sh"
   refresh_compose_config || { module_warn 'Areas applied; edition configuration refresh failed. Run bash scripts/init-host-orchestration.sh, then scripts/spaceworks-compose.sh bundled up -d.'; return 1; }
-  ${COMPOSE[@]+"${COMPOSE[@]}"} up -d || { module_warn 'Edition saved; application restart failed. Run scripts/spaceworks-compose.sh bundled up -d.'; return 1; }
+  ${COMPOSE[@]+${COMPOSE[@]+"${COMPOSE[@]}"}} up -d || { module_warn 'Edition saved; application restart failed. Run scripts/spaceworks-compose.sh bundled up -d.'; return 1; }
   say "Deployment edition changed to $edition."
 }

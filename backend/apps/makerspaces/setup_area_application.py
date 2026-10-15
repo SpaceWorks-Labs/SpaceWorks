@@ -1,4 +1,5 @@
 """One atomic installer application, using ordinary module and settings writers."""
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -61,6 +62,8 @@ def validate_answers(answers):
     without = answers.get("without", [])
     if not isinstance(without, list) or any(not isinstance(key, str) or key not in BY_KEY or key in core_module_keys() for key in without):
         raise ValidationError({"without": "Use optional module keys."})
+    if "member_accounts" in without:
+        raise ValidationError({"without": "Personal accounts are always on in setup."})
     configuring = answers.get("configure_areas", areas)
     if not isinstance(configuring, list) or any(key not in areas for key in configuring):
         raise ValidationError({"configure_areas": "Choose a subset of enabled areas."})
@@ -76,6 +79,18 @@ def apply_areas(actor, space, answers):
     # Checkout/profile writers take payment-settings before the makerspace. Match that
     # order, including the concurrent first-row creation retry used by the profile API.
     from apps.payments.models import MakerspacePaymentSettings
+    created_payment = False
+    # Always insert before the root lock, as the profile API does: generated defaults
+    # (a first currency) can need the row, and a concurrent settings creator needs its
+    # FK key-share lock on the makerspace to finish inserting, so creating the row
+    # under FOR UPDATE could deadlock on the unique index.
+    try:
+        with transaction.atomic():
+            _, created_payment = MakerspacePaymentSettings.objects.get_or_create(makerspace=space)
+    except DjangoValidationError:
+        # save() runs full_clean(): a competing insert can surface as a uniqueness error.
+        if not MakerspacePaymentSettings.objects.filter(makerspace=space).exists():
+            raise
     payment = MakerspacePaymentSettings.objects.filter(makerspace=space).select_for_update().first()
     space = Makerspace.objects.select_for_update().get(pk=space.pk)
     if payment is None and MakerspacePaymentSettings.objects.filter(makerspace=space).exists():
@@ -86,7 +101,7 @@ def apply_areas(actor, space, answers):
     anchors = {"inventory": "request_workflow", "machines": "machines", "events": "events", "membership": "membership"}
     initial = {area for area in configuring if anchors.get(area) is None or anchors[area] in wanted}
     settings = initial_settings(initial, settings, first_setup="configure_areas" not in answers,
-                                stored_currency=payment.default_currency if payment else None)
+                                stored_currency=payment.default_currency if payment and not created_payment else None)
     unavailable = sorted(key for key in wanted if not module_available(key))
     if unavailable:
         raise ModuleInstallError(f"Setup areas require unavailable modules: {', '.join(unavailable)}.")
@@ -112,7 +127,9 @@ def apply_areas(actor, space, answers):
                      if definition.parent_module in preserved_parents
                      and set(feature_required_modules(key)) <= previous_modules}
         if "inventory" in configuring:
-            preserved -= INVENTORY_FEATURES | {"loans.enabled", "payments.loans"}
+            preserved -= {key for key, definition in FEATURES.items()
+                          if definition.parent_module in AREAS["inventory"]}
+            preserved -= INVENTORY_FEATURES | {"payments.loans"}
         preserved.add("security.staff_mfa_required")
         if "inventory" in areas - configuring:
             preserved |= INVENTORY_FEATURES

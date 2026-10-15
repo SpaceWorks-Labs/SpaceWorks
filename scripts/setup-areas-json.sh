@@ -30,7 +30,7 @@ build_area_settings_json() {
     for section in space loan_policy loan_charges admission plan machine_policy notifications features root; do
       comma=''
       local seen_fields=","
-      for record in "${AREA_SETTING_RECORDS[@]}"; do
+      for record in ${AREA_SETTING_RECORDS[@]+"${AREA_SETTING_RECORDS[@]}"}; do
         IFS='|' read -r s field type variable label <<< "$record"
         [[ "$s" == "$section" ]] || continue
         [[ "$seen_fields" != *",$field,"* ]] || continue
@@ -54,7 +54,7 @@ setup_areas_json() {
   printf '{"areas":['
   local selected=() omitted=()
   IFS=, read -ra selected <<< "$SETUP_SELECTED_AREAS"
-  for area in "${selected[@]}"; do
+  for area in ${selected[@]+"${selected[@]}"}; do
     [[ -n "$area" ]] || continue
     printf '%s' "$comma"; comma=,; area_json_string "$area"
   done
@@ -65,7 +65,7 @@ setup_areas_json() {
   if [[ -n "${MODULE_WITHOUT:-}" ]]; then
     printf ',"without":['; comma=''
     IFS=, read -ra omitted <<< "$MODULE_WITHOUT"
-    for without_key in "${omitted[@]}"; do
+    for without_key in ${omitted[@]+"${omitted[@]}"}; do
       printf '%s' "$comma"; comma=,; area_json_string "$without_key"
     done
     printf ']'

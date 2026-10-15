@@ -140,7 +140,7 @@ derive_setup_edition() {
   SPACEWORKS_EDITION=makerspace
   local primary=() area
   IFS=, read -ra selected <<< "$SETUP_SELECTED_AREAS"
-  for area in "${selected[@]}"; do
+  for area in ${selected[@]+"${selected[@]}"}; do
     case "$area" in inventory|machines|events|bookings) primary+=("$area") ;; esac
   done
   if [[ ${#primary[@]} == 1 && ( "${primary[0]}" == events || "${primary[0]}" == bookings ) ]]; then
@@ -156,7 +156,7 @@ ask_setup_areas() {
   question AREA_ALL 'Enable every area (inventory, machines, events, bookings, membership, online payments, reports, chat alerts)?' N choices:Y,y,yes,YES,N,n,no,NO || return 1
   for ((index=0; index<${#SETUP_AREAS[@]}; index++)); do
     key="${SETUP_AREAS[index]}"; default=N
-    case "$incoming:$key" in makerspace:inventory|makerspace:machines|organization:inventory|organization:machines|events:events|bookings:bookings|events:membership|events:payments|events:reports|bookings:membership|bookings:payments|bookings:reports) default=Y ;; esac
+    case "$incoming:$key" in makerspace:inventory|makerspace:machines|makerspace:reports|organization:inventory|organization:machines|organization:reports|events:events|bookings:bookings|events:membership|events:payments|events:reports|bookings:membership|bookings:payments|bookings:reports) default=Y ;; esac
     echo "${SETUP_AREA_LABELS[index]} enables every module and supported feature in this area."
     AREA_ENABLE=Y
     if ! area_yes "$AREA_ALL"; then
@@ -183,9 +183,9 @@ setup_areas_summary() {
     [[ ",${SETUP_SELECTED_AREAS}," != *,$key,* ]] || state=yes
     printf '  %s: %s\n' "${SETUP_AREA_LABELS[index]}" "$state"
   done
-  echo '  Always on: core modules, backup, notifications, email, money tracking, receipt documents, payment reminders, staff invitations and advisory geofence.'
+  echo '  Always on: core modules, personal accounts (sign-up and member area), backup, notifications, email, money tracking, receipt documents, payment reminders, staff invitations and advisory geofence.'
   local record section field type variable label
-  for record in "${AREA_SETTING_RECORDS[@]}"; do
+  for record in ${AREA_SETTING_RECORDS[@]+"${AREA_SETTING_RECORDS[@]}"}; do
     IFS='|' read -r section field type variable label <<< "$record"
     printf '  %s: %s\n' "$label" "${!variable}"
   done

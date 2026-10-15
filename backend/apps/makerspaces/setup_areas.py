@@ -10,12 +10,12 @@ AREAS = {
     "machines": ("machines", "machine_service", "printing", "maintenance"),
     "events": ("events",),
     "bookings": ("bookings",),
-    "membership": ("membership", "member_accounts", "mobile"),
+    "membership": ("membership", "mobile"),
     "payments": ("payments",),
     "reports": ("reports",),
     "chat": ("telegram", "slack", "mattermost", "discord", "webhook"),
 }
-ALWAYS_MODULES = {"backup", "notifications", "email"}
+ALWAYS_MODULES = {"backup", "notifications", "email", "member_accounts"}
 ALWAYS_FEATURES = {"billing.reminders", "charges.enabled", "billing.documents",
                    "staff.invitations", "presence.geofence"}
 INVENTORY_FEATURES = {"inventory.self_checkout", "inventory.kiosk"}

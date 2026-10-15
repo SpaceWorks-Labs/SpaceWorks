@@ -99,7 +99,9 @@ change_modules() {
   for slug in ${MODULE_TARGETS[@]+"${MODULE_TARGETS[@]}"}; do
     module_change_one "$slug" || failed=1
   done
-  if [[ "$failed" == 0 && "$MODULE_AREAS_APPLIED" == 1 ]]; then
+  # Refresh after any committed area change, even if another makerspace failed:
+  # the edition must follow what is now in the database.
+  if [[ "$MODULE_AREAS_APPLIED" == 1 ]]; then
     module_refresh_edition || failed=1
   fi
   return "$failed"

@@ -376,13 +376,17 @@ console shows you:
 | **Connected devices** | Printers and label printers enrolled with their own signing key |
 
 **Choose areas before confirmation.** Setup enables each area's modules and every satisfiable feature.
-Inventory & lending and Machines default on; the other six areas default off. Core, backup,
-notifications, email, charge tracking, receipt documents, billing reminders, staff invitations and
-advisory geofence stay on. Inventory off hides lending through `loans.enabled` and retains all data.
+Setup first asks whether to enable every area (default no); yes still asks the normal follow-ups.
+Inventory & lending, Machines and Reports default on; the other five areas default off. Core, backup,
+notifications, email and per-person accounts (self sign-up, password/Google/Apple/phone sign-in and
+the member area) stay on, as do charge tracking, receipt documents, billing reminders, staff invitations
+and advisory geofence. Membership adds plans, vouching, renewals and the mobile app. Inventory off
+hides lending through `loans.enabled` and retains all data.
 See [Areas used by setup](docs/MODULES.md#areas-used-by-setup) for the module/feature mapping.
 
 Change areas later with installer menu 2/3 or `scripts/update.sh --modules-only`. The menu displays
-on/partial/off and asks settings only for newly enabled areas. Automation can select an exact set:
+on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks settings only for newly
+enabled areas. Automation can select an exact set:
 
 ```bash
 bash scripts/update.sh --modules-only --areas=inventory,machines --makerspace my-space --confirm-removals
@@ -504,7 +508,8 @@ enable them.
 ### What you get if you choose nothing
 
 Installing without a profile gives you **7 modules**: the six core ones plus `backup`.
-Member accounts and mobile apps are opt-in; mobile pulls in `member_accounts` when installed.
+Outside guided setup, member accounts and mobile apps are opt-in; mobile pulls in `member_accounts`
+when installed. Guided setup always enables per-person accounts.
 
 Everything money-related is still dormant: `payments` being installed means the *surfaces* exist,
 and no charge can be created until a Space Manager enables a `payments.<area>` feature **and** valid

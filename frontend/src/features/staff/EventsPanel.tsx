@@ -57,7 +57,9 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    create.mutate(payloadFor(newValues), {
+    // Unknown default and untouched field: let the server apply the space's default audience.
+    const { registration_audience: audience, ...rest } = payloadFor(newValues);
+    create.mutate(defaultAudience || audienceEdited ? { ...rest, registration_audience: audience } : rest, {
       onSuccess: (created) => {
         setValues(emptyEventForm); setAudienceEdited(false);
         setSelectedId(created.id);
@@ -66,7 +68,8 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
   }
   function submitSeries(event: FormEvent) {
     event.preventDefault();
-    createSeries.mutate(seriesPayload(newSeriesValues), {
+    const { registration_audience: seriesAudience, ...seriesRest } = seriesPayload(newSeriesValues);
+    createSeries.mutate(defaultAudience || seriesAudienceEdited ? { ...seriesRest, registration_audience: seriesAudience } : seriesRest, {
       onSuccess: (created) => {
         setSeriesValues(emptySeriesForm); setSeriesAudienceEdited(false);
         setSelectedSeriesId(created.series.id);

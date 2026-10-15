@@ -13,12 +13,14 @@ happens to its data.
 ## Areas used by setup
 
 Setup first asks whether to enable every area (default no). Yes selects all eight areas and still
-asks their normal follow-ups in order; no asks yes/no about each area. Inventory & lending and Machines default
-to yes; the other six default to no. An existing events/bookings edition defaults to its corresponding
-area plus Membership, Online payments and Reports, preserving built-in accounts, checkout and reporting;
+asks their normal follow-ups in order; no asks yes/no about each area. Inventory & lending, Machines
+and Reports default to yes; the other five default to no. An existing events/bookings edition defaults to its corresponding
+area plus Membership, Online payments and Reports, preserving plans, checkout and reporting;
 Inventory and Machines are off. Areas enable every child feature supported by the selected
 modules and its feature prerequisites. Follow-up answers may turn off self-checkout, kiosk or
 certification gating. Staff MFA is a separate question.
+Per-person accounts (self sign-up, password/Google/Apple/phone sign-in and the member area) are always
+on in setup. Membership adds plans, vouching, renewals and the mobile app.
 
 | Area | Modules | Features |
 | --- | --- | --- |
@@ -26,11 +28,11 @@ certification gating. Staff MFA is a separate question.
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
-| Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
+| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
-| Always on | Six core modules, `backup`, `notifications`, `email` | Every satisfiable `notifications.*` feature, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence` |
+| Always on | Six core modules, `backup`, `notifications`, `email`, `member_accounts` | Every satisfiable child of `backup`, `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence` |
 
 The source is `makerspaces/setup_areas.py`; registry module keys/defaults are unchanged. Inventory
 off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Charges,

@@ -27,8 +27,8 @@ class Command(BaseCommand):
         if options["deployment_edition"]:
             from django.conf import settings
             from apps.makerspaces.models import Makerspace
-            from apps.makerspaces.setup_areas import edition_for
             from apps.makerspaces.servability import servable_queryset
+            from apps.makerspaces.setup_areas import edition_for
             selected = set()
             for row in servable_queryset(Makerspace.objects.all()):
                 selected.update(key for key, state in area_status(row).items() if state != "off")

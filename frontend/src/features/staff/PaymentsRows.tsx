@@ -11,7 +11,9 @@ export function paymentColumns({ access, pending, amendPending, run, onAmend, on
   onCorrectRefund: (paymentId: number, refund: RefundRow) => void;
 }): DataTableColumn<PaymentRow>[] {
   return [
-    { key: "subject_label", header: "Subject", render: row => <div className="grid gap-1"><span className="font-semibold text-ink">{row.subject_label}</span><span className="text-xs text-muted">{labelFor(PAYMENT_SUBJECTS, row.subject_type)}</span></div> },
+    { key: "subject_label", header: "Subject", render: row => <span className="font-semibold text-ink">{row.subject_label}</span> },
+    // Its own column again, so saved column choices that include Type keep it.
+    { key: "subject_type", header: "Type", render: row => <span className="text-muted">{labelFor(PAYMENT_SUBJECTS, row.subject_type)}</span> },
     { key: "status", header: "Status", render: row => <StatusPill label={labelFor(PAYMENT_STATUSES, row.status)} tone={row.status === "pending" ? "warn" : row.status.startsWith("paid_") ? "success" : "neutral"} /> },
     { key: "due_at", header: "Due", render: row => <PaymentDueBadge payment={row} /> },
     { key: "amount", header: "Amount", render: row => formatMoney(row.amount, row.currency), className: "text-right font-semibold tabular-nums text-ink" },

@@ -50,7 +50,9 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
           error: "Couldn't load dashboard. Try again.", onRetry: () => { void dashboard.refetch(); } }}
         progress={progress}
         stats={ranked.map(tile => ({ label: tile.label, value: dashboard.data?.[tile.key] ?? 0,
-          tone: tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0 ? "attention" : "neutral", href: href(tile.key) }))}
+          // Overdue, problems, out of stock, failed email and overdue maintenance keep their danger signal.
+          tone: tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0 ? tile.tone === "danger" ? "danger" : "attention" : "neutral",
+          href: href(tile.key) }))}
         callout={alert ? { size: "banner", tone: "warn", lead: alertLead[alert.key],
           action: { label: "Review", href: href(alert.key) } } : undefined}
         main={main} rail={rail}

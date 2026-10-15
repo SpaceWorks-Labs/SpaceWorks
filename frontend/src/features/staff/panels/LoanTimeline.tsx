@@ -1,5 +1,5 @@
 import { plural } from "../../../lib/plural";
-﻿import { useState } from "react";
+import { useState } from "react";
 
 import { useStaffGet } from "./shared";
 import { ActivityItem, ActivityRail, EmptyState, ErrorBlock, StatusPill } from "../../../components/ui";

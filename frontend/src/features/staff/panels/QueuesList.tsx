@@ -1,8 +1,19 @@
 import { useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ActionControl, EmptyState, ListRow, OverflowMenu, RelativeTime, StatusBadge, type Action } from "../../../components/ui";
+import { ActionControl, EmptyState, ListRow, OverflowMenu, RelativeTime, StatusBadge, StatusPill, type Action } from "../../../components/ui";
 import type { HardwareRequest } from "./Queues";
 import { RequestDetail } from "./RequestDetail";
+
+/** "2 damaged · 1 missing" across the request, so problem loans stand out without opening each one. */
+function itemFlags(row: HardwareRequest) {
+  const sum = (key: "damaged_quantity" | "missing_quantity" | "needs_fix_quantity") => row.items.reduce((total, item) => total + (item[key] ?? 0), 0);
+  const [damaged, missing, fix] = [sum("damaged_quantity"), sum("missing_quantity"), sum("needs_fix_quantity")];
+  return [damaged ? `${damaged} damaged` : "", missing ? `${missing} missing` : "", fix ? `${fix} to fix` : ""].filter(Boolean).join(" · ");
+}
+/** Ready rows list where to fetch each item before the handover. */
+function shelves(row: HardwareRequest) {
+  return row.status === "accepted" ? [...new Set(row.items.map(item => item.storage_location).filter(Boolean))] : [];
+}
 
 export function RequestList({ rows, canViewAudit = false, actions, primary, menu, reject, extra }: {
   rows: HardwareRequest[]; canViewAudit?: boolean; actions?: (row: HardwareRequest) => ReactNode;
@@ -32,6 +43,8 @@ export function RequestList({ rows, canViewAudit = false, actions, primary, menu
   return <div className="grid gap-3">{copyMessage ? <p role={copyMessage.error ? "alert" : "status"} className={copyMessage.error ? "text-sm text-danger" : "text-sm text-muted"}>{copyMessage.text}</p> : null}{rows.map(row => {
     const next = primary?.(row);
     const pending = row.status === "pending_approval";
+    const flags = itemFlags(row);
+    const shelf = shelves(row);
     const identity = !pending && row.return_due_at ? { kind: "date" as const, date: row.return_due_at }
       : { kind: "avatar" as const, name: row.requester_display || row.requester_username, seed: row.requester_username };
     const overflow: Action[] = [
@@ -44,8 +57,11 @@ export function RequestList({ rows, canViewAudit = false, actions, primary, menu
       <ListRow title={row.requester_display || row.requester_username} identity={identity} onClick={() => open(row)}
         meta={<><span>#{row.id} · {row.items.length} {row.items.length === 1 ? "item" : "items"} · {row.items.slice(0, 2).map(item => `${item.product_name} ×${item.requested_quantity}`).join(", ")}{row.items.length > 2 ? ` · +${row.items.length - 2} more` : ""}</span>
           {row.requested_for ? <span className="mt-1 block break-words">{row.requested_for}</span> : null}
+          {shelf.length ? <span className="mt-1 block break-words">Shelf: {shelf.join(", ")}</span> : null}
+          {row.rejection_reason ? <span className="mt-1 block break-words">Rejected: {row.rejection_reason}</span> : null}
           {row.return_due_at ? <span className="mt-1 block">{new Date(row.return_due_at).getTime() < Date.now() ? "Overdue · " : "Due "}<RelativeTime date={row.return_due_at} /></span> : null}</>}
         right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={row.status} />
+          {flags ? <StatusPill tone="danger" label={flags} /> : null}
           {next ? <ActionControl primary action={{ ...next, label: row.status === "issued" || row.status === "partially_returned" ? "Return" : next.label }} />
             : pending ? <ActionControl action={{ label: "Review", onClick: () => open(row) }} /> : null}
           {extra?.(row)}{actions?.(row)}<OverflowMenu label={`More actions for request #${row.id}`} actions={overflow} /></div>} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListLayout } from "../../components/layouts";
 import { ErrorBlock, ListRow, RelativeTime, StatusPill, type Action, type IconName } from "../../components/ui";
+import { RouteLink } from "../../components/ui/RouteLink";
 import { memberRequest, staffRequest } from "../../lib/api";
 import { opsQueryState, useOpsTabs } from "../staff/opsPresentation";
 import { inboxUnreadKey, personalRecipientKey } from "./personalQueryKeys";
@@ -90,7 +91,7 @@ export function PersonalInbox({ makerspaceId, member = false, announcement }: {
               meta={<><span>{families[row.feature] ?? row.feature.replace(/_/g, " ")} · <RelativeTime date={row.created_at} /></span>
                 <span className="mt-1 block line-clamp-2 whitespace-pre-wrap break-words">{row.summary}</span></>}
               right={<div className="flex flex-wrap items-center gap-2">{!row.read_at ? <StatusPill label="Unread" tone="accent" /> : null}
-                {isInboxLink(row.link) ? <a className="desk-button" href={row.link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>Open</a> : null}
+                {isInboxLink(row.link) ? <RouteLink className="desk-button" href={row.link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>Open</RouteLink> : null}
                 {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}</div>} />
             {row.summary ? <div className="mx-4 mb-4">
               <button className="desk-button-ghost" aria-expanded={Boolean(expanded[row.id])}

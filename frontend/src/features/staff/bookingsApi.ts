@@ -12,6 +12,7 @@ export type BookableSpace = {
   staff_tools_enabled?: boolean;
   can_copy_booking_rules?: boolean;
   cancellation_cutoff_hours?: number;
+  report_features?: string[];
   recurring_enabled?: boolean;
   staff_grants_enabled?: boolean;
   staff_permissions?: string[];
@@ -133,6 +134,7 @@ export function useSpaceInvalidation(makerspaceId: number, spaceId?: number) {
       queryClient.invalidateQueries({ queryKey: ["operations-report"] }),
       queryClient.invalidateQueries({ queryKey: ["member"] }),
       queryClient.invalidateQueries({ queryKey: ["bookings", "accessible"] }),
+      queryClient.invalidateQueries({ queryKey: ["fablab-report", "booking-utilization"] }),
       ...(spaceId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: bookingKeys.detail(spaceId) }),
         queryClient.invalidateQueries({ queryKey: bookingKeys.bookings(spaceId) }),

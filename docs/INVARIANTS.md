@@ -2399,6 +2399,51 @@ Existing booking module/tenant purge and owned-image collection cover clones, wh
 the core payment ledger remains retained. Target undo still needs live authority,
 current admission and its server clock; portable provenance is never permission.
 
+### Booking resource analytics and exports (BK-E)
+
+Booking reports extend the always-present report registry and subject/PDF infrastructure;
+no booking code imports separable events. `subject_kind="bookable_space"` resolves the
+resource inside the selected tenant before a builder runs. New analytics, reservations
+and answer previews/downloads/saved views require live tenant `MANAGE_BOOKINGS` or that
+resource's `manage_reservations` grant, AND tenant `VIEW_AUDIT`. PDFs require full tenant
+booking management plus audit and a complete positive date period. Rules/price/payment
+permissions, scanners and descriptive editors convey no report authority. Saved views
+reauthorize their owner and reader on every replay; sharing never grants access.
+
+`bookings.analytics`, `bookings.utilization_pdf` (also needs analytics) and
+`bookings.exports` are opt-in Bookings children requiring Reports, discovered by the
+installer without installing Reports implicitly. All four new definitions are
+unschedulable, non-deployment-aggregate and explicit organization exclusions. Subject
+filters are refused on every scheduling/deployment/organization path, including legacy
+`booking-utilization`. The unfiltered legacy report retains its permissions and metrics.
+
+Resource analytics applies the resource predicate BEFORE the existing utilisation
+aggregation. Confirmed/completed/no-show reserved intervals clip to the requested window;
+the denominator is the whole calendar window, never opening hours or measured use.
+Utilisation is null without both bounds. Dates are inclusive tenant-local calendar labels
+converted by `local_day_bounds` to UTC half-open bounds; exports stamp those instants,
+subject and tenant timezone in provenance. Reservation/answer details select overlapping
+booking windows (not creation dates), retain original booking timestamps and use explicit
+column lists. PII reads use model attributes and eager tenant paths, never raw values or
+ciphertext. Custom-answer snapshots preserve their stored labels. No notes, payment data,
+public booking UUIDs, feed/check-in credentials or arbitrary model fields are exported.
+Previews/downloads audit through the source write fence; subject responses are private,
+no-store. CSV/XLSX keep the shared formula protection and export renders are throttled.
+
+`reports_booking_resources.extend_with_booking_arrival_counts` is the named BK-C hook.
+Until BK-C supplies arrival facts it sets `arrival_counts_available=False`, without
+inventing zero counts or interpreting completion as arrival. Arrival counts must remain
+separately labelled from reservation hours. The shared PDF renderer embeds a Unicode
+font (DejaVu Sans supplied by `fonts-dejavu-core` in the backend image; installed Arial
+for native Windows QA), rather than silently dropping Greek glyphs from bundled Vera.
+
+This lane creates no persistent models/fields, stored report objects or new routes.
+Existing SavedView import projection resets state/sharing, so source subject IDs cannot
+replay in another tenant. Existing tenant/module purge, classification, User closure,
+encryption and object ownership remain sufficient; the model catalog hash is unchanged.
+Tombstoning Bookings removes its subject adapter, report definitions and feature keys;
+tombstoning events does not affect booking reports.
+
 ### Booking resource staff grants (BK-A)
 
 `bookings/booking_authority.py` owns every booking staff predicate, including locked

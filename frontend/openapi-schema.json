@@ -1070,7 +1070,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -19233,7 +19233,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -19304,7 +19304,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/booking-utilization": {
@@ -19400,7 +19400,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -19471,7 +19471,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/damaged-lost": {
@@ -19567,7 +19567,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -19638,7 +19638,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/damaged-missing": {
@@ -19734,7 +19734,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -19805,7 +19805,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/event-attendance": {
@@ -19901,7 +19901,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -19972,7 +19972,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/fablab-health": {
@@ -20068,7 +20068,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -20139,7 +20139,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/machine-usage": {
@@ -20235,7 +20235,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -20306,7 +20306,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/maintenance-activity": {
@@ -20402,7 +20402,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -20473,7 +20473,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/member-activity": {
@@ -20569,7 +20569,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -20640,7 +20640,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/most-lent": {
@@ -20736,7 +20736,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -20807,7 +20807,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/payment-reconciliation": {
@@ -20903,7 +20903,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -20974,7 +20974,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/qr-scans": {
@@ -21070,7 +21070,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -21141,7 +21141,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/recently-added": {
@@ -21237,7 +21237,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -21308,7 +21308,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/returns": {
@@ -21404,7 +21404,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -21475,7 +21475,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/summary": {
@@ -21571,7 +21571,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -21642,7 +21642,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/taken-items": {
@@ -21738,7 +21738,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -21809,7 +21809,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/top-borrowers": {
@@ -21905,7 +21905,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -21976,7 +21976,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/{report_key}": {
@@ -22080,7 +22080,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -22151,7 +22151,7 @@
             "description": "Makerspace or report not found."
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/api-client-scopes": {
@@ -31953,6 +31953,10 @@
                 "accounting-journal",
                 "active-loans",
                 "audit-trail",
+                "booking-answers",
+                "booking-reservations",
+                "booking-resource-utilization",
+                "booking-resource-utilization-pdf",
                 "booking-utilization",
                 "cash-book",
                 "certification-coverage",
@@ -32038,7 +32042,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -32131,7 +32135,7 @@
             "description": ""
           }
         },
-        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
+        "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/request-history": {
@@ -46428,7 +46432,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -50705,7 +50709,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+            "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
           },
           {
             "in": "query",
@@ -73780,6 +73784,15 @@
           },
           {
             "$ref": "#/components/schemas/EventFeedbackReport"
+          },
+          {
+            "$ref": "#/components/schemas/BookingResourceUtilizationReport"
+          },
+          {
+            "$ref": "#/components/schemas/BookingReservationReport"
+          },
+          {
+            "$ref": "#/components/schemas/BookingAnswerReport"
           }
         ]
       },
@@ -75977,6 +75990,13 @@
           "can_copy_booking_rules": {
             "type": "boolean",
             "readOnly": true
+          },
+          "report_features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
           }
         },
         "required": [
@@ -76009,6 +76029,7 @@
           "payment_amount",
           "public_token",
           "recurring_enabled",
+          "report_features",
           "requester_notifications_enabled",
           "show_public_availability",
           "show_public_booker_names",
@@ -106902,6 +106923,10 @@
           "accounting-journal",
           "active-loans",
           "audit-trail",
+          "booking-answers",
+          "booking-reservations",
+          "booking-resource-utilization",
+          "booking-resource-utilization-pdf",
           "booking-utilization",
           "cash-book",
           "certification-coverage",
@@ -113192,6 +113217,203 @@
           "id",
           "kind",
           "name"
+        ]
+      },
+      "BookingReservationReportRow": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "integer"
+          },
+          "space_id": {
+            "type": "integer"
+          },
+          "space_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "booking_id",
+          "created_at",
+          "email",
+          "ends_at",
+          "name",
+          "phone",
+          "space_id",
+          "space_name",
+          "starts_at",
+          "status"
+        ]
+      },
+      "BookingAnswerReportRow": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "integer"
+          },
+          "space_id": {
+            "type": "integer"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "string",
+            "description": "JSON of the stored custom-answer snapshot; null when absent."
+          }
+        },
+        "required": [
+          "answers",
+          "booking_id",
+          "ends_at",
+          "space_id",
+          "starts_at",
+          "status"
+        ]
+      },
+      "BookingReportMeta": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "grain": {
+            "type": "string"
+          },
+          "rollup_through": {
+            "type": "string",
+            "nullable": true
+          },
+          "arrival_counts_available": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "grain",
+          "rollup_through",
+          "source"
+        ]
+      },
+      "BookingResourceUtilizationReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "report_key": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BookingReportMeta"
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingUtilizationRow"
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "report_key",
+          "rows",
+          "typed_rows"
+        ]
+      },
+      "BookingReservationReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "report_key": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BookingReportMeta"
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingReservationReportRow"
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "report_key",
+          "rows",
+          "typed_rows"
+        ]
+      },
+      "BookingAnswerReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "report_key": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BookingReportMeta"
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingAnswerReportRow"
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "report_key",
+          "rows",
+          "typed_rows"
         ]
       }
     },

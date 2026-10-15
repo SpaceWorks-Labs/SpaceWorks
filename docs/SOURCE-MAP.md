@@ -20,6 +20,21 @@ carry source kind/id/metadata through lifecycle dispatch, deferral and retry.
 definitions/builders/typed contracts are `report_definitions_events.py`,
 `reports_event_exports.py`, `serializers_reports_events_detail.py`.
 
+Booking resource reports (BK-E): `bookings/report_subject.py` registers the typed
+`bookable_space` policy; `report_features.py` projects request-local UI capabilities.
+`operations/report_definitions_bookings.py` registers four tenant-only reports;
+`reports_booking_resources.py` reuses `reports_bookings.py` and owns the explicit
+`extend_with_booking_arrival_counts` BK-C extension point. `reports_booking_exports.py`
+reads allow-listed reservation/contact and answer snapshots through model accessors;
+`serializers_reports_bookings.py` defines the typed response contracts.
+`reports_booking_pdf.py` supplies reservation semantics to the shared renderer;
+`report_pdf_fonts.py` selects the embedded Unicode font (backend image: DejaVu Sans).
+`BookingResourceAnalytics.tsx`, `BookingResourceTabs.tsx` and `bookingReportsApi.ts`
+provide resource/date query keys, accessible drawer tabs and audited download actions;
+`OperationsReportsBookings.tsx` exports the summary shared with the existing tenant report.
+Regression tests live under `backend/tests/operations/test_booking_*reports.py`,
+`test_booking_report_exports.py` and the resource analytics Vitest file (gitignored).
+
 Event adapters live in `events/broadcasts.py`, `models_broadcasts.py`,
 `services_broadcasts.py`, `views_broadcasts.py`, `serializers_broadcasts.py` and
 `urls_communications.py`; `services_bulk_invites.py`/`views_bulk_invites.py` own the

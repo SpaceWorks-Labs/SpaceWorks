@@ -18,6 +18,16 @@ class RetentionFilterSerializer(serializers.Serializer):
     months = serializers.IntegerField(required=False, min_value=1, max_value=120)
 
 
+SUBJECT_REPORT_DESCRIPTION = (
+    "Subject reports require live resource management plus tenant VIEW_AUDIT. "
+    "For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; "
+    "bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, "
+    "bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; "
+    "reservation detail includes overlapping windows. No credentials are exported. "
+    "Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
+)
+
+
 DATE_RANGE_PARAMETERS = [
     OpenApiParameter("start", OpenApiTypes.DATE, OpenApiParameter.QUERY),
     OpenApiParameter("end", OpenApiTypes.DATE, OpenApiParameter.QUERY),
@@ -28,7 +38,7 @@ PAYMENT_FILTER_PARAMETERS = [
     OpenApiParameter("subject_type", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=Payment.SubjectType.values),
 ]
 PREVIEW_PARAMETERS = [
-    OpenApiParameter("subject_kind", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Typed tenant-local report subject, paired with subject_id."),
+    OpenApiParameter("subject_kind", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."),
     OpenApiParameter("subject_id", OpenApiTypes.INT, OpenApiParameter.QUERY),
     OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
     *DATE_RANGE_PARAMETERS,

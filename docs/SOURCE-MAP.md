@@ -438,8 +438,12 @@ stdin document. `module-area-selection.sh` presents the live on/partial/off menu
 maps bundles to registry modules/features; `setup_area_application.py` and `setup_settings.py` apply
 them atomically through audited writers via `apply_setup_areas`. `integrations/timing_settings.py`
 and `machines/policy_settings.py` are shared with their existing staff editors.
-`compose-deployment.sh` appends the frontend/storage overlays consistently for `spaceworks-compose.sh`
-and `setup-host-orchestration.sh` topology records. Update, rollback and restore use that wrapper.
+`compose-deployment.sh` appends the frontend/storage overlays (and, for TLS layers, the control-plane
+tunnel overlay) consistently for `spaceworks-compose.sh` and `setup-host-orchestration.sh` topology
+records. Update, rollback and restore use that wrapper. `apply-settings.sh` applies the `CONTROL_PLANE_*`
+keys on an installed host without changing the release; the opt-in route itself lives in
+`deploy/control-*.caddy` and the nginx generator `frontend/docker-entrypoint.d/40-control-plane.sh`, whose
+address validation (`frontend/docker/control-plane-allowlist.sh`) the questionnaire shares.
 
 `compose-deployment.sh` also selects the running app, writer, image, rollback and one-shot service sets.
 `update-rollback.sh` restores previous application images only, without rerunning migrations or replacing

@@ -290,6 +290,12 @@ if [[ "$ACTION" == fresh ]]; then
   elif [[ "$HTTPS_MODE" == 3 ]]; then ports+=(8080)
   else ports+=(80); fi
   [[ "$STORAGE" != 1 || "$HOSTING_MODEL" == 3 ]] || ports+=(9000 9001)
+  if [[ "$HTTPS_MODE" == 2 && -n "${CONTROL_PLANE_TUNNEL_PORT:-}" ]]; then
+    for port in "${ports[@]}"; do
+      [[ "$port" != "$CONTROL_PLANE_TUNNEL_PORT" ]] || die "TCP port $port is already selected for another service. Choose a different SSH-tunnel port."
+    done
+    ports+=("$CONTROL_PLANE_TUNNEL_PORT")
+  fi
   for port in "${ports[@]}"; do
     port_in_use "$port" && die "TCP port $port is already in use. Free it before installing."
   done
@@ -372,6 +378,18 @@ if ! docker info >/dev/null 2>&1; then
   fi
 fi
 docker compose version >/dev/null 2>&1 || die "Docker Compose V2 is still unavailable after dependency setup."
+# Only now is Docker installed, running and reachable; read the engine as setup will use it.
+if [[ "$ACTION" == fresh && "$HTTPS_MODE" == 2 && -n "${CONTROL_PLANE_TUNNEL_PORT:-}" ]]; then
+  if [[ "$RUN_INSTALLED_AS_ROOT" == 1 ]]; then
+    engine="$(${RUN_ROOT[@]+"${RUN_ROOT[@]}"} docker version --format '{{.Server.Version}}' 2>/dev/null || true)"
+  elif [[ "$USE_DOCKER_GROUP" == 1 ]]; then
+    engine="$(sg docker -c "docker version --format '{{.Server.Version}}'" 2>/dev/null || true)"
+  else
+    engine="$(docker version --format '{{.Server.Version}}' 2>/dev/null || true)"
+  fi
+  source "$STAGE_DIR/scripts/compose-deployment.sh"
+  require_tunnel_engine "$engine" || die 'Cannot install the control-plane SSH tunnel with this Docker Engine.'
+fi
 run_installed() {
   local command="$1"
   if [[ "$RUN_INSTALLED_AS_ROOT" == 1 ]]; then

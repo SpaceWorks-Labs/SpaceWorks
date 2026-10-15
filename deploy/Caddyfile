@@ -1,7 +1,9 @@
 {
     email "{$TLS_EMAIL}"
+    skip_install_trust
 }
 import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
+import /etc/caddy/control-tunnel-{$CONTROL_PLANE_TUNNEL:off}.caddy
 {$PUBLIC_DOMAIN} {
     encode zstd gzip
 
@@ -11,6 +13,8 @@ import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
     handle /api/v1/live/* {
         reverse_proxy live:8000
     }
+
+    import /etc/caddy/control-plane-{$CONTROL_PLANE_PROXY:false}.caddy
 
     @backend path /api/* /static/* /docs* /redoc* /schema*
     reverse_proxy @backend backend:8000 {

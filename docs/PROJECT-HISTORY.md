@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — opt-in route to the control plane.** `/control/` had no working path on a bundled
+  install: no proxy forwarded it, the backend publishes no port, and with HTTPS on Django redirects a
+  plain-HTTP tunnel to `https://localhost:8000`. `CONTROL_PLANE_PROXY` (default off) now routes `/control/`
+  and `/mfa/control/` through Caddy, the website nginx or the single-box nginx, with a socket-peer
+  `CONTROL_PLANE_ALLOW_CIDRS` allowlist; `CONTROL_PLANE_TUNNEL_PORT` publishes a `127.0.0.1`-only Caddy HTTPS
+  listener for `ssh -L` (TLS layer, Docker Engine 28+). Setup asks; `scripts/apply-settings.sh` applies a
+  change without changing the release. Rules under **Container / deployment invariants**.
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which
   presign rows no workflow ever consumed; a default-off deployment switch plus tenant opt-in lets a

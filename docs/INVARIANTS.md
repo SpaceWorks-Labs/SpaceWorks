@@ -1470,7 +1470,7 @@ the module check together. It does **not** change `core_module_keys()`, `module_
 every edition, so a hidden surface is recoverable and nothing that was recorded becomes unreachable to
 staff. `Event.makerspace` remains the tenancy anchor in all editions. The single-box image
 (`Dockerfile.allinone`) launches every Django process through `scripts/spaceworks_entrypoint.py` with its
-own `--role`, runs unprivileged, keeps `/control/` unproxied, and dies as a unit when any process dies
+own `--role`, runs unprivileged, keeps `/control/` unproxied unless `CONTROL_PLANE_PROXY=true`, and dies as a unit when any process dies
 (`docker/allinone/run.sh`); the install shape persists in `.spaceworks-layer`.
 
 **Member ID cards (forward plan phase 5, 2026-09-03).** `makerspaces.MemberCard` is `membership`-module
@@ -3319,6 +3319,28 @@ encoder always emits canonical output, so stored envelopes are unaffected.
   across secrets. Never clear nonces on rotation.
 
 ## Container / deployment invariants
+
+**The control plane reaches the bundled proxy only by operator opt-in.** `CONTROL_PLANE_PROXY` (default
+`false`) is the only switch that routes `/control`, `/control/*` and `/mfa/control/*` through Caddy, the
+website nginx or the single-box nginx; `CONTROL_PLANE_TUNNEL_PORT` (default empty, TLS layer only) is the only
+way to publish the `127.0.0.1` HTTPS tunnel listener. Rules that must not regress:
+- Values fail closed. Caddy imports `control-plane-{$CONTROL_PLANE_PROXY}.caddy`, so anything but
+  `true`/`false` is a missing file and Caddy will not start; the nginx generator
+  (`frontend/docker-entrypoint.d/40-control-plane.sh`) exits non-zero and so does the container. Compose must
+  always pass a non-empty value: a Caddy placeholder default applies only to an UNSET variable.
+- The browser's authority is never rewritten: Caddy keeps the incoming `Host` (no `header_up Host` /
+  `X-Forwarded-Host` on these routes) and nginx sends `$http_host`. The MFA challenge binds its origin to
+  `scheme://Host`, and Django's CSRF origin check compares the same, so dropping the port breaks the tunnel.
+- `CONTROL_PLANE_ALLOW_CIDRS` matches the socket peer only (Caddy `remote_ip`, nginx `$remote_addr`, no
+  `trusted_proxies`/realip), so a forged `X-Forwarded-For` cannot pass it. Both proxies answer 403.
+- The tunnel listener terminates real TLS (Caddy internal CA) so Secure cookies, `SECURE_SSL_REDIRECT` and
+  CSRF behave as on the public domain, strips `Strict-Transport-Security`, and serves nothing but the control
+  plane and `/static/`. Its overlay is selected only for TLS layers, and the wrapper refuses it on Docker
+  Engine < 28 (older engines expose `127.0.0.1`-published ports to neighbouring hosts); enumerating the
+  alternative topology records never consults the engine.
+- `.env` changes to these keys are applied with `scripts/apply-settings.sh`, which holds the update lock and
+  `operation.lock`, pins every running application container's image ID before refreshing records, never
+  pulls, and refuses build/SaaS layers and API-only behind an own proxy (`api-edge` has no route).
 
 **The H1 host marker is a process boundary, and PostgreSQL grants are a separate authority
 boundary.** Every application-image start must enter through

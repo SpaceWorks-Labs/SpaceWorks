@@ -154,7 +154,15 @@ if [ "$FIRST_RUN" = 1 ]; then
   rm -f -- "$ROOT/.spaceworks-answers"
   echo "  Website: $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
   echo "  API: $([[ "$HTTPS_MODE" == 1 ]] && echo http || echo https)://$WEBHOST/api"
-  echo "  Control plane: /control/ on the backend only, through a private connection."
+  if [[ "$(deployment_value CONTROL_PLANE_PROXY)" == true ]]; then
+    echo "  Control plane: $(deployment_value PUBLIC_APP_BASE_URL)/control/"
+  else
+    echo "  Control plane: off (see docs/self-hosting.md, 'Reaching the control plane')"
+  fi
+  tunnel_port="$(deployment_value CONTROL_PLANE_TUNNEL_PORT)"
+  if [[ -n "$tunnel_port" ]]; then
+    echo "  SSH tunnel: ssh -L 8443:127.0.0.1:$tunnel_port <you>@<this server>, then https://localhost:8443/control/"
+  fi
   [ "$GEN_PASS" = 1 ] && warn "  Generated admin password: ${ADMINPASS}   (save this now)"
   echo
   echo   "Next: log into the React staff console at /admin, add inventory, and turn on 'public inventory' for your makerspace."

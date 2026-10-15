@@ -1,0 +1,12 @@
+# The loopback-published listener serves the control plane and its static assets only.
+https://localhost:9443 {
+    tls internal
+    @control_plane path /control /control/* /mfa/control/* /static/*
+    handle @control_plane {
+        reverse_proxy backend:8000 {
+            header_up X-Forwarded-Proto https
+            header_down -Strict-Transport-Security
+        }
+    }
+    respond 404
+}

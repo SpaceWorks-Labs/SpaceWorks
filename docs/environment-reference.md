@@ -237,6 +237,9 @@ documented under managed SaaS mode above.
 | `CADDY_SAAS_CONFIG` | Defaults to existing `./deploy/Caddyfile.saas`; new guided platforms use `./deploy/Caddyfile.saas-install` for public ACME. Existing deployments keep their origin-certificate configuration. |
 | `STORAGE_DOMAIN` | Bundled HTTPS storage hostname (`files.<server/platform-domain>`). Requires DNS; an existing proxy forwards to loopback Silo port 9000. |
 | `STORAGE_CADDY_CONFIG` | Defaults to `/etc/caddy/storage-disabled.caddy`; guided bundled HTTPS storage selects `/etc/caddy/storage.caddy`. External storage has no local route. |
+| `CONTROL_PLANE_PROXY` | `false`. `true` makes the bundled proxy (Caddy, the website nginx or the single-box nginx) forward `/control/` and `/mfa/control/` to Django on the site's own host. Only `true`/`false` are valid; anything else stops the proxy from starting. Apply a change with `bash scripts/apply-settings.sh`. |
+| `CONTROL_PLANE_ALLOW_CIDRS` | Empty (any address). Space-separated IPv4/IPv6 addresses or CIDRs allowed to reach the control plane; others get 403. Only meaningful where the proxy sees the real client address — not behind your own reverse proxy. |
+| `CONTROL_PLANE_TUNNEL_PORT` | Empty (off). Automatic-HTTPS installs only: a `127.0.0.1`-only HTTPS port serving just the control plane, for `ssh -L`. Needs Docker Engine 28 or newer. |
 
 External storage also writes existing `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
 `AWS_S3_ENDPOINT_URL`, `AWS_S3_PUBLIC_ENDPOINT_URL`, `AWS_S3_REGION_NAME`, `AWS_STORAGE_BUCKET_NAME`,

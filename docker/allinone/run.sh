@@ -16,6 +16,10 @@ TENANT_CONFIG_PATH=/srv/www/config.js /app/allinone/write-config.sh
 
 mkdir -p /var/lib/spaceworks/nginx/body /var/lib/spaceworks/nginx/proxy \
   /var/lib/spaceworks/nginx/fastcgi /var/lib/spaceworks/nginx/uwsgi /var/lib/spaceworks/nginx/scgi
+mkdir -p /var/lib/spaceworks/nginx/control.d
+CONTROL_PLANE_UPSTREAM=http://127.0.0.1:8000 CONTROL_PLANE_PROTO='$scheme' \
+  CONTROL_PLANE_SNIPPET=/var/lib/spaceworks/nginx/control.d/control-plane.conf \
+  CONTROL_PLANE_LIB=/app/allinone/control-plane-allowlist.sh /app/allinone/control-plane.sh
 
 pids=""
 launch() {

@@ -61,5 +61,7 @@ class PublicOrganizationEventListView(APIView):
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(public_events_for(organization), request, view=self)
         return paginator.get_paginated_response(
-            PublicOrganizationEventSerializer(page, many=True).data
+            PublicOrganizationEventSerializer(page, many=True, context={
+                "omit_website": True,
+            }).data
         )

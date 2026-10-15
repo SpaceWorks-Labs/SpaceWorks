@@ -5,11 +5,12 @@ from apps.makerspaces.origin_scope_model_lookups import (
     TARGET_SET_LOOKUPS,
 )
 
-PUBLIC_SLUG_ROUTES = {"member-booking-pass", "member-booking-confirmation", "member-booking-confirmation-png", "member-booking-calendar", "member-booking-rotate-checkin", "public-event-organization-eligibility"}
+PUBLIC_SLUG_ROUTES = {"public-booking-resource", "public-booking-website", "public-booking-website-image", "member-booking-pass", "member-booking-confirmation", "member-booking-confirmation-png", "member-booking-calendar", "member-booking-rotate-checkin", "public-event-organization-eligibility"}
 
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 
 MAKERSPACE_KWARG_ROUTES = {
+    "website-origins": "makerspace_id",
     'admin-booking-machine-types': 'makerspace_id',
     'admin-makerspace-setup-state': 'makerspace_id',
     'admin-maintenance-overdue': 'makerspace_id',

@@ -8,6 +8,8 @@ def events_delete(makerspace, cursor):
     # Remove only this domain's source outboxes, including deferred digest inputs.
     EmailLog.objects.filter(makerspace=makerspace, source_kind__in=["event_broadcast", "event_invitation"]).delete()
     broadcasts, broadcast_labels = _delete(EventBroadcast.objects.filter(makerspace=makerspace))
+    from apps.events.models_website import EventPage
+    pages, page_labels = _delete(EventPage.objects.filter(makerspace=makerspace))
     from apps.events.models import (
         Event, EventCategory, EventStaffGrant, EventStaffGrantInvite,
         EventAttendanceCertificate,
@@ -88,7 +90,7 @@ def events_delete(makerspace, cursor):
     categories, category_labels = _delete(EventCategory.objects.filter(makerspace=makerspace))
     return _counts(
         model_labels=(
-            collaboration_labels | certificate_labels | response_labels
+            page_labels | collaboration_labels | certificate_labels | response_labels
             | revision_labels | artwork_labels
             | survey_labels | checkin_labels | registration_labels | event_labels
             | projected_collaboration_labels | series_collaboration_labels | series_labels
@@ -116,6 +118,7 @@ def events_delete(makerspace, cursor):
         event_staff_grants=grants,
         event_staff_grant_invites=invites,
         event_broadcasts=broadcasts,
+        event_website_rows=pages,
     )
 
 
@@ -130,6 +133,9 @@ def events_public_images(makerspace):
 
 def events_private_keys(makerspace, add):
     from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork
+    from apps.events.models_website import EventPageAsset
+    for key in EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", flat=True):
+        add(key)
 
     for key in EventAttendanceCertificate.objects.filter(
         registration__event__makerspace=makerspace
@@ -145,6 +151,8 @@ def events_private_keys(makerspace, add):
 def events_private_key_sizes(makerspace):
     from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork
 
+    from apps.events.models_website import EventPageAsset
+
     sizes = {
         key: size
         for key, size in EventAttendanceCertificate.objects.filter(
@@ -155,6 +163,11 @@ def events_private_key_sizes(makerspace):
     sizes.update({
         key: size for key, size in EventCertificateArtwork.objects.filter(
             event__makerspace=makerspace,
+        ).values_list("object_key", "size_bytes") if key
+    })
+    sizes.update({
+        key: size for key, size in EventPageAsset.objects.filter(
+            page__makerspace=makerspace,
         ).values_list("object_key", "size_bytes") if key
     })
     return sizes

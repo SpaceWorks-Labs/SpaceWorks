@@ -6,6 +6,7 @@ from .unique_values_billing import BILLING_UNIQUE_RULES
 from .unique_values_devices import DEVICE_UNIQUE_RULES
 from .unique_values_events import EVENT_UNIQUE_RULES
 from .unique_values_bookings import BOOKING_UNIQUE_RULES
+from .unique_values_website import WEBSITE_UNIQUE_RULES
 from .unique_values_policy import (  # noqa: F401 -- re-exported
     FRESH,
     NULL,
@@ -26,6 +27,7 @@ DEPLOYMENT_GLOBAL_UNIQUE_RULES = {
     **BILLING_UNIQUE_RULES,
     **EVENT_UNIQUE_RULES,
     **BOOKING_UNIQUE_RULES,
+    **WEBSITE_UNIQUE_RULES,
 }
 
 

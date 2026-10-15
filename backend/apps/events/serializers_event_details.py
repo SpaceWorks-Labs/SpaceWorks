@@ -92,13 +92,12 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_ticketing_features(self, obj):
-        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience", "events.certificate_designer") if self._feature_enabled(obj, key)]
+        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience", "events.certificate_designer", "events.website", "events.embed") if self._feature_enabled(obj, key)]
 
     def _feature_enabled(self, obj, key):
         flags = self.context.get("event_feature_flags", {}).get(obj.makerspace_id)
-        if flags is not None:
-            if key in flags:
-                return flags[key]
+        if flags is not None and key in flags:
+            return flags[key]
         return feature_enabled(obj.makerspace, key)
 
     @extend_schema_field(serializers.BooleanField())

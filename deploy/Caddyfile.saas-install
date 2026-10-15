@@ -6,16 +6,38 @@
 }
 import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
 (application) {
-    header Referrer-Policy strict-origin
     handle /api/v1/internal/* {
         respond 403
     }
     handle /api/v1/live/* {
         reverse_proxy live:8000
     }
-    @backend path /api/* /static/* /docs* /redoc* /schema*
+    @event_crawler {
+        path_regexp event_card ^/(m/[^/]+/)?events/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @event_crawler {
+        rewrite * /share/events/{re.event_card.2}/
+        reverse_proxy backend:8000
+    }
+    @booking_crawler {
+        path_regexp booking_card ^/(m/[^/]+/)?bookings/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @booking_crawler {
+        rewrite * /share/bookings/{re.booking_card.2}/
+        reverse_proxy backend:8000
+    }
+
+    @backend path /embed/* /share/* /sitemap.xml /robots.txt /api/* /static/* /docs* /redoc* /schema*
     reverse_proxy @backend backend:8000
-    reverse_proxy {$SPACEWORKS_WEB_UPSTREAM:frontend:80}
+    reverse_proxy {$SPACEWORKS_WEB_UPSTREAM:frontend:80} {
+        # Backend responses own their referrer policy (embeds and credentials use no-referrer).
+        header_down Referrer-Policy strict-origin
+        header_down X-Frame-Options "DENY"
+        # Add framing protection without replacing the SPA analytics policy.
+        header_down +Content-Security-Policy "frame-ancestors 'none'"
+    }
 }
 {$PLATFORM_DOMAIN}, {$PLATFORM_FIRST_HOST}, {$PLATFORM_ORIGIN_HOST} {
     import application

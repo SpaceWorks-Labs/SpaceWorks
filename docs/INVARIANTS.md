@@ -2334,6 +2334,100 @@ Load-bearing details that carried over unchanged:
   JSON through the object manifest, clears source bucket VersionIds and preserves
   checksums. Deployment backups preserve the complete design/snapshot metadata.
 
+### Event websites and shared public serving (Lane C)
+
+`events/website_visibility.py` owns the existing public event predicate (public, published,
+not expired), extracted without changing the core list/detail contract. Enhanced detail,
+programme, session, speaker, image, embed and share reads also require `events.website`
+and the effective page's release. Only `visibility=published` children are projected;
+unknown, foreign, draft, unreleased, disabled and expired website data are uniform 404s.
+Core event fields and existing public-bucket covers retain their original behavior.
+Directory discovery and sitemaps add public-site publication, canonical servability,
+hard-hide and central-directory consent; direct event access does not inherit directory
+consent. Tenant custom-domain sitemaps name their own canonical URLs. Event discovery
+uses tenant-local date filters through `local_time.local_date_expression`, pagination 24,
+and honors `show_registration_count`; the older tenant list stays an array.
+
+`EventPage` has exactly one typed event/series owner and a matching makerspace. A series
+page supplies occurrence defaults until an occurrence copies its content on write. That
+snapshot and every private asset have independent identities, start unreleased, and cannot
+change their owner. Typed `EventPageSection` kinds share bounded editorial fields for
+speakers, tracks, rooms, sponsors, FAQs, resources, introductions and logos. Concrete session
+track/room/speaker/asset FKs must remain on that page and have the appropriate kind, enforced
+by SQL triggers as well as service validation. Planned session windows fit their owner and
+all inheriting occurrences; owner edits refuse with typed validation, with SQL backstops.
+Series -> occurrence locks serialize programme/window writes. SQL wall-time conversion
+matches recurrence's ZoneInfo fold=0 at DST overlaps/gaps; duration arithmetic is elapsed UTC.
+A session delay of 0?1440 minutes leaves planned times intact and shifts that session and
+later published sessions in its track by the running maximum delay. Other tracks do not
+move. Occurrences with differing programmes must first create their own overrides.
+
+Page-owned metadata includes a bounded tagline, optional hex accent colour, a complete
+canonical group order and group toggles (HERO, ABOUT, HIGHLIGHTS, SCHEDULE, SPEAKERS,
+SPONSORS, VENUE, FAQ, RESOURCES). Legacy logo/intro sections map to HERO/ABOUT.
+Disabled groups are removed by the public projection, including direct speaker/session
+reads and private-image reference checks; hiding a group never deletes its editorial rows.
+Speaker sections carry headline, organization and HTTP(S)-only website/LinkedIn/X links;
+the existing page asset is the photo. Sponsors use the same asset as their logo and one
+of platinum/gold/silver/partner/community_partner. Highlights carry icon, title and text.
+Venue is one typed, bounded page JSON value with public address, finite range-checked
+coordinates, HTTP(S) map link, directions, parking, transit and accessibility notes;
+rooms remain sections with a maximum of 30 per page. These JSON fields contain no model
+or User IDs. Clone and series copy-on-write preserve all content/layout fields while
+release still resets. Older payloads that omit new page metadata or same-slug section profile/tier/icon fields
+preserve saved values; explicit blanks still clear optional text.
+
+All mutations recheck live `event_authority` under locks: sections/assets require
+`edit_details`, programme/delays/release require `publish_schedule`. A read-only grant cannot
+create a copy-on-write page, even with an unchanged payload. Optimistic page revisions
+refuse stale saves/releases. Release requires an own page and a published owner; the event
+publish action can atomically release a saved own page only with the explicit checkbox and
+current revision. Every write audits identifiers/revision/counts, not content. Clone uses
+Lane B's durable asset transaction, copies the effective website before optional series
+attachment, and never copies release or live-delay history. This preserves valid short
+occurrence overrides when attaching their draft clones to a longer series template.
+
+Always-present `makerspaces/website_assets.py` accepts multipart uploads, never client keys
+or final-key presigns. It bounds input to 5 MB, one frame and 16 megapixels before decode,
+reuses byte sniffing, strips metadata and re-encodes to WebP at most 2048 pixels per edge.
+New keys use `<domain>/website/<tenant>/<page>/...` in the private bucket. Staging is removed
+before commit; every new key is enlisted for rollback cleanup. Replacement redirects section
+references to a fresh asset, then deletes old versions after commit; only confirmed deletion
+frees quota. Copy/clone validates ownership and byte-size metadata, uses fresh keys and the
+shared bounded-copy limits. Public images are streamed through a live-gated backend path,
+with no-store/nosniff and no object URL in JSON. Public React reads use tenant-aware blob
+transport (including client headers and external API origins); staff previews use staff
+transport and separate private/no-store endpoints.
+
+Curated website text and image descriptions are intentional publication data, like event
+titles/descriptions, not private contact/answer fields or new scoped-PII sources. These five
+models have no User FKs or credentials. They have explicit export datasets, field/reference
+and unique dispositions, retained object ownership, private-key collectors, quota
+reconciliation and module/tenant purge coverage. Portable content travels with remapped
+FKs and verified object-journal keys, but release and framing origins reset to false/empty.
+An imported asset's typed page row plus its verified same-tenant object journal prove
+ownership even after collision-driven key regeneration and a second migration. Deployment
+backup retains the original content/release graph. Retention remains registered under
+Events tombstoning; the runtime adapter and public surfaces disappear. Deleted page audit
+targets remain inert source provenance.
+
+`makerspaces/website_visibility.py`, `website_directory.py`, `website_serving.py` and
+`website_views.py` are domain-neutral infrastructure. Typed adapters own public resolution,
+query predicates, cards and effective-page release; bookings supplies its adapter without
+importing events or inheriting event expiry. Restricted Markdown is rendered by React with
+no HTML parser and only HTTP(S) links. Share HTML uses escaped core fields and the existing
+public cover, is noindex, and caches content server-side for 600 seconds only after a live
+gate on every request; HTTP revalidation prevents unrelease/module changes reviving stale
+HTML. Cache identities include subject, tenant and release revision.
+
+Every supported SPA serving config denies framing, including nginx's index fallback.
+`/embed/` is proxied to Django, which alone emits the exact `frame-ancestors` policy and
+exempts its response from X-Frame-Options. `website_embed_origins` is a separate framing
+allow-list (at most 20 canonical exact HTTPS origins; no paths, credentials or wildcards),
+never a CORS/staff-origin grant. Empty or invalid stored policy refuses embeds. Only tenant
+`MANAGE_MAKERSPACE` may edit it. New proxy locations forward the real client chain so
+public throttles do not collapse all visitors into the frontend container's address.
+
 ### Event communications and subject reports (Lane D)
 
 `integrations/broadcasts_models.py`, `broadcasts_registry.py`, `broadcasts_worker.py`
@@ -2393,6 +2487,56 @@ are omitted telemetry. Events-only purge removes event campaigns and event-sourc
 preserving other domains; whole-tenant purge removes all. These models own no S3 objects;
 manual PDF bytes are streamed, never stored. Retention/encryption/purge declarations survive
 tombstoning while adapters, feature rows and report definitions disappear.
+
+### Booking public resource websites (BK-F)
+
+`bookings/website_visibility.py` owns the active/public resource predicate extracted
+unchanged from `views_public`. New core detail keeps existing direct visibility without
+adding central-directory consent. `bookings.website` and explicit page release additionally
+gate enhanced detail, images, embeds and share HTML. Only published sections and their
+referenced images are public. Private, inactive, foreign, disabled and unreleased enhanced
+content returns indistinguishable 404s. Public detail returns core fields and null website
+when the feature is off/unreleased; the legacy catalogue remains an array. Availability
+and booker-name flags keep their existing separate behavior. Approved public flat price,
+currency and duration/lead/horizon/cancellation summaries never expose internal buffers,
+machine links, notes, answers, contacts or reservation identities.
+
+`BookingResourcePage` belongs to one resource; its tenant is derived from that typed FK.
+Bounded rules/amenity/FAQ/link/sponsor/gallery sections and assets have immutable page
+ownership, with SQL guards for cross-page asset references and reparenting. Editorial
+text is deliberate publication data, not a new private-contact source; there are no User
+FKs or new scoped-PII/JSON fields. Restricted Markdown uses the shared React renderer with
+escaped HTML and HTTP(S)-only links. New features default off and are Bookings-parented.
+
+Content and private image changes require live `edit_details`; release/unrelease requires
+`publish_page`. Services acquire the source gate, resource and tenant/authority locks,
+then check revision and permission again. Publishing cannot make a resource public or
+active. Private previews are authorized no-store endpoints; public image IDs never grant
+draft access. Saves, release and image changes advance page revision and audit only that
+revision. Asset upload accepts no object keys, uses shared bounded staging/sniff/WebP/quota
+and rollback cleanup, and stores `bookings/website/<tenant>/<page>/...` privately.
+Replacement remaps section references to fresh keys and releases quota only after confirmed
+post-commit deletion. Cloning copies the page/sections/assets inside the existing durable
+clone transaction with independent keys and reset release; no authority/history is copied.
+
+The Bookings adapter consumes always-present makerspaces visibility, assets, directory,
+embed/share and clone mechanisms; it imports no Events services and has no event expiry
+rule. Discover/sitemap add public-site and directory consent. Custom-domain sitemaps use
+verified canonical resource URLs. Shared embeds require feature/release and a nonempty
+exact HTTPS framing policy, and use “Book a time”; nginx/Caddy retain default SPA framing
+denial through index fallback. Crawler routes use the existing public cover and shared
+escaped, noindex HTML. Live visibility checks precede cache reads; identity includes tenant,
+resource update and page release revision, so unrelease/visibility/module changes cannot
+revive cached content. Public analytics continues to use route templates, with private
+and credential routes excluded.
+
+All three concrete models have literal export fields, datasets, reference/unique policies,
+object ownership and retention registrations independent of runtime tombstoning. Portable
+import resets page release; typed imported asset metadata plus the same-tenant verified
+object journal proves ownership when keys retain source IDs. Deleted page audit targets
+remain inert source provenance. Module purge cascades page rows from `BookableSpace` and
+collects private keys/sizes; whole-tenant purge, storage reconciliation and backup/migration
+capture include gallery objects. The core payment ledger remains outside module purge.
 
 ### Booking clone, edits and cancellation undo (BK-B)
 
@@ -3844,7 +3988,10 @@ Bookings. Live Bookings startup registers typed resource and reservation targets
 in the existing read contract; cross-tenant/unresolved/hidden/unservable targets
 deny. Tombstoning either domain removes only its own scopes, routes, prefixes and
 features. All ten concrete GET/HEAD entries exclude legacy-v1. Explicit serializer
-allow-lists omit contacts, answers, notes, credentials, forms, rules and money.
+allow-lists omit contacts, answers, notes, credentials, forms and reservation money.
+Only a released public page may add approved public price/currency, rule summaries,
+published sections and backend image references through its nested allow-list; signed
+resource authority never bypasses the canonical public visibility/release gates.
 Names use scoped PII attributes with tenant relations loaded. Private resources
 are readable by signed resource authority without making them publicly visible.
 
@@ -3858,9 +4005,10 @@ referrers, and exclude confirmation queries, private routes and credentials.
 
 No model, field, User edge, object key, stored export or new PII storage is added.
 Existing audit retention, target references and tenant purge apply; classification,
-encryption, portability and the model-graph catalog pin remain unchanged. BK-F
-website data requires its public release/visibility adapter after owner integration;
-this initial resource projection contains only the existing descriptive fields.
+encryption, portability and the model-graph catalog pin remain unchanged by the read
+projection. BK-F website data uses its canonical public release/visibility adapter.
+Public detail/image/discovery routes remain public-scoped and never inherit server
+booking or reservation scopes.
 
 ### Signed integration reads (Lane F)
 

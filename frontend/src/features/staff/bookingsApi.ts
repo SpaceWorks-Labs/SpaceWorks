@@ -17,6 +17,8 @@ export type BookableSpace = {
   staff_grants_enabled?: boolean;
   checkin_enabled?: boolean;
   passes_enabled?: boolean;
+  website_enabled?: boolean;
+  embed_enabled?: boolean;
   broadcasts_enabled?: boolean;
   staff_permissions?: string[];
   can_manage_grants?: boolean;
@@ -135,6 +137,9 @@ export function useSpaceInvalidation(makerspaceId: number, spaceId?: number) {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: bookingKeys.spaces(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: ["public-spaces"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-booking-resource"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-website-image"] }),
+      queryClient.invalidateQueries({ queryKey: ["booking-discover"] }),
       queryClient.invalidateQueries({ queryKey: ["operations-report"] }),
       queryClient.invalidateQueries({ queryKey: ["member"] }),
       queryClient.invalidateQueries({ queryKey: ["bookings", "accessible"] }),

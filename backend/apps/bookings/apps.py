@@ -14,6 +14,8 @@ class BookingsConfig(AppConfig):
         if not app_is_tombstoned("bookings"):
             from .integration_targets import register_targets
             register_targets()
+            from .website_adapter import register_website
+            register_website()
             from .report_subject import register_subject
             register_subject()
             from .broadcasts import register_broadcasts

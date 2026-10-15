@@ -87,6 +87,12 @@ from .serializers_organization_audience import OrganizationAudienceFields
 
 
 class EventSeriesDetailSerializer(OrganizationAudienceFields, EventSeriesSummarySerializer):
+    website_enabled = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_website_enabled(self, obj):
+        from apps.makerspaces.platform import feature_enabled
+        return feature_enabled(obj.makerspace, "events.website")
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
     image_url = serializers.SerializerMethodField()
     organization_audience_enabled = serializers.SerializerMethodField()
@@ -99,7 +105,7 @@ class EventSeriesDetailSerializer(OrganizationAudienceFields, EventSeriesSummary
     class Meta(EventSeriesSummarySerializer.Meta):
         fields = EventSeriesSummarySerializer.Meta.fields + (
             "participating_organizations", "audience_label", "organization_admission_blocked", "organization_audience_enabled",
-            "description", "location", "location_kind", "custom_form", "capacity",
+            "website_enabled", "description", "location", "location_kind", "custom_form", "capacity",
             "payment_amount", "registration_requires_approval", "registration_audience",
             "cancellation_cutoff_hours",
             "registration_cutoff_lead_minutes", "is_public", "created_by_id", "created_at",

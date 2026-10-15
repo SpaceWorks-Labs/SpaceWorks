@@ -6,6 +6,11 @@ collect="${WEB_ANALYTICS_COLLECT_URL:-}"
 domain="${WEB_ANALYTICS_DOMAIN:-}"
 headers="${WEB_ANALYTICS_HEADERS_PATH:-/etc/nginx/analytics-headers.conf}"
 printf '%s\n' 'add_header Referrer-Policy strict-origin always;' > "$headers"
+# nginx stops inheriting server headers as soon as a location adds any header.
+# Keep framing protection in the include used by every SPA/static location, even
+# when analytics is disabled. Backend embeds intentionally do not include it.
+printf '%s\n' 'add_header X-Frame-Options "DENY" always;' \
+  "add_header Content-Security-Policy \"frame-ancestors 'none'\" always;" >> "$headers"
 if [ -z "$script$collect$domain" ]; then exit 0; fi
 fail() { echo 'Invalid WEB_ANALYTICS configuration' >&2; exit 1; }
 [ -n "$script" ] && [ -n "$collect" ] && [ -n "$domain" ] || fail

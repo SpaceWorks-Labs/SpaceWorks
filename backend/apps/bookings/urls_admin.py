@@ -16,6 +16,7 @@ otherwise never be the winning match for the more specific paths.
 from django.urls import path
 from .urls_staff_grants import urlpatterns as staff_grant_patterns
 from .urls_broadcasts import urlpatterns as broadcast_patterns
+from .urls_website import admin_patterns as website_patterns
 
 from apps.bookings.views_admin_bookings import (
     BookingApproveView,
@@ -45,7 +46,7 @@ from .urls_arrival import urlpatterns as arrival_patterns
 
 from .urls_passes import urlpatterns as pass_patterns
 
-urlpatterns = [*staff_grant_patterns, *arrival_patterns, *pass_patterns, *broadcast_patterns,
+urlpatterns = [*staff_grant_patterns, *arrival_patterns, *pass_patterns, *broadcast_patterns, *website_patterns,
     path("spaces/<int:pk>/clone/", BookingCloneView.as_view(), name="admin-bookable-space-clone"),
     path("bookings/<int:pk>/details/", BookingDetailsEditView.as_view(), name="admin-booking-details-edit"),
     path("bookings/<int:pk>/time/", BookingTimeEditView.as_view(), name="admin-booking-time-edit"),

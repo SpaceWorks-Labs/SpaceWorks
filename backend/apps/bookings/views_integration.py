@@ -38,7 +38,7 @@ class BookingIntegrationReadView(SignedReadView):
         return tenant
 
     def resources(self, request):
-        return BookableSpace.objects.filter(makerspace=self.tenant(request))
+        return BookableSpace.objects.filter(makerspace=self.tenant(request)).select_related("makerspace")
 
     def bookings(self, request):
         # Attribute reads must traverse the scoped PII accessor with its tenant

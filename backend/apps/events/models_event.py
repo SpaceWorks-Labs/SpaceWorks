@@ -183,6 +183,9 @@ class Event(models.Model):
 
     def clean(self):
         super().clean()
+        if self.starts_at and self.ends_at:
+            from .website_validation import validate_owner_window
+            validate_owner_window(self)
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
         try:

@@ -11339,7 +11339,7 @@
     "/api/v1/admin/events/{id}/eligible-members/": {
       "get": {
         "operationId": "api_v1_admin_events_eligible_members_list",
-        "description": "The roster the staff registration picker reads.\n\nHung off the EVENT rather than the makerspace, so it inherits `_manageable_event`\nand introduces no new authority question: whoever may manage this event may see who\nthey can register for it. A separate makerspace-level member list would have needed\nits own permission answer, and the obvious candidates were all wrong â€” the\ndirect-loan roster is gated on `ISSUE_DIRECT_LOAN` plus a self-checkout feature an\nevents manager need not hold, and the full membership list is `MANAGE_MAKERSPACE`.\n\nAlready-registered members are excluded: offering someone the picker can only reject\nas a duplicate is an error the interface should not have made available.",
+        "description": "The roster the staff registration picker reads.\n\nHung off the EVENT rather than the makerspace, so it inherits `_manageable_event`\nand introduces no new authority question: whoever may manage this event may see who\nthey can register for it. A separate makerspace-level member list would have needed\nits own permission answer, and the obvious candidates were all wrong \u00e2\u20ac\u201d the\ndirect-loan roster is gated on `ISSUE_DIRECT_LOAN` plus a self-checkout feature an\nevents manager need not hold, and the full membership list is `MANAGE_MAKERSPACE`.\n\nAlready-registered members are excluded: offering someone the picker can only reject\nas a duplicate is an error the interface should not have made available.",
         "summary": "List members who can be registered for an event",
         "parameters": [
           {
@@ -12924,6 +12924,15 @@
               }
             },
             "description": "Event state or capacity conflict."
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventWebsitePublishInput"
+              }
+            }
           }
         }
       }
@@ -25567,7 +25576,7 @@
             "schema": {
               "type": "integer"
             },
-            "description": "Limit to the last 1â€“365 days."
+            "description": "Limit to the last 1\u00e2\u20ac\u201c365 days."
           },
           {
             "in": "query",
@@ -41098,7 +41107,7 @@
     "/api/v1/admin/makerspaces/{makerspace_id}/roles/{role_id}/machine-scope": {
       "get": {
         "operationId": "api_v1_admin_makerspaces_roles_machine_scope_retrieve",
-        "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything â€” the capability would exist only in `/control/` and the shell.",
+        "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything \u00e2\u20ac\u201d the capability would exist only in `/control/` and the shell.",
         "parameters": [
           {
             "in": "path",
@@ -41190,7 +41199,7 @@
       },
       "put": {
         "operationId": "api_v1_admin_makerspaces_roles_machine_scope_update",
-        "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything — the capability would exist only in `/control/` and the shell. Requires recent session-bound reauthentication (10 minutes); refresh does not renew it.",
+        "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything \u2014 the capability would exist only in `/control/` and the shell. Requires recent session-bound reauthentication (10 minutes); refresh does not renew it.",
         "parameters": [
           {
             "in": "path",
@@ -76701,7 +76710,7 @@
           }
         ],
         "summary": "Read tenant resources (server HMAC; booking_resources:read)",
-        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or reservation payment data. Nullable public_page uses canonical public visibility and release gates, and exposes only approved public price, currency, rule summaries, published sections and backend image references. Private/no-store.",
         "responses": {
           "400": {
             "description": "Invalid cursor or page size.",
@@ -76848,7 +76857,7 @@
           }
         ],
         "summary": "Read tenant resources (server HMAC; booking_resources:read)",
-        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or reservation payment data. Nullable public_page uses canonical public visibility and release gates, and exposes only approved public price, currency, rule summaries, published sections and backend image references. Private/no-store.",
         "responses": {
           "400": {
             "description": "Invalid cursor or page size.",
@@ -76980,7 +76989,7 @@
           }
         ],
         "summary": "Read one tenant resource (server HMAC; booking_resources:read)",
-        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or reservation payment data. Nullable public_page uses canonical public visibility and release gates, and exposes only approved public price, currency, rule summaries, published sections and backend image references. Private/no-store.",
         "responses": {
           "400": {
             "description": "Invalid cursor or page size.",
@@ -77117,7 +77126,7 @@
           }
         ],
         "summary": "Read one tenant resource (server HMAC; booking_resources:read)",
-        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or reservation payment data. Nullable public_page uses canonical public visibility and release gates, and exposes only approved public price, currency, rule summaries, published sections and backend image references. Private/no-store.",
         "responses": {
           "400": {
             "description": "Invalid cursor or page size.",
@@ -78056,6 +78065,3296 @@
             "description": "Same authorization and headers as GET; empty body."
           }
         }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_put",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteContentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/release/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_release_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteReleaseInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/sessions/{slug}/delay/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_sessions_slug_delay_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDelayInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/assets/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_assets_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes. Bounded JPEG/PNG/WebP upload; bytes sniffed, re-encoded and stored privately, no object keys accepted or returned.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteAsset"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteAssetInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/assets/{asset_id}": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_assets_asset_id_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Authorized private WebP preview; no-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Authorized private WebP preview; no-store.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_assets_asset_id_delete",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Removed."
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_put",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteContentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/release/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_release_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteReleaseInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/sessions/{slug}/delay/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_sessions_slug_delay_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDelayInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/assets/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_assets_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes. Bounded JPEG/PNG/WebP upload; bytes sniffed, re-encoded and stored privately, no object keys accepted or returned.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteAsset"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteAssetInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/assets/{asset_id}": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_assets_asset_id_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Authorized private WebP preview; no-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Authorized private WebP preview; no-store.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_assets_asset_id_delete",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Removed."
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Published, public, unexpired, servable event plus enabled events.website and released effective page. Only explicitly published items; uniform 404 otherwise. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/sections/{slug}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_sections_slug_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Published, public, unexpired, servable event plus enabled events.website and released effective page. Only explicitly published items; uniform 404 otherwise. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/sessions/{slug}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_sessions_slug_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Published, public, unexpired, servable event plus enabled events.website and released effective page. Only explicitly published items; uniform 404 otherwise. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSession"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/assets/{asset_id}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_assets_asset_id_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated, released, referenced private WebP image. Unreleased, draft-only, foreign and missing images are uniform 404; no-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Live-gated, released, referenced private WebP image. Unreleased, draft-only, foreign and missing images are uniform 404; no-store.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/embed/{makerspace_slug}/{kind}/{public_token}/": {
+      "get": {
+        "operationId": "lane_c_embed_makerspace_slug_kind_public_token_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Backend card for a released website. Exact HTTPS tenant framing origins, events.embed and events.website required. Empty origin list fails closed. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Backend card for a released website. Exact HTTPS tenant framing origins, events.embed and events.website required. Empty origin list fails closed. No-store.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/share/{kind}/{public_token}/": {
+      "get": {
+        "operationId": "lane_c_share_kind_public_token_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Noindex OG/Twitter HTML using public cover only. Checks current visibility before every cache read; server content cache 600s, browser revalidation required.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Noindex OG/Twitter HTML using public cover only. Checks current visibility before every cache read; server content cache 600s, browser revalidation required.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discover/{kind}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_discover_kind_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Deployment-local, directory-consented subjects, paginated 24. Events accept q/date_from/date_to; bookings accept q/kind/location/page and reject date filters. Does not widen direct visibility.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking resource kind (query filter); events use date filters instead."
+          },
+          {
+            "in": "query",
+            "name": "location",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking resource location contains this text."
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sitemap.xml": {
+      "get": {
+        "operationId": "lane_c_sitemap_xml_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated, edition-aware canonical public URLs for this verified tenant origin or the central directory; no-store.",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Live-gated, edition-aware canonical public URLs for this verified tenant origin or the central directory; no-store.",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/robots.txt": {
+      "get": {
+        "operationId": "lane_c_robots_txt_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Known-origin crawler rules and sitemap URL.",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Known-origin crawler rules and sitemap URL.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/makerspaces/{makerspace_id}/website-embed-origins/": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_makerspaces_makerspace_id_website_embed_origins_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Tenant MANAGE_MAKERSPACE required. Separate framing trust; at most twenty canonical exact HTTPS origins, no credentials, paths, wildcards or default ports. Empty disables embedding. Audited.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteOrigins"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "lane_c_api_v1_admin_makerspaces_makerspace_id_website_embed_origins_put",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Tenant MANAGE_MAKERSPACE required. Separate framing trust; at most twenty canonical exact HTTPS origins, no credentials, paths, wildcards or default ports. Empty disables embedding. Audited.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteOrigins"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteOrigins"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/schedule/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_schedule_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated released programme; published sessions and visible relations only.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteSession"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/speakers/{slug}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_speakers_slug_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated released speaker; draft or non-speaker slugs are uniform 404.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/": {
+      "get": {
+        "operationId": "admin_spaces_website_retrieve",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Private preview requires edit_details or publish_page; bookings.website required."
+      },
+      "put": {
+        "operationId": "admin_spaces_website_update",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires live edit_details under resource/tenant locks; revision match; audits revision only.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWebsiteContentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/release/": {
+      "post": {
+        "operationId": "admin_spaces_website_release_create",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires publish_page and current page revision. Release cannot activate a private/inactive resource.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWebsiteReleaseInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/assets/": {
+      "post": {
+        "operationId": "admin_spaces_website_assets_create",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsiteAsset"
+                }
+              }
+            }
+          }
+        },
+        "description": "edit_details; private multipart upload, 5 MB, single-frame 16 megapixels, sniffed/re-encoded WebP. Replacement must belong to this page.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWebsiteAssetInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/website/assets/{asset_id}/": {
+      "get": {
+        "operationId": "admin_spaces_website_assets_retrieve",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "description": "Separate edit_details-authorized private preview."
+      },
+      "delete": {
+        "operationId": "admin_spaces_website_assets_destroy",
+        "tags": [
+          "Booking website"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Staff sign in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing live resource permission or wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No-store; public images also enforce live release and ownership."
+          }
+        },
+        "description": "edit_details; audit and post-commit object cleanup/quota release."
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/spaces/{public_token}/": {
+      "get": {
+        "operationId": "public_spaces_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Public booking website"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBookingResource"
+                }
+              }
+            }
+          }
+        },
+        "description": "Active public resource core with flat price and approved rule summaries. Website null unless feature enabled and released; no reservation identities or internal buffers."
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/spaces/{public_token}/website/": {
+      "get": {
+        "operationId": "public_spaces_website_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Public booking website"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWebsite"
+                }
+              }
+            }
+          }
+        },
+        "description": "Only live released page with published sections. Unreleased/private/disabled are uniform 404s."
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/spaces/{public_token}/website/assets/{asset_id}/": {
+      "get": {
+        "operationId": "public_spaces_website_assets_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "tags": [
+          "Public booking website"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid content, unknown fields, disabled feature or stale revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown, private, inactive, foreign or unreleased content.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Image storage or tenant write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-store; public images also enforce live release and ownership.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "description": "Private image bytes require current public resource, feature, release and a published same-page reference. No object URLs."
       }
     }
   },
@@ -81198,6 +84497,14 @@
           "broadcasts_enabled": {
             "type": "boolean",
             "readOnly": true
+          },
+          "website_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "embed_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -81217,6 +84524,7 @@
           "custom_form",
           "description",
           "effective_requester_notifications_enabled",
+          "embed_enabled",
           "id",
           "image_url",
           "is_active",
@@ -81240,7 +84548,8 @@
           "staff_grants_enabled",
           "staff_permissions",
           "staff_tools_enabled",
-          "updated_at"
+          "updated_at",
+          "website_enabled"
         ]
       },
       "BookableSpaceBookingRules": {
@@ -81624,6 +84933,165 @@
           "waiver_state"
         ]
       },
+      "BookingBroadcast": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "space": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 200,
+            "readOnly": true
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "readOnly": true
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "statuses": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed"
+              ]
+            },
+            "readOnly": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "queued",
+              "sending",
+              "sent",
+              "cancelled",
+              "failed"
+            ],
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "queued_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "required": [
+          "body",
+          "completed_at",
+          "created_at",
+          "id",
+          "queued_at",
+          "space",
+          "status",
+          "statuses",
+          "subject",
+          "window_end",
+          "window_start"
+        ]
+      },
+      "BookingBroadcastInput": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "statuses": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "default": [
+              "confirmed"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed"
+              ]
+            }
+          }
+        },
+        "required": [
+          "body",
+          "subject",
+          "window_end"
+        ]
+      },
+      "BookingBroadcastList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "previous": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingBroadcast"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "next",
+          "previous",
+          "results"
+        ]
+      },
       "BookingCloneInput": {
         "type": "object",
         "properties": {
@@ -81843,6 +85311,164 @@
           "next",
           "previous",
           "results"
+        ]
+      },
+      "BookingPassElement": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "name",
+              "resource",
+              "booking_window",
+              "reference"
+            ]
+          },
+          "x_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "y_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5
+          },
+          "height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5
+          },
+          "font": {
+            "type": "string",
+            "enum": [
+              "sans",
+              "serif"
+            ]
+          },
+          "font_size_pt": {
+            "type": "number",
+            "format": "double",
+            "minimum": 6,
+            "maximum": 48
+          },
+          "bold": {
+            "type": "boolean"
+          },
+          "align": {
+            "type": "string",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ]
+          },
+          "colour": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          }
+        },
+        "required": [
+          "field",
+          "height_mm",
+          "width_mm",
+          "x_mm",
+          "y_mm"
+        ],
+        "additionalProperties": false,
+        "description": "Reusable top-left millimetre box. Font is bundled; PDF rendering validates geometry and text overflow. Domain adapters validate field selectors."
+      },
+      "BookingPassTemplate": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Version 2 answer-free booking layout. Never accepts contacts, custom answers, notes, artwork, QR or arbitrary text. Defaults apply to omitted properties.",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 2
+          },
+          "paper_size": {
+            "type": "string",
+            "enum": [
+              "A4",
+              "LETTER",
+              "custom"
+            ]
+          },
+          "orientation": {
+            "type": "string",
+            "enum": [
+              "portrait",
+              "landscape"
+            ]
+          },
+          "page_width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 100,
+            "maximum": 500,
+            "nullable": true
+          },
+          "page_height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 100,
+            "maximum": 500,
+            "nullable": true
+          },
+          "card_width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 40,
+            "maximum": 150
+          },
+          "card_height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 30,
+            "maximum": 120
+          },
+          "margin_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0,
+            "maximum": 40
+          },
+          "gap_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "grid_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5,
+            "maximum": 10
+          },
+          "elements": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "$ref": "#/components/schemas/BookingPassElement"
+            }
+          }
+        },
+        "required": [
+          "space_id",
+          "makerspace_id",
+          "makerspace_slug",
+          "name",
+          "source",
+          "permissions"
         ]
       },
       "BookingReportMeta": {
@@ -86197,6 +89823,91 @@
           "membership_id"
         ]
       },
+      "Discovery": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "previous": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryCard"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "next",
+          "previous",
+          "results"
+        ]
+      },
+      "DiscoveryCard": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "availability": {
+            "type": "string"
+          },
+          "audience_label": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "makerspace_name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "registration_count": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "audience_label",
+          "availability",
+          "date",
+          "description",
+          "image_url",
+          "location",
+          "makerspace_name",
+          "registration_count",
+          "revision",
+          "title",
+          "url"
+        ]
+      },
       "DispositionEnum": {
         "enum": [
           "needs_fix",
@@ -86651,6 +90362,11 @@
         "required": [
           "code"
         ]
+      },
+      "Empty": {
+        "type": "object",
+        "properties": {},
+        "required": []
       },
       "EndReasonEnum": {
         "enum": [
@@ -87594,7 +91310,7 @@
       },
       "EventEligibleMember": {
         "type": "object",
-        "description": "A picker row. Name and id only â€” a roster is not a contact export.",
+        "description": "A picker row. Name and id only \u00e2\u20ac\u201d a roster is not a contact export.",
         "properties": {
           "member_id": {
             "type": "integer",
@@ -88175,6 +91891,10 @@
           "organization_audience_enabled": {
             "type": "boolean",
             "readOnly": true
+          },
+          "website_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -88202,7 +91922,8 @@
           "staff_permissions",
           "status",
           "title",
-          "updated_at"
+          "updated_at",
+          "website_enabled"
         ]
       },
       "EventSeriesListResponse": {
@@ -88495,7 +92216,7 @@
       },
       "EventStaffRegistration": {
         "type": "object",
-        "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody â€” which is what makes the attendee list usable as an accountability record\nrather than free text.",
+        "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody \u00e2\u20ac\u201d which is what makes the attendee list usable as an accountability record\nrather than free text.",
         "properties": {
           "member_id": {
             "type": "integer",
@@ -88540,6 +92261,20 @@
         "required": [
           "member_id"
         ]
+      },
+      "EventWebsitePublishInput": {
+        "type": "object",
+        "properties": {
+          "publish_website": {
+            "type": "boolean",
+            "default": false
+          },
+          "website_revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": []
       },
       "EventWrite": {
         "type": "object",
@@ -89392,7 +93127,7 @@
           "REDACTED"
         ],
         "type": "string",
-        "description": "* `REDACTED` - Readable â€” audit metadata and form answers redacted; member contact details included"
+        "description": "* `REDACTED` - Readable \u00e2\u20ac\u201d audit metadata and form answers redacted; member contact details included"
       },
       "FieldValidationError": {
         "type": "object",
@@ -90087,6 +93822,58 @@
           }
         }
       },
+      "IntegrationEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ends_at",
+          "id",
+          "location",
+          "starts_at",
+          "status",
+          "title"
+        ]
+      },
+      "IntegrationEventPage": {
+        "type": "object",
+        "properties": {
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationEvent"
+            }
+          }
+        },
+        "required": [
+          "next_cursor",
+          "results"
+        ]
+      },
       "IntegrationHealth": {
         "type": "object",
         "properties": {
@@ -90154,6 +93941,50 @@
           "error",
           "stream",
           "subject"
+        ]
+      },
+      "IntegrationParticipant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "registered_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attended_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "registered_at"
+        ]
+      },
+      "IntegrationParticipantPage": {
+        "type": "object",
+        "properties": {
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationParticipant"
+            }
+          }
+        },
+        "required": [
+          "next_cursor",
+          "results"
         ]
       },
       "IntegrationWorkerHealth": {
@@ -92962,6 +96793,18 @@
           "qr_data_url",
           "secret"
         ]
+      },
+      "MFAEnrollmentStart": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "default": "",
+            "writeOnly": true
+          }
+        },
+        "required": []
       },
       "MFAPassword": {
         "type": "object",
@@ -99873,6 +103716,33 @@
           "slug"
         ]
       },
+      "OrganizationCreationPolicy": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "max_owned": {
+            "type": "integer"
+          },
+          "max_per_day": {
+            "type": "integer"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "eligible",
+          "enabled",
+          "max_owned",
+          "max_per_day",
+          "reason"
+        ]
+      },
       "OrganizationDetail": {
         "type": "object",
         "properties": {
@@ -100418,6 +104288,31 @@
         "type": "string",
         "description": "* `active` - Active\n* `suspended` - Suspended"
       },
+      "OrganizationMembershipUpdate": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended"
+            ]
+          },
+          "governance_actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "granted_actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": []
+      },
       "OrganizationReportBreakdown": {
         "type": "object",
         "properties": {
@@ -100476,6 +104371,32 @@
         },
         "required": [
           "rows"
+        ]
+      },
+      "OrganizationSelfCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "description": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "name",
+          "slug"
         ]
       },
       "OrganizationSummary": {
@@ -108659,6 +112580,15 @@
             "type": "string",
             "nullable": true,
             "readOnly": true
+          },
+          "website": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Website"
+              }
+            ],
+            "nullable": true,
+            "readOnly": true
           }
         },
         "required": [
@@ -108690,7 +112620,8 @@
           "tags",
           "ticket_selection_required",
           "ticket_types",
-          "title"
+          "title",
+          "website"
         ]
       },
       "PublicEventRegistrationInput": {
@@ -111076,6 +115007,182 @@
         ],
         "type": "string",
         "description": "* `bounce` - Hard bounce\n* `complaint` - Spam complaint"
+      },
+      "Reauthentication": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 1024,
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 6,
+            "default": ""
+          }
+        },
+        "required": []
+      },
+      "ReauthenticationEmailConfirm": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ReauthenticationEmailConfirmed": {
+        "type": "object",
+        "properties": {
+          "confirmed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirmed"
+        ]
+      },
+      "ReauthenticationEmailSent": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "sent"
+        ]
+      },
+      "ReauthenticationResult": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean"
+          },
+          "expires_in": {
+            "type": "integer"
+          },
+          "mfa_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "verified",
+          "expires_in"
+        ]
+      },
+      "ReauthenticationSocialComplete": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 200
+          },
+          "nonce": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 200
+          },
+          "id_token": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 16384,
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 2048,
+            "default": ""
+          },
+          "totp": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 6,
+            "default": ""
+          }
+        },
+        "required": [
+          "state",
+          "nonce"
+        ]
+      },
+      "ReauthenticationSocialStart": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "provider",
+          "redirect_uri"
+        ]
+      },
+      "ReauthenticationSocialStarted": {
+        "type": "object",
+        "properties": {
+          "authorization_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "state": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "expires_in": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "authorization_url",
+          "state",
+          "nonce",
+          "expires_in"
+        ]
+      },
+      "ReauthenticationStatus": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean"
+          },
+          "password_available": {
+            "type": "boolean"
+          },
+          "mfa_enabled": {
+            "type": "boolean"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "verified",
+          "password_available",
+          "mfa_enabled",
+          "providers"
+        ]
       },
       "ReceiptEnvelope": {
         "type": "object",
@@ -118837,6 +122944,668 @@
           "detail"
         ]
       },
+      "Website": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer"
+          },
+          "released": {
+            "type": "boolean"
+          },
+          "inherited": {
+            "type": "boolean"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSection"
+            }
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSession"
+            }
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteAsset"
+            }
+          },
+          "tagline": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "accent_color": {
+            "type": "string",
+            "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+          },
+          "section_order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "HERO",
+                "ABOUT",
+                "HIGHLIGHTS",
+                "SCHEDULE",
+                "SPEAKERS",
+                "SPONSORS",
+                "VENUE",
+                "FAQ",
+                "RESOURCES"
+              ]
+            },
+            "minItems": 9,
+            "maxItems": 9,
+            "description": "Each canonical page group exactly once, in display order."
+          },
+          "section_enabled": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Canonical page groups only; omitted groups are enabled. Public projection, direct pages and image serving honor disabled groups."
+          },
+          "venue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebsiteVenue"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "revision",
+          "released",
+          "inherited",
+          "sections",
+          "sessions"
+        ]
+      },
+      "WebsiteAsset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "alt_text": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "alt_text",
+          "id",
+          "size_bytes"
+        ]
+      },
+      "WebsiteAssetInput": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          },
+          "alt_text": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "replace_id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "file",
+          "alt_text"
+        ]
+      },
+      "WebsiteContentInput": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sections": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSectionInput"
+            },
+            "description": "At most 30 room sections. Omitted profile/tier/icon fields preserve the same-slug section values; new rows default to blank profile/icon and community_partner. Speaker photos and sponsor logos use page-owned private asset IDs."
+          },
+          "sessions": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSessionInput"
+            }
+          },
+          "tagline": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "accent_color": {
+            "type": "string",
+            "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+          },
+          "section_order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "HERO",
+                "ABOUT",
+                "HIGHLIGHTS",
+                "SCHEDULE",
+                "SPEAKERS",
+                "SPONSORS",
+                "VENUE",
+                "FAQ",
+                "RESOURCES"
+              ]
+            },
+            "minItems": 9,
+            "maxItems": 9,
+            "description": "Each canonical page group exactly once, in display order."
+          },
+          "section_enabled": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Canonical page groups only; omitted groups are enabled. Public projection, direct pages and image serving honor disabled groups."
+          },
+          "venue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebsiteVenue"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "revision",
+          "sections",
+          "sessions"
+        ]
+      },
+      "WebsiteDelayInput": {
+        "type": "object",
+        "properties": {
+          "delay_minutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1440
+          }
+        },
+        "required": [
+          "delay_minutes"
+        ]
+      },
+      "WebsiteOrigins": {
+        "type": "object",
+        "properties": {
+          "origins": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
+        },
+        "required": [
+          "origins"
+        ]
+      },
+      "WebsiteReleaseInput": {
+        "type": "object",
+        "properties": {
+          "released": {
+            "type": "boolean"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "released",
+          "revision"
+        ]
+      },
+      "WebsiteSection": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "intro",
+              "logo",
+              "speaker",
+              "track",
+              "room",
+              "sponsor",
+              "faq",
+              "resource",
+              "highlight"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "default": ""
+          },
+          "asset_id": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "default": null
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          },
+          "headline": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "organization": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "website_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "linkedin_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "x_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "sponsor_tier": {
+            "type": "string",
+            "enum": [
+              "platinum",
+              "gold",
+              "silver",
+              "partner",
+              "community_partner"
+            ]
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "image_alt_text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title",
+          "image_url",
+          "image_alt_text"
+        ]
+      },
+      "WebsiteSectionInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "intro",
+              "logo",
+              "speaker",
+              "track",
+              "room",
+              "sponsor",
+              "faq",
+              "resource",
+              "highlight"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "default": ""
+          },
+          "asset_id": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "default": null
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          },
+          "headline": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "organization": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "website_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "linkedin_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "x_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "sponsor_tier": {
+            "type": "string",
+            "enum": [
+              "platinum",
+              "gold",
+              "silver",
+              "partner",
+              "community_partner"
+            ]
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title"
+        ]
+      },
+      "WebsiteSession": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "track": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "room": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "speakers": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 80,
+              "pattern": "^[-a-zA-Z0-9_]+$"
+            },
+            "default": []
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "delay_minutes": {
+            "type": "integer"
+          },
+          "effective_starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effective_ends_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "starts_at",
+          "ends_at",
+          "delay_minutes",
+          "effective_starts_at",
+          "effective_ends_at"
+        ]
+      },
+      "WebsiteSessionInput": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "track": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "room": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "speakers": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 80,
+              "pattern": "^[-a-zA-Z0-9_]+$"
+            },
+            "default": []
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "starts_at",
+          "ends_at"
+        ]
+      },
+      "WebsiteVenue": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 500,
+            "default": ""
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "directions": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "parking": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "public_transport": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "accessibility_notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -90,
+            "maximum": 90,
+            "nullable": true,
+            "default": null
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -180,
+            "maximum": 180,
+            "nullable": true,
+            "default": null
+          },
+          "map_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "default": ""
+          }
+        },
+        "required": []
+      },
       "WitnessWaiverResponse": {
         "type": "object",
         "properties": {
@@ -118899,688 +123668,378 @@
           "name"
         ]
       },
-      "BookingPassElement": {
+      "BookingWebsiteSectionInput": {
         "type": "object",
         "properties": {
-          "field": {
+          "kind": {
             "type": "string",
             "enum": [
-              "name",
-              "resource",
-              "booking_window",
-              "reference"
+              "rules",
+              "amenity",
+              "faq",
+              "link",
+              "sponsor",
+              "gallery"
             ]
           },
-          "x_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 0
-          },
-          "y_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 0
-          },
-          "width_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 0.5
-          },
-          "height_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 0.5
-          },
-          "font": {
+          "slug": {
             "type": "string",
-            "enum": [
-              "sans",
-              "serif"
-            ]
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
           },
-          "font_size_pt": {
-            "type": "number",
-            "format": "double",
-            "minimum": 6,
-            "maximum": 48
-          },
-          "bold": {
-            "type": "boolean"
-          },
-          "align": {
-            "type": "string",
-            "enum": [
-              "left",
-              "center",
-              "right"
-            ]
-          },
-          "colour": {
-            "type": "string",
-            "pattern": "^#[0-9A-Fa-f]{6}$"
-          }
-        },
-        "required": [
-          "field",
-          "height_mm",
-          "width_mm",
-          "x_mm",
-          "y_mm"
-        ],
-        "additionalProperties": false,
-        "description": "Reusable top-left millimetre box. Font is bundled; PDF rendering validates geometry and text overflow. Domain adapters validate field selectors."
-      },
-      "BookingPassTemplate": {
-        "type": "object",
-        "additionalProperties": false,
-        "description": "Version 2 answer-free booking layout. Never accepts contacts, custom answers, notes, artwork, QR or arbitrary text. Defaults apply to omitted properties.",
-        "properties": {
-          "version": {
-            "type": "integer",
-            "minimum": 2,
-            "maximum": 2
-          },
-          "paper_size": {
-            "type": "string",
-            "enum": [
-              "A4",
-              "LETTER",
-              "custom"
-            ]
-          },
-          "orientation": {
-            "type": "string",
-            "enum": [
-              "portrait",
-              "landscape"
-            ]
-          },
-          "page_width_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 100,
-            "maximum": 500,
-            "nullable": true
-          },
-          "page_height_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 100,
-            "maximum": 500,
-            "nullable": true
-          },
-          "card_width_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 40,
-            "maximum": 150
-          },
-          "card_height_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 30,
-            "maximum": 120
-          },
-          "margin_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 0,
-            "maximum": 40
-          },
-          "gap_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 0,
-            "maximum": 30
-          },
-          "grid_mm": {
-            "type": "number",
-            "format": "double",
-            "minimum": 0.5,
-            "maximum": 10
-          },
-          "elements": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 4,
-            "items": {
-              "$ref": "#/components/schemas/BookingPassElement"
-            }
-          }
-        },
-        "required": [
-          "space_id",
-          "makerspace_id",
-          "makerspace_slug",
-          "name",
-          "source",
-          "permissions"
-        ]
-      },
-      "BookingBroadcastInput": {
-        "type": "object",
-        "properties": {
-          "subject": {
+          "title": {
             "type": "string",
             "maxLength": 200
-          },
-          "body": {
-            "type": "string",
-            "maxLength": 10000
-          },
-          "window_start": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "window_end": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "statuses": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 2,
-            "default": [
-              "confirmed"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "pending",
-                "confirmed"
-              ]
-            }
-          }
-        },
-        "required": [
-          "body",
-          "subject",
-          "window_end"
-        ]
-      },
-      "BookingBroadcast": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "readOnly": true
-          },
-          "space": {
-            "type": "integer",
-            "readOnly": true
-          },
-          "subject": {
-            "type": "string",
-            "maxLength": 200,
-            "readOnly": true
           },
           "body": {
             "type": "string",
             "maxLength": 10000,
-            "readOnly": true
+            "default": ""
           },
-          "window_start": {
+          "url": {
             "type": "string",
-            "format": "date-time",
-            "readOnly": true
+            "maxLength": 500,
+            "format": "uri",
+            "default": ""
           },
-          "window_end": {
-            "type": "string",
-            "format": "date-time",
-            "readOnly": true
+          "asset_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "default": null
           },
-          "statuses": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 2,
-            "items": {
-              "type": "string",
-              "enum": [
-                "pending",
-                "confirmed"
-              ]
-            },
-            "readOnly": true
-          },
-          "status": {
+          "visibility": {
             "type": "string",
             "enum": [
               "draft",
-              "queued",
-              "sending",
-              "sent",
-              "cancelled",
-              "failed"
+              "published"
             ],
-            "readOnly": true
+            "default": "draft"
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "readOnly": true
-          },
-          "queued_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "readOnly": true
-          },
-          "completed_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "readOnly": true
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
           }
         },
         "required": [
-          "body",
-          "completed_at",
-          "created_at",
-          "id",
-          "queued_at",
-          "space",
-          "status",
-          "statuses",
-          "subject",
-          "window_end",
-          "window_start"
-        ]
+          "kind",
+          "slug",
+          "title"
+        ],
+        "additionalProperties": false
       },
-      "BookingBroadcastList": {
+      "BookingWebsiteSection": {
         "type": "object",
         "properties": {
-          "count": {
-            "type": "integer"
-          },
-          "next": {
+          "kind": {
             "type": "string",
-            "format": "uri",
-            "nullable": true
-          },
-          "previous": {
-            "type": "string",
-            "format": "uri",
-            "nullable": true
-          },
-          "results": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BookingBroadcast"
-            }
-          }
-        },
-        "required": [
-          "count",
-          "next",
-          "previous",
-          "results"
-        ]
-      },
-      "Reauthentication": {
-        "type": "object",
-        "properties": {
-          "password": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 1024,
-            "default": ""
-          },
-          "code": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 6,
-            "default": ""
-          }
-        },
-        "required": []
-      },
-      "ReauthenticationResult": {
-        "type": "object",
-        "properties": {
-          "verified": {
-            "type": "boolean"
-          },
-          "expires_in": {
-            "type": "integer"
-          },
-          "mfa_required": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "verified",
-          "expires_in"
-        ]
-      },
-      "ReauthenticationStatus": {
-        "type": "object",
-        "properties": {
-          "verified": {
-            "type": "boolean"
-          },
-          "password_available": {
-            "type": "boolean"
-          },
-          "mfa_enabled": {
-            "type": "boolean"
-          },
-          "providers": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "verified",
-          "password_available",
-          "mfa_enabled",
-          "providers"
-        ]
-      },
-      "ReauthenticationSocialStart": {
-        "type": "object",
-        "properties": {
-          "provider": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "redirect_uri": {
-            "type": "string",
-            "format": "uri",
-            "maxLength": 2048
-          }
-        },
-        "required": [
-          "provider",
-          "redirect_uri"
-        ]
-      },
-      "ReauthenticationSocialStarted": {
-        "type": "object",
-        "properties": {
-          "authorization_url": {
-            "type": "string",
-            "format": "uri"
-          },
-          "state": {
-            "type": "string"
-          },
-          "nonce": {
-            "type": "string"
-          },
-          "expires_in": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "authorization_url",
-          "state",
-          "nonce",
-          "expires_in"
-        ]
-      },
-      "ReauthenticationSocialComplete": {
-        "type": "object",
-        "properties": {
-          "state": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 200
-          },
-          "nonce": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 200
-          },
-          "id_token": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 16384,
-            "default": ""
-          },
-          "code": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 2048,
-            "default": ""
-          },
-          "totp": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 6,
-            "default": ""
-          }
-        },
-        "required": [
-          "state",
-          "nonce"
-        ]
-      },
-      "ReauthenticationEmailConfirm": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "writeOnly": true,
-            "maxLength": 200
-          }
-        },
-        "required": [
-          "token"
-        ]
-      },
-      "ReauthenticationEmailSent": {
-        "type": "object",
-        "properties": {
-          "sent": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "sent"
-        ]
-      },
-      "ReauthenticationEmailConfirmed": {
-        "type": "object",
-        "properties": {
-          "confirmed": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "confirmed"
-        ]
-      },
-      "Empty": {
-        "type": "object",
-        "properties": {},
-        "required": []
-      },
-      "MFAEnrollmentStart": {
-        "type": "object",
-        "properties": {
-          "password": {
-            "type": "string",
-            "maxLength": 1024,
-            "default": "",
-            "writeOnly": true
-          }
-        },
-        "required": []
-      },
-      "OrganizationSelfCreate": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 200
+            "enum": [
+              "rules",
+              "amenity",
+              "faq",
+              "link",
+              "sponsor",
+              "gallery"
+            ]
           },
           "slug": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 80,
             "pattern": "^[-a-zA-Z0-9_]+$"
           },
-          "description": {
-            "type": "string"
-          },
-          "website": {
+          "title": {
             "type": "string",
-            "format": "uri",
             "maxLength": 200
-          }
-        },
-        "required": [
-          "name",
-          "slug"
-        ]
-      },
-      "OrganizationCreationPolicy": {
-        "type": "object",
-        "properties": {
-          "enabled": {
-            "type": "boolean"
           },
-          "eligible": {
-            "type": "boolean"
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
           },
-          "max_owned": {
-            "type": "integer"
+          "url": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "uri",
+            "default": ""
           },
-          "max_per_day": {
-            "type": "integer"
+          "asset_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "default": null
           },
-          "reason": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "eligible",
-          "enabled",
-          "max_owned",
-          "max_per_day",
-          "reason"
-        ]
-      },
-      "OrganizationMembershipUpdate": {
-        "type": "object",
-        "properties": {
-          "status": {
+          "visibility": {
             "type": "string",
             "enum": [
-              "active",
-              "suspended"
-            ]
+              "draft",
+              "published"
+            ],
+            "default": "draft"
           },
-          "governance_actions": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
           },
-          "granted_actions": {
+          "image_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "image_alt_text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title",
+          "body",
+          "url",
+          "asset_id",
+          "visibility",
+          "position",
+          "image_url",
+          "image_alt_text"
+        ]
+      },
+      "BookingWebsiteContentInput": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sections": {
             "type": "array",
+            "maxItems": 100,
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/BookingWebsiteSectionInput"
             }
           }
         },
-        "required": []
+        "required": [
+          "revision",
+          "sections"
+        ],
+        "additionalProperties": false
       },
-      "IntegrationEvent": {
+      "BookingWebsiteReleaseInput": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "released": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revision",
+          "released"
+        ],
+        "additionalProperties": false
+      },
+      "BookingWebsiteAssetInput": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          },
+          "alt_text": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "replace_id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "file",
+          "alt_text"
+        ],
+        "additionalProperties": false
+      },
+      "BookingWebsiteAsset": {
         "type": "object",
         "properties": {
           "id": {
             "type": "integer"
           },
-          "title": {
+          "alt_text": {
             "type": "string"
           },
-          "status": {
-            "type": "string"
-          },
-          "starts_at": {
+          "size_bytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "alt_text",
+          "size_bytes"
+        ]
+      },
+      "BookingWebsite": {
+        "type": "object",
+        "properties": {
+          "public_url": {
             "type": "string",
-            "format": "date-time"
+            "format": "uri",
+            "readOnly": true
           },
-          "ends_at": {
+          "embed_path": {
             "type": "string",
-            "format": "date-time"
+            "readOnly": true
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "released": {
+            "type": "boolean"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingWebsiteSection"
+            }
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingWebsiteAsset"
+            }
+          }
+        },
+        "required": [
+          "revision",
+          "released",
+          "sections"
+        ]
+      },
+      "BookingPublicRules": {
+        "type": "object",
+        "properties": {
+          "minimum_minutes": {
+            "type": "integer"
+          },
+          "maximum_minutes": {
+            "type": "integer"
+          },
+          "lead_minutes": {
+            "type": "integer"
+          },
+          "advance_days": {
+            "type": "integer"
+          },
+          "cancellation_cutoff_hours": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "minimum_minutes",
+          "maximum_minutes",
+          "lead_minutes",
+          "advance_days",
+          "cancellation_cutoff_hours"
+        ]
+      },
+      "PublicBookingResource": {
+        "type": "object",
+        "properties": {
+          "public_token": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Kind3bfEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "description": {
+            "type": "string",
+            "readOnly": true
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 0,
+            "readOnly": true
           },
           "location": {
+            "type": "string",
+            "readOnly": true
+          },
+          "image_url": {
+            "type": "string",
+            "readOnly": true
+          },
+          "approval_mode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalModeE35Enum"
+              }
+            ],
+            "readOnly": true
+          },
+          "custom_form": {
+            "readOnly": true,
+            "nullable": true
+          },
+          "show_public_availability": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "show_public_booker_names": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "payment_amount": {
+            "type": "string",
+            "format": "decimal"
+          },
+          "currency": {
             "type": "string"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/BookingPublicRules"
+          },
+          "website": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookingWebsite"
+              }
+            ],
+            "nullable": true
           }
         },
         "required": [
-          "ends_at",
-          "id",
+          "approval_mode",
+          "capacity",
+          "currency",
+          "custom_form",
+          "description",
+          "image_url",
+          "kind",
           "location",
-          "starts_at",
-          "status",
-          "title"
-        ]
-      },
-      "IntegrationParticipant": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "display_name": {
-            "type": "string"
-          },
-          "registered_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "attended_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "display_name",
-          "registered_at"
-        ]
-      },
-      "IntegrationEventPage": {
-        "type": "object",
-        "properties": {
-          "next_cursor": {
-            "type": "string",
-            "nullable": true
-          },
-          "results": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IntegrationEvent"
-            }
-          }
-        },
-        "required": [
-          "next_cursor",
-          "results"
-        ]
-      },
-      "IntegrationParticipantPage": {
-        "type": "object",
-        "properties": {
-          "next_cursor": {
-            "type": "string",
-            "nullable": true
-          },
-          "results": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IntegrationParticipant"
-            }
-          }
-        },
-        "required": [
-          "next_cursor",
-          "results"
+          "name",
+          "payment_amount",
+          "public_token",
+          "rules",
+          "show_public_availability",
+          "show_public_booker_names",
+          "website"
         ]
       },
       "IntegrationBookingResource": {
@@ -119609,6 +124068,15 @@
           },
           "is_public": {
             "type": "boolean"
+          },
+          "public_page": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IntegrationBookingPublicPage"
+              }
+            ],
+            "nullable": true,
+            "readOnly": true
           }
         },
         "required": [
@@ -119619,7 +124087,8 @@
           "is_public",
           "kind",
           "location",
-          "name"
+          "name",
+          "public_page"
         ]
       },
       "IntegrationBooking": {
@@ -119696,6 +124165,83 @@
         "required": [
           "next_cursor",
           "results"
+        ]
+      },
+      "IntegrationBookingPublicSection": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "image_alt_text": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "body",
+          "image_alt_text",
+          "image_url",
+          "kind",
+          "position",
+          "slug",
+          "title",
+          "url"
+        ]
+      },
+      "IntegrationBookingPublicPage": {
+        "type": "object",
+        "properties": {
+          "public_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "embed_path": {
+            "type": "string"
+          },
+          "payment_amount": {
+            "type": "string",
+            "format": "decimal",
+            "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/BookingPublicRules"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationBookingPublicSection"
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "embed_path",
+          "payment_amount",
+          "public_url",
+          "rules",
+          "sections"
         ]
       }
     },

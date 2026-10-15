@@ -23,9 +23,11 @@ from .models_tickets import EventTicketType
 from .models_promos import EventPromoCode
 from .models_categories import EventCategory
 from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
+from .models_website import EventPage, EventPageAsset, EventPageSection, EventSession, EventSessionSpeaker
 
 __all__ = [
     "EventCertificateArtwork", "EventCertificateTemplateRevision",
+    "EventPage", "EventPageAsset", "EventPageSection", "EventSession", "EventSessionSpeaker",
     "EventBroadcast", "EventBroadcastDelivery",
     "EventStaffGrant", "EventStaffGrantInvite",
     "EventInvite", "EventTicketType", "EventPromoCode", "EventCategory",

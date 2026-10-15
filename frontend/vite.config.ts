@@ -15,6 +15,11 @@ export default defineConfig({
     // Inside the dev container the backend is another service on the compose
     // network, not localhost — docker-compose.dev.yml sets this to http://backend:8000.
     proxy: {
+      // Shared website HTML belongs to Django, including its exact framing policy.
+      ...Object.fromEntries(["/embed/", "/share/", "/sitemap.xml", "/robots.txt"].map(path => [path, {
+        target: process.env.VITE_DEV_PROXY_TARGET || "http://localhost:8000",
+        changeOrigin: false,
+      }])),
       "/api": {
         target: process.env.VITE_DEV_PROXY_TARGET || "http://localhost:8000",
         changeOrigin: true,

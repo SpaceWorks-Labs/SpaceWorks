@@ -27,6 +27,9 @@ EXPORTED_MODEL_FIELDS = {
 extend_event_export_fields(EXPORTED_MODEL_FIELDS)
 from apps.tenant_migration.catalog_broadcasts import EXPORTED_FIELDS as BROADCAST_FIELDS
 EXPORTED_MODEL_FIELDS.update(BROADCAST_FIELDS)
+from apps.tenant_migration.catalog_website import EXPORTED_FIELDS as WEBSITE_FIELDS
+EXPORTED_MODEL_FIELDS.update(WEBSITE_FIELDS)
+EXPORTED_MODEL_FIELDS["makerspaces.Makerspace"] += " website_embed_origins"
 EXPORTED_MODEL_FIELDS["events.Event"] += " show_registration_count organization_admission_blocked"
 EXPORTED_MODEL_FIELDS["events.EventSeries"] += " organization_admission_blocked"
 EXPORTED_MODEL_FIELDS["events.EventRegistration"] += " cancelled_at status_before_cancel waitlist_position_at"

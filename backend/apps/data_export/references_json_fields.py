@@ -20,6 +20,10 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("events.Event", "custom_form"),
         # Public tag strings are discovery labels, never model identifiers.
         ("events.Event", "tags"),
+        # Curated venue scalars and layout enum strings/booleans, never model IDs.
+        ("events.EventPage", "venue"),
+        ("events.EventPage", "section_order"),
+        ("events.EventPage", "section_enabled"),
         ("events.Event", "badge_template"),
         # Fixed layout scalars, never recipient identity. Artwork keys in issuance
         # snapshots are remapped separately by tenant_migration.object_fields.
@@ -39,6 +43,7 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("machines.MachineServiceRequest", "capability_payload"),
         ("machines.MachineType", "capability_config"),
         ("makerspaces.Makerspace", "cors_allowed_origins"),
+        ("makerspaces.Makerspace", "website_embed_origins"),
         ("makerspaces.Makerspace", "enabled_modules"),
         ("makerspaces.Makerspace", "enabled_features"),
         ("makerspaces.Makerspace", "resource_limit_overrides"),

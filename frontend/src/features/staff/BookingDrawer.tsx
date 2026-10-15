@@ -17,6 +17,7 @@ import {
 } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
 import { BookingDetailsEditor } from "./BookingDetailsEditor";
+import { BookingWebsiteEditor } from "./BookingWebsiteEditor";
 import { BookingPassDesigner } from "./BookingPassDesigner";
 import { BookingArrivalScanner } from "./BookingArrivalScanner";
 import { BookingBroadcastsPanel } from "./BookingBroadcastsPanel";
@@ -81,7 +82,10 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
   const actionError = update.error || deactivate.error || action.error;
   const hasReports = Boolean(space?.report_features?.length);
   const activeTab = hasReports ? tab : "details";
-  const resourceTabs = [...additionalTabs, ...(space?.passes_enabled && access.edit ? [{
+  const resourceTabs = [...additionalTabs, ...(space?.website_enabled && (access.edit || space.staff_permissions?.includes("publish_page")) ? [{
+    id: "website", label: "Website", content: selectedTab === "website"
+      ? <BookingWebsiteEditor key={spaceId} space={space} /> : null,
+  }] : []), ...(space?.passes_enabled && access.edit ? [{
     id: "passes", label: "Pass designer", content: selectedTab === "passes"
       ? <BookingPassDesigner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> : null,
   }] : [])];

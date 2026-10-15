@@ -7,6 +7,14 @@ def definitions(FeatureDefinition):
         "Privileged tenant-bound server clients can read minimal resources, reservations and separately scoped arrivals.",
         requires_modules=("bookings",),
     ), FeatureDefinition(
+        "bookings.website", "bookings", "Resource websites",
+        "Release curated rules, amenities, FAQs, links, sponsors and private gallery images.",
+        requires_modules=("bookings",),
+    ), FeatureDefinition(
+        "bookings.embed", "bookings", "Resource embeds",
+        "Serve released resource cards to an exact HTTPS framing allow-list.",
+        requires_modules=("bookings",), requires_features=("bookings.website",),
+    ), FeatureDefinition(
         "bookings.passes", "bookings", "Printable booking passes",
         "Design and download answer-free PDF passes; scanner printing requires an active arrival.",
         requires_modules=("bookings",), requires_features=("bookings.confirmations",),
@@ -53,6 +61,14 @@ def definitions(FeatureDefinition):
         "events.certificate_designer", "events", "Certificate designer",
         "Design private certificate artwork and immutable issuance-time layouts.",
         requires_modules=("events",),
+    ), FeatureDefinition(
+        "events.website", "events", "Event websites",
+        "Release curated programme, speakers, sponsors and private website images.",
+        requires_modules=("events",),
+    ), FeatureDefinition(
+        "events.embed", "events", "Event embeds",
+        "Serve released event cards to an exact HTTPS framing allow-list.",
+        requires_modules=("events",), requires_features=("events.website",),
     ), FeatureDefinition(
         "events.organization_audience", "events", "Participating organizations audience",
         "Admit active accounts belonging to live event organizers or the venue owner, "

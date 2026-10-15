@@ -12,6 +12,9 @@ BK-H signed booking reads are mapped in
 [SOURCE-MAP-BOOKING-READS.md](SOURCE-MAP-BOOKING-READS.md). They use the existing core
 HMAC, typed-target, cursor and re-auth contracts; Events is never imported.
 
+BK-F resource websites are mapped in [SOURCE-MAP-BOOKING-WEBSITES.md](SOURCE-MAP-BOOKING-WEBSITES.md).
+Bookings supplies typed adapters to the always-present website/asset/clone infrastructure.
+
 BK-G printable passes are mapped in [SOURCE-MAP-BOOKING-PASSES.md](SOURCE-MAP-BOOKING-PASSES.md).
 They consume the existing core positioned-layout/PDF primitives without importing Events.
 

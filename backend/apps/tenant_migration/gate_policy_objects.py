@@ -11,6 +11,8 @@ LIFECYCLE_EXEMPTIONS = {
 
 
 OBJECT_MUTATION_PARTICIPANTS = {
+    "apps.makerspaces.website_assets.delete_object": "Private website rollback/replacement cleanup belongs to the tenant-resolved durable website transaction or post-commit cleanup.",
+    "apps.makerspaces.website_assets.copy_object": "Called only by an authorized domain clone/COW adapter inside clone_transaction and its tenant source gate.",
     "apps.data_export.subject_services.run_subject_export": (
         "The subject task or recovery sweep holds subject_boundary through archive upload and finalization."
     ),

@@ -15,6 +15,8 @@ class EventsConfig(AppConfig):
         if not app_is_tombstoned("events"):
             from .integration_targets import register_targets
             register_targets()
+            from .website_adapter import register_website
+            register_website()
             from .broadcasts import register_broadcasts
             from .services_bulk_invites import register_invitations
             from .report_subject import register_subject

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
+import { EventWebsiteEditor } from "./EventWebsiteEditor";
+import { EventWebsitePublication } from "./EventWebsitePublication";
 import { EventOrganizationAudience } from "./EventOrganizationAudience";
 import { EventDuplicateAction } from "./EventDuplicateAction";
 import { EventInvitesPanel } from "./EventInvitesPanel";
@@ -43,6 +45,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
   const event = eventQuery.data;
   const access = eventAccess(event ?? { staff_permissions: [], can_manage_staff: false });
   const [values, setValues] = useState(emptyEventForm);
+  const [websitePublication, setWebsitePublication] = useState<{ publish_website: boolean; website_revision?: number } | undefined>();
+  const websiteTarget = { kind: "events" as const, id: eventId, makerspaceId };
   const [confirm, setConfirm] = useState<Action | null>(null);
   const update = useUpdateEvent(makerspaceId, eventId);
   const publish = usePublishEvent(makerspaceId, eventId);
@@ -51,6 +55,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
   const invalidateEvent = useEventInvalidation(makerspaceId, eventId);
 
   useEffect(() => { if (event) setValues(valuesFor(event)); }, [event?.updated_at]);
+  useEffect(() => setWebsitePublication(undefined), [eventId]);
   const lifecycle = confirm === "publish" ? publish : confirm === "cancel" ? cancel : complete;
   const readOnly = event?.status === "cancelled" || event?.status === "completed";
   const actionError = update.error || publish.error || cancel.error || complete.error;
@@ -81,6 +86,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
           {!readOnly ? <button className="desk-button-primary mt-3" type="submit" disabled={update.isPending}>{update.isPending ? "Saving..." : "Save changes"}</button> : <p className="mt-3 text-sm text-muted">Terminal events are read-only.</p>}
         </form> : <p className="whitespace-pre-wrap text-sm text-muted">{event.description}</p>}
         {(access.edit || access.publish) && event.series_summary && event.series_override_fields.length && !readOnly ? <section><h3 className="title-section">Occurrence overrides</h3><p className="mt-1 text-sm text-muted">Reset a field to inherit the current series template again.</p><div className="mt-2 flex flex-wrap gap-2">{event.series_override_fields.filter((field) => field === "payment_amount" ? access.manager : ["starts_at", "ends_at"].includes(field) ? access.publish : access.edit).map((field) => <button key={field} className="desk-button" type="button" disabled={update.isPending} onClick={() => update.mutate({ inherit_fields: [field] })}>Reset {field.replace(/_/g, " ")}</button>)}</div></section> : null}
+        {event.ticketing_features?.includes("events.website") && (access.edit || access.publish) ? <EventWebsiteEditor key={`event:${eventId}`} target={websiteTarget} canEdit={access.edit} canPublish={access.publish} status={event.status} /> : null}
+        {access.publish && event.status === "draft" && event.ticketing_features?.includes("events.website") ? <EventWebsitePublication key={eventId} target={websiteTarget} onChange={setWebsitePublication} /> : null}
         {access.publish ? <div className="flex flex-wrap gap-2">
           {event.status === "draft" ? <button className="desk-button-primary" type="button" onClick={() => setConfirm("publish")}>Publish</button> : null}
           {event.status === "published" ? <><button className="desk-button-success" type="button" onClick={() => setConfirm("complete")}>Complete</button><button className="desk-button-danger" type="button" onClick={() => setConfirm("cancel")}>Cancel event</button></> : null}
@@ -99,6 +106,6 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
         {access.manager ? <><EventOrganizers event={event} makerspaceId={makerspaceId} disabled={readOnly} /><EventCollaborators makerspaceId={makerspaceId} eventId={eventId} /><EventStaffAccess target={{ kind: "event", id: eventId }} /></> : null}
       </div> : null}
     </DetailDrawer>
-    <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Confirm"} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => lifecycle.mutate(undefined, { onSuccess: () => setConfirm(null), onError: () => setConfirm(null) })} />
+    <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Confirm"} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => { const options = { onSettled: () => setConfirm(null) }; if (confirm === "publish") publish.mutate(websitePublication, options); else lifecycle.mutate(undefined, options); }} />
   </>;
 }

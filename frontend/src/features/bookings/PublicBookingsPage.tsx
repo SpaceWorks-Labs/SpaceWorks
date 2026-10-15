@@ -116,6 +116,7 @@ export function PublicBookingsPage() {
                     </dl>
                     <p className="mt-3 text-sm text-muted">{space.approval_mode === "approve" ? "Your request stays pending until makerspace staff review it." : "A non-overlapping slot is confirmed immediately."}</p>
                     {discovery.view === "calendar" && discovery.month ? <SpaceDiscoveryCalendar slug={makerspaceSlug} space={space} month={discovery.month} timeZone={discovery.timeZone} /> : null}
+                    <Link className="desk-button-ghost mt-4 mr-3" to={tenantPath(`bookings/${space.public_token}`)}>Resource details</Link>
                     <button className="desk-button-secondary mt-4" type="button" aria-expanded={open} onClick={() => setActiveToken(open ? null : space.public_token)}>{open ? "Close booking form" : "Choose a time"}</button>
                     {open ? <div className="mt-5"><PublicBookingForm key={space.public_token} makerspaceSlug={makerspaceSlug} space={space} /></div> : null}
                   </div>

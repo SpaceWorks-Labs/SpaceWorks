@@ -81,6 +81,12 @@ class EventSeries(models.Model):
             )
         ]
 
+    def clean(self):
+        super().clean()
+        if self.pk and self.dtstart_local_date and self.dtstart_local_time and self.duration_minutes:
+            from .website_validation import validate_owner_window
+            validate_owner_window(self)
+
     def save(self, *args, **kwargs):
         self.title = (self.title or "").strip()
         if self.pk:

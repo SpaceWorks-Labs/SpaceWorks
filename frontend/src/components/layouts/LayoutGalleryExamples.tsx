@@ -20,7 +20,7 @@ export function LayoutGalleryExample({ example, state = { status: "ready" }, isE
   const base = { state, isEmpty, empty: { message: "Nothing here yet. Add your first item." }, standalone: true };
   const header = { title: example, subtitle: "Everything your community needs to make." };
   const form = <Field label="Name"><input className="desk-input" defaultValue="Community workshop" required /></Field>;
-  const publicDetail = <PublicDetailLayout {...base} standalone={false} title="Community workshop" tagline="Make something together."
+  const publicDetail = <PublicDetailLayout {...base} standalone={false} title="Community workshop" tagline="Find it. Use it. Make something."
     cover={{ src: "/brand/og-1200x630.png", alt: "" }} chips={[{ label: "In person", tone: "accent" }]}
     facts={[{ identity: { kind: "date", date: "2026-10-16" }, primary: "Friday, 16 October", secondary: "9:30 AM" }]}
     sections={[{ id: "gallery-about", label: "About", content: sample }]} actionCard={actionCard}
@@ -57,7 +57,7 @@ export function LayoutGalleryExample({ example, state = { status: "ready" }, isE
         leaveGuard: "Your captured evidence will be left unfinished." } as const;
       return example === "Flow dialog" ? <FlowLayout {...flow} steps={[...flow.steps]} presentation="dialog" open /> : <FlowLayout {...flow} steps={[...flow.steps]} />;
     }
-    case "Auth": return <AuthLayout {...base} title="Welcome back." brand={{ headline: "A place to make things happen.", showcase: <><Card>16 Oct · Community workshop</Card><Card>Meera checked in</Card></> }}
+    case "Auth": return <AuthLayout {...base} title="Welcome back." brand={{ showcase: <><Card>16 Oct · Community workshop</Card><Card>Meera checked in</Card></> }}
       modeSwitch={{ label: "Account access", value: "signin", options: [{ value: "signin", label: "Sign in" }, { value: "signup", label: "Create account" }], onChange: noop }}
       social={<button type="button" className="desk-button">Continue with your provider</button>} form={<>{sample}{form}</>} legal="By continuing, you agree to the terms." />;
     case "Centered card": case "Centered wide": return <CenteredCardLayout {...base} title="Confirm your email" body={sample}

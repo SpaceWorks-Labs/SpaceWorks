@@ -7,7 +7,7 @@ import { LayoutFrame, QueryContent } from "./LayoutFrame";
 import type { LayoutProps } from "./types";
 
 export type AuthLayoutProps = LayoutProps & {
-  brand: { headline: string; showcase?: ReactNode; tenant?: { name: string; logo?: string } };
+  brand: { headline?: string; showcase?: ReactNode; tenant?: { name: string; logo?: string } };
   eyebrow?: string;
   title: string;
   modeSwitch?: SegmentedControlProps;
@@ -36,7 +36,7 @@ export function AuthLayout({ brand, eyebrow, title, modeSwitch, social, dividerL
       </div>
       <aside aria-label="Space Works" className="sw-auth-brand min-w-0 flex-col justify-center rounded-[28px] bg-accent-soft p-6 xl:p-10">
         <div className="hidden xl:block"><SpaceWorksLogo variant="stacked" size={180} /></div>
-        <p className="max-w-lg break-words font-accent text-xl text-ink xl:mt-8 xl:text-4xl">{brand.headline}</p>
+        <p className="max-w-lg break-words font-accent text-xl text-ink xl:mt-8 xl:text-4xl">{brand.headline ?? "Less searching. More making."}</p>
         {brand.showcase ? <div aria-hidden="true" inert className="sw-auth-showcase relative mt-10 hidden min-w-0 xl:grid xl:gap-4 [&>*]:shadow-overlay">{brand.showcase}</div> : null}
       </aside>
     </div>

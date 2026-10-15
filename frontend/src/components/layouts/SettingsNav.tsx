@@ -14,7 +14,7 @@ export function SettingsNav({ sections }: { sections: { id: string; title?: stri
   return <nav aria-label="Settings sections" className="sw-settings-nav flex min-w-0 gap-2 overflow-x-auto pb-2 xl:flex-col">
     {sections.map(section => <a key={section.id} href={`#${section.id}`} onClick={() => setActive(section.id)}
       aria-current={active === section.id ? "location" : undefined}
-      className={`desk-button shrink-0 justify-start ${active === section.id ? "border-accent bg-accent-soft text-accent-ink" : ""}`}>
+      className={`flex min-h-11 shrink-0 items-center rounded-control px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${active === section.id ? "bg-hover text-ink" : "text-muted hover:bg-hover hover:text-ink"}`}>
       {section.title ?? section.id}</a>)}
   </nav>;
 }

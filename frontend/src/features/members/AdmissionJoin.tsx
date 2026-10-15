@@ -32,8 +32,8 @@ export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSi
       if (!Object.keys(next).length) onJoin(answers);
     }}>
       <CustomFormFields schema={settings.application_schema} answers={answers} onChange={setAnswers} disabled={pending} errors={{ ...errors, ...customAnswerErrors(error instanceof StructuredApiError ? error.body.application_answers : null) }} />
-      <button className="desk-button-brand w-fit" disabled={pending} type="submit">{pending ? "Sending…" : label}</button>
-    </form> : !blocked ? <button className="desk-button-brand mt-4" onClick={onSignIn} type="button">Sign in to join</button> : null}
+      <button className="desk-button-brand w-full sm:w-fit" disabled={pending} type="submit">{pending ? "Sending…" : label}</button>
+    </form> : !blocked ? <button className="desk-button-brand mt-4 w-full sm:w-fit" onClick={onSignIn} type="button">Sign in to join</button> : null}
     {error ? <p role="alert" className="mt-3 text-sm text-danger">{error instanceof Error ? error.message : "Unable to submit your application."}</p> : null}
   </section>;
 }

@@ -86,7 +86,7 @@ export function ProjectEditor({
           </div>
         ))}
       </div>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex flex-wrap gap-2">
         <button
           className="desk-button-ghost"
           type="button"

@@ -68,6 +68,15 @@ def consume_download_token(archive_id, raw):
     return archive
 
 
+def invalidate_download_tokens_after_restore(*, using="default"):
+    """Restore hook: copied archive bearers must never be usable; the download is anonymous."""
+    return BackupArchive.objects.using(using).exclude(download_token_digest="").update(
+        download_token_digest="",
+        download_token_expires_at=None,
+        download_token_consumed_at=None,
+    )
+
+
 def purge_expired_archives(limit=100):
     """Delete managed bytes of archives past retention.
 

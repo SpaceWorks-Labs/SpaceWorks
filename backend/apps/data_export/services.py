@@ -270,16 +270,6 @@ def consume_download_token(job_id, raw_token):
     return claimed
 
 
-def invalidate_download_tokens_after_restore():
-    """Restore hook: copied bearer digests must never remain usable."""
-    return DataExportJob.objects.exclude(download_token_digest="").update(
-        download_token_digest="",
-        download_token_expires_at=None,
-        download_token_consumed_at=None,
-        download_issued_to=None,
-    )
-
-
 def _token_digest(raw):
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 

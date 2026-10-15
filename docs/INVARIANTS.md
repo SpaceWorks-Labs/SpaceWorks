@@ -3164,6 +3164,24 @@ responsibility; local purges never delete shared global organizations or foreign
 
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
+- **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,
+  and quarantine's credential reset does not cover it. `apps/data_export/restore_hooks.py` clears
+  bearers at all three seams that copy these rows: classic `rehydrate_control_record` (both kinds),
+  compound `DatabaseStateTarget.rehydrate` on the candidate alias, and delayed B1 slice merge, where
+  `slice_fixtures` scrubs the `DROP_ROW_TO_SLICE` `row_preimage` before staging. Tenant dumps never
+  carry this model (`OMITTED_MODELS`).
+- **A restored `backup.BackupArchive` download bearer is never usable.**
+  `apps/backup/services_access.invalidate_download_tokens_after_restore` clears bearers at classic
+  `rehydrate_control_record` and compound `DatabaseStateTarget.rehydrate`. B1 slice merge needs no sweep:
+  `BackupArchive.makerspace` is a `PROJECT_GLOBAL_BOUNDARIES` `PROJECT_NULL_TO_SLICE` boundary whose
+  delta carries only the `field_preimage`. Tenant dumps omit the model (`OMITTED_MODELS`).
+- **`TenantDumpCapture` download bearers are cleared pre-emptively at all three seams** by
+  `apps/tenant_migration/restore_hooks.py`: classic `rehydrate_control_record`, compound
+  `DatabaseStateTarget.rehydrate`, and the `slice_fixtures` `row_preimage` scrub (its `makerspace` FK
+  is a `DROP_ROW_TO_SLICE` boundary). Today `publish_tenant_dump`'s token has no caller and no redeemer.
+  **RULE:** a future `TenantDumpCapture` download route must keep these hooks, and any new model carrying
+  a `download_token_*` bearer needs a sweep at every seam that copies its rows.
+
 ### Offsite destinations and the `backup` module (lane backup, 2026-10-09)
 
 - **An offsite copy is `bytes_verified`, never "restorable".** `offsite_push` streams the primary

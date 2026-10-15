@@ -442,6 +442,7 @@ while pack application explicitly asserts the target source gate before writes.
   are thin barrels: the exported field lists live in `classification_domain.py`, the global/omitted
   model reasons in `classification_platform.py`, and the declared `accounts.User` edges in
   `references_core.py`; adapter extensions compose `classification_7b.py`/`references_7b.py`.
+  `restore_hooks.py` clears copied download bearers during restore and slice staging.
   Credential omission checks live in `guards_credentials.py` behind the original `guards.py` exports. Its `guards._equal(subject, declared,
   actual)` is called with the *scanned* set passed as `declared`, so `extra=` in a failure means **scanned
   but not registered** — read the signature before deciding which side to fix.
@@ -468,6 +469,7 @@ while pack application explicitly asserts the target source gate before writes.
   and exact object bytes before `source_gate_release.py` performs the fenced `copy_capture` release;
   `tenant_dump_staging.py` + `tenant_dump_database_cleanup.py` own marker-guarded crash cleanup;
   `tenant_dump_cleanup.py` retries refused unpublished-object deletion from its durable capture-row key;
+  `restore_hooks.py` clears copied tenant-dump download bearers during restore and slice staging;
   `tenant_dump_derivation.py` derives and seals output only from that capture;
   `tenant_dump_pii.py` binds raw mapped-column mode findings and ciphertext AAD identities;
   `tenant_dump_key_inventory.py` freezes and exact-set checks source-broker key facts, while

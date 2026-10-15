@@ -12,6 +12,7 @@ import { EmptyState, ListRow, StatusPill } from "../../components/ui";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
+import { publicErrorState } from "../inventory/publicErrorState";
 import { PublicBookingForm } from "./PublicBookingForm";
 import { usePublicSpaces, type PublicBookableSpace } from "./publicBookingsApi";
 
@@ -59,7 +60,7 @@ export function PublicBookingsPage() {
     <PageMetadata title={`Bookings · ${displayName}`} description={`Discover public bookable rooms and benches at ${displayName}.`} path={canonicalPath} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
       header={{ title: "Book a makerspace", subtitle: `Book a space at ${displayName}`, primary: { label: "My bookings", href: tenantPath("member/bookings") } }}
-      state={spaces.isLoading ? { status: "loading" } : spaces.error ? { status: "error", error: "Couldn't load spaces. Try again.", onRetry: () => { void spaces.refetch(); } } : { status: "ready" }}>
+      state={spaces.isLoading ? { status: "loading" } : spaces.error ? publicErrorState(spaces.error, { noun: "Bookings" }, () => { void spaces.refetch(); }) : { status: "ready" }}>
       <DiscoveryControls state={discovery} searchLabel="Search spaces" filters={Object.entries(KIND_LABELS).map(([value, label]) => ({ value, label }))} />
       <p role="status" className="mb-4 text-sm text-muted">{visibleSpaces.length} matching space(s)</p>
       {!visibleSpaces.length ? <EmptyState message={spaces.data?.length ? "No spaces match these filters. Try another search." : "No bookable spaces yet. Check back soon."} /> : null}

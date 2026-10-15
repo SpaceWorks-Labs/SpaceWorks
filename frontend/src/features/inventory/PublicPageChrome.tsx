@@ -2,6 +2,8 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
 import type { TenantBootstrap } from "../../lib/api";
 
+export const LICENSE_URL = "https://github.com/SpaceWorks-HQ/SpaceWorks/blob/main/LICENSE";
+
 /** Shared public navigation derives only from the bootstrap already loaded by its caller. */
 export function publicPageChrome(slug: string, name: string, path: (part?: string) => string, bootstrap?: TenantBootstrap | null) {
   const modules = new Set(bootstrap?.modules ?? []);
@@ -24,7 +26,7 @@ export function publicPageChrome(slug: string, name: string, path: (part?: strin
     liveStatus: <><MakerspaceMapLink makerspace={bootstrap?.makerspace} /><ThemeToggle variant="icon" /></>,
     footer: { credit: "Powered by Space Works", links: [
       { label: "About", href: "/about" },
-      { label: "License", href: "https://github.com/SpaceWorks-HQ/SpaceWorks/blob/main/LICENSE", external: true },
+      { label: "License", href: LICENSE_URL, external: true },
       { label: "Staff sign-in", href: "/admin" },
       ...support,
     ] },

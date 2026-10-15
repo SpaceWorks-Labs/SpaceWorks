@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { DashboardLayout, ListLayout, PublicLayout, SettingsLayout } from "../../components/layouts";
+import { DashboardLayout, ListLayout, SettingsLayout } from "../../components/layouts";
 import type { Action, QueryState, Tab } from "../../components/ui";
 import type { MemberActivity } from "./MemberActivity";
 import type { MemberTab } from "./MemberPortalTabs";
@@ -18,11 +18,10 @@ export function MemberScreenLayout({ tab, state, children, member, name, slug, a
   const memberBase = slug ? `/m/${slug}/member` : "/member";
   const link = (key: string) => `${location.pathname}?section=${key}`;
   const header = { title: titles[tab], eyebrow: "Member area", primary };
-  if (tab === "overview" && !member) return <PublicLayout standalone={false} state={state}
-    makerspace={{ name, slug }} nav={[]} headerAction={{ label: "Browse catalogue", href: publicBase || "/" }}
-    header={{ ...header, subtitle: `Join ${name} and make something together.` }} footer={{ links: [] }}>
-    <div className="grid gap-6">{children}</div>
-  </PublicLayout>;
+  // Inside the member shell already: one header, no second public header or footer.
+  if (tab === "overview" && !member) return <DashboardLayout state={state}
+    header={{ ...header, subtitle: `Join ${name} and make something together.`, primary: primary ?? { label: "Browse catalogue", href: publicBase || "/" } }}
+    stats={[]} main={[{ title: "Join this makerspace", content: <div className="grid gap-6">{children}</div>, empty: { message: "Joining options will appear here." } }]} />;
   if (tab === "overview") return <DashboardLayout state={state} header={{ ...header, subtitle: name }}
     callout={activity?.accountability?.waiver_acceptance_required ? { size: "banner", tone: "warn", lead: "Accept the updated waiver to keep borrowing.", action: { label: "Read and accept", href: "#current-waiver" } } : (activity?.active_hardware_loans ?? []).some(row => row.overdue) ? { size: "banner", tone: "warn", lead: "A loan is overdue.", body: "Return it to the front desk, or check whether you can renew it.", action: { label: "View loans", href: `${memberBase}/loans` } } : undefined}
     stats={activity ? [{ label: "On loan", value: (activity.active_hardware_loans ?? []).length, href: `${memberBase}/loans` },

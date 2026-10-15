@@ -10,7 +10,7 @@ import { submitPublicRequest } from "./api";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { PublicToolScanPanel } from "./PublicToolScanPanel";
 
-type ActiveTab = "borrow" | "scan";
+export type ActiveTab = "borrow" | "scan";
 
 type PublicRequestPanelProps = {
   items: RequestCartItem[];
@@ -20,6 +20,9 @@ type PublicRequestPanelProps = {
   // The makerspace's policy, not the caller's state. Present only when the space opted
   // into account-less borrow requests.
   requestAccess?: "anyone";
+  /** Lets the page open the panel straight on "Scan a tool" (the phone bar does). Uncontrolled when omitted. */
+  activeTab?: ActiveTab;
+  onActiveTabChange?: (tab: ActiveTab) => void;
 };
 
 // The header is required for account-less submissions, and it is what makes a retry
@@ -40,9 +43,13 @@ export function PublicRequestPanel({
   onClear,
   disabled = false,
   requestAccess,
+  activeTab: controlledTab,
+  onActiveTabChange,
 }: PublicRequestPanelProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("borrow");
+  const [ownTab, setOwnTab] = useState<ActiveTab>("borrow");
+  const activeTab = controlledTab ?? ownTab;
+  const setActiveTab = (tab: ActiveTab) => { setOwnTab(tab); onActiveTabChange?.(tab); };
   const [requestedFor, setRequestedFor] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [contactName, setContactName] = useState("");

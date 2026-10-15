@@ -101,7 +101,7 @@ export function ArchivedPayments() {
     );
   }
 
-  return <PublicLayout state={discovery.isLoading ? { status: "loading" } : discovery.isError ? { status: "error", error: "Couldn't load archived payments. Try again.", onRetry: () => void discovery.refetch() } : { status: "ready" }}
+  return <PublicLayout state={discovery.isLoading ? { status: "loading" } : discovery.isError ? { status: "error", error: errorMessage(discovery.error), onRetry: () => void discovery.refetch() } : { status: "ready" }}
     makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} nav={[]} headerAction={{ label: "Member area", href: "/member" }}
     header={{ title: "Payments and receipts", eyebrow: "Archived makerspaces", subtitle: "Closed makerspaces no longer appear in the normal member area. Outstanding charges and past receipts remain available here.", primary: { label: "Back to Space Works", href: "/" } }} footer={{ links: [] }}>
     <div className="grid gap-6">{discovery.data?.length === 0 ? <EmptyState message="No charges outstanding from closed makerspaces." /> : discovery.data?.map(summary => <ArchivedMakerspacePayments key={summary.makerspace.id} summary={summary} />)}</div>

@@ -12,7 +12,8 @@ export type PublicActionCardProps = {
   note?: string;
   state: "open" | "closed" | "done";
   doneContent?: ReactNode;
-  mobileBar: { summary: string; label: string };
+  /** onOpen runs before the sheet opens; secondary adds a second verb that opens the same sheet. */
+  mobileBar: { summary: string; label: string; onOpen?: () => void; secondary?: { label: string; onOpen: () => void } };
 };
 function ActionCardContent({ title, summary, form, primary, secondary, note, state, doneContent }: PublicActionCardProps) {
   return <Card className="grid gap-4 shadow-overlay">
@@ -31,7 +32,10 @@ export function PublicActionCard(props: PublicActionCardProps) {
   return <>
     <div className="sw-public-mobile-bar flex flex-wrap items-center justify-between gap-3 border-t border-line bg-panel p-4">
       <p className="text-sm text-ink">{props.mobileBar.summary}</p>
-      <ActionControl primary className="desk-button-brand" action={{ label: props.mobileBar.label, onClick: () => setOpen(true) }} />
+      <div className="flex flex-wrap gap-2">
+        {props.mobileBar.secondary ? <ActionControl action={{ label: props.mobileBar.secondary.label, onClick: () => { props.mobileBar.secondary?.onOpen(); setOpen(true); } }} /> : null}
+        <ActionControl primary className="desk-button-brand" action={{ label: props.mobileBar.label, onClick: () => { props.mobileBar.onOpen?.(); setOpen(true); } }} />
+      </div>
     </div>
     <Modal open={open} onClose={() => setOpen(false)} title={props.title}
       footer={<ActionControl action={{ label: "Close", onClick: () => setOpen(false) }} />}>

@@ -123,7 +123,7 @@ export function StatusResult({ isPending, error, status, onRetry }: {
   isPending: boolean; error: Error | null; status?: PrintStatus; onRetry?: () => void;
 }) {
   if (isPending) return <div role="status" aria-label="Loading print status"><Skeleton className="h-60" /></div>;
-  if (error) return <ErrorBlock error={new Error("Couldn't load your print status. Try again.")} onRetry={onRetry} />;
+  if (error) return <ErrorBlock error={new Error(error.message || "Couldn't load your print status. Try again.")} onRetry={onRetry} />;
   return status ? <div className="grid gap-5"><div><h3 className="title-section break-words">{status.title}</h3>
     <p className="mt-1 text-sm text-muted">Created <RelativeTime date={status.created_at} /></p></div><StatusStepper status={status} /></div> : null;
 }

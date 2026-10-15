@@ -1,13 +1,14 @@
 import { PublicLayout } from "../components/layouts";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { ListRow } from "../components/ui";
+import { LICENSE_URL } from "./inventory/PublicPageChrome";
 
 export function AboutPage() {
   return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }}
     nav={[{ label: "Browse spaces", href: "/" }]} headerAction={{ label: "Sign in", href: "/member" }}
     liveStatus={<ThemeToggle />} width="narrow" state={{ status: "ready" }}
     header={{ eyebrow: "About", title: "Open-source makerspace management", subtitle: "Tools to run a community workshop, with care for every handover.", primary: { label: "Browse spaces", href: "/" } }}
-    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "Staff sign-in", href: "/admin" }] }}>
+    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "License", href: LICENSE_URL, external: true }, { label: "Staff sign-in", href: "/admin" }] }}>
     <div className="space-y-5 text-base leading-7 text-muted">
       <p>Space Works brings public equipment catalogues, traceable hardware loans, 3D-print requests, and makerspace operations together.</p>
       <p>Each space controls its inventory, branding, team, and notifications. Members browse and request tools; staff review requests and record every issue and return with evidence.</p>

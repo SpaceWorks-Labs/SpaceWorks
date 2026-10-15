@@ -1,4 +1,5 @@
 import { DashboardLayout } from "../../components/layouts";
+import { MakerspaceBrand } from "../../components/MakerspaceBrand";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessToken, memberRequest } from "../../lib/api";
 import { MemberCertifications } from "./MemberCertifications";
@@ -13,8 +14,8 @@ export function hasClaimSession() {
   } catch { return false; }
 }
 
-export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnabled }: {
-  slug: string; makerspaceId: number; modules: string[]; geofenceEnabled: boolean;
+export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnabled, name, logoUrl }: {
+  slug: string; makerspaceId: number; modules: string[]; geofenceEnabled: boolean; name: string; logoUrl?: string | null;
 }) {
   const client = useQueryClient();
   const key = ["member", "claim", makerspaceId];
@@ -28,7 +29,7 @@ export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnable
   }, onSuccess: () => { void client.invalidateQueries({ queryKey: key }); } });
   const error = presence.error ?? waiver.error ?? activity.error ?? togglePresence.error;
   return <DashboardLayout standalone header={{ title: "Temporary member session", eyebrow: "Member area", primary: modules.includes("public_inventory") ? { label: "Browse tools", href: `/m/${slug}` } : undefined }} state={{ status: "ready" }} stats={[]} main={[{ title: "Your access", empty: { message: "Your access details will appear here." }, content: <div className="grid gap-6">
-    <section className="desk-panel p-5"><p className="mt-2 text-sm text-muted">Your staff-issued claim code opened access for this makerspace. Staff must witness waiver acceptance.</p>
+    <section className="desk-panel p-5"><MakerspaceBrand name={name} logoUrl={logoUrl} fallback="logo" /><p className="mt-3 text-sm text-muted">Your staff-issued claim code opened access for this makerspace. Staff must witness waiver acceptance.</p>
     </section>
     {waiver.data?.has_waiver ? <section className="desk-panel p-5"><h2 className="title-panel">Current waiver ({waiver.data.version})</h2><p className="mt-2 whitespace-pre-wrap text-sm text-muted">{waiver.data.body}</p><p className="mt-3 text-sm text-muted">Ask staff to record witnessed acceptance before borrowing.</p></section> : null}
     <section className="desk-panel p-5"><h2 className="title-panel">Presence</h2>
@@ -37,7 +38,7 @@ export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnable
     </section>
     {activity.isLoading ? <p className="text-sm text-muted">Loading your activity…</p> : null}
     {modules.includes("machines") ? <MemberCertifications makerspaceId={makerspaceId} /> : null}
-    {activity.data ? <MemberActivityPanel modules={modules} activity={activity.data} makerspaceId={makerspaceId} makerspaceSlug={slug} /> : null}
+    {activity.data ? <MemberActivityPanel modules={modules} activity={activity.data} makerspaceId={makerspaceId} makerspaceSlug={slug} makerspaceName={name} /> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
   </div> }]} />;
 }

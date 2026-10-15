@@ -10,11 +10,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 
-import { EmptyState, ListRow, StatusPill } from "../../components/ui";
+import { EmptyState } from "../../components/ui";
 import type { ApiPath } from "../../generated/api";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
-import { EventPrice } from "../events/EventPrice";
+import { PublicEventCard } from "./PublicEventCard";
+import { publicErrorState } from "./publicErrorState";
 import { formatSlug } from "./PublicInventoryParts";
 import { useTenantBootstrap } from "./usePublicInventory";
 
@@ -93,7 +94,7 @@ export function PublicEventsPage() {
     <PageMetadata title={`Events · ${displayName}`} description={`Upcoming public workshops, meetups and community events at ${displayName}.`} path={canonicalPath} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
       header={{ title: "Upcoming events", subtitle: `What's on at ${displayName}`, primary: { label: "My events", href: tenantPath("member/events") } }}
-      state={events.isLoading ? { status: "loading" } : events.error ? { status: "error", error: "Couldn't load events. Try again.", onRetry: () => { void events.refetch(); } } : { status: "ready" }}>
+      state={events.isLoading ? { status: "loading" } : events.error ? publicErrorState(events.error, { noun: "Events" }, () => { void events.refetch(); }) : { status: "ready" }}>
       <DiscoveryControls state={discovery} searchLabel="Search events" filters={[{ value: "free", label: "Free events" }, { value: "open", label: "Registration open" }]} />
       <div className="mb-5 flex flex-wrap gap-3"><label>Category<select className="desk-input" value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{[...new Map((events.data ?? []).flatMap(item => item.category ? [[item.category.slug, item.category] as const] : [])).values()].map(row => <option key={row.slug} value={row.slug}>{row.name}</option>)}</select></label>
       <label>Tag<select className="desk-input" value={tag} onChange={e => setTag(e.target.value)}><option value="">All tags</option>{[...new Set((events.data ?? []).flatMap(item => item.tags ?? []))].sort().map(value => <option key={value}>{value}</option>)}</select></label></div>
@@ -101,16 +102,10 @@ export function PublicEventsPage() {
       {discovery.view === "calendar" && discovery.month ? <MonthCalendar month={discovery.month} timeZone={discovery.timeZone} label="Upcoming public events" entries={visibleEvents.map(item => ({ id: item.public_token, startsAt: item.starts_at, endsAt: item.ends_at, label: item.title, href: `#event-${item.public_token}` }))} /> : null}
       {!visibleEvents.length ? <EmptyState message={events.data?.length ? "No matching events. Try another search, filter or month." : "No upcoming events. Check back soon."} /> : null}
       <div className="grid gap-7">{groupedEvents.map(group => <section key={group.key} aria-label={group.title ?? undefined}>
-        {group.title ? <h2 className="title-panel mb-3">{group.title}</h2> : null}
-        <div className="grid gap-3">{group.items.map(item => <div key={item.public_token} id={`event-${item.public_token}`} tabIndex={-1}>
-          <ListRow title={item.title} identity={{ kind: "date", date: item.starts_at }} href={tenantPath(`events/${item.public_token}`)}
-            meta={<>{eventTime(item, discovery.timeZone)} · {item.location}<span className="mt-1 block"><EventPrice inline amount={item.payment_amount} currency={item.currency} tickets={item.ticket_types} ticketRequired={item.ticket_selection_required} /></span></>}
-            right={<div className="grid justify-items-end gap-2"><StatusPill label={item.registration_open ? item.availability : "Registration closed"} tone={item.registration_open ? item.availability === "Full" ? "warn" : "success" : "neutral"} />
-              <div className="flex flex-wrap gap-2"><a className="desk-button" href={tenantPath(`events/${item.public_token}`)}>{!item.registration_open ? "View event" : item.registration_requires_approval ? "Apply" : item.availability === "Full" ? "Join waitlist" : "Register"}</a>
-              <button className="desk-button" type="button" disabled={calendarToken === item.public_token} onClick={() => downloadCalendar(item)}>Add to calendar</button></div></div>} />
-          {calendarError?.token === item.public_token ? <p role="alert" className="mt-2 text-danger">{calendarError.message}</p> : null}
-
-        </div>)}</div>
+        {group.title ? <div className="mb-3"><p className="text-sm text-muted">Recurring series</p><h2 className="title-panel">{group.title}</h2></div> : null}
+        <div className="grid gap-5">{group.items.map(item => <PublicEventCard key={item.public_token} event={item} href={tenantPath(`events/${item.public_token}`)}
+          time={eventTime(item, discovery.timeZone)} calendarPending={calendarToken === item.public_token} onCalendar={() => downloadCalendar(item)}
+          calendarError={calendarError?.token === item.public_token ? calendarError.message : undefined} />)}</div>
       </section>)}</div>
     </PublicLayout>
   </div>;

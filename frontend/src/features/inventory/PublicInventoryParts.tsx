@@ -42,14 +42,19 @@ export function ErrorState({ error }: { error: Error }) {
 }
 
 export function CatalogSidebar({ categories, view, onSelect }: { categories: PublicCategory[]; view: View; onSelect: (view: View) => void }) {
-  const choices: { label: string; value: View; active: boolean; count?: number }[] = [
+  type Choice = { label: string; value: View; active: boolean; count?: number };
+  const browse: Choice[] = [
     { label: "All items", value: { kind: "all" }, active: view.kind === "all" },
     { label: "Popular", value: { kind: "sort", sort: "popular" }, active: view.kind === "sort" && view.sort === "popular" },
     { label: "Most used", value: { kind: "sort", sort: "most_used" }, active: view.kind === "sort" && view.sort === "most_used" },
-    ...categories.map(category => ({ label: category.name, value: { kind: "category" as const, slug: category.slug }, active: view.kind === "category" && view.slug === category.slug, count: category.product_count })),
   ];
-  return <nav aria-label="Catalog browse" className="flex gap-2 overflow-x-auto pb-2">{choices.map(choice =>
-    <button key={choice.label} className={choice.active ? "desk-button-brand shrink-0" : "desk-button shrink-0"} aria-current={choice.active ? "page" : undefined} onClick={() => onSelect(choice.value)} type="button">
-      {choice.label}{choice.count != null ? <span className="ml-2 tabular-nums">({choice.count})</span> : null}
-    </button>)}</nav>;
+  const byCategory: Choice[] = categories.map(category => ({ label: category.name, value: { kind: "category" as const, slug: category.slug }, active: view.kind === "category" && view.slug === category.slug, count: category.product_count }));
+  const chip = (choice: Choice) => <button key={choice.label} className={choice.active ? "desk-button-brand" : "desk-button"} aria-current={choice.active ? "page" : undefined} onClick={() => onSelect(choice.value)} type="button">
+    {choice.label}{choice.count != null ? <span className="ml-2 tabular-nums">({choice.count})</span> : null}
+  </button>;
+  // Chips wrap instead of scrolling sideways, so every category and its count stays in view.
+  return <nav aria-label="Catalog browse" className="grid gap-3">
+    <div className="flex flex-wrap gap-2">{browse.map(chip)}</div>
+    {byCategory.length ? <div className="grid gap-2"><h2 className="text-sm text-muted">Categories</h2><div className="flex flex-wrap gap-2">{byCategory.map(chip)}</div></div> : null}
+  </nav>;
 }

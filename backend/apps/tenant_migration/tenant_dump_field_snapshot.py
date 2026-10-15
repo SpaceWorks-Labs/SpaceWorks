@@ -237,6 +237,9 @@ FIRST_PARTY_FIELD_NAMES = {
 from .catalog_7b import PRINTER_FIELD_NAMES
 
 FIRST_PARTY_FIELD_NAMES.update(PRINTER_FIELD_NAMES)
+from .catalog_broadcasts import FIELD_NAMES as BROADCAST_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(BROADCAST_FIELDS)
+FIRST_PARTY_FIELD_NAMES["integrations.EmailLog"] |= {"source_kind", "source_id", "source_metadata"}
 
 from .catalog_7c import LABEL_FIELD_NAMES
 

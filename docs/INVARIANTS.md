@@ -2238,6 +2238,66 @@ Load-bearing details that carried over unchanged:
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
+### Event communications and subject reports (Lane D)
+
+`integrations/broadcasts_models.py`, `broadcasts_registry.py`, `broadcasts_worker.py`
+and `broadcasts_delivery.py` are always-present shared infrastructure. Domain adapters
+own typed campaign/recipient models, resource authority and selection. Events uses
+`EventBroadcast` and `EventBroadcastDelivery`; bookings must not import events to reuse
+the engine. Campaigns require the domain feature plus notifications and email. Queueing
+is serialized by the tenant lock and limited to ten campaigns per hour per makerspace.
+The worker batches at 200 accounts, deduplicates by account, and creates each delivery
+and its unique outbox relation in one transaction. The existing reminder task recovers
+unfinished batches and enqueue failures through per-tenant source-gate boundaries.
+This guarantees durable enqueue identity, not exactly-once SMTP acceptance.
+
+Every send passes through `integrations/delivery_sources.py` inside `dispatch_delivery`:
+immediate, quiet-hours release and retry all reload campaign state, the original sender's
+current resource authority and live recipient eligibility. Unknown/tombstoned sources
+fail closed. Event recipients need matching registration status/attendance, a verified,
+valid account email, active account and any existing membership, notification consent,
+matrix, suppression and module/feature gates. Cancellation stops unclaimed sends;
+already accepted provider sends cannot be recalled. Templates render data-only bounded
+placeholders at send time through the existing email renderer. Ticket URLs navigate to
+the authenticated member ticket page; they contain no check-in/admission credential.
+Audit records contain state/counts and identifiers, never message bodies or recipient lists.
+
+Campaign sources are excluded when assigning digests AND while collecting digest inputs.
+Digest summaries retain input outbox IDs; `delivery_digest.py` rebuilds them by rechecking
+each registered source before delivery and every retry, dropping stale entries and skipping
+empty summaries. Booking reminder adapters supply durable booking/window/revision/offset
+identity via `EmailDelivery`/`dispatch_email` source fields and register their own live
+predicate. No generic worker imports a separable domain to implement these checks.
+
+Bulk event invitations accept at most 200 validated addresses per call and reuse
+`create_invite`. Emails contain only an event navigation link. Verified-email resolution
+and bound-code redemption use the existing locked resolver; invite-only registration
+without a code now uses that resolver and explains missing verification. Organization
+audience membership remains an additional admission requirement. No credential enters
+an outbox body, template context, log or export.
+
+`operations/report_subjects.py` validates paired `subject_kind`/`subject_id` through typed
+domain adapters and resolves the subject inside the selected tenant. Event-scoped
+attendance, registration/feedback preview, CSV/XLSX download and saved views require
+manage_registrations authority AND tenant VIEW_AUDIT. PDFs require full event management
+(tenant/organizer, no scoped grant) and an ended event. New detail/PDF definitions are
+unschedulable, non-deployment-aggregate and explicitly excluded from organization reports.
+Subject filters are refused on ALL schedules and aggregate paths, including legacy keys.
+Unfiltered legacy report permissions and calculation semantics remain intact. Saved views
+recheck reader and owner authority against their exact subject. PII previews/downloads
+audit; export provenance includes subject identity and tenant-local date bounds. Report
+registry PDF dispatch uses the same builder rows, provenance and render throttle as other
+formats. Feedback text uses the scoped-PII model accessor; exports never carry ticket tokens.
+
+Campaign subject/body use scoped secondary PII encryption and the DB write fence. Both
+concrete history models are tenant export datasets with explicit User closure. Portable
+import cancels nonterminal campaigns, clears delivery outbox links/cursors, and skips
+pending deliveries; terminal history survives. The source outbox and digest references
+are omitted telemetry. Events-only purge removes event campaigns and event-source outboxes,
+preserving other domains; whole-tenant purge removes all. These models own no S3 objects;
+manual PDF bytes are streamed, never stored. Retention/encryption/purge declarations survive
+tombstoning while adapters, feature rows and report definitions disappear.
+
 ### Event-scoped staff grants
 
 `events/event_authority.py` is the staff event authority API: tenant `MANAGE_EVENTS`,

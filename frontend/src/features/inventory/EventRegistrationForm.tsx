@@ -96,7 +96,6 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     setClientErrors(errors);
     if (hostWaiver && !waiverAccepted) { setClientErrors({ waiver: "Accept the current host waiver." }); return; }
     if (tickets.length && ticketId === null) { setClientErrors({ ticket: "Choose a ticket type." }); return; }
-    if (audience === "invite" && !inviteCode.trim()) { setClientErrors({ invite: "Enter your invitation code." }); return; }
     if (Object.keys(errors).length) return;
     if (!registration.isPending) registration.mutate();
   };
@@ -110,7 +109,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     </label>
     <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={registration.isPending} />
     <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={currency} disabled={registration.isPending} />
-    {audience === "invite" ? <label className="grid gap-1 text-sm">Invitation code<input className="desk-input" required maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
+    {audience === "invite" ? <><label className="grid gap-1 text-sm">Invitation code<input className="desk-input" maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">Leave blank if your verified account email was invited.</p></> : null}
     {hostWaiver ? <fieldset className="rounded-lg border border-line p-3"><legend>Host waiver</legend><p className="whitespace-pre-wrap text-sm">{hostWaiver.body}</p><label className="mt-2 flex gap-2"><input type="checkbox" checked={waiverAccepted} onChange={(e) => setWaiverAccepted(e.target.checked)} />I accept this host waiver (version {hostWaiver.version}).</label>{clientErrors.waiver ? <p role="alert">{clientErrors.waiver}</p> : null}</fieldset> : null}
     {promoEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
     {clientErrors.ticket || clientErrors.invite ? <p role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}

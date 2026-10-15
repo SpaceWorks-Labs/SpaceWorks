@@ -192,9 +192,17 @@ def _quote(event, member, ticket, invite_code, promo_code, *, actor):
     from .promos import redeem_promo
 
     from .organization_audience import AUDIENCE
-    invite = redeem_invite(event, invite_code, member, actor=actor) if (event.registration_audience == "invite"
+    invite = redeem_invite(event, invite_code, member, actor=actor) if (event.registration_audience == "invite" and invite_code
              or event.registration_audience == AUDIENCE and invite_code) else None
     from apps.makerspaces.platform import feature_enabled
+    if event.registration_audience == "invite" and not invite_code:
+        from .invites import resolve_for_account
+        from rest_framework.exceptions import NotFound, ValidationError
+        if not member or not member.email_verified_at:
+            raise ValidationError({"detail": "Verify your email to use your invitation.", "code": "email_verification_required"})
+        invite = resolve_for_account(event, member, actor=actor)
+        if invite is None:
+            raise NotFound("Invitation not found.")
     if event.registration_audience == AUDIENCE and not invite_code and feature_enabled(event.makerspace, "events.invites"):
         from .invites import resolve_for_account
         invite = resolve_for_account(event, member, actor=actor)

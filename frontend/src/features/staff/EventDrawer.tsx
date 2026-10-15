@@ -4,6 +4,8 @@ import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "
 import { EventOrganizationAudience } from "./EventOrganizationAudience";
 import { EventDuplicateAction } from "./EventDuplicateAction";
 import { EventInvitesPanel } from "./EventInvitesPanel";
+import { EventBroadcastsPanel } from "./EventBroadcastsPanel";
+import { EventAnalyticsPanel } from "./EventAnalyticsPanel";
 import { EventTicketsPanel } from "./EventTicketsPanel";
 import { EventPromosPanel } from "./EventPromosPanel";
 import { EventCategoriesField } from "./EventCategoriesField";
@@ -90,6 +92,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
         {!access.registrations && access.checkIn ? <EventCheckInOperator makerspaceId={makerspaceId} eventId={eventId} offlineEnabled={event.offline_checkin_enabled} canManageStation={access.manager} /> : null}
         {!access.registrations && access.edit ? <EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={[]} includeAttended={false} onIncludeAttended={() => {}} canPrint={false} /> : null}
         {access.edit ? <EventFeedbackPanel eventId={eventId} makerspaceId={makerspaceId} canViewResponses={access.registrations} canManageCertificates={access.manager} /> : access.registrations ? <EventFeedbackResponses eventId={eventId} makerspaceId={makerspaceId} responseCount={0} canManageCertificates={false} /> : null}
+        {access.registrations && event.broadcasts_enabled ? <EventBroadcastsPanel makerspaceId={makerspaceId} eventId={eventId} /> : null}
+        {event.report_features?.includes("analytics") ? <EventAnalyticsPanel makerspaceId={makerspaceId} eventId={eventId} endsAt={event.ends_at} features={event.report_features} /> : null}
         {access.manager ? <><EventOrganizers event={event} makerspaceId={makerspaceId} disabled={readOnly} /><EventCollaborators makerspaceId={makerspaceId} eventId={eventId} /><EventStaffAccess target={{ kind: "event", id: eventId }} /></> : null}
       </div> : null}
     </DetailDrawer>

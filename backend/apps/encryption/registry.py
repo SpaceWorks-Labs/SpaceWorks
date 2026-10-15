@@ -45,6 +45,8 @@ SECONDARY_FIELDS = _fields(
 )
 SECONDARY_FIELDS += _fields("notifications.MemberBroadcast", ("title", "body"),
                             "makerspace_id", "secondary", ((None, None), ("none", "none")))
+SECONDARY_FIELDS += _fields("events.EventBroadcast", ("subject", "body"),
+                            "makerspace_id", "secondary", ((None, None), ("none", "none")))
 ALL_FIELDS = SOURCE_FIELDS + SECONDARY_FIELDS
 BY_MODEL = {}
 for _field in ALL_FIELDS:

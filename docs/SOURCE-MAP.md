@@ -8,6 +8,27 @@
 
 ## Current source map (real paths)
 
+Lane D shared communications live in `integrations/broadcasts_models.py` (abstract schema),
+`broadcasts_registry.py` (typed adapters), `broadcasts_worker.py` (200-account batches and
+recovery) and `broadcasts_delivery.py` (execution checks/status reconciliation).
+`delivery_sources.py` is the pre-send/digest eligibility registry; `delivery_digest.py`
+rebuilds summaries from durable source outbox references. `EmailDelivery` and `EmailLog`
+carry source kind/id/metadata through lifecycle dispatch, deferral and retry.
+`operations/report_subjects.py` owns generic subject validation/authorization;
+`report_download.py` dispatches registered CSV/XLSX/PDF renderers and download audits.
+`report_pdf.py` renders paginated metric/value tables with provenance; new event report
+definitions/builders/typed contracts are `report_definitions_events.py`,
+`reports_event_exports.py`, `serializers_reports_events_detail.py`.
+
+Event adapters live in `events/broadcasts.py`, `models_broadcasts.py`,
+`services_broadcasts.py`, `views_broadcasts.py`, `serializers_broadcasts.py` and
+`urls_communications.py`; `services_bulk_invites.py`/`views_bulk_invites.py` own the
+bounded code-free email invitation flow, and `report_subject.py` owns event report policy.
+`makerspaces/module_purge_collectors_events.py` is re-exported by the existing collector
+barrel; `tenant_migration/catalog_broadcasts.py` declares inert portable history.
+Staff drawer components are `EventBroadcastsPanel.tsx`, `EventBulkInvites.tsx` and
+`EventAnalyticsPanel.tsx`, backed by `eventCommunicationsApi.ts` query keys/mutations.
+
 Event staff authority lives in `events/event_authority.py`, with its permission vocabulary
 in `event_permissions.py` and concrete typed event/series grants in `models_staff_grants.py`.
 `services_staff_grants.py` adapts the always-present

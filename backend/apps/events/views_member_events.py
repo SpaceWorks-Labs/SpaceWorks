@@ -142,6 +142,7 @@ class MemberCollaborativeEventRegistrationView(APIView):
     @extend_schema(
         tags=["Member events"],
         summary="Register for a collaborative event",
+        description="Invite-only admission can resolve a matching verified account email when the code is omitted. Partner eligibility, host waiver and normal admission rules still apply.",
         request=CollaborativeEventRegistrationInputSerializer,
         responses={
             201: PublicEventRegistrationResponseSerializer,

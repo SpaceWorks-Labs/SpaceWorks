@@ -165,6 +165,9 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/",
   "/api/v1/admin/events/{id}/badge-template/",
   "/api/v1/admin/events/{id}/badges.pdf",
+  "/api/v1/admin/events/{id}/broadcasts/",
+  "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/cancel/",
+  "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/queue/",
   "/api/v1/admin/events/{id}/cancel/",
   "/api/v1/admin/events/{id}/check-in/offline-roster/",
   "/api/v1/admin/events/{id}/check-in/offline-sync/",
@@ -183,6 +186,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/feedback-survey/templates/",
   "/api/v1/admin/events/{id}/image",
   "/api/v1/admin/events/{id}/invites/",
+  "/api/v1/admin/events/{id}/invites/bulk/",
   "/api/v1/admin/events/{id}/organizers/",
   "/api/v1/admin/events/{id}/promo-codes/",
   "/api/v1/admin/events/{id}/publish/",
@@ -960,7 +964,7 @@ export type AdmissionVouchOutcome = {
 
 export type AllowedFormatsEnum = "csv" | "xlsx";
 
-export type AnalyticsReportResponse = AnalyticsSummary | TakenItemsReport | ActiveLoansReport | ReturnsReport | DamagedMissingReport | DamagedLostReport | QrScansReport | MostLentReport | TopBorrowersReport | RecentlyAddedReport | MachineUsageReport | EventAttendanceReport | BookingUtilizationReport | MaintenanceActivityReport | MemberActivityReport | FabLabHealthReport | PaymentReconciliationReport | PaymentCashBook | PaymentsLedgerReport | RevenueOverTimeReport | CashBookReport | AccountingJournalReport | GenericAnalyticsReport | MemberRetentionReport | MembershipRevenueReport;
+export type AnalyticsReportResponse = AnalyticsSummary | TakenItemsReport | ActiveLoansReport | ReturnsReport | DamagedMissingReport | DamagedLostReport | QrScansReport | MostLentReport | TopBorrowersReport | RecentlyAddedReport | MachineUsageReport | EventAttendanceReport | BookingUtilizationReport | MaintenanceActivityReport | MemberActivityReport | FabLabHealthReport | PaymentReconciliationReport | PaymentCashBook | PaymentsLedgerReport | RevenueOverTimeReport | CashBookReport | AccountingJournalReport | GenericAnalyticsReport | MemberRetentionReport | MembershipRevenueReport | EventRegistrationReport | EventFeedbackReport;
 
 export type AnalyticsSummary = {
   "products": number;
@@ -1662,6 +1666,16 @@ export type BulkImportPreview = {
   [key: string]: unknown;
 }>;
   "mapping"?: unknown;
+};
+
+export type BulkInviteInput = {
+  "emails": Array<string>;
+  "expires_at"?: string | null;
+  "send_email"?: boolean;
+};
+
+export type BulkInviteResult = {
+  "created": number;
 };
 
 export type CadenceEnum = "daily" | "weekly" | "monthly";
@@ -2607,6 +2621,8 @@ export type EventAdmin = {
   "participating_organizations": Array<ParticipatingOrganization>;
   "audience_label": string | null;
   "organization_admission_blocked": boolean;
+  "broadcasts_enabled": boolean;
+  "report_features": Array<string>;
 };
 
 export type EventAttendanceMark = {
@@ -2642,6 +2658,33 @@ export type EventAttendanceRow = {
   "attended": number;
   "attendance_rate_percent": number | null;
   "organizers": string;
+};
+
+export type EventBroadcast = {
+  "id": number;
+  "event": number;
+  "subject": string;
+  "body": string;
+  "statuses": Array<"pending_approval" | "registered" | "waitlisted" | "rejected" | "cancelled" | "attended">;
+  "attendance": "any" | "attended" | "not_attended";
+  "status": "draft" | "queued" | "sending" | "sent" | "cancelled" | "failed";
+  "created_at": string;
+  "queued_at": string | null;
+  "completed_at": string | null;
+};
+
+export type EventBroadcastInput = {
+  "subject": string;
+  "body": string;
+  "statuses"?: Array<"pending_approval" | "registered" | "waitlisted" | "rejected" | "cancelled" | "attended">;
+  "attendance"?: "any" | "attended" | "not_attended";
+};
+
+export type EventBroadcastList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<EventBroadcast>;
 };
 
 export type EventCheckInResolveRequest = {
@@ -2717,6 +2760,18 @@ export type EventEligibleMember = {
   "display_name": string;
 };
 
+export type EventFeedbackReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<EventFeedbackReportRow>;
+};
+
+export type EventFeedbackReportRow = {
+  "response_id": number;
+  "created_at": string;
+  "registration_id": number | null;
+  "answers": string;
+};
+
 export type EventListResponse = {
   "count": number;
   "next"?: string | null;
@@ -2781,6 +2836,21 @@ export type EventRegistrationListResponse = {
   "next"?: string | null;
   "previous"?: string | null;
   "results": Array<EventRegistrationAdmin>;
+};
+
+export type EventRegistrationReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<EventRegistrationReportRow>;
+};
+
+export type EventRegistrationReportRow = {
+  "registration_id": number;
+  "name": string;
+  "email": string;
+  "phone": string;
+  "status": string;
+  "created_at": string;
+  "answers": string;
 };
 
 export type EventSeriesDetail = {
@@ -8611,7 +8681,7 @@ export type ReportCatalogItem = {
   "grains": Array<string>;
   "chart_hint": string;
   "aggregate_supported": boolean;
-  "allowed_formats": Array<AllowedFormatsEnum>;
+  "allowed_formats": Array<ReportExportFormatEnum>;
   "schedulable": boolean;
   "previewable": boolean;
   "condition_metrics": Array<string>;
@@ -8641,7 +8711,9 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "summary" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "damaged-lost" | "qr-scans" | "most-lent" | "top-borrowers" | "recently-added" | "machine-usage" | "event-attendance" | "booking-utilization" | "maintenance-activity" | "member-activity" | "machine-service" | "printer-service" | "fablab-health" | "payment-reconciliation" | "loan-throughput" | "inventory-control" | "evidence-compliance" | "import-quality" | "procurement-performance" | "communications-health" | "community-engagement" | "certification-coverage" | "module-operational-health" | "audit-trail" | "member-retention" | "membership-revenue" | "payments-ledger" | "revenue-over-time" | "cash-book" | "accounting-journal";
+export type ReportExportFormatEnum = "csv" | "xlsx" | "pdf";
+
+export type ReportKeyEnum = "accounting-journal" | "active-loans" | "audit-trail" | "booking-utilization" | "cash-book" | "certification-coverage" | "communications-health" | "community-engagement" | "damaged-lost" | "damaged-missing" | "event-attendance" | "event-attendance-pdf" | "event-feedback" | "event-registrations" | "evidence-compliance" | "fablab-health" | "import-quality" | "inventory-control" | "loan-throughput" | "machine-service" | "machine-usage" | "maintenance-activity" | "member-activity" | "member-retention" | "membership-revenue" | "module-operational-health" | "most-lent" | "payment-cash-book" | "payment-reconciliation" | "payments-ledger" | "printer-service" | "procurement-performance" | "qr-scans" | "recently-added" | "returns" | "revenue-over-time" | "summary" | "taken-items" | "top-borrowers";
 
 export type ReportSchedule = {
   "id": number;
@@ -8672,6 +8744,8 @@ export type ReportScheduleFilters = {
   "status"?: Status66aEnum;
   "subject_type"?: SubjectTypeEnum;
   "months"?: number;
+  "subject_kind"?: string;
+  "subject_id"?: number;
 };
 
 export type ReportScheduleFormatEnum = "csv" | "xlsx";

@@ -16,6 +16,8 @@ export type StaffEvent = {
   staff_permissions?: import("./eventStaffPermissions").EventPermission[];
   can_manage_staff?: boolean;
   ticketing_features?: string[];
+  broadcasts_enabled?: boolean;
+  report_features?: string[];
   participating_organizations?: { id: number; name: string }[];
   audience_label?: string | null;
   organization_admission_blocked?: boolean;

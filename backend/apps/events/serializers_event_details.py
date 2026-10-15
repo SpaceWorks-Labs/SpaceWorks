@@ -36,6 +36,8 @@ from .serializers_organization_audience import OrganizationAudienceFields
 
 
 class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, serializers.ModelSerializer):
+    broadcasts_enabled = serializers.SerializerMethodField()
+    report_features = serializers.SerializerMethodField()
     ticketing_features = serializers.SerializerMethodField()
     makerspace_id = serializers.IntegerField(read_only=True)
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
@@ -53,6 +55,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
             'participating_organizations', 'audience_label', 'organization_admission_blocked',
             'id', 'staff_permissions', 'can_manage_staff',
             'makerspace_id', 'ticketing_features',
+            'broadcasts_enabled', 'report_features',
             'series_summary',
             'series_revision',
             'series_override_fields',
@@ -89,6 +92,33 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_ticketing_features(self, obj):
         return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience") if feature_enabled(obj.makerspace, key)]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_broadcasts_enabled(self, obj):
+        return feature_enabled(obj.makerspace, "events.broadcasts")
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_report_features(self, obj):
+        from apps.accounts import rbac
+        from apps.makerspaces.platform import module_enabled
+        from . import event_authority
+        actor = getattr(self.context.get("request"), "user", None)
+        if not module_enabled(obj.makerspace, "reports") or not event_authority._active(actor):
+            return []
+        manager, permissions = self._authority(obj)
+        if "manage_registrations" not in permissions:
+            return []
+        audit = self.context.setdefault("event_report_audit", {})
+        if obj.makerspace_id not in audit:
+            audit[obj.makerspace_id] = rbac.can(actor, rbac.Action.VIEW_AUDIT, obj.makerspace_id)
+        if not audit[obj.makerspace_id]:
+            return []
+        keys = ["analytics"]
+        if feature_enabled(obj.makerspace, "reports.event_exports"):
+            keys.append("exports")
+        if feature_enabled(obj.makerspace, "reports.event_pdf") and manager:
+            keys.append("pdf")
+        return keys
 
     # The raw object key is never exposed: staff and public both receive a resolved
     # URL, matching PublicMachineSerializer.
@@ -142,4 +172,3 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
                 for status in EventRegistration.Status.values
             }
         )
-

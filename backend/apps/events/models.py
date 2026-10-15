@@ -21,8 +21,10 @@ from .models_invites import EventInvite
 from .models_tickets import EventTicketType
 from .models_promos import EventPromoCode
 from .models_categories import EventCategory
+from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
 
 __all__ = [
+    "EventBroadcast", "EventBroadcastDelivery",
     "EventStaffGrant", "EventStaffGrantInvite",
     "EventInvite", "EventTicketType", "EventPromoCode", "EventCategory",
     "Event",

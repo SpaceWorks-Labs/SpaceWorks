@@ -158,7 +158,7 @@ export function PartnerEvents({
                 <button
                   type="button"
                   className="desk-button-secondary"
-                  disabled={!event.registration_open || register.isPending || (open && (blocked || (tickets.length > 0 && ticketId === null) || (event.ticket_selection_required && !tickets.length) || (event.registration_audience === "invite" && !inviteCode.trim())))}
+                  disabled={!event.registration_open || register.isPending || (open && (blocked || (tickets.length > 0 && ticketId === null) || (event.ticket_selection_required && !tickets.length)))}
                   onClick={() => {
                     if (mustExpand && !open) {
                       setPhone(""); setEmail(""); setNeedsPhone(false); setNeedsEmail(false);
@@ -188,7 +188,7 @@ export function PartnerEvents({
               {open ? <div className="mt-3 grid gap-2">
                 <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={register.isPending} />
                 <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={event.currency ?? ""} disabled={register.isPending} />
-                {event.registration_audience === "invite" ? <label>Invitation code<input className="desk-input" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
+                {event.registration_audience === "invite" ? <><label>Invitation code<input className="desk-input" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">Leave blank if your verified account email was invited.</p></> : null}
                 {event.promo_codes_enabled ? <label>Promo code (optional)<input className="desk-input" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
               </div> : null}
               {!event.registration_open && event.effective_registration_cutoff_at ? <p className="mt-2 text-xs text-muted">Closed at {new Date(event.effective_registration_cutoff_at).toLocaleString()}</p> : null}

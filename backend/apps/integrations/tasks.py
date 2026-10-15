@@ -1,5 +1,8 @@
 import random
 
+# Register the shared worker even when no separable domain adapter is installed.
+from .broadcasts_worker import broadcast_batch, resume_broadcasts  # noqa: F401
+
 from celery import shared_task
 from django.db import transaction
 
@@ -55,6 +58,13 @@ def _claim_log(log_id):
         assert_mapped_write_allowed(candidate.makerspace_id)
         log = EmailLog.objects.select_for_update().filter(pk=log_id).first()
         if log is None or log.status in (EmailLog.Status.SENT, EmailLog.Status.SKIPPED):
+            return None
+        from .broadcasts_delivery import attempt_limit
+        from .broadcasts_registry import ADAPTERS
+        # Duplicate tasks must leave exhausted failures available for manual retry.
+        # Only that locked retry renews the budget, including subsequent retries.
+        if (log.status == EmailLog.Status.FAILED and log.source_kind in ADAPTERS
+                and log.attempts >= attempt_limit(log)):
             return None
         if log.status == EmailLog.Status.SENDING and not sending_claim_is_stale(log):
             return None

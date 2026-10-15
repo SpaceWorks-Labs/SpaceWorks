@@ -1,6 +1,10 @@
 """Static model-backed origin scopes, split from request resolution logic."""
 
 BASE_MODEL_LOOKUPS = {
+    'admin-event-broadcasts': ('events.Event', 'makerspace_id'),
+    'admin-event-broadcast-queue': ('events.Event', 'makerspace_id'),
+    'admin-event-broadcast-cancel': ('events.Event', 'makerspace_id'),
+    'admin-event-bulk-invites': ('events.Event', 'makerspace_id'),
     "admin-certification-members": ("machines.CertificationType", "makerspace_id"),
     "admin-certification-type-detail": ("machines.CertificationType", "makerspace_id"),
     "admin-certification-type-grants": ("machines.CertificationType", "makerspace_id"),

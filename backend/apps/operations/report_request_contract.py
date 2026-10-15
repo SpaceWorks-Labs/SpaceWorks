@@ -28,6 +28,8 @@ PAYMENT_FILTER_PARAMETERS = [
     OpenApiParameter("subject_type", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=Payment.SubjectType.values),
 ]
 PREVIEW_PARAMETERS = [
+    OpenApiParameter("subject_kind", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Typed tenant-local report subject, paired with subject_id."),
+    OpenApiParameter("subject_id", OpenApiTypes.INT, OpenApiParameter.QUERY),
     OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
     *DATE_RANGE_PARAMETERS,
     *PAYMENT_FILTER_PARAMETERS,
@@ -56,12 +58,18 @@ FILTER_SERIALIZERS = {
 
 
 def _report_filters(request, report_key):
+    from .report_subjects import SubjectFilterSerializer, SUBJECTS
+    subjects = SubjectFilterSerializer(data=request.query_params)
+    subjects.is_valid(raise_exception=True)
+    values = dict(subjects.validated_data)
+    if values and not any(report_key in adapter.report_keys for adapter in SUBJECTS.values()):
+        raise ValidationError({"subject_kind": "Unsupported subject for this report."})
     serializer_class = FILTER_SERIALIZERS.get(report_key)
     if serializer_class is None:
-        return {}
+        return values
     serializer = serializer_class(data=request.query_params)
     serializer.is_valid(raise_exception=True)
-    return serializer.validated_data
+    return {**serializer.validated_data, **values}
 
 
 def _grain_param(request, definition):

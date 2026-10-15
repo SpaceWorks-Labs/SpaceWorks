@@ -113,6 +113,7 @@ PLANS = (
             "events.EventRegistration",
             "events.EventFeedbackResponse",
             "events.EventAttendanceCertificate",
+            "events.EventBroadcast",
         ),
         private_keys=events_private_keys,
         private_key_sizes=events_private_key_sizes,

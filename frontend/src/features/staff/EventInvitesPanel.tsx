@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useEventTicketing, type EventCode } from "./eventTicketingApi";
+import { EventBulkInvites } from "./EventBulkInvites";
 
 export function EventInvitesPanel({ eventId, disabled = false }: { eventId: number; disabled?: boolean }) {
   const [page, setPage] = useState(1);
@@ -11,6 +12,7 @@ export function EventInvitesPanel({ eventId, disabled = false }: { eventId: numb
   const error = rows.error || create.error || revoke.error;
   return <section className="grid gap-3" aria-label="Event invitations">
     <h3 className="title-section">Invitations</h3>
+    <EventBulkInvites eventId={eventId} disabled={disabled} />
     <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); create.mutate({ email, max_uses: limit, expires_at: expires ? new Date(expires).toISOString() : null }, { onSuccess: (row) => setCode(row.code ?? "") }); }}>
       <label>Recipient email (optional)<input className="desk-input" type="email" value={email} disabled={disabled} onChange={(e) => setEmail(e.target.value)} /></label>
       <label>Maximum uses<input className="desk-input" type="number" min="1" required value={limit} disabled={disabled} onChange={(e) => setLimit(Number(e.target.value))} /></label>

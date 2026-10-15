@@ -33,6 +33,10 @@ class AuthorityRegistryError(AssertionError):
 
 APPS_DIR = Path(project_apps.__file__).resolve().parent
 AUTHORIZATION_SOURCES = (
+    APPS_DIR / "events" / "broadcasts.py",
+    APPS_DIR / "events" / "report_subject.py",
+    APPS_DIR / "integrations" / "broadcasts_delivery.py",
+    APPS_DIR / "operations" / "report_subjects.py",
     APPS_DIR / "events" / "event_authority.py",
     APPS_DIR / "events" / "event_authority_page.py",
     APPS_DIR / "events" / "staff_grant_locks.py",
@@ -67,6 +71,8 @@ SCANNED_MODEL_LABELS = frozenset({
 EXPLICIT_AUTHORITY_FIELDS = {
     **WP4_AUTHORITY_FIELDS,
     **LOAN_AUTHORITY_FIELDS,
+    ("makerspaces.Makerspace", "location"): "AST over-approximation from broadcast rendering; portable location grants no authority.",
+    ("machines.Machine", "location"): "AST over-approximation from broadcast rendering; portable location grants no authority.",
     ("machines.MakerspaceMachineTypePolicy", "makerspace"): "Tenant boundary for reminder policy; preserved data does not grant staff authority.",
     ("machines.MakerspaceMachineTypePolicy", "machine_type"): "Remapped type boundary for reminder policy, never an authorization scope grant.",
     ("machines.MakerspaceMachineTypePolicy", "cert_reminder_days"): "Portable certification disclosure timing; target-owned feature and channel gates still apply.",

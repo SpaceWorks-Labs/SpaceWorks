@@ -115,6 +115,7 @@ class PublicEventRegistrationView(APIView):
     @extend_schema(
         tags=['Public events'],
         request=PublicEventRegistrationInputSerializer,
+        description="Invite-only admission accepts a code or a matching verified account email. Code-free unverified admission returns email_verification_required; all normal admission, capacity and waiver rules apply.",
         responses={
             201: PublicEventRegistrationResponseSerializer,
             **PUBLIC_EVENT_REGISTRATION_ERRORS,

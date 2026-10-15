@@ -28,6 +28,9 @@ def require_feature(event, key):
 @transaction.atomic
 def create_invite(event, *, actor, email="", max_uses=1, expires_at=None):
     event = _locked_event(event.pk)
+    from . import event_authority
+    from .event_permissions import MANAGE_INVITATIONS
+    event_authority.require(actor, event, MANAGE_INVITATIONS)
     event.makerspace = require_module_locked(event.makerspace, "events")
     require_feature(event, "events.invites")
     if max_uses < 1 or (expires_at and expires_at <= timezone.now()):
@@ -99,6 +102,9 @@ def resolve_for_account(event, member, *, actor):
 @transaction.atomic
 def revoke_invite(invite, *, actor):
     event = _locked_event(invite.event_id)
+    from . import event_authority
+    from .event_permissions import MANAGE_INVITATIONS
+    event_authority.require(actor, event, MANAGE_INVITATIONS)
     event.makerspace = require_module_locked(event.makerspace, "events")
     require_feature(event, "events.invites")
     locked = EventInvite.objects.select_for_update().get(pk=invite.pk, event=event)

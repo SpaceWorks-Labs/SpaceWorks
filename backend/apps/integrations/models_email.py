@@ -111,6 +111,10 @@ class EmailLog(ScopedPiiModelMixin, models.Model):
     )
     # Family key independent of template stream/event aliases.
     feature = models.CharField(max_length=32, blank=True)
+    # Durable source identity contains identifiers/window snapshots only, never credentials.
+    source_kind = models.CharField(max_length=48, blank=True)
+    source_id = models.PositiveBigIntegerField(null=True, blank=True)
+    source_metadata = models.JSONField(default=dict, blank=True)
     subject = models.TextField()
     text_body = models.TextField(blank=True)
     html_body = models.TextField(blank=True)

@@ -12,6 +12,30 @@ logger = logging.getLogger(__name__)
 
 def _deliver(log):
     if log.status in {EmailLog.Status.SENT, EmailLog.Status.SKIPPED}:
+        from .delivery_sources import finished
+        finished(log)
+        return log
+
+    # Custody alarms are deployment control-plane mail even when addressed to a
+    # tenant custodian. Keep the source-gate exemption as narrow as the task policy.
+    custody_alarm = log.stream == "backup" and log.event in {
+        "archive_custody_alarm", "tenant_exit_custody_alarm",
+    }
+    if log.makerspace_id and not custody_alarm:
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        from apps.encryption.write_fence import assert_mapped_write_allowed
+        # Reuse the task's dedicated boundary lock before opening an application
+        # transaction; a second connection can queue behind migration's writer.
+        assert_write_allowed(log.makerspace_id)
+        with transaction.atomic():
+            assert_mapped_write_allowed(log.makerspace_id)
+
+    from .delivery_sources import prepare, finished
+    from .delivery_content import content, recipient_address
+    if not prepare(log):
+        log.status, log.error = EmailLog.Status.SKIPPED, 'delivery_source_no_longer_eligible'
+        log.save(update_fields=['status', 'error', 'updated_at'])
+        finished(log)
         return log
 
     if log.event == 'daily_digest':
@@ -19,6 +43,7 @@ def _deliver(log):
         if not _allowed(log, log.makerspace):
             log.status, log.error = EmailLog.Status.SKIPPED, 'notification_disabled_before_release'
             log.save(update_fields=['status', 'error', 'updated_at'])
+            finished(log)
             return log
 
     from apps.encryption.write_fence import assert_mapped_write_allowed
@@ -30,16 +55,25 @@ def _deliver(log):
     # across a module uninstall, and the retry path re-enters here too. Gating only
     # `dispatch_email` would let everything already in flight through.
     from apps.integrations.email_preferences import blocked_reason, unsubscribe_headers
-    reason = blocked_reason(log.makerspace, log.to_email, user_id=log.recipient_id,
+    reason = blocked_reason(log.makerspace, recipient_address(log), user_id=log.recipient_id,
                             feature=log.feature, stream=log.stream, event=log.event)
     if reason or email_module_blocks(log.makerspace, log.stream, log.event):
         log.status = EmailLog.Status.SKIPPED
         log.error = reason or "Email is disabled for this makerspace."
         log.save(update_fields=["status", "error", "updated_at"])
+        finished(log)
         return log
 
     from apps.integrations.timing_dispatch import defer_log
-    if defer_log(log, kind='email'):
+    try:
+        if defer_log(log, kind='email'):
+            return log
+    except Exception as exc:
+        log.status, log.error = EmailLog.Status.FAILED, 'delivery_timing_unavailable'
+        log.attempts += 1
+        log.save(update_fields=['status', 'error', 'attempts', 'updated_at'])
+        finished(log)
+        logger.error('source_delivery_timing_failed', extra={'email_log_id': log.pk, 'error_class': type(exc).__name__})
         return log
 
     try:
@@ -52,16 +86,17 @@ def _deliver(log):
             connection, from_email = makerspace_mail_connection(log.makerspace)
         else:
             connection, from_email = platform_mail_connection()
+        rendered = content(log)
         msg = EmailMultiAlternatives(
-            subject=log.subject,
-            body=log.text_body,
+            subject=rendered.subject,
+            body=rendered.text_body,
             from_email=from_email,
-            to=[log.to_email],
+            to=[rendered.to_email],
             connection=connection,
             headers=unsubscribe_headers(log),
         )
-        if log.html_body:
-            msg.attach_alternative(log.html_body, "text/html")
+        if rendered.html_body:
+            msg.attach_alternative(rendered.html_body, "text/html")
         msg.send()
     except Exception as exc:
         log.status = EmailLog.Status.FAILED
@@ -98,4 +133,5 @@ def _deliver(log):
                 "updated_at",
             ]
         )
+    finished(log)
     return log

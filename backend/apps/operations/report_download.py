@@ -1,0 +1,54 @@
+"""Report registry download dispatch, shared by tenant and aggregate views."""
+from contextlib import nullcontext
+
+from apps.operations import reports
+from apps.tenant_migration.gate_runtime import tenant_write
+from .report_request_contract import _export_format, _grain_param, _report_filters
+from .report_exports import _csv_response, _xlsx_response
+from .report_exports_provenance import actor_label, build_provenance, export_filters
+from .views_report_helpers import _date_range, _makerspace_for_report_view
+
+
+def _export_response(request, definition, makerspace_id):
+    """Build the file through the canonical row path and stamp its provenance.
+
+    Every input the builder saw is echoed into the provenance filters, so a reader of the
+    file can tell what subset it is without the URL that produced it.
+    """
+    fmt = _export_format(request, definition)
+    local_space = None
+    if makerspace_id is not None:
+        local_space = _makerspace_for_report_view(request.user, makerspace_id, definition.key)
+    local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in {"member-retention", "membership-revenue"})
+    date_range = _date_range(request, local_space if local_dates else None)
+    report_filters = _report_filters(request, definition.key)
+    grain = _grain_param(request, definition)
+    rows = reports.report_rows(
+        definition.key, makerspace_id, date_range=date_range,
+        actor=request.user,
+        report_filters=report_filters, grain=grain,
+    )
+    provenance = build_provenance(
+        definition.key, version=definition.version, makerspace_id=makerspace_id,
+        generated_by=actor_label(request.user),
+        filters=export_filters(date_range=date_range, report_filters=report_filters, grain=grain),
+    )
+    from apps.audit.services import record
+    # GET bypasses the request write gate; hold the service gate through audit commit.
+    with tenant_write(local_space.pk) if local_space is not None else nullcontext():
+        record(request.user, "report.downloaded", makerspace=local_space,
+               meta={"report_key": definition.key, "format": fmt, "filters": provenance.filters})
+    if fmt == "pdf":
+        from django.http import HttpResponse
+        from django.utils.module_loading import import_string
+        if not definition.pdf_renderer_path:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("PDF is unavailable for this report.")
+        response = HttpResponse(import_string(definition.pdf_renderer_path)(rows, provenance=provenance,
+                                title=definition.title), content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{definition.key}.pdf"'
+        response["Cache-Control"] = "private, no-store"
+        return response
+    if fmt == "xlsx":
+        return _xlsx_response(rows, f"{definition.key}.xlsx", provenance=provenance)
+    return _csv_response(rows, f"{definition.key}.csv", provenance=provenance)

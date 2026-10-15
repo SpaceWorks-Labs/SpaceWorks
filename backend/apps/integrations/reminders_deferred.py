@@ -4,6 +4,7 @@ from django.db import transaction
 
 from apps.accounts import rbac
 from apps.integrations.models import EmailLog, NotificationDeliveryLog
+from apps.integrations.delivery_content import content, recipient_address
 from apps.integrations.notify import NotificationResult
 from apps.integrations.timing_dispatch import RELEASING
 from apps.operations.reminder_types import ReminderMessage, ReminderSource
@@ -23,6 +24,12 @@ def build(space, row, now, tz):
 
 
 def _allowed(log, space):
+    if (isinstance(log, EmailLog) and log.source_kind == 'event_invitation'
+            and log.stream == 'events' and log.event == 'invitation'):
+        # Explicit invitations use the same policy as immediate mail. _deliver
+        # rechecks the live invitation/sender, modules, suppression and opt-outs;
+        # the automatic-notification matrix must not discard a quiet-hours invite.
+        return True
     from apps.integrations.email_preferences import blocked_reason
     from apps.integrations.dispatch_policy import email_module_blocks
     from apps.integrations.notification_catalog import is_notification_enabled, receipt_email_default
@@ -35,7 +42,7 @@ def _allowed(log, space):
         from apps.notifications.inbox import eligible_owner
         if log.recipient_id and not eligible_owner(space, log.recipient_id):
             return False
-        return not (blocked_reason(space, log.to_email, user_id=log.recipient_id,
+        return not (blocked_reason(space, recipient_address(log), user_id=log.recipient_id,
                                   feature=log.feature, stream=log.stream, event=log.event)
                     or email_module_blocks(space, log.stream, log.event)) and (
             not family or is_notification_enabled(space, family, 'email') or
@@ -59,6 +66,8 @@ def dispatch(space, row, message, now, tz):
     if not _allowed(log, space):
         log.status, log.error = 'skipped', 'notification_disabled_before_release'
         log.save(update_fields=['status', 'error', 'updated_at'])
+        from .delivery_sources import finished
+        finished(log)
         return NotificationResult(False)
     token = RELEASING.set(True)
     try:
@@ -93,13 +102,23 @@ def _digest(space, row, now):
     # Bound each batch. Tail gets its own reminder identity rather than disappearing.
     with transaction.atomic():
         for log in queryset.select_for_update()[:200]:
-            allowed = _allowed(log, space)
+            from .delivery_sources import digestible, prepare
+            if not digestible(log):
+                # Also defend legacy/manual digest markers on campaign rows.
+                token = RELEASING.set(True)
+                try:
+                    from .dispatch_delivery import _deliver
+                    _deliver(log)
+                finally:
+                    RELEASING.reset(token)
+                continue
+            allowed = prepare(log) and _allowed(log, space)
             if allowed:
                 # Preserve family and address boundaries so a queued summary can
                 # still honour opt-outs and matrix changes at SMTP delivery time.
                 from apps.notifications.preferences import STREAM_FEATURES
                 family = log.feature or STREAM_FEATURES.get(log.stream, log.stream)
-                groups.setdefault((family, log.to_email, log.audience), []).append(log)
+                groups.setdefault((family, recipient_address(log), log.audience), []).append(log)
             log.status = 'skipped'
             log.error = 'included_in_daily_digest' if allowed else 'notification_disabled_before_release'
             log.save(update_fields=['status', 'error', 'updated_at'])
@@ -110,8 +129,10 @@ def _digest(space, row, now):
                 summaries.append(dispatch_email(
                     makerspace=space, to_email=address, recipient_id=int(user_id), feature=family,
                     subject=f'{space.name}: daily notification digest',
-                    text_body='\n\n'.join(f'{mail.subject}\n{mail.text_body}' for mail in mails),
+                    text_body='\n\n'.join(f'{content(mail).subject}\n{content(mail).text_body}' for mail in mails),
                     stream='notifications', event='daily_digest', audience=audience, sync=False,
+                    source_kind='notification_digest',
+                    source_metadata={'entries': [mail.pk for mail in mails]},
                 ))
         finally:
             RELEASING.reset(token)

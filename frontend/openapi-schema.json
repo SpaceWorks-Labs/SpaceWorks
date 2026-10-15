@@ -981,6 +981,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -16895,6 +16911,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -16956,7 +16988,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/booking-utilization": {
@@ -17045,6 +17078,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -17106,7 +17155,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/damaged-lost": {
@@ -17195,6 +17245,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -17256,7 +17322,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/damaged-missing": {
@@ -17345,6 +17412,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -17406,7 +17489,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/event-attendance": {
@@ -17495,6 +17579,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -17556,7 +17656,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/fablab-health": {
@@ -17645,6 +17746,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -17706,7 +17823,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/machine-usage": {
@@ -17795,6 +17913,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -17856,7 +17990,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/maintenance-activity": {
@@ -17945,6 +18080,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -18006,7 +18157,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/member-activity": {
@@ -18095,6 +18247,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -18156,7 +18324,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/most-lent": {
@@ -18245,6 +18414,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -18306,7 +18491,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/payment-reconciliation": {
@@ -18395,6 +18581,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -18456,7 +18658,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/qr-scans": {
@@ -18545,6 +18748,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -18606,7 +18825,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/recently-added": {
@@ -18695,6 +18915,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -18756,7 +18992,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/returns": {
@@ -18845,6 +19082,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -18906,7 +19159,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/summary": {
@@ -18995,6 +19249,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -19056,7 +19326,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/taken-items": {
@@ -19145,6 +19416,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -19206,7 +19493,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/top-borrowers": {
@@ -19295,6 +19583,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -19356,7 +19660,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/analytics/{report_key}": {
@@ -19453,6 +19758,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -19514,7 +19835,8 @@
             },
             "description": "Makerspace or report not found."
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/api-client-scopes": {
@@ -29274,7 +29596,8 @@
               "type": "string",
               "enum": [
                 "csv",
-                "xlsx"
+                "xlsx",
+                "pdf"
               ]
             }
           },
@@ -29323,6 +29646,9 @@
                 "damaged-lost",
                 "damaged-missing",
                 "event-attendance",
+                "event-attendance-pdf",
+                "event-feedback",
+                "event-registrations",
                 "evidence-compliance",
                 "fablab-health",
                 "import-quality",
@@ -29390,6 +29716,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -29409,6 +29751,12 @@
                 }
               },
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -29456,8 +29804,19 @@
               }
             },
             "description": "Makerspace or report not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportError"
+                }
+              }
+            },
+            "description": ""
           }
-        }
+        },
+        "description": "Subject reports require event manage_registrations AND tenant VIEW_AUDIT; PDF requires full event management and an ended event."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/request-history": {
@@ -43747,6 +44106,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -48008,6 +48383,22 @@
                 "membership_term"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "subject_kind",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Typed tenant-local subject; pair with subject_id. Refused on schedules and aggregates."
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
         "tags": [
@@ -48027,6 +48418,12 @@
                 }
               },
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -48074,6 +48471,16 @@
               }
             },
             "description": "Makerspace or report not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -59522,7 +59929,7 @@
             "description": "Rate limit exceeded."
           }
         },
-        "description": " Organization audience requires live qualifying membership and enabled feature/readiness; host_waiver_required refuses missing, stale or forged consent. Organization eligibility cannot consume invites/promos on refusal."
+        "description": "Organization audience requires live qualifying membership and enabled feature/readiness; host_waiver_required refuses missing, stale or forged consent. Organization eligibility cannot consume invites/promos on refusal. Invite-only admission can resolve matching verified account email when invite_code is omitted; unverified code-free requests return email_verification_required. Normal eligibility, capacity and waiver rules still apply."
       }
     },
     "/api/v1/member/makerspaces/{makerspace_id}/directory": {
@@ -65821,7 +66228,7 @@
             "description": "Event state conflict or cancelled paid registration cannot be reused."
           }
         },
-        "description": " Organization audience requires live qualifying membership and enabled feature/readiness; host_waiver_required refuses missing, stale or forged consent. Organization eligibility cannot consume invites/promos on refusal."
+        "description": "Organization audience requires live qualifying membership and enabled feature/readiness; host_waiver_required refuses missing, stale or forged consent. Organization eligibility cannot consume invites/promos on refusal. Invite-only admission can resolve matching verified account email when invite_code is omitted; unverified code-free requests return email_verification_required. Normal eligibility, capacity and waiver rules still apply."
       }
     },
     "/api/v1/public/{makerspace_slug}/inventory/": {
@@ -69621,6 +70028,650 @@
           }
         }
       }
+    },
+    "/api/v1/admin/events/{id}/broadcasts/": {
+      "get": {
+        "operationId": "api_v1_admin_events_broadcasts_list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventBroadcastList"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": "Invalid field values, disabled events module or disabled feature."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "description": "Requires live manage_registrations authority and events.broadcasts, notifications and email. Campaigns send only to eligible verified accounts; queue is limited to 10/hour/makerspace."
+      },
+      "post": {
+        "operationId": "api_v1_admin_events_broadcasts_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventBroadcastInput"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventBroadcast"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": "Invalid field values, disabled events module or disabled feature."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "description": "Requires live manage_registrations authority and events.broadcasts, notifications and email. Campaigns send only to eligible verified accounts; queue is limited to 10/hour/makerspace."
+      }
+    },
+    "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/queue/": {
+      "post": {
+        "operationId": "api_v1_admin_events_broadcasts_queue_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": "Invalid field values, disabled events module or disabled feature."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventBroadcast"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/cancel/": {
+      "post": {
+        "operationId": "api_v1_admin_events_broadcasts_cancel_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": "Invalid field values, disabled events module or disabled feature."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventBroadcast"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/invites/bulk/": {
+      "post": {
+        "operationId": "api_v1_admin_events_invites_bulk_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkInviteInput"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkInviteResult"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": "Invalid field values, disabled events module or disabled feature."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "description": "Requires manage_invitations and events.invites. Up to 200 email-bound invites; emails contain only event navigation, never admission codes. Verified account email is required for code-free admission."
+      }
     }
   },
   "components": {
@@ -70531,6 +71582,12 @@
           },
           {
             "$ref": "#/components/schemas/MembershipRevenueReport"
+          },
+          {
+            "$ref": "#/components/schemas/EventRegistrationReport"
+          },
+          {
+            "$ref": "#/components/schemas/EventFeedbackReport"
           }
         ]
       },
@@ -77374,10 +78431,22 @@
           "organization_admission_blocked": {
             "type": "boolean",
             "readOnly": true
+          },
+          "broadcasts_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "report_features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
           }
         },
         "required": [
           "audience_label",
+          "broadcasts_enabled",
           "can_manage_staff",
           "cancellation_cutoff_hours",
           "capacity",
@@ -77405,6 +78474,7 @@
           "registration_cutoff_lead_minutes",
           "registration_open",
           "registration_requires_approval",
+          "report_features",
           "series_override_fields",
           "series_revision",
           "series_summary",
@@ -102202,7 +103272,7 @@
           "allowed_formats": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AllowedFormatsEnum"
+              "$ref": "#/components/schemas/ReportExportFormatEnum"
             }
           },
           "schedulable": {
@@ -102330,42 +103400,45 @@
       },
       "ReportKeyEnum": {
         "enum": [
-          "payment-cash-book",
-          "summary",
-          "taken-items",
+          "accounting-journal",
           "active-loans",
-          "returns",
-          "damaged-missing",
-          "damaged-lost",
-          "qr-scans",
-          "most-lent",
-          "top-borrowers",
-          "recently-added",
-          "machine-usage",
-          "event-attendance",
+          "audit-trail",
           "booking-utilization",
-          "maintenance-activity",
-          "member-activity",
-          "machine-service",
-          "printer-service",
-          "fablab-health",
-          "payment-reconciliation",
-          "loan-throughput",
-          "inventory-control",
-          "evidence-compliance",
-          "import-quality",
-          "procurement-performance",
+          "cash-book",
+          "certification-coverage",
           "communications-health",
           "community-engagement",
-          "certification-coverage",
-          "module-operational-health",
-          "audit-trail",
+          "damaged-lost",
+          "damaged-missing",
+          "event-attendance",
+          "event-attendance-pdf",
+          "event-feedback",
+          "event-registrations",
+          "evidence-compliance",
+          "fablab-health",
+          "import-quality",
+          "inventory-control",
+          "loan-throughput",
+          "machine-service",
+          "machine-usage",
+          "maintenance-activity",
+          "member-activity",
           "member-retention",
           "membership-revenue",
+          "module-operational-health",
+          "most-lent",
+          "payment-cash-book",
+          "payment-reconciliation",
           "payments-ledger",
+          "printer-service",
+          "procurement-performance",
+          "qr-scans",
+          "recently-added",
+          "returns",
           "revenue-over-time",
-          "cash-book",
-          "accounting-journal"
+          "summary",
+          "taken-items",
+          "top-borrowers"
         ],
         "type": "string",
         "description": "* `payment-cash-book` - payment-cash-book\n* `summary` - summary\n* `taken-items` - taken-items\n* `active-loans` - active-loans\n* `returns` - returns\n* `damaged-missing` - damaged-missing\n* `damaged-lost` - damaged-lost\n* `qr-scans` - qr-scans\n* `most-lent` - most-lent\n* `top-borrowers` - top-borrowers\n* `recently-added` - recently-added\n* `machine-usage` - machine-usage\n* `event-attendance` - event-attendance\n* `booking-utilization` - booking-utilization\n* `maintenance-activity` - maintenance-activity\n* `member-activity` - member-activity\n* `machine-service` - machine-service\n* `printer-service` - printer-service\n* `fablab-health` - fablab-health\n* `payment-reconciliation` - payment-reconciliation\n* `loan-throughput` - loan-throughput\n* `inventory-control` - inventory-control\n* `evidence-compliance` - evidence-compliance\n* `import-quality` - import-quality\n* `procurement-performance` - procurement-performance\n* `communications-health` - communications-health\n* `community-engagement` - community-engagement\n* `certification-coverage` - certification-coverage\n* `module-operational-health` - module-operational-health\n* `audit-trail` - audit-trail\n* `member-retention` - member-retention\n* `membership-revenue` - membership-revenue\n* `payments-ledger` - payments-ledger\n* `revenue-over-time` - revenue-over-time\n* `cash-book` - cash-book\n* `accounting-journal` - accounting-journal"
@@ -102503,6 +103576,14 @@
           "months": {
             "type": "integer",
             "maximum": 120,
+            "minimum": 1
+          },
+          "subject_kind": {
+            "type": "string",
+            "maxLength": 48
+          },
+          "subject_id": {
+            "type": "integer",
             "minimum": 1
           }
         }
@@ -108857,6 +109938,327 @@
           "reason",
           "consent_repair_required",
           "host_waiver"
+        ]
+      },
+      "BulkInviteInput": {
+        "type": "object",
+        "properties": {
+          "emails": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 200,
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "send_email": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "emails"
+        ]
+      },
+      "BulkInviteResult": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "created"
+        ]
+      },
+      "EventRegistrationReportRow": {
+        "type": "object",
+        "properties": {
+          "registration_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "answers": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "answers",
+          "created_at",
+          "email",
+          "name",
+          "phone",
+          "registration_id",
+          "status"
+        ]
+      },
+      "EventFeedbackReportRow": {
+        "type": "object",
+        "properties": {
+          "response_id": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "registration_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "answers": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "answers",
+          "created_at",
+          "registration_id",
+          "response_id"
+        ]
+      },
+      "EventRegistrationReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventRegistrationReportRow"
+            }
+          }
+        },
+        "required": [
+          "rows",
+          "typed_rows"
+        ]
+      },
+      "EventFeedbackReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventFeedbackReportRow"
+            }
+          }
+        },
+        "required": [
+          "rows",
+          "typed_rows"
+        ]
+      },
+      "ReportExportFormatEnum": {
+        "type": "string",
+        "enum": [
+          "csv",
+          "xlsx",
+          "pdf"
+        ]
+      },
+      "EventBroadcastInput": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "statuses": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "default": [
+              "registered",
+              "attended"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "pending_approval",
+                "registered",
+                "waitlisted",
+                "rejected",
+                "cancelled",
+                "attended"
+              ]
+            }
+          },
+          "attendance": {
+            "type": "string",
+            "enum": [
+              "any",
+              "attended",
+              "not_attended"
+            ],
+            "default": "any"
+          }
+        },
+        "required": [
+          "body",
+          "subject"
+        ]
+      },
+      "EventBroadcast": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "event": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 200,
+            "readOnly": true
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "readOnly": true
+          },
+          "statuses": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "default": [
+              "registered",
+              "attended"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "pending_approval",
+                "registered",
+                "waitlisted",
+                "rejected",
+                "cancelled",
+                "attended"
+              ]
+            },
+            "readOnly": true
+          },
+          "attendance": {
+            "type": "string",
+            "enum": [
+              "any",
+              "attended",
+              "not_attended"
+            ],
+            "default": "any",
+            "readOnly": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "queued",
+              "sending",
+              "sent",
+              "cancelled",
+              "failed"
+            ],
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "queued_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "required": [
+          "attendance",
+          "body",
+          "completed_at",
+          "created_at",
+          "event",
+          "id",
+          "queued_at",
+          "status",
+          "statuses",
+          "subject"
+        ]
+      },
+      "EventBroadcastList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "previous": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventBroadcast"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "next",
+          "previous",
+          "results"
         ]
       }
     },

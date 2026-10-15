@@ -32,6 +32,8 @@ class ReportScheduleFiltersSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Payment.Status.choices, required=False)
     subject_type = serializers.ChoiceField(choices=Payment.SubjectType.choices, required=False)
     months = serializers.IntegerField(required=False, min_value=1, max_value=120)
+    subject_kind = serializers.CharField(max_length=48, required=False)
+    subject_id = serializers.IntegerField(min_value=1, required=False)
 
     def to_internal_value(self, data):
         # Nested serializers receive raw data here, before DRF drops unknown keys.
@@ -40,6 +42,9 @@ class ReportScheduleFiltersSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
+        from .report_subjects import SubjectFilterSerializer
+        subject = SubjectFilterSerializer(data=attrs)
+        subject.is_valid(raise_exception=True)
         if attrs.get("window_days") and (attrs.get("start") or attrs.get("end")):
             raise serializers.ValidationError("Use either window_days or start/end, not both.")
         if attrs.get("start") and attrs.get("end") and attrs["start"] > attrs["end"]:
@@ -150,8 +155,12 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         current = self.instance
         report_key = attrs.get("report_key", getattr(current, "report_key", None))
-        definition = REPORT_REGISTRY[report_key]
+        definition = REPORT_REGISTRY.get(report_key)
+        if definition is None:
+            raise serializers.ValidationError({"report_key": "Report is unavailable on this deployment."})
         filters = attrs.get("filters", getattr(current, "filters", {}))
+        from .report_subjects import reject_aggregate
+        reject_aggregate(filters)
         if set(filters) - (allowed_report_filters(report_key) | {"window_days"}):
             raise serializers.ValidationError({"filters": "Unsupported filters for this report."})
         condition = attrs.get("condition", getattr(current, "condition", {}))

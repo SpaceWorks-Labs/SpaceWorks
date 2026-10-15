@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from apps.tenant_migration.gate_runtime import tenant_write
+
 from apps.operations.report_registry import (
     DEPLOYMENT_AGGREGATE_REPORT_KEYS,
     REPORT_KEYS,
@@ -24,6 +26,7 @@ def report_data(
     report_filters=None, grain="day", actor=None,
 ):
     definition = report_definition(report_key)
+    subject = _authorize_subject(actor, makerspace_id, definition, report_filters)
     if not definition.previewable:
         # Export-only: the generic JSON analytics path must never become a second list.
         raise ReportNotFound()
@@ -33,6 +36,12 @@ def report_data(
     if definition.grains:
         kwargs["grain"] = grain
     result = definition.builder()(makerspace_id, **kwargs)
+    if subject is not None:
+        from apps.audit.services import record
+        # Previews are GETs, but their disclosure audit is a tenant write.
+        with tenant_write(subject.makerspace_id):
+            record(actor, "report.previewed", makerspace=subject.makerspace, target=subject,
+                   meta={"report_key": definition.key})
     if definition.summary:
         return result
     if not isinstance(result, ReportResult):
@@ -51,6 +60,7 @@ def report_rows(
     report_filters=None, grain="day", actor=None,
 ):
     definition = report_definition(report_key, for_export=True)
+    _authorize_subject(actor, makerspace_id, definition, report_filters)
     kwargs = dict(limit=limit, date_range=date_range, **(report_filters or {}))
     if report_key in {"member-retention", "membership-revenue"}:
         kwargs["actor"] = actor
@@ -64,6 +74,20 @@ def report_rows(
 
 def required_modules(report_key):
     return report_definition(report_key).required_modules
+
+
+def _authorize_subject(actor, makerspace_id, definition, filters):
+    from .report_subjects import authorize
+    from apps.makerspaces.models import Makerspace
+    from rest_framework.exceptions import PermissionDenied
+    filters = filters or {}
+    if (not definition.subject_kind and not definition.required_feature
+            and not {"subject_kind", "subject_id"}.intersection(filters)):
+        return
+    if makerspace_id is None:
+        raise PermissionDenied("Subject reports are tenant-local.")
+    space = Makerspace.objects.get(pk=makerspace_id)
+    return authorize(actor, space, definition, filters)
 
 
 def validate_report_key(report_key, *, for_export=False, deployment_aggregate=False):

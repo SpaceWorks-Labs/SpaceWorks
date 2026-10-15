@@ -32,6 +32,7 @@ def _rules(disposition, *fields):
 
 
 OMITTED_FIELD_RECONSTRUCTIONS = {
+    ("events.EventBroadcastDelivery", "outbox"): NULL,
     **_rules(
         DROP_ROW,
         ("apiclients.ApiClient", "client_id"),

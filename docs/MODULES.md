@@ -24,11 +24,11 @@ certification gating. Staff MFA is a separate question.
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `charges.bookings`; `payments.bookings` with Online payments |
 | Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
-| Reports | `reports` | `reports.saved_views` |
+| Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
 | Always on | Six core modules, `backup`, `notifications`, `email` | Every satisfiable `notifications.*` feature, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence` |
 
@@ -210,6 +210,15 @@ or discounts, closed admission and unavailable confirmed seats. Public registrat
 can be hidden per event. Purge removes these event fields and copied images with their
 existing event records; uninstall retains them.
 
+Opt-in `events.broadcasts` requires Notifications and Email. Staff with event registration
+authority compose email campaigns filtered by registration status and attendance, review
+drafts, send and cancel from the Events drawer. Only verified eligible accounts receive
+mail; preferences, suppression and quiet hours apply. Delivery history survives uninstall;
+events purge removes campaigns and their event-source outboxes. Imported unfinished
+campaigns are cancelled and cannot resume. Bulk email-bound invitations reuse Events
+invites and email only an event link; the signed-in participant verifies their email to
+use an invitation without entering a code.
+
 ## Bookings
 
 ### bookings
@@ -268,6 +277,14 @@ memberships retain their waiver requirement; booking in advance never requires p
 | Feature | Default | What it adds |
 | --- | --- | --- |
 | `reports.saved_views` | ON | Personal server-side report filters and columns, with optional manager-published makerspace sharing. Opening a view rechecks both reader and owner authority. |
+| `reports.event_pdf` | OFF | Audited post-event analytics PDF using the event-attendance builder; requires Events, full event management and tenant audit permission. |
+| `reports.event_exports` | OFF | Registration and feedback CSV/XLSX plus previews; requires Events, event registration management and tenant audit permission. |
+
+Event analytics in the drawer uses one tenant-local event subject through the existing
+report registry. New exports cannot be scheduled or aggregated across tenants or an
+organization. Subject-filtered saved views recheck both owner and reader. Feature off
+refuses its export; it retains event history. Manual PDF files are generated on demand
+and add no stored objects; events purge removes the underlying history, not the core ledger.
 
 Membership reports add counts-only join-month cohorts and retention at 3/6/12 months (or a chosen
 anniversary), plus per-currency MRR/ARR from recurring terms. Reports require `membership`;
@@ -333,6 +350,9 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
+| `events.broadcasts` | `events` | `notifications`, `email` | Durable email campaigns with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
+| `reports.event_pdf` | `reports` | `events` | Post-event PDF from the report registry | PDF refuses; event analytics/history retained |
+| `reports.event_exports` | `reports` | `events` | Tenant-local registration/feedback previews and CSV/XLSX | Detail exports refuse; event history retained |
 | `events.account_registration` | `events` | | Authenticated accounts can register for account-audience events | Events keep their members-only default |
 | `events.invites` | `events` | | Invite-only registration with expiring, limited-use codes | Invite audience and invite administration are refused |
 | `events.ticket_types` | `events` | | Public/member prices, sales windows and capacity per type | Flat event price applies |

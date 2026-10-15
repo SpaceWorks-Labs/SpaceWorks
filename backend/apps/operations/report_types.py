@@ -37,6 +37,9 @@ class ReportDefinition:
     schedulable: bool = True
     previewable: bool = True
     deployment_aggregate: bool = True
+    subject_kind: str = ""
+    required_feature: str = ""
+    pdf_renderer_path: str = ""
 
     def builder(self) -> Callable:
         return import_string(self.builder_path)

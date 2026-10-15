@@ -2,6 +2,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -153,7 +154,10 @@ class ReportScheduleRunNowView(APIView):
     )
     def post(self, request, pk, *args, **kwargs):
         schedule = _scoped_schedule(request.user, pk)
-        require_action(request.user, REPORT_REGISTRY[schedule.report_key].required_action, schedule.makerspace_id)
+        definition = REPORT_REGISTRY.get(schedule.report_key)
+        if definition is None:
+            raise ValidationError({"report_key": "Report is unavailable on this deployment."})
+        require_action(request.user, definition.required_action, schedule.makerspace_id)
         delivery = run_schedule(schedule.pk, force=True, actor=request.user)
         if delivery is None:
             return Response(

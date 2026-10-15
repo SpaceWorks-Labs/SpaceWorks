@@ -13,6 +13,12 @@ class EventsConfig(AppConfig):
         from apps.separability.tombstones import app_is_tombstoned
 
         if not app_is_tombstoned("events"):
+            from .broadcasts import register_broadcasts
+            from .services_bulk_invites import register_invitations
+            from .report_subject import register_subject
+            register_broadcasts()
+            register_invitations()
+            register_subject()
             from apps.makerspaces.resource_grant_sources import ResourceGrantSource, register
             from .staff_payload import granted_event_entries, has_grant_authority
             from .serializers_staff_grants import GrantedEventEntrySerializer

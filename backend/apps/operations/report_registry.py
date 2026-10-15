@@ -5,6 +5,7 @@ from apps.operations.report_definitions_coverage import COVERAGE_REPORT_DEFINITI
 from apps.operations.report_definitions_existing import EXISTING_REPORT_DEFINITIONS
 from apps.operations.report_definitions_membership import MEMBERSHIP_REPORT_DEFINITIONS
 from apps.operations.report_definitions_finance import FINANCE_REPORT_DEFINITIONS
+from apps.operations.report_definitions_events import EVENT_REPORT_DEFINITIONS
 from apps.operations.report_types import (
     ReportDefinition,
     ReportNotExportable,
@@ -17,7 +18,12 @@ REPORT_DEFINITIONS = (
     *EXISTING_REPORT_DEFINITIONS, *COVERAGE_REPORT_DEFINITIONS, *AUDIT_REPORT_DEFINITIONS,
     *MEMBERSHIP_REPORT_DEFINITIONS,
     *FINANCE_REPORT_DEFINITIONS,
+    *EVENT_REPORT_DEFINITIONS,
 )
+# Runtime entries disappear on a deployment tombstone; retention stays registered.
+from apps.separability.tombstones import tombstoned_app_labels
+REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS
+                           if not set(d.required_modules) & tombstoned_app_labels())
 REPORT_REGISTRY = {definition.key: definition for definition in REPORT_DEFINITIONS}
 REPORT_KEYS = [definition.key for definition in REPORT_DEFINITIONS]
 # The only definitions any deployment-wide (all-makerspaces) surface may enumerate or run.

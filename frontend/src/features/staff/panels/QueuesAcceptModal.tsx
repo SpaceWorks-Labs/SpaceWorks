@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { QuantityStepper } from "../QuantityStepper";
 import { RequestFlowDialog } from "./RequestFlowDialog";
 import type { HardwareRequest } from "./Queues";
 
@@ -49,22 +50,20 @@ export function AcceptRequestModal({
         </p>
         <div className="grid gap-2">
           {row?.items.map((item) => (
-            <label key={item.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-line p-2 text-sm">
-              <span className="min-w-0">
+            <label key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-3 text-sm">
+              <span className="min-w-0 flex-1 basis-40 break-words">
                 <span className="font-medium text-ink">{item.product_name}</span>
                 <span className="ml-1 text-xs text-muted">(requested {item.requested_quantity})</span>
               </span>
-              <input
-                className="desk-input w-24"
-                type="number"
-                min={0}
+              <QuantityStepper
+                label={item.product_name}
                 max={item.requested_quantity}
                 value={quantities[item.id] ?? item.requested_quantity}
                 disabled={pending}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setQuantities((current) => ({
                     ...current,
-                    [item.id]: Math.max(0, Math.min(item.requested_quantity, Number(event.target.value) || 0)),
+                    [item.id]: Math.max(0, Math.min(item.requested_quantity, Number(value) || 0)),
                   }))
                 }
               />

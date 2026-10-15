@@ -15,6 +15,7 @@ import { useStaffGet, type Makerspace } from "../panels/shared";
 import type { DirectLoanMemberResponse, ProductOption, QrResolveResponse } from "../DirectLoansTypes";
 import { DirectLoanBorrowerExtras, DirectLoanContainerField } from "../DirectLoanIssueFields";
 import { useDirectLoanContainer } from "../useDirectLoanContainer";
+import { QuantityStepper } from "../QuantityStepper";
 
 // Desk staff who prefer the one-page counter form land back in it next time.
 const VIEW_KEY = "sw.direct-handout.view";
@@ -91,15 +92,15 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
       {compact ? compactWork : <>
     <fieldset className="grid gap-3" disabled={issue.isPending}><legend className="sr-only">Handout details</legend>
       {step === 0 ? <>
-        {canScanCard ? <><button className="desk-button" onClick={() => setScanning("card")}>Scan member card</button><label>Card payload<input className="desk-input block" value={cardPayload} onChange={event => setCardPayload(event.target.value)} /></label><button className="desk-button" disabled={!cardPayload.trim() || card.isPending} onClick={() => void scanCard(cardPayload)}>Check card</button></> : null}
-        <label>Borrower<select className="desk-input block w-full" value={borrower} onChange={event => setBorrower(event.target.value)}><option value="">Choose an active member</option>{memberRows.map(row => <option key={row.user_id} value={row.user_id}>{row.display_name || row.username}</option>)}</select></label>
+        {canScanCard ? <><button className="desk-button" onClick={() => setScanning("card")}>Scan member card</button><label className="grid gap-1">Card payload<input className="desk-input w-full" autoComplete="off" value={cardPayload} onChange={event => setCardPayload(event.target.value)} /></label><button className="desk-button" disabled={!cardPayload.trim() || card.isPending} onClick={() => void scanCard(cardPayload)}>Check card</button></> : null}
+        <label className="grid gap-1">Borrower<select className="desk-input w-full" value={borrower} onChange={event => setBorrower(event.target.value)}><option value="">Choose an active member</option>{memberRows.map(row => <option key={row.user_id} value={row.user_id}>{row.display_name || row.username}</option>)}</select></label>
         <DirectLoanBorrowerExtras key={borrower} makerspaceId={makerspace.id} member={memberRows.find(row => String(row.user_id) === borrower)} onBorrowerIdChange={setBorrower} />
       </> : null}
       {step === 1 ? <>
         <DirectLoanContainerField {...container.field} />
-        <button className="desk-button" onClick={() => setScanning("items")}>Scan tools continuously</button><label>Tool QR payload<input className="desk-input block w-full" value={qrInput} onChange={event => setQrInput(event.target.value)} /></label><button className="desk-button" disabled={!qrInput.trim()} onClick={() => void scanItem(qrInput)}>Check tool QR</button>
-        <ul>{payloads.map(value => <li key={value} className="flex flex-wrap gap-2 break-all">{value}<button className="desk-button-ghost" onClick={() => setPayloads(payloads.filter(payload => payload !== value))}>Remove</button></li>)}</ul>
-        {productRows.filter(row => row.tracking_mode !== "individual").map(row => <label key={row.id} className="grid gap-1">{row.name}<input className="desk-input" type="number" min="0" step="1" max={row.available_quantity} value={selected[row.id] ?? ""} onChange={event => setSelected({ ...selected, [row.id]: event.target.value })} /></label>)}
+        <button className="desk-button" onClick={() => setScanning("items")}>Scan tools continuously</button><label className="grid gap-1">Tool QR payload<input className="desk-input w-full" autoComplete="off" value={qrInput} onChange={event => setQrInput(event.target.value)} /></label><button className="desk-button" disabled={!qrInput.trim()} onClick={() => void scanItem(qrInput)}>Check tool QR</button>
+        <ul>{payloads.map(value => <li key={value} className="flex flex-wrap items-center gap-2 [overflow-wrap:anywhere]">{value}<button className="desk-button-ghost" onClick={() => setPayloads(payloads.filter(payload => payload !== value))}>Remove</button></li>)}</ul>
+        {productRows.filter(row => row.tracking_mode !== "individual").map(row => <label key={row.id} className="grid min-w-0 gap-1 break-words">{row.name}<QuantityStepper label={row.name} max={row.available_quantity} value={selected[row.id] ?? ""} onValueChange={value => setSelected({ ...selected, [row.id]: value })} /></label>)}
       </> : null}
       {step === 2 ? <><EvidenceUpload makerspaceId={makerspace.id} evidenceType="issue" onUploaded={setEvidence} />{evidence ? <p>Uploaded photo #{evidence}</p> : null}<label className="grid gap-1">Issue remark<textarea className="desk-input" value={remark} onChange={event => setRemark(event.target.value)} /></label><KitChecklistCapture checklist={kits} /></> : null}
     </fieldset>

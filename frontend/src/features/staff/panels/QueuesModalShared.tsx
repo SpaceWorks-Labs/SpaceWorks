@@ -55,11 +55,11 @@ export function BoxCodeField({ value, onChange, makerspaceId, pending }: { value
       <div className="flex min-w-0 flex-wrap gap-2">
         <div className="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className={value ? "min-w-0 truncate font-medium text-ink" : "min-w-0 truncate text-muted"}>{value ? displayLabel || value : "No container selected"}</span>
+            <span title={value ? displayLabel || value : undefined} className={value ? "min-w-0 truncate font-medium text-ink" : "min-w-0 truncate text-muted"}>{value ? displayLabel || value : "No container selected"}</span>
             {value ? <StatusPill label="Selected" tone="success" /> : null}
           </div>
         </div>
-        <button className="desk-button-ghost shrink-0" type="button" disabled={pending} onClick={() => setScanOpen(true)}>Scan</button>
+        <button className="desk-button shrink-0" type="button" disabled={pending} onClick={() => setScanOpen(true)}>Scan</button>
       </div>
       {containers.length ? (
         <Field label="Available container">

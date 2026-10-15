@@ -94,12 +94,12 @@ export function ReturnDialog({ row, makerspace, onClose }: DialogProps) {
         <div className="grid gap-2">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Return quantities</h3>
           {rows.map(({ item, remaining, value, total, valid }) => (
-            <div key={item.id} className="grid gap-2 rounded-md border border-line bg-surface p-3">
+            <div key={item.id} className="@container grid gap-2 rounded-md border border-line bg-surface p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium text-ink">{item.product_name}</span>
                 <span className="text-xs text-muted">Remaining {remaining}</span>
               </div>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2 @lg:grid-cols-3">
                 <QuantityInput
                   label="Returned"
                   value={value.returned}
@@ -135,11 +135,11 @@ export function ReturnDialog({ row, makerspace, onClose }: DialogProps) {
         </label>
         <DialogError error={mutation.error} />
         <KitChecklistCapture checklist={kits} />
-        <div className="desk-actions flex flex-wrap justify-end gap-2">
+        <div className="desk-actions sticky bottom-0 -mx-5 -mb-5 flex flex-wrap justify-end gap-2 border-t border-line bg-panel px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button className="desk-button" type="button" onClick={onClose}>
             Cancel
           </button>
-          <button className="desk-button" type="submit" disabled={!canSubmit || mutation.isPending}>
+          <button className="desk-button-primary" type="submit" disabled={!canSubmit || mutation.isPending}>
             Return
           </button>
         </div>

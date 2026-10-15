@@ -139,7 +139,7 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
           <input className="desk-input" maxLength={120} value={form.name} onChange={(event) => set("name", event.target.value)} />
         </Field>
         <Field label="Interval">
-          <select className="desk-input" value={form.interval} onChange={(event) => set("interval", event.target.value as PlanInterval)}>
+          <select className="desk-input max-w-full" value={form.interval} onChange={(event) => set("interval", event.target.value as PlanInterval)}>
             {PLAN_INTERVALS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </Field>

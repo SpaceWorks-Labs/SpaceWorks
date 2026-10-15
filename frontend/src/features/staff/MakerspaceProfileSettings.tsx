@@ -65,12 +65,12 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
       <fieldset className="grid gap-4" disabled={mutation.isPending}>
         <legend className="sr-only">Profile fields</legend>
         <SettingsRow label="Timezone" htmlFor="profile-timezone" helper="Use local time for opening hours, reminders and bookings.">
-          <select id="profile-timezone" className="desk-input" value={draft.timezone} onChange={event => { changed(); setDraft({ ...draft, timezone: event.target.value }); }}>
+          <select id="profile-timezone" className="desk-input max-w-full" value={draft.timezone} onChange={event => { changed(); setDraft({ ...draft, timezone: event.target.value }); }}>
             {draft.timezone_choices.map(zone => <option key={zone}>{zone}</option>)}
           </select>
         </SettingsRow>
         <SettingsRow label="Country" htmlFor="profile-country" helper="Visible to staff only.">
-          <select id="profile-country" className="desk-input" value={draft.country} onChange={event => { changed(); setDraft({ ...draft, country: event.target.value }); }}>
+          <select id="profile-country" className="desk-input max-w-full" value={draft.country} onChange={event => { changed(); setDraft({ ...draft, country: event.target.value }); }}>
             <option value="">Unspecified</option>
             {draft.country_choices.map(code => <option key={code} value={code}>{countryLabel(code)}</option>)}
           </select>

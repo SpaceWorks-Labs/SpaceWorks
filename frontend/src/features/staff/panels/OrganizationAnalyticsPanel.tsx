@@ -24,7 +24,7 @@ export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Maker
   return <DashboardLayout header={{ title: "Organization analytics", eyebrow: "Across your spaces", subtitle: "Your organization's spaces, side by side.", meta: <div className="grid gap-4">
         <div className="flex flex-wrap items-end gap-4">
           <label className="grid min-w-0 gap-2 text-sm">Organization
-            <select className="desk-input" value={organizationValue} onChange={event => {
+            <select className="desk-input max-w-full" value={organizationValue} onChange={event => {
               setOrganizationValue(event.target.value);
               setOrganizationName(choices.find(org => String(org.id) === event.target.value)?.name ?? "");
             }}><option value="">Choose an organization</option>
@@ -33,7 +33,7 @@ export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Maker
             </select>
           </label>
           <label className="grid gap-2 text-sm">Report
-            <select className="desk-input" value={reportKey} onChange={event => setReportKey(event.target.value as ReportKey)}>
+            <select className="desk-input max-w-full" value={reportKey} onChange={event => setReportKey(event.target.value as ReportKey)}>
               {reportDefinitions.filter(definition => definition.aggregate_supported).map(definition => <option key={definition.key} value={definition.key}>{definition.title}</option>)}
             </select>
           </label>

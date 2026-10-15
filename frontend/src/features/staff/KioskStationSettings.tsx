@@ -65,7 +65,7 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
     </div>
     <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={submit}>
       <label className="grid gap-1 text-sm">Name<input id="kiosk-station-name" className="desk-input" required maxLength={160} value={name} onChange={(event) => setName(event.target.value)} /></label>
-      <label className="grid gap-1 text-sm">Kind<select className="desk-input" value={kind} onChange={(event) => setKind(event.target.value as KioskStation["kind"])}>
+      <label className="grid gap-1 text-sm">Kind<select className="desk-input max-w-full" value={kind} onChange={(event) => setKind(event.target.value as KioskStation["kind"])}>
         <option value="handover">Handover</option>
         <option value="scanner">Scanner</option>
       </select></label>

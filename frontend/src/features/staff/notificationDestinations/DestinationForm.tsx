@@ -78,7 +78,7 @@ export function DestinationForm({
         <label className="grid gap-1 text-sm">
           <span className="text-muted">Channel</span>
           <select
-            className="desk-input"
+            className="desk-input max-w-full"
             disabled={Boolean(destination)}
             onChange={(event) => setChannel(event.target.value as typeof channel)}
             value={channel}
@@ -156,7 +156,7 @@ export function DestinationForm({
       ) : null}
 
       {channel === "webhook" ? <label className="grid gap-1 text-sm">Payload format
-          <select className="desk-input" value={payloadVersion} onChange={(event) => setPayloadVersion(Number(event.target.value) as 1 | 2)}>
+          <select className="desk-input max-w-full" value={payloadVersion} onChange={(event) => setPayloadVersion(Number(event.target.value) as 1 | 2)}>
             <option value={1}>v1 legacy envelope</option><option value={2}>v2 structured domain IDs</option>
           </select>
       </label> : null}

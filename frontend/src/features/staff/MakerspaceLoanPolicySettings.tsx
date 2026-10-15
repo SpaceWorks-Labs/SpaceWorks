@@ -63,7 +63,7 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
       {NUMBERS.map(([field, label, min, max]) => <Field key={field} label={label}>
         <input className="desk-input" type="number" required min={min} max={max} step="1" value={form[field]} disabled={save.isPending} onChange={(event) => setForm({ ...form, [field]: Number(event.target.value) })} />
       </Field>)}
-      <Field label="Renewal mode"><select className="desk-input" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
+      <Field label="Renewal mode"><select className="desk-input max-w-full" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
         <option value="off">Off</option><option value="auto">Automatic within policy</option>
       </select></Field>
       <Field label="Reminder offsets in hours" hint="Negative = before due; 0 = due; positive = overdue. Leave empty to disable borrower reminders.">

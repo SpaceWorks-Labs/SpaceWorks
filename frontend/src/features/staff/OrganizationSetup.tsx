@@ -29,7 +29,7 @@ export function OrganizationLinks({ id, makerspaces }: { id: number; makerspaces
     <h3 className="title-section">Linked makerspaces</h3>
     <p className="text-sm text-muted">Linking a space extends the organization's granted actions to it. Relationship labels describe the connection; all three can confer those actions.</p>
     <label>Makerspace<select className="desk-input block w-full" value={space} onChange={event => setSpace(event.target.value)}><option value="">Choose space</option>{makerspaces.filter(row => row.superadmin_access_enabled !== false).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-    <label>Relationship<select className="desk-input block" value={relationship} onChange={event => setRelationship(event.target.value as OrganizationLink["relationship"])}>{["affiliate", "manager", "owner"].map(value => <option key={value}>{value}</option>)}</select></label>
+    <label>Relationship<select className="desk-input block max-w-full" value={relationship} onChange={event => setRelationship(event.target.value as OrganizationLink["relationship"])}>{["affiliate", "manager", "owner"].map(value => <option key={value}>{value}</option>)}</select></label>
     <button className="desk-button" disabled={!space || change.isPending} onClick={() => setPending({ makerspace_id: Number(space), relationship })}>Link or update relationship</button>
     {links.isLoading ? <p role="status">Loading links…</p> : null}
     {links.error || change.error ? <p role="alert" className="text-danger">{(links.error ?? change.error)?.message}</p> : null}

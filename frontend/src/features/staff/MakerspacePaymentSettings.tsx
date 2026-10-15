@@ -81,8 +81,17 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
   });
   const busy = settings.isLoading || save.isPending || clear.isPending || onboard.isPending;
 
+  // Keyed on charge TRACKING, not the online rail, and rendered OUTSIDE the
+  // payment-settings query: that endpoint is part of the separable `payments_rail`
+  // and 404s when the rail is tombstoned, which is exactly the cash-only space that
+  // still raises deposits and late fees and must be able to configure them.
+  const loans = featureEnabled(makerspace.enabled_features ?? [], "charges.loans")
+    ? <MakerspaceLoanSettings makerspaceId={makerspace.id} /> : null;
+  // No rail installed: there is no Stripe configuration to show, only loan charges.
+  if ((settings.error as { status?: number } | null)?.status === 404) return loans;
+
   return (
-    <SettingsQueryState query={settings} resource="payment"><><SettingsRow label="Stripe payments" helper="Secret credentials are encrypted; saved keys are never displayed again."><div className="grid min-w-0 gap-4">
+    <><SettingsQueryState query={settings} resource="payment"><SettingsRow label="Stripe payments" helper="Secret credentials are encrypted; saved keys are never displayed again."><div className="grid min-w-0 gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
 
@@ -156,17 +165,12 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
           {(settings.error || save.error || clear.error || onboard.error)?.message}
         </p>
       ) : null}
-      {/* Keyed on charge TRACKING, not the online rail. `payments.loans` is pruned when
-          the payments module is uninstalled, so gating on it hid deposit amounts, caps
-          and the blocking switch from exactly the cash-only spaces that now raise those
-          charges -- they could not configure what the feature promised. */}
-
     </div><SettingsResetAction label={"Clear raw configuration"} consequence="Remove the saved Stripe credentials. Online checkout will use an available Connect account, or stop until credentials are configured." pending={clear.isPending} disabled={busy
             || !(
               settings.data?.stripe_publishable_key_set
               || settings.data?.stripe_secret_key_set
               || settings.data?.stripe_webhook_secret_set
-            )} onConfirm={() => clear.mutateAsync()} /></SettingsRow>{featureEnabled(makerspace.enabled_features ?? [], "charges.loans") ? <MakerspaceLoanSettings makerspaceId={makerspace.id} /> : null}</></SettingsQueryState>
+            )} onConfirm={() => clear.mutateAsync()} /></SettingsRow></SettingsQueryState>{loans}</>
   );
 }
 

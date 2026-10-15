@@ -4,7 +4,7 @@ import { SettingsLayout } from "../../components/layouts";
 import { ApiClientsTelegramSettings } from "./ApiClientsTelegramSettings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { StatusPill, Field, Modal, SettingsRow } from "../../components/ui";
+import { ErrorBlock, StatusPill, Field, Modal, SettingsRow } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { MakerspaceBrandingSettings } from "./MakerspaceBrandingSettings";
 import { MakerspaceBookingRulesSettings } from "./MakerspaceBookingRulesSettings";
@@ -146,10 +146,14 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     </div>
   </SettingsRow>;
   return <>
+    {/* Every editor owns its own query, so the parent GET never gates the page: while it
+        loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a
+        failure is reported here instead of hiding payments, notifications and the rest. */}
     <SettingsLayout header={{ title: "Makerspace settings", subtitle: "Make this space work for your community.",
+      meta: settings.error ? <ErrorBlock className="w-full" onRetry={() => { void settings.refetch(); }}
+        error={new Error(`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)} /> : undefined,
       primary: { label: "View public site", href: `/m/${makerspace.slug}` } }}
-      state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready",
-        error: "Couldn't load makerspace settings. Try again.", onRetry: () => { void settings.refetch(); } }}
+      state={{ status: "ready" }}
       subnav="auto" sections={[
         { id: "general", title: "General", rows: <>
           <MakerspaceGeneralSettings {...shared} />

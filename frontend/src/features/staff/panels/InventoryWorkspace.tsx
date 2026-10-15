@@ -18,7 +18,7 @@ import { ListViewControls } from "../ListViewControls";
 import { plural } from "../../../lib/plural";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
 import { featureEnabled } from "../../../lib/features";
-import { ReorderSuggestions } from "./ReorderSuggestions";
+import { useReorderSuggestions } from "./ReorderSuggestions";
 import { invalidateInventoryViews } from "../queryInvalidation";
 import { categoryResults, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
 import {
@@ -201,7 +201,9 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     if (item && editing?.id !== item.id) { setEditing(item); setForm({ ...formFromProduct(item), ...(kitEnabled ? { kit_components: item.kit_components ?? [] } : {}) }); }
     else if (item && item !== editing) setEditing(item);
   }, [params, rows, linkedItem.data, editing, kitEnabled]);
-  const columns = inventoryColumns({ openEdit, openFix, openToBuy, archive: item => archive.mutate(item), unarchive: item => unarchive.mutate(item), canUseToBuy, pending: archive.isPending || unarchive.isPending });
+  const reorder = useReorderSuggestions({ makerspaceId: makerspace.id, canProcure: canUseToBuy });
+  const selectedSuffix = selectedIds.length ? ` (${selectedIds.length} selected)` : "";
+  const columns = inventoryColumns({ openEdit, openFix, openToBuy, archive: item => archive.mutate(item), unarchive: item => unarchive.mutate(item), canUseToBuy, pending: archive.isPending || unarchive.isPending, stockTab: showLowStock || outOfStock });
   const addItem = { label: "Add item", onClick: () => { setForm(emptyForm); setAddOpen(true); } };
   const href = (archived: string, low: string, out: string) => { const next = new URLSearchParams(params); next.set("archived", archived); next.set("low_stock", low); next.set("out_of_stock", out); next.delete("page"); return `?${next}`; };
   const activeTab = showArchived ? "archived" : outOfStock ? "out" : showLowStock ? "low" : "all";
@@ -210,16 +212,17 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   </ItemModal>;
   return (
     <ListLayout width="wide" header={{ title: "Inventory", subtitle: "Parts, tools and the stock ready for your next project.", primary: addItem,
-      secondary: { label: "Export", menu: [{ label: "Export CSV", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: "Export Excel", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, meta: plural(products.data?.count ?? 0, "item") }}
-      state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id)}
+      secondary: { label: "Export", menu: [{ label: `Export CSV${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: `Export Excel${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, meta: plural(products.data?.count ?? 0, "item") }}
+      callout={reorder.callout} state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id)}
       empty={{ message: "No parts added yet. Add your first item.", action: addItem }} filteredEmpty={{ message: showArchived ? "No archived items." : showLowStock ? "Nothing low on stock." : "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
       tabs={[{ key: "all", label: "All", href: href("false", "false", "false") }, { key: "low", label: "Low stock", href: href("false", "true", "false") }, { key: "out", label: "Out of stock", href: href("false", "false", "true") }, { key: "archived", label: "Archived", href: href("true", "false", "false") }]} activeTab={activeTab}
       filters={{ toolbar: <ListViewControls state={list} makerspaceId={makerspace.id} entity="inventory" searchLabel="Search inventory"
         sorts={[["name", "Name"], ["-name", "Name descending"], ["available_quantity", "Available first"], ["-available_quantity", "Available last"]]} /> }}
-      bulkBar={{ count: selectedIds.length, onClear: () => setSelectedIds([]), actions: [{ label: "Enable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(true); } }, { label: "Disable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(false); } }, { label: "Export selected", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }] }}
-      body={{ kind: "table", table: <><ReorderSuggestions key={makerspace.id} makerspaceId={makerspace.id} canProcure={canUseToBuy} /><DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={value => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={row => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} /></> }}
+      bulkBar={{ count: selectedIds.length, onClear: () => setSelectedIds([]), actions: [{ label: "Enable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(true); } }, { label: "Disable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(false); } }, { label: "Export CSV", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: "Export Excel", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }}
+      body={{ kind: "table", table: <DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={value => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={row => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} /> }}
       pagination={{ page: list.page, pageSize: 24, count: products.data?.count ?? 0, onChange: list.setPage }}
       detail={<>
+      {reorder.panel}{products.isError ? null : reorder.error}
       <p role="status" className="text-sm text-muted">{toBuyMessage || bulkQrMessage}</p><ErrorText message={exportInventory.error?.message} />
       {editing ? <InventoryItemDetail product={editing} makerspace={makerspace} canViewAudit={canViewAudit} kitEnabled={kitEnabled} form={form} setForm={setForm} categories={categoryRows} onClose={closeEdit}
         pending={update.isPending} error={update.error?.message} onSave={() => update.mutate()} onArchive={() => { archive.mutate(editing); closeEdit(); }}

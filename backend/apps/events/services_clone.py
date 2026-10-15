@@ -34,16 +34,18 @@ def duplicate_event(event, *, actor, attach_series=False):
         values["title"] = source.title[:193].rstrip() + " (copy)"
         clone = Event(makerspace=source.makerspace, created_by=actor,
                       organization_admission_blocked=source.organization_admission_blocked, **values)
+        attachment = None
         if attach_series:
             if not source.series_id:
                 from rest_framework.exceptions import ValidationError
                 raise ValidationError({"attach_series": "The source has no series."})
             event_authority.require(actor, series, None)
-            clone.series = series
-            clone.series_revision = series.revision
             local_start = source.starts_at.astimezone(ZoneInfo(series.recurrence_timezone))
-            clone.series_occurrence_key = f"copy{uuid4().hex[:16]}:{local_start:%Y%m%dT%H%M%S}"
-            clone.series_override_fields = sorted(INHERITABLE_FIELDS)
+            attachment = {
+                "series": series, "series_revision": series.revision,
+                "series_occurrence_key": f"copy{uuid4().hex[:16]}:{local_start:%Y%m%dT%H%M%S}",
+                "series_override_fields": sorted(INHERITABLE_FIELDS),
+            }
         from .registration_access import validate_event_audience
         validate_event_audience(clone)
         key = source.image_key
@@ -66,5 +68,14 @@ def duplicate_event(event, *, actor, attach_series=False):
         survey = EventFeedbackSurvey.objects.select_for_update().filter(event=source).first()
         if survey is not None and not survey.is_open:
             EventFeedbackSurvey.objects.create(event=clone, **copy_fields(survey, SURVEY_FIELDS))
+        from .website_copy import copy_page
+        copy_page(source, clone, copies=assets)
+        # Materialize the private override before attachment: its window may be
+        # deliberately shorter than the inherited series programme.
+        if attachment:
+            for field, value in attachment.items():
+                setattr(clone, field, value)
+            _validate(clone)
+            clone.save(update_fields=[*attachment, "updated_at"])
         _audit(clone, actor, "event.duplicated", clone, {"source_event_id": source.pk})
         return clone

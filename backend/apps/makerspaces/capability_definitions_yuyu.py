@@ -50,6 +50,14 @@ def definitions(FeatureDefinition):
         "Design private certificate artwork and immutable issuance-time layouts.",
         requires_modules=("events",),
     ), FeatureDefinition(
+        "events.website", "events", "Event websites",
+        "Release curated programme, speakers, sponsors and private website images.",
+        requires_modules=("events",),
+    ), FeatureDefinition(
+        "events.embed", "events", "Event embeds",
+        "Serve released event cards to an exact HTTPS framing allow-list.",
+        requires_modules=("events",), requires_features=("events.website",),
+    ), FeatureDefinition(
         "events.organization_audience", "events", "Participating organizations audience",
         "Admit active accounts belonging to live event organizers or the venue owner, "
         "directly or through their owned makerspaces. Imported audiences need local review.",

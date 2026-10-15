@@ -59,6 +59,12 @@ def create_event(
 def update_event(event, *, actor, inherit_fields=(), **changes):
     from apps.events.services_calendar import CALENDAR_EVENT_FIELDS, calendar_event_changed
 
+    # Website template edits and occurrence windows serialize series -> occurrence.
+    from .models import EventSeries
+    series_id = Event.objects.values_list("series_id", flat=True).get(pk=event.pk)
+    if series_id:
+        EventSeries.objects.select_for_update().get(pk=series_id)
+
     locked = _locked_event(event.pk, lock_makerspace=False)
     from .organization_audience import lock_admission_sources
     original_audience = locked.registration_audience

@@ -13,6 +13,11 @@ P = TenantPredicate
 DATASET_SPECS = {
     "bookings.BookingBroadcast": ("bookings/broadcasts.csv", P(("makerspace",), ("space__makerspace",))),
     "bookings.BookingBroadcastDelivery": ("bookings/broadcast_deliveries.csv", P(("campaign__makerspace",))),
+    "events.EventPage": ("events/pages.csv", P(("makerspace",))),
+    "events.EventPageAsset": ("events/page_assets.csv", P(("page__makerspace",))),
+    "events.EventPageSection": ("events/page_sections.csv", P(("page__makerspace",))),
+    "events.EventSession": ("events/sessions.csv", P(("page__makerspace",))),
+    "events.EventSessionSpeaker": ("events/session_speakers.csv", P(("session__page__makerspace",))),
     "events.EventBroadcast": ("events/broadcasts.csv", P(("makerspace",), ("event__makerspace",))),
     "events.EventBroadcastDelivery": ("events/broadcast_deliveries.csv", P(("campaign__makerspace",))),
     "notifications.MemberNotificationPreference": ("notifications/member_preferences.csv", P(("makerspace",))),

@@ -256,6 +256,8 @@ def _delete_object_graph(makerspace):
             source_series_collaboration__makerspace=makerspace
         ).exclude(event__makerspace=makerspace).delete()
         EventSeriesCollaborator.objects.filter(makerspace=makerspace).delete()
+        from apps.events.models_website import EventPage
+        EventPage.objects.filter(makerspace=makerspace).delete()
         Event.objects.filter(makerspace=makerspace).delete()
         EventSeries.objects.filter(makerspace=makerspace).delete()
         # Credentials and event bindings are already gone. Delete every Station kind so

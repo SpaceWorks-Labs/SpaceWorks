@@ -6,6 +6,7 @@ export type EventTicket = {
 };
 
 export type PublicEventDetail = {
+  website?: import("./websiteTypes").EventWebsite | null;
   audience_label?: string | null; participating_organizations?: { id: number; name: string }[];
   public_token: string; title: string; description: string;
   starts_at: string; ends_at: string; location: string;

@@ -46,6 +46,7 @@ export const openApiTags = [
   "Email logs",
   "Email templates",
   "Event check-in stations",
+  "Event website",
   "Events",
   "Evidence retention",
   "Health",
@@ -79,6 +80,7 @@ export const openApiTags = [
   "Public machines",
   "Public organizations",
   "Public requests",
+  "Public websites",
   "QR assets",
   "QR print batches",
   "Reauthentication",
@@ -169,6 +171,11 @@ export const openApiPaths = [
   "/api/v1/admin/event-series/{id}/publish/",
   "/api/v1/admin/event-series/{id}/staff-grants/",
   "/api/v1/admin/event-series/{id}/staff-invites/",
+  "/api/v1/admin/event-series/{id}/website/",
+  "/api/v1/admin/event-series/{id}/website/assets/",
+  "/api/v1/admin/event-series/{id}/website/assets/{asset_id}",
+  "/api/v1/admin/event-series/{id}/website/release/",
+  "/api/v1/admin/event-series/{id}/website/sessions/{slug}/delay/",
   "/api/v1/admin/event-staff-grants/{id}/",
   "/api/v1/admin/event-staff-grants/{id}/revoke/",
   "/api/v1/admin/event-staff-invites/redeem/",
@@ -210,6 +217,11 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/staff-grants/",
   "/api/v1/admin/events/{id}/staff-invites/",
   "/api/v1/admin/events/{id}/ticket-types/",
+  "/api/v1/admin/events/{id}/website/",
+  "/api/v1/admin/events/{id}/website/assets/",
+  "/api/v1/admin/events/{id}/website/assets/{asset_id}",
+  "/api/v1/admin/events/{id}/website/release/",
+  "/api/v1/admin/events/{id}/website/sessions/{slug}/delay/",
   "/api/v1/admin/evidence/{id}",
   "/api/v1/admin/inventory/needs-fix",
   "/api/v1/admin/inventory/{id}",
@@ -456,6 +468,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/uploads/evidence-url",
   "/api/v1/admin/makerspaces/{makerspace_id}/waiver",
   "/api/v1/admin/makerspaces/{makerspace_id}/walk-in-members",
+  "/api/v1/admin/makerspaces/{makerspace_id}/website-embed-origins/",
   "/api/v1/admin/member-cards/{id}/print.pdf",
   "/api/v1/admin/member-cards/{id}/reissue",
   "/api/v1/admin/member-cards/{id}/revoke",
@@ -632,6 +645,7 @@ export const openApiPaths = [
   "/api/v1/device/label-commands/{id}/result",
   "/api/v1/device/printer-jobs/{id}/result",
   "/api/v1/device/printer-jobs/{id}/telemetry",
+  "/api/v1/discover/{kind}/",
   "/api/v1/event-checkin-stations/{public_token}/roster/",
   "/api/v1/event-checkin-stations/{public_token}/session/",
   "/api/v1/event-checkin-stations/{public_token}/sync/",
@@ -749,6 +763,12 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/events/{public_token}/eligibility/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/feedback/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/register/",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/website/",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/website/assets/{asset_id}/",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/website/schedule/",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/website/sections/{slug}/",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/website/sessions/{slug}/",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/website/speakers/{slug}/",
   "/api/v1/public/{makerspace_slug}/inventory/",
   "/api/v1/public/{makerspace_slug}/inventory/categories/",
   "/api/v1/public/{makerspace_slug}/inventory/{id}/",
@@ -789,7 +809,11 @@ export const openApiPaths = [
   "/api/v1/recovery",
   "/api/v1/webhooks/razorpay/{public_code}",
   "/api/v1/webhooks/stripe/connect",
-  "/api/v1/webhooks/stripe/{public_code}"
+  "/api/v1/webhooks/stripe/{public_code}",
+  "/embed/{makerspace_slug}/{kind}/{public_token}/",
+  "/robots.txt",
+  "/share/{kind}/{public_token}/",
+  "/sitemap.xml"
 ] as const;
 
 export type ApiPath = (typeof openApiPaths)[number];
@@ -2780,6 +2804,27 @@ export type DirectoryEntry = {
   "avatar_url": string | null;
 };
 
+export type Discovery = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<DiscoveryCard>;
+};
+
+export type DiscoveryCard = {
+  "title": string;
+  "description": string;
+  "date": string;
+  "location": string;
+  "availability": string;
+  "audience_label": string;
+  "revision": string;
+  "makerspace_name": string;
+  "url": string;
+  "image_url": string | null;
+  "registration_count": number | null;
+};
+
 export type DispositionEnum = "needs_fix" | "remove";
 
 export type DocTypeEnum = "manual" | "sop";
@@ -3227,6 +3272,7 @@ export type EventSeriesDetail = {
   "audience_label": string | null;
   "organization_admission_blocked": boolean;
   "organization_audience_enabled": boolean;
+  "website_enabled": boolean;
 };
 
 export type EventSeriesListResponse = {
@@ -3296,6 +3342,11 @@ export type EventStaffRegistration = {
   "custom_answers"?: unknown | null;
   "phone"?: string;
   "email"?: string;
+};
+
+export type EventWebsitePublishInput = {
+  "publish_website"?: boolean;
+  "website_revision"?: number;
 };
 
 export type EventWrite = {
@@ -8196,6 +8247,7 @@ export type PublicEvent = {
   "registration_count": number | null;
   "participating_organizations": Array<ParticipatingOrganization>;
   "audience_label": string | null;
+  "website": Website | null;
 };
 
 export type PublicEventRegistrationInput = {
@@ -10689,6 +10741,139 @@ export type WatchResponse = {
 
 export type WebhookResponse = {
   "detail": string;
+};
+
+export type Website = {
+  "revision": number;
+  "released": boolean;
+  "inherited": boolean;
+  "sections": Array<WebsiteSection>;
+  "sessions": Array<WebsiteSession>;
+  "assets"?: Array<WebsiteAsset>;
+  "tagline"?: string;
+  "accent_color"?: string;
+  "section_order"?: Array<"HERO" | "ABOUT" | "HIGHLIGHTS" | "SCHEDULE" | "SPEAKERS" | "SPONSORS" | "VENUE" | "FAQ" | "RESOURCES">;
+  "section_enabled"?: {
+  [key: string]: boolean;
+};
+  "venue"?: WebsiteVenue | null;
+};
+
+export type WebsiteAsset = {
+  "id": number;
+  "alt_text": string;
+  "size_bytes": number;
+};
+
+export type WebsiteAssetInput = {
+  "file": string;
+  "alt_text": string;
+  "replace_id"?: number;
+};
+
+export type WebsiteContentInput = {
+  "revision": number;
+  "sections": Array<WebsiteSectionInput>;
+  "sessions": Array<WebsiteSessionInput>;
+  "tagline"?: string;
+  "accent_color"?: string;
+  "section_order"?: Array<"HERO" | "ABOUT" | "HIGHLIGHTS" | "SCHEDULE" | "SPEAKERS" | "SPONSORS" | "VENUE" | "FAQ" | "RESOURCES">;
+  "section_enabled"?: {
+  [key: string]: boolean;
+};
+  "venue"?: WebsiteVenue | null;
+};
+
+export type WebsiteDelayInput = {
+  "delay_minutes": number;
+};
+
+export type WebsiteOrigins = {
+  "origins": Array<string>;
+};
+
+export type WebsiteReleaseInput = {
+  "released": boolean;
+  "revision": number;
+};
+
+export type WebsiteSection = {
+  "kind": "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
+  "slug": string;
+  "title": string;
+  "body"?: string;
+  "url"?: string;
+  "asset_id"?: number | null;
+  "visibility"?: "draft" | "published";
+  "position"?: number;
+  "headline"?: string;
+  "organization"?: string;
+  "website_url"?: string;
+  "linkedin_url"?: string;
+  "x_url"?: string;
+  "sponsor_tier"?: "platinum" | "gold" | "silver" | "partner" | "community_partner";
+  "icon"?: string;
+  "image_url": string | null;
+  "image_alt_text": string;
+};
+
+export type WebsiteSectionInput = {
+  "kind": "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
+  "slug": string;
+  "title": string;
+  "body"?: string;
+  "url"?: string;
+  "asset_id"?: number | null;
+  "visibility"?: "draft" | "published";
+  "position"?: number;
+  "headline"?: string;
+  "organization"?: string;
+  "website_url"?: string;
+  "linkedin_url"?: string;
+  "x_url"?: string;
+  "sponsor_tier"?: "platinum" | "gold" | "silver" | "partner" | "community_partner";
+  "icon"?: string;
+};
+
+export type WebsiteSession = {
+  "slug": string;
+  "title": string;
+  "body"?: string;
+  "starts_at": string;
+  "ends_at": string;
+  "track"?: string | null;
+  "room"?: string | null;
+  "speakers"?: Array<string>;
+  "visibility"?: "draft" | "published";
+  "delay_minutes": number;
+  "effective_starts_at": string;
+  "effective_ends_at": string;
+};
+
+export type WebsiteSessionInput = {
+  "slug": string;
+  "title": string;
+  "body"?: string;
+  "starts_at": string;
+  "ends_at": string;
+  "track"?: string | null;
+  "room"?: string | null;
+  "speakers"?: Array<string>;
+  "visibility"?: "draft" | "published";
+};
+
+export type WebsiteVenue = {
+  "name"?: string;
+  "address"?: string;
+  "city"?: string;
+  "country"?: string;
+  "directions"?: string;
+  "parking"?: string;
+  "public_transport"?: string;
+  "accessibility_notes"?: string;
+  "latitude"?: number | null;
+  "longitude"?: number | null;
+  "map_url"?: string;
 };
 
 export type WitnessWaiverResponse = {

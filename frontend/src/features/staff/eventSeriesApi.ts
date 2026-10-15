@@ -32,6 +32,7 @@ export type EventSeries = Omit<EventSeriesPayload, "effective_from"> & {
   audience_label?: string | null;
   organization_admission_blocked?: boolean;
   organization_audience_enabled?: boolean;
+  website_enabled?: boolean;
   staff_permissions?: import("./eventStaffPermissions").EventPermission[];
   can_manage_staff?: boolean;
   id: number;

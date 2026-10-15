@@ -71,6 +71,8 @@ def update_series(series, *, actor, effective_from=None, **changes):
                                 {"old_status": Event.Status.DRAFT, "new_status": Event.Status.CANCELLED})
             else:
                 event_id = event.pk
+                from .services_website_assets import schedule_occurrence_asset_cleanup
+                schedule_occurrence_asset_cleanup(event)
                 event.delete()
                 removed.append(event_id)
                 audit.record(

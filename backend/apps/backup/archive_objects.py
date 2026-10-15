@@ -186,6 +186,7 @@ def capture_objects(root, object_keys, modes):
 
 def module_for_model(label):
     return {
+        "events.EventPageAsset": "events",
         "events.Event": "events",
         "events.EventSeries": "events",
         "events.EventAttendanceCertificate": "events",

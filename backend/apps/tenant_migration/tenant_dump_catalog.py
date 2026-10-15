@@ -97,6 +97,9 @@ CATALOG_SCHEMA_SHA256 = "0154ba8ca1e81ac7b2ec3f379fd4ca75c63cdb225f1c0641d45b40c
 # BK-D adds typed booking campaign/delivery history. Literal reconstruction
 # reproduced HEAD's complete graph before computing the new digest.
 # Lane F: platform-only, nonportable session reauthentication proof.
+# Lane C: five typed editorial/asset models plus the separate framing-origin field.
+# Literal graph reconstruction reproduced HEAD before pinning this reviewed graph;
+# Django's runtime catalog guard remains the integration verification.
 
 
 def catalog_models(apps_registry=apps):

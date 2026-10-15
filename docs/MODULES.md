@@ -24,7 +24,7 @@ certification gating. Staff MFA is a separate question.
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.certificate_designer`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -239,6 +239,26 @@ payment data and bearer credentials are excluded. Without the feature reads are
 refused. Uninstall retains history; purge uses the existing Events retention graph.
 Bookings reuses the core target/signature/keyset mechanisms through typed adapters.
 
+Opt-in `events.website` adds curated event and series pages: introductions and page logos,
+speakers, tracks, rooms, sessions, sponsors, FAQs and links. Detail editors manage sections
+and private images; schedule publishers manage programme times, live delays and website
+release. Existing events start without a released website. Publishing an event releases its
+saved page only when ?Publish website with event? is selected; pages can then be released
+or unreleased independently. An occurrence inherits its series page until an editor saves
+an independent, initially unreleased copy. Event duplication copies content and images to
+fresh private keys, with no copied release or live delays.
+
+Opt-in `events.embed` requires `events.website`. A released, public, unexpired event can
+appear as a backend HTML card only on the makerspace's exact HTTPS framing origins,
+configured in Public site settings by a makerspace manager. The empty list disables
+embedding. Ordinary SPA pages deny framing. Public website images are private stored
+objects read through the live visibility gate, not public bucket URLs. Existing event
+covers retain their public behavior. Deployment-local discovery, canonical sitemaps and
+crawler share cards respect public visibility and directory consent; discovery does not
+require an enhanced page to be released. Uninstall hides the enhanced surfaces and retains
+the rows and objects; Events purge removes both. Portable imports retain editorial content
+and private objects but reset page release and framing origins for target-side review.
+
 ## Bookings
 
 Opt-in `bookings.broadcasts` requires Notifications and Email and defaults off. Resource
@@ -436,6 +456,9 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
 | `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
 | `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
+
+| `events.website` | `events` | | Curated released pages with private assets and programmes | Enhanced routes and images disappear; core event details remain |
+| `events.embed` | `events` | `events.website` feature | Exact-origin backend HTML cards | Embed route refuses |
 | `events.broadcasts` | `events` | `notifications`, `email` | Durable email campaigns with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
 | `reports.event_pdf` | `reports` | `events` | Post-event PDF from the report registry | PDF refuses; event analytics/history retained |
 | `reports.event_exports` | `reports` | `events` | Tenant-local registration/feedback previews and CSV/XLSX | Detail exports refuse; event history retained |
@@ -471,3 +494,10 @@ belong to no module: they are standalone capabilities that apply whenever you en
 ## Removing a module from the build entirely
 
 [Read about removing a module from the build entirely](MODULES-LIFECYCLE.md#removing-a-module-from-the-build-entirely).
+
+Event website content includes speaker profiles and private photos, tiered sponsors and logos,
+venue and room information, highlights, a tagline, accent colour and ordered section switches.
+Turning a website section off also hides its direct public detail and image access unless
+another enabled section uses the image. Content editing requires event `edit_details`;
+programme edits and live track delays require `publish_schedule`. These additions use the
+existing `events.website` feature; embedding still additionally requires `events.embed`.

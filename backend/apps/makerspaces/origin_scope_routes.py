@@ -10,6 +10,7 @@ PUBLIC_SLUG_ROUTES = {"member-booking-pass", "member-booking-confirmation", "mem
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 
 MAKERSPACE_KWARG_ROUTES = {
+    "website-origins": "makerspace_id",
     'admin-booking-machine-types': 'makerspace_id',
     'admin-makerspace-setup-state': 'makerspace_id',
     'admin-maintenance-overdue': 'makerspace_id',

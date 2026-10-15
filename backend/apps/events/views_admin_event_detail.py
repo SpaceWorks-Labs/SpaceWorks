@@ -1,3 +1,4 @@
+from .serializers_website_publish import EventWebsitePublishInput
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -177,11 +178,15 @@ class EventPublishView(_EventActionView):
     @extend_schema(
         tags=['Admin events'],
         summary='Publish an event',
-        request=EmptyActionSerializer,
+        request=EventWebsitePublishInput,
         responses={200: EventAdminSerializer, **EVENT_SCOPED_ERRORS, 400: EVENT_ERROR_400, 409: EVENT_ERROR_409},
     )
     def post(self, request, pk, *args, **kwargs):
-        return self.execute(request, pk)
+        event = _manageable_event(request.user, pk, PUBLISH_SCHEDULE)
+        serializer = EventWebsitePublishInput(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        event = services.publish(event, actor=request.user, **serializer.validated_data)
+        return Response(EventAdminSerializer(event, context={"request": request}).data)
 
 
 class EventCancelView(_EventActionView):

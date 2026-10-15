@@ -31,7 +31,7 @@ export function PublicDeskKioskPage() {
     connection={{ online }} mode="work" state={{ status: "ready" }}
     headerActions={[...programme, { label: "Open full catalogue", href: path() }]}
     work={{ capture: <div className="text-lg [&_button]:min-h-12 [&_a]:min-h-12">{body}</div>,
-      panel: <div className="grid gap-6">{request}
+      panel: <div className="grid gap-6"><Card>{request}</Card>
         <Card className="grid gap-4">
           <h2 className="title-panel">Need a hand?</h2>
           <SupportContact branding={bootstrap?.branding} />

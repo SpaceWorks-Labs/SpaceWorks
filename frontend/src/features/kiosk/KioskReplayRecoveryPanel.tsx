@@ -49,7 +49,7 @@ function RecoveryPanel({ makerspaceId, revealKey }: { makerspaceId: number; reve
           </div> : null : null}
         </li>)}
       </ul>}
-      {list.data ? <nav className="flex gap-3 text-sm" aria-label="Recovery pages">
+      {list.data ? <nav className="flex flex-wrap items-center gap-3 text-sm" aria-label="Recovery pages">
         <button type="button" className="desk-button" disabled={!list.data.previous || list.isFetching} onClick={() => { setPage(page - 1); setSelected(null); }}>Previous failures</button>
         <span>Page {page} · {plural(list.data.count, "failure")}</span>
         <button type="button" className="desk-button" disabled={!list.data.next || list.isFetching} onClick={() => { setPage(page + 1); setSelected(null); }}>Next failures</button>

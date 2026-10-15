@@ -120,13 +120,13 @@ export function PrintDetailsForm({
         </fieldset>
         <fieldset className="space-y-4" disabled={submitPending}><legend className="title-section mb-4">Material</legend>
           {catalogue?.materials.length ? <div className="grid gap-3 md:grid-cols-2">
-            <label className="grid gap-1 text-sm">Material<select className="desk-input" value={form.material} onChange={event => { updateField("material", event.target.value); updateField("color", ""); updateField("consumablePoolId", ""); }}><option value="">No preference</option>{catalogue.materials.map(material => <option key={material.name}>{material.name}</option>)}</select></label>
-            <label className="grid gap-1 text-sm">Colour<select className="desk-input" value={form.color} required={Boolean(form.material)} onChange={event => updateField("color", event.target.value)}><option value="">Choose a colour</option>{catalogue.materials.find(m => m.name === form.material)?.colours.map(c => <option key={c}>{c}</option>)}</select></label>
+            <label className="grid gap-1 text-sm">Material<select className="desk-input w-full" value={form.material} onChange={event => { updateField("material", event.target.value); updateField("color", ""); updateField("consumablePoolId", ""); }}><option value="">No preference</option>{catalogue.materials.map(material => <option key={material.name}>{material.name}</option>)}</select></label>
+            <label className="grid gap-1 text-sm">Colour<select className="desk-input w-full" value={form.color} required={Boolean(form.material)} onChange={event => updateField("color", event.target.value)}><option value="">Choose a colour</option>{catalogue.materials.find(m => m.name === form.material)?.colours.map(c => <option key={c}>{c}</option>)}</select></label>
           </div> : null}
           <div className="grid gap-4 md:grid-cols-2">
             {noAvailablePools ? (
               <div>
-                <span className="eyebrow mb-1 block">Filament / material</span>
+                <span className="mb-1 block text-sm font-semibold text-ink">Filament / material</span>
                 <EmptyState
                   title="No filament currently available"
                   description="There is no filament available to choose right now. You can still submit without a preference, and staff will confirm the options."
@@ -134,7 +134,7 @@ export function PrintDetailsForm({
               </div>
             ) : (
               <label className="block">
-                <span className="eyebrow mb-1 block">
+                <span className="mb-1 block text-sm font-semibold text-ink">
                   Filament / material
                 </span>
                 <select
@@ -158,17 +158,17 @@ export function PrintDetailsForm({
                   ))}
                 </select>
                 {poolsQuery.isLoading ? (
-                  <p className="mt-1 text-xs text-muted">Loading filament…</p>
+                  <p className="mt-1 text-sm text-muted">Loading filament…</p>
                 ) : null}
                 {poolsQuery.isError ? (
-                  <p className="mt-1 text-xs text-danger">
+                  <p className="mt-1 text-sm text-danger">
                     {poolsQuery.error.message}
                   </p>
                 ) : null}
               </label>
             )}
             <label className="block">
-              <span className="eyebrow mb-1 block">
+              <span className="mb-1 block text-sm font-semibold text-ink">
                 Quantity
               </span>
               <input
@@ -182,7 +182,7 @@ export function PrintDetailsForm({
               />
             </label>
             <label className="block">
-              <span className="eyebrow mb-1 block">
+              <span className="mb-1 block text-sm font-semibold text-ink">
                 Estimated filament (g) &mdash; optional
               </span>
               <input
@@ -195,7 +195,7 @@ export function PrintDetailsForm({
                   updateField("estimatedFilamentGrams", event.target.value)
                 }
               />
-              <span className="mt-1 block text-xs text-muted">
+              <span className="mt-1 block text-sm text-muted">
                 If you know it from your slicer &mdash; staff can adjust this.
               </span>
             </label>

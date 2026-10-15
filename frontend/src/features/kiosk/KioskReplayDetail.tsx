@@ -15,7 +15,7 @@ export function KioskReplayDetail({ row }: { row: RecoveryReplay }) {
     finally { setPending(false); }
   }
   return <div className="grid gap-2 text-sm">
-    <p>{row.failure_detail} <span className="code-text">({row.failure_code})</span></p>
+    <p className="break-words">{row.failure_detail} <span className="code-text [overflow-wrap:anywhere]">({row.failure_code})</span></p>
     <p>{replayGuidance(row.failure_code)}</p>
     <p>{row.station_name} · {row.operator_display} · {new Date(row.completed_at).toLocaleString()}</p>
     <p className="break-all">Aggregate {row.aggregate_id} · sequence {row.sequence}</p>

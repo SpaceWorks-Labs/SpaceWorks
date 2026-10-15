@@ -65,7 +65,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
       {availability.data?.availability?.length ? (
         <ul className="mt-3 grid gap-2">
           {availability.data.availability.map((interval) => (
-            <li className="rounded-lg border border-success bg-success-soft px-3 py-2 text-sm text-ink" key={interval.starts_at + interval.ends_at}>
+            <li className="break-words rounded-lg border border-success bg-success-soft px-3 py-2 text-sm text-ink" key={interval.starts_at + interval.ends_at}>
               <time className="tabular-nums" dateTime={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</time>
               {interval.booker_name !== null ? <span className="ml-2 font-semibold">{interval.booker_name}</span> : null}
             </li>

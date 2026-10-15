@@ -32,7 +32,7 @@ export function MfaFlow({ challenge, onComplete, onCancel }: {
     body="Each code works once. Save these somewhere secure; they will not be shown again."
     primary={{ label: "I saved my codes. Continue", onClick: () => onComplete(completed) }}
     content={<div className="grid gap-4">
-      <ul className="grid grid-cols-2 gap-2">{completed.recovery_codes?.map((value) => <li className="rounded-control border border-line bg-surface p-3" key={value}>{value}</li>)}</ul>
+      <ul className="grid grid-cols-2 gap-2">{completed.recovery_codes?.map((value) => <li className="min-w-0 break-all rounded-control border border-line bg-surface p-3 code-text text-sm" key={value}>{value}</li>)}</ul>
       <button type="button" className="desk-button" onClick={() => void copy(completed.recovery_codes?.join("\n") ?? "")}>Copy all codes</button>
       {copyNotice ? <p role="status" className="text-sm text-muted">{copyNotice}</p> : null}
       <a className="desk-button" download="space-works-recovery-codes.txt" href={`data:text/plain;charset=utf-8,${encodeURIComponent(completed.recovery_codes?.join("\n") ?? "")}`}>Download codes</a>

@@ -106,7 +106,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={currency} disabled={registration.isPending} />
     {audience === "invite" ? <label className="grid gap-1 text-sm">Invitation code<input className="desk-input" required maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
     {promoEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
-    {clientErrors.ticket || clientErrors.invite ? <p role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
+    {clientErrors.ticket || clientErrors.invite ? <p className="text-sm text-danger" role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
     <CustomFormFields schema={customForm} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...clientErrors }} />
     {registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
     <button className="desk-button-brand" type="submit" disabled={registration.isPending}>

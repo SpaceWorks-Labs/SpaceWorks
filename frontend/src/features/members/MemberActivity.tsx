@@ -15,6 +15,7 @@ type Registration = {
   registration_id: number;
   event_title: string;
   starts_at: string;
+  ends_at?: string;
   status: string;
   waitlist_position: number | null;
   cancellation_cutoff_at?: string;
@@ -140,7 +141,8 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
   if (!modules.includes("membership")) return null;
   const printerRequests = (activity.machine_service_requests ?? []).filter(request => request.machine_type === "3d_printer");
   const otherServiceRequests = (activity.machine_service_requests ?? []).filter(request => request.machine_type !== "3d_printer");
-  const registrations = (activity.event_registrations ?? []).filter(row => !eventPeriod || (eventPeriod === "past") === (new Date(row.starts_at).getTime() < Date.now()));
+  // An event counts as past once it has ENDED, so a running event (and its check-in QR) stays under "Going".
+  const registrations = (activity.event_registrations ?? []).filter(row => !eventPeriod || (eventPeriod === "past") === (new Date(row.ends_at ?? row.starts_at).getTime() < Date.now()));
   const requestRows = (rows: MachineServiceRequest[]) => rows.length ? rows.map((item, index) => <ListRow key={`${item.title}-${index}`} title={item.title}
     meta={item.queue_position ? `Queue ${item.queue_position}` : undefined} right={<StatusPill label={item.status.replace(/_/g, " ")} />} />) : <Empty />;
   return <div className="grid gap-6">
@@ -157,7 +159,7 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
       right={<div className="grid gap-2"><StatusPill label={REGISTRATION_LABELS[item.status] ?? item.status} tone={statusTone(item.status)} />
         {item.checkin_token ? <CheckInQr makerspaceId={makerspaceId} registrationId={item.registration_id} title={item.event_title} startsAt={item.starts_at} organisation={makerspaceName} /> : null}
         <MemberEventCancel makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} status={item.status} canCancel={item.can_cancel} cutoffAt={item.cancellation_cutoff_at} />
-        <MemberEventFeedback makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} feedbackPath={item.feedback_path} certificate={item.certificate} /></div>} />) : <EmptyState message="You’re not registered for anything yet. See what’s on." action={{ label: "See events", href: `/m/${makerspaceSlug}/events` }} />}</Section> : null}
+        <MemberEventFeedback makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} feedbackPath={item.feedback_path} certificate={item.certificate} /></div>} />) : <EmptyState message={eventPeriod === "past" ? "No past events yet." : "You’re not registered for anything yet. See what’s on."} action={{ label: "See events", href: `/m/${makerspaceSlug}/events` }} />}</Section> : null}
     {(section === "all" || section === "overview") && modules.includes("presence") ? <Section title="Recent presence">{activity.recent_presence_sessions.length ? activity.recent_presence_sessions.map(item => <ListRow key={item.started_at} title="Makerspace visit" identity={{ kind: "date", date: item.started_at }} meta={<><RelativeTime date={item.started_at} /> · until {new Date(item.expires_at).toLocaleString()}</>} right={<StatusPill label={item.active ? "Active" : "Ended"} tone={item.active ? "success" : "neutral"} />} />) : <Empty />}</Section> : null}
   </div>;
 }

@@ -1,4 +1,6 @@
-"""Booking charging boundary; payment failures never affect confirmation."""
+"""Required booking ledger writes are atomic; optional online rails are best-effort."""
+
+import logging
 
 from django.db import IntegrityError, transaction
 
@@ -7,28 +9,30 @@ from apps.payments.models import MakerspacePaymentSettings, Payment
 from apps.payments.reconciliation import cancel_pending
 from apps.payments.services import create_checkout, create_payment
 
+logger = logging.getLogger(__name__)
+
 
 def create_for_confirmed_booking(booking, actor):
+    space = booking.space
+    makerspace = space.makerspace
+    member = booking.member
+    if (
+        member is None
+        or space.payment_amount <= 0
+        or not charge_tracking_enabled(makerspace, "bookings")
+    ):
+        return None
+    # The caller's atomic booking transaction must also commit its required debt.
+    # Only the optional provider rail may fail after this local ledger write.
+    payment = _get_or_create(booking, actor or member)
     try:
-        space = booking.space
-        makerspace = space.makerspace
-        member = booking.member
-        if (
-            member is None
-            or space.payment_amount <= 0
-            or not charge_tracking_enabled(makerspace, "bookings")
-        ):
-            return None
-        # The debt is recorded whether or not it can be collected online; the rail is
-        # only added when one is actually live.
-        payment = _get_or_create(booking, actor or member)
         if payment.status == Payment.Status.PENDING and online_payments_enabled(
             makerspace, "bookings"
         ):
             _schedule_checkout(payment)
-        return payment
     except Exception:
-        return None
+        logger.exception("booking_checkout_schedule_failed", extra={"payment_id": payment.pk})
+    return payment
 
 
 def _get_or_create(booking, created_by):
@@ -63,18 +67,17 @@ def _schedule_checkout(payment):
         try:
             create_checkout(payment)
         except Exception:
-            pass
+            logger.exception("booking_checkout_failed", extra={"payment_id": payment.pk})
 
     transaction.on_commit(create_safely)
 
 
 def cancel_for_booking(booking, actor):
-    try:
-        return cancel_pending(
-            makerspace=booking.space.makerspace,
-            subject_type=Payment.SubjectType.BOOKING,
-            subject_id=booking.pk,
-            actor=actor,
-        )
-    except Exception:
-        return None
+    # Reconciliation already isolates provider failures. Local update/audit failures
+    # must reach cancel_booking's atomic boundary and roll back the booking too.
+    return cancel_pending(
+        makerspace=booking.space.makerspace,
+        subject_type=Payment.SubjectType.BOOKING,
+        subject_id=booking.pk,
+        actor=actor,
+    )

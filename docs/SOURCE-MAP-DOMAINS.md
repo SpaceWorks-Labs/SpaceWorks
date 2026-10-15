@@ -28,6 +28,13 @@ Continued from [SOURCE-MAP.md](SOURCE-MAP.md); paths are relative to the reposit
   (credential/payment locks) and `checkout_provider.py` (provider requests and currency helpers).
   `services_webhooks.py` re-exports Connect handling from `services_connect_webhooks.py`;
   `notifications.py` supplies bounded payment snapshots to the feature/channel matrix.
+- `backend/apps/bookings/service_payments.py` — required local debt creation/cancellation
+  inside the existing atomic booking workflows; optional checkout is scheduled after
+  commit and provider failures remain best-effort through payment reconciliation.
+  BK-0 regression coverage lives in `tests/bookings/test_payment_ledger_rollback.py`
+  and `test_payment_provider_boundary.py`, sharing `payment_ledger_helpers.py`;
+  `tests/payments/test_track3_booking_event_charging.py` separates required debt failure
+  from optional checkout failure.
 - `backend/apps/printing/` — **TOMBSTONED** (Project B): only an `AppConfig` and an empty `models.py`, kept
   in `INSTALLED_APPS` so its historical migrations remain installed. 3D printing is now a `MachineType`
   inside `apps/machines/` — look there, not here.

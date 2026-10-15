@@ -688,6 +688,20 @@ in the same transaction as the status flip. NOTE: the line below calling `paymen
 stale — it is parented to the `payments` module, and the per-domain `payments.*` keys are parented to
 their own domain modules with `payments` in `requires_modules`.
 
+**Booking ledger writes are required (BK-0, 2026-10-15).** With charge tracking enabled,
+instant creation and approval commit their required debt in the booking transaction.
+Debt lookup, insert or audit failure rolls back confirmation, calendar revision, audits
+and post-commit notification callbacks. Recurrence retains its outer atomic transaction:
+a required ledger failure rolls back earlier occurrences too. Cancellation likewise
+requires the pending-charge update and audit to succeed with the booking transition;
+failure rolls both back. Missing or nonpending charges remain a valid no-op, settled
+money stays unchanged, and tracking disabled after confirmation does not prevent
+cancelling an existing pending debt. Optional rail readiness, checkout scheduling and
+post-commit checkout remain best-effort. Provider expiry/native-intent cancellation
+retain the existing best-effort boundary in `payments/reconciliation_rail.py`.
+No feature flag may bypass these ledger guarantees; cancellation provenance added by
+BK-B must join the same transaction.
+
 **A6 master switches are additive `AND`s, never replacements.** `payments.enabled`, `mobile.push` and
 `presence.geofence` are standalone (`parent_module=None`) features that sit **in front of** the readiness
 check each capability already had — `online_payments_enabled` still requires the per-domain

@@ -20,6 +20,8 @@ export type DataTableProps<T> = {
   skeletonCols?: number;
   ordering?: string; onOrderingChange?: (ordering: string) => void;
   listState?: UrlListState;
+  /** Optional screen-reader caption naming the table. */
+  caption?: string;
 };
 
 export function DataTable<T>({
@@ -33,7 +35,7 @@ export function DataTable<T>({
   emptyDescription,
   emptyAction,
   skeletonCols,
-  ordering, onOrderingChange, listState,
+  ordering, onOrderingChange, listState, caption,
 }: DataTableProps<T>) {
   const [localSort, setSort] = useState<SortState | null>(null);
   const sort: SortState | null = ordering !== undefined ? { key: ordering.replace(/^-/, ""), direction: ordering.startsWith("-") ? "desc" : "asc" } : localSort;
@@ -83,6 +85,7 @@ export function DataTable<T>({
     <div className="overflow-x-auto rounded-xl border border-line bg-panel">
       {listState ? <ListColumns columns={columns} value={{ columns: listState.values.columns ?? "", density: listState.values.density ?? "comfortable" }} onChange={value => listState.restore({ ...listState.values, ...value })} /> : null}
       <table role="table" className="block w-full text-left text-sm md:table md:min-w-[640px]" aria-busy={loading}>
+        {caption ? <caption className="sr-only">{caption}</caption> : null}
         <thead role="rowgroup" className="block bg-surface dark:bg-hover text-xs text-muted md:table-header-group">
           <tr role="row" className="flex flex-wrap items-center border-b border-line md:table-row">
             {selectionEnabled ? (

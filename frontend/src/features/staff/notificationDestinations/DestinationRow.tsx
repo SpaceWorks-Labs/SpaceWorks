@@ -45,6 +45,7 @@ export function DestinationRow({
     <span>{scopeCount === 0 ? "Everything" : `${scopeCount} scoped`}</span>
   </span>} right={<div className="flex gap-2">
     <button className="desk-button" onClick={() => setEditing(true)} type="button">Edit</button>
-    <OverflowMenu label={`Actions for ${destination.label}`} actions={[{ label: "Remove", tone: "danger", onClick: onDelete }]} />
+    <OverflowMenu label={`Actions for ${destination.label}`} actions={[{ label: "Remove", tone: "danger", onClick: onDelete,
+      confirm: { title: "Remove room?", message: `Alerts stop reaching ${destination.label}. Its saved webhook URL is discarded and can't be shown again.`, confirmLabel: "Remove room" } }]} />
   </div>} />;
 }

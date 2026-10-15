@@ -72,10 +72,11 @@ export function NotificationDestinations({
           </li>
         ))}
       </ul>
+      {remove.error ? <p role="alert" className="mt-2 text-sm text-danger">{remove.error.message}</p> : null}
 
       {destinations.data?.length === 0 && !destinations.isLoading ? (
         <p className="mt-3 text-sm text-muted">
-          No rooms yet. Alerts still go to the webhook saved in Chat webhooks above until
+          No rooms yet. Alerts still go to the webhook saved in Chat webhooks (Email &amp; integrations) until
           you add one.
         </p>
       ) : null}

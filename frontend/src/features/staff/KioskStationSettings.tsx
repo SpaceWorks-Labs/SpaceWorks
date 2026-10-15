@@ -88,7 +88,8 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
           <button className="desk-button" type="button" disabled={rotate.isPending} onClick={() => rotate.mutate(station.id)}>{station.enabled ? "Rotate PIN" : "Re-enable with new PIN"}</button>
           {station.enabled ? <OverflowMenu label={`Actions for ${station.name}`} actions={[
             { label: "Reveal PIN", onClick: () => { setRevealFor(station); setPassword(""); } },
-            { label: "Disable", tone: "danger", onClick: () => disable.mutate(station.id), pending: disable.isPending },
+            { label: "Disable", tone: "danger", onClick: () => disable.mutate(station.id), pending: disable.isPending,
+              confirm: { title: "Disable station?", message: `${station.name} is locked out until it is re-enabled with a new PIN.`, confirmLabel: "Disable station" } },
           ]} /> : null}
         </div>} />
       </li>)}

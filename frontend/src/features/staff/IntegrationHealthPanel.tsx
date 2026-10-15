@@ -58,7 +58,7 @@ type IntegrationHealth = {
 
 const integrationHealthPath: ApiPath = "/api/v1/admin/makerspace/{makerspace_id}/integration-health";
 
-export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace }) {
+export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { makerspace: Makerspace; isSuperadmin?: boolean }) {
   const health = useQuery({
     queryKey: ["integration-health", makerspace.id],
     queryFn: () =>
@@ -73,7 +73,8 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
   const data = health.data;
 
   return (
-    <SettingsQueryState query={health} resource="integration health"><SettingsRow label="Integration health" helper="Check connected services and delivery before sending alerts."><div className="grid min-w-0 gap-4">
+    // A failed background refresh keeps the last known readings; only a first load blanks the row.
+    <SettingsQueryState query={{ isLoading: health.isLoading, error: health.data ? null : health.error, refetch: health.refetch }} resource="integration health"><SettingsRow label="Integration health" helper="Check connected services and delivery before sending alerts."><div className="grid min-w-0 gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -85,7 +86,12 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="desk-button" to={staffTabPath("email-logs", false, makerspace.slug)}>Email log</Link>
-          <Link className="desk-button" to={staffTabPath("settings", false, makerspace.slug) + "#integrations"}>Telegram test</Link>
+          {/* The Telegram card (superadmin only) sits on this same page, so jump to it in place. */}
+          {isSuperadmin ? <button className="desk-button" type="button" onClick={() => {
+            const card = document.getElementById("telegram-settings");
+            card?.scrollIntoView({ behavior: "smooth", block: "start" });
+            card?.focus({ preventScroll: true });
+          }}>Telegram test</button> : null}
         </div>
       </div>
 

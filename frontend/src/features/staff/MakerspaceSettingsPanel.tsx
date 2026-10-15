@@ -194,7 +194,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
         { id: "integrations", title: "Email & integrations", rows: <>
           <MakerspaceEmailSettings makerspace={makerspace} /><MakerspaceWebhookSettings makerspace={makerspace} />
           {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
-          <IntegrationHealthPanel makerspace={makerspace} />
+          <IntegrationHealthPanel makerspace={makerspace} isSuperadmin={isSuperadmin} />
         </> },
         { id: "privacy", title: "Privacy & evidence", rows: <>{privacy}
           {canManageMakerspace ? <EvidenceRetentionPanel makerspaceId={makerspace.id} /> : null}

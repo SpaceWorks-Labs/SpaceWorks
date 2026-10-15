@@ -76,7 +76,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       {!allMachines.length ? <EmptyState message="No machines are registered for this type. Add the first one with Add machine." /> :
         !visibleMachines.length ? <EmptyState message="No machines match the selected status. Choose another status." /> :
         <DataTable data={visibleMachines} columns={[
-          { key: "name", header: "Name", render: machine => <button className="desk-button-ghost min-h-11 text-left" onClick={() => onSelectMachine(machine.id)}><ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10" /><span>
+          { key: "name", header: "Name", render: machine => <button className="desk-button-ghost min-h-11 max-w-full justify-start text-left" onClick={() => onSelectMachine(machine.id)}><ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10 shrink-0" /><span className="min-w-0 break-words">
             <strong className="block">{machine.name}</strong><span className="block text-sm text-muted">{[machine.type_payload?.model, machine.location || "No location"].filter(Boolean).join(" · ")}</span>
           </span></button> },
           { key: "status", header: "Status", render: machine => <StatusBadge status={machine.status} label={machineStatusLabel(machine.status)} /> },

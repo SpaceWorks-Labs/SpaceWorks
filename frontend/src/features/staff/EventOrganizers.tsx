@@ -32,7 +32,7 @@ export function EventOrganizers({ visible = true, event, makerspaceId, disabled 
         {assignable.map((organization) => (
           <label className="flex items-center gap-2 rounded-lg border border-line bg-surface p-3 text-sm" key={organization.id}>
             <input type="checkbox" checked={selected.includes(organization.id)} disabled={disabled} onChange={() => toggle(organization.id)} />
-            <span><span className="font-semibold text-ink">{organization.name}</span><span className="ml-1 code-text text-xs text-muted">({organization.slug})</span></span>
+            <span className="min-w-0 break-words"><span className="font-semibold text-ink">{organization.name}</span><span className="ml-1 code-text text-xs text-muted">({organization.slug})</span></span>
           </label>
         ))}
         {retained.map((organization) => (

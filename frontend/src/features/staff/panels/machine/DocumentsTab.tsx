@@ -50,7 +50,7 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
       <div className="grid gap-2">
         {items.map((document) => (
           <ListRow key={document.id} title={document.original_filename} identity={{ kind: "icon", icon: "Wrench", tone: "neutral" }}
-            meta={`${document.doc_type} · ${formatBytes(document.size_bytes)}`} right={<div className="flex gap-2">
+            meta={`${document.doc_type} · ${formatBytes(document.size_bytes)}`} right={<div className="flex flex-wrap gap-2">
               <button className="desk-button" type="button" disabled={view.isPending} onClick={() => view.mutate(document.id)}>View</button>
               {canEdit ? <OverflowMenu actions={[{ label: "Delete", tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(document.id) }]} /> : null}
             </div>} />

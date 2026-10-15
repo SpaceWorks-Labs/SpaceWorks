@@ -145,7 +145,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
         </label>
         <label className="eyebrow grid gap-1">
           Performed at (optional)
-          <input className="desk-input" type="datetime-local" value={performedAt}
+          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <label className="eyebrow grid gap-1">
@@ -158,12 +158,12 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
           <textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
-        <label className="eyebrow flex items-center gap-2 sm:col-span-2">
+        <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
           Set machine status to idle
         </label>
-        <div className="flex gap-2 sm:col-span-2">
+        <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button className="desk-button-primary" type="submit"
             disabled={complete.isPending || !summary.trim()}>
             {complete.isPending ? "Completing..." : "Complete maintenance"}
@@ -225,7 +225,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
         </label>
         <label className="eyebrow grid gap-1">
           Performed at (optional)
-          <input className="desk-input" type="datetime-local" value={performedAt}
+          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <label className="eyebrow grid gap-1">
@@ -238,7 +238,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
           <textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
-        <label className="eyebrow flex items-center gap-2 sm:col-span-2">
+        <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
           Set machine status to idle

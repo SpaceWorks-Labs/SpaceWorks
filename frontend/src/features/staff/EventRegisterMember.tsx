@@ -165,6 +165,8 @@ export function EventRegisterMember({
           </label>
           <input
             id="event-register-phone"
+            type="tel"
+            autoComplete="tel"
             className="desk-input mt-1 w-full"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}

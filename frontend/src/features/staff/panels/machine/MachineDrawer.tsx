@@ -1,6 +1,6 @@
 import { plural } from "../../../../lib/plural";
 import { machineStatusLabel } from "./machineStatusLabel";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -40,6 +40,12 @@ export function MachineDrawer({
   const details = machine.data;
   const changeStatus = useMachineStatus(machineId, makerspaceId, details?.status === "idle" ? "running" : "idle");
   const maintenanceAllowed = maintenanceEnabled && details?.can_operate === true;
+  // A tab tapped at the edge of the phone's scrolling tab row is brought fully into view
+  // (iOS Safari does not focus a tapped button, so focus alone never scrolls it there).
+  const mainRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    mainRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [activeTab]);
   const tabs: readonly MachineTab[] = [
     ...BASE_TABS.slice(0, 4),
     ...(maintenanceAllowed ? ["Maintenance" as const] : []),
@@ -53,7 +59,10 @@ export function MachineDrawer({
     status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label="Retired" tone="warn" /> : null}</> : undefined}
     actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? "Mark running" : "Mark idle", pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
     meta={details ? [details.machine_type.name, plural(Number(details.usage_hours), "total hour")] : undefined}
-    main={details ? <div className="grid gap-6 [&_[role=tablist]]:flex-wrap [&_[role=tablist]]:overflow-visible [&_[role=tablist]]:[mask-image:none]">
+    /* Phones keep the shared tab bar's single scrolling row (eight tabs wrapped into three ragged
+       rows there); from `sm` the drawer is wide enough that every tab fits once wrapped, so the
+       row wraps instead of hiding tabs behind a scroll. */
+    main={details ? <div ref={mainRef} className="grid min-w-0 gap-6 sm:[&_[role=tablist]]:flex-wrap sm:[&_[role=tablist]]:overflow-visible sm:[&_[role=tablist]]:[mask-image:none]">
       {changeStatus.error ? <p role="alert" className="text-sm text-danger">{changeStatus.error.message}</p> : null}
       <Tabs label="Machine details" tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)}>
             {activeTab === "Overview" ? (

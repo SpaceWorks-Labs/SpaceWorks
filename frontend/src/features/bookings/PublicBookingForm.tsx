@@ -97,8 +97,8 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
           <p className="eyebrow mt-1">Times are shown in your device timezone.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Starts" error={errorFor("starts_at")}><input className="desk-input" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></Field>
-          <Field label="Ends" error={errorFor("ends_at")}><input className="desk-input" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required /></Field>
+          <Field label="Starts" error={errorFor("starts_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></Field>
+          <Field label="Ends" error={errorFor("ends_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required /></Field>
         </div>
         <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} errors={{ ...answerErrors, ...serverAnswerErrors }} disabled={booking.isPending} />
         <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">Website

@@ -1,5 +1,5 @@
 import { opsStatusLabel } from "./opsPresentation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ScanWorkbench } from "../../components/ui";
 import { useCorrectAttendance } from "./eventFeedbackApi";
@@ -35,6 +35,14 @@ export default function EventCheckInScanner({
   const correct = useCorrectAttendance(makerspaceId, eventId);
   const resolve = useResolveEventCheckIn(eventId);
   const attend = useMarkEventAttended(makerspaceId, eventId, "qr");
+  // On a phone the workbench stacks the camera card and the code field ABOVE the result, so the
+  // guest's name and the Confirm button land below the fold after every scan. Bring the result
+  // panel into view whenever it changes; `nearest` leaves it alone when it is already visible.
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!resolved && !error && !confirmed) return;
+    sectionRef.current?.querySelector<HTMLElement>("section[aria-labelledby]")?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [resolved, error, confirmed]);
 
   const handleScan = async (value: string) => {
     setError(null);
@@ -99,8 +107,9 @@ export default function EventCheckInScanner({
             ? "This event was cancelled, so attendance cannot be confirmed."
             : `Attendance cannot be confirmed while this event is ${resolved.event_status}.`;
 
-  return <section aria-labelledby="event-checkin-title" className="grid gap-4">
-    <div className="flex items-center justify-between gap-3"><h3 id="event-checkin-title" className="title-panel">Check in by QR</h3><button className={`desk-button ${FOCUS}`} type="button" onClick={onClose}>Done</button></div>
+  // `scroll-mb-*` keeps the scrolled-to result clear of the shell's bottom tabs and the home indicator.
+  return <section ref={sectionRef} aria-labelledby="event-checkin-title" className="grid gap-4 [&_section[aria-labelledby]]:scroll-mb-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom)+1rem)]">
+    <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="event-checkin-title" className="title-panel">Check in by QR</h3><button className={`desk-button ${FOCUS}`} type="button" onClick={onClose}>Done</button></div>
     <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find a guest by check-in code" helper="Paste the guest’s event check-in code. Confirm their name before recording attendance."
       findPending={resolve.isPending || attend.isPending}
       result={resolved ? { title: resolved.name, tone: confirmable ? "success" : "warn", summary: <div className="grid gap-2"><p>{opsStatusLabel(resolved.status)}</p>{resolved.payment_status ? <p>Payment: {resolved.payment_status}</p> : null}{resolved.host_waiver_state === "missing" ? <p>No host waiver on file — take one at the desk.</p> : null}{blockedReason ? <p>{blockedReason}</p> : null}</div>,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DangerZone, ScanWorkbench } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
@@ -40,6 +40,10 @@ export function OfflineCheckInOperator({
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [autoAttempted, setAutoAttempted] = useState(false);
+  const resolvedRef = useRef<HTMLDivElement>(null);
+  const workbenchRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (resolved) resolvedRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" }); }, [resolved]);
+  useEffect(() => { if (scanning) workbenchRef.current?.scrollIntoView?.({ block: "start", behavior: "smooth" }); }, [scanning]);
 
   const refresh = useCallback(async () => {
     await pruneExpiredOfflineStates();
@@ -144,9 +148,11 @@ export function OfflineCheckInOperator({
       <p aria-live="polite" className="sr-only">{state.operations.length} queued check-ins. {state.conflicts.length} conflicts.</p>
       {state.conflicts.length ? <div role="alert" className="rounded-md border border-warn bg-warn-soft p-2 text-warn-ink"><strong>{state.conflicts.length} synchronization conflicts</strong><ul className="mt-1 list-disc pl-5">{state.conflicts.map((item) => <li key={item.operation_id}>{item.outcome.replace(/_/g, " ")}</li>)}</ul></div> : null}
     </div> : <p className="mt-3 text-sm text-muted">No attendee data is stored on this device.</p>}
-    {resolved ? <div className="mt-3 rounded-md border border-line p-3"><p className="font-medium text-ink">{resolved.name}</p><p className="text-sm text-muted">Waiver: {resolved.host_waiver_state.replace(/_/g, " ")}</p><div className="mt-2 flex gap-2"><button className={`desk-button-primary ${FOCUS}`} type="button" onClick={confirm}>Confirm attendance</button><button className={`desk-button ${FOCUS}`} type="button" onClick={() => setResolved(null)}>Cancel</button></div></div> : null}
+    {/* The guest is standing at the door: name large, Confirm full-width on a phone, and the card
+        scrolled into view because the scan happens further down the page. */}
+    {resolved ? <div ref={resolvedRef} className="mt-3 scroll-mb-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom)+1rem)] rounded-md border border-line p-3"><p className="break-words text-lg font-semibold text-ink">{resolved.name}</p><p className="text-sm text-muted">Waiver: {resolved.host_waiver_state.replace(/_/g, " ")}</p><div className="mt-3 grid gap-2 sm:flex sm:flex-wrap"><button className={`desk-button-primary min-h-12 ${FOCUS}`} type="button" onClick={confirm}>Confirm attendance</button><button className={`desk-button ${FOCUS}`} type="button" onClick={() => setResolved(null)}>Cancel</button></div></div> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-    {scanning ? <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find an offline check-in code" controls={<button className="desk-button" type="button" onClick={() => setScanning(false)}>Done</button>} /> : null}
+    {scanning ? <div ref={workbenchRef} className="mt-3"><ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find an offline check-in code" controls={<button className="desk-button" type="button" onClick={() => setScanning(false)}>Done</button>} /></div> : null}
     {state ? <DangerZone title="Remove offline attendee data" consequence="The roster and unsynchronized attendance on this device will be removed." action={{ label: "Wipe attendee data", onClick: wipe, confirm: { title: "Wipe attendee data from this device?", message: "The roster and any check-ins not yet synced are removed from this device. This can't be undone." } }} /> : null}
   </section>;
 }

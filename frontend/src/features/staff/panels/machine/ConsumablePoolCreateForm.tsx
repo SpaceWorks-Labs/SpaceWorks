@@ -86,7 +86,7 @@ export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPo
         <h4 className="title-section">{printerType ? "Add filament" : "Create consumable pool"}</h4>
         <p className="mt-1 text-sm text-muted"><span className="eyebrow mr-2">Scope</span>{scopeCopy}</p>
       </div>
-      <div className="grid gap-2 md:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <label className="eyebrow grid gap-1">
           Material
           {materialPresets ? (

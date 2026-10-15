@@ -40,7 +40,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
           <h3 id={"availability-" + publicToken} className="title-section">Published availability</h3>
           <p className="eyebrow mt-1">{rangeLabel(window.startsAt, window.endsAt)}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button className="desk-button-ghost" type="button" disabled={offset === 0} onClick={() => setOffset((value) => Math.max(0, value - 1))}>Previous 14 days</button>
           <button className="desk-button-ghost" type="button" onClick={() => setOffset((value) => value + 1)}>Next 14 days</button>
         </div>

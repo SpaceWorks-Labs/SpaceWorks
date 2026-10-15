@@ -110,7 +110,7 @@ export function MaintenanceSchedules({
               }}
             >
               {fields(editDraft, setEditDraft, "Edit schedule")}
-              <div className="flex gap-2 sm:col-span-3">
+              <div className="flex flex-wrap gap-2 sm:col-span-3">
                 <button className="desk-button-primary" type="submit" disabled={update.isPending}>
                   {update.isPending ? "Saving..." : "Save schedule"}
                 </button>
@@ -128,7 +128,7 @@ export function MaintenanceSchedules({
                 label={schedule.overdue ? "Maintenance due" : schedule.is_active ? schedule.trigger === "usage" ? "Within usage threshold" : "Due as scheduled" : "Inactive"}
                 tone={schedule.overdue ? "danger" : schedule.is_active ? "accent" : "neutral"} />
               {canEdit && schedule.is_active && !retired ? (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button className="desk-button-success" type="button" onClick={() => onComplete(schedule)}>
                     Complete
                   </button>

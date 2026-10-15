@@ -2,6 +2,7 @@ import { SettingsRow, SettingsSection } from "../../components/ui";
 import { EventCategoriesField } from "./EventCategoriesField";
 import { EventFields, valuesFor, type EventFormValues } from "./EventFormFields";
 import { ImageUploader } from "./ImageUploader";
+import { pageStickyActions } from "./stickyActions";
 import type { StaffEvent } from "./eventsApi";
 
 export function EventSettings({ event, makerspaceId, values, setValues, save, pending, invalidate, resetField, complete }: {
@@ -18,7 +19,7 @@ export function EventSettings({ event, makerspaceId, values, setValues, save, pe
       <form onSubmit={e => { e.preventDefault(); save(); }} className="grid gap-4">
         <EventCategoriesField makerspaceId={makerspaceId} value={values.category_id ?? null} onChange={category_id => setValues({ ...values, category_id })} disabled={readOnly} />
         <EventFields values={values} setValues={setValues} disabled={readOnly} approvalLocked={event.status !== "draft"} settings />
-        {!readOnly ? <div className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-line bg-panel py-4">
+        {!readOnly ? <div className={pageStickyActions}>
           <button type="button" className="desk-button" disabled={pending} onClick={() => setValues(valuesFor(event))}>Discard</button>
           <button type="submit" className="desk-button-primary" disabled={pending}>{pending ? "Saving…" : "Save changes"}</button>
         </div> : null}

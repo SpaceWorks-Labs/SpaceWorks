@@ -60,7 +60,7 @@ export function WarrantyPanel({
     empty={{ message: "No warranties recorded yet. Add one from a machine or asset." }}
     filteredEmpty={{ message: "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
     tabs={["all", "active", "expiring_soon", "expired", "unknown"].map(key => ({ key, label: ({ all: "All", active: "Active", expiring_soon: "Expiring soon", expired: "Expired", unknown: "Not covered" } as Record<string, string>)[key], href: href(key) }))} activeTab={status}
-    filters={{ views: <button type="button" className={missingDocs ? "desk-button-brand" : "desk-button"} aria-pressed={missingDocs} onClick={() => list.setFilter("missing_docs", String(!missingDocs))}>Missing docs</button>,
+    filters={{ views: <button type="button" className={missingDocs ? "desk-button-primary" : "desk-button"} aria-pressed={missingDocs} onClick={() => list.setFilter("missing_docs", String(!missingDocs))}>Missing docs</button>,
       controls: <Field label="Expires before"><input className="desk-input" type="date" value={expiresBefore} onChange={event => list.setFilter("expires_before", event.target.value)} /></Field>,
       activeCount: expiresBefore ? 1 : 0,
       chips: expiresBefore ? [{ key: "expires_before", label: `expires before ${expiresBefore}`, onRemove: () => list.setFilter("expires_before", "") }] : [] }}

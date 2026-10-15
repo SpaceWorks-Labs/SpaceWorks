@@ -9,6 +9,7 @@
     --chart-danger: var(--color-danger);
   }
   :root.dark {
+    --chart-accent: var(--color-accent-ink); /* teal marks are 1.76:1 on the dark panel */
     --chart-info: var(--color-info);
     --chart-success: var(--color-success);
     --chart-warn: var(--color-warn);

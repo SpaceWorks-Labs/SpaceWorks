@@ -147,7 +147,7 @@ export function PublicRequestPanel({
   // At xl the host card is sticky beside the catalogue, so the tab body scrolls inside a viewport-
   // high panel instead of hiding the submit button below the fold until the page ends.
   return (
-    <div className="grid min-w-0 gap-4 xl:max-h-[calc(100dvh-9rem)] xl:grid-rows-[auto_auto_minmax(0,1fr)]">
+    <div className="grid min-w-0 gap-4 xl:flex xl:max-h-[calc(100dvh-9rem)] xl:flex-col">
       {disabled ? (
         <div>
           <p className="eyebrow text-brand-ink">
@@ -160,7 +160,7 @@ export function PublicRequestPanel({
         </div>
       ) : (
         <>
-          <div>
+          <div className="shrink-0">
             <h2 className="title-panel text-brand-ink">
               {accountLess && activeTab === "borrow"
                 ? "Borrow something"
@@ -181,12 +181,12 @@ export function PublicRequestPanel({
             </p>
           </div>
 
-          <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
+          <div className="shrink-0 [&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
             <SegmentedControl label="Request actions" value={activeTab} options={[{ value: "borrow", label: "Borrow request" }, { value: "scan", label: "Scan a tool" }]} onChange={value => setActiveTab(value as ActiveTab)} />
           </div>
 
           {/* p-1/-m-1 keeps focus outlines inside the scroll box from being clipped. */}
-          <div className="min-h-0 min-w-0 xl:-m-1 xl:overflow-y-auto xl:p-1">
+          <div className="min-h-0 min-w-0 xl:-m-1 xl:flex-1 xl:overflow-y-auto xl:p-1">
             {activeTab === "borrow" ? (
               <div
                 id="public-request-borrow-panel"

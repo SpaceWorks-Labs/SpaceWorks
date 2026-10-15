@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { ListLayout } from "../../../components/layouts";
-import type { Action } from "../../../components/ui";
+import type { Action, CalloutProps } from "../../../components/ui";
 import { requestTabHref, requestTabLabels, visibleRequestTabs, type RequestTab } from "./requestTabs";
 import { useRequestQueues } from "./useRequestQueues";
 import { staffRequest } from "../../../lib/api";
@@ -67,7 +67,7 @@ export type HardwareRequest = {
   assigned_box?: { code: string; label: string };
 };
 
-export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery }: { makerspace: Makerspace; guestOnly: boolean; canViewAudit?: boolean; recovery?: ReactNode }) {
+export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, callout }: { makerspace: Makerspace; guestOnly: boolean; canViewAudit?: boolean; recovery?: ReactNode; callout?: CalloutProps }) {
   const queryClient = useQueryClient();
   // Tab counts reuse the dashboard numbers the shell already caches; no extra request is made.
   const counts = queryClient.getQueryData<{ pending_requests?: number; awaiting_issue?: number }>(["dashboard", makerspace.id]);
@@ -189,6 +189,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery }
     <ListLayout header={{ title: "Requests", subtitle: "Borrow requests from members, from review to return.",
       meta: queues.finding ? <span role="status">Finding request #{list.values.id || list.values.request}…</span> : undefined,
       primary: tab === "accepted" && selected.count === 1 && selected.results[0] ? primary(selected.results[0]) : undefined }}
+      callout={callout}
       tabs={visible.map(key => ({ key, label: requestTabLabels[key], href: requestTabHref(location.pathname, location.search, key),
         count: key === "pending" ? counts?.pending_requests : key === "accepted" ? counts?.awaiting_issue : undefined }))}
       activeTab={tab} state={state} isEmpty={!visible.length || queues.notFound || !selected.results.length}

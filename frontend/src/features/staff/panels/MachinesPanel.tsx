@@ -184,7 +184,8 @@ function MachinesWorkspace({
           const section = document.querySelector<HTMLDetailsElement>("#machine-type-settings");
           if (section) { section.open = true; section.scrollIntoView({ behavior: "smooth", block: "start" }); section.querySelector<HTMLInputElement>("input")?.focus(); }
         } } : undefined }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
-        callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: "Retry", onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } } : undefined}
+        callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: "Retry", onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } }
+          : poolQuery.isError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: () => { void poolQuery.refetch(); } } } : undefined}
         body={{ kind: "rows", rows: <><MachineTypeCards machineTypes={reachableTypes} machines={allMachines}
           machinesLoading={machines.isLoading} machinesFailed={machines.isError} typesLoading={machineTypes.isLoading}
           typesFailed={machineTypes.isError} hrefFor={hrefFor} />{settings}</> }}

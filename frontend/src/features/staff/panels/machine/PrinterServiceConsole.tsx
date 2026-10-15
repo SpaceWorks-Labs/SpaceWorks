@@ -1,5 +1,5 @@
 import { machineStatusLabel } from "./machineStatusLabel";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { MachineServiceRequest, PrinterPool, PrinterServiceReport, TypedManualUsageResponse } from "../../../../generated/api";
@@ -24,13 +24,21 @@ type Props = {
   pools: PrinterPool[];
   draft: ServiceDraft;
   setDraft: (update: (draft: ServiceDraft) => ServiceDraft) => void;
+  /** Queue sub-tab to open first (`?job_status=` deep link). */
+  queueStatus?: string;
+  /** Manual-usage dialog state, lifted to the type page so its header can open it. */
+  logging?: boolean;
+  onLogging?: (open: boolean) => void;
 };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 // Mirrors backend `printer_capabilities.PRINTER_SLUG`.
 const PRINTER_SLUG = "3d_printer";
 
-export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled, reportsEnabled = true, machineType, machines, pools, draft, setDraft, visible = true }: Props) {
+export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled, reportsEnabled = true, machineType, machines, pools, draft, setDraft, visible = true, queueStatus, logging: liftedLogging, onLogging: setLiftedLogging }: Props) {
+  const [ownLogging, setOwnLogging] = useState(false);
+  const logging = liftedLogging ?? ownLogging;
+  const setLogging = setLiftedLogging ?? setOwnLogging;
   const queryClient = useQueryClient();
   // Filter by the stable machine-type ID, not the slug: slugs are not unique across the
   // global/tenant split, so a makerspace-local type sharing a built-in's slug would pull in
@@ -90,6 +98,7 @@ export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled
     }),
     onSuccess: () => {
       setDraft((current) => ({ ...current, manual: { ...current.manual, machine_id: "", consumable_pool_id: "", duration_minutes: "", quantity: "", outcome: "success", percent_complete: "100", reason: "", note: "" } }));
+      setLogging(false);
       invalidate();
     },
   });
@@ -112,7 +121,7 @@ export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled
     <div className="grid gap-4">
       <ServiceConsoleSections queue={printingEnabled ? (<Subsection title="3D-printer queue">
           <p className="mb-3 text-sm text-muted">Accept jobs, reserve filament, start work, reconcile actual grams, then complete, fail, collect, or reprint.</p>
-          <ServiceQueueTabs rows={requests.data}>{visible => <div className="grid gap-3">
+          <ServiceQueueTabs rows={requests.data} initialStatus={queueStatus}>{visible => <div className="grid gap-3">
             {visible?.map((request) => (
               <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
                 meta={<> {request.requester_name} · Planned {request.planned_grams} g · actual {request.actual_consumed_quantity ?? "0"} g</>}
@@ -125,7 +134,7 @@ export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled
             {report.data?.printer_metrics.map((metric) => <p className="rounded-md border border-line p-3 text-sm" key={`${metric.makerspace_id ?? makerspaceId}:${metric.machine_id}`}><strong>{metric.machine_name}</strong><span className="mt-1 block text-xs text-muted">{metric.completed_hours}h complete - {metric.failed_partial_hours}h failed - {metric.manual_hours}h manual - {metric.consumed_grams}g used</span></p>)}
             {report.data && report.data.printer_metrics.length === 0 ? <p className="text-sm text-muted">No completed printer activity yet.</p> : null}
           </div>
-        </Subsection>) : undefined} />
+        </Subsection>) : undefined} logging={logging} onLogging={setLogging} />
       <ErrorBlock error={[requests.error, manualUsage.error, report.error, submitManual.error, runAction.error].find((item) => item instanceof Error)} />
     </div>
   );

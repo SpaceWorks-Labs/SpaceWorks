@@ -39,7 +39,7 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
         href={`${href}?machine=${row.machine_id}&detail_tab=Maintenance`} meta={<>Due <RelativeTime date={row.next_due} /></>}
         right={<StatusPill label="Overdue" tone="danger" />} />)}
       {jobRows?.map(row => <ListRow key={row.id} title={row.title} right={<StatusBadge status={row.status} label={machineStatusLabel(row.status)} />}
-        href={printer ? `${staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}?view=queue` : undefined}
+        href={printer ? `${staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}?view=queue&job_status=${statuses[queue]}` : undefined}
         meta="Open printer queue" />)}
     </> }} pagination={enabled && maintenance ? { page: list.page, pageSize: 24, count: schedules.data?.count ?? 0, onChange: list.setPage } : undefined} />;
 }

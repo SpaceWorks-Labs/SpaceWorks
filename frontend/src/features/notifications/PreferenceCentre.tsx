@@ -28,7 +28,7 @@ export function PreferenceCentre({ makerspaceId, digests = false }: { makerspace
       className="rounded-md border border-line p-3 text-sm">
       <SettingsRow label={`${cell.feature.replace(/_/g, " ")} · ${cell.channel === "in_app" ? "Inbox" : cell.channel.replace(/_/g, " ")}`}><label className="flex min-h-11 items-center gap-3"><input className="h-5 w-5" type="checkbox" aria-label={`${cell.feature} ${cell.channel} messages`} checked={cell.enabled} disabled={save.isPending || (!cell.available && !cell.enabled)}
         onChange={() => save.mutate(cell)} />
-      <span>{cell.feature.replace(/_/g, " ")} · {cell.channel === "in_app" ? "Inbox" : cell.channel.replace(/_/g, " ")}
+      <span>Send me these messages
         {!cell.available ? <span className="block text-xs text-muted">Disabled by makerspace</span> : null}
         {cell.mandatory_events.length ? <span className="block text-xs text-muted">Safety emails stay enabled: {cell.mandatory_events.map((event) => event.replace(/_/g, " ")).join(", ")}</span> : null}
       </span></label>

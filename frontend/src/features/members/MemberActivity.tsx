@@ -76,7 +76,7 @@ export type MemberTermSummary = {
  * revoked on unmount and whenever it is replaced -- otherwise every open-and-close leaks a
  * blob for the lifetime of the tab.
  */
-function CheckInQr({ makerspaceId, registrationId, title, startsAt }: { makerspaceId: number; registrationId: number; title: string; startsAt: string }) {
+function CheckInQr({ makerspaceId, registrationId, title, startsAt, organisation }: { makerspaceId: number; registrationId: number; title: string; startsAt: string; organisation: string }) {
   const [open, setOpen] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,7 @@ function CheckInQr({ makerspaceId, registrationId, title, startsAt }: { makerspa
     {/* Unmounted rather than hidden, so the blob is released and keyboard users cannot tab
         into an image that is not on screen. */}
     {open ? <Modal open title="Your event ticket" onClose={() => setOpen(false)}>
-      {src ? <TicketCard organisation="Space Works" title={title} fields={[{ label: "When", value: new Date(startsAt).toLocaleString() }, { label: "Registration", value: registrationId }]} qr={<img src={src} alt="Your check-in QR code" />} caption="Show this code at event check-in." /> : <p role="status">Loading your ticket?</p>}
+      {src ? <TicketCard organisation={organisation} title={title} fields={[{ label: "When", value: new Date(startsAt).toLocaleString() }, { label: "Registration", value: registrationId }]} qr={<img src={src} alt="Your check-in QR code" />} caption="Show this code at event check-in." /> : <p role="status">Loading your ticket…</p>}
     </Modal> : null}
     {open && error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
   </div>;
@@ -130,9 +130,11 @@ function Empty({ children = "Nothing here yet. Check back after your next visit.
 const REGISTRATION_LABELS: Record<string, string> = { pending_approval: "Awaiting approval", registered: "Confirmed", waitlisted: "Waitlisted", rejected: "Not approved", cancelled: "Cancelled", attended: "Attended" };
 const statusTone = (status: string) => ["registered", "confirmed", "attended", "completed"].includes(status) ? "success" as const : ["cancelled", "rejected"].includes(status) ? "neutral" as const : "warn" as const;
 
-export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, modules, section = "all", eventPeriod }: {
+export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, makerspaceName, modules, section = "all", eventPeriod }: {
   modules: string[]; section?: "all" | "overview" | "loans" | "bookings" | "events"; eventPeriod?: "going" | "past";
   activity: MemberActivity; makerspaceId: number; makerspaceSlug: string;
+  /** Printed on event tickets; the hosting makerspace, not the platform. */
+  makerspaceName: string;
 }) {
   if (!modules.includes("membership")) return null;
   const printerRequests = (activity.machine_service_requests ?? []).filter(request => request.machine_type === "3d_printer");
@@ -152,7 +154,7 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, mo
     {(section === "all" || section === "events") && modules.includes("events") && activity.event_registrations ? <Section title="Event registrations"><MemberCalendarActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} />{registrations.length ? registrations.map(item => <ListRow key={item.registration_id} title={item.event_title} identity={{ kind: "date", date: item.starts_at }}
       meta={<><span className="tabular-nums">{new Date(item.starts_at).toLocaleString()}</span>{item.status === "pending_approval" ? " · No payment until confirmed" : ""}{item.waitlist_position ? ` · Waitlist ${item.waitlist_position}` : ""}</>}
       right={<div className="grid gap-2"><StatusPill label={REGISTRATION_LABELS[item.status] ?? item.status} tone={statusTone(item.status)} />
-        {item.checkin_token ? <CheckInQr makerspaceId={makerspaceId} registrationId={item.registration_id} title={item.event_title} startsAt={item.starts_at} /> : null}
+        {item.checkin_token ? <CheckInQr makerspaceId={makerspaceId} registrationId={item.registration_id} title={item.event_title} startsAt={item.starts_at} organisation={makerspaceName} /> : null}
         <MemberEventCancel makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} status={item.status} canCancel={item.can_cancel} cutoffAt={item.cancellation_cutoff_at} />
         <MemberEventFeedback makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} feedbackPath={item.feedback_path} certificate={item.certificate} /></div>} />) : <EmptyState message="You’re not registered for anything yet. See what’s on." action={{ label: "See events", href: `/m/${makerspaceSlug}/events` }} />}</Section> : null}
     {(section === "all" || section === "overview") && modules.includes("presence") ? <Section title="Recent presence">{activity.recent_presence_sessions.length ? activity.recent_presence_sessions.map(item => <ListRow key={item.started_at} title="Makerspace visit" identity={{ kind: "date", date: item.started_at }} meta={<><RelativeTime date={item.started_at} /> · until {new Date(item.expires_at).toLocaleString()}</>} right={<StatusPill label={item.active ? "Active" : "Ended"} tone={item.active ? "success" : "neutral"} />} />) : <Empty />}</Section> : null}

@@ -19,6 +19,7 @@ import {
   type ProcurementMachineTypeOptions,
 } from "./ProcurementPanelTypes";
 import { ProcurementMoveModal } from "./ProcurementMoveModal";
+import { ReorderSuggestions } from "./ReorderSuggestions";
 import { ListLayout } from "../../../components/layouts";
 import { useSearchParams } from "react-router-dom";
 import { inventoryQueryState } from "./inventoryPresentation";
@@ -52,11 +53,13 @@ const emptyForm: Form = {
 type ProcurementPanelProps = {
   makerspace: Makerspace;
   canChooseKind?: boolean;
+  inventoryTabAvailable?: boolean;
 };
 
 export function ProcurementPanel({
   makerspace,
   canChooseKind = false,
+  inventoryTabAvailable = false,
 }: ProcurementPanelProps) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Form>(emptyForm);
@@ -146,7 +149,7 @@ export function ProcurementPanel({
         onSave={draft => update.mutate({ id: item.id, payload: { status: draft.status, vendor_name: draft.vendor_name, actual_unit_cost: draft.actual_unit_cost ? Number(draft.actual_unit_cost) : null } })}
         onDelete={() => remove.mutate(item.id)} onMove={() => setMoveTarget(item)} onReceiptsChanged={invalidate}
         updateError={update.variables?.id === item.id ? update.error?.message : undefined} deleteError={remove.variables === item.id ? remove.error?.message : undefined} />)}</section>) }}
-    detail={<><Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add item">
+    detail={<>{inventoryTabAvailable ? <ReorderSuggestions makerspaceId={makerspace.id} canProcure /> : null}<Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add item">
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); if (form.name.trim() && (!requiresMachineType || form.machine_type)) create.mutate(); }}>
         <Field label="Item name" className="sm:col-span-2"><input className="desk-input sm:col-span-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label="Quantity"><input className="desk-input" type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>

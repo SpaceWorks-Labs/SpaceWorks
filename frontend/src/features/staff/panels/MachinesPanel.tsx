@@ -159,7 +159,7 @@ function MachinesWorkspace({
   const settingsVisible = !shownType || params.get("view") === "settings";
   const settings = !onTypePage ? <>
     <MachineTypesPanel visible={settingsVisible} makerspaceId={makerspaceId} canConfigureMachineTypes={canConfigureMachineTypes} />
-    {settingsVisible && maintenanceEnabled && delegatedRecipientRulesEnabled ? <NotificationRecipientPicker delegated makerspaceId={makerspaceId} /> : null}
+    {maintenanceEnabled && delegatedRecipientRulesEnabled ? <NotificationRecipientPicker visible={settingsVisible} delegated makerspaceId={makerspaceId} /> : null}
     {canManage && machineServiceEnabled ? <SharedConsumablesSection visible={settingsVisible} makerspaceId={makerspaceId} pools={sharedPools} existingPools={pools} poolError={poolQuery.error} open={sharedOpen} onToggle={() => setSharedOpen(current => !current)} /> : null}
   </> : null;
   const detail = selectedId !== null ? <MachineDrawer enabledFeatures={enabledFeatures} key={selectedId} machineId={selectedId} makerspaceId={makerspaceId} canManageMachines={canManage} maintenanceEnabled={maintenanceEnabled} onClose={closeSelection} /> : null;

@@ -25,7 +25,7 @@ export function LegacyPasswordResetForm({ uid, token }: { uid: string; token: st
     }
   };
   return <CenteredCardLayout state={{ status: "ready" }} eyebrow="Account access"
-    media={{ icon: updated ? "Check" : "Settings", tone: updated ? "success" : "accent" }}
+    media={{ icon: updated ? "Check" : "KeyRound", tone: updated ? "success" : "accent" }}
     title={updated ? "Password updated" : "Set a new password"}
     body={updated ? "Your password has been updated. You can now sign in." : "Choose a new password for your Space Works account."}
     primary={updated ? { label: "Go to sign in", href: "/admin" } : {

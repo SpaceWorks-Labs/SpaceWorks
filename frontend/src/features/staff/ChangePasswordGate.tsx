@@ -27,7 +27,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
   const canSubmit =
     currentPassword.length > 0 && newPassword.length > 0 && !mismatch && !mutation.isPending;
   return (
-    <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "CircleAlert", tone: "accent" }}
+    <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Lock", tone: "accent" }}
       eyebrow="Security" title="Set a new password" body={<p><strong>{username}</strong> is using a temporary password. Choose your own to continue.</p>}
       primary={{ label: "Update password", pending: mutation.isPending, pendingLabel: "Updating…", disabled: !canSubmit, disabledReason: "Enter matching passwords to continue.", onClick: () => (document.getElementById("change-password-form") as HTMLFormElement)?.requestSubmit() }}
       escape={{ label: "Sign out", onClick: onSignOut }} content={

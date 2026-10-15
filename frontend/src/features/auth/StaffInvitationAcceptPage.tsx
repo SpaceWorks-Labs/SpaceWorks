@@ -13,7 +13,7 @@ export function StaffInvitationAcceptPage() {
     token: link.get("token"), makerspace_slug: link.get("space"), password, code,
   }), onSuccess: () => { setPassword(""); setCode(""); window.history.replaceState(null, "", window.location.pathname); } });
   return <CenteredCardLayout width={480} state={{ status: "ready" }}
-    media={{ avatars: [{ kind: "icon", icon: "Circle", tone: "accent" }, { kind: "icon", icon: "User", tone: "info" }] }}
+    media={{ avatars: [{ kind: "icon", icon: "Building2", tone: "accent" }, { kind: "icon", icon: "User", tone: "info" }] }}
     title={accept.data ? "You're in" : "Accept your staff invitation"}
     body={accept.data ? <p role="status">{accept.data.detail}</p> : "You've been invited to join a makerspace on Space Works. This link works once."}
     primary={accept.data ? { label: "Sign in with your email", href: "/admin" } : {

@@ -14,7 +14,7 @@ export function PrintingSection({ printing }: { printing: PublicStatsPrinting })
     </div>
     <div className="grid gap-5 lg:grid-cols-3">
       <div><h3 className="title-section mb-3">Busiest printer</h3>{printing.busiest_printer ? <ListRow title={printing.busiest_printer.name}
-        identity={printing.busiest_printer.image_url ? { kind: "image", src: printing.busiest_printer.image_url } : { kind: "icon", icon: "Wrench", tone: "accent" }}
+        identity={printing.busiest_printer.image_url ? { kind: "image", src: printing.busiest_printer.image_url } : { kind: "icon", icon: "Printer", tone: "accent" }}
         meta={<>{printing.busiest_printer.model}<span className="block tabular-nums">{formatNumber(printing.busiest_printer.hours)} hours / {printing.busiest_printer.completed} completed</span></>} />
         : <EmptyState message="No printer activity yet. Completed jobs will appear here." />}</div>
       <div><h3 className="title-section mb-3">Queue</h3><div className="flex flex-wrap gap-2">

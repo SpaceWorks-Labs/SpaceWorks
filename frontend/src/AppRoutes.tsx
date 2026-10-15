@@ -34,7 +34,7 @@ const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").th
 
 function NotFoundPage() {
   const { pathname } = useLocation();
-  return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Search", tone: "accent" }}
+  return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Compass", tone: "accent" }}
     eyebrow="404" title="We couldn't find that page" body="The link may be old, or the page moved."
     primary={{ label: "Go to home", href: "/" }}
     escape={pathname.startsWith("/admin") ? { label: "Staff sign-in", href: "/admin" } : undefined} />;

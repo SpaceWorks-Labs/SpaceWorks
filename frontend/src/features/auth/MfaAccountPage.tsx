@@ -29,7 +29,7 @@ export function MfaAccountPage() {
   const enabled = status.data?.enabled;
   const busy = enroll.isPending || change.isPending;
   return <>
-    <CenteredCardLayout title={codes ? "Save your recovery codes" : "Two-step sign-in"} media={{ icon: "Settings", tone: "accent" }}
+    <CenteredCardLayout title={codes ? "Save your recovery codes" : "Two-step sign-in"} media={{ icon: "ShieldCheck", tone: "accent" }}
       state={{ status: !ready ? "ready" : status.isLoading ? "loading" : status.error ? "error" : "ready",
         error: "Couldn't load authenticator settings. Try again.", onRetry: () => { void status.refetch(); } }}
       body={codes ? "Each code works once. Save them somewhere secure before you continue." : !ready ? notice || "Sign in to manage your authenticator." :

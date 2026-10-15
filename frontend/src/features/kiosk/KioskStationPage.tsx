@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 
 import { KioskLayout } from "../../components/layouts";
-import { StationUnlockForm } from "./StationUnlockForm";
 import { Callout } from "../../components/ui";
 import { KioskOnlineHandover } from "./KioskOnlineHandover";
 import { KioskOnlineScanner } from "./KioskOnlineScanner";
@@ -83,15 +82,17 @@ export function KioskStationPage() {
     connection={{ online: offline.online, queued: offline.queue?.commands.filter(command => command.status !== "succeeded").length }}
     idleCountdown={idle.seconds !== null && !hasCommands ? { seconds: idle.seconds, onKeep: idle.onKeep } : undefined}
     state={activeSession && !activeLease && !recoveryId && error ? { status: "error", error, onRetry: () => { void signIn(); } } : { status: "ready" }}
-    mode={activeSession && !activeLease && !recoveryId ? "ready" : "work"}
+    mode={!activeSession && offline.online ? "lock" : activeSession && !activeLease && !recoveryId ? "ready" : "work"}
+    lock={{ title: "Enter the station PIN", helper: "Ask a manager for the 8-digit PIN. It unlocks this device only.",
+      pending, error: error ?? undefined, submitLabel: "Unlock station", pendingLabel: "Unlocking…", onSubmit: pin => { void unlock(pin); } }}
     ready={{ primary: { label: "Start operator shift", pending: shiftPending, pendingLabel: "Starting…", onClick: () => { void signIn(); }, disabled: !offline.online,
       disabledReason: !offline.online ? "Reconnect before starting an operator shift." : undefined } }}
     headerActions={activeSession ? [{ label: "Full screen", onClick: () => { void enterKioskMode(); } },
       { label: "Lock station", onClick: () => { if (hasCommands) setResetRequested(true); else void lock().catch(() => setError("Local reset failed.")); } }] : []}
-    work={{ capture: !activeSession ? offline.online ? <StationUnlockForm helper="Ask a manager for the 8-digit PIN. It unlocks this device only." pending={pending} error={error ?? undefined} onSubmit={pin => { void unlock(pin); }} />
-      : <Callout size="panel" tone="warn" lead="Reconnect to unlock and load this handover" /> : offline.online && activeLease && !hasCommands && !queueMode && !recoveryId ? <KioskOnlineScanner token={stationToken} lease={activeLease} /> : <div className="rounded-xl border border-dashed border-outline p-8"><p className="title-panel">{offline.online ? "Your handover workspace" : "Keep working offline"}</p><p className="mt-3 text-muted">Loaded handovers stay encrypted on this device until the server confirms them.</p></div>,
+    work={{ capture: !activeSession ? <Callout size="panel" tone="warn" lead="Reconnect to unlock and load this handover" /> : offline.online && activeLease && !hasCommands && !queueMode && !recoveryId ? <KioskOnlineScanner token={stationToken} lease={activeLease} /> : <div className="rounded-xl border border-dashed border-outline p-8"><p className="title-panel">{offline.online ? "Your handover workspace" : "Keep working offline"}</p><p className="mt-3 text-muted">Loaded handovers stay encrypted on this device until the server confirms them.</p></div>,
       panel: <div className="grid gap-5">{!activeSession ? <p className="text-muted">The station PIN unlocks this device. An operator must then sign in before handling hardware.</p> : workPanel}{activeSession && error ? <Callout size="inline" tone="danger" lead={error} /> : null}
         {offline.storageError ? <p role="status" className="text-muted">{offline.storageError}</p> : null}</div> }}
-    confirmLock={resetRequested ? { pendingCount: offline.queue?.commands.length ?? 0,
+    confirmLock={resetRequested ? { pendingCount: offline.queue?.commands.length ?? 0, title: "Discard handovers and lock?",
+      consequence: "Queued handovers and their photos will be permanently removed from this device before they reach the server.",
       onDiscard: () => { void lock().catch(() => setError("Local reset failed.")); }, onKeep: () => setResetRequested(false) } : undefined} />;
 }

@@ -39,7 +39,7 @@ export function TenantUsagePanel({ makerspace }: { makerspace: Makerspace }) {
               <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="title-section capitalize">{row.label}</h3>
                 {over ? <StatusPill label="Over limit" tone="danger" /> : fraction !== null && fraction >= 0.8 ? <StatusPill label="Near limit" tone="warn" /> : null}</div>
               <p className="text-sm text-muted"><span className="font-display text-2xl text-ink">{usageAmount(row.used, row.unit)}</span> of <span>{row.limit === null ? "Unlimited" : usageAmount(row.limit, row.unit)}</span></p>
-              {fraction !== null ? <><ProgressBar value={fraction} label={`${row.label} allowance used`} /><p className="tabular-nums text-sm text-muted">{(fraction * 100).toFixed(1)}%</p></> : null}
+              {fraction !== null ? <><ProgressBar value={fraction} tone={fraction > 1 ? "danger" : fraction >= 0.8 ? "warn" : "accent"} label={`${row.label} allowance used`} /><p className="tabular-nums text-sm text-muted">{(fraction * 100).toFixed(1)}%</p></> : null}
             </div></Card>;
           })}
         </div>}

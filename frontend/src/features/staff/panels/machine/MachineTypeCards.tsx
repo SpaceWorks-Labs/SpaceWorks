@@ -70,7 +70,7 @@ export function MachineTypeCards({
           <ListRow
             key={machineType.id}
             href={hrefFor(machineType)} title={machineType.name}
-            identity={{ kind: "icon", icon: "Settings", tone: "accent" }}
+            identity={{ kind: "icon", icon: "Cog", tone: "accent" }}
             meta={<span className="flex flex-wrap items-center gap-2">
               {/* A count is stated as fact, so it must not be stated while the fleet is
                   still loading or after the request failed. */}

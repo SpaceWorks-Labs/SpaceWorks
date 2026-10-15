@@ -36,7 +36,7 @@ export function MakerspacePicker({
       secondary: { label: "Sign out", onClick: onSignOut } }}
     stats={[]} progress={<label className="grid gap-2 text-sm font-semibold">Find a makerspace<input className="desk-input" aria-label="Name, code or slug" placeholder="Name, code or slug" value={search} onChange={event => setSearch(event.target.value)} /></label>}
     main={[{ title: "Your makerspaces", isEmpty: !matches.length, empty: { message: makerspaces.length ? "No spaces match. Try another name, code or slug." : "No spaces yet. Create one from Staff & roles or the control plane.", action: makerspaces.length ? undefined : { label: "Open control plane", href: "/control/" } }, content: <div className="grid gap-3 sm:grid-cols-2">{matches.map(space => <ListRow key={space.id} title={space.name}
-      identity={{ kind: "icon", icon: "Settings", tone: "accent" }}
+      identity={{ kind: "icon", icon: "Building2", tone: "accent" }}
       meta={<>{space.public_code ?? space.slug} · Operate this makerspace →</>}
       onClick={() => onSelect(space.id)}
       right={space.superadmin_access_enabled === false ? <StatusPill tone="warn" label="Superadmin access: Off" /> : null} />)}</div> }]} />;

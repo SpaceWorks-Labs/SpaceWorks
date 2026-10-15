@@ -64,7 +64,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
   const main = <>
     {view.active === "machines" ? <section aria-label={`${machineType.name} machines`} className="grid gap-4">
       <Tabs label="Machine status" activeKey={statusFilter} onChange={key => onStatusFilter(key as typeof statusFilter & ("all" | Machine["status"]))}
-        tabs={statuses.map(key => ({ key, label: key === "all" ? "All statuses" : key.charAt(0).toUpperCase() + key.slice(1), href: "#" }))} />
+        tabs={statuses.map(key => ({ key, label: key === "all" ? "All statuses" : key.charAt(0).toUpperCase() + key.slice(1), href: "#" }))}>
       {!allMachines.length ? <EmptyState message="No machines are registered for this type. Add the first one with Add machine." /> :
         !visibleMachines.length ? <EmptyState message="No machines match the selected status. Choose another status." /> :
         <DataTable data={visibleMachines} columns={[
@@ -74,6 +74,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
           { key: "status", header: "Status", render: machine => <StatusBadge status={machine.status} label={machineStatusLabel(machine.status)} /> },
           { key: "usage_hours", header: "Usage", render: machine => <span className="tabular-nums">{machine.usage_hours} h</span> },
         ]} />}
+      </Tabs>
     </section> : null}
     {service ? isBuiltinPrinterType(machineType) ?
       <PrinterServiceConsole visible={view.active === "queue"} makerspaceId={makerspaceId} canManage={canManage} printingEnabled={printingEnabled} reportsEnabled={reportsEnabled} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} /> :
@@ -93,7 +94,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
     {detail}
   </>;
   return <div onClickCapture={view.onClickCapture}>
-    <DetailLayout title={indexHref ? machineType.name : "Machines"} identity={{ kind: "icon", icon: "Settings", tone: "accent" }}
+    <DetailLayout title={indexHref ? machineType.name : "Machines"} identity={{ kind: "icon", icon: "Cog", tone: "accent" }}
       back={indexHref ? { label: "All machine types", href: indexHref } : undefined}
       meta={[...(indexHref ? [] : [machineType.name]), `${allMachines.length} machines`, `${allMachines.filter(machine => machine.status === "running").length} running`]}
       actions={{ primary: canManage && machineType.can_create_machine === true ? { label: "Add machine", icon: "Plus", onClick: () => setCreating(true) } : undefined }}

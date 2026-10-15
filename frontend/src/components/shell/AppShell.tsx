@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { ContentTarget } from "../layouts/LayoutFrame";
 import { SkipLink } from "../SkipLink";
 import { Sidebar } from "./Sidebar";
 import { MobileTopBar } from "./MobileTopBar";
@@ -41,12 +42,12 @@ export function AppShell(props: AppShellProps) {
   const items = nav.flatMap(section => [...section.items, ...section.more ?? []]);
   const unread = items.find(item => item.badgeLabel === "unread")?.badge ?? 0;
   const openNavigation = () => setDrawer(true);
-  return <div className="min-h-dvh bg-bg text-ink" data-app-shell={props.variant}>
+  return <div className="min-h-dvh bg-bg text-ink" data-app-shell={props.variant} style={{ "--shell-bottom-tabs": compactNav === "bottom-tabs" ? "64px" : "0px" } as import("react").CSSProperties}>
     <SkipLink />
     <div className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-line lg:flex"><Sidebar {...shellProps} /></div>
     <div className="min-w-0 lg:ml-[264px]">
       <MobileTopBar {...shellProps} unread={unread} onMenu={openNavigation} />
-      <main id="main-content" tabIndex={-1} className={`min-w-0 p-5 lg:p-9 ${focusRing} ${compactNav === "bottom-tabs" ? "pb-24" : ""}`}>{children}</main>
+      <main id="main-content" tabIndex={-1} className={`min-w-0 p-5 lg:p-9 ${focusRing} ${compactNav === "bottom-tabs" ? "pb-24" : ""}`}><ContentTarget.Provider value={true}>{children}</ContentTarget.Provider></main>
     </div>
     <SidebarDrawer open={drawer} onClose={() => setDrawer(false)}><Sidebar {...shellProps} onNavigate={() => setDrawer(false)} /></SidebarDrawer>
     {compactNav === "bottom-tabs" ? <BottomTabs items={items} activeKey={activeKey} label={props.variant === "staff" ? "Staff quick navigation" : "Member quick navigation"} onMore={openNavigation} /> : null}

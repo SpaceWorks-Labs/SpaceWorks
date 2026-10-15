@@ -48,14 +48,13 @@ export function MachineDrawer({
 
   return <DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={720}
     title={details?.name ?? "Machine details"} state={opsQueryState(machine, "machine")}
-    identity={details?.image_url ? { kind: "image", src: details.image_url } : { kind: "icon", icon: "Settings", tone: "accent" }}
+    identity={details?.image_url ? { kind: "image", src: details.image_url } : { kind: "icon", icon: "Cog", tone: "accent" }}
     status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label="Retired" tone="warn" /> : null}</> : undefined}
     actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? "Mark running" : "Mark idle", pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
     meta={details ? [details.machine_type.name, `${details.usage_hours} total hours`] : undefined}
     main={details ? <div className="grid gap-6 [&_[role=tablist]]:flex-wrap [&_[role=tablist]]:overflow-visible [&_[role=tablist]]:[mask-image:none]">
       {changeStatus.error ? <p role="alert" className="text-sm text-danger">{changeStatus.error.message}</p> : null}
-      <Tabs label="Machine details" tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)} />
-      <div role="tabpanel">
+      <Tabs label="Machine details" tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)}>
             {activeTab === "Overview" ? (
               <OverviewTab
                 publicDetailsEnabled={enabledFeatures.includes("machines.public_detail")}
@@ -98,6 +97,6 @@ export function MachineDrawer({
             ) : null}
             {activeTab === "Warranty" && details.can_edit ? (
               <WarrantyTab machineId={machineId} />
-            ) : null}</div>
+            ) : null}</Tabs>
     </div> : null} />;
 }

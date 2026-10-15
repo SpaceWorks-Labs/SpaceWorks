@@ -55,7 +55,7 @@ function OwnBookings({ slug, recipient }: { slug: string; recipient: number | "s
   return <section className="desk-panel p-5" aria-labelledby="my-bookings-heading">
     <h2 className="title-panel" id="my-bookings-heading">My bookings</h2>
     <BookingCalendar key={`${slug}:${recipient}`} slug={slug} />
-    <Tabs label="Booking period" activeKey={period} tabs={[{ key: "upcoming", label: "Upcoming", href: "#upcoming" }, { key: "past", label: "Past", href: "#past" }]} onChange={value => { setPeriod(value as "upcoming" | "past"); setPage(1); setSelected(null); setMoving(null); }} />
+    <Tabs label="Booking period" activeKey={period} tabs={[{ key: "upcoming", label: "Upcoming", href: "#upcoming" }, { key: "past", label: "Past", href: "#past" }]} onChange={value => { setPeriod(value as "upcoming" | "past"); setPage(1); setSelected(null); setMoving(null); }}>
     {bookings.isLoading ? <p className="mt-3 text-sm text-muted" role="status">Loading bookings…</p> : null}
     {error ? <ErrorBlock error={error instanceof Error ? error : new Error("Couldn't load bookings. Try again.")} onRetry={bookings.isError ? () => void bookings.refetch() : undefined} /> : null}
     {bookings.data?.results.length === 0 ? <EmptyState message={period === "upcoming" ? "No upcoming bookings. Book a bench or room when you need one." : "No past bookings yet. Your visits will appear here."} /> : null}
@@ -76,5 +76,6 @@ function OwnBookings({ slug, recipient }: { slug: string; recipient: number | "s
       <span className="text-sm">Page {page}</span>
       <button type="button" className="desk-button-brand" disabled={!bookings.data.next || bookings.isFetching} onClick={() => setPage((value) => value + 1)}>Next</button>
     </div> : null}
+    </Tabs>
   </section>;
 }

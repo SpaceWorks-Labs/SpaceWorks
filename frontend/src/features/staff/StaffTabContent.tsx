@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { Skeleton } from "../../components/ui";
 import type { StaffAuthUser } from "../../lib/api";
@@ -15,6 +15,7 @@ import { PaymentsPanel, DevicesPanel, DashboardPanel, NotificationInbox, DirectL
 export function StaffTabContent({
   activeMakerspace,
   activeTab,
+  progress,
   guestOnly,
   makerspaces,
   isSuperadmin,
@@ -41,6 +42,7 @@ export function StaffTabContent({
 }: {
   activeMakerspace?: Makerspace;
   activeTab: string;
+  progress?: ReactNode;
   guestOnly: boolean;
   makerspaces: Makerspace[];
   isSuperadmin: boolean;
@@ -77,6 +79,7 @@ export function StaffTabContent({
   }
   const makerspaceKey = activeMakerspace.id;
   const actorActions = currentUser.makerspaces.find((space) => space.id === makerspaceKey)?.actions ?? [];
+  const allowedTabs = filterTabsByEnabledModules(getStaffAccess(actorActions, isSuperadmin, singleTenantLocked, isMachineOnly).allowedTabs, activeMakerspace);
   const has = (action: string) => isSuperadmin || actorActions.includes(action);
   return (
     <StaffPanelErrorBoundary resetKey={`${makerspaceKey}:${activeTab}`}>
@@ -87,7 +90,7 @@ export function StaffTabContent({
         <DevicesPanel key={makerspaceKey} makerspaceId={makerspaceKey} />
       ) : null}
       {activeTab === "dashboard" ? (
-        <DashboardPanel key={makerspaceKey} makerspace={activeMakerspace} canManageMakerspace={canManageMakerspace} allowedTabs={filterTabsByEnabledModules(getStaffAccess(actorActions, isSuperadmin, singleTenantLocked, isMachineOnly).allowedTabs, activeMakerspace)} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
+        <DashboardPanel key={makerspaceKey} makerspace={activeMakerspace} canManageMakerspace={canManageMakerspace} allowedTabs={allowedTabs} actions={actorActions} isSuperadmin={isSuperadmin} progress={progress} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
       ) : null}
       {activeTab === "notifications" ? (
         <NotificationInbox key={makerspaceKey} makerspace={activeMakerspace} canManageMembers={has("manage_members")} />
@@ -153,12 +156,13 @@ export function StaffTabContent({
       {activeTab === "cards" && canUseMemberCards ? (
         <MemberCardsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} />
       ) : null}
-      {activeTab === "payments" && (has("view_finance") || has("record_payment")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
+      {activeTab === "payments" && (has("view_finance") || has("record_payment")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} makerspaceName={activeMakerspace.name} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
       {activeTab === "tobuy" ? (
         <ProcurementPanel
           key={makerspaceKey}
           makerspace={activeMakerspace}
           canChooseKind={canChooseToBuyKind}
+          inventoryTabAvailable={allowedTabs.includes("inventory")}
         />
       ) : null}
       {activeTab === "transfers" && (canEditInventory || isSuperadmin) ? (

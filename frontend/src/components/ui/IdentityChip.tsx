@@ -9,6 +9,9 @@ export function IdentityChip({ identity, label = "Identity", draft = false }: Id
   const [failedSrc, setFailedSrc] = useState<string>();
   if (identity.kind === "date") return <DateChip date={identity.date} draft={draft} />;
   if (identity.kind === "avatar") return <Avatar name={identity.name} seed={identity.seed} size="lg" tone={draft ? "neutral" : undefined} />;
+  if (identity.kind === "code") return <span role="img" aria-label={label === "Identity" ? identity.code : label}
+    className={`inline-flex h-13 min-w-13 shrink-0 items-center justify-center rounded-md border px-2 font-sans text-sm font-semibold tabular-nums ${toneClasses[draft ? "neutral" : "accent"]}`}>
+    {identity.code}</span>;
   if (identity.kind === "image" && failedSrc !== identity.src) return <img src={identity.src} alt={label}
     className="h-13 w-13 shrink-0 rounded-md border border-line object-cover" onError={() => setFailedSrc(identity.src)} />;
   return <span role="img" aria-label={label}

@@ -22,7 +22,7 @@ export function ContainersPanel({ makerspace, canEditInventory }: { makerspace: 
    filteredEmpty={{ message: "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => setParams(current => { current.delete("q"); current.delete("view"); return current; }) } }}
    tabs={["all", "active", "inactive"].map(key => ({ key, label: key[0].toUpperCase() + key.slice(1), href: href(key) }))} activeTab={status}
    filters={{ search: { label: "Search containers", value: search, onChange: value => setParams(current => { current.set("q", value); return current; }) } }}
-   body={{ kind: "rows", rows: rows.map(container => <ListRow key={container.id} title={container.label} identity={{ kind: "icon", icon: "Circle", tone: "accent" }}
+   body={{ kind: "rows", rows: rows.map(container => <ListRow key={container.id} title={container.label} identity={{ kind: "code", code: container.code || String(container.id) }}
      meta={[container.code, container.location].filter(Boolean).join(" · ")} onClick={() => setParams(current => { current.set("container", String(container.id)); return current; })}
      right={<StatusPill label={container.is_active === false ? "Inactive" : "Active"} tone={container.is_active === false ? "neutral" : "success"} />} />) }}
    detail={selected ? <ContainerDetail key={selected.id} container={selected} makerspaceId={makerspace.id} canEditInventory={canEditInventory} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")}

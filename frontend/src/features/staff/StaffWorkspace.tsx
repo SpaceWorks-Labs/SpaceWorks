@@ -117,8 +117,7 @@ export function StaffWorkspace({
         guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} user={user}
         roleName={activeRoleName} isSuperadmin={isSuperadmin} makerspaces={makerspaces} setSelected={setSelected}
         setTab={setTab} signOut={signOut} actions={actions}>
-        <PageHeader title={routeTabDenied ? "Page unavailable" : `${TAB_LABELS[activeTab] ?? "Workspace"} · ${activeMakerspace?.name ?? "Space Works"}`} />
-          {activeMakerspace && canManageMakerspace && activeTab === "dashboard" ? <SetupChecklist key={`${user.username}:${activeMakerspace.id}`} makerspace={activeMakerspace} owner={user.username} allowedTabs={moduleAllowedTabs} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} /> : null}
+        {routeTabDenied ? <PageHeader title="Page unavailable" /> : null}
           {routeTabDenied ? (
             <EmptyState
               title="Access denied"
@@ -133,6 +132,7 @@ export function StaffWorkspace({
             <StaffTabContent
               activeMakerspace={activeMakerspace}
               activeTab={activeTab}
+              progress={activeMakerspace && canManageMakerspace && activeTab === "dashboard" ? <SetupChecklist key={`${user.username}:${activeMakerspace.id}`} makerspace={activeMakerspace} owner={user.username} allowedTabs={moduleAllowedTabs} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} /> : undefined}
               guestOnly={guestOnly || handoutOnly}
               makerspaces={visibleMakerspaces}
               isSuperadmin={isSuperadmin}

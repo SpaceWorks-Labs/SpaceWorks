@@ -1,4 +1,5 @@
-export type Toast = { id: number; message: string; tone: "success" | "error" | "info"; undo?: () => Promise<unknown>; undoKey?: string; busy?: boolean };
+export type Toast = { id: number; message: string; tone: "success" | "error" | "info"; undo?: () => Promise<unknown>; undoKey?: string; busy?: boolean;
+  action?: { label: string; onClick(): void } };
 let nextId = 0;
 let session = 0;
 let rows: Toast[] = [];
@@ -30,9 +31,9 @@ export function dismissToast(id: number) {
 }
 
 /** Undo is an awaited compensating server call, supplied only by reversible actions. */
-export function toast(message: string, options: { tone?: Toast["tone"]; undo?: Toast["undo"]; undoKey?: string; duration?: number } = {}) {
+export function toast(message: string, options: { tone?: Toast["tone"]; undo?: Toast["undo"]; undoKey?: string; duration?: number; action?: Toast["action"] } = {}) {
   const id = ++nextId;
-  rows = [...rows, { id, message, tone: options.tone ?? "success", undo: options.undo, undoKey: options.undoKey }]; publish();
+  rows = [...rows, { id, message, tone: options.tone ?? "success", undo: options.undo, undoKey: options.undoKey, action: options.action }]; publish();
   if (options.tone !== "error") timers.set(id, setTimeout(() => dismissToast(id), options.duration ?? 8000));
   return id;
 }

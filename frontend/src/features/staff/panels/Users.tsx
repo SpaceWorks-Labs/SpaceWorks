@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { ConfirmDialog, Tabs } from "../../../components/ui";
+import { ConfirmDialog } from "../../../components/ui";
 import { staffRequest, type StaffAuthUser } from "../../../lib/api";
 import { useStaffGet, type Makerspace } from "./shared";
 import { ListLayout } from "../../../components/layouts/ListLayout";
@@ -167,16 +167,17 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
     return <ListLayout header={{ title: "Staff & roles" }} state={{ status: "ready" }} isEmpty empty={{ message: "No makerspaces available for this account. Choose another account to continue." }} body={{ kind: "rows", rows: null }} />;
   }
 
-  const sectionTabs = (<Tabs activeKey={tab} onChange={setTab} tabs={[
+  const sectionTabs = [
         { key: "staff", label: "Staff", href: "#staff", count: memberships.data?.length ?? 0 },
         ...(canManageRoles ? [{ key: "roles", label: "Roles", href: "#roles", count: rolesList.data?.length ?? 0 }] : []),
         ...(canManageRoles && makerspaces.find(space => space.id === msId)?.enabled_features?.includes("staff.invitations") ? [{ key: "invitations", label: "Invitations", href: "#invitations" }] : []),
-      ]} />);
+      ];
   const activeQuery = tab === "roles" ? rolesList : memberships;
   const panelError = memberships.error?.message ?? rolesList.error?.message ?? restore.error?.message;
 
   return (
-    <ListLayout header={{ meta: sectionTabs, title: "Staff & roles", subtitle: "Give your team the access they need to run this space.", primary: { label: "Add staff", onClick: openAdd, disabled: !assignableRoles.length, disabledReason: "A role you can assign is needed first." }, secondary: isSuperadmin ? { label: "Create makerspace", onClick: () => setMakerspaceOpen(true) } : undefined }}
+    <ListLayout tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
+    header={{ title: "Staff & roles", subtitle: "Give your team the access they need to run this space.", primary: { label: "Add staff", onClick: openAdd, disabled: !assignableRoles.length, disabledReason: "A role you can assign is needed first." }, secondary: isSuperadmin ? { label: "Create makerspace", onClick: () => setMakerspaceOpen(true) } : undefined }}
       state={{ status: tab === "invitations" ? "ready" : activeQuery.isLoading ? "loading" : activeQuery.isError ? "error" : "ready", error: "Couldn't load staff and roles. Try again.", onRetry: () => { void activeQuery.refetch(); } }}
       empty={{ message: "No staff yet. Add someone to your team." }}
       stats={[{ label: "Staff", value: memberships.data?.length ?? 0 }, { label: "Roles", value: rolesList.data?.length ?? 0 }]}

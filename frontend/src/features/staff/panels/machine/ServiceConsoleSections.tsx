@@ -14,9 +14,9 @@ export function ServiceQueueTabs({ rows, children }: {
   const [status, setStatus] = useState("pending");
   const visible = rows?.filter(row => status === "all" || row.status === status);
   return <div className="grid gap-4"><Tabs activeKey={status} label="Job status" onChange={setStatus}
-    tabs={statuses.map(item => ({ ...item, href: "#", count: rows?.filter(row => item.key === "all" || row.status === item.key).length }))} />
+    tabs={statuses.map(item => ({ ...item, href: "#", count: rows?.filter(row => item.key === "all" || row.status === item.key).length }))}>
     {visible?.length === 0 ? <EmptyState message="No jobs waiting. New requests land here." /> : children(visible)}
-  </div>;
+  </Tabs></div>;
 }
 
 export function ServiceConsoleSections({ queue, manualForm, manualRows, reports }: { queue?: ReactNode; manualForm: ReactNode; manualRows: ReactNode; reports?: ReactNode }) {
@@ -25,11 +25,11 @@ export function ServiceConsoleSections({ queue, manualForm, manualRows, reports 
   const tabs = [...(queue ? [{ key: "queue", label: "Queue", href: "#" }] : []),
     { key: "manual", label: "Manual usage", href: "#" }, ...(reports ? [{ key: "reports", label: "Printer reports", href: "#" }] : [])];
   return <div className="grid gap-6">
-    <Tabs tabs={tabs} activeKey={active} onChange={setActive} label="Service sections" />
+    <Tabs tabs={tabs} activeKey={active} onChange={setActive} label="Service sections">
     {active === "queue" ? queue : null}
     {active === "manual" ? <><div className="flex justify-end"><button className="desk-button-primary" onClick={() => setLogging(true)}>Log usage</button></div>
       {manualRows}
       {logging ? <Modal open title="Log usage" onClose={() => setLogging(false)}>{manualForm}</Modal> : null}</> : null}
     {active === "reports" ? reports : null}
-  </div>;
+  </Tabs></div>;
 }

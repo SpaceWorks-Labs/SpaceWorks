@@ -16,6 +16,7 @@ export type DetailLayoutProps = LayoutProps & Presentation & {
   banner?: CalloutProps;
   tabs?: Tab[];
   activeTab?: string;
+  onTabChange?: (key: string) => void;
   main: ReactNode;
   aside?: ReactNode;
   asideSide?: "start" | "end";
@@ -24,14 +25,10 @@ export type DetailLayoutProps = LayoutProps & Presentation & {
 };
 
 export function DetailLayout(props: DetailLayoutProps) {
-  const { presentation = "page", back, identity, title, status, meta, actions, banner, tabs, activeTab,
+  const { presentation = "page", back, identity, title, status, meta, actions, banner, tabs, activeTab, onTabChange,
     main, aside, asideSide = "end", footer, danger = [], standalone, width, state, isEmpty, empty } = props;
   const primary = actions?.primary?.targetsTab && actions.primary.targetsTab === activeTab ? undefined : actions?.primary;
-  const content = <LayoutFrame standalone={standalone} width={width} className={presentation === "drawer" ? "sw-overlay-content" : ""}>
-    <PageHeader title={title} identity={identity} status={status} back={presentation === "page" ? back : undefined}
-      meta={meta?.map((part, index) => <span key={index}>{index ? <span aria-hidden="true"> · </span> : null}{part}</span>)}
-      primary={primary} secondary={actions?.secondary} overflow={actions?.overflow} />
-    {tabs?.length ? <div className="mb-6"><Tabs tabs={tabs} activeKey={activeTab ?? tabs[0].key} /></div> : null}
+  const panel = <>
     <QueryContent state={state} isEmpty={isEmpty} empty={empty}>
       <div className="grid min-w-0 gap-6">
         {banner ? <Callout {...banner} /> : null}
@@ -45,6 +42,12 @@ export function DetailLayout(props: DetailLayoutProps) {
         {footer.primary ? <ActionControl action={footer.primary} primary /> : null}
       </div> : null}
     </QueryContent>
+  </>;
+  const content = <LayoutFrame standalone={presentation === "page" && standalone} width={width} className={presentation === "drawer" ? "sw-overlay-content" : ""}>
+    <PageHeader headingLevel={presentation === "drawer" ? 2 : 1} title={title} identity={identity} status={status} back={presentation === "page" ? back : undefined}
+      meta={meta?.map((part, index) => <span key={index}>{index ? <span aria-hidden="true"> · </span> : null}{part}</span>)}
+      primary={primary} secondary={actions?.secondary} overflow={actions?.overflow} />
+    {tabs?.length ? <Tabs tabs={tabs} activeKey={activeTab ?? tabs[0].key} onChange={onTabChange}>{panel}</Tabs> : panel}
   </LayoutFrame>;
   return props.presentation === "drawer" ? <div className={`sw-detail-drawer sw-detail-drawer-${props.drawerWidth ?? 640}`}>
     <DetailDrawer open={props.open} title={title} onClose={props.onClose}>{content}</DetailDrawer>

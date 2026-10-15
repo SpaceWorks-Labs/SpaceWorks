@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { DataTable, EmptyState, Field, IdentityChip, Tabs } from "../../components/ui";
+import { DataTable, EmptyState, Field, IdentityChip } from "../../components/ui";
 import type {
   AdminMembership,
   MembershipListResponse,
@@ -101,15 +101,16 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
   const activeQuery = tab === "requests" ? requests : tab === "presence" ? presence : roster;
   const querySection = ["members", "requests", "presence"].includes(tab);
 
-  const sectionTabs = (<Tabs activeKey={tab} onChange={setTab} tabs={[
+  const sectionTabs = [
       { key: "members", label: "Members", href: "#members", count: roster.data?.count ?? 0 },
       { key: "requests", label: membershipEnabled ? "Requests" : "Invitations", href: "#requests", count: requests.data?.count ?? 0 },
       { key: "presence", label: "Present now", href: "#presence", count: presence.data?.length ?? 0 },
       ...(membershipEnabled && canManageMakerspace ? [{ key: "plans", label: "Plans", href: "#plans" }] : []),
       ...(canManageMakerspace ? [{ key: "waivers", label: "Waivers", href: "#waivers" }] : []),
-    ]} />);
+    ];
   return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: `Couldn't load ${tab === "requests" ? "requests" : tab === "presence" ? "presence" : "members"}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
-    header={{ meta: sectionTabs, title: "Members", subtitle: "Membership, permissions and the people making things here.", primary: { label: "Invite member", onClick: () => setInviteOpen(true) } }}
+    tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
+    header={{ title: "Members", subtitle: "Membership, permissions and the people making things here.", primary: { label: "Invite member", onClick: () => setInviteOpen(true) } }}
     stats={[{ label: "Members", value: roster.data?.count ?? 0 }, { label: membershipEnabled ? "Membership requests" : "Invitations", value: requests.data?.count ?? 0 }, { label: "Currently present", value: presence.data?.length ?? 0 }]}
     empty={{ message: "No members yet. Invite someone to your space." }}
     body={{ kind: "rows", rows: <>

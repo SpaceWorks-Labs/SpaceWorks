@@ -3,7 +3,7 @@ import { EmptyState, ErrorBlock, Skeleton } from "../ui";
 import type { LayoutStateProps } from "./types";
 import "./layouts.css";
 
-const ContentTarget = createContext(false);
+export const ContentTarget = createContext(false);
 export const PublicQueryState = createContext<LayoutStateProps | undefined>(undefined);
 
 /** Nested public layouts share one landmark and one skip destination. */
@@ -14,10 +14,11 @@ export function LayoutFrame({ standalone = false, width = "default", children, c
   className?: string;
 }) {
   const nested = useContext(ContentTarget);
-  const Root = standalone && !nested ? "main" : "div";
+  const ownsTarget = standalone && !nested;
+  const Root = ownsTarget ? "main" : "div";
   return <ContentTarget.Provider value={true}>
     {standalone && !nested ? <a href="#main-content" className="skip-link">Skip to content</a> : null}
-    <Root id={nested ? undefined : "main-content"} tabIndex={nested ? undefined : -1}
+    <Root id={ownsTarget ? "main-content" : undefined} tabIndex={ownsTarget ? -1 : undefined}
       className={`${nested ? "min-w-0" : `sw-layout sw-layout-${width}`} ${className}`}>
       {children}
     </Root>

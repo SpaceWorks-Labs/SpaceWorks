@@ -10,6 +10,7 @@ export type ConfirmDialogProps = {
   onConfirm: () => void;
   onCancel: () => void;
   pending?: boolean;
+  safePrimary?: boolean;
 };
 
 export function ConfirmDialog({
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   pending = false,
+  safePrimary = false,
 }: ConfirmDialogProps) {
   return (
     <Modal
@@ -30,11 +32,11 @@ export function ConfirmDialog({
       title={title}
       footer={(
         <div className="desk-actions flex flex-wrap justify-end gap-2">
-          <button className="desk-button" type="button" disabled={pending} onClick={onCancel}>
+          <button className={safePrimary ? "desk-button-primary" : "desk-button"} type="button" disabled={pending} onClick={onCancel}>
             {cancelLabel}
           </button>
           <button
-            className={tone === "danger" ? "desk-button-danger" : "desk-button-primary"}
+            className={safePrimary ? "desk-button-danger-outline" : tone === "danger" ? "desk-button-danger" : "desk-button-primary"}
             type="button"
             disabled={pending}
             onClick={onConfirm}

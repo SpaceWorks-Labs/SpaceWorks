@@ -15,7 +15,7 @@ export type KioskLayoutProps = LayoutProps & {
   ready?: { primary: Action };
   work?: { capture: ReactNode; panel: ReactNode; recent?: ReactNode };
   idleCountdown?: { seconds: number; onKeep: () => void };
-  confirmLock?: { pendingCount: number; onDiscard: () => void; onKeep: () => void };
+  confirmLock?: { pendingCount?: number; title?: string; consequence?: string; onDiscard: () => void; onKeep: () => void };
 };
 export function KioskLayout({ context, connection, progress, headerActions, mode, lock, ready, work, idleCountdown,
   confirmLock, standalone = true, width = "default", ...query }: KioskLayoutProps) {
@@ -31,15 +31,16 @@ export function KioskLayout({ context, connection, progress, headerActions, mode
       {idleCountdown ? <div className="mb-6"><Callout size="panel" tone="warn" lead={`Station locks in ${idleCountdown.seconds} seconds.`}
         action={{ label: "Keep working", onClick: idleCountdown.onKeep }} /></div> : null}
       <QueryContent {...query}>
-        {mode === "lock" && lock ? <KioskPin {...lock} /> : null}
+        {mode === "lock" && lock ? <><KioskPin {...lock} />
+          {work?.panel ? <div className="mt-6">{work.panel}</div> : null}</> : null}
         {mode === "ready" && ready ? <Card className="grid min-h-64 place-items-center"><ActionControl action={ready.primary} primary /></Card> : null}
         {mode === "work" && work ? <div className="grid gap-8"><div className="sw-kiosk-stage">
           <div className="min-w-0">{work.capture}</div><div className="min-w-0">{work.panel}</div>
         </div>{work.recent}</div> : null}
       </QueryContent>
     </LayoutFrame>
-    <ConfirmDialog open={Boolean(confirmLock)} title="Lock this station?"
-      message={`${confirmLock?.pendingCount ?? 0} queued actions are still on this device.`} confirmLabel="Discard and lock" cancelLabel="Keep working"
-      tone="danger" onConfirm={() => confirmLock?.onDiscard()} onCancel={() => confirmLock?.onKeep()} />
+    <ConfirmDialog open={Boolean(confirmLock)} title={confirmLock?.title ?? "Lock this station?"}
+      message={confirmLock?.consequence ?? `${confirmLock?.pendingCount ?? 0} queued actions are still on this device.`} confirmLabel="Discard and lock" cancelLabel="Keep working"
+      tone="danger" safePrimary onConfirm={() => confirmLock?.onDiscard()} onCancel={() => confirmLock?.onKeep()} />
   </div>;
 }

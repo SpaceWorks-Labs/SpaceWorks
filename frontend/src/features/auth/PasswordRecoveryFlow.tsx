@@ -69,7 +69,7 @@ export function PasswordRecoveryFlow() {
     : step === "success" ? "Your password has been updated. You can now sign in."
     : "Password recovery is unavailable on this deployment — contact your makerspace staff";
   return <CenteredCardLayout state={{ status: "ready" }} eyebrow="Account access"
-    media={{ icon: step === "success" ? "Check" : step === "confirm" ? "Info" : "Settings", tone: step === "success" ? "success" : "accent" }}
+    media={{ icon: step === "success" ? "Check" : step === "confirm" ? "Mail" : "KeyRound", tone: step === "success" ? "success" : "accent" }}
     title={titles[step]} body={<p role={step === "unavailable" ? "alert" : undefined}>{body}</p>}
     primary={step === "success" || step === "unavailable" ? { label: step === "success" ? "Go to sign in" : "Back to sign in", href: "/admin" } : {
       label: step === "request" ? "Request recovery code" : "Update password", pending,

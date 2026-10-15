@@ -45,7 +45,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
   const saveError = save.error instanceof Error ? save.error.message : undefined;
   const href = (key: string) => { const next = new URLSearchParams(params); next.set("containerTab", key); return `?${next}`; };
   const query = panel === "contents" ? contents : panel === "history" ? history : null;
-  return <InventoryDetailNavigation><DetailLayout presentation="drawer" open onClose={onClose} title={container.label} meta={[container.code ?? "", container.location ?? ""]}
+  return <InventoryDetailNavigation><DetailLayout presentation="drawer" open onClose={onClose} title={container.label} identity={{ kind: "code", code: container.code || String(container.id) }} meta={[container.code ?? "", container.location ?? ""]}
     status={<StatusPill label={container.is_active === false ? "Inactive" : "Active"} tone={container.is_active === false ? "neutral" : "success"} />}
     state={query ? inventoryQueryState(query, panel === "history" ? "scan history" : "container contents") : { status: "ready" }}
     tabs={["contents", "history", "details"].map(key => ({ key, label: key[0].toUpperCase() + key.slice(1), href: href(key) }))} activeTab={panel}

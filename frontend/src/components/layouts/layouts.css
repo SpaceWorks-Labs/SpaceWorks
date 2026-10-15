@@ -17,6 +17,7 @@
 .sw-kiosk-stage > * { min-width: 0; }
 .sw-kiosk-pin { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .sw-kiosk-pin button { min-height: 76px; font-size: 26px; }
+.sw-kiosk-flow :is(button, input, select, a:not(.skip-link), summary) { min-height: 56px; min-width: 56px; font-size: 18px; }
 @media (min-width: 768px) {
   .sw-layout { padding: 32px 24px; max-width: 1168px; }
   .sw-layout-wide { max-width: none; }
@@ -71,3 +72,9 @@
 
 @media (min-width: 768px) { .sw-settings-row > [role="group"] { grid-template-columns: 220px minmax(0, 1fr); } }
 @media (min-width: 1280px) { .sw-settings-row > [role="group"] { grid-template-columns: 300px minmax(0, 1fr); } }
+
+/* Mobile header action sits above the shell navigation and the device safe area. */
+@media (max-width: 767px) {
+  :is(div, main, section):has(> header .sw-sticky-primary) { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .sw-sticky-primary { position: fixed; inset-inline: 0; bottom: calc(var(--shell-bottom-tabs, 0px) + env(safe-area-inset-bottom)); z-index: 20; padding: 12px 16px; background: rgb(var(--color-panel)); border-top: 1px solid rgb(var(--color-line)); }
+}

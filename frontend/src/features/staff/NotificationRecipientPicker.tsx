@@ -26,9 +26,11 @@ const RECIPIENTS_KEY = (makerspaceId: number) =>
 export function NotificationRecipientPicker({
   makerspaceId,
   delegated = false,
+  visible = true,
 }: {
   makerspaceId: number;
   delegated?: boolean;
+  visible?: boolean;
 }) {
   const path = `/admin/makerspace/${makerspaceId}/notification-recipient-rules`;
   const data = useQuery({
@@ -49,6 +51,7 @@ export function NotificationRecipientPicker({
     ? { feature: features[0].key, event: features[0].events[0] }
     : null);
   const events = features.find((item) => item.key === current?.feature)?.events ?? [];
+  if (!visible) return null;
 
   return (
     <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">Who gets notified</h3>

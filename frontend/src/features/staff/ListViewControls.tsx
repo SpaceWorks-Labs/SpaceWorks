@@ -12,5 +12,5 @@ export function ListViewControls({ state, makerspaceId, entity, sorts, search = 
     sort={<ListSort value={state.values.ordering} onChange={event => state.setFilter("ordering", event.target.value)} options={sorts} />}
     views={<SavedViewsMenu makerspaceId={makerspaceId} entity={entity} state={state.values} onRestore={state.restore} />}
     controls={controls} activeCount={activeCount}
-    chips={state.values.id ? [{ key: "id", label: "Selected result", onRemove: () => state.setFilter("id", "") }] : []} />;
+    chips={state.values.id ? [{ key: "id", label: "selected result", onRemove: () => state.setFilter("id", "") }] : []} />;
 }

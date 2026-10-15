@@ -8,6 +8,9 @@ from apps.backup.services_access import (
     invalidate_download_tokens_after_restore as invalidate_archive_download_tokens_after_restore,
 )
 from apps.data_export.restore_hooks import invalidate_download_tokens_after_restore
+from apps.tenant_migration.restore_hooks import (
+    invalidate_download_tokens_after_restore as invalidate_tenant_dump_download_tokens_after_restore,
+)
 from apps.tenant_migration.tenant_restore_target_state import (
     establish_target_import_state,
     set_target_normal,
@@ -42,6 +45,7 @@ class DatabaseStateTarget:
         )
         invalidate_download_tokens_after_restore(using=self.using)
         invalidate_archive_download_tokens_after_restore(using=self.using)
+        invalidate_tenant_dump_download_tokens_after_restore(using=self.using)
         return {
             **state,
             "database_uuid": str(identity.database_uuid),

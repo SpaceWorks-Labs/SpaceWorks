@@ -377,6 +377,7 @@ while pack application explicitly asserts the target source gate before writes.
   and exact object bytes before `source_gate_release.py` performs the fenced `copy_capture` release;
   `tenant_dump_staging.py` + `tenant_dump_database_cleanup.py` own marker-guarded crash cleanup;
   `tenant_dump_cleanup.py` retries refused unpublished-object deletion from its durable capture-row key;
+  `restore_hooks.py` clears copied tenant-dump download bearers during restore and slice staging;
   `tenant_dump_derivation.py` derives and seals output only from that capture;
   `tenant_dump_pii.py` binds raw mapped-column mode findings and ciphertext AAD identities;
   `tenant_dump_key_inventory.py` freezes and exact-set checks source-broker key facts, while

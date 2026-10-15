@@ -9,7 +9,13 @@ from django.utils import timezone
 from apps.backup.main_projection_registry import boundary_rules, table_rules
 from apps.backup.slice_merge_types import SliceMergeError
 from apps.data_export.datasets import DATASET_SPECS
-from apps.data_export.restore_hooks import strip_download_bearer
+from apps.data_export.restore_hooks import strip_download_bearer as strip_data_export_download_bearer
+from apps.tenant_migration.restore_hooks import strip_download_bearer as strip_tenant_dump_download_bearer
+
+_BEARER_SCRUBBERS = {
+    "data_export.DataExportJob": strip_data_export_download_bearer,
+    "tenant_migration.TenantDumpCapture": strip_tenant_dump_download_bearer,
+}
 
 
 def slice_fixtures(root):
@@ -24,10 +30,11 @@ def slice_fixtures(root):
             preimage = item.get("row_preimage")
             if preimage:
                 model = apps.get_model(preimage["model"])
-                if model._meta.label == "data_export.DataExportJob":
+                scrub = _BEARER_SCRUBBERS.get(model._meta.label)
+                if scrub:
                     # Scrub boundary bearers before staging for verify_staged_rows equality
                     # and no crash window.
-                    preimage = strip_download_bearer(preimage)
+                    preimage = scrub(preimage)
                 result.append((model, preimage))
     return result
 

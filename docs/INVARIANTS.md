@@ -2505,6 +2505,12 @@ Load-bearing details that carried over unchanged:
   `rehydrate_control_record` and compound `DatabaseStateTarget.rehydrate`. B1 slice merge needs no sweep:
   `BackupArchive.makerspace` is a `PROJECT_GLOBAL_BOUNDARIES` `PROJECT_NULL_TO_SLICE` boundary whose
   delta carries only the `field_preimage`. Tenant dumps omit the model (`OMITTED_MODELS`).
+- **`TenantDumpCapture` download bearers are cleared pre-emptively at all three seams** by
+  `apps/tenant_migration/restore_hooks.py`: classic `rehydrate_control_record`, compound
+  `DatabaseStateTarget.rehydrate`, and the `slice_fixtures` `row_preimage` scrub (its `makerspace` FK
+  is a `DROP_ROW_TO_SLICE` boundary). Today `publish_tenant_dump`'s token has no caller and no redeemer.
+  **RULE:** a future `TenantDumpCapture` download route must keep these hooks, and any new model carrying
+  a `download_token_*` bearer needs a sweep at every seam that copies its rows.
 
 ### Offsite destinations and the `backup` module (lane backup, 2026-10-09)
 

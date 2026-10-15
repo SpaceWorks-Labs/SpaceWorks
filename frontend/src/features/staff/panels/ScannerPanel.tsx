@@ -23,7 +23,7 @@ export function ScannerPanel(props: { makerspace: Makerspace; isSuperadmin: bool
         {successNote ? <p role="status" className="text-sm text-accent-ink">{successNote}</p> : null}
       {resolved && target ? (
         <div className="mt-4 rounded-md border border-line bg-surface p-3">
-          <h3 className="title-section">
+          <h3 className="title-section [overflow-wrap:anywhere]">
             {target.type === "box" ? `Box: ${target.label} (${target.code})`
               : target.type === "product" ? `Product: ${target.name}`
               : `Asset: ${target.asset_tag} - ${target.product} (${target.status})`}
@@ -89,7 +89,7 @@ export function ScannerPanel(props: { makerspace: Makerspace; isSuperadmin: bool
           ) : null}
           {revokeError ? <p className="mt-2 text-sm text-danger">{revokeError}</p> : null}
           {contents ? (
-            <div className="mt-3 rounded-md border border-line bg-bg p-2 text-xs text-muted">
+            <div className="mt-3 rounded-md border border-line bg-bg p-2 text-xs text-muted [overflow-wrap:anywhere]">
               <h4 className="title-section">Contents</h4>
               {contents.products.map((product) => <p key={`p-${product.id}`}>{product.name} - {product.available_quantity} available</p>)}
               {contents.assets.map((asset) => <p key={`a-${asset.id}`}>{asset.asset_tag} ({asset.status})</p>)}

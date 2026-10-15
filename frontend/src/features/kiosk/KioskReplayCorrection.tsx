@@ -76,12 +76,12 @@ export function KioskReplayCorrection({ id, token, session, online, onQueueChang
         })); }); }} disabled={busy} />
         {!queue ? <button type="button" className="desk-button-primary" disabled={busy || !row.recovery_request_id && !row.recovery_loan_id}
           onClick={() => { void run(async () => { setQueue(await loadCorrectiveWork(token, session, row)); }); }}>Start corrective shift and load current work</button> : !command ? <form className="grid gap-2" onSubmit={(event) => { void capture(event); }}>
-          <p className="text-sm">Current work: {queue.works[0].work.display_label} · {queue.works[0].work.status}. Return corrections record all outstanding items as returned; damage/loss needs the staff return workflow.</p>
-          {row.operation_kind === "assign_box" || row.operation_kind.endsWith("return") ? <label className="text-sm">Current box or return QR<input className="desk-input" required value={box} onChange={(event) => setBox(event.target.value)} /></label> : null}
+          <p className="text-sm [overflow-wrap:anywhere]">Current work: {queue.works[0].work.display_label} · {queue.works[0].work.status}. Return corrections record all outstanding items as returned; damage/loss needs the staff return workflow.</p>
+          {row.operation_kind === "assign_box" || row.operation_kind.endsWith("return") ? <label className="grid gap-1 text-sm">Current box or return QR<input className="desk-input w-full" autoComplete="off" required value={box} onChange={(event) => setBox(event.target.value)} /></label> : null}
           {row.operation_kind !== "assign_box" ? <>
-            <label className="text-sm">New correction photo<input type="file" accept="image/*" required onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} /></label>
-            <label className="text-sm">Correction remark<input className="desk-input" required={row.operation_kind.endsWith("return")} value={remark} onChange={(event) => setRemark(event.target.value)} /></label>
-            {row.operation_kind === "reviewed_issue" ? <label className="text-sm">Current asset QRs (one per line)<textarea className="desk-input" value={assetQrs} onChange={(event) => setAssetQrs(event.target.value)} /></label> : null}
+            <label className="grid gap-1 text-sm">New correction photo<input className="desk-input w-full min-w-0" type="file" accept="image/*" required onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} /></label>
+            <label className="grid gap-1 text-sm">Correction remark<input className="desk-input w-full" required={row.operation_kind.endsWith("return")} value={remark} onChange={(event) => setRemark(event.target.value)} /></label>
+            {row.operation_kind === "reviewed_issue" ? <label className="grid gap-1 text-sm">Current asset QRs (one per line)<textarea className="desk-input w-full" value={assetQrs} onChange={(event) => setAssetQrs(event.target.value)} /></label> : null}
           </> : null}
           <button className="desk-button-primary" type="submit" disabled={busy}>Capture fresh correction</button>
         </form> : <div className="grid gap-2 text-sm">

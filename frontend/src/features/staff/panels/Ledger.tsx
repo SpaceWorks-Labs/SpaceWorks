@@ -97,7 +97,7 @@ export function Ledger({ makerspace, isSuperadmin }: { makerspace: Makerspace; i
     stats={[{ label: "Items out on this page", value: itemCount }, { label: "Records", value: totalRows }]}
     tabs={[{ key: "", label: "All", href: tabHref("") }, { key: "reviewed", label: "Reviewed", href: tabHref("reviewed") }, { key: "self_checkout", label: "Self-checkout", href: tabHref("self_checkout") }, { key: "direct", label: "Direct", href: tabHref("direct") }]} activeTab={sourceFilter}
     filters={{ search: { label: "Search ledger", value: filter, onChange: setFilter },
-      sort: <div className="flex min-w-0 items-center gap-2">
+      sort: <div className="flex min-w-0 flex-wrap items-center gap-2">
         <ListSort label="Sort ledger" value={sort.key} onChange={event => setSortKey(event.target.value as SortKey)} options={sortOptions(aggregate)} />
         <button type="button" className="desk-button" onClick={() => setSort(current => ({ ...current, direction: current.direction === "asc" ? "desc" : "asc" }))}>{sort.direction === "asc" ? "Ascending" : "Descending"}</button>
       </div>,

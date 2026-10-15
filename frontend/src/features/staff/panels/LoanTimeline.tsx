@@ -77,7 +77,7 @@ function AssetGroups({ groups }: { groups: AssetGroup[] }) {
       {groups.map((group) => (
         <div key={group.asset_id ?? group.asset_tag} className="rounded-xl border border-line bg-surface p-4 text-sm">
           <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{group.asset_tag || `Asset #${group.asset_id}`} <StatusPill label={humanize(group.status)} tone="neutral" /></p>
-          <p className="text-muted">{group.events.map((event) => humanize(String(event.detail.outcome ?? event.kind))).join(" | ")}</p>
+          <p className="text-muted [overflow-wrap:anywhere]">{group.events.map((event) => humanize(String(event.detail.outcome ?? event.kind))).join(" | ")}</p>
         </div>
       ))}
     </div>
@@ -103,7 +103,8 @@ function EventList({ events, truncated }: { events: TimelineEvent[]; truncated: 
     <ActivityRail title="History">
       {events.map((event, index) => (
         <ActivityItem key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} actor={event.actor ? formatActor(event.actor) : "Space Works"} date={event.at}>
-          <span className="font-medium text-ink">
+          {/* Audit meta can carry long IDs, keys and URLs; let them break instead of widening the drawer. */}
+          <span className="font-medium text-ink [overflow-wrap:anywhere]">
             {event.kind === "audit" ? String(event.detail.action_label ?? "Audit entry") : humanize(event.kind)}
           </span>
           {event.evidence_id ? ` · evidence #${event.evidence_id}` : ""}
@@ -121,14 +122,14 @@ function DetailText({ detail }: { detail: Record<string, unknown> }) {
     .map((key) => detail[key])
     .filter((value) => value !== undefined && value !== null && value !== "")
     .map(String);
-  return parts.length ? <span> | {parts.join(" | ")}</span> : null;
+  return parts.length ? <span className="[overflow-wrap:anywhere]"> | {parts.join(" | ")}</span> : null;
 }
 
 function AuditDetail({ detail }: { detail: Record<string, unknown> }) {
   const meta = (detail.meta ?? {}) as Record<string, unknown>;
   const parts = Object.entries(meta).map(([key, value]) => `${key}: ${String(value)}`);
   if (detail.meta_redacted) parts.push("some details withheld");
-  return parts.length ? <span> | {parts.join(" | ")}</span> : null;
+  return parts.length ? <span className="[overflow-wrap:anywhere]"> | {parts.join(" | ")}</span> : null;
 }
 
 function retentionLabel(retention: NonNullable<TimelineEvent["evidence_retention"]>) {

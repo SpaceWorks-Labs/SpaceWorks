@@ -153,3 +153,13 @@ submits descriptive fields only. Query keys include resource IDs and page/filter
 grant mutations invalidate access lists and resource detail, booking mutations retain the
 existing reservation/availability/report invalidation. Backend tests for this lane live
 under `backend/tests/bookings/test_resource_*` (gitignored per repository convention).
+
+## Booking communications (BK-D)
+
+- `bookings/models_broadcasts.py`: concrete resource campaigns and unique account deliveries.
+- `broadcasts.py`, `services_broadcasts.py`: typed shared-engine adapter and audited draft/queue/cancel policy.
+- `communication_recipients.py`: current verified account email, optional membership consent and notification policy.
+- `reminders.py`, `reminder_delivery.py`: account-only discovery, occurrence claims and live pre-send adapter.
+- `serializers_broadcasts.py`, `views_broadcasts.py`, `urls_broadcasts.py`: resource-authorized staff compose/history/actions.
+- `migrations/0013_booking_broadcasts.py`: history schema and persistent PII write-fence trigger, after actual leaf 0012.
+- `integrations/delivery_sources.py` retains source requirements across tombstones; `broadcasts_delivery.py` skips render-time eligibility loss. Shared digest/worker implementations remain in Integrations; Bookings never imports Events.

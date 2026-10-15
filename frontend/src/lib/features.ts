@@ -58,6 +58,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.invites", parent_module: "events", label: "Event invitations" },
   { key: "events.account_registration", parent_module: "events", label: "Account event registration" },
   { key: "events.organization_audience", parent_module: "events", label: "Participating organizations audience" },
+  { key: "bookings.broadcasts", parent_module: "bookings", label: "Booker broadcasts" },
   { key: "events.broadcasts", parent_module: "events", label: "Event broadcasts" },
   { key: "reports.event_pdf", parent_module: "reports", label: "Post-event PDF" },
   { key: "reports.event_exports", parent_module: "reports", label: "Event detail exports" },

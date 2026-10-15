@@ -37,7 +37,9 @@ def prepare(log):
     if not adapter.eligible(campaign, delivery.recipient):
         return False
     values = adapter.render(campaign, delivery.recipient)
-    render(log, subject=values["subject"], text_body=values["text_body"], to_email=delivery.recipient.email)
+    if values is None:
+        return False
+    render(log, subject=values["subject"], text_body=values["text_body"], to_email=values.get("to_email", delivery.recipient.email))
     return True
 
 

@@ -24,6 +24,7 @@ _FILTERS = {
     "hardware_requests.HardwareRequest": "makerspace_id",
     "events.EventRegistration": "event__makerspace_id",
     "bookings.Booking": "space__makerspace_id",
+    "bookings.BookingBroadcast": "makerspace_id",
     "machines.MachineServiceRequest": "makerspace_id",
     "machines.MachineUsageEntry": "machine__makerspace_id",
     "integrations.EmailLog": "makerspace_id",

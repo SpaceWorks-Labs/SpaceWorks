@@ -32,6 +32,7 @@ def _rules(disposition, *fields):
 
 
 OMITTED_FIELD_RECONSTRUCTIONS = {
+    ("bookings.BookingBroadcastDelivery", "outbox"): NULL,
     ("events.EventBroadcastDelivery", "outbox"): NULL,
     **_rules(
         DROP_ROW,

@@ -529,6 +529,9 @@ export const openApiPaths = [
   "/api/v1/admin/spaces/{id}/",
   "/api/v1/admin/spaces/{id}/booking-rules/",
   "/api/v1/admin/spaces/{id}/bookings/",
+  "/api/v1/admin/spaces/{id}/broadcasts/",
+  "/api/v1/admin/spaces/{id}/broadcasts/{campaign_id}/cancel/",
+  "/api/v1/admin/spaces/{id}/broadcasts/{campaign_id}/queue/",
   "/api/v1/admin/spaces/{id}/deactivate/",
   "/api/v1/admin/spaces/{id}/eligible-members/",
   "/api/v1/admin/spaces/{id}/image/",
@@ -1481,6 +1484,7 @@ export type BookableSpaceAdmin = {
   "can_manage_grants": boolean;
   "staff_grants_enabled": boolean;
   "recurring_enabled": boolean;
+  "broadcasts_enabled": boolean;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1530,6 +1534,35 @@ export type BookingAdmin = {
   "custom_answers": unknown | null;
   "created_at": string;
   "payment": StaffPaymentSummary | null;
+};
+
+export type BookingBroadcast = {
+  "id": number;
+  "space": number;
+  "subject": string;
+  "body": string;
+  "window_start": string;
+  "window_end": string;
+  "statuses": Array<"pending" | "confirmed">;
+  "status": "draft" | "queued" | "sending" | "sent" | "cancelled" | "failed";
+  "created_at": string;
+  "queued_at": string | null;
+  "completed_at": string | null;
+};
+
+export type BookingBroadcastInput = {
+  "subject": string;
+  "body": string;
+  "window_start"?: string;
+  "window_end": string;
+  "statuses"?: Array<"pending" | "confirmed">;
+};
+
+export type BookingBroadcastList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<BookingBroadcast>;
 };
 
 export type BookingEligibleMember = {

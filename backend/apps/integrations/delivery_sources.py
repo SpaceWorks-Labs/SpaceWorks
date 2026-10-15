@@ -13,6 +13,10 @@ class DeliverySource:
 
 
 SOURCES = {}
+# Protocol requirements survive domain tombstoning. No runtime domain import is
+# needed to reject an old source-less message when its adapter is unavailable.
+REQUIRED_SOURCES = {("bookings", "reminder"): "bookings.booking"}
+
 
 
 def register(kind, source):
@@ -37,6 +41,9 @@ def digestible(log):
 def prepare(log):
     # Reusing an instance for a retry must never reuse an earlier rendering.
     log.__dict__.pop("_rendered_email", None)
+    required = REQUIRED_SOURCES.get((getattr(log, "stream", ""), getattr(log, "event", "")))
+    if required and log.source_kind != required:
+        return False
     if not getattr(log, "source_kind", ""):
         return True
     source = SOURCES.get(log.source_kind)

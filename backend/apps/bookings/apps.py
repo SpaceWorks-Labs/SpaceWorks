@@ -12,6 +12,10 @@ class BookingsConfig(AppConfig):
 
         from apps.separability.tombstones import app_is_tombstoned
         if not app_is_tombstoned("bookings"):
+            from .broadcasts import register_broadcasts
+            from .reminder_delivery import register_reminders
+            register_broadcasts()
+            register_reminders()
             from apps.makerspaces.resource_grant_sources import ResourceGrantSource, register
             from .staff_payload import granted_booking_entries, has_grant_authority
             from .serializers_staff_grants import GrantedBookingEntrySerializer

@@ -13,6 +13,7 @@ def features_for_page(rows):
     makerspaces = {row.makerspace_id: row.makerspace for row in rows}
     return {pk: {
         "recurring_enabled": feature_enabled(makerspace, "bookings.recurring"),
+        "broadcasts_enabled": feature_enabled(makerspace, "bookings.broadcasts"),
         "staff_grants_enabled": feature_enabled(makerspace, "bookings.staff_grants"),
     } for pk, makerspace in makerspaces.items()}
 

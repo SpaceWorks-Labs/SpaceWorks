@@ -15,6 +15,7 @@ otherwise never be the winning match for the more specific paths.
 
 from django.urls import path
 from .urls_staff_grants import urlpatterns as staff_grant_patterns
+from .urls_broadcasts import urlpatterns as broadcast_patterns
 
 from apps.bookings.views_admin_bookings import (
     BookingApproveView,
@@ -38,7 +39,7 @@ from apps.bookings.views_admin_spaces import (
 
 from .views_recurrence import StaffRecurringBookingView
 
-urlpatterns = [*staff_grant_patterns,
+urlpatterns = [*staff_grant_patterns, *broadcast_patterns,
     path('spaces/<int:pk>/recurring-bookings/', StaffRecurringBookingView.as_view(), name='admin-recurring-bookings'),
     path(
         'makerspaces/<int:makerspace_id>/booking-machine-types/',

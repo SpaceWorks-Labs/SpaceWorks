@@ -22,6 +22,7 @@ USER_PROJECTIONS = {
 }
 
 ALWAYS_OMITTED = {
+    ("bookings.BookingBroadcastDelivery", "outbox"): "Source-local send authority never travels.",
     ("events.EventBroadcastDelivery", "outbox"): "Source-local send authority never travels.",
     ("devices.DeviceCommand", "lease_token_digest"): "Deployment-local command delivery credential.",
     # Trigger-maintained full-text vectors: derived from exported columns and rebuilt by

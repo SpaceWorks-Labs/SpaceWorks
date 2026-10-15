@@ -3,6 +3,10 @@
 
 def definitions(FeatureDefinition):
     features = (FeatureDefinition(
+        "bookings.broadcasts", "bookings", "Booker broadcasts",
+        "Email upcoming bookers with durable delivery history and live reservation and consent checks.",
+        requires_modules=("bookings", "notifications", "email"),
+    ), FeatureDefinition(
         "bookings.staff_grants", "bookings", "Resource staff grants",
         "Delegate descriptive editing, reservations, arrival or page release for one resource.",
         requires_modules=("bookings",),

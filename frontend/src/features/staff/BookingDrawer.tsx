@@ -17,6 +17,7 @@ import {
 } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
 import { BookingDetailsEditor } from "./BookingDetailsEditor";
+import { BookingBroadcastsPanel } from "./BookingBroadcastsPanel";
 import { BookingStaffAccess } from "./BookingStaffAccess";
 import { bookingAccess } from "./bookingStaffPermissions";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
@@ -90,6 +91,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
             /> : access.edit ? <BookingDetailsEditor key={space.updated_at} space={space} pending={update.isPending} onSubmit={(payload) => update.mutate(payload)} /> : <p className="text-sm text-muted">{space.description || "Use your assigned resource permissions."}</p>}
             {access.manager && space.staff_grants_enabled ? <BookingStaffAccess target={{ id: spaceId }} /> : null}
             {access.manager && space.is_active ? <button className="desk-button-danger w-fit" type="button" onClick={() => setConfirmDeactivate(true)}>Deactivate space</button> : !space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
+            {access.reservations && space.broadcasts_enabled ? <BookingBroadcastsPanel makerspaceId={makerspaceId} spaceId={spaceId} /> : null}
             {access.reservations ? <section aria-labelledby="space-bookings-title">
               {space.is_active ? <StaffBookingForm recurringEnabled={recurringEnabled || space.recurring_enabled} makerspaceId={makerspaceId} space={space} /> : null}
               <div className="mb-3">

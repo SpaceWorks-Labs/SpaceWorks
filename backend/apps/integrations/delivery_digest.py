@@ -20,6 +20,10 @@ def prepare_digest(log):
                 or not prepare(mail) or not _allowed(mail, log.makerspace)):
             continue
         rendered = content(mail)
+        # A source can revalidate a different address after summary assembly.
+        # Keep its private content out of a digest bound to the former mailbox.
+        if rendered.to_email != log.to_email:
+            continue
         bodies.append(f"{rendered.subject}\n{rendered.text_body}")
     render(log, subject=log.subject, text_body="\n\n".join(bodies))
     return bool(bodies)

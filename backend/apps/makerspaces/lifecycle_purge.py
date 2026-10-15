@@ -239,6 +239,8 @@ def _delete_object_graph(makerspace):
         StationCredential.objects.filter(station__makerspace=makerspace).delete()
         EventStaffGrantInvite.objects.filter(makerspace=makerspace).delete()
         EventStaffGrant.objects.filter(makerspace=makerspace).delete()
+        from apps.bookings.models_broadcasts import BookingBroadcast
+        BookingBroadcast.objects.filter(makerspace=makerspace).delete()
         from apps.events.models_broadcasts import EventBroadcast
         EventBroadcast.objects.filter(makerspace=makerspace).delete()
         EventStationBinding.objects.filter(station__makerspace=makerspace).delete()

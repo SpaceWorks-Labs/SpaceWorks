@@ -2312,6 +2312,48 @@ preserving other domains; whole-tenant purge removes all. These models own no S3
 manual PDF bytes are streamed, never stored. Retention/encryption/purge declarations survive
 tombstoning while adapters, feature rows and report definitions disappear.
 
+### Booker communications and occurrence reminders (BK-D)
+
+`bookings/broadcasts.py` is a thin typed adapter over the always-present
+`integrations/broadcasts_*` engine. `BookingBroadcast` targets exactly one resource
+and its tenant, a future start window ending within 366 days, and pending/confirmed
+states (confirmed by default). Selection excludes started and contact-only bookings,
+deduplicates by account and uses the current verified account email, never copied
+`Booking.email`. Compose/queue/cancel and every send require live `manage_reservations`
+through `booking_authority`, `bookings.broadcasts`, Notifications and Email, plus a
+servable, non-hidden tenant. Ten queues/hour/tenant are serialized by its row lock;
+API calls additionally have a per-user throttle. Sender revocation and matching booking
+loss stop unclaimed sends on immediate, quiet-hours and retry paths. Render-time loss
+also skips safely. Email only: no campaign body enters staff chat or a digest.
+
+`communication_recipients.py` preserves current account standing, optional membership
+status/notification consent, requester selection, matrix, personal preferences and
+suppression. Account-owned booking reminders do not require the Membership module.
+Email-only eligibility gates do not suppress independently enabled requester inbox delivery.
+`reminder_delivery.py` registers source `bookings.booking`: tenant/resource/booking/
+recipient IDs, exact UTC start/end, calendar sequence, reminder kind and offset are
+stored on the outbox. The claim subject includes the occurrence window and revision;
+an old revision's completed claim cannot suppress a moved or restored occurrence.
+Legacy claims still prevent duplicate/uncertain sends for the same start on upgrade,
+including bookings whose calendar sequence already advanced through approval. Delivery reloads
+that exact source and requires confirmed status, a future start, current offset and
+effective requester toggle. The shared digest retains input outbox IDs and rebuilds
+at inclusion, delivery and every retry; stale entries are dropped, empty summaries
+skip. Legacy source-less booking reminders fail closed even when Bookings is tombstoned.
+No note, answer or credential belongs in source metadata or a template placeholder.
+
+Campaign subject/body use scoped secondary PII encryption and the persistent DB write
+fence. Concrete campaign/delivery datasets include both tenant and typed resource closure,
+with explicit created_by/recipient User edges. Import cancels nonterminal campaigns,
+zeros cursors, marks recipients complete, clears outbox links and skips pending delivery
+history. Audit targets remap through the exported-model catalog; count-only metadata
+has no new reference edges. Outbox/source/digest references are omitted telemetry.
+Bookings-only purge removes booking campaigns and booking-source outboxes, retaining
+other domains and letting shared summaries rebuild survivors; whole-tenant purge removes
+all. No S3 objects are created, so object/storage/backup ownership registries need no
+new keys. Retention declarations remain present under tombstoning; runtime adapters and
+the opt-in capability disappear. Restored lifecycle notifications remain BK-B's concern.
+
 ### Booking resource staff grants (BK-A)
 
 `bookings/booking_authority.py` owns every booking staff predicate, including locked

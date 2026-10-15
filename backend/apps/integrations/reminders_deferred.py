@@ -63,10 +63,12 @@ def dispatch(space, row, message, now, tz):
     if quiet_until(space, 'email' if kind == 'email' else log.channel, now):
         defer_log(log, kind=kind, now=now)
         return NotificationResult(True)
-    if not _allowed(log, space):
+    from .delivery_sources import finished, prepare
+    # Sources resolve live recipients as well as content. Suppression must use
+    # that address, rather than the account address captured before quiet hours.
+    if (isinstance(log, EmailLog) and not prepare(log)) or not _allowed(log, space):
         log.status, log.error = 'skipped', 'notification_disabled_before_release'
         log.save(update_fields=['status', 'error', 'updated_at'])
-        from .delivery_sources import finished
         finished(log)
         return NotificationResult(False)
     token = RELEASING.set(True)

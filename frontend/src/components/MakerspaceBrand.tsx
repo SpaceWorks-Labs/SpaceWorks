@@ -10,6 +10,8 @@ type MakerspaceBrandProps = {
   hideName?: boolean;
   /** Without tenant artwork: the Space Works symbol (page headers) or initials (cards and lists). */
   fallback?: "logo" | "avatar";
+  /** Let a long name wrap onto two lines (clamped) instead of truncating to one. */
+  wrap?: boolean;
   className?: string;
 };
 
@@ -30,8 +32,8 @@ const NAME_SIZE: Record<NonNullable<MakerspaceBrandProps["size"]>, string> = {
 /**
  * Renders a makerspace's brand: its uploaded logo when present, otherwise the
  * Space Works symbol (brand master, 48 px floor) in page headers, or initials in
- * cards and lists, beside the name. Names stay on
- * one line so long tenant identities cannot push public navigation out of alignment.
+ * cards and lists, beside the name. Names stay on one line (or two with `wrap`) so long tenant
+ * identities cannot push public navigation out of alignment; the full name is always in `title`.
  */
 export function MakerspaceBrand({
   name,
@@ -39,6 +41,7 @@ export function MakerspaceBrand({
   size = "md",
   hideName = false,
   fallback = "avatar",
+  wrap = false,
   className = "",
 }: MakerspaceBrandProps) {
   return (
@@ -53,7 +56,7 @@ export function MakerspaceBrand({
         : <Avatar name={name} size={size === "sm" ? "sm" : size === "md" ? "md" : "lg"} />}
       {!hideName || !logoUrl ? (
         <span
-          className={`min-w-0 truncate font-display font-semibold leading-tight text-ink ${NAME_SIZE[size]}`}
+          className={`min-w-0 ${wrap ? "line-clamp-2 break-words" : "truncate"} font-display font-semibold leading-tight text-ink ${NAME_SIZE[size]}`}
           title={name}
         >
           {name}

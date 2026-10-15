@@ -22,6 +22,8 @@ export type DataTableProps<T> = {
   listState?: UrlListState;
   /** Optional screen-reader caption naming the table. */
   caption?: string;
+  /** Phones: put the `actions` cell at the top of each stacked card so the primary action is visible first. */
+  actionsFirstOnPhone?: boolean;
 };
 
 export function DataTable<T>({
@@ -35,7 +37,7 @@ export function DataTable<T>({
   emptyDescription,
   emptyAction,
   skeletonCols,
-  ordering, onOrderingChange, listState, caption,
+  ordering, onOrderingChange, listState, caption, actionsFirstOnPhone = false,
 }: DataTableProps<T>) {
   const [localSort, setSort] = useState<SortState | null>(null);
   const sort: SortState | null = ordering !== undefined ? { key: ordering.replace(/^-/, ""), direction: ordering.startsWith("-") ? "desc" : "asc" } : localSort;
@@ -50,6 +52,8 @@ export function DataTable<T>({
   const visibleColumns = filtered.length ? filtered : columns;
   const columnLabels = new Map(visibleColumns.map(column => [column.key, headerText(column.header)]));
   const cellPadding = listState?.values.density === "compact" ? "px-3 py-1" : "px-3 py-2";
+  // Phones read rows as stacked cards: only interactive headers (sort, select all) stay visible.
+  const phoneHeader = selectionEnabled || visibleColumns.some(column => column.sortable);
 
   useEffect(() => {
     if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected && !allSelected;
@@ -82,11 +86,13 @@ export function DataTable<T>({
   if (!loading && !data.length) return <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />;
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-line bg-panel">
+    <div className="min-w-0 rounded-xl border border-line bg-panel">
       {listState ? <ListColumns columns={columns} value={{ columns: listState.values.columns ?? "", density: listState.values.density ?? "comfortable" }} onChange={value => listState.restore({ ...listState.values, ...value })} /> : null}
+      {/* Tablet+: wide tables scroll inside this box, never the page. */}
+      <div className="overflow-x-auto overscroll-x-contain rounded-xl">
       <table role="table" className="block w-full text-left text-sm md:table md:min-w-[640px]" aria-busy={loading}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
-        <thead role="rowgroup" className="block bg-surface dark:bg-hover text-xs text-muted md:table-header-group">
+        <thead role="rowgroup" className={`${phoneHeader ? "block" : "max-md:sr-only"} bg-surface dark:bg-hover text-xs text-muted md:table-header-group`}>
           <tr role="row" className="flex flex-wrap items-center border-b border-line md:table-row">
             {selectionEnabled ? (
               <th role="columnheader" className="block w-16 px-3 py-2 md:table-cell" scope="col">
@@ -96,7 +102,7 @@ export function DataTable<T>({
             {visibleColumns.map((column) => (
               <th role="columnheader"
                 key={column.key}
-                className={`block px-3 py-2 font-semibold md:table-cell ${column.className ?? ""}`}
+                className={`${column.sortable ? "block" : "max-md:sr-only"} px-3 py-2 font-semibold md:table-cell ${column.className ?? ""}`}
                 aria-sort={sort?.key === column.key ? ariaSort(sort.direction) : undefined}
                 scope="col"
               >
@@ -123,14 +129,14 @@ export function DataTable<T>({
             sortedData.map((row) => {
               const id = getRowId(row);
               return (
-                <tr role="row" key={id} className={`m-3 block min-w-0 rounded-xl border border-line md:m-0 md:table-row md:rounded-none md:border-x-0 md:border-t-0 md:last:border-b-0 ${selectedSet.has(id) ? "bg-accent-soft" : "hover:bg-hover"}`}>
+                <tr role="row" key={id} className={`m-3 block min-w-0 ${actionsFirstOnPhone ? "max-md:flex max-md:flex-col" : ""} rounded-xl border border-line md:m-0 md:table-row md:rounded-none md:border-x-0 md:border-t-0 md:last:border-b-0 ${selectedSet.has(id) ? "bg-accent-soft" : "hover:bg-hover"}`}>
                   {selectionEnabled ? (
                     <td role="cell" className="block px-3 py-2 md:table-cell">
                       <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" aria-label={`Select row ${String(id)}`} checked={selectedSet.has(id)} onChange={(event) => changeRow(id, event.target.checked)} /></label>
                     </td>
                   ) : null}
-                  {visibleColumns.map((column) => (
-                    <td role="cell" key={column.key} className={`${cellPadding} block min-w-0 break-words text-ink md:table-cell ${column.key === "actions" ? "[&_button]:min-h-11 [&_button]:min-w-11 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:items-center" : ""} ${column.className ?? ""}`}>
+                  {visibleColumns.map((column, index) => (
+                    <td role="cell" key={column.key} className={`${cellPadding} block min-w-0 break-words text-ink md:table-cell ${index === 0 ? "max-md:font-semibold" : ""} ${column.key === "actions" ? `${actionsFirstOnPhone ? "max-md:order-first max-md:border-b" : "max-md:border-t"} max-md:border-line [&_button]:min-h-11 [&_button]:min-w-11 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:items-center` : ""} ${column.className ?? ""}`}>
                       {/* Generated labels avoid duplicating cell text or controls during CSS reflow. */}
                       {columnLabels.get(column.key) ? <span aria-hidden="true" data-label={columnLabels.get(column.key)} className="mb-1 block text-xs text-muted before:content-[attr(data-label)] md:hidden" /> : null}
                       {column.render ? column.render(row) : String(getCellValue(row, column.key) ?? "")}
@@ -142,6 +148,7 @@ export function DataTable<T>({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

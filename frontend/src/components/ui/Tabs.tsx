@@ -1,13 +1,46 @@
-import { useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { RouteLink } from "./RouteLink";
 import { rove } from "./useRovingFocus";
 import type { Tab } from "./types";
 export type TabsProps = { tabs: Tab[]; activeKey: string; label?: string;
   onChange?: (key: string) => void; children?: ReactNode };
-const barClass = "flex min-w-0 overflow-x-auto border-b border-line px-1 [mask-image:linear-gradient(to_right,transparent,rgb(var(--color-ink))_8px,rgb(var(--color-ink))_calc(100%_-_8px),transparent)] focus-within:[mask-image:none]";
+const barClass = "sw-tab-scroll relative flex min-w-0 overflow-x-auto overscroll-x-contain border-b border-line px-1";
+type Fade = "none" | "start" | "end" | "both";
+
+/** On a narrow screen the row scrolls sideways: edges fade where more tabs wait, and the active tab is kept in view. */
+function useScrollAffordance(active: string | undefined, count: number) {
+  const bar = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState<Fade>("none");
+  useEffect(() => {
+    const element = bar.current;
+    if (!element) return;
+    const update = () => {
+      const start = element.scrollLeft > 1;
+      const end = element.scrollLeft + element.clientWidth < element.scrollWidth - 1;
+      setFade(start && end ? "both" : start ? "start" : end ? "end" : "none");
+    };
+    update();
+    element.addEventListener("scroll", update, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(update);
+    observer?.observe(element);
+    return () => { element.removeEventListener("scroll", update); observer?.disconnect(); };
+  }, [count]);
+  useEffect(() => {
+    const element = bar.current;
+    const current = element?.querySelector<HTMLElement>('[aria-selected="true"], [aria-current="page"]');
+    if (!element || !current) return;
+    const left = current.offsetLeft - 24;
+    const right = current.offsetLeft + current.offsetWidth + 24 - element.clientWidth;
+    if (left < element.scrollLeft) element.scrollLeft = Math.max(0, left);
+    else if (right > element.scrollLeft) element.scrollLeft = right;
+  }, [active]);
+  return { bar, fade };
+}
+
 export function Tabs({ tabs, activeKey, label = "Page sections", onChange, children }: TabsProps) {
   const id = useId();
   const active = tabs.some(tab => tab.key === activeKey) ? activeKey : tabs[0]?.key;
+  const { bar, fade } = useScrollAffordance(active, tabs.length);
   const content = tabs.map((tab, index) => {
     const selected = active === tab.key;
     const accessibleLabel = tab.count === undefined ? tab.label : `${tab.label} ${tab.count}`;
@@ -20,10 +53,10 @@ export function Tabs({ tabs, activeKey, label = "Page sections", onChange, child
         tabIndex={selected ? 0 : -1} className={classes}>{body}</RouteLink>;
   });
   return onChange ? <>
-    <div role="tablist" aria-label={label} className={barClass}
+    <div ref={bar} role="tablist" aria-label={label} className={barClass} data-fade={fade}
       onKeyDown={event => rove(event, '[role="tab"]', true)}>{content}</div>
     <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-${tabs.findIndex(tab => tab.key === active)}`}
       tabIndex={0} className="grid min-w-0 gap-6">{children}</div>
-  </> : <><nav aria-label={label} className={barClass}
+  </> : <><nav ref={bar} aria-label={label} className={barClass} data-fade={fade}
     onKeyDown={event => rove(event, "a")}>{content}</nav>{children}</>;
 }

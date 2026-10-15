@@ -6,7 +6,8 @@ export type FlowStep = { key: string; label: string; state: "done" | "current" |
   summary?: string; required?: boolean; missing?: boolean };
 export function FlowSteps({ steps, current, onStepSelect }: { steps: FlowStep[]; current: string; onStepSelect?: (key: string) => void }) {
   const [open, setOpen] = useState(false);
-  const tablet = useLayoutMedia("(min-width: 768px)");
+  // The full rail only beside the work panel (xl two-column flow); a collapsed summary below that.
+  const tablet = useLayoutMedia("(min-width: 1280px)");
   const navRef = useRef<HTMLElement>(null);
   const index = Math.max(0, steps.findIndex(step => step.key === current));
   const summary = `Step ${index + 1} of ${steps.length} · ${steps[index]?.label ?? ""}`;

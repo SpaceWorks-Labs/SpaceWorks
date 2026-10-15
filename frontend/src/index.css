@@ -2,6 +2,7 @@
 @import "./styles/chrome.css";
 @import "./styles/components.css";
 @import "./styles/buttons.css";
+@import "./styles/responsive.css";
 @config "../tailwind.config.ts";
 
 @font-face {
@@ -160,6 +161,8 @@
     @apply bg-bg text-ink antialiased;
     font-family: "Gilroy", sans-serif;
     font-synthesis: none;
+    /* Long emails, URLs and codes wrap instead of pushing the page sideways. */
+    overflow-wrap: break-word;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Gilroy", sans-serif;
@@ -177,6 +180,7 @@
 
   #root {
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
   ::selection {

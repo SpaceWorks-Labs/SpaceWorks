@@ -47,9 +47,9 @@ export function FlowLayout({ title, subject, steps, current, onStepSelect, work,
         <QueryContent {...query}><Card>{result ? <ResultPanel {...result} /> : work}</Card></QueryContent>
         {error ? <div className="mt-4" role="alert"><Callout {...error} /></div> : null}
         {next.disabled && next.disabledReason && !result ? <p className="mt-4 text-sm text-muted">{next.disabledReason}</p> : null}
-        <div className="sticky bottom-0 z-10 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line bg-panel py-4">
+        <div className="sw-sticky-footer mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line bg-panel pt-4">
           <ActionControl action={{ label: "Cancel", onClick: cancel, disabled: busy }} />
-          {!result ? <div className="flex flex-wrap items-center gap-3">
+          {!result ? <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
             {footer.back ? <ActionControl action={footer.back} /> : null}<ActionControl primary action={next} />
           </div> : null}
         </div>

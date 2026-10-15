@@ -1,16 +1,15 @@
 /* Geometry only. Colours, controls and type come from the wave-1/2a vocabulary. */
-.sw-layout { width: 100%; min-width: 0; max-width: 1192px; margin-inline: auto; padding: 24px 16px; }
-.sw-layout-wide { max-width: none; }
+.sw-layout { width: 100%; min-width: 0; max-width: 1192px; margin-inline: auto; padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
+.sw-layout-wide { max-width: 1800px; }
 .sw-layout-narrow { max-width: 792px; }
 .sw-layout:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: -2px; }
-.sw-columns, .sw-detail-columns, .sw-public-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns { display: grid; min-width: 0; gap: 24px; }
+.sw-columns, .sw-detail-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns { display: grid; min-width: 0; gap: 24px; }
 .sw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .sw-auth { display: grid; gap: 24px; min-height: calc(100dvh - 80px); }
 .sw-auth-brand { display: none; }
 .sw-auth-form { width: 100%; max-width: 400px; margin: auto; }
 .sw-centered-card { width: 100%; max-width: 440px; margin: auto; }
 .sw-centered-wide { max-width: 720px; }
-.sw-public-mobile-bar { position: fixed; inset: auto 0 0; z-index: 20; }
 .sw-kiosk { min-height: 100dvh; font-size: 18px; }
 .sw-kiosk :is(button, input, select, a:not(.skip-link), summary) { min-height: 56px; min-width: 56px; font-size: 18px; }
 .sw-kiosk-stage { display: grid; gap: 24px; }
@@ -19,8 +18,8 @@
 .sw-kiosk-pin button { min-height: 76px; font-size: 26px; }
 .sw-kiosk-flow :is(button, input, select, a:not(.skip-link), summary) { min-height: 56px; min-width: 56px; font-size: 18px; }
 @media (min-width: 768px) {
-  .sw-layout { padding: 32px 24px; max-width: 1168px; }
-  .sw-layout-wide { max-width: none; }
+  .sw-layout { padding: 32px max(24px, env(safe-area-inset-right)) 32px max(24px, env(safe-area-inset-left)); max-width: 1168px; }
+  .sw-layout-wide { max-width: 1800px; }
   .sw-layout-narrow { max-width: 768px; }
   .sw-auth-brand { display: flex; min-height: 120px; }
   .sw-auth { grid-template-rows: auto 1fr; }
@@ -31,15 +30,14 @@
 }
 @media (min-width: 900px) { .sw-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 1280px) {
-  .sw-layout { padding: 40px 36px; max-width: 1192px; }
-  .sw-layout-wide { max-width: none; }
+  .sw-layout { padding: 40px max(36px, env(safe-area-inset-right)) 40px max(36px, env(safe-area-inset-left)); max-width: 1192px; }
+  .sw-layout-wide { max-width: 1800px; }
   .sw-layout-narrow { max-width: 792px; }
   .sw-columns { grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; }
   .sw-detail-columns { grid-template-columns: minmax(0, 1fr) 280px; }
   .sw-detail-start { grid-template-columns: 280px minmax(0, 1fr); }
   .sw-detail-start > aside { grid-row: 1; grid-column: 1; }
   .sw-detail-start > div { grid-column: 2; }
-  .sw-public-columns { grid-template-columns: minmax(0, 1fr) 340px; gap: 36px; }
   .sw-form-columns { grid-template-columns: minmax(0, 1fr) 300px; gap: 32px; }
   .sw-flow-columns { grid-template-columns: 300px minmax(0, 1fr); }
   .sw-settings-columns { grid-template-columns: 200px minmax(0, 1fr); }
@@ -67,7 +65,7 @@
 /* A drawer stays narrow even when its containing browser is desktop-sized. */
 .sw-detail-drawer .sw-detail-columns { grid-template-columns: minmax(0, 1fr); }
 .sw-detail-drawer .sw-detail-start > :is(div, aside) { grid-column: auto; grid-row: auto; }
-.sw-public-detail { padding-bottom: 112px; }
+.sw-public-detail { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
 @media (min-width: 768px) { .sw-public-detail { padding-bottom: 32px; } }
 
 @media (min-width: 768px) { .sw-settings-row > [role="group"] { grid-template-columns: 220px minmax(0, 1fr); } }
@@ -75,6 +73,27 @@
 
 /* Mobile header action sits above the shell navigation and the device safe area. */
 @media (max-width: 767px) {
-  :is(div, main, section):has(> header .sw-sticky-primary) { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
-  .sw-sticky-primary { position: fixed; inset-inline: 0; bottom: calc(var(--shell-bottom-tabs, 0px) + env(safe-area-inset-bottom)); z-index: 20; padding: 12px 16px; background: rgb(var(--color-panel)); border-top: 1px solid rgb(var(--color-line)); }
+  :is(div, main, section):has(> header .sw-sticky-primary) { padding-bottom: calc(96px + var(--shell-safe-bottom, env(safe-area-inset-bottom))); }
+  .sw-sticky-primary { position: fixed; inset-inline: 0; bottom: var(--shell-bottom-offset, 0px); z-index: 20;
+    padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + var(--shell-safe-bottom, env(safe-area-inset-bottom))) max(16px, env(safe-area-inset-left));
+    background: rgb(var(--color-panel)); border-top: 1px solid rgb(var(--color-line)); }
 }
+
+/* Public main + action panel ("Your request", registration, booking). The panel keeps at least
+   360px: when the main column would drop under 60% of the row it wraps underneath instead of
+   squeezing, so the panel never becomes a narrow column of one-word lines. */
+.sw-public-columns { display: flex; flex-wrap: wrap; align-items: flex-start; min-width: 0; gap: 24px; }
+.sw-public-columns > :first-child { flex: 999 1 0%; min-width: 60%; }
+.sw-public-columns > :not(:first-child) { flex: 1 1 360px; min-width: 0; }
+@media (min-width: 1280px) { .sw-public-columns { column-gap: 36px; } }
+@media (min-width: 1536px) { .sw-public-columns > :not(:first-child) { flex-basis: 400px; } }
+
+/* Drawers and dialogs are narrow regardless of the browser width: their column layouts stack. */
+.sw-detail-drawer :is(.sw-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns) { grid-template-columns: minmax(0, 1fr); }
+.sw-detail-drawer .sw-settings-nav { position: static; }
+
+/* A kiosk fills the device: its frame clears the notch, status bar and home indicator. */
+.sw-kiosk > .sw-layout { padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+
+/* asideSide="start": the aside leads when the columns stack, matching its desktop position. */
+.sw-detail-start > aside { order: -1; }

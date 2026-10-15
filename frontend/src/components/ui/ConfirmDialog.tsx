@@ -31,12 +31,12 @@ export function ConfirmDialog({
       onClose={onCancel}
       title={title}
       footer={(
-        <div className="desk-actions flex flex-wrap justify-end gap-2">
-          <button className={safePrimary ? "desk-button-primary" : "desk-button"} type="button" disabled={pending} onClick={onCancel}>
+        <div className="desk-actions flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+          <button className={`${safePrimary ? "desk-button-primary" : "desk-button"} w-full sm:w-auto`} type="button" disabled={pending} onClick={onCancel}>
             {cancelLabel}
           </button>
           <button
-            className={safePrimary ? "desk-button-danger-outline" : tone === "danger" ? "desk-button-danger" : "desk-button-primary"}
+            className={`${safePrimary ? "desk-button-danger-outline" : tone === "danger" ? "desk-button-danger" : "desk-button-primary"} w-full sm:w-auto`}
             type="button"
             disabled={pending}
             onClick={onConfirm}
@@ -46,7 +46,7 @@ export function ConfirmDialog({
         </div>
       )}
     >
-      <p className={tone === "danger" ? "rounded-control border border-danger-line bg-panel p-4 text-sm text-danger" : "text-sm text-muted"}>{message}</p>
+      <p className={tone === "danger" ? "break-words rounded-control border border-danger-line bg-panel p-4 text-sm text-danger" : "break-words text-sm text-muted"}>{message}</p>
     </Modal>
   );
 }

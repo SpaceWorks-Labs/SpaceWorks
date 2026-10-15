@@ -11,7 +11,7 @@ export function SupportContact({ branding }: Props) {
   if (!emailSafe && !url) return null;
   return <div className="flex flex-wrap items-center gap-3 text-sm text-muted" aria-label="Support contact">
     <span>Need help?</span>
-    {emailSafe ? <a className="underline hover:text-ink" href={`mailto:${encodeURI(email)}`}>{email}</a> : null}
-    {url ? <a className="underline hover:text-ink" href={url} target="_blank" rel="noreferrer">Contact support</a> : null}
+    {emailSafe ? <a className="inline-flex min-h-11 min-w-0 items-center break-all underline hover:text-ink" href={`mailto:${encodeURI(email)}`}>{email}</a> : null}
+    {url ? <a className="inline-flex min-h-11 items-center underline hover:text-ink" href={url} target="_blank" rel="noreferrer">Contact support</a> : null}
   </div>;
 }

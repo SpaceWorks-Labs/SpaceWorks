@@ -6,7 +6,8 @@ import "./layouts.css";
 export const ContentTarget = createContext(false);
 export const PublicQueryState = createContext<LayoutStateProps | undefined>(undefined);
 
-/** Nested public layouts share one landmark and one skip destination. */
+/** Nested public layouts share one landmark and one skip destination. Inside the shell, a narrow
+ * layout keeps its reading width; the shell itself caps everything else for wide monitors. */
 export function LayoutFrame({ standalone = false, width = "default", children, className = "" }: {
   standalone?: boolean;
   width?: "default" | "wide" | "narrow";
@@ -19,7 +20,7 @@ export function LayoutFrame({ standalone = false, width = "default", children, c
   return <ContentTarget.Provider value={true}>
     {standalone && !nested ? <a href="#main-content" className="skip-link">Skip to content</a> : null}
     <Root id={ownsTarget ? "main-content" : undefined} tabIndex={ownsTarget ? -1 : undefined}
-      className={`${nested ? "min-w-0" : `sw-layout sw-layout-${width}`} ${className}`}>
+      className={`${nested ? `min-w-0 ${width === "narrow" ? "mx-auto w-full max-w-[792px]" : ""}` : `sw-layout sw-layout-${width}`} ${className}`}>
       {children}
     </Root>
   </ContentTarget.Provider>;

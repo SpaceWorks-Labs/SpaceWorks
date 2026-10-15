@@ -25,7 +25,7 @@ function Rows({ rows }: { rows: SettingsLayoutSection["rows"] }) {
   return <>{rows as ReactNode}</>;
 }
 function SaveActions({ save }: { save: SettingsSave }) {
-  return save.dirty || save.pending || save.error ? <div className="sticky bottom-0 z-10 bg-panel">
+  return save.dirty || save.pending || save.error ? <div className="sticky bottom-[var(--shell-bottom-offset,0px)] z-10 bg-panel">
     {save.error ? <ErrorBlock error={new Error(save.error)} /> : null}
     <SettingsActions {...save} />
   </div> : null;

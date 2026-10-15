@@ -20,6 +20,7 @@ from rest_framework.views import APIView
 # configured on claim-reachable routes. Exact class+method matching makes a new hook a
 # build failure instead of silently trusting executable pre-auth code.
 POLICY_OVERRIDE_ALLOWLIST = {
+    "apps.bookings.views_passes.BookingPassRenderThrottle": set(),
     "apps.bookings.views_confirmation.BookingConfirmationThrottle": set(),
     "apps.bookings.throttles_feed.BookingFeedTokenThrottle": {"get_cache_key"},
     "apps.bookings.throttles_feed.BookingFeedIpThrottle": {"get_cache_key"},

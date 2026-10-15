@@ -3,6 +3,10 @@
 
 def definitions(FeatureDefinition):
     features = (FeatureDefinition(
+        "bookings.passes", "bookings", "Printable booking passes",
+        "Design and download answer-free PDF passes; scanner printing requires an active arrival.",
+        requires_modules=("bookings",), requires_features=("bookings.confirmations",),
+    ), FeatureDefinition(
         "bookings.clone", "bookings", "Clone resources",
         "Duplicate descriptive configuration into a private resource with independent assets.",
         requires_modules=("bookings",),

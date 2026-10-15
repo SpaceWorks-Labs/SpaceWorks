@@ -73803,6 +73803,635 @@
           }
         }
       }
+    },
+    "/api/v1/admin/spaces/{id}/pass-template/": {
+      "get": {
+        "operationId": "admin_spaces_pass_template_retrieve",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated answer-free template.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingPassTemplate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active account with booking ownership or the required resource permission. Claim sessions refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature/module disabled, target unavailable or foreign booking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Live edit_details and bookings.passes required. Stored templates revalidated on every read."
+      },
+      "put": {
+        "operationId": "admin_spaces_pass_template_update",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated answer-free template.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingPassTemplate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active account with booking ownership or the required resource permission. Claim sessions refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature/module disabled, target unavailable or foreign booking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Save bounded answer-free layout. Requires live edit_details and bookings.passes; audits identifiers only.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingPassTemplate"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/pass-preview/": {
+      "post": {
+        "operationId": "admin_spaces_pass_preview_create",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private/no-store, no-referrer. Audited PDF rendering at 30/hour/account.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active account with booking ownership or the required resource permission. Claim sessions refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature/module disabled, target unavailable or foreign booking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires edit_details and bookings.passes. Fixed sample recipient, never a real booking, no answer/contact/note/credential binding.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingPassTemplate"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/arrival/{booking_id}/pass/": {
+      "post": {
+        "operationId": "admin_spaces_arrival_pass_create",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private/no-store, no-referrer. Audited PDF rendering at 30/hour/account.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active account with booking ownership or the required resource permission. Claim sessions refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature/module disabled, target unavailable or foreign booking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires check_in and bookings.checkin/passes; confirmed/completed booking with current active arrival under resource then booking locks. Rebuilds answer-free PDF; template overrides refused.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/pass.pdf": {
+      "get": {
+        "operationId": "public_my_bookings_pass_retrieve",
+        "tags": [
+          "Member bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "makerspace_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "public_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private/no-store, no-referrer. Audited PDF rendering at 30/hour/account.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active account with booking ownership or the required resource permission. Claim sessions refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature/module disabled, target unavailable or foreign booking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Authenticated owner only, bookings.passes required. Confirmed/completed reservations. No membership/events/presence/payment-rail dependency. Never prints contacts, notes, custom answers or credentials."
+      }
     }
   },
   "components": {
@@ -76936,6 +77565,10 @@
           "checkin_enabled": {
             "type": "boolean",
             "readOnly": true
+          },
+          "passes_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -76966,6 +77599,7 @@
           "max_booking_duration_minutes",
           "min_booking_duration_minutes",
           "name",
+          "passes_enabled",
           "payment_amount",
           "public_token",
           "recurring_enabled",
@@ -77339,12 +77973,17 @@
               "current",
               "missing"
             ]
+          },
+          "can_print_pass": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
           "arrived_at",
           "booking_id",
           "can_arrive",
+          "can_print_pass",
           "can_reverse",
           "display_name",
           "ends_at",
@@ -77421,6 +78060,10 @@
           "google_calendar_url": {
             "type": "string",
             "format": "uri"
+          },
+          "pass_available": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -77431,6 +78074,7 @@
           "ends_at",
           "google_calendar_url",
           "location",
+          "pass_available",
           "public_token",
           "qr_value",
           "space_name",
@@ -114621,6 +115265,156 @@
           "kind",
           "name"
         ]
+      },
+      "BookingPassElement": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "name",
+              "resource",
+              "booking_window",
+              "reference"
+            ]
+          },
+          "x_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "y_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5
+          },
+          "height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5
+          },
+          "font": {
+            "type": "string",
+            "enum": [
+              "sans",
+              "serif"
+            ]
+          },
+          "font_size_pt": {
+            "type": "number",
+            "format": "double",
+            "minimum": 6,
+            "maximum": 48
+          },
+          "bold": {
+            "type": "boolean"
+          },
+          "align": {
+            "type": "string",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ]
+          },
+          "colour": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          }
+        },
+        "required": [
+          "field",
+          "height_mm",
+          "width_mm",
+          "x_mm",
+          "y_mm"
+        ],
+        "additionalProperties": false,
+        "description": "Reusable top-left millimetre box. Font is bundled; PDF rendering validates geometry and text overflow. Domain adapters validate field selectors."
+      },
+      "BookingPassTemplate": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Version 2 answer-free booking layout. Never accepts contacts, custom answers, notes, artwork, QR or arbitrary text. Defaults apply to omitted properties.",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 2
+          },
+          "paper_size": {
+            "type": "string",
+            "enum": [
+              "A4",
+              "LETTER",
+              "custom"
+            ]
+          },
+          "orientation": {
+            "type": "string",
+            "enum": [
+              "portrait",
+              "landscape"
+            ]
+          },
+          "page_width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 100,
+            "maximum": 500,
+            "nullable": true
+          },
+          "page_height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 100,
+            "maximum": 500,
+            "nullable": true
+          },
+          "card_width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 40,
+            "maximum": 150
+          },
+          "card_height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 30,
+            "maximum": 120
+          },
+          "margin_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0,
+            "maximum": 40
+          },
+          "gap_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "grid_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5,
+            "maximum": 10
+          },
+          "elements": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "$ref": "#/components/schemas/BookingPassElement"
+            }
+          }
+        }
       }
     },
     "securitySchemes": {

@@ -30,6 +30,7 @@ _WRITE = ("POST",)
 # target mode, tenant-app admission, legacy-v1 admission). Legacy admission is explicit
 # so adding a route cannot silently widen the frozen cutover capability.
 _ROUTE_DEFINITIONS = (
+    ("member-booking-pass", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("member-booking-confirmation", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("member-booking-confirmation-png", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("member-booking-calendar", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),

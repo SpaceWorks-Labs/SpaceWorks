@@ -2490,6 +2490,41 @@ credential tables in that tenant; whole-tenant purge cascades them. Retention re
 survives tombstoning; runtime discovery/routes/features do not. Source migration gates
 apply before grant mutations. The catalog pin includes both concrete model graphs.
 
+### Booking printable passes (BK-G)
+
+`bookings.passes` defaults off, belongs to Bookings and requires
+`bookings.confirmations`; it has no Events, Membership, Presence or payment-rail
+dependency. Owners may download confirmed/completed passes through their existing
+private account-owned confirmation scope. Claim sessions are explicitly refused.
+Staff printing requires live resource `check_in`, the check-in feature, a
+confirmed/completed booking and a current active arrival. Neither `edit_details`
+nor reservation-management alone grants scanner printing. Resource -> booking locks
+serialize the final arrival check and render/audit with arrival reversal and lifecycle
+changes. A completed arrival may print until explicitly reversed.
+
+Every save, template read, preview and actual render validates the same fixed field
+bindings: display name, resource, tenant-local booking window and optional numeric
+booking reference. Unknown/legacy custom-answer, note, contact, QR, public-token,
+arbitrary-text and artwork bindings refuse; no sensitive binding is silently removed.
+Only these four projected strings cross into the shared PDF renderer. Template editors
+can preview only fixed fictional values, never select another person's booking.
+All booking passes use this answer-free policy, regardless of additional roster/export
+authority. Actual PDFs are regenerated after authorization, never cached or shared with
+sample previews or confirmation PNGs. Public booking/check-in identities never print.
+
+The existing always-present `operations/printable_*` utilities own grid geometry,
+Unicode/RTL/fallback fonts and overflow refusal. Layout is bounded version-2 JSON on
+`BookableSpace.pass_template`, copied independently on ordinary resource cloning.
+It contains no PII, User FK, object key or live embedded reference: the existing tenant
+resource dataset and purge paths cover it, both export fidelities emit it, and portable
+import preserves configuration subject to target feature/authority gates and render
+validation. No encryption registration or object collector is needed, and no PDF or
+artwork is persisted. The schema graph pin includes the new field and the integrated
+Lane E/BK-C models. Uninstall retains layouts; module/tenant purge deletes them with
+their resource, preserving other tenants and the core ledger. Template writes, previews
+and downloads audit identifiers only. All pass routes are private/no-store/no-referrer
+including pre-dispatch failures; renders are limited to 30/hour/account.
+
 ### Booking confirmations and QR arrival (BK-C)
 
 `bookings.confirmations` and `bookings.checkin` are opt-in Bookings-parented features;

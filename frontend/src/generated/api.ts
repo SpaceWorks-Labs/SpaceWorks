@@ -537,6 +537,7 @@ export const openApiPaths = [
   "/api/v1/admin/spaces/{id}/",
   "/api/v1/admin/spaces/{id}/arrival/confirm/",
   "/api/v1/admin/spaces/{id}/arrival/resolve/",
+  "/api/v1/admin/spaces/{id}/arrival/{booking_id}/pass/",
   "/api/v1/admin/spaces/{id}/arrival/{booking_id}/reverse/",
   "/api/v1/admin/spaces/{id}/booking-rules/",
   "/api/v1/admin/spaces/{id}/bookings/",
@@ -546,6 +547,8 @@ export const openApiPaths = [
   "/api/v1/admin/spaces/{id}/image/",
   "/api/v1/admin/spaces/{id}/image/finalize/",
   "/api/v1/admin/spaces/{id}/image/presign/",
+  "/api/v1/admin/spaces/{id}/pass-preview/",
+  "/api/v1/admin/spaces/{id}/pass-template/",
   "/api/v1/admin/spaces/{id}/recurring-bookings/",
   "/api/v1/admin/spaces/{id}/staff-grants/",
   "/api/v1/admin/spaces/{id}/staff-invites/",
@@ -753,6 +756,7 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/cancel/",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/confirmation.png",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/confirmation/",
+  "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/pass.pdf",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/reschedule/",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/rotate-checkin/",
   "/api/v1/public/{makerspace_slug}/presence-sessions",
@@ -1504,6 +1508,7 @@ export type BookableSpaceAdmin = {
   "can_copy_booking_rules": boolean;
   "report_features": Array<string>;
   "checkin_enabled": boolean;
+  "passes_enabled": boolean;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1587,6 +1592,7 @@ export type BookingArrival = {
   "can_arrive": boolean;
   "can_reverse": boolean;
   "waiver_state": "not_required" | "current" | "missing";
+  "can_print_pass": boolean;
 };
 
 export type BookingCloneInput = {
@@ -1607,6 +1613,7 @@ export type BookingConfirmation = {
   "cancellation_cutoff_at": string;
   "qr_value": string | null;
   "google_calendar_url": string;
+  "pass_available": boolean;
 };
 
 export type BookingCredential = {
@@ -1642,6 +1649,33 @@ export type BookingMachineTypePage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<BookingMachineType>;
+};
+
+export type BookingPassElement = {
+  "field": "name" | "resource" | "booking_window" | "reference";
+  "x_mm": number;
+  "y_mm": number;
+  "width_mm": number;
+  "height_mm": number;
+  "font"?: "sans" | "serif";
+  "font_size_pt"?: number;
+  "bold"?: boolean;
+  "align"?: "left" | "center" | "right";
+  "colour"?: string;
+};
+
+export type BookingPassTemplate = {
+  "version"?: number;
+  "paper_size"?: "A4" | "LETTER" | "custom";
+  "orientation"?: "portrait" | "landscape";
+  "page_width_mm"?: number | null;
+  "page_height_mm"?: number | null;
+  "card_width_mm"?: number;
+  "card_height_mm"?: number;
+  "margin_mm"?: number;
+  "gap_mm"?: number;
+  "grid_mm"?: number;
+  "elements"?: Array<BookingPassElement>;
 };
 
 export type BookingReportMeta = {

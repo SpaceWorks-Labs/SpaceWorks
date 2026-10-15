@@ -22,7 +22,7 @@ function ConfirmationQr({ slug, token, revision }: { slug: string; token: string
 export function BookingConfirmation({ slug, token, onClose }: { slug: string; token: string; onClose?: () => void }) {
   const { detail, rotate } = useBookingConfirmation(slug, token);
   const [qrRefresh, setQrRefresh] = useState(0);
-  const download = useMutation({ mutationFn: (kind: "png" | "ics") => downloadBookingFile(slug, token, kind) });
+  const download = useMutation({ mutationFn: (kind: "png" | "ics" | "pdf") => downloadBookingFile(slug, token, kind) });
   const booking = detail.error ? undefined : detail.data;
   const error = detail.error ?? rotate.error ?? download.error;
   function refreshConfirmation() {
@@ -46,6 +46,7 @@ export function BookingConfirmation({ slug, token, onClose }: { slug: string; to
       <div className="flex flex-wrap gap-2">
         <a className="desk-button-secondary" href={booking.google_calendar_url} target="_blank" rel="noreferrer">Google Calendar</a>
         <button type="button" className="desk-button-secondary" disabled={download.isPending} onClick={() => download.mutate("ics")}>Download calendar</button>
+        {booking.pass_available ? <button type="button" className="desk-button-secondary" disabled={download.isPending} onClick={() => download.mutate("pdf")}>Download printable pass</button> : null}
         {booking.qr_value ? <><button type="button" className="desk-button-secondary" disabled={download.isPending} onClick={() => download.mutate("png")}>Download QR PNG</button>
           <button type="button" className="desk-button-secondary" disabled={rotate.isPending} onClick={() => rotate.mutate()}>Replace private QR</button></> : null}
       </div>

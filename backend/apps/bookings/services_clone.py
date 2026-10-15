@@ -15,7 +15,7 @@ from .services_spaces import _canonical_form, _machine_type, _validate
 
 COPY_FIELDS = frozenset({
     "name", "kind", "description", "capacity", "location", "custom_form",
-    "payment_amount", "requester_notifications_enabled",
+    "payment_amount", "requester_notifications_enabled", "pass_template",
 })
 
 

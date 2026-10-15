@@ -42,7 +42,9 @@ from .views_staff_tools import BookingCloneView, BookingDetailsEditView, Booking
 
 from .urls_arrival import urlpatterns as arrival_patterns
 
-urlpatterns = [*staff_grant_patterns, *arrival_patterns,
+from .urls_passes import urlpatterns as pass_patterns
+
+urlpatterns = [*staff_grant_patterns, *arrival_patterns, *pass_patterns,
     path("spaces/<int:pk>/clone/", BookingCloneView.as_view(), name="admin-bookable-space-clone"),
     path("bookings/<int:pk>/details/", BookingDetailsEditView.as_view(), name="admin-booking-details-edit"),
     path("bookings/<int:pk>/time/", BookingTimeEditView.as_view(), name="admin-booking-time-edit"),

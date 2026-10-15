@@ -27,6 +27,7 @@ class BookingArrivalSerializer(serializers.Serializer):
     arrived_at = serializers.DateTimeField(allow_null=True)
     can_arrive = serializers.BooleanField()
     can_reverse = serializers.BooleanField()
+    can_print_pass = serializers.BooleanField(read_only=True)
     waiver_state = serializers.ChoiceField(choices=("not_required", "current", "missing"))
 
 
@@ -42,5 +43,6 @@ class BookingConfirmationSerializer(serializers.Serializer):
     arrived_at = serializers.DateTimeField(allow_null=True)
     can_cancel = serializers.BooleanField()
     cancellation_cutoff_at = serializers.DateTimeField()
+    pass_available = serializers.BooleanField(read_only=True)
     qr_value = serializers.CharField(allow_null=True)
     google_calendar_url = serializers.URLField()

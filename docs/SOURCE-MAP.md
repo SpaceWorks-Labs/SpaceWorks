@@ -8,6 +8,9 @@
 
 ## Current source map (real paths)
 
+BK-G printable passes are mapped in [SOURCE-MAP-BOOKING-PASSES.md](SOURCE-MAP-BOOKING-PASSES.md).
+They consume the existing core positioned-layout/PDF primitives without importing Events.
+
 BK-C booking arrival is isolated in `bookings/models_arrival.py` (abstract credential /
 projection fields and append-only history), `services_arrival.py` (resolve/confirm/reverse),
 `services_arrival_policy.py` (locked lifecycle/time-edit matrix) and `arrival_projection.py`

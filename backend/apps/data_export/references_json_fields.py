@@ -14,6 +14,8 @@ JSON_REFERENCE_FIELDS = frozenset(
         # live reference of any kind.
         ("devices.DeviceEvent", "details"),
         ("bookings.BookableSpace", "custom_form"),
+        # Booking pass geometry and four fixed field names; no identifiers or PII.
+        ("bookings.BookableSpace", "pass_template"),
         ("bookings.Booking", "custom_answers"),
         ("events.Event", "custom_form"),
         # Public tag strings are discovery labels, never model identifiers.

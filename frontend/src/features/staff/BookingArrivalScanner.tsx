@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { BookingPassPrint } from "./BookingPassPrint";
 import QrScanner from "../../components/ui/QrScanner";
 import { staffRequest } from "../../lib/api";
 import type { BookingArrival } from "../../generated/api";
@@ -45,6 +46,7 @@ export function BookingArrivalScanner({ makerspaceId, spaceId }: { makerspaceId:
       <p>{result.status.replace(/_/g, " ")} - {result.arrived_at ? "Arrival recorded" : "No active arrival"}</p>
       <p className="text-sm text-muted">Waiver: {result.waiver_state.replace(/_/g, " ")} (advisory)</p>
       {result.can_arrive && !result.arrived_at && credential ? <button type="button" className="desk-button-primary w-fit" disabled={busy} onClick={() => confirm.mutate()}>Confirm arrival</button> : null}
+      {result.can_print_pass ? <BookingPassPrint key={result.booking_id} spaceId={spaceId} bookingId={result.booking_id} disabled={busy} /> : null}
       {result.can_reverse ? <button type="button" className="desk-button-danger w-fit" disabled={busy} onClick={() => reverse.mutate()}>Reverse recorded arrival</button> : null}
     </div> : null}
   </section>;

@@ -16,6 +16,7 @@ export type BookableSpace = {
   recurring_enabled?: boolean;
   staff_grants_enabled?: boolean;
   checkin_enabled?: boolean;
+  passes_enabled?: boolean;
   staff_permissions?: string[];
   can_manage_grants?: boolean;
   public_token: string;

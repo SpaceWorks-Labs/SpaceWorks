@@ -17,8 +17,8 @@ export function useBookingConfirmation(slug: string, token: string) {
   return { detail, rotate };
 }
 
-export async function downloadBookingFile(slug: string, token: string, kind: "png" | "ics") {
-  const blob = await memberRequestBlob(confirmationPath(slug, token) + (kind === "png" ? "confirmation.png" : "calendar.ics"));
+export async function downloadBookingFile(slug: string, token: string, kind: "png" | "ics" | "pdf") {
+  const blob = await memberRequestBlob(confirmationPath(slug, token) + (kind === "png" ? "confirmation.png" : kind === "pdf" ? "pass.pdf" : "calendar.ics"));
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

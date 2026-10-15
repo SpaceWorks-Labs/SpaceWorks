@@ -22,6 +22,8 @@ def confirmation_data(booking):
         "description": space.description, "arrived_at": booking.arrived_at,
         "can_cancel": booking.arrived_at is None and member_can_cancel(booking, now=timezone.now()),
         "cancellation_cutoff_at": cancellation_cutoff(booking),
+        "pass_available": (feature_enabled(space.makerspace, "bookings.passes")
+                           and booking.status in ("confirmed", "completed")),
         "qr_value": qr_value(booking) if qr_available(booking) else None,
         "google_calendar_url": google_calendar_url(title=space.name, starts_at=booking.starts_at,
             ends_at=booking.ends_at, location=space.location),

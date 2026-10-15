@@ -77,6 +77,12 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
     clone_enabled = serializers.SerializerMethodField()
     staff_tools_enabled = serializers.SerializerMethodField()
     can_copy_booking_rules = serializers.SerializerMethodField()
+    passes_enabled = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_passes_enabled(self, obj):
+        return self._features(obj)["passes_enabled"]
+
     checkin_enabled = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.BooleanField())
@@ -152,7 +158,7 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
             "clone_enabled", "staff_tools_enabled", "can_copy_booking_rules",
             "recurring_enabled", "staff_grants_enabled", "staff_permissions", "can_manage_grants",
             "report_features",
-            "checkin_enabled",
+            "checkin_enabled", "passes_enabled",
             'id',
             'public_token',
             'makerspace_id',

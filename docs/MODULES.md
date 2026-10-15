@@ -250,6 +250,16 @@ Switching these features off hides their routes without deleting history. Bookin
 removes arrival history before reservations; portable archives retain historical facts and
 regenerate QR credentials. These are arrival counts, never measured-use duration.
 
+`bookings.passes` (off by default, requires confirmations) adds printable PDF passes,
+a resource pass-designer tab and sample previews. Only display name, resource, booking
+window and an optional booking reference can print. Answers, notes, contacts and QR
+credentials are always refused, including in older stored layouts. Owners download their
+own confirmed/completed pass; staff need check-in permission and a current recorded
+arrival. Template editing alone grants no scanner printing or roster access. Layouts stay
+on uninstall and travel as bounded resource configuration; Bookings/tenant purge removes
+them with resources. No artwork or PDF objects are stored. Without this feature,
+confirmations and arrival continue independently and pass routes refuse.
+
 `bookings.staff_grants` (off by default) delegates selected operations for one resource.
 Its four permissions cover descriptive editing, reservation management, check-in and page
 release. Pricing, rules, machine links, activation, visibility policy, finance and further
@@ -395,6 +405,7 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `payments.membership` | `membership` | | Card rail for dues | Dues are still recorded and settled offline |
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
+| `bookings.passes` | `bookings` (needs `bookings.confirmations`) | | Answer-free pass designer, owner downloads and staff printing after active arrival | Pass routes refuse; stored layouts retained |
 | `bookings.analytics` | `bookings` (needs `reports`) | | Resource calendar reservation occupancy with resource management AND tenant audit authority | Resource analytics refuses; existing tenant-wide utilisation is unchanged |
 | `bookings.utilization_pdf` | `bookings` (needs `reports`, `bookings.analytics`) | | Audited resource PDF for a complete tenant-local period, requiring full tenant booking management AND audit | Resource PDF refuses; stored booking history stays |
 | `bookings.exports` | `bookings` (needs `reports`) | | Tenant-local reservation contacts and custom-answer previews/CSV/XLSX, requiring resource management AND audit | New detail exports refuse; booking history stays |

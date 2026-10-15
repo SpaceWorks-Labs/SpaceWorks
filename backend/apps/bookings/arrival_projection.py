@@ -13,7 +13,11 @@ def arrival_data(booking):
     waiver_state = "not_required"
     if membership and waiver:
         waiver_state = "current" if current_acceptance(membership, active_waiver=waiver) else "missing"
+    from apps.makerspaces.platform import feature_enabled
     return {
+        "can_print_pass": (booking.arrived_at is not None
+                           and booking.status in ("confirmed", "completed")
+                           and feature_enabled(space.makerspace, "bookings.passes")),
         "booking_id": booking.pk, "display_name": booking.name, "space_name": space.name,
         "timezone": space.makerspace.timezone, "starts_at": booking.starts_at,
         "ends_at": booking.ends_at, "status": booking.status, "arrived_at": booking.arrived_at,

@@ -1,6 +1,9 @@
 """Static model-backed origin scopes, split from request resolution logic."""
 
 BASE_MODEL_LOOKUPS = {
+    "admin-booking-pass-template": ("bookings.BookableSpace", "makerspace_id"),
+    "admin-booking-pass-preview": ("bookings.BookableSpace", "makerspace_id"),
+    "admin-booking-pass": ("bookings.BookableSpace", "makerspace_id"),
     "admin-bookable-space-clone": ("bookings.BookableSpace", "makerspace_id"),
     "admin-booking-details-edit": ("bookings.Booking", "space__makerspace_id"),
     "admin-booking-time-edit": ("bookings.Booking", "space__makerspace_id"),

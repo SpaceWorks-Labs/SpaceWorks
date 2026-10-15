@@ -91,7 +91,9 @@ class TenantDumpCatalogError(AssertionError):
 # Lane D: two concrete history models and durable outbox source identity. The
 # standalone graph check reproduced the preceding pin before adding these fields.
 # BK-B: nullable cancellation timestamp and prior reservation state.
-CATALOG_SCHEMA_SHA256 = "427429f00b6a46b5cb2558b9cfd30b725b2ce0fee9e48cbac2946a4deb3c6080"
+# BK-G: reconcile the integrated Lane E/BK-C graph plus the scalar pass template.
+# Literal reconstruction reproduces b90ce9de before the later merged model additions.
+CATALOG_SCHEMA_SHA256 = "0154ba8ca1e81ac7b2ec3f379fd4ca75c63cdb225f1c0641d45b40cae1e20acb"
 
 
 def catalog_models(apps_registry=apps):

@@ -25,11 +25,12 @@ PUBLIC_CLAIM_ROUTES = {
            ("member-booking-confirmation", ("GET", "HEAD")),
            ("member-booking-confirmation-png", ("GET", "HEAD")),
            ("member-booking-calendar", ("GET", "HEAD")),
+           ("member-booking-pass", ("GET", "HEAD")),
            ("member-booking-rotate-checkin", ("POST",)),
        ) for method in methods},
     **{(name, "OPTIONS"): AnonymousRead() for name in (
         "member-booking-confirmation", "member-booking-confirmation-png",
-        "member-booking-calendar", "member-booking-rotate-checkin",
+        "member-booking-calendar", "member-booking-rotate-checkin", "member-booking-pass",
     )},
     ('member-booking-reschedule', 'POST'): Allowed(tenant=SLUG, audited=True),
     ('member-booking-reschedule', 'OPTIONS'): AnonymousRead(),

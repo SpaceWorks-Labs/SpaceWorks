@@ -4,8 +4,8 @@ from django.utils.cache import patch_vary_headers
 
 _PRIVATE_PATH = re.compile(
     r"^/api/v1/(?:public/[^/]+/my-bookings/[0-9a-fA-F-]+/"
-    r"(?:confirmation/|confirmation\.png|calendar\.ics|rotate-checkin/)|"
-    r"admin/spaces/[0-9]+/arrival/(?:resolve/|confirm/|[0-9]+/reverse/))$"
+    r"(?:confirmation/|confirmation\.png|calendar\.ics|pass\.pdf|rotate-checkin/)|"
+    r"admin/spaces/[0-9]+/(?:pass-template/|pass-preview/|arrival/(?:resolve/|confirm/|[0-9]+/(?:reverse/|pass/))))$"
 )
 
 

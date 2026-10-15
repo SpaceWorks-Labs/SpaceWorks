@@ -1,4 +1,4 @@
-import { Field } from "../../../components/ui";
+import { Field, SegmentedControl } from "../../../components/ui";
 import type { Product } from "./shared";
 
 type PrinterOption = { id: number; name: string };
@@ -44,7 +44,7 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
 }) {
   return (
     <div className="grid gap-3">
-      <Segmented values={["create", "topup"]} value={form.mode} label={(mode) => mode === "create" ? "Create item" : "Top up"} onChange={(mode) => setForm({ ...form, mode })} />
+      <SegmentedControl label="Inventory destination" value={form.mode} options={[{ value: "create", label: "Create item" }, { value: "topup", label: "Top up" }]} onChange={mode => setForm({ ...form, mode: mode as HardwareMode })} />
       <Field label="Quantity"><input className="desk-input" type="number" min="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>
       {form.mode === "topup" ? (
         <Field label="Existing product">
@@ -79,7 +79,7 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
 export function PrintingMoveForm({ form, setForm, printers }: { form: PrintingForm; setForm: (form: PrintingForm) => void; printers: PrinterOption[] }) {
   return (
     <div className="grid gap-3">
-      <Segmented values={["spool", "printer"]} value={form.target} label={(target) => target === "spool" ? "Spool" : "Printer"} onChange={(target) => setForm({ ...form, target })} />
+      <SegmentedControl label="Printing destination" value={form.target} options={[{ value: "spool", label: "Spool" }, { value: "printer", label: "Printer" }]} onChange={target => setForm({ ...form, target: target as PrintingTarget })} />
       {form.target === "spool" ? (
         <>
           <Field label="Printer"><select className="desk-input" value={form.printerId} onChange={(e) => setForm({ ...form, printerId: e.target.value })}><option value="">Unassigned printer</option>{printers.map((printer) => <option key={printer.id} value={printer.id}>{printer.name}</option>)}</select></Field>
@@ -100,10 +100,6 @@ export function PrintingMoveForm({ form, setForm, printers }: { form: PrintingFo
   );
 }
 
-function Segmented<T extends string>({ values, value, label, onChange }: { values: T[]; value: T; label: (value: T) => string; onChange: (value: T) => void }) {
-  return <div className="inline-flex w-max rounded-md border border-line bg-surface p-1">{values.map((item) => <button key={item} type="button" className={value === item ? "desk-button-primary" : "desk-button-ghost"} onClick={() => onChange(item)}>{label(item)}</button>)}</div>;
-}
-
 function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
-  return <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /> {label}</label>;
+  return <label className="inline-flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /> {label}</label>;
 }

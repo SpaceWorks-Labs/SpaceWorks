@@ -1,10 +1,12 @@
+import { ListLayout } from "../../../components/layouts";
+import { inventoryQueryState } from "./inventoryPresentation";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { ConfirmDialog, DataTable, EmptyState, Field } from "../../../components/ui";
+import { ConfirmDialog, DataTable, Field, Modal, OverflowMenu } from "../../../components/ui";
 import type { DataTableColumn } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
-import { categoryResults, Panel, type Category, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
+import { categoryResults, type Category, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
 import { invalidatePublicInventory } from "../queryInvalidation";
 
 type CategoryForm = {
@@ -32,6 +34,7 @@ function categoryPayload(form: CategoryForm, includeSlug: boolean) {
 
 export function Categories({ makerspace }: { makerspace: Makerspace }) {
   const queryClient = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<CategoryForm>(emptyCategoryForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<CategoryForm>(emptyCategoryForm);
@@ -53,6 +56,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
       }),
     onSuccess: () => {
       setForm(emptyCategoryForm);
+      setAddOpen(false);
       invalidateCategories();
     },
   });
@@ -140,7 +144,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
           category.icon || "-"
         ),
     },
-    { key: "product_count", header: "# products", sortable: true },
+    { key: "product_count", header: "Products", sortable: true },
     {
       key: "actions",
       header: "",
@@ -153,58 +157,34 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
               disabled={!editForm.name.trim() || update.isPending}
               onClick={() => update.mutate(category)}
             >
-              Save
+              {update.isPending ? "Saving…" : "Save"}
             </button>
             <button className="desk-button-ghost" type="button" onClick={() => setEditingId(null)}>
               Cancel
             </button>
           </div>
         ) : (
-          <div className="desk-actions flex flex-wrap gap-2">
-            <button className="desk-button-ghost" type="button" onClick={() => startEdit(category)}>
-              Edit
-            </button>
-            <button
-              className="desk-button-danger"
-              type="button"
-              disabled={remove.isPending}
-              onClick={() => setDeleteTarget(category)}
-            >
-              Delete
-            </button>
-          </div>
+          <div className="flex items-center gap-2"><button className="desk-button-ghost" onClick={() => startEdit(category)}>Edit</button>
+          <OverflowMenu label={`Actions for ${category.name}`} actions={[{ label: "Delete", confirms: true, tone: "danger", disabled: remove.isPending, onClick: () => setDeleteTarget(category) }]} /></div>
         ),
     },
   ];
-  return (
-    <Panel title="Categories">
-      <div className="grid gap-3">
-        <div className="grid gap-2 rounded-md border border-line bg-panel p-3 md:grid-cols-[1fr_1fr_120px_1fr_auto]">
+  const add = { label: "Add category", onClick: () => setAddOpen(true) };
+  return <ListLayout header={{ title: "Categories", subtitle: "Group the parts in your catalogue.", primary: add }}
+    state={inventoryQueryState(categories, "categories")} isEmpty={!rows.length} empty={{ message: "No categories yet. Add one to group your catalogue.", action: add }}
+    body={{ kind: "table", table: <DataTable<Category> columns={columns} data={rows} getRowId={row => row.id} /> }}
+    detail={<><Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add category">
+        <div className="grid gap-4">
           <Field label="Name"><input className="desk-input" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></Field>
           <Field label="Slug"><input className="desk-input" placeholder="auto from name" value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))} /></Field>
           <Field label="Order"><input className="desk-input" type="number" value={form.display_order} onChange={(event) => setForm((current) => ({ ...current, display_order: event.target.value }))} /></Field>
           <Field label="Icon"><input className="desk-input" value={form.icon} onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))} /></Field>
           <button className="desk-button-primary" type="button" disabled={!form.name.trim() || create.isPending} onClick={() => create.mutate()}>
-            Add category
+            {create.isPending ? "Adding…" : "Add category"}
           </button>
         </div>
-        {create.error ? <p className="text-sm text-danger">{create.error.message}</p> : null}
-        {update.error ? <p className="text-sm text-danger">{update.error.message}</p> : null}
-        {remove.error ? <p className="text-sm text-danger">{remove.error.message}</p> : null}
-        {categories.error ? <p className="text-sm text-danger">{categories.error.message}</p> : null}
-        {categories.isError ? (
-          <EmptyState title="Unable to load categories" description={categories.error.message} />
-        ) : (
-          <DataTable<Category>
-            columns={columns}
-            data={rows}
-            getRowId={(row) => row.id}
-            loading={categories.isLoading}
-            emptyTitle="No categories"
-            emptyDescription="Add a category to organize inventory products."
-          />
-        )}
-      </div>
+      {create.error ? <p role="alert" className="text-sm text-danger">{create.error.message}</p> : null}</Modal>
+      {update.error || remove.error ? <p role="alert" className="text-sm text-danger">{(update.error || remove.error)?.message}</p> : null}
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete category"
@@ -221,6 +201,5 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
           if (deleteTarget) remove.mutate(deleteTarget);
         }}
       />
-    </Panel>
-  );
+    </>} />;
 }

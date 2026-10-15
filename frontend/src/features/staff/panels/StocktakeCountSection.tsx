@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../lib/api";
-import QrScanner from "../../../components/ui/QrScanner";
+import { DataTable, EmptyState, ErrorBlock, ScanWorkbench, Skeleton, StatRow, StatusPill } from "../../../components/ui";
 import { type Makerspace, useStaffGet } from "./shared";
 
 type StocktakeRow = { id: number; status: string; notes: string; container: number | null };
@@ -36,7 +36,7 @@ const CONDITIONS = ["available", "damaged", "lost", "unknown"];
 // The count step is what moves a stocktake forward and produces the variance the Apply
 // step adjusts on - without it a stocktake has zero lines and Apply is a no-op. Records
 // a counted quantity per product, then shows expected/counted/variance from the detail.
-export function CountSection({ makerspace, stocktakeId }: { makerspace: Makerspace; stocktakeId: number }) {
+export function CountSection({ makerspace, stocktakeId, readOnly = false }: { makerspace: Makerspace; stocktakeId: number; readOnly?: boolean }) {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"product" | "asset">("product");
   const [productId, setProductId] = useState("");
@@ -45,7 +45,6 @@ export function CountSection({ makerspace, stocktakeId }: { makerspace: Makerspa
   const [counted, setCounted] = useState("0");
   const [condition, setCondition] = useState("available");
   const [notes, setNotes] = useState("");
-  const [scanning, setScanning] = useState(false);
   const [scanNote, setScanNote] = useState("");
   const detail = useStaffGet<StocktakeDetail>(["stocktake-detail", stocktakeId], `/admin/stocktakes/${stocktakeId}`);
   const products = useStaffGet<{ results: ProductOption[] }>(["inventory-all", makerspace.id], `/admin/makerspace/${makerspace.id}/inventory?page_size=1000`);
@@ -97,18 +96,20 @@ export function CountSection({ makerspace, stocktakeId }: { makerspace: Makerspa
         setContainerId(String(result.container_id));
       }
       setScanNote(`Scanned ${result.asset_tag || result.name || result.label || payload}`);
-      setScanning(false);
     } catch (error) {
       setScanNote(error instanceof Error ? error.message : "Unable to resolve scanned QR");
-      setScanning(false);
     }
   };
   const recordError = record.error instanceof Error ? record.error.message : undefined;
   const lines = detail.data?.lines ?? [];
-  const canSave = mode === "asset" ? Boolean(assetId) : Boolean(productId);
+  const editable = !readOnly && ["draft", "counting"].includes(detail.data?.status ?? "");
+  const canSave = editable && (mode === "asset" ? Boolean(assetId) : Boolean(productId));
 
   return (
     <div className="mt-3 rounded-md border border-line bg-bg p-3">
+      {detail.isLoading ? <Skeleton className="h-32" /> : detail.error ? <ErrorBlock error={detail.error} resource="the count" onRetry={() => { void detail.refetch(); }} /> : null}
+      {editable ? <ScanWorkbench searchLabel="QR payload" onFind={handleScan} onScan={handleScan}
+        controls={<div className="grid gap-3">
       <div className="grid gap-2 md:grid-cols-[120px_1fr_1fr_120px_140px] md:items-end">
         <label className="eyebrow grid gap-1">
           <span>Count type</span>
@@ -166,36 +167,23 @@ export function CountSection({ makerspace, stocktakeId }: { makerspace: Makerspa
         <input className="desk-input" value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       <div className="desk-actions mt-2 flex justify-between gap-2">
-        <button className="desk-button-ghost" type="button" onClick={() => setScanning(true)}>Scan QR</button>
-        <button className="desk-button-primary" disabled={!canSave || record.isPending} onClick={() => record.mutate()}>{record.isPending ? "Saving..." : "Record count"}</button>
+        <button className="desk-button-primary" disabled={!canSave || record.isPending || readOnly} onClick={() => record.mutate()}>{record.isPending ? "Saving…" : "Record count"}</button>
       </div>
+        </div>} /> : null}
       {scanNote ? <p className={`mt-2 text-sm ${scanNote.startsWith("Scanned ") ? "text-muted" : "text-danger"}`}>{scanNote}</p> : null}
       {recordError ? <p className="mt-2 text-sm text-danger">{recordError}</p> : null}
-      {scanning ? <QrScanner onClose={() => setScanning(false)} onScan={handleScan} /> : null}
-      <div className="mt-3 grid min-w-0 gap-1">
-        {lines.length ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-[720px] text-left text-xs">
-              <thead className="text-muted">
-                <tr><th scope="col" className="py-1">Item</th><th scope="col">Container</th><th scope="col">Expected</th><th scope="col">Counted</th><th scope="col">Variance</th><th scope="col">Condition</th><th scope="col">Notes</th></tr>
-              </thead>
-              <tbody>
-                {lines.map((line) => (
-                  <tr key={line.id} className="border-t border-line">
-                    <td className="py-1"><span className="block max-w-48 break-words">{line.asset ? assetName(line.asset) : productName(line.product)}</span></td>
-                    <td>{containerName(line.container)}</td>
-                    <td className="tabular-nums">{line.expected_quantity ?? "Hidden"}</td>
-                    <td className="tabular-nums">{line.counted_quantity}</td>
-                    <td className={line.variance_quantity === 0 ? "tabular-nums text-muted" : "tabular-nums text-danger"}>{line.variance_quantity ?? "Hidden"}</td>
-                    <td>{line.condition}</td>
-                    <td><span className="block max-w-56 break-words">{line.notes || "-"}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : <p className="text-xs text-muted">No counts recorded yet.</p>}
-      </div>
+      <StatRow stats={[{ label: "Lines counted", value: lines.length }, ...(!detail.data?.blind ? [{ label: "Variances", value: lines.filter(line => line.variance_quantity != null && line.variance_quantity !== 0).length }] : [])]} />
+      <h2 className="title-section mt-6">Counted so far</h2>
+      {lines.length ? <DataTable<StocktakeLine> data={lines} getRowId={line => line.id} columns={[
+        { key: "item", header: "Item", render: line => line.asset ? assetName(line.asset) : productName(line.product) },
+        { key: "container", header: "Container", render: line => containerName(line.container) },
+        { key: "expected_quantity", header: "Expected", render: line => line.expected_quantity ?? "Hidden" },
+        { key: "counted_quantity", header: "Counted" },
+        { key: "variance_quantity", header: "Variance", render: line => <StatusPill label={line.variance_quantity === null ? "Hidden" : String(line.variance_quantity)} tone={line.variance_quantity ? "warn" : "neutral"} /> },
+        { key: "condition", header: "Condition", render: line => <StatusPill label={line.condition} /> },
+        { key: "notes", header: "Notes" },
+      ]} /> : <EmptyState message="No counts recorded yet. Scan or pick an item to start." />}
+
     </div>
   );
 }

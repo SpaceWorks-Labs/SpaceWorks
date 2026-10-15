@@ -1,14 +1,11 @@
 import { Link, Navigate, useLocation } from "react-router-dom";
 
-import { StaffDock } from "./StaffDock";
-import { CommandPalette } from "./CommandPalette";
-import { JobTray } from "../../components/ui/JobTray";
+import { StaffShell } from "./StaffShell";
+import { PageHeader } from "../../components/ui";
 import { StaffListContext } from "./StaffListContext";
 import { SetupChecklist } from "./SetupChecklist";
-import { StaffHeader } from "./StaffHeader";
 import { StaffTabContent } from "./StaffTabContent";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { SkipLink } from "../../components/SkipLink";
 import { getStaffAccess, STAFF_TAB_KEYS, TAB_LABELS } from "./staffAccess";
 import {
   filterTabsByEnabledModules,
@@ -115,25 +112,12 @@ export function StaffWorkspace({
   }
 
   return (
-    <StaffListContext.Provider value={{ ownerName: user.username, canShare: canManageMakerspace, actions, isSuperadmin }}><main className="desk-shell grid grid-cols-1">
-      <SkipLink />
-      <section className="min-w-0">
-        <StaffHeader
-          activeMakerspace={activeMakerspace}
-          isSuperadmin={isSuperadmin}
-          makerspaces={makerspaces}
-          onSignOut={signOut}
-          onSwitchMakerspace={() => setSelected(null)}
-          roleName={activeRoleName}
-          selected={selected}
-          setSelected={setSelected}
-          singleTenantLocked={singleTenantLocked}
-          user={user}
-        />
-
-        {activeMakerspace ? <CommandPalette key={activeMakerspace.id} makerspaceId={activeMakerspace.id} makerspaceSlug={activeMakerspace.slug} allowedTabs={moduleAllowedTabs} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} ownerName={user.username} actions={actions} isSuperadmin={isSuperadmin} /> : null}
-        <div className="min-w-0 p-5 pb-28" id="main-content" tabIndex={-1}>
-          {activeMakerspace ? <JobTray makerspaceId={activeMakerspace.id} /> : null}
+    <StaffListContext.Provider value={{ ownerName: user.username, canShare: canManageMakerspace, actions, isSuperadmin }}>
+      <StaffShell activeMakerspace={activeMakerspace} allowedTabs={moduleAllowedTabs} activeTab={routeTabDenied ? "" : activeTab}
+        guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} user={user}
+        roleName={activeRoleName} isSuperadmin={isSuperadmin} makerspaces={makerspaces} setSelected={setSelected}
+        setTab={setTab} signOut={signOut} actions={actions}>
+        <PageHeader title={routeTabDenied ? "Page unavailable" : `${TAB_LABELS[activeTab] ?? "Workspace"} · ${activeMakerspace?.name ?? "Space Works"}`} />
           {activeMakerspace && canManageMakerspace && activeTab === "dashboard" ? <SetupChecklist key={`${user.username}:${activeMakerspace.id}`} makerspace={activeMakerspace} owner={user.username} allowedTabs={moduleAllowedTabs} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} /> : null}
           {routeTabDenied ? (
             <EmptyState
@@ -174,17 +158,7 @@ export function StaffWorkspace({
               singleTenantLocked={singleTenantLocked}
             />
           )}
-        </div>
-      </section>
-
-      <StaffDock
-        activeMakerspace={activeMakerspace}
-        activeTab={routeTabDenied ? "" : activeTab}
-        allowedTabs={moduleAllowedTabs}
-        guestOnly={guestOnly}
-        setTab={setTab}
-        singleTenantLocked={singleTenantLocked}
-      />
-    </main></StaffListContext.Provider>
+      </StaffShell>
+    </StaffListContext.Provider>
   );
 }

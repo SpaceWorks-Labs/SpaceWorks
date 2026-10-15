@@ -8,6 +8,26 @@
 
 ## Current source map (real paths)
 
+The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
+`AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
+`WorkspaceSwitcher`, `UserMenu`, `MobileTopBar`, `SidebarDrawer`, `BottomTabs` and
+`JobTrayPill`. The logo/switcher/search and user chip frame one scrolling navigation
+region, including Settings and Platform. The shell uses the wave-1 brand tokens and
+`SpaceWorksLogo`; reusable UI primitives remain in `components/ui/` (`index.ts`).
+Page layouts L2?L10 belong in `components/layouts/`, owned separately from the shell.
+
+`features/staff/sidebarSections.ts` owns the 42-key sidebar presentation map;
+`StaffShell.tsx` adapts the existing permission/module-filtered tabs, shared Inbox unread
+query, cached dashboard counts and machine-type cache. `StaffWorkspace.tsx` retains
+canonicalisation and `StaffListContext`; `StaffApp.tsx` retains its pre-shell gates.
+The picker stays outside the shell (S10); global routes use its no-workspace mode.
+`StaffHeader.tsx`, `StaffDock.tsx`, `StaffDockPopover.tsx`, `useDockAnchor.ts` and
+`staffNavIcons.tsx` were removed. `CommandPalette` stays mounted across drawer closure;
+`JobTray` keeps job polling alive behind its compact pill and unmounts closed dialog controls.
+`features/members/MemberPortalTabs.tsx` composes the member `AppShell` from the unchanged
+`memberTabs(modules)` selector, using URL navigation links and the shared `#main-content`
+skip target. `MemberArea.tsx` supplies workspace/account data and unchanged tab bodies.
+
 WP1 event access and ticketing lives in `events/registration_access.py`, `invites.py`,
 `ticketing.py` and `promos.py`; `participant_access.py` limits account ticket reads to
 the owned registration. New model, serializer and route files are indexed in

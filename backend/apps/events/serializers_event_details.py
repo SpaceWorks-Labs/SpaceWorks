@@ -36,6 +36,7 @@ from .serializers_organization_audience import OrganizationAudienceFields
 
 
 class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, serializers.ModelSerializer):
+    badge_sensitive_fields_allowed = serializers.SerializerMethodField()
     broadcasts_enabled = serializers.SerializerMethodField()
     report_features = serializers.SerializerMethodField()
     ticketing_features = serializers.SerializerMethodField()
@@ -55,7 +56,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
             'participating_organizations', 'audience_label', 'organization_admission_blocked',
             'id', 'staff_permissions', 'can_manage_staff',
             'makerspace_id', 'ticketing_features',
-            'broadcasts_enabled', 'report_features',
+            'broadcasts_enabled', 'report_features', 'badge_sensitive_fields_allowed',
             'series_summary',
             'series_revision',
             'series_override_fields',
@@ -91,13 +92,28 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_ticketing_features(self, obj):
-        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience") if self._feature_enabled(obj, key)]
+        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience", "events.certificate_designer") if self._feature_enabled(obj, key)]
 
     def _feature_enabled(self, obj, key):
         flags = self.context.get("event_feature_flags", {}).get(obj.makerspace_id)
         if flags is not None:
-            return flags[key]
+            if key in flags:
+                return flags[key]
         return feature_enabled(obj.makerspace, key)
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_badge_sensitive_fields_allowed(self, obj):
+        actor = getattr(self.context.get("request"), "user", None)
+        _manager, permissions = self._authority(obj)
+        return bool(actor and "manage_registrations" in permissions
+                    and self._audit_allowed(actor, obj.makerspace_id))
+
+    def _audit_allowed(self, actor, makerspace_id):
+        from apps.accounts import rbac
+        audit = self.context.setdefault("event_report_audit", {})
+        if makerspace_id not in audit:
+            audit[makerspace_id] = rbac.can(actor, rbac.Action.VIEW_AUDIT, makerspace_id)
+        return audit[makerspace_id]
 
     @extend_schema_field(serializers.BooleanField())
     def get_broadcasts_enabled(self, obj):
@@ -105,7 +121,6 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_report_features(self, obj):
-        from apps.accounts import rbac
         from apps.makerspaces.platform import module_enabled
         from . import event_authority
         actor = getattr(self.context.get("request"), "user", None)
@@ -114,10 +129,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
         manager, permissions = self._authority(obj)
         if "manage_registrations" not in permissions:
             return []
-        audit = self.context.setdefault("event_report_audit", {})
-        if obj.makerspace_id not in audit:
-            audit[obj.makerspace_id] = rbac.can(actor, rbac.Action.VIEW_AUDIT, obj.makerspace_id)
-        if not audit[obj.makerspace_id]:
+        if not self._audit_allowed(actor, obj.makerspace_id):
             return []
         keys = ["analytics"]
         if feature_enabled(obj.makerspace, "reports.event_exports"):

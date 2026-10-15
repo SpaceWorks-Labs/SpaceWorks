@@ -41,6 +41,8 @@ DATASET_SPECS = {
     "events.EventFeedbackSurvey": ("events/feedback_surveys.csv", P(("event__makerspace",))),
     "events.EventFeedbackResponse": ("events/feedback_responses.csv", P(("survey__event__makerspace",))),
     "events.EventAttendanceCertificate": ("events/attendance_certificates.csv", P(("registration__event__makerspace",))),
+    "events.EventCertificateArtwork": ("events/certificate_artwork.csv", P(("event__makerspace",))),
+    "events.EventCertificateTemplateRevision": ("events/certificate_template_revisions.csv", P(("event__makerspace",))),
     "evidence.EvidencePhoto": ("evidence/photos.csv", P(("makerspace",))),
     "evidence.EvidenceObjectRetentionState": (
         "evidence/object_retention.csv",

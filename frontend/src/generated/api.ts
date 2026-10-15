@@ -169,6 +169,11 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/cancel/",
   "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/queue/",
   "/api/v1/admin/events/{id}/cancel/",
+  "/api/v1/admin/events/{id}/certificate-artwork/",
+  "/api/v1/admin/events/{id}/certificate-artwork/{artwork_id}/",
+  "/api/v1/admin/events/{id}/certificate-artwork/{artwork_id}/finalize/",
+  "/api/v1/admin/events/{id}/certificate-template/",
+  "/api/v1/admin/events/{id}/certificate-template/preview.pdf",
   "/api/v1/admin/events/{id}/check-in/offline-roster/",
   "/api/v1/admin/events/{id}/check-in/offline-sync/",
   "/api/v1/admin/events/{id}/check-in/resolve/",
@@ -1372,7 +1377,7 @@ export type BadgePdfRequest = {
 };
 
 export type BadgeTemplate = {
-  "version"?: number;
+  "version"?: 1 | 2;
   "paper_size"?: PaperSizeEnum;
   "orientation"?: OrientationEnum;
   "page_width_mm"?: number | null;
@@ -1387,6 +1392,8 @@ export type BadgeTemplate = {
   "name_font_size_pt"?: number;
   "text_align"?: TextAlignEnum;
   "include_qr"?: boolean;
+  "grid_mm"?: number;
+  "elements"?: Array<PositionedElement>;
 };
 
 export type BillingPolicyError = HardwareRequestError | BillingPolicyValidationError;
@@ -1736,9 +1743,34 @@ export type CategoryList = {
   "results": Array<Category>;
 };
 
+export type CertificateArtwork = {
+  "id": number;
+};
+
+export type CertificateArtworkPresign = {
+  "content_type": "image/png" | "image/jpeg";
+  "content_length": number;
+};
+
+export type CertificateArtworkUpload = {
+  "id": number;
+  "upload_url": string;
+  "headers": {
+  [key: string]: string;
+};
+};
+
 export type CertificateDownload = {
   "url": string;
   "expires_at": string;
+};
+
+export type CertificateParameters = {
+  "version"?: number;
+  "page_width_mm"?: number;
+  "page_height_mm"?: number;
+  "name_box"?: PositionedElement;
+  "grid_mm"?: number;
 };
 
 export type CertificateRevoke = {
@@ -1757,6 +1789,18 @@ export type CertificateSummary = {
 };
 
 export type CertificateSummaryStatusEnum = "pending" | "rendering" | "active" | "failed" | "revoked";
+
+export type CertificateTemplateRevision = {
+  "id": number | null;
+  "parameters": CertificateParameters;
+  "artwork_id": number | null;
+  "created_at": string | null;
+};
+
+export type CertificateTemplateWrite = {
+  "parameters": CertificateParameters;
+  "artwork_id"?: number | null;
+};
 
 export type CertificationGrant = {
   "id": number;
@@ -2623,6 +2667,7 @@ export type EventAdmin = {
   "organization_admission_blocked": boolean;
   "broadcasts_enabled": boolean;
   "report_features": Array<string>;
+  "badge_sensitive_fields_allowed": boolean;
 };
 
 export type EventAttendanceMark = {
@@ -7406,6 +7451,19 @@ export type Policy = {
   "variance_threshold"?: number | null;
 };
 
+export type PositionedElement = {
+  "field": string;
+  "x_mm": number;
+  "y_mm": number;
+  "width_mm": number;
+  "height_mm": number;
+  "font"?: "sans" | "serif";
+  "font_size_pt"?: number;
+  "bold"?: boolean;
+  "align"?: "left" | "center" | "right";
+  "colour"?: string;
+};
+
 export type PreferenceCell = {
   "feature": Feature9d8Enum;
   "channel": Channel673Enum;
@@ -9620,6 +9678,8 @@ export type StockTransferStatusEnum = "applied" | "cancelled";
 export type StrategyEnum = "sum" | "group_sum" | "row_union" | "weighted_rate" | "global_rank" | "distinct_person";
 
 export type StreamEnum = "hardware" | "printing" | "events" | "bookings" | "maintenance" | "membership" | "devices" | "payments" | "stock" | "certifications";
+
+export type Strict = Record<string, unknown>;
 
 export type StripeConnectOnboarding = {
   "authorize_url": string;

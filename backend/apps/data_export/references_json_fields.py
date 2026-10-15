@@ -19,6 +19,10 @@ JSON_REFERENCE_FIELDS = frozenset(
         # Public tag strings are discovery labels, never model identifiers.
         ("events.Event", "tags"),
         ("events.Event", "badge_template"),
+        # Fixed layout scalars, never recipient identity. Artwork keys in issuance
+        # snapshots are remapped separately by tenant_migration.object_fields.
+        ("events.EventCertificateTemplateRevision", "parameters"),
+        ("events.EventAttendanceCertificate", "layout_snapshot"),
         ("events.Event", "series_override_fields"),
         ("events.EventSeries", "custom_form"),
         ("events.EventRegistration", "custom_answers"),

@@ -145,6 +145,11 @@ def _selected_disposition(model, field, source, rule, selector):
 
 
 def _reset_value(model, field, source):
+    if (model._meta.label, field.name) == ("events.EventAttendanceCertificate", "layout_snapshot"):
+        snapshot = deepcopy(source[field.attname])
+        if isinstance(snapshot, dict) and snapshot.get("artwork_object_key"):
+            snapshot["artwork_version_id"] = ""
+        return snapshot
     from .target_projection import TARGET_FIELD_PROJECTION
 
     target = TARGET_FIELD_PROJECTION.get((model._meta.label, field.name))

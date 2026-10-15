@@ -31,6 +31,7 @@ PROJECTED_MODEL_LABELS = frozenset(
     events.EventSeries events.Event events.EventRegistration
     events.EventCheckInEvent events.EventStationBinding events.EventFeedbackSurvey events.EventFeedbackResponse
     events.EventAttendanceCertificate
+    events.EventCertificateArtwork events.EventCertificateTemplateRevision
     evidence.EvidencePhoto evidence.EvidenceObjectRetentionState
     evidence.EvidenceRetentionPolicy hardware_requests.HardwareRequest
     hardware_requests.HardwareRequestItem hardware_requests.HardwareRequestItemAsset

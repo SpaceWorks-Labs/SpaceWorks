@@ -1,6 +1,12 @@
 """Static model-backed origin scopes, split from request resolution logic."""
 
 BASE_MODEL_LOOKUPS = {
+    'admin-event-certificate-template': ('events.Event', 'makerspace_id'),
+    'admin-event-certificate-preview': ('events.Event', 'makerspace_id'),
+    'admin-event-certificate-artwork-presign': ('events.Event', 'makerspace_id'),
+    'admin-event-certificate-artwork-finalize': ('events.Event', 'makerspace_id'),
+    'admin-event-certificate-artwork': ('events.Event', 'makerspace_id'),
+
     'admin-event-broadcasts': ('events.Event', 'makerspace_id'),
     'admin-event-broadcast-queue': ('events.Event', 'makerspace_id'),
     'admin-event-broadcast-cancel': ('events.Event', 'makerspace_id'),

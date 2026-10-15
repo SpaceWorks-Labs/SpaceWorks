@@ -52,14 +52,17 @@ class EventBadgeTemplateView(APIView):
 
 class EventBadgePdfView(APIView):
     permission_classes = [IsActiveStaff]
+    from apps.events.throttles import CredentialRenderThrottle
+    throttle_classes = [CredentialRenderThrottle]
 
     @extend_schema(
         tags=["Admin events"], request=BadgePdfRequestSerializer,
+        description="Private audited positioned badge PDF, 30/hour per account. No contacts or bearer QR. Custom answers require registration management and tenant VIEW_AUDIT.",
         responses={
             (200, "application/pdf"): OpenApiResponse(
                 OpenApiTypes.BINARY, description="Print-ready badge PDF."
             ),
-            400: EVENT_ERROR_400, 403: ErrorSerializer, 404: ErrorSerializer, 409: EVENT_ERROR_409,
+            400: EVENT_ERROR_400, 403: ErrorSerializer, 404: ErrorSerializer, 409: EVENT_ERROR_409, 429: ErrorSerializer,
         },
     )
     def post(self, request, pk):

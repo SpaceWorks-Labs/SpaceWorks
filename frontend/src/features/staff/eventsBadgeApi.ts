@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest, staffRequestBlob } from "../../lib/api";
+import type { PositionedElement } from "../../components/print-layout/positionedLayout";
 import { eventKeys } from "./eventsApiTypes";
 
 export type BadgeTemplate = {
-  version: number;
+  version: 2;
+  grid_mm: number;
+  elements: PositionedElement[];
   paper_size: "A4" | "LETTER" | "custom";
   orientation: "portrait" | "landscape";
   page_width_mm: number | null;

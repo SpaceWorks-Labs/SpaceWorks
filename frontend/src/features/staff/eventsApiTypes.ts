@@ -17,6 +17,7 @@ export type StaffEvent = {
   can_manage_staff?: boolean;
   ticketing_features?: string[];
   broadcasts_enabled?: boolean;
+  badge_sensitive_fields_allowed?: boolean;
   report_features?: string[];
   participating_organizations?: { id: number; name: string }[];
   audience_label?: string | null;

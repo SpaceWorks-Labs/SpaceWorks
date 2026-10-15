@@ -485,3 +485,19 @@ and `setup-host-orchestration.sh` topology records. Update, rollback and restore
 the database. `install-runner.sh` optionally registers the install-owner GitHub Actions systemd service
 and prints required repository/security settings; `runner-release.py` verifies its release asset checksum.
 The release workflow deploys an exact published main version through the installed updater.
+
+Lane E printable credentials: `operations/printable_layout.py`, `printable_serializers.py`,
+`printable_fonts.py` and `printable_pdf.py` are always-present geometry/font/overflow/PDF
+mechanisms with no domain imports. `events/badge_templates.py` validates event fields and
+converts v1 layouts; `badge_rendering.py` adapts authorized values. Certificate design is
+owned by `models_certificate_templates.py`, `certificate_templates.py`,
+`services_certificate_templates.py`, `certificate_artwork_storage.py`,
+`serializers_certificate_templates.py`, `views_certificate_templates.py` and
+`urls_credentials.py`; `services_certificates.py` freezes issuance and
+`certificate_rendering.py` consumes its snapshot; `certificate_rendering_legacy.py`
+preserves pre-designer PDF bytes for rows with empty migration snapshots.
+`backup/object_reference_certificates.py`
+registers artwork keys embedded in issuance JSON; the normal retention/purge registries
+also include concrete artwork and revision rows. Frontend shared design controls live in
+`components/print-layout/`; `EventCertificateDesigner.tsx` and
+`eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.

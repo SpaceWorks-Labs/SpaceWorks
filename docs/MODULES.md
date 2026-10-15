@@ -24,7 +24,7 @@ certification gating. Staff MFA is a separate question.
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.certificate_designer`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `charges.bookings`; `payments.bookings` with Online payments |
 | Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -210,6 +210,17 @@ or discounts, closed admission and unavailable confirmed seats. Public registrat
 can be hidden per event. Purge removes these event fields and copied images with their
 existing event records; uninstall retains them.
 
+Opt-in `events.certificate_designer` adds private artwork uploads, positioned name boxes
+and server PDF previews in the Events drawer. Every save creates an immutable revision;
+issued certificates freeze the selected design, so later changes never alter pending or
+retried certificates. Turning the feature off removes editing and preview access while
+existing certificate snapshots remain readable through their ordinary authorized path.
+Artwork, revisions and certificates are removed by an Events purge in dependency order.
+Badges use the shared positioned layout engine with bundled fonts and overflow validation;
+printed contacts and bearer QR codes are forbidden. Custom answers require registration
+management plus the tenant audit permission. These badge changes use the existing Events
+module rather than a new feature switch.
+
 Opt-in `events.broadcasts` requires Notifications and Email. Staff with event registration
 authority compose email campaigns filtered by registration status and attendance, review
 drafts, send and cancel from the Events drawer. Only verified eligible accounts receive
@@ -350,6 +361,7 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
+| `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
 | `events.broadcasts` | `events` | `notifications`, `email` | Durable email campaigns with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
 | `reports.event_pdf` | `reports` | `events` | Post-event PDF from the report registry | PDF refuses; event analytics/history retained |
 | `reports.event_exports` | `reports` | `events` | Tenant-local registration/feedback previews and CSV/XLSX | Detail exports refuse; event history retained |

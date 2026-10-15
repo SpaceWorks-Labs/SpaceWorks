@@ -34,6 +34,10 @@ S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 from .target_projection_w7_events import EVENT_AUDIT_EDGES
 
 AUDIT_META_REFERENCES = {
+    **_reference(R, "events.EventCertificateArtwork", ("event.certificate_template_saved", "artwork_id")),
+    **_reference(R, "events.EventCertificateTemplateRevision",
+                 ("event.certificate_template_previewed", "revision_id"),
+                 ("event.certificate_created", "template_revision_id")),
     **{edge: AuditReference(R, model) for edge, model in EVENT_AUDIT_EDGES.items()},
     **_reference(R, "makerspaces.MakerspaceLoanPolicy",
                  ("makerspace.return_policy_updated", "policy_id")),

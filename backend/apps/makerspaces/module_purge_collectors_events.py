@@ -11,6 +11,7 @@ def events_delete(makerspace, cursor):
     from apps.events.models import (
         Event, EventCategory, EventStaffGrant, EventStaffGrantInvite,
         EventAttendanceCertificate,
+        EventCertificateArtwork, EventCertificateTemplateRevision,
         EventCheckInEvent,
         EventCollaborator,
         EventFeedbackResponse,
@@ -64,6 +65,12 @@ def events_delete(makerspace, cursor):
             registration__event__makerspace=makerspace
         )
     )
+    revisions, revision_labels = _delete(
+        EventCertificateTemplateRevision.objects.filter(event__makerspace=makerspace)
+    )
+    artwork, artwork_labels = _delete(
+        EventCertificateArtwork.objects.filter(event__makerspace=makerspace)
+    )
     responses, response_labels = _delete(
         EventFeedbackResponse.objects.filter(survey__event__makerspace=makerspace)
     )
@@ -82,6 +89,7 @@ def events_delete(makerspace, cursor):
     return _counts(
         model_labels=(
             collaboration_labels | certificate_labels | response_labels
+            | revision_labels | artwork_labels
             | survey_labels | checkin_labels | registration_labels | event_labels
             | projected_collaboration_labels | series_collaboration_labels | series_labels
             | feed_labels | station_credential_labels | station_binding_labels
@@ -91,6 +99,8 @@ def events_delete(makerspace, cursor):
         event_series_collaborations=series_collaborations,
         event_collaborations=collaborations,
         event_certificates=certificates,
+        event_certificate_template_revisions=revisions,
+        event_certificate_artwork=artwork,
         event_feedback_responses=responses,
         event_feedback_surveys=surveys,
         event_check_in_events=checkins,
@@ -119,22 +129,32 @@ def events_public_images(makerspace):
 
 
 def events_private_keys(makerspace, add):
-    from apps.events.models import EventAttendanceCertificate
+    from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork
 
     for key in EventAttendanceCertificate.objects.filter(
         registration__event__makerspace=makerspace
     ).values_list("object_key", flat=True):
         add(key)
+    for key in EventCertificateArtwork.objects.filter(
+        event__makerspace=makerspace
+    ).values_list("object_key", flat=True):
+        add(key)
+        add(f"staging/{key}")
 
 
 def events_private_key_sizes(makerspace):
-    from apps.events.models import EventAttendanceCertificate
+    from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork
 
-    return {
+    sizes = {
         key: size
         for key, size in EventAttendanceCertificate.objects.filter(
             registration__event__makerspace=makerspace
         ).values_list("object_key", "size_bytes")
         if key
     }
-
+    sizes.update({
+        key: size for key, size in EventCertificateArtwork.objects.filter(
+            event__makerspace=makerspace,
+        ).values_list("object_key", "size_bytes") if key
+    })
+    return sizes

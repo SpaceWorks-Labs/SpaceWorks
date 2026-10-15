@@ -8,6 +8,7 @@ from apps.events.models_attendance import (
 from apps.events.models_station import EventStationBinding
 from apps.events.models_feedback import EventFeedbackResponse, EventFeedbackSurvey
 from apps.events.models_certificates import EventAttendanceCertificate
+from .models_certificate_templates import EventCertificateArtwork, EventCertificateTemplateRevision
 from apps.events.organizer_models import EventOrganizer
 from apps.events.models_series import (
     EventSeries,
@@ -24,6 +25,7 @@ from .models_categories import EventCategory
 from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
 
 __all__ = [
+    "EventCertificateArtwork", "EventCertificateTemplateRevision",
     "EventBroadcast", "EventBroadcastDelivery",
     "EventStaffGrant", "EventStaffGrantInvite",
     "EventInvite", "EventTicketType", "EventPromoCode", "EventCategory",

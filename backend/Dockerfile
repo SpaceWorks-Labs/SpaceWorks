@@ -18,7 +18,7 @@ ARG POSTGRESQL_LOCAL_SERVER_MAJOR=16
 # Both are versioned package names, so nothing floats to 18. `age` is the archive
 # boundary.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age fonts-noto-core \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
       | gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg \

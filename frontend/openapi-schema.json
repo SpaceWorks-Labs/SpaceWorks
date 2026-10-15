@@ -4100,8 +4100,19 @@
               }
             },
             "description": "Event state conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render rate limit exceeded."
           }
-        }
+        },
+        "description": "Throttled, audited certificate download. Existing staff-management or exact participant-ownership checks remain required. The immutable issuance snapshot controls layout and artwork."
       }
     },
     "/api/v1/admin/event-certificates/{id}/reissue/": {
@@ -7768,7 +7779,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": "Requires live event edit_details authority. Version 1 templates convert on read to positioned version 2 layouts. Contacts and bearer QR credentials never print."
       },
       "put": {
         "operationId": "api_v1_admin_events_badge_template_update",
@@ -7861,7 +7873,8 @@
             },
             "description": "Event state or capacity conflict."
           }
-        }
+        },
+        "description": "Requires live event edit_details authority. Version 1 templates convert on read to positioned version 2 layouts. Contacts and bearer QR credentials never print."
       }
     },
     "/api/v1/admin/events/{id}/badges.pdf": {
@@ -7957,8 +7970,19 @@
               }
             },
             "description": "Event state or capacity conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render rate limit exceeded."
           }
-        }
+        },
+        "description": "Throttled, audited private badge PDF. Requires check_in; scoped check-in actors may print only attended registrations and cannot override templates. Custom answers additionally require event manage_registrations AND tenant VIEW_AUDIT. No contact details or bearer QR credentials print."
       }
     },
     "/api/v1/admin/events/{id}/cancel/": {
@@ -60418,9 +60442,10 @@
                 }
               }
             },
-            "description": "Rate limit exceeded."
+            "description": "Credential render rate limit exceeded."
           }
-        }
+        },
+        "description": "Throttled, audited certificate download. Existing staff-management or exact participant-ownership checks remain required. The immutable issuance snapshot controls layout and artwork."
       }
     },
     "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/calendar.ics": {
@@ -70672,6 +70697,738 @@
         },
         "description": "Requires manage_invitations and events.invites. Up to 200 email-bound invites; emails contain only event navigation, never admission codes. Verified account email is required for code-free admission."
       }
+    },
+    "/api/v1/admin/events/{id}/certificate-template/": {
+      "get": {
+        "operationId": "api_v1_admin_events_certificate_template_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "description": "Requires authenticated active staff, live event edit_details and events.certificate_designer. Returns the current immutable revision, or default layout with null ID and created_at. Responses are private/no-store.",
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid layout, field selector, upload or text overflow."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Live event edit_details authority and events.certificate_designer are required."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event or owned private artwork not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event, quota or immutable artwork state conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render or artwork upload rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Private storage or rendering unavailable."
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateTemplateRevision"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "api_v1_admin_events_certificate_template_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "description": "Requires authenticated active staff, live event edit_details and events.certificate_designer. Every save creates a new immutable revision. Artwork must be promoted and owned by this event. Existing pending, failed and retried issuances retain their frozen layout/artwork. Responses are private/no-store.",
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid layout, field selector, upload or text overflow."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Live event edit_details authority and events.certificate_designer are required."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event or owned private artwork not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event, quota or immutable artwork state conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render or artwork upload rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Private storage or rendering unavailable."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateTemplateRevision"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateTemplateWrite"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateTemplateWrite"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateTemplateWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/certificate-template/preview.pdf": {
+      "post": {
+        "operationId": "api_v1_admin_events_certificate_template_preview.pdf_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "description": "Requires authenticated active staff, live event edit_details and events.certificate_designer. Throttled PDF preview uses a fixed sample recipient and issuance geometry/artwork/overflow rules. Recipient data is never accepted. Responses are private/no-store.",
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid layout, field selector, upload or text overflow."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Live event edit_details authority and events.certificate_designer are required."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event or owned private artwork not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event, quota or immutable artwork state conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render or artwork upload rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Private storage or rendering unavailable."
+          },
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateTemplateWrite"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateTemplateWrite"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateTemplateWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/certificate-artwork/": {
+      "post": {
+        "operationId": "api_v1_admin_events_certificate_artwork_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "description": "Requires authenticated active staff, live event edit_details and events.certificate_designer. Reserve owned private artwork and obtain a ten-minute staging-only PUT with exact MIME headers. PNG/JPEG up to 10 MiB. Final object keys are server-owned. Responses are private/no-store.",
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid layout, field selector, upload or text overflow."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Live event edit_details authority and events.certificate_designer are required."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event or owned private artwork not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event, quota or immutable artwork state conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render or artwork upload rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Private storage or rendering unavailable."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateArtworkUpload"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateArtworkPresign"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateArtworkPresign"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateArtworkPresign"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/certificate-artwork/{artwork_id}/finalize/": {
+      "post": {
+        "operationId": "api_v1_admin_events_certificate_artwork_finalize_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "description": "Requires authenticated active staff, live event edit_details and events.certificate_designer. Validate bounded decoded pixels, strip metadata and promote once. Quota/ownership/authority are rechecked; retries are idempotent. Responses are private/no-store.",
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid layout, field selector, upload or text overflow."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Live event edit_details authority and events.certificate_designer are required."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event or owned private artwork not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event, quota or immutable artwork state conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render or artwork upload rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Private storage or rendering unavailable."
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateArtwork"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/certificate-artwork/{artwork_id}/": {
+      "get": {
+        "operationId": "api_v1_admin_events_certificate_artwork_retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin events"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "description": "Requires authenticated active staff, live event edit_details and events.certificate_designer. Throttled authenticated private artwork read. No public route or object URL is exposed. Responses are private/no-store.",
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid layout, field selector, upload or text overflow."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Live event edit_details authority and events.certificate_designer are required."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event or owned private artwork not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Event, quota or immutable artwork state conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Credential render or artwork upload rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Private storage or rendering unavailable."
+          },
+          "200": {
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
     }
   },
   "components": {
@@ -73322,7 +74079,13 @@
         "type": "object",
         "properties": {
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ],
+            "default": 2,
+            "description": "Legacy version 1 input is accepted and converted; all reads return version 2."
           },
           "paper_size": {
             "$ref": "#/components/schemas/PaperSizeEnum"
@@ -73364,7 +74127,8 @@
             "items": {
               "type": "string",
               "maxLength": 80
-            }
+            },
+            "description": "name, event_title, date_time, location, registration_number or custom:<question_id>. Email and phone selectors are refused. Custom-answer rendering requires manage_registrations AND tenant VIEW_AUDIT."
           },
           "font_size_pt": {
             "type": "number",
@@ -73378,9 +74142,27 @@
             "$ref": "#/components/schemas/TextAlignEnum"
           },
           "include_qr": {
-            "type": "boolean"
+            "type": "boolean",
+            "default": false,
+            "description": "Compatibility field, always normalized to false; bearer check-in credentials never print."
+          },
+          "grid_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5,
+            "maximum": 10,
+            "default": 1
+          },
+          "elements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PositionedElement"
+            },
+            "description": "Exactly one positioned box for each selected printable field."
           }
-        }
+        },
+        "additionalProperties": false,
+        "description": "Badge layout version 2. Legacy version 1 is converted on read. Only display fields and authorized custom-answer selectors are printable; email, phone and bearer QR credentials never print."
       },
       "BillingPolicyError": {
         "oneOf": [
@@ -78225,7 +79007,8 @@
             "items": {
               "type": "string"
             },
-            "readOnly": true
+            "readOnly": true,
+            "description": "Enabled event feature keys, including events.certificate_designer when configured."
           },
           "series_summary": {
             "type": "object",
@@ -78442,10 +79225,16 @@
               "type": "string"
             },
             "readOnly": true
+          },
+          "badge_sensitive_fields_allowed": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Live event manage_registrations authority AND tenant VIEW_AUDIT; permits custom-answer badge printing."
           }
         },
         "required": [
           "audience_label",
+          "badge_sensitive_fields_allowed",
           "broadcasts_enabled",
           "can_manage_staff",
           "cancellation_cutoff_hours",
@@ -110260,6 +111049,211 @@
           "previous",
           "results"
         ]
+      },
+      "PositionedElement": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "x_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "y_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5
+          },
+          "height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5
+          },
+          "font": {
+            "type": "string",
+            "enum": [
+              "sans",
+              "serif"
+            ]
+          },
+          "font_size_pt": {
+            "type": "number",
+            "format": "double",
+            "minimum": 6,
+            "maximum": 48
+          },
+          "bold": {
+            "type": "boolean"
+          },
+          "align": {
+            "type": "string",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ]
+          },
+          "colour": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          }
+        },
+        "required": [
+          "field",
+          "height_mm",
+          "width_mm",
+          "x_mm",
+          "y_mm"
+        ],
+        "additionalProperties": false,
+        "description": "Reusable top-left millimetre box. Font is bundled; PDF rendering validates geometry and text overflow. Domain adapters validate field selectors."
+      },
+      "CertificateParameters": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1
+          },
+          "page_width_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 100,
+            "maximum": 420
+          },
+          "page_height_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 100,
+            "maximum": 420
+          },
+          "name_box": {
+            "$ref": "#/components/schemas/PositionedElement"
+          },
+          "grid_mm": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.5,
+            "maximum": 10
+          }
+        },
+        "additionalProperties": false,
+        "description": "Version 1 certificate layout. name_box.field must be name; only the recipient name is accepted. Defaults are A4 landscape with a bundled-font name box."
+      },
+      "CertificateTemplateWrite": {
+        "type": "object",
+        "properties": {
+          "parameters": {
+            "$ref": "#/components/schemas/CertificateParameters"
+          },
+          "artwork_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "default": null
+          }
+        },
+        "required": [
+          "parameters"
+        ],
+        "additionalProperties": false
+      },
+      "CertificateTemplateRevision": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/CertificateParameters"
+          },
+          "artwork_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "artwork_id",
+          "created_at",
+          "id",
+          "parameters"
+        ]
+      },
+      "CertificateArtworkPresign": {
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg"
+            ]
+          },
+          "content_length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10485760
+          }
+        },
+        "required": [
+          "content_length",
+          "content_type"
+        ],
+        "additionalProperties": false
+      },
+      "CertificateArtworkUpload": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "upload_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "headers",
+          "id",
+          "upload_url"
+        ]
+      },
+      "CertificateArtwork": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Strict": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
       }
     },
     "securitySchemes": {

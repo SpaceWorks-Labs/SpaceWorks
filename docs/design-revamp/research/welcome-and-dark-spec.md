@@ -669,3 +669,21 @@ Ordered so each step is independently testable. Shared files (`index.css`, `styl
 
 - Dark palette: **apply the new Deep Ink + Maker Teal dark surfaces** in this spec.
 - Status pills: **solid brand fills in both light and dark** (large callouts keep soft fills).
+
+## Implementation notes (2026-10-16, built on `feature/design-revamp`)
+
+Where the build differs from the text above, the build wins:
+
+- **Hero grid** is `2fr / 1fr` at ≥1280 (not 7/5): Unbounded 600 sets "Less searching." at 9.4em, so the
+  phrase needs ~600 px at 64 px to stay on one line. The title is two explicit block lines.
+- **Phone header** keeps the responsive lane's menu: symbol 48 + Menu + Sign in on one row; "About" and the
+  theme toggle live in the menu below 1024 px.
+- **Tenant sign-in panel** shows the phrase and showcase on the tenant brand fill, but not the tenant
+  logo/name: the form column already carries `MakerspaceBrand`, so repeating it would be a second identity
+  on one screen. Showcase cards are always a Deep Ink island (`.sw-island-dark`) so they read as product
+  objects on any field.
+- **Public catalogue title** keeps `text-ink` (PageHeader has no title-colour slot); only the search input
+  took the Citron treatment.
+- **Drift guards**: `backend/tests/test_frontend_theme_contrast.py` now reads `dark-tokens-v3.json` and accepts
+  Deep Ink + Teal + Cream mixes for dark neutrals; `frontend/src/styles/darkTokens.test.ts` recomputes every
+  dark surface and soft from the brand hexes.

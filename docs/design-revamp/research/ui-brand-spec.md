@@ -74,6 +74,11 @@ The maths is WCAG 2.x relative luminance. It reproduces the PDF's own tested pai
 
 ### A.1 Full token table, with the source of every value
 
+> **Dark column superseded (2026-10-16).** The live dark set is the "teal-lit ink" palette in
+> `welcome-and-dark-spec.md` §6.2 and `dark-tokens-v3.json`: Deep Ink + Maker Teal (+ Cream) surfaces, Citron
+> focus, accent-ink 171 200 188, muted 199 196 186, 7% softs. Status marks (pills, avatars, date chips) are
+> solid brand fills in both modes; only large callouts keep the dark soft + tone-ink pairing (D6 revised).
+
 | Token | Light | Source (light) | Dark | Source (dark) |
 |---|---|---|---|---|
 | `bg` | `255 244 232` #FFF4E8 | brand | `20 44 42` #142C2A | brand (reversed ground) |

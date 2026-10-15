@@ -62,7 +62,7 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
 
   return <div className="my-4 rounded-md border border-line p-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h4 className="font-extrabold text-ink">Attendee badges</h4><p className="text-xs text-muted">Each QR contains that registration’s existing check-in credential.</p></div>
+      <div><h4 className="font-semibold text-ink">Attendee badges</h4><p className="text-xs text-muted">Each QR contains that registration’s existing check-in credential.</p></div>
       <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>Preview</button>
       <button className="desk-button-primary" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: savePdf })}>{generate.isPending ? "Generating…" : `Download PDF (${selectedIds.length})`}</button></div>
     </div>

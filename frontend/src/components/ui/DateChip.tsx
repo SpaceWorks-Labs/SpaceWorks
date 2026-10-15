@@ -9,6 +9,6 @@ export function DateChip({ date, seed = date, tone, draft }: DateChipProps) {
     className="inline-flex h-13 w-13 shrink-0 flex-col overflow-hidden rounded-md border border-line bg-panel text-center">
     <span className={`border px-1 text-xs font-semibold uppercase ${toneClasses[draft ? "neutral" : tone ?? identityTone(seed)]}`}>
       {parsed.toLocaleDateString("en", { month: "short" })}</span>
-    <span className="flex flex-1 items-center justify-center font-display text-xl font-extrabold text-ink">{parsed.getDate()}</span>
+    <span className="flex flex-1 items-center justify-center font-display text-xl font-semibold text-ink">{parsed.getDate()}</span>
   </time>;
 }

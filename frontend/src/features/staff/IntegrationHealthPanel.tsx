@@ -190,7 +190,7 @@ function HealthBlock({
   return (
     <section className={`min-w-0 rounded-md border border-line bg-bg p-3 ${wide ? "xl:col-span-2" : ""}`}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="font-extrabold text-ink">{title}</h4>
+        <h4 className="font-semibold text-ink">{title}</h4>
         <Badge label="" tone={statusTone(status)}>{statusLabel(status)}</Badge>
       </div>
       {detail ? <p className="mb-3 break-words text-sm text-danger">{detail}</p> : null}

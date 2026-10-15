@@ -72,7 +72,7 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
                 key={`${entry.stream}:${entry.audience}`}
                 className="min-w-0 rounded-md border border-line bg-surface p-3"
               >
-                <h5 className="text-sm font-extrabold text-ink">
+                <h5 className="text-sm font-semibold text-ink">
                   {streamLabel(entry.stream)} &middot; {audienceLabel(entry.audience)}
                 </h5>
                 {!emailEnabled ? (

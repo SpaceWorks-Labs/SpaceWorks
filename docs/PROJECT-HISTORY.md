@@ -6,6 +6,12 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-15 — approved brand kit + functionality restore (`feature/design-revamp`).** The app adopts the
+  SpaceWorks-Design brand kit: Gilroy 400–700 for all text and headings (Outfit and the free 300/800
+  weights retired), Unbounded accent, and the kit's Figma logo masters, favicon, app icons and OG image
+  (horizontal lockup now has its own reversed and one-colour drawings). Five parallel restore lanes
+  brought back functionality the revamp had buried or dropped across inventory, machines/events/bookings,
+  front desk, public/member and admin/settings, and the member dashboard gained "Find a makerspace".
 - **2026-10-15 — design revamp (`feature/design-revamp`).** Whole frontend rebuilt on Space Works brand
   guidelines v1 (seven-colour palette with solver-derived inks and soft fills, Gilroy ExtraBold + Outfit +
   Unbounded, open-box logo extracted verbatim from the guideline PDF, favicons/PWA/OG/Unfold assets) and

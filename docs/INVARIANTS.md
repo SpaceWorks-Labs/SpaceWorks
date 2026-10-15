@@ -1282,11 +1282,12 @@ the backend contrast guard parses those blocks. Tailwind maps each colour token 
   panel/danger-line/danger. Issued and checked-out are accent. Limited stock is emphasis;
   unavailable is neutral. Neutral statistic panels have ink numbers; emphasis is an orange pill
   with its ink label. Colour assignment follows meaning or stable identity, never randomness.
-- **Exactly three font families:** Gilroy ExtraBold 800 for headings, titles and display numbers;
-  Outfit 400-700 for body/UI, labels, codes and tables; Unbounded 500-600 for one accent phrase per
-  layout. Gilroy Light 300 is optional only for a secondary display line on public/auth surfaces.
-  `font-synthesis: none` prevents fake Gilroy weights. Stacks end in the generic sans-serif only.
-  Native `code`, `kbd`, `samp`, `pre` use Outfit with tabular/slashed-zero numerals, 0.02em tracking
+- **Exactly two font families** (approved brand kit, 2026-10-15): Gilroy 400/500/600/700 for all
+  text — headings, titles and display numbers at 600 (inline emphasis 700), body 400, labels and
+  meta 500 — and Unbounded 500-600 for one accent phrase per layout. Outfit and the free Gilroy
+  300/800 weights are retired. `font-synthesis: none` prevents fake weights. Stacks end in the
+  generic sans-serif only.
+  Native `code`, `kbd`, `samp`, `pre` use Gilroy with tabular/slashed-zero numerals, 0.02em tracking
   and 1em size; `pre` wraps. `.code-text` carries the same features for machine strings. Neither
   a monospace family nor `font-mono`/`font-code` utilities exist. The shared `.title-page`,
   `.title-panel`, `.title-section`, `.eyebrow` and `.col-header` classes own the spec type scale.

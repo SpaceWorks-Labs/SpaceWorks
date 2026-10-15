@@ -59,13 +59,12 @@ steps; both 500 and 600 retain Maker Teal, per the lane brief.
 ## Typography
 
 The PDF assigns Gilroy the primary role and Unbounded short geometric accents. The product follows
-the owner's permanent implementation decision in PLAN section 0.4:
+the approved brand kit (SpaceWorks-Design, 15 October 2026), which supersedes PLAN section 0.4:
 
-- Official free **Gilroy ExtraBold 800** for headings and display numbers; **Gilroy Light 300** is the
-  other licensed brand weight. Preserve the original outlined wordmark in all logos.
-- **Outfit** for body and UI text, labels, controls, tables and IDs in place of unlicensed Gilroy
-  weights. Outfit is the only non-brand family. Machine strings use Outfit with tabular numerals,
-  slashed zero and wider tracking.
+- **Gilroy** Regular 400, Medium 500, SemiBold 600 and Bold 700 for all text: headings, titles and
+  display numbers at 600, body 400, labels and meta 500, inline emphasis 700. Machine strings use
+  Gilroy with tabular numerals, slashed zero and wider tracking. Preserve the original outlined
+  wordmark in all logos; the logo masters here are the kit's Figma exports.
 - **Unbounded** for one short accent phrase per layout. Never use it for long copy.
 
 PDF type scale (size / line height): display 72/76, heading 48/52, subheading 32/38, body 16/24,

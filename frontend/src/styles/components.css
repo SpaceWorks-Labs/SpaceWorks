@@ -1,17 +1,17 @@
 @layer components {
   .code-text {
-    font-family: "Outfit", sans-serif;
+    font-family: "Gilroy", sans-serif;
     font-variant-numeric: tabular-nums slashed-zero;
     letter-spacing: 0.02em;
   }
   .title-page {
-    @apply font-display text-[26px] leading-8 font-extrabold tracking-[-0.01em] text-ink sm:text-[32px] sm:leading-[38px];
+    @apply font-display text-[26px] leading-8 font-semibold tracking-[-0.01em] text-ink sm:text-[32px] sm:leading-[38px];
   }
   .title-panel {
-    @apply font-display text-xl leading-7 font-extrabold tracking-[-0.005em] text-ink;
+    @apply font-display text-xl leading-7 font-semibold tracking-[-0.005em] text-ink;
   }
   .title-section {
-    @apply font-display text-base leading-6 font-extrabold text-ink;
+    @apply font-display text-base leading-6 font-semibold text-ink;
   }
   .eyebrow {
     @apply font-sans text-caption font-semibold uppercase tracking-[0.08em] text-muted;

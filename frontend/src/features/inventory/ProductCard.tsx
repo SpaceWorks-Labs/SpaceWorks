@@ -43,7 +43,7 @@ export function ProductCard({
           />
         ) : (
           <div className="bg-surface grid h-full w-full place-items-center">
-            <span className="font-display text-4xl font-extrabold uppercase text-ink">
+            <span className="font-display text-4xl font-semibold uppercase text-ink">
               {product.name.slice(0, 2)}
             </span>
           </div>

@@ -112,7 +112,7 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
   return (
     <section className="rounded-md border border-line bg-surface p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-sm font-extrabold text-ink">{label}</h4>
+        <h4 className="text-sm font-semibold text-ink">{label}</h4>
         <Badge label="" tone={configured ? "success" : "neutral"}>
           {configured ? "Configured" : "Not configured"}
         </Badge>

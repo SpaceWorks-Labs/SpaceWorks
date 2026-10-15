@@ -61,9 +61,9 @@ export default {
         "sidebar-active": "rgb(var(--color-sidebar-active) / <alpha-value>)",
       },
       fontFamily: {
-        display: ["Gilroy", "Outfit", "sans-serif"],
-        sans: ["Outfit", "sans-serif"],
-        accent: ["Unbounded", "Gilroy", "Outfit", "sans-serif"],
+        display: ["Gilroy", "sans-serif"],
+        sans: ["Gilroy", "sans-serif"],
+        accent: ["Unbounded", "Gilroy", "sans-serif"],
       },
       fontSize: {
         display: ["4.5rem", { lineHeight: "4.75rem", letterSpacing: "-0.02em" }],

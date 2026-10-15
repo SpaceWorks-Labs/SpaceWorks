@@ -53,7 +53,7 @@ export function MakerspaceBrand({
         : <Avatar name={name} size={size === "sm" ? "sm" : size === "md" ? "md" : "lg"} />}
       {!hideName || !logoUrl ? (
         <span
-          className={`min-w-0 truncate font-display font-extrabold leading-tight text-ink ${NAME_SIZE[size]}`}
+          className={`min-w-0 truncate font-display font-semibold leading-tight text-ink ${NAME_SIZE[size]}`}
           title={name}
         >
           {name}

@@ -92,7 +92,7 @@ export function ReturnDialog({ row, makerspace, onClose }: DialogProps) {
           <input className="desk-input" value={boxCode} onChange={(event) => setBoxCode(event.target.value)} />
         </label>
         <div className="grid gap-2">
-          <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted">Return quantities</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Return quantities</h3>
           {rows.map(({ item, remaining, value, total, valid }) => (
             <div key={item.id} className="grid gap-2 rounded-md border border-line bg-surface p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">

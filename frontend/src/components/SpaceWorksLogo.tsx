@@ -27,14 +27,11 @@ export function SpaceWorksLogo({
   const titleId = useId();
   const surface = ground ?? theme;
   const requested = variant ?? (withWordmark && (size ?? 0) >= 48 ? "stacked" : "symbol");
-  // There is no reversed or one-colour horizontal master. Use the stacked drawing.
-  const shape = requested === "horizontal" && (surface === "dark" || oneColour)
-    ? "stacked" : requested;
+  const shape = requested;
   const master = shape === "symbol" ? "symbol" : `lockup-${shape}` as const;
   const key = surface === "dark" ? `${master}-reversed` as const
     : oneColour ? `${master}-one-colour-ink` as const : master;
-  // Narrow the keys after resolving the horizontal fallback above.
-  const artwork = logoMasters[key as keyof typeof logoMasters];
+  const artwork: { viewBox: string; paths: readonly { fill: string; d: string }[]; clip?: { width: number; height: number; count: number } } = logoMasters[key];
   const [, , viewWidth, viewHeight] = artwork.viewBox.split(" ").map(Number);
   const ratio = viewWidth / viewHeight;
   const floor = shape === "symbol" ? 48 : Math.max(180, 48 * ratio);
@@ -59,7 +56,11 @@ export function SpaceWorksLogo({
           focusable="false"
         >
           {!decorative && <title id={titleId}>Space Works</title>}
-          {artwork.paths.map((path, index) => <path key={index} {...path} />)}
+          {artwork.clip ? <>
+            <defs><clipPath id={`${titleId}-clip`}><rect width={artwork.clip.width} height={artwork.clip.height} /></clipPath></defs>
+            <g clipPath={`url(#${titleId}-clip)`}>{artwork.paths.slice(0, artwork.clip.count).map((path, index) => <path key={index} {...path} />)}</g>
+            {artwork.paths.slice(artwork.clip.count).map((path, index) => <path key={index} {...path} />)}
+          </> : artwork.paths.map((path, index) => <path key={index} {...path} />)}
         </svg>
       </span>
     </span>

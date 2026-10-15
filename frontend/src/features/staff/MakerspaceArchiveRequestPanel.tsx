@@ -64,7 +64,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
   return (
     <section className="min-w-0 rounded-md border border-line bg-bg p-4" aria-labelledby="archive-request-title">
       <div className="grid min-w-0 gap-2">
-        <h3 id="archive-request-title" className="text-base font-extrabold text-ink">
+        <h3 id="archive-request-title" className="text-base font-semibold text-ink">
           Archive this makerspace
         </h3>
         <p className="max-w-3xl text-sm text-muted">
@@ -81,7 +81,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
         <div className="mt-4 rounded-md border border-warn bg-surface p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-sm font-extrabold text-ink">Pending request</h4>
+              <h4 className="text-sm font-semibold text-ink">Pending request</h4>
               <Badge label="" tone="warn">Pending</Badge>
             </div>
             <button
@@ -153,7 +153,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
 
       {requests.isSuccess ? (
         <div className="mt-6 border-t border-line pt-4">
-          <h4 className="text-sm font-extrabold text-ink">Resolved history</h4>
+          <h4 className="text-sm font-semibold text-ink">Resolved history</h4>
           {history.length === 0 ? (
             <p className="mt-2 text-sm text-muted">No resolved archive requests.</p>
           ) : (

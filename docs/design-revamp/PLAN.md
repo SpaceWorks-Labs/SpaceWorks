@@ -18,7 +18,8 @@ research specs below and summarised in §9.
    only where an existing endpoint already serves the data under the permission the actor already has.
 3. **Every page is revamped** (all 42 staff tab keys, every public / member / auth / kiosk route),
    each built from one of a closed set of reusable layouts.
-4. **Fonts** (owner decision, permanent): brand guidelines followed 100 %, with **Outfit as the only
+4. **Fonts** — *superseded 2026-10-15 by the approved brand kit: Gilroy 400–700 for all text and
+   headings, Unbounded accent, Outfit retired (see `docs/brand/README.md`).* Original decision: brand guidelines followed 100 %, with **Outfit as the only
    non-brand font**. Official free **Gilroy** (ExtraBold 800, Light 300; Radomir Tinkov Free Font EULA —
    clause h permits `@font-face`, d/i permit embedding in software) for headings and display numbers;
    **Outfit** (OFL) for body/UI text in place of the unlicensed Gilroy weights; **Unbounded** (OFL, brand

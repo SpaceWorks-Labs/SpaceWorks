@@ -1,9 +1,9 @@
 # Space Works brand → SpaceWorks UI: design-system spec
 
-Research only. No app code has been changed.
+Design-system specification. The brand export and typography sections were refreshed from Figma on 15 October 2026. App-specific implementation notes below describe the prior integration, not verification of another repository.
 
 **Binding source rule (owner).** Every visual decision comes from exactly two sources: the brand PDF
-(`docs/brand/space-works-brand-guidelines-v1.pdf`) for visual identity, and the Yuyu boards
+(`brand/space-works-brand-guidelines-v1.pdf`) for visual identity, and the Yuyu boards
 (`scratchpad/crops/*.png`, summarised in `ux-yuyu-spec.md`) for layout and UX. All existing app
 functionality is kept and re-themed. Every token below names its source:
 
@@ -61,12 +61,12 @@ The maths is WCAG 2.x relative luminance. It reproduces the PDF's own tested pai
 | D4 | **Danger comes from Yuyu**, because the brand has no red: `#B91C1C` text/fill, `#991B1B` hover, `#FCA5A5` card border (dark text). | Yuyu org5 danger zone (sampled, C.0) |
 | D5 | Solid `*-soft` tokens replace every `bg-{tone}/NN`. **Translucent text is banned.** | Codex (1): `text-on-accent/75` on teal = 3.90:1 |
 | D6 | Status = **word** (mandatory) on a soft pill. Light mode uses the brand-tested solid pastel + ink pairs; dark mode uses soft + tone-ink. Icons are optional. | brand p.10 "add a word or icon to every status"; Yuyu P10 tinted pills |
-| D7 | **Fonts (owner-binding, permanent):** `font-display` = **Gilroy ExtraBold 800** (the official free release, Tinkov Free Font EULA) for every heading, title, card title, stat number and date-chip numeral. `font-sans` = **Outfit** (OFL; 400/500/600/700) for body, labels, buttons, inputs, tables, meta, nav and IDs (`tabular-nums`). `font-accent` = **Unbounded** (OFL) for the one accent phrase per layout. No Gilroy licence will be bought. | owner; brand p.11–12 |
+| D7 | **Typography updated by the owner, 15 October 2026:** Gilroy Regular 400 / Medium 500 / Semibold 600 / Bold 700 for all everyday text and headings. Unbounded 500–600 for one short accent phrase. This supersedes the previous Outfit body and free-weight-only restriction. | owner; current Figma p.11–12 |
 | D8 | Shape follows the brand's own product mock (p.16, measured): controls r 10, window/cards r 16, tags fully round, **no shadows**, hairlines = Deep Ink @ 18 %. Yuyu asks for pill buttons; one token switches it. | brand p.16 vector; Yuyu P11 |
 | D9 | Light-mode sidebar = **Citron field** with Deep Ink labels and a filled teal active item. Dark-mode sidebar = Deep Ink. **The nav is text-only.** Neither the brand mock (p.16) nor Yuyu (org5) puts icons in the sidebar. | brand p.16; Yuyu org5 |
 | D10 | Attention counters and low-stock tags use `emphasis` (orange + ink; p.16 "2 left" is an orange tag). `danger` is reserved for destructive actions and errors. | brand p.16 |
 | D11 | **No "System" theme option.** The existing Light/Dark toggle stays as it is. | owner |
-| D12 | Logo artwork is **extracted verbatim** from the PDF vectors into `research/logo-extract/` (section F). The reversed horizontal lockup does not exist in the PDF; an assembled preview exists for reference only and is **not used** (PLAN §10.2). | brand |
+| D12 | Logo masters are exported directly from the Figma component library into `logo/`. All three horizontal variants are supplied as masters, including reversed and one-colour ink. | current Figma component library |
 
 ---
 
@@ -394,113 +394,51 @@ pill, upcoming = neutral.
 
 ## D. Typography
 
-### D.1 Faces and roles (owner-binding, permanent)
+### D.1 Faces and roles
 
-| Token | Face | Weights shipped | File (`frontend/public/fonts/`) | Licence | Role |
-|---|---|---|---|---|---|
-| `font-display` | **Gilroy ExtraBold** (official free release) | **800** | `Gilroy-ExtraBold.woff2` (converted from the official `Gilroy-ExtraBold.otf`) | Radomir Tinkov Free Font EULA (clause h permits web formats via @font-face) | every heading and title (display, heading, page, panel, section, card and row titles), stat numbers, big display numbers, date-chip numerals |
-| `font-display` (light) | **Gilroy Light** (official free release) | **300** | `Gilroy-Light.woff2` | same EULA | **one narrow, legitimate use:** a display-size **secondary line ≥32 px** on public/marketing and auth surfaces (for example the sub-line under a 72 px hero), in `ink` or Cream only, never `muted`, never on a tint, never in the staff console. Everywhere else, none. At ≥32 px the thin strokes stay legible, and ink-on-cream is 13.60. Brand p.11 lists Regular to Bold, so treat it as optional; dropping the file entirely is acceptable. |
-| `font-sans` | **Outfit** (Google Fonts, variable 100–900) | **400 / 500 / 600 / 700** | `Outfit-Variable.woff2` (Latin + Latin-Ext subset of the official variable file) | SIL OFL 1.1 | body, labels, buttons, inputs, tables, meta, nav items, pills, eyebrows, IDs and codes (`tabular-nums`) |
-| `font-accent` | **Unbounded** (Google Fonts, variable) | **500 / 600** | `Unbounded-Variable.woff2` (Latin subset) | SIL OFL 1.1 | exactly one short accent phrase per layout (brand p.11–12) |
-| ~~`font-code`~~ | **not created** (owner: only Gilroy/Outfit/Unbounded) | — | — | — | machine strings use Outfit + `.code-text` (`tabular-nums slashed-zero tracking-wide`) (H.6) |
+| Role | Family | Weights | Files |
+|---|---|---|---|
+| Headings and titles | Gilroy | 600, 700 | `Gilroy-SemiBold.woff`, `Gilroy-Bold.woff` |
+| Body, labels, controls and IDs | Gilroy | 400, 500, 600, 700 | `Gilroy-Regular.woff`, `Gilroy-Medium.woff`, plus the heading files |
+| One short expressive accent | Unbounded | 500, 600 | `Unbounded-Variable.woff2` |
 
-Retired: Clash Display, JetBrains Mono, the system-sans body stack, and any "Gilroy later" aliasing.
+The four Gilroy files were converted from the owner's installed fonts without subsetting or changing outlines.
+See `fonts/README.md` for provenance. Legacy Gilroy 300/800 and Outfit files remain for compatibility;
+they are not the defaults for new surfaces. The logo wordmark is supplied as vector outlines.
 
-**Facts read from the font files** (`otfinfo.py` plus browser canvas metrics at 1000 px):
+### D.2 Self-hosted CSS
 
-| | Gilroy (ExtraBold / Light) | Outfit 300 / 800 |
-|---|---|---|
-| upm | 1000 | |
-| x-height | 500 | 469 / 500 |
-| cap height | 700 (canvas 703) | 688 / 719 |
-| x/cap | .711 | .682 / .696 |
-| hhea (asc / desc) | ExtraBold 955/−270, Light 913/−240 | |
-| glyphs | 554 | |
-| fsType | 8 | |
-| coverage | Latin, Cyrillic, € | |
-
-- **Gilroy has no ₹ (U+20B9).** INR amounts in Gilroy-set numbers (stat cards) fall back through the stack
-  for that glyph. Check Outfit's ₹ coverage when vending the file; otherwise ₹ falls to the generic `sans-serif` keyword.
-- Outfit runs slightly smaller than Gilroy at matched size (x-height −0 to −6 %), so the D.3 sizes already
-  compensate. Never mix the two faces on one line.
-- Outfit's light weights use a single-storey `a` (Gilroy is double-storey), which is why weight 300 is not used.
-  At 400–700 the texture sits close to Gilroy.
-- Always set an explicit `line-height`, because Gilroy's per-weight hhea metrics differ.
-
-### D.2 `@font-face` set (self-hosted; CSP forbids remote fonts)
-
-```css
-@font-face { font-family: "Gilroy"; src: url("/fonts/Gilroy-ExtraBold.woff2") format("woff2");
-  font-weight: 800; font-style: normal; font-display: swap; }
-@font-face { font-family: "Gilroy"; src: url("/fonts/Gilroy-Light.woff2") format("woff2");
-  font-weight: 300; font-style: normal; font-display: swap; }
-@font-face { font-family: "Outfit"; src: url("/fonts/Outfit-Variable.woff2") format("woff2");
-  font-weight: 400 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-Variable.woff2") format("woff2");
-  font-weight: 500 600; font-style: normal; font-display: swap; }
-```
-
-`tailwind.config.ts` `fontFamily`:
-
-| Key | Stack |
-|---|---|
-| `display` | `"Gilroy", "Outfit", sans-serif` |
-| `sans` (default) | `"Outfit", sans-serif` |
-| `accent` | `"Unbounded", "Gilroy", "Outfit", sans-serif` |
-| `code` | **none — not created** (owner rule: Gilroy + Outfit + Unbounded only). Source guard bans `font-code` and `font-mono`. |
-| `mono` | deleted |
-
-**Native code elements (Codex r3).** Tailwind Preflight sets `font-family: theme(fontFamily.mono)` on `code, kbd, samp, pre`; with `mono` deleted they would fall back to the browser's monospace. `@layer base` therefore adds `code, kbd, samp, pre { font-family: "Outfit", sans-serif; font-variant-numeric: tabular-nums slashed-zero; letter-spacing: 0.02em; font-size: 1em; }` (with `pre` keeping `white-space: pre-wrap`). Verified by a vitest DOM check and by the `revamp-routes` e2e asserting `getComputedStyle(el).fontFamily` starts with `Outfit` for every `code/kbd/samp/pre` on the MFA recovery-codes and JSON-preview screens, and that no rendered element anywhere resolves to a family other than Gilroy/Outfit/Unbounded.
-
-`@layer base`:
-- `body { font-family: theme(fontFamily.sans); font-synthesis: none }`. Synthesis is off so the browser never fakes a Gilroy weight that does not exist.
-- `h1–h6 { font-family: theme(fontFamily.display); font-weight: 800 }`.
-- **A Gilroy element only ever requests weight 800 (or 300 for the display sub-line).** Guard: no `font-display` together with `font-(normal|medium|semibold|bold)`.
-
-**Files and licences to ship**:
-- `frontend/public/fonts/`: `Gilroy-ExtraBold.woff2`, `Gilroy-Light.woff2`, `Outfit-Variable.woff2`, `Unbounded-Variable.woff2`.
-- `frontend/public/fonts/LICENSES/`:
-  - `Gilroy-Free-Font-EULA.txt`: verbatim Radomir Tinkov Free Font EULA from the free zip.
-  - `OFL-Outfit.txt`: OFL 1.1 with the Outfit copyright line.
-  - `OFL-Unbounded.txt`: OFL 1.1 with the Unbounded copyright line.
-- Delete `ClashDisplay-*.woff2` and `JetBrainsMono-Variable.woff2`. Add the three fonts to any third-party notices file.
-
-**otf → woff2 (Gilroy):** `pip install fonttools brotli`, then
-`python -c "from fontTools.ttLib import TTFont; f=TTFont('Gilroy-ExtraBold.otf'); f.flavor='woff2'; f.save('Gilroy-ExtraBold.woff2')"`
-(the same for Light). This is a **format conversion only** (EULA h). **Do not subset, rename or edit outlines**
-(EULA e). Outfit and Unbounded may be subset to Latin + Latin-Ext (OFL allows it). Keep their family names.
-
-**Licence note:**
-- EULA (f) bars making the font "available to any third party". Clauses (d), (h) and (i) permit web use and embedding in software.
-- Serving the woff2 from a SpaceWorks deployment is covered.
-- Shipping it inside a public repo and self-hoster images is a grey area the owner has accepted. Record that decision in the release notes.
+Import `tokens/tokens.css`. Use `var(--font-sans)` for body and `var(--font-display)` for headings.
+Both resolve to Gilroy. `var(--font-accent)` resolves to Unbounded with Gilroy as fallback.
+Use explicit line heights and `font-synthesis: none`. IDs and code use Gilroy with tabular figures,
+not a separate monospace family. Keep `pre` text wrapping on narrow screens.
 
 ### D.3 Type scale tokens (family + weight)
 
 | Token / class | Size / line | Family · weight | Tracking | Use |
 |---|---|---|---|---|
-| `text-display` | 72/76 (mobile 44/48) | Gilroy 800 | −0.02em | public landing hero |
-| `text-display-sub` | 32/38 (mobile 24/30) | Gilroy 300 | 0 | optional sub-line under a display/heading on public and auth only |
-| `text-heading` | 48/52 (mobile 34/40) | Gilroy 800 | −0.015em | public section heads, auth brand panel |
-| `.title-page` (brand Subheading) | 32/38 (mobile 26/32) | Gilroy 800 | −0.01em | one h1 per page |
-| `.title-panel` (between Body and Subheading) | 20/28 | Gilroy 800 | −0.005em | card and panel titles |
-| `.title-section` | 16/24 | Gilroy 800 | 0 | section titles, list-row titles |
-| Stat number / big display number | 32/38 (hero stats 48/52) | Gilroy 800 + `tabular-nums` | −0.01em | `StatCard`, report totals |
-| Date-chip numeral | 20/24 | Gilroy 800 + `tabular-nums` | 0 | `DateChip` |
-| `text-body` | 16/24 | Outfit 400 | 0 | body, descriptions, inputs |
-| `text-label` | 14/20 | Outfit 500 | 0 | nav items, form labels, meta, dense table cells |
-| Button label | 14/20 (large 16/24) | Outfit 600 | 0 | `desk-button*` |
-| `.col-header` | 14/20 | Outfit 600, sentence case, `text-accent-ink` | 0 | table headers (p.16) |
-| Inline strong / pill emphasis | inherit | Outfit 700 | 0 | `<strong>`, pill counts |
-| `text-caption` | 12/16 | Outfit 500 | 0.01em | pills, timestamps, helper text |
-| `.eyebrow` | 12/16 | Outfit 600 uppercase | 0.08em | category kicker, `text-muted` (p.17) |
-| IDs / shelf codes | inherit | Outfit 500 + `tabular-nums` | 0 | `text-accent-ink` under a title (p.17), `text-ink` in cells |
+| `text-display` | 72/76 (mobile 44/48) | Gilroy 600 | −0.02em | public landing hero |
+| `text-display-sub` | 32/38 (mobile 24/30) | Gilroy 400 | 0 | optional sub-line under a display/heading on public and auth only |
+| `text-heading` | 48/52 (mobile 34/40) | Gilroy 600 | −0.015em | public section heads, auth brand panel |
+| `.title-page` (brand Subheading) | 32/38 (mobile 26/32) | Gilroy 600 | −0.01em | one h1 per page |
+| `.title-panel` (between Body and Subheading) | 20/28 | Gilroy 600 | −0.005em | card and panel titles |
+| `.title-section` | 16/24 | Gilroy 600 | 0 | section titles, list-row titles |
+| Stat number / big display number | 32/38 (hero stats 48/52) | Gilroy 600 + `tabular-nums` | −0.01em | `StatCard`, report totals |
+| Date-chip numeral | 20/24 | Gilroy 600 + `tabular-nums` | 0 | `DateChip` |
+| `text-body` | 16/24 | Gilroy 400 | 0 | body, descriptions, inputs |
+| `text-label` | 14/20 | Gilroy 500 | 0 | nav items, form labels, meta, dense table cells |
+| Button label | 14/20 (large 16/24) | Gilroy 600 | 0 | `desk-button*` |
+| `.col-header` | 14/20 | Gilroy 600, sentence case, `text-accent-ink` | 0 | table headers (p.16) |
+| Inline strong / pill emphasis | inherit | Gilroy 700 | 0 | `<strong>`, pill counts |
+| `text-caption` | 12/16 | Gilroy 500 | 0.01em | pills, timestamps, helper text |
+| `.eyebrow` | 12/16 | Gilroy 600 uppercase | 0.08em | category kicker, `text-muted` (p.17) |
+| IDs / shelf codes | inherit | Gilroy 500 + `tabular-nums` | 0 | `text-accent-ink` under a title (p.17), `text-ink` in cells |
 | `text-accent` | 48/56 (mobile 32/40) | Unbounded 500 (600 allowed) | −0.01em | **one** phrase per layout: landing hero, auth brand panel, the empty-state hero; never in staff chrome |
 
 ### D.4 `font-mono` decision (Codex 4)
 
 There are 235 occurrences on 227 lines in 126 files, plus `.eyebrow`, `.chip` and `.status-box` in CSS.
-**Migrate, do not alias.** IDs and codes move to Outfit with `tabular-nums` (brand p.17 wants clear IDs in the UI family, not a mono). Secrets, digests and JSON use Outfit with the `.code-text` utility (`font-variant-numeric: tabular-nums slashed-zero; letter-spacing: 0.02em`) — **owner rule: no monospace family** (PLAN §0.4 supersedes this spec). The site lists are in H.6.
+**Migrate, do not alias.** IDs and codes move to Gilroy with `tabular-nums` (brand p.17 wants clear IDs in the UI family, not a mono). Secrets, digests and JSON use Gilroy with the `.code-text` utility (`font-variant-numeric: tabular-nums slashed-zero; letter-spacing: 0.02em`) — **owner rule: no monospace family** (PLAN §0.4 supersedes this spec). The site lists are in H.6.
 
 ---
 
@@ -535,81 +473,28 @@ Yuyu (org5) shows the same pattern: a text-only nav, an active item filled warm 
 
 ## F. Logo: exact extraction and in-product use
 
-### F.1 What the PDF contains
+### F.1 Current master exports
 
-- The PDF was exported from Figma. **All visible artwork, including the wordmark, is outlined vector paths**
-  (`f` fills, nonzero rule, opacity 1, no strokes, no gradients, no clipping on any logo shape).
-- The selectable text is a separate **invisible** layer: 18 Type 3 fonts named `FigmaGlyphs` whose glyph
-  procedures are empty (`d1` metrics only, FontBBox 0 0 0 0). **No real font is embedded**, so nothing in
-  the wordmark could be "substituted with a font". The wordmark is one compound outline (221 segments),
-  identical in every instance.
-- **Colours inside the logo artwork: exactly #142C2A, #006E63, #FF7447** (full colour), **#FFF4E8**
-  (reversed) and **#142C2A** (one-colour). **There are no extra shades.** The box's "side faces" are flat
-  brand fills (front-left teal, front-right ink, interior ink); there is no darker teal and no shading.
-  The tile and card grounds are #FFF4E8, #FFFFFF, #B5CDFF, #DFFF8F, #142C2A and #006E63, all brand.
-- **Instances:**
+Use `logo/`: ten SVG masters and ten matching transparent 4× PNGs exported directly from Figma.
+The app tile includes its cream field. Wordmarks are outlined, so logo rendering does not require font files.
+Source component IDs and bounds are in `brand/figma-styles.json`.
 
-  | Artwork | Pages |
-  |---|---|
-  | Full-colour symbol | p.3 (master), p.4, p.5, p.6, p.7, p.8 |
-  | Primary stacked lockup | p.4, p.5, p.6, p.7, p.17 |
-  | Horizontal lockup | **only p.4** (ink on Citron) |
-  | Reversed stacked (cream) | cover, p.4, p.7 (03 on Ink, 04 on Teal) |
-  | One-colour ink stacked | p.7 (02) |
-  | App-icon tile | cover (on Ink), p.6 |
+| Variant | Full color | Deep Ink | Reversed cream |
+|---|---|---|---|
+| Primary / stacked wordmark | `lockup-stacked` | `lockup-stacked-one-colour-ink` | `lockup-stacked-reversed` |
+| Horizontal | `lockup-horizontal` | `lockup-horizontal-one-colour-ink` | `lockup-horizontal-reversed` |
+| Symbol | `symbol` | `symbol-one-colour-ink` | `symbol-reversed` |
 
-  **The PDF contains no reversed horizontal lockup.**
+Each basename has `.svg` and `.png`. The tenth variant is `app-icon`.
 
-### F.2 Extracted files: `docs/design-revamp/research/logo-extract/`
+### F.2 Usage
 
-Units are PDF points, and the paths are copied verbatim with transforms applied.
-
-- **Crop.** Each viewBox is tight to the painted artwork: the true curve extent, sampled, not the control
-  points. Clear space (H÷4 on every side) is documented in each file's `<desc>` and is **not**
-  included in the viewBox.
-- **Verification.** `preview.html` renders every file on its intended ground. It was opened in the
-  browser pane and compared against the PDF pages in Chrome's PDF viewer: p.3 symbol, p.4 four
-  variants, p.7 four grounds, cover, p.6 tile. Panel colours, panel order, notches, gaps and wordmark
-  matched.
-
-| File | Source | viewBox (w × h) | Symbol H | Colours |
-|---|---|---|---|---|
-| `symbol.svg` | p.3 master | 468.13 × 436.15 | 436.15 (w/H 1.0733) | teal, ink, orange |
-| `lockup-stacked.svg` | p.4 primary | 543.32 × 192.42 | 192.42 (lockup w = **2.824 H**) | teal, ink, orange |
-| `lockup-horizontal.svg` | p.4 (on Citron) | 618.81 × 103.09 | 103.09 (lockup w = **6.003 H**) | teal, ink, orange |
-| `lockup-stacked-reversed.svg` | p.4 (same artwork on cover and p.7) | 385.26 × 135.63 | 135.63 (2.841 H) | cream only |
-| `symbol-reversed.svg` | p.4 | 146.45 × 135.63 | w/H 1.0797 | cream |
-| `lockup-stacked-one-colour-ink.svg` | p.7 02 | 466.27 × 164.15 | 2.841 H | ink |
-| `symbol-one-colour-ink.svg` | p.7 02 | 177.24 × 164.15 | w/H 1.0797 | ink |
-| `app-icon.svg` | p.6 tile (viewBox = tile) | 300 × 300 | 183.38 → **61.1 % of the tile** (spec says 62 %) | cream tile + teal/ink/orange |
-| `lockup-horizontal-reversed.svg` | **ASSEMBLED, NOT A MASTER** | 618.81 × 102.48 | — | cream |
-| `preview.html` | verification sheet | | | |
-
-The assembled reversed horizontal combines the p.4 reversed symbol, scaled ×0.75457 onto the horizontal
-symbol box by matching the top-left flap, with the p.4 horizontal wordmark recoloured Cream. **Not used anywhere (PLAN §5/§10.2).** Dark placements use masters only.
-
-**Geometry notes.**
-- The full-colour symbol has 7 rounded parallelogram panels. The edges run at **35.26°** (true isometric).
-  Corner radius is about 0.9 % of the symbol width, and the panel gap is about 0.9 %.
-- Panels in normalised coordinates (x left→right, y top→down):
-
-  | Panel | Colour | x | y |
-  |---|---|---|---|
-  | flap, top-left | teal | 0–.483 | 0–.366 |
-  | flap, top-right | orange | .517–1 | 0–.366 |
-  | flap, lower-left | orange | 0–.483 | .391–.757 |
-  | flap, lower-right | teal | .517–1 | .391–.757 |
-  | front-left | teal | .155–.495 | .394–1 |
-  | front-right | ink | .504–.844 | .394–1 |
-  | interior | ink | .167–.832 | .127–.630 |
-
-- Paint order: front panels, then the interior, then the flaps.
-- The **one-colour / reversed symbol is a separate drawing**: the front panels are notched, the interior is
-  knocked out, and the aspect is 1.0797 against 1.0733. **A CSS recolour of the full-colour file is not
-  equivalent**, which is exactly p.8 "don't recolor panels / don't lose dark panels".
-- Primary lockup gap ≈ **0.171 H** (rule H÷6 = 0.167). Wordmark height ≈ 0.81 H (rule "1.25×").
-- At 61 % the symbol's farthest point is 0.36 tile-heights from centre, inside the 0.40 maskable safe circle.
-  **`app-icon.svg` works as a maskable icon unchanged.**
+Full-color artwork uses Deep Ink, Maker Teal and Workshop Orange. Reversed artwork is Warm Cream.
+The monochrome marks have a hollow opening and transparent fold gaps so all four flaps remain visible.
+Use the dedicated variants; recoloring the full-color symbol is not equivalent.
+Keep the supplied proportions. Clear space is one quarter of the symbol height on every side.
+PNG app icons and the social card are derived from these masters. The editable component source remains in Figma;
+`brand/logo-masters.svg` and `.png` are portable reference sheets, not a native `.fig` backup.
 
 ### F.3 In-product sizes (rules: symbol ≥48 px; primary lockup ≥180 px wide; clear space H÷4)
 
@@ -617,7 +502,7 @@ symbol box by matching the top-left flap, with the p.4 horizontal wordmark recol
 |---|---|---|---|---|
 | Staff/member **sidebar** (≥1024) | `lockup-stacked.svg` (dark: `lockup-stacked-reversed.svg`) | **180 px wide** → H 63.7 | 16 → logo block 96 px tall | meets both minimums. The horizontal lockup cannot fit: at H 48 it is 288 px, wider than the 256 sidebar. |
 | Mobile top bar (<1024) | `symbol.svg` (dark: `symbol-reversed.svg`) | **48 px** | 12 → bar 72 px | the brand symbol variant "recognition at a glance" |
-| Public header ≥ 768 | `lockup-horizontal.svg` (dark: `symbol-reversed.svg` master at 48 px — no reversed horizontal master exists; the assembled file is never used) | symbol 48 → **288 × 48** | 12 → header 72 | |
+| Public header ≥ 768 | `lockup-horizontal.svg` (dark: `lockup-horizontal-reversed.svg`) | symbol 48 → **300 × 48** | 12 → header 72 | |
 | Public header < 768 | `symbol.svg` | 48 | 12 | |
 | Auth brand panel | `lockup-stacked.svg` on Cream | 240–320 px wide | ≥ H÷4 | |
 | Favicon 16 / 32 | below 48 → **p.6 "test a dedicated small-size asset"**: owner to supply. Interim: `app-icon.svg` rasterised and proofed. | 16, 32 | | **open item** |
@@ -671,7 +556,7 @@ This replaces `components/icons.tsx` and `staffNavIcons.tsx`. The old nav-icon s
 
 | Site | Today → measured | Replacement |
 |---|---|---|
-| `features/staff/panels/DashboardPanel.tsx:77–80,83,91` | `text-on-accent/75` (3.90), `text-on-secondary/75`, `text-on-success/75`, `text-on-warn/75`, `text-bg/80` on danger (3.90), `text-bg` | `StatCard`: a neutral panel with Gilroy-800 number in `text-{tone}-ink` and a full-opacity label. The secondary tone becomes `emphasis`. |
+| `features/staff/panels/DashboardPanel.tsx:77–80,83,91` | `text-on-accent/75` (3.90), `text-on-secondary/75`, `text-on-success/75`, `text-on-warn/75`, `text-bg/80` on danger (3.90), `text-bg` | `StatCard`: a neutral panel with Gilroy-600 number in `text-{tone}-ink` and a full-opacity label. The secondary tone becomes `emphasis`. |
 | `features/inventory/PublicInventoryParts.tsx:67` | `text-on-secondary/80` counter (4.22) | `text-on-brand` |
 | `components/ui/StatusStepper.tsx:55` | `opacity-70` on fills | full opacity, `text-caption` |
 | `features/inventory/RequestSummary.tsx:23,30` | `opacity-80` | `text-muted` |
@@ -766,7 +651,7 @@ Changes the contract implies:
 
 ### H.6 `font-mono` migration (Codex 4)
 
-**A. → `.code-text` on Outfit** (57 sites; machine strings; owner rule — no `font-code`/monospace family).
+**A. → `.code-text` on Gilroy** (57 sites; machine strings; owner rule — no `font-code`/monospace family).
 
 | Kind | Sites |
 |---|---|
@@ -859,9 +744,9 @@ these tests live only in the main checkout (they are gitignored), so the updated
 | 11 | Seven exact sRGB colours; neutral first, accent second (p.9, p.13) | all tokens | A.1 provenance; `test_token_provenance`; hex-literal guard |
 | 12 | Tested text pairs; **orange text on cream banned** (p.10) | all text | no `emphasis-ink` token exists; guard bans `text-emphasis`; contrast guard ≥4.5 universal matrix |
 | 13 | Every status = colour + word or icon (p.10) | `StatusPill`, stepper, availability, machine states | `StatusPill` requires a `label: string` prop (TS non-optional, non-empty); axe; test that every C status maps to a word |
-| 14 | Gilroy leads; Unbounded **one accent per layout** (p.11–12) | Gilroy 800 on every heading and number; Outfit for UI text; accent on landing, auth, empty hero | `font-accent` only through `<AccentHeadline>`; a test mounts each page and asserts ≤1 `[data-accent]`; guard bans raw `font-accent` outside that component |
+| 14 | Gilroy leads; Unbounded **one accent per layout** (p.11–12) | Gilroy 600 on every heading and number; Gilroy for UI text; accent on landing, auth, empty hero | `font-accent` only through `<AccentHeadline>`; a test mounts each page and asserts ≤1 `[data-accent]`; guard bans raw `font-accent` outside that component |
 | 15 | Type scale 72/76, 48/52, 32/38, 16/24, 14/20, accent 48/56 (p.12) | D.3 | Tailwind `fontSize` defines only these (+ derived 20/28, 12/16); guard bans arbitrary `text-[NNpx]` |
-| 16 | Clear IDs and shelf codes (p.17) | tables, labels, item pages | `font-mono` removed (H.6); Outfit 500 + `tabular-nums` (Gilroy has only 800/300, too heavy or too light for IDs) |
+| 16 | Clear IDs and shelf codes (p.17) | tables, labels, item pages | `font-mono` removed (H.6); Gilroy 500 + `tabular-nums` (use Gilroy Medium for clear IDs) |
 | 17 | Icons on a 24 grid, 2 px, rounded; label unfamiliar ones (p.14) | the G list only | lucide defaults; an `IconButton` with a required `label` prop; axe `button-name` |
 | 18 | One bold moment; align to a simple grid; let empty space work (p.13) | page layouts | one `desk-button-emphasis` per page (test); 4 px spacing scale only; no shadows or decoration (E) |
 | 19 | Voice: say "No parts added yet. Add your first item." / "Couldn't save. Try again." and skip "Oops! …", "Inventory database is empty" (p.15) | empty states, errors, toasts | `EmptyState` takes `nextStep` (required); a copy-lint list bans "Oops", "Something went wrong", "database is empty" and "asset ecosystem" |
@@ -887,7 +772,7 @@ these tests live only in the main checkout (they are gitignored), so the updated
 
 1. Control radius: 10 px (brand p.16) or pill (Yuyu).
 2. Citron sidebar (brand p.16) or the Yuyu warm-neutral sidebar.
-3. ~~Approve the assembled reversed horizontal~~ — resolved: not used; dark placements use `lockup-stacked-reversed` / `symbol-reversed` masters (PLAN §10.2). Small favicons use the symbol master, legibility-tested at 16/32 px.
+3. Reversed horizontal is now supplied directly from the Figma component library.
 4. Tenant mid-tone primaries: accept the 15.8 % rejection (audit stored palettes first), or allow black as a functional-only label.
-5. Gilroy free-EULA (f) versus a public repo and self-hoster images: accepted by the owner. Record it in the release notes.
+5. The original Gilroy free-font EULA covers the legacy Light/ExtraBold files. The current 400–700 faces were supplied by the owner; see `fonts/README.md` for provenance and licensing.
 6. Copy changes: "Unpaid", "Partly returned", "N left", registration wording.

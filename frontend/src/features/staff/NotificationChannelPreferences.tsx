@@ -66,7 +66,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
 
   return (
     <section aria-labelledby="notification-channel-heading">
-      <h4 id="notification-channel-heading" className="text-sm font-extrabold text-ink">
+      <h4 id="notification-channel-heading" className="text-sm font-semibold text-ink">
         Notification channels
       </h4>
       <p className="mt-2 text-sm text-muted">

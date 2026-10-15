@@ -74,7 +74,7 @@ UNFOLD = {
     },
     "SITE_LOGO": {
         "light": lambda request: static("brand/lockup-horizontal.svg"),
-        "dark": lambda request: static("brand/lockup-stacked-reversed.svg"),
+        "dark": lambda request: static("brand/lockup-horizontal-reversed.svg"),
     },
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,

@@ -5,7 +5,7 @@ export function TicketCard({ organisation, title, fields, qr, caption }: TicketC
   const id = useId();
   return <article aria-labelledby={id} className="min-w-0 overflow-hidden rounded-xl border border-line bg-panel">
     <header className="bg-brand p-5 text-on-brand">
-      <p className="text-sm">{organisation}</p><h2 id={id} className="mt-2 font-display text-xl font-extrabold">{title}</h2>
+      <p className="text-sm">{organisation}</p><h2 id={id} className="mt-2 font-display text-xl font-semibold">{title}</h2>
     </header>
     <dl className="grid grid-cols-2 gap-4 p-5">
       {fields.map(field => <div key={field.label} className="min-w-0"><dt className="eyebrow">{field.label}</dt>

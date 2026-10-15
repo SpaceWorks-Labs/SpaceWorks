@@ -137,7 +137,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
         updateRules.mutate();
       }}
     >
-      <h4 className="text-sm font-extrabold text-ink">{space.name}</h4>
+      <h4 className="text-sm font-semibold text-ink">{space.name}</h4>
       <div className="grid min-w-0 gap-3 sm:grid-cols-2 ">
         {NUMBER_FIELDS.map(({ key, label, min }) => (
           <label className="grid min-w-0 content-start gap-1 text-sm text-ink" key={key}>

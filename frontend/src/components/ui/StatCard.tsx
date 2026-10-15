@@ -8,7 +8,7 @@ export function StatCard({ label, value, of, progress, tone = "neutral", href }:
   const content = <>
     <p className="text-sm text-muted">{label}</p>
     <div className="mt-3 flex flex-wrap items-center gap-2">
-      <p className="font-display text-heading font-extrabold tabular-nums text-ink">{value}
+      <p className="font-display text-heading font-semibold tabular-nums text-ink">{value}
         {of !== undefined ? <span className="ml-1 font-sans text-base font-semibold text-muted">/ {of}</span> : null}</p>
       {tone !== "neutral" ? <StatusPill tone={tone === "attention" ? "emphasis" : tone}
         label={tone === "attention" ? "Needs attention" : tone === "danger" ? "Action needed" : "On track"} /> : null}

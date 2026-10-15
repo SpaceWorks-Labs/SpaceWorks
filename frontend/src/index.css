@@ -6,22 +6,29 @@
 
 @font-face {
   font-family: "Gilroy";
-  src: url("/fonts/Gilroy-ExtraBold.woff2") format("woff2");
-  font-weight: 800;
+  src: url("/fonts/Gilroy-Regular.woff2") format("woff2");
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Gilroy";
-  src: url("/fonts/Gilroy-Light.woff2") format("woff2");
-  font-weight: 300;
+  src: url("/fonts/Gilroy-Medium.woff2") format("woff2");
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Outfit";
-  src: url("/fonts/Outfit-Variable.woff2") format("woff2");
-  font-weight: 400 700;
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Bold.woff2") format("woff2");
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
@@ -151,17 +158,17 @@
 
   body {
     @apply bg-bg text-ink antialiased;
-    font-family: "Outfit", sans-serif;
+    font-family: "Gilroy", sans-serif;
     font-synthesis: none;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Gilroy", "Outfit", sans-serif;
-    font-weight: 800;
+    font-family: "Gilroy", sans-serif;
+    font-weight: 600;
     line-height: 1.25;
     letter-spacing: -0.01em;
   }
   code, kbd, samp, pre {
-    font-family: "Outfit", sans-serif;
+    font-family: "Gilroy", sans-serif;
     font-variant-numeric: tabular-nums slashed-zero;
     letter-spacing: 0.02em;
     font-size: 1em;

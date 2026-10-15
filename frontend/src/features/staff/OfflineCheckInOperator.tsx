@@ -131,7 +131,7 @@ export function OfflineCheckInOperator({
 
   return <section className="mt-3 rounded-lg border border-line bg-panel p-3" aria-labelledby={`${scope}-offline-title`}>
     <div className="flex flex-wrap items-start justify-between gap-2">
-      <div><h4 id={`${scope}-offline-title`} className="font-extrabold text-ink">Offline-ready check-in</h4><p className="text-xs text-muted">{online ? "Online" : "Offline"} · attendee names are encrypted on this device.</p></div>
+      <div><h4 id={`${scope}-offline-title`} className="font-semibold text-ink">Offline-ready check-in</h4><p className="text-xs text-muted">{online ? "Online" : "Offline"} · attendee names are encrypted on this device.</p></div>
       <button type="button" className={`desk-button ${FOCUS}`} disabled={busy} onClick={downloadNow}>{state ? "Refresh roster" : "Download roster"}</button>
     </div>
     {state ? <div className="mt-3 grid gap-2 text-sm">

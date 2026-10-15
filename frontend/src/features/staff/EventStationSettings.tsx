@@ -38,7 +38,7 @@ export function EventStationSettings({ eventId }: { eventId: number }) {
   });
   const error = query.error || rotate.error || reveal.error || disable.error;
   return <section className="mt-3 rounded-lg border border-line bg-panel p-3" aria-labelledby="station-settings-title">
-    <h4 id="station-settings-title" className="font-extrabold text-ink">PIN check-in station</h4>
+    <h4 id="station-settings-title" className="font-semibold text-ink">PIN check-in station</h4>
     <p className="mt-1 text-sm text-muted">The PIN is scoped to this event and check-in window. Rotation immediately invalidates old station sessions.</p>
     {query.data?.configured ? <div className="mt-3 grid gap-2 text-sm"><p>Status: <strong>{query.data.enabled ? "enabled" : "disabled"}</strong> · version {query.data.version}</p>{query.data.station_url ? <div className="flex flex-wrap gap-2"><a className="desk-button" href={query.data.station_url} target="_blank" rel="noreferrer">Open station</a><button className="desk-button" type="button" onClick={() => navigator.clipboard.writeText(query.data?.station_url ?? "")}>Copy URL</button></div> : null}</div> : <p className="mt-2 text-sm text-muted">No station PIN has been created.</p>}
     {pin ? <p className="mt-3 rounded-md border border-warn bg-warn-soft p-3 tabular-nums text-xl text-warn-ink" aria-live="polite">PIN: {pin}</p> : null}

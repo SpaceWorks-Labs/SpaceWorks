@@ -23,7 +23,11 @@ NON_CANCELLED = (
 CENT = Decimal("0.01")
 
 
-def build_booking_utilization(makerspace_id, *, limit=None, date_range=None):
+def build_booking_utilization(makerspace_id, *, limit=None, date_range=None, subject_kind=None, subject_id=None):
+    if subject_kind is not None or subject_id is not None:
+        from rest_framework.exceptions import ValidationError
+        if makerspace_id is None or subject_kind != "bookable_space" or subject_id is None:
+            raise ValidationError("Resource utilization requires a tenant-local bookable_space subject.")
     aggregate = makerspace_id is None
     now = timezone.now()
     overlap = Q()
@@ -39,7 +43,10 @@ def build_booking_utilization(makerspace_id, *, limit=None, date_range=None):
     duration = ExpressionWrapper(clipped_end - clipped_start, output_field=DurationField())
     qs = BookableSpace.objects.filter(
         makerspace_id__in=scoped_ids(makerspace_id, "bookings")
-    ).values("id", "makerspace_id", "name", "kind", "is_active").annotate(
+    )
+    if subject_id is not None:
+        qs = qs.filter(pk=subject_id)
+    qs = qs.values("id", "makerspace_id", "name", "kind", "is_active").annotate(
         booked_count=Count("bookings", filter=overlap & Q(bookings__status=Booking.Status.CONFIRMED)),
         completed_count=Count("bookings", filter=overlap & Q(bookings__status=Booking.Status.COMPLETED)),
         no_show_count=Count("bookings", filter=overlap & Q(bookings__status=Booking.Status.NO_SHOW)),

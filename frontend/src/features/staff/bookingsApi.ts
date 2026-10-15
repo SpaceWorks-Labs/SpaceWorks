@@ -8,6 +8,7 @@ import type { PaymentSummary } from "./PaymentReconcileActions";
 export type BookingStatus = "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
 export type BookableSpace = {
   id: number;
+  report_features?: string[];
   recurring_enabled?: boolean;
   staff_grants_enabled?: boolean;
   staff_permissions?: string[];
@@ -123,6 +124,7 @@ function useSpaceInvalidation(makerspaceId: number, spaceId?: number) {
       queryClient.invalidateQueries({ queryKey: bookingKeys.spaces(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: ["public-spaces"] }),
       queryClient.invalidateQueries({ queryKey: ["operations-report"] }),
+      queryClient.invalidateQueries({ queryKey: ["fablab-report", "booking-utilization"] }),
       ...(spaceId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: bookingKeys.detail(spaceId) }),
         queryClient.invalidateQueries({ queryKey: bookingKeys.bookings(spaceId) }),

@@ -972,7 +972,7 @@ export type AdmissionVouchOutcome = {
 
 export type AllowedFormatsEnum = "csv" | "xlsx";
 
-export type AnalyticsReportResponse = AnalyticsSummary | TakenItemsReport | ActiveLoansReport | ReturnsReport | DamagedMissingReport | DamagedLostReport | QrScansReport | MostLentReport | TopBorrowersReport | RecentlyAddedReport | MachineUsageReport | EventAttendanceReport | BookingUtilizationReport | MaintenanceActivityReport | MemberActivityReport | FabLabHealthReport | PaymentReconciliationReport | PaymentCashBook | PaymentsLedgerReport | RevenueOverTimeReport | CashBookReport | AccountingJournalReport | GenericAnalyticsReport | MemberRetentionReport | MembershipRevenueReport | EventRegistrationReport | EventFeedbackReport;
+export type AnalyticsReportResponse = AnalyticsSummary | TakenItemsReport | ActiveLoansReport | ReturnsReport | DamagedMissingReport | DamagedLostReport | QrScansReport | MostLentReport | TopBorrowersReport | RecentlyAddedReport | MachineUsageReport | EventAttendanceReport | BookingUtilizationReport | MaintenanceActivityReport | MemberActivityReport | FabLabHealthReport | PaymentReconciliationReport | PaymentCashBook | PaymentsLedgerReport | RevenueOverTimeReport | CashBookReport | AccountingJournalReport | GenericAnalyticsReport | MemberRetentionReport | MembershipRevenueReport | EventRegistrationReport | EventFeedbackReport | BookingResourceUtilizationReport | BookingReservationReport | BookingAnswerReport;
 
 export type AnalyticsSummary = {
   "products": number;
@@ -1481,6 +1481,7 @@ export type BookableSpaceAdmin = {
   "can_manage_grants": boolean;
   "staff_grants_enabled": boolean;
   "recurring_enabled": boolean;
+  "report_features": Array<string>;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1532,6 +1533,22 @@ export type BookingAdmin = {
   "payment": StaffPaymentSummary | null;
 };
 
+export type BookingAnswerReport = {
+  "rows": Array<Array<unknown>>;
+  "report_key": string;
+  "meta": BookingReportMeta;
+  "typed_rows": Array<BookingAnswerReportRow>;
+};
+
+export type BookingAnswerReportRow = {
+  "booking_id": number;
+  "space_id": number;
+  "starts_at": string;
+  "ends_at": string;
+  "status": string;
+  "answers": string;
+};
+
 export type BookingEligibleMember = {
   "member_id": number;
   "display_name": string;
@@ -1563,9 +1580,43 @@ export type BookingMachineTypePage = {
   "results": Array<BookingMachineType>;
 };
 
+export type BookingReportMeta = {
+  "source": string;
+  "grain": string;
+  "rollup_through": string | null;
+  "arrival_counts_available"?: boolean;
+};
+
 export type BookingReschedule = {
   "starts_at": string;
   "ends_at": string;
+};
+
+export type BookingReservationReport = {
+  "rows": Array<Array<unknown>>;
+  "report_key": string;
+  "meta": BookingReportMeta;
+  "typed_rows": Array<BookingReservationReportRow>;
+};
+
+export type BookingReservationReportRow = {
+  "booking_id": number;
+  "space_id": number;
+  "space_name": string;
+  "name": string;
+  "email": string;
+  "phone": string;
+  "starts_at": string;
+  "ends_at": string;
+  "status": string;
+  "created_at": string;
+};
+
+export type BookingResourceUtilizationReport = {
+  "rows": Array<Array<unknown>>;
+  "report_key": string;
+  "meta": BookingReportMeta;
+  "typed_rows": Array<BookingUtilizationRow>;
 };
 
 export type BookingStaffGrant = {
@@ -8804,7 +8855,7 @@ export type ReportError = {
 
 export type ReportExportFormatEnum = "csv" | "xlsx" | "pdf";
 
-export type ReportKeyEnum = "accounting-journal" | "active-loans" | "audit-trail" | "booking-utilization" | "cash-book" | "certification-coverage" | "communications-health" | "community-engagement" | "damaged-lost" | "damaged-missing" | "event-attendance" | "event-attendance-pdf" | "event-feedback" | "event-registrations" | "evidence-compliance" | "fablab-health" | "import-quality" | "inventory-control" | "loan-throughput" | "machine-service" | "machine-usage" | "maintenance-activity" | "member-activity" | "member-retention" | "membership-revenue" | "module-operational-health" | "most-lent" | "payment-cash-book" | "payment-reconciliation" | "payments-ledger" | "printer-service" | "procurement-performance" | "qr-scans" | "recently-added" | "returns" | "revenue-over-time" | "summary" | "taken-items" | "top-borrowers";
+export type ReportKeyEnum = "accounting-journal" | "active-loans" | "audit-trail" | "booking-answers" | "booking-reservations" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-utilization" | "cash-book" | "certification-coverage" | "communications-health" | "community-engagement" | "damaged-lost" | "damaged-missing" | "event-attendance" | "event-attendance-pdf" | "event-feedback" | "event-registrations" | "evidence-compliance" | "fablab-health" | "import-quality" | "inventory-control" | "loan-throughput" | "machine-service" | "machine-usage" | "maintenance-activity" | "member-activity" | "member-retention" | "membership-revenue" | "module-operational-health" | "most-lent" | "payment-cash-book" | "payment-reconciliation" | "payments-ledger" | "printer-service" | "procurement-performance" | "qr-scans" | "recently-added" | "returns" | "revenue-over-time" | "summary" | "taken-items" | "top-borrowers";
 
 export type ReportSchedule = {
   "id": number;

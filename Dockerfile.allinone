@@ -34,7 +34,7 @@ ARG POSTGRESQL_LOCAL_SERVER_MAJOR=16
 # Same two Postgres client majors as backend/Dockerfile (see the reasoning there), plus
 # nginx and redis-server so the box needs no separate cache/broker container.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age nginx redis-server \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age nginx redis-server fonts-dejavu-core \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
       | gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg \

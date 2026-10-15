@@ -19,6 +19,8 @@ import { useUrlListState } from "../../lib/useUrlListState";
 import { BookingDetailsEditor } from "./BookingDetailsEditor";
 import { BookingStaffAccess } from "./BookingStaffAccess";
 import { bookingAccess } from "./bookingStaffPermissions";
+import { BookingResourceTabs } from "./BookingResourceTabs";
+import { BookingResourceAnalytics } from "./BookingResourceAnalytics";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
 
 type PendingAction = { booking: Booking; action: BookingAction };
@@ -55,6 +57,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
   const list = useUrlListState({ page: "1", status: "", starts_at: "", ends_at: "", ordering: "starts_at" }, `booking-${spaceId}.`);
   const { page, setPage } = list;
   const filters: BookingFilters = { ...list.values, status: list.values.status as BookingFilters["status"], booking_id: Number(params.get("space")) === spaceId ? Number(params.get("booking")) || undefined : undefined };
+  const [tab, setTab] = useState<"details" | "analytics">("details");
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const bookings = useSpaceBookings(spaceId, filters, page, list.values.ordering, access.reservations);
@@ -66,6 +69,8 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
     list.setFilter(key, String(value ?? ""));
   };
   const actionError = update.error || deactivate.error || action.error;
+  const hasReports = Boolean(space?.report_features?.length);
+  const activeTab = hasReports ? tab : "details";
 
   return (
     <>
@@ -78,6 +83,11 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
               <StatusBadge status={space.is_active ? "active" : "inactive"} />
               <span className="text-sm text-muted">{space.effective_requester_notifications_enabled ? "Requester emails on" : "Requester emails off"}</span>
             </div>
+            {hasReports ? <BookingResourceTabs active={activeTab} onChange={setTab} /> : null}
+            <div id="resource-analytics" role="tabpanel" aria-labelledby="resource-analytics-tab" hidden={activeTab !== "analytics"}>
+              {activeTab === "analytics" && hasReports ? <BookingResourceAnalytics makerspaceId={makerspaceId} spaceId={spaceId} features={space.report_features ?? []} /> : null}
+            </div>
+            <div id="resource-details" role={hasReports ? "tabpanel" : undefined} aria-labelledby={hasReports ? "resource-details-tab" : undefined} hidden={activeTab !== "details"} className="grid gap-6">
             {access.manager ? <BookableSpaceForm
               makerspaceId={makerspaceId}
               key={space.updated_at}
@@ -147,6 +157,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
               ) : null}
               {bookings.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="font-mono text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!bookings.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!bookings.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
             </section> : null}
+            </div>
             {actionError ? <p className="text-sm text-danger" role="alert">{errorText(actionError)}</p> : null}
           </div>
         ) : null}

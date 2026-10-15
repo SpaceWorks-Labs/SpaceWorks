@@ -31,7 +31,8 @@ def _export_response(request, definition, makerspace_id):
     provenance = build_provenance(
         definition.key, version=definition.version, makerspace_id=makerspace_id,
         generated_by=actor_label(request.user),
-        filters=export_filters(date_range=date_range, report_filters=report_filters, grain=grain),
+        filters=export_filters(date_range=date_range, report_filters=report_filters, grain=grain,
+            extra={"timezone": local_space.timezone} if local_space and report_filters.get("subject_kind") else None),
     )
     from apps.audit.services import record
     # GET bypasses the request write gate; hold the service gate through audit commit.
@@ -50,5 +51,9 @@ def _export_response(request, definition, makerspace_id):
         response["Cache-Control"] = "private, no-store"
         return response
     if fmt == "xlsx":
-        return _xlsx_response(rows, f"{definition.key}.xlsx", provenance=provenance)
-    return _csv_response(rows, f"{definition.key}.csv", provenance=provenance)
+        response = _xlsx_response(rows, f"{definition.key}.xlsx", provenance=provenance)
+    else:
+        response = _csv_response(rows, f"{definition.key}.csv", provenance=provenance)
+    if definition.subject_kind or report_filters.get("subject_kind"):
+        response["Cache-Control"] = "private, no-store"
+    return response

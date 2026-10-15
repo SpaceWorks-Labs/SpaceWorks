@@ -3,6 +3,18 @@
 
 def definitions(FeatureDefinition):
     features = (FeatureDefinition(
+        "bookings.analytics", "bookings", "Resource analytics",
+        "Read calendar reservation utilization for one resource with management and audit authority.",
+        requires_modules=("bookings", "reports"),
+    ), FeatureDefinition(
+        "bookings.utilization_pdf", "bookings", "Resource utilization PDF",
+        "Download an audited bounded-period resource utilization PDF as a tenant booking manager.",
+        requires_modules=("bookings", "reports"), requires_features=("bookings.analytics",),
+    ), FeatureDefinition(
+        "bookings.exports", "bookings", "Resource reservation exports",
+        "Preview and export tenant-local reservation contacts and custom answers with management and audit authority.",
+        requires_modules=("bookings", "reports"),
+    ), FeatureDefinition(
         "bookings.staff_grants", "bookings", "Resource staff grants",
         "Delegate descriptive editing, reservations, arrival or page release for one resource.",
         requires_modules=("bookings",),

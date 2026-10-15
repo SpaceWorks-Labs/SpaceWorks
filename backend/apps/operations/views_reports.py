@@ -29,6 +29,7 @@ from apps.operations.report_request_contract import (
     DATE_RANGE_PARAMETERS,
     PAYMENT_FILTER_PARAMETERS,
     PREVIEW_PARAMETERS,
+    SUBJECT_REPORT_DESCRIPTION,
     RETENTION_PARAMETERS,
     _export_format,
     _grain_param,
@@ -69,6 +70,7 @@ class AnalyticsView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="Get analytics report", request=None,
+        description=SUBJECT_REPORT_DESCRIPTION,
         parameters=PREVIEW_PARAMETERS,
         responses={200: ANALYTICS_REPORT_RESPONSE, **ERROR_RESPONSES},
     )
@@ -84,12 +86,15 @@ class AnalyticsView(APIView):
         require_action(request.user, definition.required_action, makerspace.id)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
-        return Response(reports.report_data(
+        response = Response(reports.report_data(
             report_key, makerspace.id,
             actor=request.user,
             limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in {"member-retention", "membership-revenue"} else None),
             report_filters=_report_filters(request, report_key), grain=_grain_param(request, definition),
         ))
+        if definition.subject_kind or request.query_params.get("subject_kind"):
+            response["Cache-Control"] = "private, no-store"
+        return response
 
 
 class ReportCatalogView(APIView):
@@ -189,6 +194,7 @@ class ReportExportView(APIView):
 
     @extend_schema(
         tags=["Reports"], summary="Export report", request=None,
+        description=SUBJECT_REPORT_DESCRIPTION,
         parameters=[
             OpenApiParameter("report_key", OpenApiTypes.STR, OpenApiParameter.PATH, enum=reports.REPORT_KEYS),
             OpenApiParameter("format", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["csv", "xlsx", "pdf"]),

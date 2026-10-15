@@ -197,7 +197,7 @@ export function ImageUploader({
               className={`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`}
             />
           ) : (
-            <div className="blueprint-bg grid h-full w-full place-items-center text-[10px] uppercase text-muted">
+            <div className="bg-surface grid h-full w-full place-items-center text-[10px] uppercase text-muted">
               none
             </div>
           )}

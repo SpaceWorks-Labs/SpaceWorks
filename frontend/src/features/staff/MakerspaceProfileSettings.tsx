@@ -38,7 +38,7 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
   useEffect(() => { mutation.reset(); }, [makerspaceId, mutation.reset]);
   const changed = () => { setDirty(true); setSaved(false); setError(null); };
   return <section className="min-w-0 rounded-md border border-line bg-bg p-4" aria-labelledby="location-hours-heading">
-    <h3 id="location-hours-heading" className="text-base font-semibold text-ink">Location &amp; hours</h3>
+    <h3 id="location-hours-heading" className="text-base font-extrabold text-ink">Location &amp; hours</h3>
     <p className="my-2 text-sm text-muted">Times use this makerspace&apos;s timezone. Hours are informational until a workflow uses them. Currency is the same default used by payment settings; existing charges keep their currency. Country stays private to staff.</p>
     {query.isPending ? <p role="status">Loading profile...</p> : null}
     {query.error ? <p role="alert">{query.error.message} <button className="desk-button" type="button" onClick={() => void query.refetch()}>Retry</button></p> : null}

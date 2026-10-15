@@ -74,7 +74,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
 
   return (
     <div className="rounded-md border border-line bg-surface p-3">
-      <h3 className="font-semibold text-ink">Integration settings</h3>
+      <h3 className="font-extrabold text-ink">Integration settings</h3>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <Field label="Telegram group chat ID">
           <input

@@ -63,7 +63,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
         <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
           <div className="grid min-w-0 max-w-2xl gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-ink">Location</h3>
+              <h3 className="text-base font-extrabold text-ink">Location</h3>
               <Badge tone={savedMapUrl ? "success" : "neutral"}>
                 {savedMapUrl ? "Maps link set" : "Text only"}
               </Badge>

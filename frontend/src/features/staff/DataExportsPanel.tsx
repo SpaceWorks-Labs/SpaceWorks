@@ -39,7 +39,7 @@ export function DataExportsPanel({ makerspaceId }: { makerspaceId: number }) {
   return (
     <Panel title="Makerspace data export">
       <div className="grid gap-4">
-        <div className="rounded-md border border-warn/40 bg-warn/10 p-4 text-sm text-ink">
+        <div className="rounded-md border border-warn/40 bg-warn-soft p-4 text-sm text-ink">
           <p className="font-semibold">Read this disclosure before requesting an export</p>
           <p className="mt-2">
             The readable archive includes makerspace-owned records, but omits credentials,

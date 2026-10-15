@@ -24,7 +24,7 @@ export function PublicInventoryHeader({
   listedCount,
 }: PublicInventoryHeaderProps) {
   return (
-    <header className="material-chrome border-b border-line">
+    <header className="bg-panel border-b border-line">
       <div className="mx-auto flex max-w-screen-2xl flex-col gap-2 px-5 py-4 sm:px-8">
         <p className="eyebrow text-brand-ink">
           Public Inventory
@@ -60,7 +60,7 @@ export function PublicInventoryHeader({
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <SpaceWorksBadge />
-              <div className="rounded-lg border border-brand bg-brand/15 px-3 py-2 text-sm text-brand-ink">
+              <div className="rounded-lg border border-brand bg-brand-soft px-3 py-2 text-sm text-brand-ink">
                 {listedCount ?? "-"} listed items
               </div>
               {modules.has("printing") ? (

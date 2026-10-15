@@ -17,7 +17,7 @@ export function PublicDeskKioskPage() {
             <p className="text-xs font-semibold tracking-wide text-accent-ink">
               Kiosk
             </p>
-            <h1 className="text-xl font-bold text-ink">Public desk</h1>
+            <h1 className="text-xl font-extrabold text-ink">Public desk</h1>
           </div>
           <div className="flex gap-2">
             <ThemeToggle />

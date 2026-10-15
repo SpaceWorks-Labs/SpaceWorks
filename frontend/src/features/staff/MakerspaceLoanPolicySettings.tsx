@@ -54,7 +54,7 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
     setProblem("");
     save.mutate({ ...form, loan_reminder_offsets_hours: numbers });
   }}>
-    <h4 className="font-semibold text-ink">Loan policy</h4>
+    <h4 className="font-extrabold text-ink">Loan policy</h4>
     <p className="text-sm text-muted">Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting.</p>
     <div className="grid gap-3 sm:grid-cols-2">
       {NUMBERS.map(([field, label, min, max]) => <Field key={field} label={label}>

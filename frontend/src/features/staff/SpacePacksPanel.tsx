@@ -36,7 +36,7 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
   const pending = exportPack.isPending || previewPack.isPending || applyPack.isPending || saveProfile.isPending;
   const error = inputError || exportPack.error?.message || previewPack.error?.message || applyPack.error?.message || saveProfile.error?.message;
   return <section className="grid min-w-0 gap-3 rounded-md border border-line bg-bg p-4" aria-label="Space packs">
-    <h3 className="text-base font-semibold text-ink">Space packs</h3>
+    <h3 className="text-base font-extrabold text-ink">Space packs</h3>
     <p className="text-sm text-muted">Copy configuration between spaces. Packs contain policies, roles, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack.</p>
     <button type="button" className="desk-button justify-self-start" disabled={pending} onClick={() => exportPack.mutate()}>Export configuration</button>
     <Field label="Space pack JSON">

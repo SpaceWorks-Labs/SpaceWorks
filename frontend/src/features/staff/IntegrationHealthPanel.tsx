@@ -74,7 +74,7 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Integration health</h3>
+            <h3 className="text-base font-extrabold text-ink">Integration health</h3>
             <Badge tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
           </div>
           {health.isLoading ? <p className="mt-2 text-sm text-muted">Loading integration health...</p> : null}
@@ -181,7 +181,7 @@ function HealthBlock({
   return (
     <section className={`min-w-0 rounded-md border border-line bg-bg p-3 ${wide ? "xl:col-span-2" : ""}`}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="font-semibold text-ink">{title}</h4>
+        <h4 className="font-extrabold text-ink">{title}</h4>
         <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
       </div>
       {detail ? <p className="mb-3 break-words text-sm text-danger">{detail}</p> : null}

@@ -64,7 +64,7 @@ export function TenantMigrationDisclosure({ makerspaceId }: { makerspaceId: numb
       {closure.isLoading || approvals.isLoading ? <p className="mt-3 text-sm text-muted">Computing the exact identity closure…</p> : null}
       <ErrorText error={closure.error ?? approvals.error} />
       {voidApprovals.map((approval) => (
-        <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3" key={approval.id} role="status">
+        <div className="mt-3 rounded-md border border-danger/40 bg-panel p-3" key={approval.id} role="status">
           <p className="font-semibold text-danger">VOID — disclosure closure changed after approval</p>
           <p className="mt-1 text-xs text-muted">Previously approved digest: <span className="code-text break-all">{approval.closure_digest}</span></p>
         </div>

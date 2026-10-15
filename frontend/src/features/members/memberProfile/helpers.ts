@@ -3,14 +3,14 @@ export const textToTags = (value: string) =>
   value.split(",").map((item) => item.trim()).filter(Boolean);
 
 const PROFILE_TONES = [
-  "border-accent bg-accent/15",
-  "border-brand bg-brand/15",
-  "border-success bg-success/15",
-  "border-warn bg-warn/15",
+  "border-accent bg-accent-soft",
+  "border-brand bg-brand-soft",
+  "border-success bg-success-soft",
+  "border-warn bg-warn-soft",
 ] as const;
 
 export function profileToneForIdentity(identity: string | number | undefined) {
-  if (identity === undefined || identity === "") return "border-brand bg-brand/15";
+  if (identity === undefined || identity === "") return "border-brand bg-brand-soft";
   const total = [...String(identity)].reduce((sum, character) => sum + character.codePointAt(0)!, 0);
   return PROFILE_TONES[total % PROFILE_TONES.length];
 }

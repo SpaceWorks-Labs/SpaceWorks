@@ -47,7 +47,7 @@ export function ApiClientCreateCard({
   if (canManageMakerspace) {
     return (
       <article className="rounded-md border border-line bg-surface p-3">
-        <h3 className="font-semibold text-ink">API clients</h3>
+        <h3 className="font-extrabold text-ink">API clients</h3>
         <div className="mt-3 grid gap-2">
           <Field label="Client label">
             <input
@@ -88,7 +88,7 @@ export function ApiClientCreateCard({
         </button>
         {error ? <p className="mt-2 text-sm text-danger">{error.message}</p> : null}
         {oneTimeSecret ? (
-          <div className="mt-3 rounded-md border border-accent/40 bg-accent/10 p-3">
+          <div className="mt-3 rounded-md border border-accent/40 bg-accent-soft p-3">
             <p className="text-sm font-semibold text-ink">Copy this secret now &mdash; it will not be shown again.</p>
             <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 code-text text-xs text-ink">
               {oneTimeSecret.client_secret}
@@ -113,7 +113,7 @@ export function ApiClientCreateCard({
 
   return (
     <article className="rounded-md border border-line bg-surface p-3">
-      <h3 className="font-semibold text-ink">Request API access</h3>
+      <h3 className="font-extrabold text-ink">Request API access</h3>
       <div className="mt-3 grid gap-2">
         <Field label="Request label">
           <input

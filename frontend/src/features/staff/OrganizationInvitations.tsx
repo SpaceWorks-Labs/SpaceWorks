@@ -48,7 +48,7 @@ export function OrganizationInvitations({ organization }: { organization: Organi
         <button className="desk-button-primary w-fit" type="submit" disabled={create.isPending}>{create.isPending ? "Creating..." : "Create invitation"}</button>
         {create.error ? <p className="text-sm text-danger" role="alert">{create.error.message}</p> : null}
       </form>
-      {redeemUrl ? <div className="mt-4 rounded-xl border border-success bg-success/15 p-4 text-success-ink"><p className="font-semibold">Copy this link now</p><p className="mt-1 break-all code-text text-xs">{redeemUrl}</p><button className="desk-button mt-3" type="button" onClick={() => navigator.clipboard.writeText(redeemUrl)}>Copy link</button></div> : null}
+      {redeemUrl ? <div className="mt-4 rounded-xl border border-success bg-success-soft p-4 text-success-ink"><p className="font-semibold">Copy this link now</p><p className="mt-1 break-all code-text text-xs">{redeemUrl}</p><button className="desk-button mt-3" type="button" onClick={() => navigator.clipboard.writeText(redeemUrl)}>Copy link</button></div> : null}
 
       {invitations.isLoading ? <Skeleton className="mt-5 h-24 w-full" /> : null}
       {invitations.data && !invitations.data.results.length ? <EmptyState title="No invitations yet" /> : null}

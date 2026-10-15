@@ -223,7 +223,7 @@ export function PublicSelfCheckoutPage() {
             </div>
 
             <button
-              className="desk-button-brand mt-4 w-full disabled:cursor-not-allowed disabled:opacity-50"
+              className="desk-button-brand mt-4 w-full disabled:cursor-not-allowed"
               disabled={!canScan || loanMutation.isPending}
               type="button"
               onClick={() => setScannerOpen(true)}
@@ -237,7 +237,7 @@ export function PublicSelfCheckoutPage() {
               Confirm {mode === "checkout" ? "checkout" : "return"}
             </button> : null}
             {loanMutation.isError ? (
-              <p className="mt-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+              <p className="mt-4 rounded-lg border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">
                 {loanMutation.error.message}
               </p>
             ) : null}

@@ -15,7 +15,7 @@ export function MemberCertifications({ makerspaceId }: { makerspaceId: number })
     <ul className="mt-3 grid gap-3">{query.data?.results.map((row) => <li key={row.id} className="rounded-lg border border-line p-3 text-sm">
       <strong>{row.name}</strong><p className="text-muted">{row.machine_type_name} · {!row.type_active ? "Type inactive" : row.revoked_at ? "Revoked" : row.is_live ? "Valid" : "Expired"}</p>
       <p>{row.expires_at ? `Expiry: ${new Date(row.expires_at).toLocaleDateString()}` : "Does not expire"}</p>
-      {row.type_active && !row.revoked_at && row.expires_at && (!row.is_live || new Date(row.expires_at).getTime() - Date.now() < 14 * 86400000) ? <p className="mt-1 text-warn">Ask staff to reassess and renew your training.</p> : null}
+      {row.type_active && !row.revoked_at && row.expires_at && (!row.is_live || new Date(row.expires_at).getTime() - Date.now() < 14 * 86400000) ? <p className="mt-1 text-warn-ink">Ask staff to reassess and renew your training.</p> : null}
     </li>)}</ul>
     {query.data && query.data.count > 24 ? <div className="mt-3 flex gap-2"><button className="desk-button-ghost" disabled={page === 1 || query.isFetching} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button-ghost" disabled={!query.data.next || query.isFetching} onClick={() => setPage(page + 1)}>Next</button></div> : null}
   </section>;

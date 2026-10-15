@@ -71,7 +71,7 @@ export function OrganizedEventsPanel() {
                     <span className="mt-1 block max-w-56 break-words">{row.location || "No location"}</span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 align-top">
-                    <StatusBadge status={row.status} />
+                    <StatusBadge domain="event" status={row.status} />
                   </td>
                   <td className="px-3 py-2 align-top">
                     <RegistrationTotals event={row} />

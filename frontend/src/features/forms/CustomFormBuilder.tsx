@@ -12,10 +12,10 @@ import {
 } from "./customFormTypes";
 
 const QUESTION_TONES = [
-  "border-accent bg-accent/15",
+  "border-accent bg-accent-soft",
   "border-line bg-accent-soft",
-  "border-success bg-success/15",
-  "border-warn bg-warn/15",
+  "border-success bg-success-soft",
+  "border-warn bg-warn-soft",
 ] as const;
 
 function questionTone(id: string) {

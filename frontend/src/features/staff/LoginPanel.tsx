@@ -61,7 +61,7 @@ export function LoginPanel({
         <p className="text-xs font-semibold tracking-wide text-accent-ink">
           {guestOnly ? "Guest admin desk" : "Space Manager desk"}
         </p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">Sign in</h1>
+        <h1 className="mt-2 text-2xl font-extrabold text-ink">Sign in</h1>
         <p className="mt-2 text-sm text-muted">
           {passwordLogin
             ? "Use your staff account to manage requests, inventory, and handovers."

@@ -58,7 +58,7 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
 
   return <div className="rounded-md border border-line bg-bg p-4">
     <div className="grid max-w-2xl gap-2">
-      <h3 className="text-base font-semibold text-ink">Kiosk stations</h3>
+      <h3 className="text-base font-extrabold text-ink">Kiosk stations</h3>
       <p className="text-sm text-muted">A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person.</p>
     </div>
     <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={submit}>

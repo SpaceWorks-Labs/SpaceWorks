@@ -31,7 +31,7 @@ export function ScannerPage() {
             <p className="text-xs font-semibold tracking-wide text-accent-ink">
               Scanner
             </p>
-            <h1 className="text-2xl font-bold text-ink">QR resolution</h1>
+            <h1 className="text-2xl font-extrabold text-ink">QR resolution</h1>
           </div>
           <ThemeToggle />
         </div>

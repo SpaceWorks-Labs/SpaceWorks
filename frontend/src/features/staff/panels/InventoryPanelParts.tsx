@@ -187,17 +187,17 @@ export function LendingHistory({ productId }: { productId: number }) {
 
 export function InventoryAvailability({ product }: { product: AdminProduct }) {
   const isLowStock = product.available_quantity <= Math.ceil(product.total_quantity * 0.2);
-  const badge = product.available_quantity <= 0 ? <StatusBadge status="lost" label="Unavailable" /> : isLowStock ? <StatusBadge status="limited" label="Limited" /> : <StatusBadge status="available" label="Available" />;
+  const badge = product.available_quantity <= 0 ? <StatusBadge status="unavailable" label="Unavailable" /> : isLowStock ? <StatusBadge status="limited" label="Limited" /> : <StatusBadge status="available" label="Available" />;
   return <span className="inline-flex items-center gap-2"><span className="inline-block w-8 font-medium tabular-nums text-ink">{product.available_quantity}</span>{badge}</span>;
 }
 
 export function InventoryMetric({ label, value }: { label: string; value: number }) {
   const tones: Record<string, string> = {
-    Available: "border-success bg-success/15",
-    Damaged: "border-warn bg-warn/15",
+    Available: "border-success bg-success-soft",
+    Damaged: "border-warn bg-warn-soft",
     Lost: "border-line bg-accent-soft",
   };
-  return <div className={`rounded-md border p-3 ${tones[label] ?? "border-accent bg-accent/15"}`}><p className="eyebrow">{label}</p><p className="mt-1 tabular-nums text-xl font-bold text-ink">{value}</p></div>;
+  return <div className={`rounded-md border p-3 ${tones[label] ?? "border-accent bg-accent-soft"}`}><p className="eyebrow">{label}</p><p className="mt-1 tabular-nums text-xl font-bold text-ink">{value}</p></div>;
 }
 
 export function AttributionLine({ acceptedBy, issuedBy }: { acceptedBy: Actor | null; issuedBy: Actor | null }) {

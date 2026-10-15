@@ -48,8 +48,8 @@ export function ProductQuickViewModal({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="blueprint-bg grid h-full w-full place-items-center">
-                <span className="font-display text-6xl font-bold uppercase text-ink/15">
+              <div className="bg-surface grid h-full w-full place-items-center">
+                <span className="font-display text-6xl font-extrabold uppercase text-ink">
                   {product.name.slice(0, 2)}
                 </span>
               </div>

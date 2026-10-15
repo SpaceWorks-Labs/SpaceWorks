@@ -33,7 +33,7 @@ export function ApiClientScopePicker({
     <div className="grid gap-2" aria-label="API client scopes">
       {Array.from(grouped.entries()).map(([group, groupOptions]) => (
         <section key={group} className="grid gap-2 rounded-md border border-line p-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{group}</h4>
+          <h4 className="text-xs font-extrabold uppercase tracking-wide text-muted">{group}</h4>
           {groupOptions.map((option) => (
             <label key={option.value} className="flex items-start gap-3">
               <input

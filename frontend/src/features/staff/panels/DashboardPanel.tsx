@@ -24,13 +24,8 @@ type DashboardCounts = {
   pending_payments?: number;
 };
 
-// Each tile carries a palette tone, so the grid speaks the whole four-colour system instead
-// of reading as a wall of neutral boxes with one alarming red one. The tone is chosen by what
-// the number MEANS -- it is varied, not arbitrary: `danger` is reserved for things that are
-// actually wrong, `warn` for a queue somebody has to work through, `accent` for work in
-// flight, `success` for something finished and waiting to be handed over, and `emphasis` for
-// money. Assigning tones at random would make the colour meaningless and would clash with the
-// semantic status colours used everywhere else in the console.
+// Tiles keep their semantic intent; only emphasis is a filled attention pill.
+// Numbers and labels otherwise sit on neutral panels.
 type Tone = "accent" | "emphasis" | "success" | "warn" | "danger";
 
 type Tile = {
@@ -59,36 +54,6 @@ const TILES: Tile[] = [
   { key: "maintenance_overdue", label: "Maintenance overdue", actionNeeded: true, tone: "danger" },
   { key: "pending_payments", label: "Pending payments", actionNeeded: true, tone: "emphasis" },
 ];
-
-// Two states per tone, and the INK is the whole point.
-//
-// `fill` is used only when the tile is calling for attention. Its text colours are the FIXED
-// `on-*` tokens, because they sit on a solid pastel and must not go light in dark mode -- the
-// previous version put `text-danger` on `bg-danger` (dark red on red, so the number was
-// invisible) and left the label at `text-muted` (grey on red). That is the tile in the
-// screenshot: not a colour choice, an unreadable one.
-//
-// `rest` keeps the tile neutral and carries the tone in THE NUMBER ITSELF, which is the piece
-// of the tile that actually means something. A thick coloured left edge was tried first and
-// removed: a side-tab accent border is a generated-UI cliche, and colouring a rule beside the
-// data is weaker than colouring the data. Every `rest` value is an `-ink` token, all of which
-// the contrast guard holds at AA against `bg`/`surface`/`panel`.
-const TONE_STYLES: Record<Tone, { fill: string; label: string; rest: string }> = {
-  accent: { fill: "border-accent bg-accent", label: "text-on-accent/75", rest: "text-accent-ink" },
-  emphasis: { fill: "border-emphasis bg-emphasis", label: "text-on-emphasis/75", rest: "text-on-emphasis dark:text-emphasis" },
-  success: { fill: "border-success bg-success", label: "text-on-success/75", rest: "text-success-ink" },
-  warn: { fill: "border-warn bg-warn", label: "text-on-warn/75", rest: "text-warn-ink" },
-  // The on-danger label preserves the existing per-mode canvas colour.
-  danger: { fill: "border-danger bg-danger", label: "text-on-danger/80", rest: "text-danger" },
-};
-
-const FILL_INK: Record<Tone, string> = {
-  accent: "text-on-accent",
-  emphasis: "text-on-emphasis",
-  success: "text-on-success",
-  warn: "text-on-warn",
-  danger: "text-on-danger",
-};
 
 const MACHINE_TILE_KEYS = new Set<Tile["key"]>([
   "pending_prints",
@@ -120,20 +85,17 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, s
         )).map((tile) => {
           const value = dashboard.data?.[tile.key] ?? 0;
           const needsAttention = tile.actionNeeded && value > 0;
-          const tone = TONE_STYLES[tile.tone];
           return (
             <Link
               key={tile.key}
               to={dashboardHref(tile.key, makerspace.slug, singleTenantLocked, guestOnly)}
               aria-label={`${tile.label}: ${value}. View list`}
-              className={`flex min-h-24 flex-col items-start justify-center gap-1 rounded-lg border p-4 shadow-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                needsAttention ? tone.fill : "border-line bg-panel"
-              }`}
+              className="flex min-h-24 flex-col items-start justify-center gap-1 rounded-xl border border-line bg-panel p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
-              <span className={`tabular-nums text-3xl font-semibold ${needsAttention ? FILL_INK[tile.tone] : tone.rest}`}>
+              <span className={`font-display tabular-nums text-[32px] leading-[38px] font-extrabold text-ink ${needsAttention && tile.tone === "emphasis" ? "rounded-full bg-emphasis px-2 text-on-emphasis" : ""}`}>
                 {value}
               </span>
-              <span className={`eyebrow ${needsAttention ? tone.label : ""}`}>{tile.label}</span>
+              <span className="eyebrow">{tile.label}</span>
             </Link>
           );
         })}

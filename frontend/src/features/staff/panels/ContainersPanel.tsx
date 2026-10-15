@@ -70,7 +70,7 @@ function ContainerRow({ container, makerspaceId, canEditInventory, kitEnabled }:
       <div className="flex flex-wrap items-center gap-2">
         <strong className="min-w-0 break-words text-ink">{container.label}</strong>
         {container.location ? <span className="text-xs text-muted">{container.location}</span> : null}
-        {container.is_active === false ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-xs text-warn-ink">Inactive</span> : null}
+        {container.is_active === false ? <span className="rounded-md bg-warn-soft px-2 py-0.5 text-xs text-warn-ink">Inactive</span> : null}
         <div className="desk-actions ml-0 flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
           <button className="desk-button-ghost" type="button" onClick={() => setEditing((value) => !value)}>{editing ? "Cancel" : "Edit"}</button>
           <button className="desk-button-ghost" type="button" onClick={() => togglePanel("contents")}>{panel === "contents" ? "Hide contents" : "Contents"}</button>

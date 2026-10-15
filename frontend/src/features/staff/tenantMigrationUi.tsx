@@ -33,9 +33,9 @@ export function StatusPill({ children, tone = "neutral" }: {
 }) {
   const classes = {
     neutral: "border-line bg-bg text-ink",
-    success: "border-success/40 bg-success/10 text-success-ink",
-    danger: "border-danger/40 bg-danger/10 text-danger",
-    warn: "border-warn/40 bg-warn/10 text-warn-ink",
+    success: "border-success/40 bg-success-soft text-success-ink",
+    danger: "border-danger/40 bg-panel text-danger",
+    warn: "border-warn/40 bg-warn-soft text-warn-ink",
   }[tone];
   return <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${classes}`}>{children}</span>;
 }

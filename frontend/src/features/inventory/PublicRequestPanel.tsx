@@ -127,20 +127,20 @@ export function PublicRequestPanel({
   const tabTone: Record<ActiveTab, { active: string; idle: string }> = {
     borrow: {
       active:
-        "border-brand bg-brand text-on-brand dark:bg-brand/15 dark:text-brand-ink",
-      idle: "hover:border-brand hover:bg-brand/15 hover:text-brand-ink",
+        "border-brand bg-brand text-on-brand dark:bg-brand-soft dark:text-brand-ink",
+      idle: "hover:border-brand hover:bg-brand-soft hover:text-brand-ink",
     },
     scan: {
       active:
-        "border-brand bg-brand text-on-brand dark:bg-brand/15 dark:text-brand-ink",
-      idle: "hover:border-brand hover:bg-brand/15 hover:text-brand-ink",
+        "border-brand bg-brand text-on-brand dark:bg-brand-soft dark:text-brand-ink",
+      idle: "hover:border-brand hover:bg-brand-soft hover:text-brand-ink",
     },
   };
 
   function tabClass(tab: ActiveTab) {
     const tone = tabTone[tab];
     return activeTab === tab
-      ? `status-box min-h-11 w-full py-2 shadow-soft ${tone.active}`
+      ? `status-box min-h-11 w-full py-2  ${tone.active}`
       : `status-box min-h-11 w-full py-2 ${tone.idle}`;
   }
 

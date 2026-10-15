@@ -55,7 +55,7 @@ export function TenantMigrationPairings({ pairings }: { pairings: Pairing[] }) {
         a receipt from an identity outside this pinned pair is refused.
       </p>
       {identity.data ? (
-        <div className="mt-3 rounded-md border border-accent/40 bg-accent/10 p-3 text-sm">
+        <div className="mt-3 rounded-md border border-accent/40 bg-accent-soft p-3 text-sm">
           <p className="font-semibold text-accent-ink">This deployment: {identity.data.deployment_id}</p>
           <p className="mt-1 break-all code-text text-xs text-muted">Fingerprint: {identity.data.fingerprint}</p>
           <p className="mt-1 break-all code-text text-xs text-muted">Age recipient: {identity.data.age_recipient}</p>

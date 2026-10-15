@@ -4,28 +4,28 @@ type AvailabilityBadgeProps = {
   availability: Availability;
 };
 
-type Tone = "success" | "warn" | "danger" | "neutral";
+type Tone = "success" | "emphasis" | "danger" | "neutral";
 
 // Filled status-box styling (theme-token fills plus readable ink labels) so the availability
 // pill matches the rest of the status boxes and stays legible in BOTH light and dark
 // modes — the old tinted success text washed out in dark "Available".
 const TONE_CLASS: Record<Tone, string> = {
   success:
-    "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
-  warn: "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
+    "border-success bg-success text-on-success dark:bg-success-soft dark:text-success-ink",
+  emphasis: "border-transparent bg-emphasis text-on-emphasis",
   danger: "border-danger bg-danger text-on-danger",
-  neutral: "border-outline bg-surface text-muted",
+  neutral: "border-line bg-surface text-ink",
 };
 
 function toneForAvailability(
   label: NonNullable<Availability>["label"],
 ): Tone {
   if (label === "Limited") {
-    return "warn";
+    return "emphasis";
   }
 
   if (label === "Unavailable") {
-    return "danger";
+    return "neutral";
   }
 
   if (label === "Available") {
@@ -60,7 +60,7 @@ export function AvailabilityBadge({ availability }: AvailabilityBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold tracking-tight ${TONE_CLASS[toneForAvailability(availability.label)]}`}
+      className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-xs font-semibold tracking-tight ${TONE_CLASS[toneForAvailability(availability.label)]}`}
     >
       {textForAvailability(availability)}
     </span>

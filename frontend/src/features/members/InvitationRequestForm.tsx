@@ -38,7 +38,7 @@ export function InvitationRequestForm({ slug }: { slug: string }) {
       <h2 id="invitation-request-heading" className="title-panel">Ask for an invitation</h2>
       <p className="mt-1 text-sm text-muted">Leave your details and the makerspace will get back to you.</p>
       {submit.isSuccess ? (
-        <p className="mt-4 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-ink" role="status">
+        <p className="mt-4 rounded-md border border-success/40 bg-success-soft px-3 py-2 text-sm text-ink" role="status">
           {submit.data.detail}
         </p>
       ) : (

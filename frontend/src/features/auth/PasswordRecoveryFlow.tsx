@@ -79,7 +79,7 @@ export function PasswordRecoveryFlow() {
 
         {step === "unavailable" ? (
           <>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Password recovery unavailable</h1>
+            <h1 className="mt-2 text-2xl font-extrabold text-ink">Password recovery unavailable</h1>
             <p className="mt-4 text-sm text-muted" role="alert">
               Password recovery is unavailable on this deployment — contact your makerspace staff
             </p>
@@ -89,7 +89,7 @@ export function PasswordRecoveryFlow() {
 
         {step === "request" ? (
           <form onSubmit={(event) => { event.preventDefault(); void requestCode(false); }}>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Reset password</h1>
+            <h1 className="mt-2 text-2xl font-extrabold text-ink">Reset password</h1>
             <p className="mt-2 text-sm text-muted">
               Enter your account email to request a six-digit recovery code.
             </p>
@@ -114,7 +114,7 @@ export function PasswordRecoveryFlow() {
 
         {step === "confirm" ? (
           <form onSubmit={(event) => { event.preventDefault(); if (canConfirm) void submitConfirmation(); }}>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Enter your recovery code</h1>
+            <h1 className="mt-2 text-2xl font-extrabold text-ink">Enter your recovery code</h1>
             <p className="mt-2 text-sm text-muted">{acknowledgement}</p>
             <p className="mt-2 text-sm text-muted">
               Email delivery runs on a schedule and may take a few minutes.
@@ -157,7 +157,7 @@ export function PasswordRecoveryFlow() {
 
         {step === "success" ? (
           <>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Password updated</h1>
+            <h1 className="mt-2 text-2xl font-extrabold text-ink">Password updated</h1>
             <p className="mt-4 text-sm text-muted">Your password has been updated. You can now sign in.</p>
             <Link className="desk-button-brand mt-5 w-full" to="/admin">Go to sign in</Link>
           </>

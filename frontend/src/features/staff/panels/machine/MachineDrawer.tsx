@@ -57,7 +57,7 @@ export function MachineDrawer({
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={details.status} />
             {!details.is_active ? (
-              <span className="rounded-md bg-warn/15 px-2 py-1 text-xs font-medium text-warn-ink">Retired</span>
+              <span className="rounded-md bg-warn-soft px-2 py-1 text-xs font-medium text-warn-ink">Retired</span>
             ) : null}
             <span className="text-sm text-muted">
               {details.machine_type.name} · {details.usage_hours} total hours

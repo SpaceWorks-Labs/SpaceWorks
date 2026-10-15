@@ -1266,62 +1266,59 @@ and the client never hard-blocks check-in on a location error. Do **not** conver
 without an unforgeable proximity factor (owner decision). Dormant/self-host safe: no geo config ⇒ no check,
 and the `geofence_enabled` bootstrap flag is **omitted entirely** (byte-for-byte-unchanged invariant).
 
-**One colour vocabulary, and `tone-*` is GONE.** The four pastels existed twice under two names —
-`--color-accent` == `--color-tone-blue`, `secondary` == `tone-pink`, `success` == `tone-mint`, `warn` ==
-`tone-yellow` — so which name a component reached for was historical accident. The semantic vocabulary won
-(`bg-success` says why the colour is there; `bg-tone-mint` does not) and the `tone-*` tokens are deleted
-from `index.css` and `tailwind.config.ts`.
-- **THE MIGRATION WAS NOT A RENAME, and treating it as one breaks dark mode.** Only the FILLS were
-  byte-identical: `tone-*-ink` stays **fixed dark** in dark mode like `on-*`, while `{name}-ink` goes
-  **light**. So all 39 `tone-*-ink` call sites map to **`on-*`**; mapping them to `-ink` puts light text on
-  a light pastel fill. Fills map straight across.
-- **Colour is surface-coded**: `accent` = interaction, primary actions, active nav, staff chrome;
-  `secondary` (pink) = every stranger-facing surface (public catalogue, member area, auth, kiosk);
-  `success`/`warn` keep their status meaning; `danger` is the only non-pastel.
-- **The display face was never unused — it was suppressed.** `@layer base` maps every `h1`–`h6` to Clash
-  Display; `Panel` simply rendered its `h2` as `text-sm font-semibold text-muted`. The scale lives in
-  `@layer components` as `.title-page` / `.title-panel` / `.title-section` / `.eyebrow` (the JetBrains Mono
-  voice for labels, units and column headers) so the decision sits in one place, not in 200 class strings.
-- `tests/test_frontend_theme_contrast.py` also guards `success-ink`, `warn-ink`, `info-ink` — omitted while
-  the palette was effectively one colour and those inks appeared only inside solid fills.
-- **Buttons are a CLOSED FAMILY in `@layer components`**, not per-component class strings: `desk-button`
-  (neutral), `-primary` (staff main action), `-secondary` (public/member main action), `-success`, `-warn`,
-  `-danger`, `-ghost` (quiet tertiary). Each carries `min-h-11` and the same `focus-visible` ring, so
-  adopting one fixes the touch target and the keyboard focus together — most of why the family exists.
-- **Colour VARIES but is never RANDOM.** A repeating set distributes the four tones so a screen shows the
-  whole system, but the tone is a **stable** property of the thing — assigned by meaning
-  (`DashboardPanel.TILES`) or derived from identity (`MemberDirectory.identityTone`, a character-sum hash).
-  Never `Math.random()`, never index-by-render-order, never over something already semantically coloured.
-- **A tone is NEVER expressed as `border-l-4` on a card.** A side-tab accent stripe is the most recognisable
-  generated-UI tell and the design detector fails on it; it was reached for twice, so the rule is written
-  into `docs/superpowers/specs/2026-08-13-design-language-brief.md`. Carry the tone in the heading ink, the
-  number, a badge, a `/15` tint, or a 1px full border.
-- **On a filled tile every text colour must come from the fixed `on-*` set** (or `text-bg` for `danger`).
-  `status-box-danger` is `bg-danger text-bg`, and a tile that added `text-danger` to the number and left
-  the label `text-muted` rendered dark red on red and grey on red.
+**One colour vocabulary.** `frontend/src/index.css` holds the literal light and dark RGB triplets
+from `docs/design-revamp/research/ui-brand-spec.md` section A. Keep `:root {` and `:root.dark {` literal:
+the backend contrast guard parses those blocks. Tailwind maps each colour token one-to-one.
+- `accent` is Maker Teal for staff actions, active navigation and focus. `brand` defaults to accent
+  and is tenant-overridable on public/member surfaces only. Staff uses no brand utilities except
+  the tenant-theme preview. `emphasis` is Workshop Orange, never tenant-overridable: an orange
+  pill with its fixed `on-emphasis` label carries attention. **Orange standalone text is banned.**
+- Fills pair with fixed per-mode `on-*` labels through rest, hover and active. Standalone text uses
+  `ink`, `muted`, `accent-ink`, `brand-ink`, `success-ink`, `warn-ink`, `info-ink` or `danger`.
+  **No translucent text**, including opacity applied to a text element. Opaque `*-soft` tokens
+  replace semantic alpha tints; nested cards cannot accumulate translucent fills.
+- Status pills always include a word. Light success/warn/info use their fills with `on-*` labels;
+  dark uses their soft fills and matching inks. Accent uses soft/ink in both modes; danger uses
+  panel/danger-line/danger. Issued and checked-out are accent. Limited stock is emphasis;
+  unavailable is neutral. Neutral statistic panels have ink numbers; emphasis is an orange pill
+  with its ink label. Colour assignment follows meaning or stable identity, never randomness.
+- **Exactly three font families:** Gilroy ExtraBold 800 for headings, titles and display numbers;
+  Outfit 400-700 for body/UI, labels, codes and tables; Unbounded 500-600 for one accent phrase per
+  layout. Gilroy Light 300 is optional only for a secondary display line on public/auth surfaces.
+  `font-synthesis: none` prevents fake Gilroy weights. Stacks end in the generic sans-serif only.
+  Native `code`, `kbd`, `samp`, `pre` use Outfit with tabular/slashed-zero numerals, 0.02em tracking
+  and 1em size; `pre` wraps. `.code-text` carries the same features for machine strings. Neither
+  a monospace family nor `font-mono`/`font-code` utilities exist. The shared `.title-page`,
+  `.title-panel`, `.title-section`, `.eyebrow` and `.col-header` classes own the spec type scale.
+- **Buttons are a closed family:** `desk-button` (neutral outline), `-primary` (accent), `-brand`,
+  `-emphasis`, `-success`, `-warn`, `-danger`, `-danger-outline` and `-ghost`. Each has a 44px target,
+  10px radius, explicit rest/hover/active fills and `disabled:bg-surface text-muted border-line`.
+  Controls use outline boundaries; cards use 16px radii and line borders; tags are fully round.
+  Cards have no shadow; `shadow-overlay` is reserved for menus, popovers, drawers, modals and toasts.
+  Hover changes colour over 120ms, with no translate/scale; reduced-motion preferences are honoured.
+- **Tenant contract: degrade, never reject a well-formed colour.** Keep `brandColours.ts` and
+  `makerspaces/theme_contrast.py` in lockstep. Labels try Deep Ink, Warm Cream, white, then black;
+  black is permitted only as the tenant functional fallback. Emit exactly seven brand variables,
+  including opaque brand-soft. Derive soft at at most 12% over panel, links toward the mode neutral,
+  and hover/active away from the label. If a derived pair fails, soft falls back to panel, link ink
+  to accent-ink, and interaction fills to the previous derivation. Only malformed colour values
+  are rejected. The 4,096-colour backend sweep, frontend grid and frozen acceptance parity guard
+  protect this contract. No tenant override changes staff, status, focus, neutrals or sidebar.
 
-**Accessibility floor (phase 22).** Four rules, each with a real counter-example in the tree:
-- **Text contrast is drift-guarded from the backend suite.** `tests/test_frontend_theme_contrast.py` parses
-  `frontend/src/index.css` and fails any text token below AA (4.5:1) on `bg`/`surface`/`panel`, or
-  `--color-focus` below 3:1. It lives in pytest because **vitest resolves CSS imports to an empty string**
-  under its default config (`?raw` included), so the check is impossible there; `docker-compose.dev.yml`
-  already mounts `./frontend:ro` into the backend for this class of guard (`features.ts` is the precedent).
-  Parse with comments stripped: the theme's own notes contain `{name}-ink`, whose brace ends a naive block
-  scan early and hides every token after it.
-- **`focus:outline-none` is banned.** Tailwind applies it on `:focus`, which subsumes `:focus-visible`, and
-  `@layer components` outranks `@layer base` — so one `focus:outline-none` in a `.desk-*` class silently
-  defeats any global focus style. Components carry `focus-visible:outline-2 focus-visible:outline-offset-2
-  focus-visible:outline-focus` on a dedicated `--color-focus` token, not the pastel accent at `/40` alpha,
-  which never reached 3:1.
-- **A skip link needs `tabIndex={-1}` on its target, and the target must always render** (outside any
-  conditional — the print page put `#main-content` inside `{enabled ? ... : null}`, so the link pointed at
-  nothing while the module was loading or off). Without the tabindex the browser scrolls but leaves focus
-  behind. The target is the **content region, not `<main>`** — these pages nest `<header>` inside `<main>`.
-  `MemberArea` deliberately has no skip link: its shell has no nav.
-- **Collapsed content is unmounted, never `hidden`-but-present** (`CollapsibleSection`), or keyboard users
-  tab into controls they cannot see. Its count is one text node (`` `${n} items` ``) because the
-  accessible-name algorithm trims each node and joins with no separator — `{n}<span> items</span>` is
-  announced as "3items".
+**Accessibility floor.** These rules protect every screen through the shared token system:
+- The backend frontend-theme guard strips comments before parsing RGB blocks, checks every text ink
+  at AA (4.5:1) on the universal neutral/soft grounds, every on-fill label at rest/hover/active,
+  sidebar labels and selected states, focus at 3:1 and control outlines at 3:1. Source guards ban
+  alpha text, semantic alpha fills, fill-as-text, obsolete fonts/colours and tenant classes in staff.
+  Token provenance is checked against the authoritative spec. Browser axe remains the check for
+  real composited/rendered pages; unit checks alone do not establish screen-level contrast.
+- **`focus:outline-none` is banned.** Every control carries `focus-visible:outline-2
+  focus-visible:outline-offset-2 focus-visible:outline-focus`; the dedicated focus token is opaque.
+- A skip link needs `tabIndex={-1}` on a target that always renders, outside loading/module gates.
+  Its target is the content region, so focus moves with scrolling. MemberArea currently has no
+  skip link because its shell has no nav.
+- Collapsed content is unmounted, never hidden-but-present, so invisible controls cannot receive
+  focus. Counts use one text node (for example, `` `${n} items` ``) to preserve the accessible name.
 
 **Console parity principle.** Every backend lifecycle capability reachable in the Django `/control/` admin
 must have a React staff-console surface — a capability with no console surface is a latent dead/broken

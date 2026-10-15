@@ -81,7 +81,7 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
     <section className="rounded-md border border-line bg-bg p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-ink">Stripe payments</h3>
+          <h3 className="text-base font-extrabold text-ink">Stripe payments</h3>
           <p className="mt-1 text-sm text-muted">
             Secret credentials are encrypted; saved keys are never displayed again.
           </p>

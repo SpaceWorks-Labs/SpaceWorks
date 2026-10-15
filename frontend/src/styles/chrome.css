@@ -1,27 +1,25 @@
-/* Chrome + motion rules, split out of index.css.
-   index.css was already over the repo's ~300-line ceiling (349) before the Apple-design pass, and
-   the rule is to split an over-ceiling file before adding to it. The COLOUR TOKENS deliberately
-   stay in index.css: backend/tests/test_frontend_theme_contrast.py hand-parses that exact path for
-   `:root {` / `:root.dark {`, and moving them here would make that guard silently blind. */
-
-@layer components {
-  /* The one genuinely "Apple" primitive: a translucent, blurred material for nav and header
-     chrome. `@supports` falls back to the solid panel where backdrop-filter is unavailable. */
-  .material-chrome {
-    background-color: rgb(var(--color-panel) / 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
+/* Product motion: colours only on hover; overlays use the shared easing. */
+@layer base {
+  :root {
+    --radius-control: 10px;
+    --chart-accent: var(--color-accent);
+    --chart-info: var(--color-info-ink);
+    --chart-success: var(--color-success-ink);
+    --chart-warn: var(--color-warn-ink);
+    --chart-danger: var(--color-danger);
   }
-
-  @supports not (backdrop-filter: blur(1px)) {
-    .material-chrome {
-      background-color: rgb(var(--color-panel));
-    }
+  :root.dark {
+    --chart-info: var(--color-info);
+    --chart-success: var(--color-success);
+    --chart-warn: var(--color-warn);
   }
 }
-
-/* Deliberately UNLAYERED: unlayered rules outrank every @layer, so these neutralise the hover
-   transforms declared on .brutal-hover and the .desk-button-* family without needing to restate
-   their selectors' specificity. WCAG 2.3.3 / HIG Motion "Make motion optional". */
+@media (max-width: 639px) {
+  .text-display { font-size: 44px; line-height: 48px; }
+  .text-display-sub { font-size: 24px; line-height: 30px; }
+  .text-heading { font-size: 34px; line-height: 40px; }
+  .font-accent { font-size: 32px; line-height: 40px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -29,7 +27,4 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .brutal-hover:hover { transform: none; }
-  .desk-button-primary:hover, .desk-button-brand:hover, .desk-button-success:hover,
-  .desk-button-warn:hover, .desk-button-danger:hover { transform: none; }
 }

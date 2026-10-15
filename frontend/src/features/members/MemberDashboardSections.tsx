@@ -119,7 +119,7 @@ export function MemberHistory({
                 {row.returned_at ? (
                   <> · returned {new Date(row.returned_at).toLocaleDateString()}</>
                 ) : null}
-                {row.returned_late ? <span className="text-warn"> · late</span> : null}
+                {row.returned_late ? <span className="text-warn-ink"> · late</span> : null}
               </li>
             ))}
           </ul>
@@ -130,7 +130,7 @@ export function MemberHistory({
 }
 
 function borderFor(level: string) {
-  if (level === "critical") return "border-danger/40 bg-danger/10";
-  if (level === "warning") return "border-warn/40 bg-warn/10";
+  if (level === "critical") return "border-danger/40 bg-panel";
+  if (level === "warning") return "border-warn/40 bg-warn-soft";
   return "border-line";
 }

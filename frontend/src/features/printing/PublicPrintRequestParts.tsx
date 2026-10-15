@@ -21,11 +21,11 @@ const steps = [
 ];
 
 const STEP_TONE_CLASSES = [
-  "border-accent bg-accent text-on-accent dark:bg-accent/15 dark:text-accent-ink",
-  "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
-  "border-brand bg-brand text-on-brand dark:bg-brand/15 dark:text-brand-ink",
-  "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
-  "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
+  "border-accent bg-accent text-on-accent dark:bg-accent-soft dark:text-accent-ink",
+  "border-warn bg-warn text-on-warn dark:bg-warn-soft dark:text-warn-ink",
+  "border-brand bg-brand text-on-brand dark:bg-brand-soft dark:text-brand-ink",
+  "border-success bg-success text-on-success dark:bg-success-soft dark:text-success-ink",
+  "border-success bg-success text-on-success dark:bg-success-soft dark:text-success-ink",
 ] as const;
 
 export function TextInput({
@@ -205,7 +205,7 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
       {status.queue_position != null ? (
         <div
           aria-live="polite"
-          className="rounded-xl border border-line bg-panel px-3 py-2 text-center shadow-soft"
+          className="rounded-xl border border-line bg-panel px-3 py-2 text-center"
         >
           <p className="tabular-nums text-sm font-semibold text-ink">
             #{status.queue_position} in the queue
@@ -216,7 +216,7 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
         </div>
       ) : null}
       {timeLeft ? (
-        <p className="rounded-lg border border-accent bg-accent px-3 py-2 text-center tabular-nums text-sm font-semibold text-on-accent dark:bg-accent/15 dark:text-accent-ink">
+        <p className="rounded-lg border border-accent bg-accent px-3 py-2 text-center tabular-nums text-sm font-semibold text-on-accent dark:bg-accent-soft dark:text-accent-ink">
           {timeLeft}
         </p>
       ) : null}
@@ -249,7 +249,7 @@ export function StatusResult({
 
   if (error) {
     return (
-      <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+      <p className="rounded-lg border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">
         {error.message}
       </p>
     );

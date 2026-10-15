@@ -56,7 +56,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
   if (booking.data) {
     const pending = booking.data.status === "pending";
     return (
-      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn/15" : "border-success bg-success/15"} p-4 outline-none`} role="status" tabIndex={-1}>
+      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn-soft" : "border-success bg-success-soft"} p-4 outline-none`} role="status" tabIndex={-1}>
         <h3 className="title-section">{pending ? "Booking request received" : "Space booked"}</h3>
         <p className="mt-1 text-sm text-muted">
           {pending ? "Staff must approve this request before the slot is confirmed." : "Your selected slot is confirmed and booked."}

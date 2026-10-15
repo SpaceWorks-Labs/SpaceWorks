@@ -41,7 +41,7 @@ export function MemberVouch({ makerspaceId }: { makerspaceId: number }) {
       <label className="grid gap-1 text-sm text-ink">Application number<input className="desk-input" type="number" required min="1" step="1" value={requestId} onChange={(event) => { setRequestId(event.target.value); vouch.reset(); }} /></label>
       <button className="desk-button-brand" type="submit" disabled={vouch.isPending || !requestId}>Record my vouch</button>
     </form>
-    {vouch.isSuccess ? <p className="mt-3 text-sm text-success" role="status">Your vouch is recorded.</p> : null}
+    {vouch.isSuccess ? <p className="mt-3 text-sm text-success-ink" role="status">Your vouch is recorded.</p> : null}
     {vouch.error ? <p className="mt-3 text-sm text-danger" role="alert">{vouch.error.message}</p> : null}
   </section>;
 }

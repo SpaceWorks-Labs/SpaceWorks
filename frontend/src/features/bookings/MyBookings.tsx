@@ -63,7 +63,7 @@ function OwnBookings({ slug, recipient }: { slug: string; recipient: number | "s
     {bookings.data?.results.length === 0 ? <p className="mt-3 text-sm text-muted">No {period} bookings.</p> : null}
     <ul className="mt-3 space-y-3">
       {bookings.data?.results.map((booking) => <li key={booking.public_token} className="rounded-lg border border-line p-3">
-        <h3 className="font-semibold">{booking.space_name}</h3>
+        <h3 className="font-extrabold">{booking.space_name}</h3>
         <p className="mt-1 text-sm">{dateLabel(booking.starts_at, booking.timezone)} – {dateLabel(booking.ends_at, booking.timezone)} ({booking.timezone})</p>
         <p className="mt-1 text-sm text-muted">{booking.status.replace(/_/g, " ")}</p>
         {booking.can_cancel ? <>

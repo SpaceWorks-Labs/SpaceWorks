@@ -1,8 +1,8 @@
 import { formatNumber, type ChartRow } from "./OperationsReportState";
 
 export const REPORT_CHART_COLORS = [
-  "rgb(var(--color-accent))", "rgb(var(--color-warn))", "rgb(var(--color-success))",
-  "rgb(var(--color-brand))", "rgb(var(--color-danger))",
+  "rgb(var(--chart-accent))", "rgb(var(--chart-info))", "rgb(var(--chart-success))",
+  "rgb(var(--chart-warn))", "rgb(var(--chart-danger))",
 ];
 
 export function BarChart({ rows, valueLabel }: { rows: ChartRow[]; valueLabel?: string }) {

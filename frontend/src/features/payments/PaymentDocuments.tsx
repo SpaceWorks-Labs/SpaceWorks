@@ -35,7 +35,7 @@ export function PaymentDocuments({ makerspaceId, audience }: { makerspaceId: num
     },
   });
   return <section className="mt-4 border-t border-line pt-4" aria-label="Receipt documents">
-    <h3 className="font-semibold text-ink">Receipts and credit notes</h3>
+    <h3 className="font-extrabold text-ink">Receipts and credit notes</h3>
     <button className="desk-button" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide documents" : "Show documents"}</button>
     {expanded ? <>
     {documents.isLoading ? <p className="text-sm text-muted">Loading documents...</p> : null}

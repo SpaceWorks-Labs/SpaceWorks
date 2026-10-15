@@ -19,6 +19,6 @@ export function SetupChecklist({ makerspace, owner, allowedTabs, guestOnly, sing
     <p className="mt-2 text-sm text-muted">Progress comes from your makerspace records. Dismissal is remembered for this makerspace on this browser.</p>
     {query.isLoading ? <p role="status">Checking setup…</p> : null}
     {query.error ? <p role="alert" className="text-sm text-danger">Could not check setup: {query.error.message}</p> : null}
-    <ul className="mt-3 grid gap-2">{steps.map(step => <li key={step.key} className="flex items-center gap-3 text-sm"><span className={step.complete ? "text-success" : "text-muted"}>{step.complete ? "Done" : "To do"}</span>{allowedTabs.includes(step.tab) ? <Link className="underline focus-visible:outline-2 focus-visible:outline-focus" to={staffTabPath(step.tab, guestOnly, makerspace.slug, singleTenantLocked)}>{step.label}</Link> : <span>{step.label} · ask an administrator</span>}</li>)}</ul>
+    <ul className="mt-3 grid gap-2">{steps.map(step => <li key={step.key} className="flex items-center gap-3 text-sm"><span className={step.complete ? "text-success-ink" : "text-muted"}>{step.complete ? "Done" : "To do"}</span>{allowedTabs.includes(step.tab) ? <Link className="underline focus-visible:outline-2 focus-visible:outline-focus" to={staffTabPath(step.tab, guestOnly, makerspace.slug, singleTenantLocked)}>{step.label}</Link> : <span>{step.label} · ask an administrator</span>}</li>)}</ul>
   </section>;
 }

@@ -12,7 +12,7 @@ export function StaffInvitationAcceptPage() {
     token: link.get("token"), makerspace_slug: link.get("space"), password, code,
   }), onSuccess: () => { setPassword(""); setCode(""); window.history.replaceState(null, "", window.location.pathname); } });
   return <main className="desk-shell p-6"><section className="desk-panel mx-auto grid max-w-lg gap-4 p-6">
-    <h1 className="text-2xl font-bold">Accept your staff invitation</h1>
+    <h1 className="text-2xl font-extrabold">Accept your staff invitation</h1>
     {accept.data ? <><p role="status">{accept.data.detail}</p><Link to="/admin" className="desk-link">Sign in with your email</Link></> : <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); accept.mutate(); }}>
       <p>Already have an account? Use its current password. Otherwise, choose a strong password for your new account.</p>
       <label htmlFor="invite-password">Password</label>

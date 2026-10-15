@@ -25,9 +25,9 @@ export function RecoveryQuarantinePanel({ state, onAcknowledged }: { state: Reco
       <section className="desk-panel w-full max-w-2xl p-6">
         <SpaceWorksBadge className="mb-5" />
         <p className="eyebrow text-danger">Recovery quarantine</p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">Authority is suspended</h1>
+        <h1 className="mt-2 text-2xl font-extrabold text-ink">Authority is suspended</h1>
         <p className="mt-3 text-sm text-muted">{state.quarantine_reason}</p>
-        <div className="mt-5 rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-ink">
+        <div className="mt-5 rounded-md border border-danger/40 bg-panel p-4 text-sm text-ink">
           <p className="font-semibold">Residual risk</p>
           <p className="mt-2">{state.residual_risk}</p>
         </div>

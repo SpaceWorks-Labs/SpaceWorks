@@ -156,7 +156,7 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
         <VerificationReportView report={verification.data} loading={verification.isLoading} error={verification.error} />
       ) : null}
       {job.status === "completed" && pairing && lifecycle === "IMPORTING" ? (
-        <div className="mt-3 rounded-md border border-danger/40 bg-danger/5 p-3">
+        <div className="mt-3 rounded-md border border-danger/40 bg-panel p-3">
           <h4 className="title-section">One-way target cutover</h4>
           <p className="mt-1 text-sm text-ink">Activation and abort are mutually exclusive. Activation cannot be undone from this screen.</p>
           <label className="mt-2 block text-sm text-ink">Source cutover receipt<textarea className="desk-input mt-1 min-h-28 w-full code-text text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
@@ -179,7 +179,7 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
 
 function VerificationReportView({ report, loading, error }: { report?: VerificationReport; loading: boolean; error: unknown }) {
   return (
-    <section className="mt-3 rounded-md border border-accent/40 bg-accent/5 p-3" aria-label="Import verification report">
+    <section className="mt-3 rounded-md border border-accent/40 bg-accent-soft p-3" aria-label="Import verification report">
       <h4 className="title-section">Verification report</h4>
       {loading ? <p className="mt-2 text-sm text-muted">Loading the persisted verification report…</p> : null}
       <ErrorText error={error} />

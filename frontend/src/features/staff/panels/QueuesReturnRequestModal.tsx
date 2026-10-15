@@ -82,7 +82,7 @@ export function ReturnRequestModal({ row, open, pending, error, onClose, onSubmi
       <form id="return-request-form" className="grid gap-3" onSubmit={(event) => submitForm(event, submitReturn)}>
         <div className="grid gap-3 sm:grid-cols-2">
           {issueUrl ? <div className="grid min-w-0 gap-1 text-sm"><span className="font-medium text-ink">Issue photo</span><img src={issueUrl} alt="Issue photo for comparison" className="max-h-56 w-full rounded-md border border-line object-contain" /></div> : null}
-          {issueError ? <p className="text-sm text-warning" role="status">{issueError}</p> : null}
+          {issueError ? <p className="text-sm text-warn-ink" role="status">{issueError}</p> : null}
           <div className="grid min-w-0 gap-1 text-sm"><span className="font-medium text-ink">Return photo</span><EvidenceUpload makerspaceId={makerspaceId} evidenceType="return" disabled={pending} onUploaded={setEvidenceId} /></div>
         </div>
         {row?.assigned_box_label ? <p className="text-xs text-muted">Box: <span className="font-medium text-ink">{row.assigned_box_label}</span></p> : null}

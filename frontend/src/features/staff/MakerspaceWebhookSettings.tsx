@@ -37,7 +37,7 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
   return (
     <div className="rounded-md border border-line bg-bg p-4">
       <div className="grid max-w-2xl gap-2">
-        <h3 className="text-base font-semibold text-ink">Chat webhooks</h3>
+        <h3 className="text-base font-extrabold text-ink">Chat webhooks</h3>
         <p className="text-sm text-muted">
           Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook
           configures the destination; enable delivery separately in the notification channel
@@ -113,7 +113,7 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
   return (
     <section className="rounded-md border border-line bg-surface p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-sm font-semibold text-ink">{label}</h4>
+        <h4 className="text-sm font-extrabold text-ink">{label}</h4>
         <Badge tone={configured ? "success" : "neutral"}>
           {configured ? "Configured" : "Not configured"}
         </Badge>

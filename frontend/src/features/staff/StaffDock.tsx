@@ -24,14 +24,14 @@ function badgeLabel(count: number) {
 // Staff groups use `accent`, `success` and `warn` so tenant branding does not
 // change their navigation cues.
 const GROUP_TONE_CLASSES: Record<string, string> = {
-  Operate: "border-accent/40 text-accent-ink hover:bg-accent/15",
-  Inventory: "border-accent/40 text-accent-ink hover:bg-accent/15",
-  Machines: "border-success/40 text-success-ink hover:bg-success/15",
-  Events: "border-warn/40 text-warn-ink hover:bg-warn/15",
-  Bookings: "border-accent/40 text-accent-ink hover:bg-accent/15",
-  Members: "border-accent/40 text-accent-ink hover:bg-accent/15",
-  Insights: "border-success/40 text-success-ink hover:bg-success/15",
-  Admin: "border-warn/40 text-warn-ink hover:bg-warn/15",
+  Operate: "border-accent/40 text-accent-ink hover:bg-accent-soft",
+  Inventory: "border-accent/40 text-accent-ink hover:bg-accent-soft",
+  Machines: "border-success/40 text-success-ink hover:bg-success-soft",
+  Events: "border-warn/40 text-warn-ink hover:bg-warn-soft",
+  Bookings: "border-accent/40 text-accent-ink hover:bg-accent-soft",
+  Members: "border-accent/40 text-accent-ink hover:bg-accent-soft",
+  Insights: "border-success/40 text-success-ink hover:bg-success-soft",
+  Admin: "border-warn/40 text-warn-ink hover:bg-warn-soft",
 };
 
 export function StaffDock({
@@ -152,7 +152,7 @@ export function StaffDock({
       ref={rootRef}
       data-staff-dock-root
       aria-label="Staff sections"
-      className="material-chrome fixed inset-x-0 bottom-3 z-40 mx-auto w-fit max-w-[calc(100vw-1rem)] rounded-2xl border border-line shadow-soft-lg pb-[env(safe-area-inset-bottom)]"
+      className="bg-panel fixed inset-x-0 bottom-3 z-40 mx-auto w-fit max-w-[calc(100vw-1rem)] rounded-2xl border border-line pb-[env(safe-area-inset-bottom)]"
     >
       <div
         data-staff-dock-scroller
@@ -197,11 +197,7 @@ export function StaffDock({
               onKeyDown={(event) => handleButtonKeyDown(event, index, group.label)}
             >
               <Icon className="shrink-0" />
-              {/* Clash Display, title case. The sidebar deliberately made these <h2> so the base
-                  layer handed them the display face, reasoning that the display voice is what makes
-                  a group read as a TOPIC rather than as a mono `.eyebrow` label. A tab bar is not a
-                  heading list, so the face is applied directly instead of borrowing <h2> semantics. */}
-              <span className="whitespace-nowrap font-display text-sm font-medium leading-none">
+              <span className="whitespace-nowrap font-sans text-sm font-semibold leading-5">
                 {group.label}
               </span>
               {ownsNotifications && unreadCount > 0 ? (

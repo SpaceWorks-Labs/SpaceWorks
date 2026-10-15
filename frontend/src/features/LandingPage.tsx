@@ -140,11 +140,11 @@ export function LandingPage() {
           {filteredMakerspaces.length ? (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {filteredMakerspaces.map((makerspace) => (
-                <article key={makerspace.slug} className="group relative flex flex-col rounded-xl border border-line bg-panel shadow-soft transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-soft-lg">
+                <article key={makerspace.slug} className="group relative flex flex-col rounded-xl border border-line bg-panel">
                   <div className="relative h-40 overflow-hidden rounded-t-xl border-b border-line bg-surface">
                     {makerspace.cover_image_url ? (
                       <img src={makerspace.cover_image_url} alt={`${makerspace.name} cover`} loading="lazy" className="h-full w-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0" />
-                    ) : <div className="blueprint-bg h-full w-full" />}
+                    ) : <div className="bg-surface h-full w-full" />}
                     <span className="absolute left-3 top-3 chip chip-available"><span className="h-2 w-2 rounded-full bg-bg" /> Public</span>
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col p-card-padding p-5">

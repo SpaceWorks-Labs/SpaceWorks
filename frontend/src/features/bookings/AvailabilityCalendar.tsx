@@ -33,7 +33,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
   const availability = usePublicAvailability(makerspaceSlug, publicToken, window.startsAt, window.endsAt);
 
   return (
-    <section className="rounded-lg border border-brand bg-brand/10 p-4" aria-labelledby={"availability-" + publicToken}>
+    <section className="rounded-lg border border-brand bg-brand-soft p-4" aria-labelledby={"availability-" + publicToken}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 id={"availability-" + publicToken} className="title-section">Published availability</h3>
@@ -64,7 +64,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
       {availability.data?.availability?.length ? (
         <ul className="mt-3 grid gap-2">
           {availability.data.availability.map((interval) => (
-            <li className="rounded-lg border border-success bg-success/15 px-3 py-2 text-sm text-ink" key={interval.starts_at + interval.ends_at}>
+            <li className="rounded-lg border border-success bg-success-soft px-3 py-2 text-sm text-ink" key={interval.starts_at + interval.ends_at}>
               <time className="tabular-nums" dateTime={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</time>
               {interval.booker_name !== null ? <span className="ml-2 font-semibold">{interval.booker_name}</span> : null}
             </li>

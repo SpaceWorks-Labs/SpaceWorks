@@ -63,7 +63,7 @@ export function BorrowRequestCard({
             Selected equipment
           </h2>
         </div>
-        <span className="rounded-lg border border-brand bg-brand/15 px-3 py-1 text-sm font-semibold text-brand-ink">
+        <span className="rounded-lg border border-brand bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-ink">
           {totalItems}
         </span>
       </div>
@@ -159,7 +159,7 @@ export function BorrowRequestCard({
           />
         </label>
         <button
-          className="desk-button-brand w-full disabled:cursor-not-allowed disabled:opacity-50"
+          className="desk-button-brand w-full disabled:cursor-not-allowed"
           disabled={!canSubmit}
           type="button"
           onClick={onSubmit}
@@ -168,7 +168,7 @@ export function BorrowRequestCard({
         </button>
         {submitError ? <Notice tone="danger" text={submitError} /> : null}
         {submitted ? (
-          <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success/15 dark:text-success-ink">
+          <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success-soft dark:text-success-ink">
             <h3 className="title-section text-on-success dark:text-success-ink">Request submitted</h3>
             {accountLess ? (
               <>
@@ -198,6 +198,6 @@ function Notice({ text, tone }: { text: string; tone: "danger" | "success" }) {
   const colors =
     tone === "success"
       ? "border-success bg-success text-on-success"
-      : "border-danger/40 bg-danger/10 text-danger";
+      : "border-danger/40 bg-panel text-danger";
   return <p className={`rounded-lg border px-3 py-2 text-sm ${colors}`}>{text}</p>;
 }

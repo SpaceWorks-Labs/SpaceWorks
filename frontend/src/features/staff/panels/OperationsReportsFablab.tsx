@@ -65,10 +65,10 @@ export function OperationsReportsFablab({
 function HealthState({ label, enabled, available }: { label: string; enabled: boolean; available: boolean }) {
   const state = !enabled ? "Module disabled" : available ? "Available" : "Data unavailable";
   const tones: Record<string, string> = {
-    Events: "border-accent bg-accent/15",
+    Events: "border-accent bg-accent-soft",
     Bookings: "border-line bg-accent-soft",
-    Machines: "border-success bg-success/15",
-    Maintenance: "border-warn bg-warn/15",
+    Machines: "border-success bg-success-soft",
+    Maintenance: "border-warn bg-warn-soft",
   };
   return <div className={`rounded-md border px-3 py-2 ${tones[label] ?? "border-line bg-bg"}`}><span className="font-semibold text-ink">{label}</span><span className="ml-2 text-muted">{state}</span></div>;
 }

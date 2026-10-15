@@ -64,7 +64,7 @@ export function MemberReferrals({
           {isReferring ? "Sending…" : "Send referral"}
         </button>
       </form>
-      {referralSuccess ? <p className="mt-3 text-sm text-success" role="status">{referralSuccess}</p> : null}
+      {referralSuccess ? <p className="mt-3 text-sm text-success-ink" role="status">{referralSuccess}</p> : null}
       {referralError ? <p className="mt-3 text-sm text-danger" role="alert">{referralError.message}</p> : null}
     </section> : null}
 
@@ -77,7 +77,7 @@ export function MemberReferrals({
       {emailVerified !== false && invitations.length ? <ul className="mt-3 space-y-3">
         {invitations.map((invitation) => <InvitationApplication key={invitation.id} invitation={invitation} schema={invitation.is_staff ? null : applicationSchema ?? null} admissionMode={admissionMode} pending={claimingId === invitation.id} onClaim={onClaim} />)}
       </ul> : null}
-      {claimSuccess ? <p className="mt-3 text-sm text-success" role="status">{claimSuccess}</p> : null}
+      {claimSuccess ? <p className="mt-3 text-sm text-success-ink" role="status">{claimSuccess}</p> : null}
       {claimError ? <p className="mt-3 text-sm text-danger" role="alert">{claimError.message}</p> : null}
     </section>
   </div>;

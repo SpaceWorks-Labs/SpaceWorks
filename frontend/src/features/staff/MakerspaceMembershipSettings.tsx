@@ -57,7 +57,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
     {admissionEnabled ? <MembershipAdmissionSettings makerspaceId={makerspace.id} /> : <div className="min-w-0 rounded-md border border-line bg-bg p-4">
       <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
-          <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-semibold text-ink">Membership joining</h3><Badge tone={membershipPolicy === "invite_only" ? "neutral" : "success"}>{membershipPolicyLabel(membershipPolicy)}</Badge></div>
+          <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold text-ink">Membership joining</h3><Badge tone={membershipPolicy === "invite_only" ? "neutral" : "success"}>{membershipPolicyLabel(membershipPolicy)}</Badge></div>
           <p className="text-sm text-muted">Choose whether people join immediately, request approval, or need an invitation. This only controls self-join; manager invitations remain available.</p>
           {updateMembershipPolicy.error ? <p className="text-sm text-danger" role="alert">{updateMembershipPolicy.error.message}</p> : null}
         </div>
@@ -69,7 +69,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
     <div className="min-w-0 rounded-md border border-line bg-bg p-4">
       <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
-          <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-semibold text-ink">Member referrals</h3><Badge tone={referralsEnabled ? "success" : "neutral"}>{referralsEnabled ? "On" : "Off"}</Badge></div>
+          <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold text-ink">Member referrals</h3><Badge tone={referralsEnabled ? "success" : "neutral"}>{referralsEnabled ? "On" : "Off"}</Badge></div>
           <p className="text-sm text-muted">Allow eligible active members to invite someone. Individual referral permission is managed in the member roster.</p>
           {updateReferrals.error ? <p className="text-sm text-danger" role="alert">{updateReferrals.error.message}</p> : null}
         </div>
@@ -79,7 +79,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
     {lapsedCannotBorrow !== undefined ? <div className="min-w-0 rounded-md border border-line bg-bg p-4">
       <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
-          <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-semibold text-ink">Lapsed members</h3><Badge tone={lapsedCannotBorrow ? "warn" : "neutral"}>{lapsedCannotBorrow ? "Cannot borrow" : "Can borrow"}</Badge></div>
+          <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold text-ink">Lapsed members</h3><Badge tone={lapsedCannotBorrow ? "warn" : "neutral"}>{lapsedCannotBorrow ? "Cannot borrow" : "Can borrow"}</Badge></div>
           <p className="text-sm text-muted">When on, a member whose plan term has expired or was cancelled cannot submit borrow requests until a new term is started.</p>
           {updateLapsed.error ? <p className="text-sm text-danger" role="alert">{updateLapsed.error.message}</p> : null}
         </div>
@@ -89,7 +89,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
     <div className="min-w-0 rounded-md border border-line bg-bg p-4">
       <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
-          <h3 className="text-base font-semibold text-ink">Membership dues</h3>
+          <h3 className="text-base font-extrabold text-ink">Membership dues</h3>
           <p className="text-sm text-muted">Set the amount charged when a membership is activated. Use 0 for no charge.</p>
           {updateDues.error ? <p className="text-sm text-danger" role="alert">{updateDues.error.message}</p> : null}
         </div>

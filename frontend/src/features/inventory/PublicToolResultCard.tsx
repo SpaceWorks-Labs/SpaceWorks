@@ -7,7 +7,7 @@ function formatStatus(status: string) {
 
 export function ResultCard({ result }: { result: PublicToolLoanResult }) {
   return (
-    <div className="rounded-xl border border-success bg-success px-3 py-3 text-on-success dark:bg-success/15 dark:text-success-ink">
+    <div className="rounded-xl border border-success bg-success px-3 py-3 text-on-success dark:bg-success-soft dark:text-success-ink">
       <p className="eyebrow text-on-success dark:text-success-ink">
         {formatStatus(result.status)}
       </p>

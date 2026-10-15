@@ -137,7 +137,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
           <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
             <div className="grid min-w-0 max-w-2xl gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-semibold text-ink">Superadmin access</h3>
+                <h3 className="text-base font-extrabold text-ink">Superadmin access</h3>
                 <Badge tone={superadminAccessEnabled ? "success" : "warn"}>
                   {superadminAccessEnabled ? "On" : "Off"}
                 </Badge>
@@ -170,7 +170,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
           <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
             <div className="grid min-w-0 max-w-2xl gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-semibold text-ink">Staff email notifications</h3>
+                <h3 className="text-base font-extrabold text-ink">Staff email notifications</h3>
                 <Badge tone={staffNotificationsEnabled ? "success" : "neutral"}>
                   {staffNotificationsEnabled ? "On" : "Off"}
                 </Badge>
@@ -203,7 +203,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
           <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] md:items-start">
             <div className="grid min-w-0 max-w-2xl gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-semibold text-ink">Public print status recovery</h3>
+                <h3 className="text-base font-extrabold text-ink">Public print status recovery</h3>
                 <Badge tone={publicPrintStatusLookupPolicy === "token_only" ? "neutral" : "success"}>
                   {statusLookupLabel(publicPrintStatusLookupPolicy)}
                 </Badge>
@@ -250,7 +250,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
           canManageMakerspace={canManageMakerspace}
         />
         <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-          <h3 className="text-base font-semibold text-ink">Notification channels</h3>
+          <h3 className="text-base font-extrabold text-ink">Notification channels</h3>
           <NotificationMuteMatrix makerspaceId={makerspace.id} />
           <NotificationRecipientPicker makerspaceId={makerspace.id} />
           <NotificationDestinations

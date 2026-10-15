@@ -61,11 +61,11 @@ export function CatalogSidebar({
   const itemClass = (active: boolean) =>
     active
       ? "desk-nav-item desk-nav-item-active shrink-0 whitespace-nowrap border-brand bg-brand text-on-brand hover:border-brand hover:bg-brand hover:text-on-brand lg:shrink lg:whitespace-normal"
-      : "desk-nav-item shrink-0 whitespace-nowrap hover:border-brand hover:bg-brand/15 lg:shrink lg:whitespace-normal";
+      : "desk-nav-item shrink-0 whitespace-nowrap hover:border-brand hover:bg-brand-soft lg:shrink lg:whitespace-normal";
   const countClass = (active: boolean) =>
     active
-      ? "ml-2 tabular-nums text-xs text-on-brand/80"
-      : "ml-2 rounded-full bg-warn px-1.5 tabular-nums text-xs text-on-warn dark:bg-warn/15 dark:text-warn-ink";
+      ? "ml-2 tabular-nums text-xs text-on-brand"
+      : "ml-2 rounded-full bg-warn px-1.5 tabular-nums text-xs text-on-warn dark:bg-warn-soft dark:text-warn-ink";
 
   return (
     <Card

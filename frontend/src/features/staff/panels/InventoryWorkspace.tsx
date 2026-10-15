@@ -195,7 +195,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const columns: DataTableColumn<AdminProduct>[] = [
     { key: "image", header: "", render: (product) => (
       <div className="h-10 w-10 overflow-hidden rounded-lg border border-line bg-surface">
-        {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-cover" /> : <div className="blueprint-bg h-full w-full" />}
+        {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-cover" /> : <div className="bg-surface h-full w-full" />}
       </div>
     ) },
     { key: "name", header: "Name", sortable: true, render: (product) => <button type="button" className="desk-button-ghost justify-start text-left" onClick={() => openEdit(product)}>{product.name}</button> },

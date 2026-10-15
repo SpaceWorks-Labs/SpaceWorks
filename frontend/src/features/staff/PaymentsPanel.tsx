@@ -198,7 +198,7 @@ export function PaymentsPanel({ makerspaceId, actorActions = [], isSuperadmin = 
         />
       ) : null}
       {amend.error ? <p role="alert" className="mb-3 text-sm text-danger">{amend.error.message}</p> : null}
-      {conflict ? <p role="alert" className="my-3 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">{conflict}</p> : null}
+      {conflict ? <p role="alert" className="my-3 rounded-md border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">{conflict}</p> : null}
       {payments.error && !payments.data ? <p className="mb-3 text-sm text-danger">{payments.error.message}</p> : null}
       {mutation.error && !conflict ? <p role="alert" className="mb-3 text-sm text-danger">{mutation.error.message}</p> : null}
       <DataTable

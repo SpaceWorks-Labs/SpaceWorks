@@ -14,7 +14,7 @@ export function AnnouncementFeed({ makerspaceId }: { makerspaceId: number }) {
     {feed.isLoading ? <p role="status">Loading announcements…</p> : null}
     {feed.error ? <p role="alert" className="text-danger">{feed.error.message}</p> : null}
     {feed.data?.results.length === 0 ? <p className="text-sm text-muted">No announcements.</p> : null}
-    <ul className="mt-3 grid gap-3">{feed.data?.results.map((row) => <li key={row.id} className="rounded-lg border border-line p-3"><h3 className="font-semibold">{row.title}</h3><p className="mt-1 whitespace-pre-wrap text-sm">{row.summary}</p></li>)}</ul>
+    <ul className="mt-3 grid gap-3">{feed.data?.results.map((row) => <li key={row.id} className="rounded-lg border border-line p-3"><h3 className="font-extrabold">{row.title}</h3><p className="mt-1 whitespace-pre-wrap text-sm">{row.summary}</p></li>)}</ul>
     {feed.data?.next || feed.data?.previous ? <div className="mt-3 flex gap-2"><button className="desk-button" disabled={!feed.data.previous || feed.isFetching} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!feed.data.next || feed.isFetching} onClick={() => setPage(page + 1)}>Next</button></div> : null}
   </section>;
 }

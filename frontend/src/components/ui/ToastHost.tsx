@@ -22,7 +22,7 @@ export function ToastHost() {
   return <>
     <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
     <aside aria-label="Notifications" className="fixed bottom-24 right-4 z-50 grid max-h-[60vh] w-[min(24rem,calc(100vw-2rem))] gap-2 overflow-y-auto">
-      {rows.map(row => <div key={row.id} className="desk-panel p-4">
+      {rows.map(row => <div key={row.id} className="desk-panel shadow-overlay p-4">
         <p className={`text-sm ${row.tone === "error" ? "text-danger" : "text-ink"}`}>{row.message}</p>
         <div className="mt-2 flex gap-2">
           {row.undo ? <button className="desk-button" type="button" disabled={row.busy} onClick={() => void undoToast(row.id)}>{row.busy ? "Undoing…" : "Undo"}</button> : null}

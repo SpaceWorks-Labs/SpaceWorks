@@ -1,27 +1,39 @@
-"""WCAG sRGB maths and the public/member brand-colour contract.
+"""Accessible tenant brand tokens; keep in sync with lib/brandColours.ts.
 
-Keep in sync with frontend/src/lib/brandColours.ts. The stored fill is preserved;
-foreground and interaction variants are derived, and link ink adapts to each mode.
+Well-formed tenant colours stay accepted. Derived soft, link and interaction
+colours degrade to safe defaults rather than narrowing the acceptance set.
 """
 
+import re
+
+INK, CREAM = (20, 44, 42), (255, 244, 232)
+BLACK, WHITE = (0, 0, 0), (255, 255, 255)
 SURFACES = {
-    "light": ((250, 249, 244), (239, 238, 233), (255, 255, 255)),
-    "dark": ((22, 22, 28), (38, 40, 51), (29, 30, 38)),
+    "light": ((255, 244, 232), (246, 236, 224), (255, 255, 255), (239, 230, 219)),
+    "dark": ((20, 44, 42), (27, 50, 48), (34, 56, 53), (46, 66, 63)),
 }
-PRODUCT_FILL = (249, 168, 212)
+PRODUCT_FILL = {
+    "light": (0, 110, 99),
+    "dark": (87, 156, 144),
+}
 BODY_TEXT = {
-    "light": ((31, 46, 53), (92, 103, 112)),
-    "dark": ((236, 234, 242), (154, 160, 173)),
+    "light": ((20, 44, 42), (91, 104, 99)),
+    "dark": ((255, 244, 232), (192, 190, 181)),
 }
 FIXED_INKS = {
-    "light": ((0, 55, 74), (0, 50, 27), (61, 52, 0), (164, 36, 59)),
-    "dark": ((125, 211, 252), (116, 221, 156), (252, 223, 70), (244, 114, 127)),
+    "light": ((0, 110, 99), (83, 109, 73), (105, 104, 52), (81, 105, 123), (185, 28, 28)),
+    "dark": ((163, 196, 184), (223, 255, 143), (255, 212, 71), (181, 205, 255), (252, 165, 165)),
 }
-FIXED_FILLS = ((125, 211, 252), (116, 221, 156), (252, 223, 70))
+FIXED_SOFTS = {
+    "light": ((224, 238, 236), (255, 238, 233), (251, 255, 242), (255, 250, 233), (246, 249, 255)),
+    "dark": ((40, 68, 64), (61, 63, 55), (57, 80, 64), (61, 75, 55), (52, 74, 77)),
+}
 
 
 def rgb(value):
-    digits = value.lstrip("#")
+    if not isinstance(value, str) or not re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", value):
+        return None
+    digits = value[1:]
     if len(digits) == 3:
         digits = "".join(channel * 2 for channel in digits)
     return tuple(int(digits[index:index + 2], 16) for index in (0, 2, 4))
@@ -41,70 +53,55 @@ def contrast(a, b):
 
 
 def blend(a, b, amount, rounded=True):
-    # JS Math.round for nonnegative RGB channels (Python round ties to even).
+    # Match JS Math.round, including half-channel ties.
     channels = tuple(x * (1 - amount) + y * amount for x, y in zip(a, b))
     return tuple(int(channel + .5) for channel in channels) if rounded else channels
 
 
 def derive_palette(theme, mode):
     custom = bool(theme.get("primary_color") or theme.get("accent_color"))
-    fill = rgb(theme["primary_color"]) if theme.get("primary_color") else PRODUCT_FILL
-    foreground = max(((0, 0, 0), (255, 255, 255)), key=lambda color: contrast(color, fill)) if custom else (90, 22, 51)
-    target = (255, 255, 255) if foreground == (0, 0, 0) else (0, 0, 0)
-    hover, active = (blend(fill, target, .08), blend(fill, target, .16)) if custom else (fill, fill)
-    surfaces = SURFACES[mode]
-    # Muted body text also appears inside public/member tint blocks. Reduce the
-    # tint strength rather than altering the product text/status/focus tokens.
-    tint_alphas = []
-    for requested in (.1, .15):
-        for step in range(101):
-            alpha = requested * (1 - step / 100)
-            if all(contrast(text, blend(surface, fill, alpha, False)) >= 4.55
-                   for text in (*BODY_TEXT[mode], *FIXED_INKS[mode]) for surface in surfaces):
-                tint_alphas.append(alpha)
-                break
-    backgrounds = [
-        (f"{name}{suffix}", background)
-        for name, surface in zip(("bg", "surface", "panel"), surfaces)
-        for suffix, background in (
-            ("", surface), ("/10 tint", blend(surface, fill, tint_alphas[0], False)),
-            ("/15 tint", blend(surface, fill, tint_alphas[1], False)),
-        )
-    ]
-    link_backgrounds = backgrounds + [
-        (f"{name} with {label}/15 tint", blend(surface, color, .15, False))
-        for name, surface in zip(("bg", "surface", "panel"), surfaces)
-        for label, color in zip(("accent", "success", "warn"), FIXED_FILLS)
-    ]
-    ink = rgb(theme["accent_color"]) if theme.get("accent_color") else fill
-    if not custom:
-        ink = (90, 22, 51) if mode == "light" else PRODUCT_FILL
-    endpoint = (0, 0, 0) if mode == "light" else (255, 255, 255)
+    fill = rgb(theme.get("primary_color")) or PRODUCT_FILL[mode]
+    foreground = next(color for color in (INK, CREAM, WHITE, BLACK) if contrast(color, fill) >= 4.5)
+    away = INK if luminance(foreground) > .5 else CREAM
+    toward = CREAM if away == INK else INK
+    if contrast(blend(fill, away, .10), fill) < 1.06 and contrast(foreground, blend(fill, toward, .20)) >= 4.5:
+        away = toward
+    hover, active = blend(fill, away, .10), blend(fill, away, .20)
+    # Preserve the old interaction derivation as the owner-approved fallback.
+    fallback = WHITE if luminance(foreground) < .5 else BLACK
+    if contrast(foreground, hover) < 4.5:
+        hover = blend(fill, fallback, .08)
+    if contrast(foreground, active) < 4.5:
+        active = blend(fill, fallback, .16)
+    surfaces, panel = SURFACES[mode], SURFACES[mode][2]
+    texts = (*BODY_TEXT[mode], *FIXED_INKS[mode])
+    soft = panel
     for step in range(101):
-        candidate = blend(ink, endpoint, step / 100)
-        if all(contrast(candidate, background) >= 4.5 for _, background in link_backgrounds):
-            ink = candidate
+        candidate = blend(panel, fill, .12 * (1 - step / 100))
+        if all(contrast(text, candidate) >= 4.55 for text in texts):
+            soft = candidate
             break
-    pairs = []
-    for name, background in (("brand", fill), ("brand-hover", hover), ("brand-active", active)):
-        pairs.append((f"on-brand on {name}", contrast(foreground, background), 4.5))
-        # Existing catalogue counters use text-on-brand/80.
-        counter = tuple(text * .8 + channel * .2 for text, channel in zip(foreground, background))
-        pairs.append((f"on-brand/80 on {name}", contrast(counter, background), 4.5))
-    pairs.extend((f"brand-ink on {name}", contrast(ink, background), 4.5) for name, background in link_backgrounds)
-    pairs.extend((f"{label} on {name}", contrast(text, background), 4.5)
-                 for label, text in zip(("ink", "muted"), BODY_TEXT[mode]) for name, background in backgrounds)
-    pairs.extend((f"{label} on {name}", contrast(text, background), 4.5)
-                 for label, text in zip(("accent-ink", "success-ink", "warn-ink", "danger"), FIXED_INKS[mode])
-                 for name, background in backgrounds)
-    pairs.extend((f"brand boundary on {name}", contrast(ink, surface), 3) for name, surface in zip(("bg", "surface", "panel"), surfaces))
-    return {"fill": fill, "foreground": foreground, "hover": hover, "active": active, "ink": ink, "tint_alphas": tint_alphas, "pairs": pairs}
+    backgrounds = list(zip(("bg", "surface", "panel", "hover"), surfaces)) + [("brand-soft", soft)]
+    backgrounds += list(zip(("accent-soft", "emphasis-soft", "success-soft", "warn-soft", "info-soft"), FIXED_SOFTS[mode]))
+    ink = FIXED_INKS[mode][0]
+    if custom:
+        seed = rgb(theme.get("accent_color")) or fill
+        endpoint = INK if mode == "light" else CREAM
+        for step in range(101):
+            candidate = blend(seed, endpoint, step / 100)
+            if all(contrast(candidate, background) >= 4.5 for _, background in backgrounds):
+                ink = candidate
+                break
+    pairs = [(f"on-brand on {name}", contrast(foreground, background), 4.5)
+             for name, background in (("brand", fill), ("brand-hover", hover), ("brand-active", active))]
+    pairs += [(f"brand-ink on {name}", contrast(ink, background), 4.5) for name, background in backgrounds]
+    pairs += [(f"{name} on brand-soft", contrast(text, soft), 4.5)
+              for name, text in zip(("ink", "muted", "accent-ink", "success-ink", "warn-ink", "info-ink", "danger"), texts)]
+    pairs += [(f"brand boundary on {name}", contrast(ink, background), 3) for name, background in backgrounds[:3]]
+    return {"fill": fill, "foreground": foreground, "hover": hover, "active": active, "soft": soft, "ink": ink, "pairs": pairs}
 
 
 def contrast_failures(theme):
-    return [
-        {"mode": mode, "pair": pair, "ratio": ratio, "minimum": minimum}
-        for mode in SURFACES
-        for pair, ratio, minimum in derive_palette(theme, mode)["pairs"]
-        if ratio < minimum
-    ]
+    return [{"mode": mode, "pair": pair, "ratio": ratio, "minimum": minimum}
+            for mode in SURFACES for pair, ratio, minimum in derive_palette(theme, mode)["pairs"]
+            if ratio < minimum]

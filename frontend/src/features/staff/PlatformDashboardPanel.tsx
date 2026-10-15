@@ -22,11 +22,11 @@ export function PlatformDashboardPanel() {
         <p className="mb-3 text-sm text-muted">Checked {monitoringDate(data.checked_at)}</p>
         <dl className="grid gap-3 sm:grid-cols-3">{Object.entries(data.tenants_by_state).map(([state, count]) => <div key={state} className="rounded-md border border-line p-3"><dt className="capitalize text-muted">{state} tenants</dt><dd className="text-xl font-semibold">{count}</dd></div>)}</dl>
         <div className="my-4 grid gap-4 md:grid-cols-2">
-          <div><h3 className="font-semibold">Backup and offsite</h3><p>Last backup result: {data.backup.status}</p><p>Last success: {monitoringDate(data.backup.last_success_at)}</p><p>Automatic backups: {data.backup.automatic_enabled ? "On" : "Off"}</p>
+          <div><h3 className="font-extrabold">Backup and offsite</h3><p>Last backup result: {data.backup.status}</p><p>Last success: {monitoringDate(data.backup.last_success_at)}</p><p>Automatic backups: {data.backup.automatic_enabled ? "On" : "Off"}</p>
             {data.offsite.length ? data.offsite.map((row) => <p key={row.name}>{row.name}: {row.state.replace(/_/g, " ")} {row.has_error ? "· Needs attention" : ""} · {monitoringDate(row.verified_at)}</p>) : <p>No offsite destinations configured.</p>}
             <Link className="text-accent-ink underline" to="/admin/backup-restore">Backup settings</Link>
           </div>
-          <div><h3 className="font-semibold">Delivery</h3><p>Failed emails: {data.failed_deliveries.email}</p><p>Failed notifications: {data.failed_deliveries.notifications}</p>
+          <div><h3 className="font-extrabold">Delivery</h3><p>Failed emails: {data.failed_deliveries.email}</p><p>Failed notifications: {data.failed_deliveries.notifications}</p>
             <Link className="text-accent-ink underline" to="/admin/platform">Platform settings</Link>
           </div>
         </div>

@@ -79,7 +79,7 @@ export function OrganizationInvitationRedeemPage() {
         ) : null}
         {user && redeem.isPending ? <p className="mt-5 text-sm text-muted">Redeeming invitation...</p> : null}
         {redeem.isSuccess ? (
-          <div className="mt-5 rounded-xl border border-success bg-success/15 p-4 text-success-ink" role="status">
+          <div className="mt-5 rounded-xl border border-success bg-success-soft p-4 text-success-ink" role="status">
             <h2 className="title-section">Invitation redeemed</h2>
             <p className="mt-2 text-sm">Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces.</p>
             <Link className="desk-button-primary mt-4" to="/admin/organizations">Open organizations</Link>

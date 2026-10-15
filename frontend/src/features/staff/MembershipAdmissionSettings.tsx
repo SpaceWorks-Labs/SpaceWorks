@@ -53,7 +53,7 @@ export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: nu
         <NumberField label="Application expiry (days)" value={value.request_expiry_days} min={1} onChange={(next) => update("request_expiry_days", next)} />
       </div>
       {plans.isError ? <p role="alert" className="text-sm text-danger">{plans.error.message}</p> : null}
-      {recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn">Choose a priced default plan or joining fee for this paid recipe.</p> : null}
+      {recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn-ink">Choose a priced default plan or joining fee for this paid recipe.</p> : null}
       <fieldset className="grid gap-3 rounded border border-line p-3"><legend className="text-sm font-semibold text-ink">Vouch rules</legend>
         <p className="text-sm text-muted">Vouchers must be active, unrestricted members. Vouches record accountability without automatically restricting anyone.</p>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -67,7 +67,7 @@ export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: nu
       <CustomFormBuilder value={value.application_schema} onChange={(schema) => update("application_schema", schema)} legend="Membership application questions" emptyMessage="No application questions. Applicants submit their verified account identity." />
     </fieldset>
     <button className="desk-button w-fit" type="submit" disabled={save.isPending}>{save.isPending ? "Saving…" : "Save admission settings"}</button>
-    {save.isSuccess ? <p role="status" className="text-sm text-success">Admission settings saved.</p> : null}
+    {save.isSuccess ? <p role="status" className="text-sm text-success-ink">Admission settings saved.</p> : null}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
   </form>;
 }

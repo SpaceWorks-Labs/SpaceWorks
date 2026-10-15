@@ -14,10 +14,10 @@ type DirectoryEntry = {
 type Directory = { members: DirectoryEntry[]; hidden_count: number };
 
 const IDENTITY_TONES = [
-  { border: "border-accent", surface: "bg-accent/15", ink: "text-accent-ink" },
-  { border: "border-brand", surface: "bg-brand/15", ink: "text-brand-ink" },
-  { border: "border-success", surface: "bg-success/15", ink: "text-success-ink" },
-  { border: "border-warn", surface: "bg-warn/15", ink: "text-warn-ink" },
+  { border: "border-accent", surface: "bg-accent-soft", ink: "text-accent-ink" },
+  { border: "border-brand", surface: "bg-brand-soft", ink: "text-brand-ink" },
+  { border: "border-success", surface: "bg-success-soft", ink: "text-success-ink" },
+  { border: "border-warn", surface: "bg-warn-soft", ink: "text-warn-ink" },
 ] as const;
 
 function identityTone(identity: string | number) {

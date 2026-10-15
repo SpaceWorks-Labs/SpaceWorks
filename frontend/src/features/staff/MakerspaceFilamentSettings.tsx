@@ -56,7 +56,7 @@ export function MakerspaceFilamentSettings({ makerspace, settings, loading }: Pr
       >
         <div className="grid min-w-0 max-w-2xl gap-2 md:items-start">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Filament low-stock threshold</h3>
+            <h3 className="text-base font-extrabold text-ink">Filament low-stock threshold</h3>
             <Badge tone={currentNumber > 0 ? "success" : "neutral"}>
               {currentNumber > 0 ? `${currentThreshold}g` : "Off"}
             </Badge>

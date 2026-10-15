@@ -25,7 +25,7 @@ export function TenantMigrationPanel({ makerspace }: { makerspace: Makerspace })
   return (
     <Panel title="Tenant migration">
       <div className="grid gap-4">
-        <div className="rounded-md border border-danger/40 bg-danger/10 p-4">
+        <div className="rounded-md border border-danger/40 bg-panel p-4">
           <p className="eyebrow text-danger">Superadmin-only irreversible workflow</p>
           <p className="mt-2 text-sm text-ink">
             Move one makerspace from a managed deployment to a self-hosted deployment. Review

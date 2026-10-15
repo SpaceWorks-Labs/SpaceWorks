@@ -217,12 +217,12 @@ export function PrintDetailsForm({
 
         {uploadProgress ? <p className="text-sm text-muted">{uploadProgress}</p> : null}
         {submitError ? (
-          <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p className="rounded-lg border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">
             {submitError.message}
           </p>
         ) : null}
         <button
-          className="desk-button-brand w-full disabled:cursor-not-allowed disabled:opacity-50"
+          className="desk-button-brand w-full disabled:cursor-not-allowed"
           disabled={
             !form.title.trim() ||
             submitPending

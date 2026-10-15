@@ -54,7 +54,7 @@ export function OperationsReportExports({
       <Panel title="Exports">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {reports.map((definition) => (
-            <div key={definition.key} className={`rounded-md border p-3 ${selectedReport === definition.key ? "border-accent bg-accent/10" : "border-line bg-bg"}`}>
+            <div key={definition.key} className={`rounded-md border p-3 ${selectedReport === definition.key ? "border-accent bg-accent-soft" : "border-line bg-bg"}`}>
               <h3 className="title-section">{definition.title}</h3>
               <div className="mt-3 flex gap-2">
                 {reportFormats(definition).map((format) => (
@@ -67,7 +67,7 @@ export function OperationsReportExports({
           ))}
         </div>
         {exportReport.error ? (
-          <p className="mt-3 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p className="mt-3 rounded-md border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">
             {exportReport.error instanceof Error ? exportReport.error.message : "Could not export report."}
           </p>
         ) : null}

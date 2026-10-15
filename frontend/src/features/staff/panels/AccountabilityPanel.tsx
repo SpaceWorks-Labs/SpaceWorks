@@ -92,7 +92,7 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
 
       {!section ? <><Panel title="Repeat offenders">
         {anonymous && anonymous.total_issues > 0 ? (
-          <div className="mb-4 rounded-xl border border-warn bg-warn/10 px-3 py-2">
+          <div className="mb-4 rounded-xl border border-warn bg-warn-soft px-3 py-2">
             <p className="text-sm font-medium text-ink">
               Account-less loans: {anonymous.total_issues}{" "}
               {anonymous.total_issues === 1 ? "incident" : "incidents"} ({anonymous.total_quantity}{" "}

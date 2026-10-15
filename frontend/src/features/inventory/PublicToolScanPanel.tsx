@@ -14,7 +14,7 @@ type PublicToolScanPanelProps = {
 
 function LoanResult({ loan }: { loan: PublicToolLoan }) {
   return (
-    <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success/15 dark:text-success-ink">
+    <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success-soft dark:text-success-ink">
       <h3 className="title-section capitalize text-on-success dark:text-success-ink">
         {loan.status.replace(/_/g, " ")}: {loan.items.map((item) => item.product_name).join(", ") || "Tool loan"}
       </h3>
@@ -100,7 +100,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
         Scan QR with camera
       </button>
       {scannedToken ? (
-        <p className="mt-2 inline-flex items-center gap-2 rounded-lg border border-success bg-success px-3 py-1 text-sm font-semibold text-on-success dark:bg-success/15 dark:text-success-ink">
+        <p className="mt-2 inline-flex items-center gap-2 rounded-lg border border-success bg-success px-3 py-1 text-sm font-semibold text-on-success dark:bg-success-soft dark:text-success-ink">
           Scanned OK
           <button
             type="button"
@@ -124,7 +124,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
             />
           </div>
           <button
-            className="desk-button-brand mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
+            className="desk-button-brand mt-3 w-full disabled:cursor-not-allowed"
             disabled={checkoutDisabled || checkout.isPending}
             type="button"
             onClick={() => checkout.mutate()}
@@ -174,7 +174,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
             </label>
           ) : null}
           <button
-            className="desk-button mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
+            className="desk-button mt-3 w-full disabled:cursor-not-allowed"
             disabled={returnDisabled || returnTool.isPending}
             type="button"
             onClick={() => returnTool.mutate()}
@@ -184,7 +184,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
         </section>
       </div>
       {error ? (
-        <p className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p className="mt-3 rounded-lg border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">
           {error}
         </p>
       ) : null}

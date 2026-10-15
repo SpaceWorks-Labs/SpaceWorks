@@ -132,7 +132,7 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
               return (
                 <button
                   aria-pressed={selected}
-                  className={`desk-button relative grid h-auto min-h-11 items-stretch justify-stretch gap-0 overflow-hidden bg-bg p-0 text-left ${focusRing} ${selected ? "border-2 border-accent shadow-soft" : "border border-line"}`}
+                  className={`desk-button relative grid h-auto min-h-11 items-stretch justify-stretch gap-0 overflow-hidden bg-bg p-0 text-left ${focusRing} ${selected ? "border-2 border-accent " : "border border-line"}`}
                   key={normaliseName(name)}
                   type="button"
                   onClick={() => onSelect(name, hex)}

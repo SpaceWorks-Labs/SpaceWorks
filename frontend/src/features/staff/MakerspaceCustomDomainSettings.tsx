@@ -118,7 +118,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
         <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div className="grid min-w-0 max-w-2xl gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-ink">Custom domain</h3>
+              <h3 className="text-base font-extrabold text-ink">Custom domain</h3>
               <Badge tone={isSelfHostActive ? "success" : domainStatusTone(status)}>
                 {isSelfHostActive ? "Active" : domainStatusLabel(status)}
               </Badge>

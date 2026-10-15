@@ -174,7 +174,7 @@ export function StockTransferPanel({
     <Panel title="Stock transfers">
       <div className="grid gap-4">
         {!canCreate ? (
-          <p className="rounded-md border border-line bg-warn px-3 py-2 text-sm text-on-warn dark:bg-warn/15 dark:text-warn-ink">
+          <p className="rounded-md border border-line bg-warn px-3 py-2 text-sm text-on-warn dark:bg-warn-soft dark:text-warn-ink">
             Transfers are managed by inventory staff. This view is read-only.
           </p>
         ) : (
@@ -242,7 +242,7 @@ export function StockTransferPanel({
               <input className="desk-input w-full" value={reason} placeholder="Why is this stock moving?" onChange={(event) => setReason(event.target.value)} />
             </Field>
             {isCrossMakerspace ? (
-              <p className="mt-4 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent-ink">
+              <p className="mt-4 rounded-md border border-accent/40 bg-accent-soft px-3 py-2 text-sm text-accent-ink">
                 Inter-makerspace transfer: the chosen quantity is deducted from this makerspace and
                 credited to a matching product in the destination makerspace (created there if
                 needed, kept private until it opts in). Only available stock can move; individual

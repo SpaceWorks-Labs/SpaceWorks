@@ -62,7 +62,7 @@ export function TenantMigrationPairings({ pairings, active = true }: { pairings:
           <p className="mt-1 break-all code-text text-xs text-muted">Age recipient: {identity.data.age_recipient}</p>
           <label className="mt-2 block text-sm font-semibold text-ink">
             This deployment identity JSON
-            <textarea className="desk-input mt-1 min-h-32 w-full code-text text-xs" readOnly value={JSON.stringify(localPairingIdentity, null, 2)} />
+            <textarea className="desk-input mt-1 min-h-32 w-full code-text text-base md:text-xs" readOnly value={JSON.stringify(localPairingIdentity, null, 2)} />
           </label>
           <button className="desk-button mt-2" type="button" onClick={() => setSourceText(JSON.stringify(localPairingIdentity, null, 2))}>Use this deployment as source</button>
         </div>
@@ -70,14 +70,14 @@ export function TenantMigrationPairings({ pairings, active = true }: { pairings:
       {identity.isLoading ? <p className="mt-3 text-sm text-muted">Loading this deployment identity…</p> : null}
       <ErrorText error={identity.error} />
 
-      <div className="mt-3 grid gap-3 md:grid-cols-3">
+      <div className="mt-3 grid gap-3 @2xl:grid-cols-3">
         <label className="text-sm text-ink">Migration/import job ID<input className="desk-input mt-1 w-full code-text" value={migrationId} onChange={(event) => setMigrationId(event.target.value)} /></label>
         <label className="text-sm text-ink">Source tenant ID<input className="desk-input mt-1 w-full code-text" value={sourceTenantId} onChange={(event) => setSourceTenantId(event.target.value)} /></label>
         <label className="text-sm text-ink">Archive digest<input className="desk-input mt-1 w-full code-text" value={archiveDigest} onChange={(event) => setArchiveDigest(event.target.value)} /></label>
       </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <label className="text-sm text-ink">Source deployment identity JSON<textarea className="desk-input mt-1 min-h-40 w-full code-text text-xs" value={sourceText} onChange={(event) => setSourceText(event.target.value)} /></label>
-        <label className="text-sm text-ink">Target deployment identity JSON<textarea className="desk-input mt-1 min-h-40 w-full code-text text-xs" value={effectiveTarget} onChange={(event) => setTargetText(event.target.value)} /></label>
+      <div className="mt-3 grid gap-3 @xl:grid-cols-2">
+        <label className="text-sm text-ink">Source deployment identity JSON<textarea className="desk-input mt-1 min-h-40 w-full code-text text-base md:text-xs" value={sourceText} onChange={(event) => setSourceText(event.target.value)} /></label>
+        <label className="text-sm text-ink">Target deployment identity JSON<textarea className="desk-input mt-1 min-h-40 w-full code-text text-base md:text-xs" value={effectiveTarget} onChange={(event) => setTargetText(event.target.value)} /></label>
       </div>
       <button className="desk-button-primary mt-3" type="button" disabled={!migrationId.trim() || !sourceTenantId.trim() || !archiveDigest.trim() || !sourceText.trim() || !effectiveTarget.trim() || create.isPending} onClick={submit}>
         {create.isPending ? "Pinning identities…" : "Pin this deployment pairing"}

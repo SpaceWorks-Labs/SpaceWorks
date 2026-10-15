@@ -68,7 +68,9 @@ class EventWriteSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, Mapping):
             return super().to_internal_value(data)
-        unknown = set(data) - set(self.fields)
+        # Preserve DRF's read-only-field behavior for these server-owned values.
+        # They are ignored and never enter validated_data or transition services.
+        unknown = set(data) - set(self.fields) - {"status", "makerspace", "created_by"}
         if unknown:
             raise serializers.ValidationError({key: "Unexpected field." for key in unknown})
         return super().to_internal_value(data)

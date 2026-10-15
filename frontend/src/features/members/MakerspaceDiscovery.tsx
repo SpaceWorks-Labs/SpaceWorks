@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { EmptyState, ListRow, StatusPill } from "../../components/ui";
 import { fetchPublicMakerspaces } from "../inventory/api";
-import { tenantPath, useTenant } from "../../lib/tenant";
+import { tenantPath, useOptionalTenant } from "../../lib/tenant";
 
 type SpaceRef = { makerspace: { slug: string } };
 
@@ -15,10 +15,10 @@ type SpaceRef = { makerspace: { slug: string } };
 export function MakerspaceDiscovery({ currentSlug, memberships = [], requests = [] }: {
   currentSlug: string; memberships?: (SpaceRef & { membership_status: string })[]; requests?: (SpaceRef & { state: string })[];
 }) {
-  const tenant = useTenant();
+  const central = useOptionalTenant()?.mode === "central";
   const [query, setQuery] = useState("");
-  const spaces = useQuery({ queryKey: ["public", "makerspaces"], queryFn: fetchPublicMakerspaces, enabled: tenant.mode === "central", staleTime: 5 * 60_000 });
-  if (tenant.mode !== "central") return null;
+  const spaces = useQuery({ queryKey: ["public", "makerspaces"], queryFn: fetchPublicMakerspaces, enabled: central, staleTime: 5 * 60_000 });
+  if (!central) return null;
   const others = (spaces.data ?? []).filter(space => space.slug !== currentSlug);
   const needle = query.trim().toLocaleLowerCase();
   const shown = needle ? others.filter(space => `${space.name} ${space.location ?? ""}`.toLocaleLowerCase().includes(needle)) : others;

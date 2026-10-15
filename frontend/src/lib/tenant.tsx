@@ -116,6 +116,11 @@ export function useTenant() {
   return value;
 }
 
+/** The tenant context, or null outside a TenantProvider (optional surfaces render nothing). */
+export function useOptionalTenant() {
+  return useContext(TenantContext);
+}
+
 export function tenantPath(mode: "central" | "single", slug: string, subpath = "") {
   const cleanSubpath = subpath.replace(/^\/+/, "");
   if (mode === "single") {

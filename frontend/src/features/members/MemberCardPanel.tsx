@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { Callout, EmptyState, StatusPill, TicketCard, Icon } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { CardPhotoUpload } from "./memberCard/CardPhotoUpload";
 import { OfflineCardSave } from "./memberCard/OfflineCardSave";
@@ -8,7 +9,7 @@ import { useCardPreview, useMyMemberCard, useRenameCard } from "./memberCard/api
 
 /** The member's own ID card: the printed name they control, their photo, and a
  *  watermarked preview of what the front desk will print. */
-export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }: { makerspaceId: number; spaceName?: string }) {
+export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", compact = false, cardHref = "/member/account-portal?section=card" }: { makerspaceId: number; spaceName?: string; compact?: boolean; cardHref?: string }) {
   const card = useMyMemberCard(makerspaceId);
   const rename = useRenameCard(makerspaceId);
   const preview = useCardPreview(makerspaceId);
@@ -33,7 +34,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
     return (
       <section className="desk-panel p-5">
         <h2 className="title-panel">Your member card</h2>
-        <p className="mt-1 text-sm text-muted">No card issued yet — ask the front desk.</p>
+        <EmptyState message="No card issued yet. Ask the front desk for your member card." />
       </section>
     );
   }
@@ -54,13 +55,15 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
 
   return (
     <section className="desk-panel p-5">
-      <h2 className="title-panel">Your member card</h2>
-      <p className="eyebrow mt-2">
-        <span className="tabular-nums">{row.card_number}</span> ·{" "}
-        {row.is_active ? "active" : "revoked"} · printed {row.print_count}{" "}
-        {row.print_count === 1 ? "time" : "times"}
-      </p>
-
+      <TicketCard organisation={spaceName} title={row.printed_name} fields={[
+        { label: "Card number", value: <span className="tabular-nums">{row.card_number}</span> },
+        { label: "Status", value: <StatusPill label={row.is_active ? "Active" : "Revoked"} tone={row.is_active ? "success" : "danger"} /> },
+        { label: "Printed", value: `${row.print_count} ${row.print_count === 1 ? "time" : "times"}` },
+        { label: "Issued", value: new Date(row.issued_at).toLocaleDateString() },
+      ]} qr={row.is_active && row.qr_active && row.qr_image ? <img src={row.qr_image} alt="Your member card QR code" /> : <div className="flex h-full items-center justify-center rounded-xl bg-surface"><Icon name="User" className="h-16 w-16 text-muted" /></div>}
+        caption={row.is_active ? "Your member card · ask the front desk to scan your printed card." : "This card is no longer valid."} />
+      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead="This card was revoked." body="Ask staff for a new one." /></div> : null}
+      {!compact ? <>
       <label className="mt-4 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
         Name printed on the card
       </label>
@@ -110,6 +113,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
         consentAt={row.photo_consent_at}
       />
       <OfflineCardSave card={row} space={spaceName} checkedAt={card.dataUpdatedAt} />
+      </> : <a className="desk-button mt-4" href={cardHref}>View your member card</a>}
     </section>
   );
 }

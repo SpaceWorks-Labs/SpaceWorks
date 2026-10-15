@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Callout } from "../../components/ui";
 import { CameraCapture } from "../../components/ui/CameraCapture";
 import { enqueueCommand } from "./offlineQueueStore";
 import { normalizeEvidence } from "./offlineEvidence";
@@ -59,7 +60,7 @@ export function KioskOfflineHandover({ queue, onChange, retry, acknowledge }: {
   }
 
   return <div className="grid gap-4">
-    <p className="text-sm text-muted">Continue only a loaded handover. Work is Queued until the server confirms it.</p>
+    <Callout size="panel" tone="warn" lead="Handovers stay encrypted on this device." body="Continue only a loaded handover. Work is queued until the server confirms it, and syncs when you reconnect." action={{ label: "Retry now", onClick: retry }} />
     <form className="grid gap-3" onSubmit={capture}>
       <label className="grid gap-1 text-sm">Loaded handover<select className="desk-input" value={selected} disabled={busy} onChange={(event) => { setSelected(event.target.value); setPhoto(null); setBox(""); setRemark(""); }}>
         {queue.works.map((item) => <option key={item.id} value={item.id}>{item.work.display_label}</option>)}
@@ -76,6 +77,7 @@ export function KioskOfflineHandover({ queue, onChange, retry, acknowledge }: {
         <label className="grid gap-1 text-sm">Remark<input className="desk-input" required={returning} disabled={busy} value={remark} onChange={(event) => setRemark(event.target.value)} /></label>
         <KitChecklistCapture checklist={kits} />
       </> : null}
+      <p className="text-sm text-muted">{operation !== "assign_box" && !photo ? "Add the evidence photo to continue." : returning && !remark.trim() ? "Add a return remark to continue." : !kits.ready ? "Check every kit part to continue." : "Review the handover before queuing it."}</p>
       <button type="submit" className="desk-button-primary" disabled={busy || !kits.ready || !allowed.includes(operation) || (operation !== "assign_box" && !photo)}>{busy ? "Encrypting capture…" : "Queue handover"}</button>
     </form>
     <CameraCapture open={camera} onClose={() => setCamera(false)} onCapture={(file) => { setPhoto(file); setCamera(false); }} label="Handover evidence" />

@@ -1,3 +1,4 @@
+import { SettingsActions } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -109,19 +110,19 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
         Nothing here is shown to other members until you publish it.
       </p>
 
-      <label className="mt-4 flex items-center gap-2 text-sm text-ink">
+      <label className="mt-4 flex min-h-11 items-center gap-2 text-sm text-ink">
         <input
           type="checkbox"
-          className="h-4 w-4"
+          className="h-5 w-5"
           checked={draft.is_visible}
           onChange={(event) => patch({ is_visible: event.target.checked })}
         />
         Show my profile in this makerspace&apos;s member directory
       </label>
-      <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+      <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
         <input
           type="checkbox"
-          className="h-4 w-4"
+          className="h-5 w-5"
           checked={draft.show_attended_events}
           onChange={(event) => patch({ show_attended_events: event.target.checked })}
         />
@@ -232,14 +233,12 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           {save.error instanceof Error ? save.error.message : "Could not save."}
         </p>
       ) : null}
-      <button
-        className="desk-button-brand mt-4"
-        type="button"
-        disabled={save.isPending}
-        onClick={() => save.mutate()}
-      >
-        {save.isPending ? "Saving…" : "Save profile"}
-      </button>
+      {dirty || save.isPending ? <SettingsActions pending={save.isPending} onSave={() => save.mutate()} onDiscard={() => {
+        if (!profile.data) return;
+        setDirty(false); setDraft(profile.data); setInterests(tagsToText(profile.data.interests));
+        setLanguages(tagsToText(profile.data.languages)); setProjects(profile.data.projects.map(project => ({ ...project })));
+        save.reset();
+      }} /> : null}
     </section>
   );
 }

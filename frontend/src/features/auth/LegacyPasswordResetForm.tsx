@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
+import { CenteredCardLayout } from "../../components/layouts";
 import { NewPasswordFields } from "./NewPasswordFields";
 import { CONFIRM_FAILURE_MESSAGE, confirmLegacyPasswordReset } from "./passwordRecovery";
 
@@ -14,7 +12,6 @@ export function LegacyPasswordResetForm({ uid, token }: { uid: string; token: st
   const canSubmit = newPassword.length >= 8
     && newPassword === confirmPassword
     && !pending;
-
   const submit = async () => {
     setPending(true);
     setError("");
@@ -27,35 +24,18 @@ export function LegacyPasswordResetForm({ uid, token }: { uid: string; token: st
       setPending(false);
     }
   };
-
-  return (
-    <main className="desk-shell grid place-items-center px-5">
-      <section className="desk-panel w-full max-w-md p-6">
-        <SpaceWorksBadge className="mb-5" />
-        <p className="text-xs font-semibold tracking-wide text-accent-ink">Account access</p>
-        {updated ? (
-          <>
-            <h1 className="mt-2 text-2xl font-extrabold text-ink">Password updated</h1>
-            <p className="mt-4 text-sm text-muted">Your password has been updated. You can now sign in.</p>
-            <Link className="desk-button-brand mt-5 w-full" to="/admin">Go to sign in</Link>
-          </>
-        ) : (
-          <form onSubmit={(event) => { event.preventDefault(); if (canSubmit) void submit(); }}>
-            <h1 className="mt-2 text-2xl font-extrabold text-ink">Set a new password</h1>
-            <NewPasswordFields
-              idPrefix="legacy-reset"
-              newPassword={newPassword}
-              confirmPassword={confirmPassword}
-              onNewPasswordChange={setNewPassword}
-              onConfirmPasswordChange={setConfirmPassword}
-            />
-            {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-            <button className="desk-button-brand mt-5 w-full" type="submit" disabled={!canSubmit}>
-              {pending ? "Updating..." : "Update password"}
-            </button>
-          </form>
-        )}
-      </section>
-    </main>
-  );
+  return <CenteredCardLayout state={{ status: "ready" }} eyebrow="Account access"
+    media={{ icon: updated ? "Check" : "Settings", tone: updated ? "success" : "accent" }}
+    title={updated ? "Password updated" : "Set a new password"}
+    body={updated ? "Your password has been updated. You can now sign in." : "Choose a new password for your Space Works account."}
+    primary={updated ? { label: "Go to sign in", href: "/admin" } : {
+      label: "Update password", pending, pendingLabel: "Updating…", disabled: !canSubmit,
+      disabledReason: "Enter matching passwords with at least 8 characters.",
+      onClick: () => (document.getElementById("legacy-reset-form") as HTMLFormElement)?.requestSubmit(),
+    }} content={!updated ? <form id="legacy-reset-form" onSubmit={(event) => { event.preventDefault(); if (canSubmit) void submit(); }}>
+      <NewPasswordFields idPrefix="legacy-reset" newPassword={newPassword} confirmPassword={confirmPassword}
+        onNewPasswordChange={setNewPassword} onConfirmPasswordChange={setConfirmPassword} />
+      {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
+    <button type="submit" disabled={!canSubmit} hidden aria-hidden="true" tabIndex={-1} />
+    </form> : undefined} />;
 }

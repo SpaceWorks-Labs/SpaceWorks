@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { ListRow, Modal } from "../../components/ui";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { EventContactFallback } from "../events/EventContactFallback";
@@ -31,10 +32,10 @@ type CollaborativeEventWithPolicy = CollaborativeEvent & {
  */
 export function PartnerEvents({
   makerspaceId,
-  slug,
+  slug, onAvailable, visible = true,
 }: {
   makerspaceId: number;
-  slug: string;
+  slug: string; onAvailable?: (available: boolean) => void; visible?: boolean;
 }) {
   const queryClient = useQueryClient();
   const events = useQuery({
@@ -46,6 +47,7 @@ export function PartnerEvents({
     retry: false,
   });
   const [openId, setOpenId] = useState<number | null>(null);
+  useEffect(() => { if (!visible) setOpenId(null); }, [visible]);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [needsPhone, setNeedsPhone] = useState(false);
@@ -99,6 +101,7 @@ export function PartnerEvents({
   });
 
   const rows = events.data ?? [];
+  useEffect(() => { onAvailable?.(Boolean(events.data?.length)); }, [events.data, onAvailable]);
   const groups = rows.reduce<Array<{
     key: string; title: string | null; events: CollaborativeEventWithPolicy[];
   }>>((result, event) => {
@@ -143,15 +146,7 @@ export function PartnerEvents({
             && acceptedWaiver.id === waiver?.id
             && acceptedWaiver.version === waiver?.version
           );
-          return (
-            <li key={event.id} className={`border-l-2 ${EVENT_TONES[event.id % EVENT_TONES.length]} py-2 pl-3`}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  {group.title ? <h4 className="title-section">{event.title}</h4> : <h3 className="title-section">{event.title}</h3>}
-                  <p className="eyebrow mt-1">
-                    Hosted by {event.host_name} · <span className="tabular-nums">{new Date(event.starts_at).toLocaleString()}</span>
-                  </p>
-                </div>
+          const registrationButton = (
                 <button
                   type="button"
                   className="desk-button-brand"
@@ -180,7 +175,11 @@ export function PartnerEvents({
                 >
                   {!event.registration_open ? "Registration closed" : mustExpand && !open ? `${event.registration_requires_approval ? "Apply" : "Register"}…` : event.registration_requires_approval ? "Apply" : "Register"}
                 </button>
-              </div>
+          );
+          return (
+            <li key={event.id} className={`border-l-2 ${EVENT_TONES[event.id % EVENT_TONES.length]} py-2 pl-3`}>
+              <ListRow title={event.title} identity={{ kind: "date", date: event.starts_at }} meta={`Hosted by ${event.host_name}`} right={open ? undefined : registrationButton} />
+              {open ? <Modal open title={`Register for ${event.title}`} onClose={() => { setOpenId(null); setAcceptedWaiver(null); }} footer={registrationButton}>
               <EventPrice amount={event.payment_amount ?? "0"} currency={event.currency ?? ""} tickets={tickets} ticketRequired={event.ticket_selection_required} />
               {open ? <div className="mt-3 grid gap-2">
                 <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={register.isPending} />
@@ -214,16 +213,18 @@ export function PartnerEvents({
                   </label>
                 </div>
               ) : null}
-              {open && schema ? (
+              {schema ? (
                 <div className="mt-3">
                   <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} />
                 </div>
               ) : null}
+              {register.error ? <p role="alert" className="text-sm text-danger">{register.error.message}</p> : null}
+              </Modal> : <EventPrice amount={event.payment_amount ?? "0"} currency={event.currency ?? ""} tickets={tickets} ticketRequired={event.ticket_selection_required} />}
             </li>
           );
         })}</ul></section>)}
       </div>
-      {register.error ? (
+      {register.error && openId === null ? (
         <p className="mt-2 text-sm text-danger" role="alert">
           {register.error instanceof Error ? register.error.message : "Could not register."}
         </p>

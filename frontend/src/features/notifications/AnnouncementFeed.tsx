@@ -1,3 +1,4 @@
+import { EmptyState, ErrorBlock, ListRow, RelativeTime } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { memberRequest } from "../../lib/api";
@@ -12,9 +13,9 @@ export function AnnouncementFeed({ makerspaceId }: { makerspaceId: number }) {
   return <section className="desk-panel p-5" aria-label="Member announcements">
     <h2 className="title-panel">Announcements</h2>
     {feed.isLoading ? <p role="status">Loading announcements…</p> : null}
-    {feed.error ? <p role="alert" className="text-danger">{feed.error.message}</p> : null}
-    {feed.data?.results.length === 0 ? <p className="text-sm text-muted">No announcements.</p> : null}
-    <ul className="mt-3 grid gap-3">{feed.data?.results.map((row) => <li key={row.id} className="rounded-lg border border-line p-3"><h3 className="font-extrabold">{row.title}</h3><p className="mt-1 whitespace-pre-wrap text-sm">{row.summary}</p></li>)}</ul>
+    {feed.error ? <ErrorBlock error={new Error("Couldn't load announcements. Try again.")} onRetry={() => void feed.refetch()} /> : null}
+    {feed.data?.results.length === 0 ? <EmptyState message="No announcements yet." /> : null}
+    <ul className="mt-3 grid gap-3">{feed.data?.results.map((row) => <li key={row.id}><ListRow title={row.title} meta={<><span className="block whitespace-pre-wrap">{row.summary}</span><RelativeTime date={row.created_at} /></>} /></li>)}</ul>
     {feed.data?.next || feed.data?.previous ? <div className="mt-3 flex gap-2"><button className="desk-button" disabled={!feed.data.previous || feed.isFetching} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!feed.data.next || feed.isFetching} onClick={() => setPage(page + 1)}>Next</button></div> : null}
   </section>;
 }

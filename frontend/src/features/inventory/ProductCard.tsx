@@ -1,4 +1,5 @@
-import type { Availability, Product } from "../../types/inventory";
+import { AvailabilityBadge } from "./AvailabilityBadge";
+import type { Product } from "../../types/inventory";
 import { Link } from "react-router-dom";
 
 type ProductCardProps = {
@@ -14,31 +15,6 @@ function isUnavailable(product: Product): boolean {
   return product.availability?.label === "Unavailable";
 }
 
-function statusChip(availability: Availability): { text: string; cls: string } | null {
-  if (availability === null) {
-    return null;
-  }
-  const label = availability.label ?? "Available";
-  const count =
-    availability.mode === "exact_count" && availability.count != null
-      ? availability.count
-      : null;
-
-  if (label === "Unavailable") {
-    return { text: "Unavailable", cls: "chip" };
-  }
-  if (label === "Limited") {
-    return {
-      text: count != null ? `Limited (${count})` : "Limited",
-      cls: "chip border-warn bg-warn text-on-warn dark:bg-warn-soft dark:text-warn-ink",
-    };
-  }
-  return {
-    text: count != null ? `Available (${count})` : "Available",
-    cls: "chip chip-available",
-  };
-}
-
 export function ProductCard({
   product,
   quantity,
@@ -48,7 +24,6 @@ export function ProductCard({
   detailUrl,
 }: ProductCardProps) {
   const disabled = isUnavailable(product);
-  const chip = statusChip(product.availability);
   const idLabel = `ID: ${String(product.id).padStart(4, "0")}`;
 
   return (
@@ -73,9 +48,7 @@ export function ProductCard({
             </span>
           </div>
         )}
-        {chip ? (
-          <span className={`absolute right-2 top-2 max-w-[calc(100%-1rem)] ${chip.cls}`}>{chip.text}</span>
-        ) : null}
+        <span className="absolute right-2 top-2 max-w-[calc(100%-1rem)]"><AvailabilityBadge availability={product.availability} /></span>
       </button>
 
       <div className="flex flex-1 flex-col p-4">

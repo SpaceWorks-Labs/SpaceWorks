@@ -1,12 +1,13 @@
+import { CenteredCardLayout, PublicLayout, PublicDetailLayout } from "../../components/layouts";
+import { publicPageChrome } from "./PublicPageChrome";
 import { useState } from "react";
 import { downloadEventCalendar } from "../events/eventCalendar";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { PageMetadata } from "../../components/PageMetadata";
-import { SkipLink } from "../../components/SkipLink";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
-import { EventRegistrationForm } from "./EventRegistrationForm";
+import { EventRegistrationEntry } from "./EventRegistrationEntry";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
 
@@ -28,27 +29,30 @@ export function PublicEventDetailPage() {
   });
   const event = eventQuery.error ? undefined : eventQuery.data;
   const error = eventQuery.error instanceof StructuredApiError ? eventQuery.error : null;
-  return <main className="desk-shell min-h-screen p-5">
-    <SkipLink />
-    <div id="main-content" className="mx-auto grid max-w-3xl gap-4">
-      <Link className="desk-button w-fit" to={tenantPath("events")}>All events</Link>
-      {eventQuery.isLoading ? <p role="status">Loading event…</p> : null}
-      {eventQuery.error ? <p role="alert">{error?.status === 404 ? "Event not found." : error?.status === 400 ? "Events are unavailable at this makerspace." : "Unable to load this event."}</p> : null}
-      {event ? <>
-        <PageMetadata title={event.title} description={event.description.slice(0, 200)} path={location.pathname} image={event.image_url} />
-        {event.image_url ? <img src={event.image_url} alt="" className="max-h-80 w-full rounded-xl object-cover" /> : null}
-        <h1 className="title-page">{event.title}</h1>
-        <p>{new Date(event.starts_at).toLocaleString()} · {event.location}</p>
-        {event.category ? <p className="text-sm text-muted">{event.category.name}</p> : null}
-        {event.tags?.length ? <p className="text-sm text-muted">{event.tags.join(" · ")}</p> : null}
-        <p className="whitespace-pre-wrap">{event.description}</p>
-        <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
-        <button className="desk-button w-fit" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate(event)}>Add to calendar</button>
-        {calendar.error ? <p role="alert">Could not download this calendar.</p> : null}
-        <button className="desk-button w-fit" type="button" onClick={async () => { setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: window.location.href }); else await navigator.clipboard.writeText(window.location.href); } catch { setShareError("Could not share this event."); } }}>Share event</button>
-        {shareError ? <p role="alert">{shareError}</p> : null}
-        {event.registration_open ? <EventRegistrationForm key={`${makerspaceSlug}:${event.public_token}`} makerspaceSlug={makerspaceSlug} publicToken={event.public_token} waitlist={event.availability === "Full"} approvalRequired={event.registration_requires_approval} customForm={event.custom_form} audience={event.registration_audience} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} promoEnabled={event.promo_codes_enabled} currency={event.currency} /> : <p>Registration is closed.</p>}
-      </> : null}
-    </div>
-  </main>;
+  const name = tenant.mode === "single" ? tenant.bootstrap?.makerspace.name ?? "Makerspace" : makerspaceSlug;
+  const state = eventQuery.isLoading ? { status: "loading" as const } : eventQuery.error
+    ? { status: "error" as const, error: error?.status === 400 ? "Events are unavailable at this makerspace." : "Couldn't load this event. Try again.", onRetry: () => { void eventQuery.refetch(); } } : { status: "ready" as const };
+  if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title="Event not found" body="This event is no longer available." primary={{ label: "All events", href: tenantPath("events") }} />;
+  return <>
+    {event ? <PageMetadata title={event.title} description={event.description.slice(0, 200)} path={location.pathname} image={event.image_url} /> : null}
+    <PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, tenant.mode === "single" ? tenant.bootstrap : undefined)} state={state}
+      breadcrumb={[{ label: "All events", href: tenantPath("events") }, { label: event?.title ?? "Event" }]}>
+      <PublicDetailLayout title={event?.title ?? "Event"} state={state}
+        cover={event?.image_url ? { src: event.image_url, alt: "" } : undefined}
+        chips={[...(event?.category ? [{ label: event.category.name }] : []), ...(event?.tags ?? []).map(label => ({ label }))]}
+        facts={event ? [{ identity: { kind: "date", date: event.starts_at }, primary: new Date(event.starts_at).toLocaleString(), secondary: `Until ${new Date(event.ends_at).toLocaleString()}` },
+          ...(event.location ? [{ identity: { kind: "icon" as const, icon: "Info" as const, tone: "neutral" as const }, primary: event.location }] : [])] : []}
+        sections={event ? [{ id: "about", label: "About", content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> }] : []}
+        actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
+          state: event?.registration_open ? "open" : "closed", note: event?.registration_open ? undefined : `Registration is closed.${event?.effective_registration_cutoff_at ? ` Closed ${new Date(event.effective_registration_cutoff_at).toLocaleString()}.` : ""}`,
+          summary: event ? <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} /> : null,
+          form: event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} /> : null,
+          secondary: event ? [{ label: "Add to calendar", pending: calendar.isPending, onClick: () => calendar.mutate(event) }, { label: "Share event", onClick: async () => {
+            setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: window.location.href }); else await navigator.clipboard.writeText(window.location.href); } catch { setShareError("Could not share this event."); }
+          } }] : [],
+          mobileBar: { summary: event?.title ?? "Event", label: event?.registration_open ? "Register" : "View event" },
+          doneContent: <>{calendar.error ? <p role="alert">Could not download this calendar.</p> : null}{shareError ? <p role="alert">{shareError}</p> : null}</> }} />
+    </PublicLayout>
+    {calendar.error || shareError ? <div role="alert" className="sw-layout p-4 text-danger">{shareError || "Could not download this calendar."}</div> : null}
+  </>;
 }

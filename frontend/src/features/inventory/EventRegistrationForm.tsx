@@ -1,3 +1,4 @@
+import { Icon, TicketCard } from "../../components/ui";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -70,9 +71,13 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   useEffect(() => { if (registration.data) successRef.current?.focus(); }, [registration.data]);
 
   if (registration.data) {
-    return <div ref={successRef} className="rounded-lg border border-line bg-surface p-4 outline-none" role="status" tabIndex={-1}>
-      <h3 className="title-section">{registration.data.status === "pending_approval" ? "Application awaiting approval" : registration.data.status === "waitlisted" ? "You’re on the waitlist" : "Registration received"}</h3>
-      <p className="mt-1 text-sm text-muted">{registration.data.status === "pending_approval" ? "You will only be charged if a place is confirmed." : registration.data.status === "waitlisted" ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."}</p>
+    const pending = registration.data.status === "pending_approval";
+    const waitlisted = registration.data.status === "waitlisted";
+    return <div ref={successRef} role="status" tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      <TicketCard organisation="Space Works" title={pending ? "Application awaiting approval" : waitlisted ? "You’re on the waitlist" : "Registration received"}
+        fields={[{ label: "Status", value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: "Next step", value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
+        qr={<div className="grid h-full place-items-center rounded-xl bg-success-soft text-success-ink"><Icon name="CheckCircle" className="h-16 w-16" /></div>}
+        caption={pending ? "You will only be charged if a place is confirmed." : waitlisted ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."} />
     </div>;
   }
 

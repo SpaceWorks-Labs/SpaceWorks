@@ -1,33 +1,16 @@
-import { Link, useParams } from "react-router-dom";
-
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
+import { useParams } from "react-router-dom";
+import { KioskLayout } from "../../components/layouts";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { PublicInventoryPage } from "../inventory/PublicInventoryPage";
+import { useStationConnection } from "./useStationConnection";
 
-// The central `/kiosk/:slug` public desk, moved unchanged from staff/PlatformApps.tsx.
-// Station kiosks live at `/m/:slug/kiosk/:stationToken` and never collide with it.
+// The catalogue owns its data and cart; the station only supplies touch-friendly chrome.
 export function PublicDeskKioskPage() {
-  const { slug } = useParams();
-  return (
-    <main className="desk-shell">
-      <header className="border-b border-line bg-panel">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
-          <div>
-            <SpaceWorksBadge className="mb-3" />
-            <p className="text-xs font-semibold tracking-wide text-accent-ink">
-              Kiosk
-            </p>
-            <h1 className="text-xl font-extrabold text-ink">Public desk</h1>
-          </div>
-          <div className="flex gap-2">
-            <ThemeToggle />
-            <Link className="desk-button" to={`/m/${slug ?? ""}`}>
-              Catalog
-            </Link>
-          </div>
-        </div>
-      </header>
-      <PublicInventoryPage />
-    </main>
-  );
+  const { slug = "" } = useParams();
+  const online = useStationConnection();
+  return <KioskLayout context={{ title: "Public desk", subtitle: "Explore the catalogue and request what you need." }}
+    connection={{ online }} mode="work" state={{ status: "ready" }}
+    headerActions={[{ label: "Open full catalogue", href: `/m/${slug}` }]}
+    work={{ capture: <div className="text-lg [&_button]:min-h-12 [&_a]:min-h-12"><PublicInventoryPage embedded /></div>,
+      panel: <div className="rounded-xl border border-line bg-panel p-6"><h2 className="title-panel">Find your next tool</h2><p className="mt-3 text-muted">Browse public equipment, then add the items you need to a request.</p><div className="mt-6"><ThemeToggle /></div></div> }} />;
 }

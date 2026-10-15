@@ -1,3 +1,4 @@
+import { EmptyState, ListRow, StatusPill } from "../../components/ui";
 import type { MemberPayment as GeneratedMemberPayment } from "../../generated/api";
 import { useState } from "react";
 import { DUE_OPTIONS, PaymentDueBadge } from "../staff/PaymentDueBadge";
@@ -33,18 +34,8 @@ export function MemberPaymentRows({
     </label>
     <ul className="mt-3 space-y-2 text-sm text-muted">
       {payments.filter((payment) => !dueFilter || payment.due_state === dueFilter).map((payment) => (
-        <li key={payment.id}>
-          <span className="font-medium text-ink">{payment.subject_label}</span>
-          {" · "}{payment.status}
+        <li key={payment.id}><ListRow title={payment.subject_label} right={<div className="text-right"><span className="block font-display text-lg tabular-nums text-ink">{payment.amount} {(payment.currency ?? "").toUpperCase()}</span><StatusPill label={(payment.status || "Unknown").replace(/_/g, " ")} tone={["paid_online", "paid_offline"].includes(payment.status || "") ? "success" : payment.status === "pending" ? "warn" : "neutral"} /></div>} meta={<>
           {" "}<PaymentDueBadge payment={payment} />
-          {payment.amount ? (
-            <>
-              {" · "}
-              <span className="tabular-nums">
-                {payment.amount} {(payment.currency ?? "").toUpperCase()}
-              </span>
-            </>
-          ) : null}
           {payment.checkout_url ? (
             <>
               {" · "}
@@ -93,9 +84,10 @@ export function MemberPaymentRows({
               {refund.reference ? ` · ${refund.reference}` : ""}
             </span>
           ))}
-        </li>
+        </>} /></li>
       ))}
     </ul>
+    {payments.length > 0 && !payments.some(payment => !dueFilter || payment.due_state === dueFilter) ? <EmptyState message="No payments match this due date. Choose another filter." /> : null}
     {makerspaceId ? <PaymentDocuments key={makerspaceId} makerspaceId={makerspaceId} audience="member" /> : null}
     </>
   );

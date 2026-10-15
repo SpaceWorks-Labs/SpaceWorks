@@ -1,3 +1,4 @@
+import { SegmentedControl } from "../../components/ui";
 import { currentMonth, useDiscoveryState } from "./useDiscoveryState";
 
 export function DiscoveryControls({ state, searchLabel, filters }: {
@@ -18,8 +19,7 @@ export function DiscoveryControls({ state, searchLabel, filters }: {
       <input type="month" min="1900-01" max="9998-12" className="desk-input mt-1" value={state.month} onChange={(event) => state.update({ month: event.target.value })} />
     </label>
     <div className="flex flex-wrap gap-2" role="group" aria-label="Discovery view">
-      <button type="button" className="desk-button" aria-pressed={state.view === "agenda"} onClick={() => state.update({ view: "" })}>List</button>
-      <button type="button" className="desk-button" aria-pressed={state.view === "calendar"} onClick={() => state.update({ view: "calendar", month: state.month || currentMonth(state.timeZone) })}>Month calendar</button>
+      <SegmentedControl label="Discovery view" value={state.view} options={[{ value: "agenda", label: "List" }, { value: "calendar", label: "Month calendar" }]} onChange={value => state.update(value === "calendar" ? { view: "calendar", month: state.month || currentMonth(state.timeZone) } : { view: "" })} />
       <button type="button" className="desk-button-ghost" onClick={() => state.update({ q: "", filter: "", month: "", view: "" })}>Clear filters</button>
     </div>
   </div>;

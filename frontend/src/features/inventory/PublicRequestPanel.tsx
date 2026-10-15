@@ -1,3 +1,4 @@
+import { SegmentedControl } from "../../components/ui";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -121,29 +122,6 @@ export function PublicRequestPanel({
     },
   });
 
-  // Each tab carries its own palette tone - a touch of colour so the action row
-  // doesn't read as flat. Active = filled pastel (+ dark deep-tint); idle = neutral
-  // with a faint tone hover hint.
-  const tabTone: Record<ActiveTab, { active: string; idle: string }> = {
-    borrow: {
-      active:
-        "border-brand bg-brand text-on-brand dark:bg-brand-soft dark:text-brand-ink",
-      idle: "hover:border-brand hover:bg-brand-soft hover:text-brand-ink",
-    },
-    scan: {
-      active:
-        "border-brand bg-brand text-on-brand dark:bg-brand-soft dark:text-brand-ink",
-      idle: "hover:border-brand hover:bg-brand-soft hover:text-brand-ink",
-    },
-  };
-
-  function tabClass(tab: ActiveTab) {
-    const tone = tabTone[tab];
-    return activeTab === tab
-      ? `status-box min-h-11 w-full py-2  ${tone.active}`
-      : `status-box min-h-11 w-full py-2 ${tone.idle}`;
-  }
-
   const contactReady =
     !accountLess ||
     (contactName.trim().length > 0 && contactEmail.trim().length > 0);
@@ -193,29 +171,7 @@ export function PublicRequestPanel({
             </p>
           </Card>
 
-          <div
-            aria-label="Request actions"
-            className="grid shrink-0 grid-cols-2 gap-2"
-          >
-            <button
-              aria-pressed={activeTab === "borrow"}
-              className={tabClass("borrow")}
-              id="public-request-borrow-tab"
-              type="button"
-              onClick={() => setActiveTab("borrow")}
-            >
-              Borrow request
-            </button>
-            <button
-              aria-pressed={activeTab === "scan"}
-              className={tabClass("scan")}
-              id="public-request-scan-tab"
-              type="button"
-              onClick={() => setActiveTab("scan")}
-            >
-              Scan a tool
-            </button>
-          </div>
+          <SegmentedControl label="Request actions" value={activeTab} options={[{ value: "borrow", label: "Borrow request" }, { value: "scan", label: "Scan a tool" }]} onChange={value => setActiveTab(value as ActiveTab)} />
 
           <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             {activeTab === "borrow" ? (
@@ -249,9 +205,9 @@ export function PublicRequestPanel({
 
             {activeTab === "scan" ? (
               <div
-                aria-labelledby="public-request-scan-tab"
+                aria-label="Scan a tool"
                 id="public-request-scan-panel"
-                role="tabpanel"
+                role="region"
               >
                 <PublicToolScanPanel
                   makerspaceSlug={makerspaceSlug}

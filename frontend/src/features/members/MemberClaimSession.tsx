@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { DashboardLayout } from "../../components/layouts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessToken, memberRequest } from "../../lib/api";
 import { MemberCertifications } from "./MemberCertifications";
@@ -27,9 +27,8 @@ export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnable
     return memberRequest(`/public/${slug}/presence-sessions`, { method: "POST", body: JSON.stringify({ duration_minutes: 120, ...(location ?? {}) }) });
   }, onSuccess: () => { void client.invalidateQueries({ queryKey: key }); } });
   const error = presence.error ?? waiver.error ?? activity.error ?? togglePresence.error;
-  return <main className="desk-shell mx-auto max-w-3xl space-y-5 px-5 py-8">
-    <section className="desk-panel p-5"><h1 className="title-page">Temporary member session</h1><p className="mt-2 text-sm text-muted">Your staff-issued claim code opened access for this makerspace. Staff must witness waiver acceptance.</p>
-      {modules.includes("public_inventory") ? <Link className="desk-button-brand mt-3 inline-flex" to={`/m/${slug}`}>Browse tools</Link> : null}
+  return <DashboardLayout standalone header={{ title: "Temporary member session", eyebrow: "Member area", primary: modules.includes("public_inventory") ? { label: "Browse tools", href: `/m/${slug}` } : undefined }} state={{ status: "ready" }} stats={[]} main={[{ title: "Your access", empty: { message: "Your access details will appear here." }, content: <div className="grid gap-6">
+    <section className="desk-panel p-5"><p className="mt-2 text-sm text-muted">Your staff-issued claim code opened access for this makerspace. Staff must witness waiver acceptance.</p>
     </section>
     {waiver.data?.has_waiver ? <section className="desk-panel p-5"><h2 className="title-panel">Current waiver ({waiver.data.version})</h2><p className="mt-2 whitespace-pre-wrap text-sm text-muted">{waiver.data.body}</p><p className="mt-3 text-sm text-muted">Ask staff to record witnessed acceptance before borrowing.</p></section> : null}
     <section className="desk-panel p-5"><h2 className="title-panel">Presence</h2>
@@ -40,5 +39,5 @@ export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnable
     {modules.includes("machines") ? <MemberCertifications makerspaceId={makerspaceId} /> : null}
     {activity.data ? <MemberActivityPanel modules={modules} activity={activity.data} makerspaceId={makerspaceId} makerspaceSlug={slug} /> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
-  </main>;
+  </div> }]} />;
 }

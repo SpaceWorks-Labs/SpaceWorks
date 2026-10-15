@@ -49,101 +49,15 @@ export function ErrorState({ error }: { error: Error }) {
   );
 }
 
-export function CatalogSidebar({
-  categories,
-  view,
-  onSelect,
-}: {
-  categories: PublicCategory[];
-  view: View;
-  onSelect: (view: View) => void;
-}) {
-  const itemClass = (active: boolean) =>
-    active
-      ? "desk-nav-item desk-nav-item-active shrink-0 whitespace-nowrap border-brand bg-brand text-on-brand hover:border-brand hover:bg-brand hover:text-on-brand lg:shrink lg:whitespace-normal"
-      : "desk-nav-item shrink-0 whitespace-nowrap hover:border-brand hover:bg-brand-soft lg:shrink lg:whitespace-normal";
-  const countClass = (active: boolean) =>
-    active
-      ? "ml-2 tabular-nums text-xs text-on-brand"
-      : "ml-2 rounded-full bg-warn px-1.5 tabular-nums text-xs text-on-warn dark:bg-warn-soft dark:text-warn-ink";
-
-  return (
-    <Card
-      className="lg:sticky lg:top-0 lg:max-h-[100dvh] lg:overflow-y-auto"
-      padding="sm"
-    >
-      <nav aria-label="Catalog browse">
-        <h2 className="title-section px-3">
-          Browse
-        </h2>
-        <div className="mt-2 flex gap-2 overflow-x-auto lg:block lg:space-y-1 lg:overflow-visible">
-          <button
-            aria-current={view.kind === "all" ? "page" : undefined}
-            className={itemClass(view.kind === "all")}
-            type="button"
-            onClick={() => onSelect({ kind: "all" })}
-          >
-            <span>All items</span>
-          </button>
-          <button
-            aria-current={
-              view.kind === "sort" && view.sort === "popular"
-                ? "page"
-                : undefined
-            }
-            className={itemClass(view.kind === "sort" && view.sort === "popular")}
-            type="button"
-            onClick={() => onSelect({ kind: "sort", sort: "popular" })}
-          >
-            <span>Popular</span>
-          </button>
-          <button
-            aria-current={
-              view.kind === "sort" && view.sort === "most_used"
-                ? "page"
-                : undefined
-            }
-            className={itemClass(
-              view.kind === "sort" && view.sort === "most_used",
-            )}
-            type="button"
-            onClick={() => onSelect({ kind: "sort", sort: "most_used" })}
-          >
-            <span>Most used</span>
-          </button>
-        </div>
-
-        {categories.length > 0 ? (
-          <>
-            <div className="my-3 border-t border-line" />
-            <h3 className="title-section px-3">
-              Categories
-            </h3>
-            <div className="mt-2 flex gap-2 overflow-x-auto lg:block lg:space-y-1 lg:overflow-visible">
-              {categories.map((category) => {
-                const active =
-                  view.kind === "category" && view.slug === category.slug;
-                return (
-                  <button
-                    aria-current={active ? "page" : undefined}
-                    className={itemClass(active)}
-                    key={category.id}
-                    type="button"
-                    onClick={() =>
-                      onSelect({ kind: "category", slug: category.slug })
-                    }
-                  >
-                    <span className="min-w-0 truncate">{category.name}</span>
-                    <span className={countClass(active)}>
-                      ({category.product_count})
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        ) : null}
-      </nav>
-    </Card>
-  );
+export function CatalogSidebar({ categories, view, onSelect }: { categories: PublicCategory[]; view: View; onSelect: (view: View) => void }) {
+  const choices: { label: string; value: View; active: boolean; count?: number }[] = [
+    { label: "All items", value: { kind: "all" }, active: view.kind === "all" },
+    { label: "Popular", value: { kind: "sort", sort: "popular" }, active: view.kind === "sort" && view.sort === "popular" },
+    { label: "Most used", value: { kind: "sort", sort: "most_used" }, active: view.kind === "sort" && view.sort === "most_used" },
+    ...categories.map(category => ({ label: category.name, value: { kind: "category" as const, slug: category.slug }, active: view.kind === "category" && view.slug === category.slug, count: category.product_count })),
+  ];
+  return <nav aria-label="Catalog browse" className="flex gap-2 overflow-x-auto pb-2">{choices.map(choice =>
+    <button key={choice.label} className={choice.active ? "desk-button-brand shrink-0" : "desk-button shrink-0"} aria-current={choice.active ? "page" : undefined} onClick={() => onSelect(choice.value)} type="button">
+      {choice.label}{choice.count != null ? <span className="ml-2 tabular-nums">({choice.count})</span> : null}
+    </button>)}</nav>;
 }

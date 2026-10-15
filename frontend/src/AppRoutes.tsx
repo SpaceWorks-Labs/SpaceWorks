@@ -1,15 +1,14 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { Route, Routes, useLocation, useParams } from "react-router-dom";
-
 import { PublicInventoryPage } from "./features/inventory/PublicInventoryPage";
 import { useTenantBootstrap } from "./features/inventory/usePublicInventory";
 import { PublicDeskKioskPage } from "./features/kiosk/PublicDeskKioskPage";
 import { ScannerPage } from "./features/kiosk/ScannerPage";
 import { SuperadminPage } from "./features/staff/PlatformApps";
 import { StaffApp } from "./features/staff/StaffApp";
+import { CenteredCardLayout, PublicLayout } from "./components/layouts";
 import { useTenant } from "./lib/tenant";
 import { publicHome } from "./lib/publicHome";
-
 // Every public surface below is its own chunk. The catalogue and the staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
 // route is first visited, so a lending-only install never downloads events, bookings or
@@ -34,17 +33,25 @@ const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
 
 function NotFoundPage() {
-  return <main className="grid min-h-screen place-items-center bg-bg px-6"><div className="text-center"><p className="eyebrow">404</p><h1 className="title-page mt-2">Page not found</h1></div></main>;
+  const { pathname } = useLocation();
+  return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Search", tone: "accent" }}
+    eyebrow="404" title="We couldn't find that page" body="The link may be old, or the page moved."
+    primary={{ label: "Go to home", href: "/" }}
+    escape={pathname.startsWith("/admin") ? { label: "Staff sign-in", href: "/admin" } : undefined} />;
 }
-
 // Tenant capabilities choose the home independently of the deployment edition.
+
 function FamilyHome() {
   const tenant = useTenant();
   const { slug = "" } = useParams();
   const bootstrapQuery = useTenantBootstrap(slug, tenant.mode === "central" && Boolean(slug));
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
+  const homeHref = tenant.mode === "single" ? "/" : `/m/${slug}`;
+  const memberHref = tenant.mode === "single" ? "/member" : `/m/${slug}/member`;
   if (!bootstrap) {
-    if (bootstrapQuery.error) return <main className="desk-shell p-8" role="alert">Unable to load this makerspace.</main>;
+    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: "Couldn't load this space. Try again.", onRetry: () => void bootstrapQuery.refetch() }}
+      makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: "Sign in", href: memberHref }} nav={[]} header={{ title: "We couldn't load this space" }}
+      footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
     return <RouteFallback />;
   }
   switch (publicHome(bootstrap)) {
@@ -53,15 +60,17 @@ function FamilyHome() {
     case "machines": return <PublicMachinesPage />;
     case "membership": return <MemberArea />;
     case "inventory": return <PublicInventoryPage />;
-    default: return <main className="desk-shell p-8"><h1 className="title-page">{bootstrap.branding.display_name || bootstrap.makerspace.name}</h1><p className="mt-3 text-muted">No public programme is available.</p></main>;
+    default: return <PublicLayout state={{ status: "ready" }} isEmpty empty={{ message: `${bootstrap.branding.display_name || bootstrap.makerspace.name} hasn't published anything yet. Check back soon.` }}
+      makerspace={{ name: bootstrap.branding.display_name || bootstrap.makerspace.name, slug, homeHref }} headerAction={{ label: "Sign in", href: memberHref }} nav={[]}
+      header={{ title: bootstrap.branding.display_name || bootstrap.makerspace.name }} footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
   }
 }
-
 const MfaAccountPage = lazy(() => import("./features/auth/MfaAccountPage").then((m) => ({ default: m.MfaAccountPage })));
 const StaffInvitationAcceptPage = lazy(() => import("./features/auth/StaffInvitationAcceptPage").then((m) => ({ default: m.StaffInvitationAcceptPage })));
 
 function RouteFallback() {
-  return <main className="grid min-h-screen place-items-center bg-bg px-6"><p className="text-sm font-semibold text-muted">Loading...</p></main>;
+  return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Opening Space Works…" body=""
+    primary={{ label: "Loading…", disabled: true, disabledReason: "The page is opening." }} /></div>;
 }
 
 export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landing: ReactNode }) {

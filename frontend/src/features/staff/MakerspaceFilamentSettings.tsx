@@ -46,7 +46,7 @@ export function MakerspaceFilamentSettings({ makerspace, settings, loading }: Pr
     loading || updateThreshold.isPending || invalid || nextNumber === currentNumber;
 
   return (
-    <SettingsRow label="Filament low-stock threshold" helper="Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off."><div className="grid min-w-0 gap-4">
+    <SettingsRow label="Filament low-stock threshold" helper="Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-3  md:items-end"
         onSubmit={(event) => {

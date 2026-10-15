@@ -46,7 +46,7 @@ export function MakerspaceBookingSettings({ makerspace, settings, loading }: {
   });
 
   return (
-    <SettingsRow label="Booking requester emails" helper="Set the default for booking submitted, confirmed, and rejected emails. Each space may inherit or override this setting."><div className="grid min-w-0 gap-4">
+    <SettingsRow label="Booking requester emails" helper="Set the default for booking submitted, confirmed, and rejected emails. Each space may inherit or override this setting."><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-3  md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">

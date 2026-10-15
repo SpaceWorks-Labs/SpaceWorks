@@ -91,7 +91,7 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
   if ((settings.error as { status?: number } | null)?.status === 404) return loans;
 
   return (
-    <><SettingsQueryState query={settings} resource="payment"><SettingsRow label="Stripe payments" helper="Secret credentials are encrypted; saved keys are never displayed again."><div className="grid min-w-0 gap-4">
+    <><SettingsQueryState query={settings} resource="payment"><SettingsRow label="Stripe payments" helper="Secret credentials are encrypted; saved keys are never displayed again."><div className="@container grid min-w-0 gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
 
@@ -101,7 +101,7 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
           {modeLabel(settings.data?.effective_mode)}
         </Badge>
       </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <div className="mt-4 grid gap-2 @md:grid-cols-2">
         <Field label="Stripe publishable key">
           <input
             className="desk-input"

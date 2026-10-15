@@ -135,7 +135,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
 
   return (
     <>
-      <SettingsQueryState query={settings} resource="email settings"><SettingsRow label="Email (SMTP)" helper="Configure the sender used for staff lifecycle notifications."><div className="grid min-w-0 gap-4">
+      <SettingsQueryState query={settings} resource="email settings"><SettingsRow label="Email (SMTP)" helper="Configure the sender used for staff lifecycle notifications."><div className="@container grid min-w-0 gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
 
@@ -146,7 +146,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
 
           </div>
         </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid gap-2 @md:grid-cols-2">
           <Field label="SMTP host"><input className="desk-input" value={smtpForm.smtp_host} onChange={(event) => setSmtpForm({ ...smtpForm, smtp_host: event.target.value })} /></Field>
           <Field label="SMTP port"><input className="desk-input" inputMode="numeric" value={smtpForm.smtp_port} onChange={(event) => setSmtpForm({ ...smtpForm, smtp_port: event.target.value })} /></Field>
           <Field label="SMTP username"><input className="desk-input" value={smtpForm.smtp_username} onChange={(event) => setSmtpForm({ ...smtpForm, smtp_username: event.target.value })} /></Field>
@@ -185,7 +185,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
         ) : null}
       </div><SettingsResetAction label={"Clear SMTP password"} consequence="Remove the saved SMTP password. Staff email delivery may stop until a replacement is saved." pending={clearSmtpPassword.isPending} disabled={!settings.data?.smtp_password_set || clearSmtpPassword.isPending} onConfirm={() => clearSmtpPassword.mutateAsync()} /></SettingsRow></SettingsQueryState>
 
-      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label="Notification recipients" helper="Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace."><div className="grid min-w-0 gap-4">
+      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label="Notification recipients" helper="Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace."><div className="@container grid min-w-0 gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
 

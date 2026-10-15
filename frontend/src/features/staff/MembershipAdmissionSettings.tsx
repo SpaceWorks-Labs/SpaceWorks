@@ -37,10 +37,10 @@ export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: nu
   if (settings.isError || !value) return <SettingsQueryState query={settings} resource="membership admission" />;
   const update = <K extends keyof AdmissionSettings>(key: K, next: AdmissionSettings[K]) => { setDraft({ ...value, [key]: next }); save.reset(); };
   const activePlans = plans.data?.filter((plan) => plan.is_active) ?? [];
-  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label="Membership admission" helper="Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."><form className="grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
+  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label="Membership admission" helper="Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."><form className="@container grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
     <div></div>
     <fieldset disabled={save.isPending} className="grid gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @md:grid-cols-2">
         <label className="grid gap-1 text-sm text-ink">Admission recipe<select className="desk-input" value={recipe} onChange={(event) => {
           const next = event.target.value as AdmissionRecipe | "";
           setRecipe(next);
@@ -59,7 +59,7 @@ export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: nu
       {recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn-ink">Choose a priced default plan or joining fee for this paid recipe.</p> : null}
       <fieldset className="grid gap-3 rounded border border-line p-3"><legend className="text-sm font-semibold text-ink">Vouch rules</legend>
         <p className="text-sm text-muted">Vouchers must be active, unrestricted members. Vouches record accountability without automatically restricting anyone.</p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @md:grid-cols-2">
           <NumberField label="Vouches required" min={1} value={value.vouches_required} onChange={(next) => update("vouches_required", next)} />
           <NumberField label="Minimum voucher tenure (days)" min={0} value={value.voucher_min_tenure_days} onChange={(next) => update("voucher_min_tenure_days", next)} />
           <NumberField label="Pending applicants per voucher" min={1} value={value.voucher_pending_limit} onChange={(next) => update("voucher_pending_limit", next)} />

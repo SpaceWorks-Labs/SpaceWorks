@@ -49,7 +49,7 @@ export function NotificationDestinations({
   const usable = CHANNELS.filter((channel) => availableChannels.includes(channel.key));
 
   return (
-    <SettingsRow label="Rooms"><section className="mt-6">
+    <SettingsRow label="Rooms"><section className="@container mt-6">
 
       <p className="mt-2 text-sm text-muted">
         Each room is one chat destination. A room with no machines or categories selected

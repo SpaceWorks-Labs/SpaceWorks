@@ -203,7 +203,7 @@ export function ImageUploader({
           )}
         </div>
         <div className="min-w-0 max-w-full space-y-1">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <input
               id={inputId}
               ref={inputRef}
@@ -214,7 +214,7 @@ export function ImageUploader({
                 const file = event.target.files?.[0];
                 if (file) handleFile(file);
               }}
-              className="block w-full max-w-full min-w-0 flex-1 text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-on-accent"
+              className="block min-h-11 w-full max-w-full min-w-0 flex-1 basis-56 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-accent"
             />
             {cameraSupported ? (
               <button className="desk-button min-h-11" type="button" aria-label={`Take ${label} photo`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>

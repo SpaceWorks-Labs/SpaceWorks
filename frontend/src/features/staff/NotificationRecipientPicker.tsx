@@ -55,7 +55,7 @@ export function NotificationRecipientPicker({
 
   return (
     <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">Who gets notified</h3>
-    <SettingsQueryState query={data} resource="recipient"><SettingsRow label="Recipients"><div>
+    <SettingsQueryState query={data} resource="recipient"><SettingsRow label="Recipients"><div className="@container min-w-0">
 
       <p className="mt-2 text-sm text-muted">
         {delegated
@@ -72,7 +72,7 @@ export function NotificationRecipientPicker({
 
       {current ? (
         <>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 @md:grid-cols-2">
             <label className="grid gap-1 text-sm">
               <span className="eyebrow">Area</span>
               <select

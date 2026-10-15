@@ -43,7 +43,7 @@ function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { dom
   }
   const label = domain === "event" ? "Event" : "Booking";
   return (
-    <SettingsRow label={`${label} reminders`}><form onSubmit={save} className="grid gap-3 ">
+    <SettingsRow label={`${label} reminders`}><form onSubmit={save} className="@container grid gap-3 ">
 
       <p className="text-sm text-muted">
         Email members before confirmed {domain === "event" ? "events" : "bookings"}, using the makerspace timezone.

@@ -27,10 +27,10 @@ export function ApiClientScopePicker({
     onChange(options.filter((option) => next.has(option.value)).map((option) => option.value));
   };
   return (
-    <div className="grid gap-2" aria-label="API client scopes">
+    <div className="@container grid gap-2" aria-label="API client scopes">
       {Array.from(grouped.entries()).map(([group, groupOptions]) => (
-        <section key={group} className="grid gap-3 sm:grid-cols-2">
-          <h4 className="title-section sm:col-span-2">{group}</h4>
+        <section key={group} className="grid gap-3 @lg:grid-cols-2">
+          <h4 className="title-section @lg:col-span-2">{group}</h4>
           {groupOptions.map((option) => (
             <label key={option.value} className="flex min-h-20 cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel p-4 has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
               <input
@@ -40,10 +40,10 @@ export function ApiClientScopePicker({
                 disabled={disabled || !option.grantable}
                 onChange={() => toggle(option.value, option.grantable)}
               />
-              <span className="grid gap-0.5">
+              <span className="grid min-w-0 gap-0.5">
                 <span className="font-semibold text-ink">{option.label}</span>
                 <span className="text-xs text-muted">{option.description}</span>
-                <span className="text-xs tabular-nums text-muted">{option.value}</span>
+                <span className="text-xs tabular-nums text-muted [overflow-wrap:anywhere]">{option.value}</span>
                 {!option.grantable ? (
                   <span className="text-xs text-danger">
                     {option.lock_reason ?? "This scope cannot be granted here."}

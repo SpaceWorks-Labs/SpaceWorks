@@ -67,14 +67,14 @@ export function DestinationForm({
 
   return (
     <form
-      className="grid gap-3 rounded-md border border-line bg-bg p-3"
+      className="@container grid gap-3 rounded-md border border-line bg-bg p-3"
       onSubmit={(event) => {
         event.preventDefault();
         setError("");
         save.mutate();
       }}
     >
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 @md:grid-cols-2">
         <label className="grid gap-1 text-sm">
           <span className="text-muted">Channel</span>
           <select
@@ -172,7 +172,7 @@ export function DestinationForm({
       <ScopePicker onChange={setScope} options={options} scope={scope} />
 
       {error ? <p className="text-sm text-danger">{error}</p> : null}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" disabled={save.isPending} type="submit">
           {save.isPending ? "Saving…" : "Save room"}
         </button>

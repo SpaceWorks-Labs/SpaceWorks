@@ -37,13 +37,13 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
     },
   });
   useEffect(() => { save.reset(); }, [makerspace.id]);
-  return <SettingsRow label="Public and member colours"><form className="mt-6 space-y-3" onSubmit={(event) => {
+  return <SettingsRow label="Public and member colours"><form className="@container mt-6 space-y-3" onSubmit={(event) => {
     event.preventDefault();
     if (settings && report.valid && changed && !loading && !save.isPending) save.mutate({ id: makerspace.id, slug: makerspace.slug, theme });
   }}>
 
     <p className="text-sm text-muted">Leave blank to use Maker Teal. Staff screens always use the Space Works palette.</p>
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 @md:grid-cols-2">
       <label className="grid gap-1 text-sm" htmlFor="theme-primary">Primary fill
         <input id="theme-primary" className="desk-input" placeholder="#006e63" value={primary} disabled={loading || save.isPending} onChange={(event) => setPrimary(event.target.value)} />
       </label>
@@ -51,7 +51,7 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
         <input id="theme-accent" className="desk-input" placeholder="Derived from primary" value={accent} disabled={loading || save.isPending} onChange={(event) => setAccent(event.target.value)} />
       </label>
     </div>
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 @md:grid-cols-2">
       {(["light", "dark"] as const).map((mode) => {
         const palette = deriveBrandPalette(theme, mode);
         const preview = report.valid ? palette : deriveBrandPalette({}, mode);

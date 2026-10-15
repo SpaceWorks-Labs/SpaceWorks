@@ -58,7 +58,7 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
     create.mutate();
   }
 
-  return <SettingsRow label="Kiosk stations" helper="A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person."><div className="grid min-w-0 gap-4">
+  return <SettingsRow label="Kiosk stations" helper="A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person."><div className="@container grid min-w-0 gap-4">
     <div className="grid max-w-2xl gap-2">
 
 
@@ -84,7 +84,7 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
       {(stations.data ?? []).map(station => <li key={station.id}>
         <ListRow title={station.name} meta={<span className="flex flex-wrap items-center gap-2">
           <Badge label={station.kind} /><Badge label={station.enabled ? "Enabled" : "Disabled"} tone={station.enabled ? "success" : "warn"} />
-        </span>} right={<div className="flex items-center gap-2">
+        </span>} right={<div className="flex flex-wrap items-center gap-2">
           <button className="desk-button" type="button" disabled={rotate.isPending} onClick={() => rotate.mutate(station.id)}>{station.enabled ? "Rotate PIN" : "Re-enable with new PIN"}</button>
           {station.enabled ? <OverflowMenu label={`Actions for ${station.name}`} actions={[
             { label: "Reveal PIN", onClick: () => { setRevealFor(station); setPassword(""); } },

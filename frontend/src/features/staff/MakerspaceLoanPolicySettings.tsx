@@ -46,7 +46,7 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
   });
   if (query.error) return <SettingsQueryState query={query} resource="loan policy" />;
   if (!form) return <SettingsQueryState query={query} resource="loan policy" />;
-  return <SettingsQueryState query={query} resource="loan policy"><SettingsRow label="Loan policy" helper="Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."><form className="mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
+  return <SettingsQueryState query={query} resource="loan policy"><SettingsRow label="Loan policy" helper="Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."><form className="@container mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
     event.preventDefault();
     const parts = offsets.trim() ? offsets.split(",").map((part) => part.trim()) : [];
     const numbers = parts.map(Number);
@@ -59,7 +59,7 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
   }}>
 
 
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 @md:grid-cols-2">
       {NUMBERS.map(([field, label, min, max]) => <Field key={field} label={label}>
         <input className="desk-input" type="number" required min={min} max={max} step="1" value={form[field]} disabled={save.isPending} onChange={(event) => setForm({ ...form, [field]: Number(event.target.value) })} />
       </Field>)}

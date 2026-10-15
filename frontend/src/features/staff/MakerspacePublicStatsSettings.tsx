@@ -64,7 +64,7 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
 
   return <>
     <SettingsRow label="Public stats page" helper="Publish activity, popular hardware and current loans. Borrower names have their own privacy setting below.">
-      <div className="grid gap-3"><Badge label="" tone={publicStatsEnabled ? "success" : "neutral"}>{publicStatsEnabled ? "On" : "Off"}</Badge>
+      <div className="@container grid gap-3"><Badge label="" tone={publicStatsEnabled ? "success" : "neutral"}>{publicStatsEnabled ? "On" : "Off"}</Badge>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={publicStatsEnabled}
           disabled={loading || updatePublicStats.isPending} onChange={event => updatePublicStats.mutate(event.target.checked)} />Publish public stats</label>
         <p className="text-sm text-muted">The stats page at /m/{makerspace.slug}/stats returns 404 when disabled.</p>
@@ -72,7 +72,7 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
       </div>
     </SettingsRow>
     <SettingsRow label="Public borrower names" helper="When on, current loans publish the borrower’s name on the public stats page. When off, every borrower is shown as Member.">
-      <div className="grid gap-3"><Badge label="" tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? "On" : "Off"}</Badge>
+      <div className="@container grid gap-3"><Badge label="" tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? "On" : "Off"}</Badge>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={showHolderNames}
           disabled={loading || updateHolderNames.isPending} onChange={event => updateHolderNames.mutate(event.target.checked)} />Publish borrower names publicly</label>
         {updateHolderNames.error ? <p role="alert" className="text-sm text-danger">{updateHolderNames.error.message}</p> : null}

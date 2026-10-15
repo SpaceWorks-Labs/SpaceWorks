@@ -27,7 +27,7 @@ export function ScopePicker({
           ? "Required: choose at least one machine or machine type"
           : "Limit to (leave everything unticked to receive all alerts)"}
       </legend>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="@container"><div className="grid gap-3 @lg:grid-cols-3">
         {groups.map((group) => (
           <div key={group.key}>
             <p className="eyebrow">{group.label}</p>
@@ -52,7 +52,7 @@ export function ScopePicker({
             </div>
           </div>
         ))}
-      </div>
+      </div></div>
     </fieldset>
   );
 }

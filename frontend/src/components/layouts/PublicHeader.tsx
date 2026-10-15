@@ -68,7 +68,7 @@ export function PublicHeader({ makerspace, nav, account, liveStatus }: PublicHea
     </ul>
   </nav>;
   return <header className="border-b border-line bg-panel">
-    <div className="sw-layout sw-public-chrome flex min-w-0 items-center gap-3 md:gap-4">
+    <div className="sw-layout sw-layout-wide sw-public-chrome flex min-w-0 items-center gap-3 md:gap-4">
       <RouteLink href={makerspace.homeHref ?? `/m/${makerspace.slug}`}
         className="min-w-0 shrink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
         {centralIdentity ? <><span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>

@@ -1,4 +1,4 @@
-"""Fixed font vocabulary, bundled in the backend image (Debian Noto OFL fonts).
+"""Fixed font vocabulary, bundled in the backend image (Noto OFL fonts).
 
 No user-selected paths or network font loading. Arabic uses explicit visual bidi;
 Devanagari uses ReportLab/HarfBuzz shaping. CJK uses the PDF standard CID fallback.
@@ -11,24 +11,48 @@ import unicodedata
 from xml.sax.saxutils import escape
 
 
+FONT_FAMILIES = {
+    "sans": "NotoSans", "serif": "NotoSerif", "devanagari": "NotoSansDevanagari",
+    "arabic": "NotoSansArabic", "hebrew": "NotoSansHebrew",
+}
+BUNDLED_FONT_ROOT = Path("/usr/local/share/spaceworks/fonts")
+
+
+@lru_cache(maxsize=1)
+def font_paths():
+    """Resolve only the fixed font vocabulary, across supported image layouts.
+
+    The image copies static Noto fonts to its own bundle, outside source mounts.
+    Distribution paths also support older images and local development installs.
+    Never replace a missing script font with Vera: that silently drops glyphs.
+    """
+    roots = (BUNDLED_FONT_ROOT, Path(__file__).parent / "fonts" / "noto",
+             Path("/usr/share/fonts"), Path("/usr/local/share/fonts"))
+    filenames = {f"{name}-{weight}.ttf" for name in FONT_FAMILIES.values()
+                 for weight in ("Regular", "Bold")}
+    found = {}
+    for root in roots:
+        if root.is_dir():
+            for path in sorted(root.rglob("*.ttf")):
+                if path.name in filenames:
+                    found.setdefault(path.name, path)
+    missing = sorted(filenames - found.keys())
+    if missing:
+        raise RuntimeError("Printable Noto font bundle missing: " + ", ".join(missing)
+                           + ". Rebuild the backend image before running it.")
+    return found
+
+
 @lru_cache(maxsize=1)
 def register_fonts():
-    import reportlab
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.cidfonts import UnicodeCIDFont
     from reportlab.pdfbase.ttfonts import TTFont
 
-    noto = Path("/usr/share/fonts/truetype/noto")
-    vera = Path(reportlab.__file__).parent / "fonts"
-    for family, filename in (("sans", "NotoSans"), ("serif", "NotoSerif"),
-                              ("devanagari", "NotoSansDevanagari"),
-                              ("arabic", "NotoSansArabic"), ("hebrew", "NotoSansHebrew")):
+    paths = font_paths()
+    for family, filename in FONT_FAMILIES.items():
         for bold, suffix in ((False, "Regular"), (True, "Bold")):
-            path = noto / f"{filename}-{suffix}.ttf"
-            if not path.is_file():
-                if family not in ("sans", "serif"):
-                    raise RuntimeError("Printable Unicode fonts missing: rebuild the backend image.")
-                path = vera / ("VeraBd.ttf" if bold else "Vera.ttf")
+            path = paths[f"{filename}-{suffix}.ttf"]
             pdfmetrics.registerFont(TTFont(f"Print-{family}-{bold}", str(path), shapable=True))
     pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
 

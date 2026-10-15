@@ -1,6 +1,7 @@
 """Batch resource authority and feature flags for paginated staff serializers."""
 
-from apps.makerspaces.platform import feature_enabled
+from apps.makerspaces.capability_eligibility import configuration_feature_enabled
+from apps.makerspaces.servability import is_servable
 
 from . import booking_authority
 from .booking_permissions import PERMISSIONS
@@ -11,17 +12,28 @@ def features_for_page(rows):
     # select_related makerspaces are separate Python objects on each resource;
     # deduplicate by tenant ID before invoking the recovery-aware feature policy.
     makerspaces = {row.makerspace_id: row.makerspace for row in rows}
-    return {pk: {
-        "clone_enabled": feature_enabled(makerspace, "bookings.clone"),
-        "staff_tools_enabled": feature_enabled(makerspace, "bookings.staff_tools"),
-        "passes_enabled": feature_enabled(makerspace, "bookings.passes"),
-        "checkin_enabled": feature_enabled(makerspace, "bookings.checkin"),
-        "recurring_enabled": feature_enabled(makerspace, "bookings.recurring"),
-        "broadcasts_enabled": feature_enabled(makerspace, "bookings.broadcasts"),
-        "staff_grants_enabled": feature_enabled(makerspace, "bookings.staff_grants"),
-        "website_enabled": feature_enabled(makerspace, "bookings.website"),
-        "embed_enabled": feature_enabled(makerspace, "bookings.embed"),
-    } for pk, makerspace in makerspaces.items()}
+    features = {
+        "clone_enabled": "bookings.clone",
+        "staff_tools_enabled": "bookings.staff_tools",
+        "passes_enabled": "bookings.passes",
+        "checkin_enabled": "bookings.checkin",
+        "recurring_enabled": "bookings.recurring",
+        "broadcasts_enabled": "bookings.broadcasts",
+        "staff_grants_enabled": "bookings.staff_grants",
+        "website_enabled": "bookings.website",
+        "embed_enabled": "bookings.embed",
+    }
+    result = {}
+    for pk, makerspace in makerspaces.items():
+        # Evaluate the live recovery gate once for this response, then use the
+        # same configuration policy as platform.feature_enabled for each flag.
+        # Archival remains a liveness decision, as on the detail capability path.
+        servable = is_servable(makerspace, allow_archived=True)
+        result[pk] = {
+            field: servable and configuration_feature_enabled(makerspace, key)
+            for field, key in features.items()
+        }
+    return result
 
 
 def authority_for_page(actor, rows):

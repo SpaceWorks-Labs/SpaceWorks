@@ -132,6 +132,7 @@ WRAPPER_SITE_PREFIXES = {
     "backup/recipient_states.py": ("backup.archive_recipient_",),
     "backup/recipients.py": ("backup.archive_recipient_",),
     "bookings/services_bookings.py": ("booking.",),
+    "bookings/services_broadcasts.py": ("booking.broadcast.",),
     "encryption/services.py": ("encryption.dek_",),
     "events/services_core.py": ("event.",),
     "events/services_broadcasts.py": ("event.broadcast.",),

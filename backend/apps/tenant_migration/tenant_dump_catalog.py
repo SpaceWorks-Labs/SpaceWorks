@@ -100,6 +100,8 @@ CATALOG_SCHEMA_SHA256 = "7a7132b9cf5e6f6883e4c8c868cbb35219fcf86f8fbb8cfc46329c4
 # Lane C: five typed editorial/asset models plus the separate framing-origin field.
 # Literal graph reconstruction reproduced HEAD before pinning this reviewed graph;
 # Django's runtime catalog guard remains the integration verification.
+# BK-D adds typed booking campaign/delivery history. Literal reconstruction
+# reproduces the integrated checkpoint graph, including both broadcast histories.
 
 
 def catalog_models(apps_registry=apps):

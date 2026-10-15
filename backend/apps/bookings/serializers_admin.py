@@ -49,7 +49,11 @@ class BookableSpaceWriteSerializer(serializers.Serializer):
     machine_type = serializers.IntegerField(allow_null=True, min_value=1, required=False)
 
     def to_internal_value(self, data):
-        unknown = set(data) - set(self.fields) if isinstance(data, dict) else set()
+        # Keep DRF's established read-only behavior for these server-owned
+        # values. They never enter validated_data; their dedicated endpoints
+        # retain the rules, activation and storage permissions.
+        read_only = {"approval_mode", "image_key", "is_active"}
+        unknown = set(data) - set(self.fields) - read_only if isinstance(data, dict) else set()
         if unknown:
             raise serializers.ValidationError({key: "Unexpected field." for key in sorted(unknown)})
         return super().to_internal_value(data)

@@ -46,7 +46,8 @@ def prepare_booking_save(booking, kwargs):
             raise BookingInvalidTransition("New time must be after the reschedule cutoff.")
     if changed_status and booking.status in ("cancelled", "no_show"):
         require_no_arrival(old)
-    if changed_status and old.status in ("completed", "rejected", "no_show"):
+    if (changed_status and old.status in ("completed", "rejected", "no_show")
+            and booking.status in ("pending", "confirmed")):
         raise BookingInvalidTransition("Terminal bookings cannot be reopened.")
     # A future BK-B exact restore must not resurrect source credentials/arrival.
     rotate = moved or (changed_status and (booking.status == "cancelled" or old.status == "cancelled"))

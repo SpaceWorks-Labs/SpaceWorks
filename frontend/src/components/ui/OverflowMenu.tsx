@@ -28,7 +28,7 @@ export function OverflowMenu({ actions, label = "More actions", className = "", 
     const classes = `flex min-h-11 w-full items-center gap-2 rounded-control px-3 py-2 text-left text-sm hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${disabled ? "cursor-not-allowed bg-surface text-muted" : action.tone === "danger" ? "text-danger" : "text-ink"}`;
     const content = <>{action.icon ? <Icon name={action.icon} /> : null}{text}{action.disabledReason ? <span className="sr-only"> · {action.disabledReason}</span> : null}</>;
     const click = () => { if (!disabled) { close(true); if (action.confirm) setConfirming(action); else action.onClick?.(); } };
-    return <div role="none" key={`${mobile}-${index}`} className={mobile ? "md:hidden" : undefined}>
+    return <div role="none" key={`${mobile}-${action.label}-${action.href ?? ""}-${index}`} className={mobile ? "md:hidden" : undefined}>
       {action.href ? <RouteLink role="menuitem" tabIndex={-1} aria-disabled={disabled || undefined} aria-busy={action.pending || undefined} href={disabled ? undefined : action.href}
         target={action.external ? "_blank" : undefined} rel={action.external ? "noopener noreferrer" : undefined}
         className={classes} onClick={click}>{content}</RouteLink>

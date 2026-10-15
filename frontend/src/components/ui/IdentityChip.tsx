@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Avatar } from "./Avatar";
 import { DateChip } from "./DateChip";
 import { Icon } from "./icon";
-import { toneClasses } from "./tones";
+import { toneMarkClasses } from "./tones";
 import type { Identity } from "./types";
 export type IdentityChipProps = { identity: Identity; label?: string; draft?: boolean };
 export function IdentityChip({ identity, label = "Identity", draft = false }: IdentityChipProps) {
@@ -10,11 +10,11 @@ export function IdentityChip({ identity, label = "Identity", draft = false }: Id
   if (identity.kind === "date") return <DateChip date={identity.date} draft={draft} />;
   if (identity.kind === "avatar") return <Avatar name={identity.name} seed={identity.seed} size="lg" tone={draft ? "neutral" : undefined} />;
   if (identity.kind === "code") return <span role="img" aria-label={label === "Identity" ? identity.code : label}
-    className={`inline-flex h-13 min-w-13 shrink-0 items-center justify-center rounded-md border px-2 font-sans text-sm font-semibold tabular-nums ${toneClasses[draft ? "neutral" : "accent"]}`}>
+    className={`inline-flex h-13 min-w-13 shrink-0 items-center justify-center rounded-md border px-2 font-sans text-sm font-semibold tabular-nums ${toneMarkClasses[draft ? "neutral" : "accent"]}`}>
     {identity.code}</span>;
   if (identity.kind === "image" && failedSrc !== identity.src) return <img src={identity.src} alt={label}
     className="h-13 w-13 shrink-0 rounded-md border border-line object-cover" onError={() => setFailedSrc(identity.src)} />;
   return <span role="img" aria-label={label}
-    className={`inline-flex h-13 w-13 shrink-0 items-center justify-center rounded-md border ${toneClasses[!draft && identity.kind === "icon" ? identity.tone : "neutral"]}`}>
+    className={`inline-flex h-13 w-13 shrink-0 items-center justify-center rounded-md border ${toneMarkClasses[!draft && identity.kind === "icon" ? identity.tone : "neutral"]}`}>
     <Icon name={identity.kind === "icon" ? identity.icon : "User"} /></span>;
 }

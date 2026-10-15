@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { SpaceWorksLogo } from "../SpaceWorksLogo";
 import { ActionControl, IdentityChip, PageHeader } from "../ui";
 import type { Action, IconName, Identity, Tone } from "../ui";
-import { toneClasses } from "../ui/tones";
+import { toneSurfaceClasses } from "../ui/tones";
 import { LayoutFrame, QueryContent } from "./LayoutFrame";
 import type { LayoutProps } from "./types";
 
@@ -28,7 +28,7 @@ export function CenteredCardLayout({ media, eyebrow, title, body, content, prima
         {media ? <div className="mb-6">
           {"icon" in media ? <IdentityChip identity={{ kind: "icon", ...media }} label={title} />
             : "avatars" in media ? <div className="flex -space-x-3">{media.avatars.map((identity, index) => <IdentityChip key={index} identity={identity} />)}</div>
-            : <div aria-hidden="true" className={`h-28 rounded-xl border ${toneClasses[media.banner]}`} />}
+            : <div aria-hidden="true" className={`h-28 rounded-xl border ${toneSurfaceClasses[media.banner]}`} />}
         </div> : null}
         <PageHeader eyebrow={eyebrow} title={title} />
         <QueryContent {...query}>

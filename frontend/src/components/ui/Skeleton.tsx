@@ -1,7 +1,7 @@
 export type SkeletonProps = { className?: string };
 export type SkeletonRowsProps = { rows?: number; cols: number };
 export function Skeleton({ className = "" }: SkeletonProps) {
-  return <div className={`motion-safe:animate-pulse rounded-control bg-line ${className}`} aria-hidden="true" />;
+  return <div className={`motion-safe:animate-pulse rounded-control bg-line dark:bg-hover ${className}`} aria-hidden="true" />;
 }
 
 export function SkeletonRows({ rows = 5, cols }: SkeletonRowsProps) {

@@ -23,16 +23,16 @@
     @apply inline-flex min-h-6 min-w-0 max-w-full items-center justify-center gap-1 rounded-full border border-line bg-surface px-2 py-1 text-center text-caption font-semibold break-words text-ink;
   }
   .chip-available, .status-box-done {
-    @apply border-transparent bg-success text-on-success dark:bg-success-soft dark:text-success-ink;
+    @apply border-transparent bg-success text-on-success;
   }
   .chip-active, .status-box-accent {
     @apply border-transparent bg-accent-soft text-accent-ink;
   }
   .status-box-active {
-    @apply border-transparent bg-info text-on-info dark:bg-info-soft dark:text-info-ink;
+    @apply border-transparent bg-info text-on-info;
   }
   .status-box-pending {
-    @apply border-transparent bg-warn text-on-warn dark:bg-warn-soft dark:text-warn-ink;
+    @apply border-transparent bg-warn text-on-warn;
   }
   .status-box-emphasis {
     @apply border-transparent bg-emphasis text-on-emphasis;

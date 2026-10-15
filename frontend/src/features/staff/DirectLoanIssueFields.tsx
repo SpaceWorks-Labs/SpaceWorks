@@ -26,22 +26,6 @@ export function DirectLoanBorrowerFields({
   membersLoading: boolean;
   membersError?: string;
 }) {
-  const queryClient = useQueryClient();
-  const selectedMember = memberOptions.find(
-    (member) => String(member.user_id) === borrowerId,
-  );
-  const witnessWaiver = useMutation({
-    mutationFn: () => {
-      if (!selectedMember) throw new Error("Select a member first.");
-      return staffRequest(
-        `/admin/memberships/${selectedMember.membership_id}/waiver/witness`,
-        { method: "POST", body: JSON.stringify({}) },
-      );
-    },
-    onSuccess: () => queryClient.invalidateQueries({
-      queryKey: ["members", makerspaceId],
-    }),
-  });
   return (
     <>
       <label className="block text-sm font-medium text-ink" htmlFor="direct-loan-borrower">
@@ -52,10 +36,7 @@ export function DirectLoanBorrowerFields({
         className="desk-input mt-1 w-full"
         value={borrowerId}
         disabled={membersLoading}
-        onChange={(event) => {
-          onBorrowerIdChange(event.target.value);
-          witnessWaiver.reset();
-        }}
+        onChange={(event) => onBorrowerIdChange(event.target.value)}
       >
         <option value="">Select an active member</option>
         {memberOptions.map((member) => (
@@ -65,22 +46,37 @@ export function DirectLoanBorrowerFields({
         ))}
       </select>
       {membersError ? <p className="mt-2 text-sm text-danger">{membersError}</p> : null}
-      {selectedMember ? (
-        <button
-          className="desk-button mt-2"
-          type="button"
-          disabled={witnessWaiver.isPending}
-          onClick={() => witnessWaiver.mutate()}
-        >
+      <DirectLoanBorrowerExtras key={borrowerId} makerspaceId={makerspaceId}
+        member={memberOptions.find((member) => String(member.user_id) === borrowerId)} onBorrowerIdChange={onBorrowerIdChange} />
+    </>
+  );
+}
+
+/**
+ * The counter's borrower extras: record a waiver the member accepted in person, or name a walk-in
+ * so the handout can be recorded against them. Key it by borrower so a recorded waiver resets.
+ */
+export function DirectLoanBorrowerExtras({ makerspaceId, member, onBorrowerIdChange }: {
+  makerspaceId: number; member?: DirectLoanMember; onBorrowerIdChange: (value: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const witnessWaiver = useMutation({
+    mutationFn: () => {
+      if (!member) throw new Error("Select a member first.");
+      return staffRequest(`/admin/memberships/${member.membership_id}/waiver/witness`, { method: "POST", body: JSON.stringify({}) });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["members", makerspaceId] }),
+  });
+  return (
+    <>
+      {member ? (
+        <button className="desk-button mt-2" type="button" disabled={witnessWaiver.isPending} onClick={() => witnessWaiver.mutate()}>
           Record witnessed waiver acceptance
         </button>
       ) : null}
       {witnessWaiver.isSuccess ? <p className="mt-2 text-sm text-success-ink">Waiver acceptance recorded.</p> : null}
       {witnessWaiver.error ? <p className="mt-2 text-sm text-danger">{witnessWaiver.error.message}</p> : null}
-      <WalkInMemberForm
-        makerspaceId={makerspaceId}
-        onCreated={(userId) => onBorrowerIdChange(String(userId))}
-      />
+      <WalkInMemberForm makerspaceId={makerspaceId} onCreated={(userId) => onBorrowerIdChange(String(userId))} />
     </>
   );
 }

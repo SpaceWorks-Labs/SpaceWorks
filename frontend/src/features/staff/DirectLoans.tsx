@@ -17,9 +17,9 @@ import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { MemberClaimCodes } from "./MemberClaimCodes";
 import { DirectLoanCompactWork } from "./DirectLoanCompactWork";
 import { useDirectLoanReturn } from "./useDirectLoanReturn";
+import { useDirectLoanContainer } from "./useDirectLoanContainer";
 import {
   labelForTarget,
-  type ContainerResponse,
   type DirectLoanMemberResponse,
   type LineDraft,
   type ProductOption,
@@ -41,12 +41,11 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const [scanned, setScanned] = useState<ScannedPayload[]>([]);
   const [showScanner, setShowScanner] = useState(false);
   const [qrPayloads, setQrPayloads] = useState("");
-  const [containerId, setContainerId] = useState("");
-  const [showContainerScanner, setShowContainerScanner] = useState(false);
-  const [containerScanError, setContainerScanError] = useState("");
   const [issueEvidenceId, setIssueEvidenceId] = useState<number | null>(null);
   const [issueRemark, setIssueRemark] = useState("Issued from direct handout.");
   const [issueUploadKey, setIssueUploadKey] = useState(0);
+  const container = useDirectLoanContainer(makerspace.id);
+  const resetContainer = container.reset;
   useEffect(() => {
     setBorrowerId("");
     setLineRows([{ key: 1, productId: "", quantity: "1" }]);
@@ -54,27 +53,18 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
     setScanned([]);
     setShowScanner(false);
     setQrPayloads("");
-    setContainerId("");
-    setShowContainerScanner(false);
-    setContainerScanError("");
+    resetContainer();
     setIssueEvidenceId(null);
     setIssueRemark("Issued from direct handout.");
     setIssueUploadKey((key) => key + 1);
-  }, [makerspace.id]);
+  }, [makerspace.id, resetContainer]);
   const returnFlow = useDirectLoanReturn(makerspace);
   const products = useStaffGet<{ results: ProductOption[] }>(
     ["inventory-all", makerspace.id],
     `/admin/makerspace/${makerspace.id}/inventory?page_size=1000`,
   );
-  // Fetch ALL containers (distinct cache key from the shared ["containers"] entry so a
-  // truncated first page can't leak in): the dropdown + the scan membership check both
-  // need the complete list, else a valid container past page one falsely reads as "not found".
-  const containers = useStaffGet<ContainerResponse>(
-    ["containers-all", makerspace.id],
-    `/admin/makerspace/${makerspace.id}/containers?page_size=1000`,
-  );
   // The endpoint is a DRF ListAPIView, so it answers with the paginated envelope, not a
-  // bare array — the same unwrap `containerOptions` below already does. Typing it as an
+  // bare array — the same unwrap `useDirectLoanContainer` does. Typing it as an
   // array made `.map` a runtime TypeError that took the whole panel down with it.
   const members = useStaffGet<DirectLoanMemberResponse>(
     ["direct-loan-members", makerspace.id],
@@ -83,9 +73,6 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const memberOptions = Array.isArray(members.data)
     ? members.data
     : members.data?.results ?? [];
-  const containerOptions = Array.isArray(containers.data)
-    ? containers.data
-    : containers.data?.results ?? [];
   const activeProducts = (products.data?.results ?? []).filter((product) => !product.is_archived);
   const productById = new Map(activeProducts.map((product) => [product.id, product]));
   const loans = usePaginatedQuery<DirectLoan>({
@@ -102,8 +89,8 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const kits = useKitChecklist(`/admin/makerspace/${makerspace.id}/kit-checklist-preview`,
     { phase: "issue", qr_payloads: Array.from(new Set([...scanned.map((item) => item.payload), ...pastedQrPayloads])),
       items: validManualLines.map((line) => ({ product_id: Number(line.productId), quantity: Number(line.quantity) })),
-      container_id: containerId ? Number(containerId) : null },
-    featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist") && Boolean(containerId || scanned.length || pastedQrPayloads.length || validManualLines.length));
+      container_id: container.containerId ? Number(container.containerId) : null },
+    featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist") && Boolean(container.containerId || scanned.length || pastedQrPayloads.length || validManualLines.length));
   const issue = useMutation({
     mutationFn: () =>
       staffRequest(`/admin/makerspace/${makerspace.id}/direct-loans`, {
@@ -113,7 +100,7 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
           borrower_id: Number(borrowerId),
           evidence_id: issueEvidenceId as number,
           remark: issueRemark.trim(),
-          container_id: containerId ? Number(containerId) : null,
+          container_id: container.containerId ? Number(container.containerId) : null,
           qr_payloads: Array.from(new Set([
             ...scanned.map((item) => item.payload),
             ...pastedQrPayloads,
@@ -130,16 +117,14 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
       setNextLineKey(2);
       setScanned([]);
       setQrPayloads("");
-      setContainerId("");
-      setShowContainerScanner(false);
-      setContainerScanError("");
+      resetContainer();
       setIssueEvidenceId(null);
       setIssueRemark("Issued from direct handout.");
       setIssueUploadKey((key) => key + 1);
     },
   });
   const hasIssueContent =
-    validManualLines.length > 0 || scanned.length > 0 || pastedQrPayloads.length > 0 || Boolean(containerId);
+    validManualLines.length > 0 || scanned.length > 0 || pastedQrPayloads.length > 0 || Boolean(container.containerId);
   const canIssue =
     Boolean(borrowerId) &&
     hasIssueContent &&
@@ -177,33 +162,10 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
         : [...items, { payload: cleanPayload, label }],
     );
   };
-  const handleContainerScan = async (payload: string) => {
-    try {
-      const result = await staffRequest<QrResolveResponse>("/admin/qr/resolve", {
-        method: "POST",
-        body: JSON.stringify({ payload }),
-      });
-      const target = result.target;
-      if (target.type !== "box") {
-        setContainerScanError("Scanned QR is not a container.");
-        return;
-      }
-      if (!containerOptions.some((container) => container.id === target.id)) {
-        setContainerScanError("That container isn't available for handout (inactive or not found).");
-        return;
-      }
-      setContainerId(String(target.id));
-      setContainerScanError("");
-    } catch {
-      setContainerScanError("Could not resolve the scanned QR.");
-    } finally {
-      setShowContainerScanner(false);
-    }
-  };
 
   const compactWork = <DirectLoanCompactWork
     borrower={{ makerspaceId: makerspace.id, borrowerId, onBorrowerIdChange: setBorrowerId, memberOptions, membersLoading: members.isLoading, membersError: members.error?.message }}
-    container={{ containerId, onContainerIdChange: setContainerId, containerOptions, containersLoading: containers.isLoading, scanError: containerScanError, onScanClick: () => { setContainerScanError(""); setShowContainerScanner(true); } }}
+    container={container.field}
     items={{ lineRows, activeProducts, productById, productsLoading: products.isLoading, onAdd: addLine, onUpdate: updateLine, onRemove: removeLine }}
     qr={{ scanned, qrPayloads, onOpenScanner: () => setShowScanner(true), onRemoveScanned: removeScanned, onQrPayloadsChange: setQrPayloads }}
     evidence={{ uploadKey: issueUploadKey, makerspaceId: makerspace.id, disabled: issue.isPending, onUploaded: setIssueEvidenceId, remark: issueRemark, onRemarkChange: setIssueRemark }}>
@@ -212,9 +174,9 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
         {!hasIssueContent ? <p className="mt-3 text-sm text-muted">Add at least one item, QR payload, or container before issuing.</p> : null}
         {issue.error ? <p className="mt-3 text-sm text-danger">{issue.error.message}</p> : null}
         {products.error ? <p className="mt-3 text-sm text-danger">{products.error.message}</p> : null}
-        {containers.error ? <p className="mt-3 text-sm text-danger">{containers.error.message}</p> : null}
+        {container.error ? <p className="mt-3 text-sm text-danger">{container.error.message}</p> : null}
         {showScanner ? <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} /> : null}
-        {showContainerScanner ? <QrScanner onScan={handleContainerScan} onClose={() => setShowContainerScanner(false)} /> : null}
+        {container.scanning ? <QrScanner onScan={payload => void container.scan(payload)} onClose={container.closeScanner} /> : null}
   </DirectLoanCompactWork>;
   const shown = loans.results;
   const tabHref = (key: string) => { const next = new URLSearchParams(params); next.set("handout", key); return `?${next}`; };

@@ -13,9 +13,16 @@ import { useResolveCard } from "../panels/memberCards/api";
 import { EvidenceUpload } from "../panels/EvidenceUpload";
 import { useStaffGet, type Makerspace } from "../panels/shared";
 import type { DirectLoanMemberResponse, ProductOption, QrResolveResponse } from "../DirectLoansTypes";
+import { DirectLoanBorrowerExtras, DirectLoanContainerField } from "../DirectLoanIssueFields";
+import { useDirectLoanContainer } from "../useDirectLoanContainer";
+
+// Desk staff who prefer the one-page counter form land back in it next time.
+const VIEW_KEY = "sw.direct-handout.view";
+function storedCompact() { try { return localStorage.getItem(VIEW_KEY) === "compact"; } catch { return false; } }
+function storeCompact(compact: boolean) { try { localStorage.setItem(VIEW_KEY, compact ? "compact" : "guided"); } catch { /* per-browser convenience only */ } }
 
 export function DirectHandoverWizard({ makerspace, onClose, compactWork, compactAction }: { makerspace: Makerspace; onClose: () => void; compactWork?: ReactNode; compactAction?: Action }) {
-  const [compact, setCompact] = useState(false);
+  const [compact, setCompact] = useState(() => Boolean(compactWork) && storedCompact());
   const client = useQueryClient();
   const authority = useContext(StaffListContext);
   const canScanCard = authority.isSuperadmin || authority.actions?.includes("scan_member_cards");
@@ -37,15 +44,17 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
   const items = Object.entries(selected).filter(([, count]) => count !== "" && Number(count) > 0).map(([id, count]) => ({ product_id: Number(id), quantity: Number(count) }));
   const quantitiesValid = Object.entries(selected).every(([id, count]) => count === "" || (Number.isInteger(Number(count)) && Number(count) >= 0 && Number(count) <= (productRows.find(row => row.id === Number(id))?.available_quantity ?? 0)));
   const card = useResolveCard(makerspace.id);
-  const kits = useKitChecklist(`/admin/makerspace/${makerspace.id}/kit-checklist-preview`, { phase: "issue", qr_payloads: payloads, items, container_id: null }, featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist") && Boolean(items.length || payloads.length) && quantitiesValid);
-  const itemsReady = Boolean(items.length || payloads.length) && quantitiesValid;
+  const container = useDirectLoanContainer(makerspace.id);
+  const containerId = container.containerId ? Number(container.containerId) : null;
+  const kits = useKitChecklist(`/admin/makerspace/${makerspace.id}/kit-checklist-preview`, { phase: "issue", qr_payloads: payloads, items, container_id: containerId }, featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist") && Boolean(items.length || payloads.length || containerId) && quantitiesValid);
+  const itemsReady = Boolean(items.length || payloads.length || containerId) && quantitiesValid;
   const ready = Boolean(borrower && itemsReady && evidence && kits.ready);
   const issue = useMutation({
     mutationFn: () => {
       if (!ready) throw new Error("Choose a borrower and eligible tools, then upload an issue photo.");
-      return staffRequest<{ id: number }>(`/admin/makerspace/${makerspace.id}/direct-loans`, { method: "POST", body: JSON.stringify({ borrower_id: Number(borrower), evidence_id: evidence, remark: remark.trim(), qr_payloads: payloads, items, kit_checklist: kits.counts }) });
+      return staffRequest<{ id: number }>(`/admin/makerspace/${makerspace.id}/direct-loans`, { method: "POST", body: JSON.stringify({ borrower_id: Number(borrower), evidence_id: evidence, remark: remark.trim(), container_id: containerId, qr_payloads: payloads, items, kit_checklist: kits.counts }) });
     },
-    onSuccess: result => { setReceipt({ id: result.id, at: new Date().toLocaleString(), borrower: memberRows.find(row => String(row.user_id) === borrower)?.display_name ?? borrower, labels: items.map(item => `${productRows.find(row => row.id === item.product_id)?.name ?? item.product_id} × ${item.quantity}`) }); setStep(3); void client.invalidateQueries(); },
+    onSuccess: result => { setReceipt({ id: result.id, at: new Date().toLocaleString(), borrower: memberRows.find(row => String(row.user_id) === borrower)?.display_name ?? borrower, labels: [...(container.label ? [`Container: ${container.label}`] : []), ...items.map(item => `${productRows.find(row => row.id === item.product_id)?.name ?? item.product_id} × ${item.quantity}`)] }); setStep(3); void client.invalidateQueries(); },
   });
   async function scanCard(payload: string) {
     setBorrower(""); setScanError("");
@@ -78,14 +87,16 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
     result={receipt ? { tone: "success", title: `Handout #${receipt.id} recorded`, summary: `${receipt.borrower} · ${receipt.at}`,
       children: <><div>{receipt.labels.map((label, index) => <p key={index}>{label}</p>)}<p>{payloads.length} tool QR scans · Evidence photo #{evidence}</p>{remark ? <p>{remark}</p> : null}</div><button className="desk-button" onClick={() => window.print()}>Print receipt</button></>, next: { label: "Close receipt", onClick: onClose } } : undefined}
     work={<>
-      {compactWork ? <button className="desk-button mb-4" onClick={() => setCompact(!compact)}>{compact ? "Guided view" : "Compact view"}</button> : null}
+      {compactWork ? <button className="desk-button mb-4" onClick={() => { setCompact(!compact); storeCompact(!compact); }}>{compact ? "Guided view" : "Compact view"}</button> : null}
       {compact ? compactWork : <>
     <fieldset className="grid gap-3" disabled={issue.isPending}><legend className="sr-only">Handout details</legend>
       {step === 0 ? <>
         {canScanCard ? <><button className="desk-button" onClick={() => setScanning("card")}>Scan member card</button><label>Card payload<input className="desk-input block" value={cardPayload} onChange={event => setCardPayload(event.target.value)} /></label><button className="desk-button" disabled={!cardPayload.trim() || card.isPending} onClick={() => void scanCard(cardPayload)}>Check card</button></> : null}
         <label>Borrower<select className="desk-input block w-full" value={borrower} onChange={event => setBorrower(event.target.value)}><option value="">Choose an active member</option>{memberRows.map(row => <option key={row.user_id} value={row.user_id}>{row.display_name || row.username}</option>)}</select></label>
+        <DirectLoanBorrowerExtras key={borrower} makerspaceId={makerspace.id} member={memberRows.find(row => String(row.user_id) === borrower)} onBorrowerIdChange={setBorrower} />
       </> : null}
       {step === 1 ? <>
+        <DirectLoanContainerField {...container.field} />
         <button className="desk-button" onClick={() => setScanning("items")}>Scan tools continuously</button><label>Tool QR payload<input className="desk-input block w-full" value={qrInput} onChange={event => setQrInput(event.target.value)} /></label><button className="desk-button" disabled={!qrInput.trim()} onClick={() => void scanItem(qrInput)}>Check tool QR</button>
         <ul>{payloads.map(value => <li key={value} className="flex flex-wrap gap-2 break-all">{value}<button className="desk-button-ghost" onClick={() => setPayloads(payloads.filter(payload => payload !== value))}>Remove</button></li>)}</ul>
         {productRows.filter(row => row.tracking_mode !== "individual").map(row => <label key={row.id} className="grid gap-1">{row.name}<input className="desk-input" type="number" min="0" step="1" max={row.available_quantity} value={selected[row.id] ?? ""} onChange={event => setSelected({ ...selected, [row.id]: event.target.value })} /></label>)}
@@ -94,6 +105,7 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
     </fieldset>
       </>}
       {issue.error || scanError ? <div role="alert"><Callout size="inline" tone="danger" lead={scanError || issue.error?.message || "Couldn't issue handout. Try again."} /></div> : null}
+    {container.scanning ? <QrScanner onScan={payload => void container.scan(payload)} onClose={container.closeScanner} /> : null}
     {scanning ? <QrScanner feedback={<><p role="status">{scanning === "items" ? `${plural(payloads.length, "tool")} scanned` : "Check borrower card"}</p>{scanError ? <p role="alert">{scanError}</p> : null}</>} onScan={payload => { if (scanning === "card") { if (!card.isPending) void scanCard(payload); } else void scanItem(payload); }} onClose={() => setScanning(null)} /> : null}
     </>}
   />;

@@ -49,7 +49,7 @@ export function StaffShell(props: Props) {
     ...(props.makerspaces.length > 1 ? props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })) : []),
     ...(props.isSuperadmin ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : []), ...publicPage,
   ] : [];
-  const workspace: ShellWorkspace | undefined = space ? { name: space.name, subtitle: props.roleName ?? "",
+  const workspace: ShellWorkspace | undefined = space ? { name: space.name, subtitle: [space.public_code || space.slug, props.roleName].filter(Boolean).join(" · "),
     avatar: { kind: "avatar", name: space.name, seed: space.slug }, menu, locked: singleTenantLocked || props.makerspaces.length === 1 } : props.isSuperadmin ? {
       name: "Choose a space", subtitle: "Super Admin", avatar: { kind: "icon", icon: "Settings", tone: "neutral" },
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),

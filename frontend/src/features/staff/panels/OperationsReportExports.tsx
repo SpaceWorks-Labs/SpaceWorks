@@ -2,7 +2,6 @@ import { useMutation } from "@tanstack/react-query";
 
 import { downloadStaffFile } from "../../../lib/api";
 import { ReportSchedules } from "./ReportSchedules";
-import { Panel } from "./shared";
 import { reportFormats, reportGrain, type ReportCatalog, type ReportKey } from "./operationsReportsConfig";
 
 type ReportEntry = ReportCatalog["results"][number];
@@ -28,9 +27,9 @@ export function useOperationsReportExport({ reports, grain, filters = {}, report
   });
 }
 
-// The export/schedule block of the reports tab, split out of OperationsReports.tsx so
-// that file stays under the size ceiling. It owns the export mutation (a file download,
-// not server state, so nothing is invalidated) and hands schedules their definitions.
+// Every exportable report with a button per format, so any report can be exported without
+// selecting it first. Opened from the Reports header; schedules have their own drawer.
+// It owns the export mutation (a file download, not server state, so nothing is invalidated).
 export function OperationsReportExports({
   reports,
   selectedReport,
@@ -41,7 +40,7 @@ export function OperationsReportExports({
   grain,
   aggregate,
   makerspaceId,
-  reportsEnabled,
+  reportsEnabled = false,
 }: {
   reports: ReportEntry[];
   selectedReport: ReportKey;
@@ -51,21 +50,21 @@ export function OperationsReportExports({
   filters?: { months?: string; status?: string; subject_type?: string };
   grain: string;
   aggregate: boolean;
-  makerspaceId: number;
-  reportsEnabled: boolean;
+  /** With a makerspace, schedules render under the grid (the Reports page keeps them in their own drawer). */
+  makerspaceId?: number;
+  reportsEnabled?: boolean;
 }) {
   const exportReport = useOperationsReportExport({ reports, grain, filters, reportsBase, dateSuffix, aggregate });
 
   return (
-    <>
-      <Panel title="Exports">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <section aria-label="Exports">
+        <div className="grid gap-3 sm:grid-cols-2">
           {reports.map((definition) => (
             <div key={definition.key} className={`rounded-md border p-3 ${selectedReport === definition.key ? "border-accent bg-accent-soft" : "border-line bg-bg"}`}>
               <h3 className="title-section">{definition.title}</h3>
               <div className="mt-3 flex gap-2">
                 {reportFormats(definition).map((format) => (
-                  <button key={format} className="desk-button-ghost" type="button" disabled={exportReport.isPending} onClick={() => { onSelect(definition.key); exportReport.mutate({ report: definition.key, format }); }}>
+                  <button key={format} className="desk-button" type="button" disabled={exportReport.isPending} onClick={() => { onSelect(definition.key); exportReport.mutate({ report: definition.key, format }); }}>
                     {format.toUpperCase()}
                   </button>
                 ))}
@@ -74,17 +73,15 @@ export function OperationsReportExports({
           ))}
         </div>
         {exportReport.error ? (
-          <p className="mt-3 rounded-md border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">
+          <p role="alert" className="mt-3 rounded-md border border-danger-line bg-panel px-3 py-2 text-sm text-danger">
             {exportReport.error instanceof Error ? exportReport.error.message : "Could not export report."}
           </p>
         ) : null}
-      </Panel>
-
       {/* Only schedulable definitions reach schedules: email/chat delivery of e.g. the
           audit trail would broaden custody of accountability data. */}
-      {!aggregate && reportsEnabled ? (
+      {makerspaceId !== undefined && !aggregate && reportsEnabled ? (
         <ReportSchedules makerspaceId={makerspaceId} reports={reports.filter((report) => report.schedulable !== false)} />
       ) : null}
-    </>
+    </section>
   );
 }

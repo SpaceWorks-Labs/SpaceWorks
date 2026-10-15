@@ -1,8 +1,9 @@
 import { EmptyState, ErrorText, ListRow, RelativeTime, StatusPill } from "../../components/ui";
+import { toneClasses } from "../../components/ui/tones";
 import type { BackupArchive } from "./backupApi";
 
 export function ArchiveDisclosure({ deployment }: { deployment: boolean }) {
-  return <p className="rounded-xl border border-line bg-surface p-4 text-sm text-ink">This {deployment ? "deployment archive contains production data and continuity secrets" : "makerspace archive contains production tenant data"}, encrypted to the configured age recipient. Downloaded copies are outside makerspace purge guarantees; delete retained copies separately.</p>;
+  return <p className={`rounded-xl border p-4 text-sm ${toneClasses.warn}`}>This {deployment ? "deployment archive contains production data and continuity secrets" : "makerspace archive contains production tenant data"}, encrypted to the configured age recipient. Downloaded copies are outside makerspace purge guarantees; delete retained copies separately.</p>;
 }
 export function BackupArchiveRows({ rows, onDownload, downloading }: { rows: BackupArchive[]; onDownload: (id: string) => void; downloading?: string }) {
   return <div className="grid gap-3">{!rows.length ? <EmptyState message="No backups yet. Create one before you change anything big." /> : rows.map(row => <ListRow key={row.id}

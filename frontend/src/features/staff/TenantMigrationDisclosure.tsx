@@ -8,6 +8,7 @@ import {
   revokeDisclosure,
   tenantMigrationKeys,
 } from "./tenantMigrationApi";
+import { ActionControl } from "../../components/ui";
 import { ErrorText, StatusPill } from "./tenantMigrationUi";
 
 export function TenantMigrationDisclosure({ makerspaceId, active = true }: { makerspaceId: number; active?: boolean }) {
@@ -106,7 +107,9 @@ export function TenantMigrationDisclosure({ makerspaceId, active = true }: { mak
           {activeApproval ? (
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <p className="text-sm text-success-ink">{activeApproval.approved_count} of {activeApproval.identity_count} identities approved for this digest.</p>
-              <button className="desk-button-danger" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(activeApproval.id)}>Revoke approval</button>
+              <ActionControl action={{ label: "Revoke approval", tone: "danger", pending: revoke.isPending, pendingLabel: "Revoking…",
+                confirm: { title: "Revoke approval?", message: "Exports can no longer be created from this closure until it is reviewed and approved again.", confirmLabel: "Revoke approval" },
+                onClick: () => revoke.mutate(activeApproval.id) }} />
             </div>
           ) : (
             <div className="mt-3">

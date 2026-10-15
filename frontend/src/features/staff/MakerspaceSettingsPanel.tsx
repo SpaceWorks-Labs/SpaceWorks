@@ -2,9 +2,10 @@ import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { useState } from "react";
 import { SettingsLayout } from "../../components/layouts";
 import { ApiClientsTelegramSettings } from "./ApiClientsTelegramSettings";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { MakerspaceArchiveRequest } from "../../generated/api";
 
-import { StatusPill, Field, Modal, SettingsRow } from "../../components/ui";
+import { ErrorBlock, StatusPill, Field, Modal, SettingsRow } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { MakerspaceBrandingSettings } from "./MakerspaceBrandingSettings";
 import { MakerspaceBookingRulesSettings } from "./MakerspaceBookingRulesSettings";
@@ -48,6 +49,11 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     ["makerspace-settings", makerspace.id],
     `/admin/makerspaces/${makerspace.id}`,
   );
+  // Same cache entry as the archive panel: a pending request must be visible on the page,
+  // not only after opening the request form.
+  const archiveRequests = useQuery({ queryKey: ["staff", "archive-requests", makerspace.id] as const, enabled: canManageMakerspace,
+    queryFn: () => staffRequest<MakerspaceArchiveRequest[]>(`/admin/makerspace/${makerspace.id}/archive-requests`) });
+  const archivePending = Boolean(archiveRequests.data?.some(request => request.status === "pending"));
   const superadminAccessEnabled =
     settings.data?.superadmin_access_enabled ?? makerspace.superadmin_access_enabled ?? true;
   const staffNotificationsEnabled =
@@ -117,7 +123,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
   const disabled = settings.isLoading || updateAccess.isPending || reEnableBlocked;
   const notificationsDisabled = settings.isLoading || updateStaffNotifications.isPending;
   const shared = { makerspace, settings: settings.data, loading: settings.isLoading };
-  const privacy = <SettingsRow label="Superadmin access" helper="Hide this makerspace from platform reports, dashboards, audit and admin lists. Only the makerspace admin can restore access.">
+  const privacy = <SettingsRow label="Superadmin access" helper="Hide this makerspace from platform reports, dashboards, audit and admin lists. Only the makerspace admin can restore access. It does not revoke the superadmin's platform or database access.">
     <div className="grid gap-3">
       <StatusPill label={superadminAccessEnabled ? "On" : "Off"} tone={superadminAccessEnabled ? "success" : "warn"} />
       {reEnableBlocked ? <p className="text-sm text-muted">Re-enable is controlled by the makerspace admin.</p> : null}
@@ -136,7 +142,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     {updateStaffNotifications.error ? <p role="alert" className="text-sm text-danger">{updateStaffNotifications.error.message}</p> : null}
   </SettingsRow>;
   const printRecovery = <SettingsRow label="Public print status recovery" helper="Choose how people recover a public print request when they lose their status link.">
-    <div className="grid gap-3"><StatusPill label={statusLookupLabel(publicPrintStatusLookupPolicy)} />
+    <div className="grid gap-3"><StatusPill label={statusLookupLabel(publicPrintStatusLookupPolicy)} tone={publicPrintStatusLookupPolicy === "token_only" ? "neutral" : "success"} />
       <Field label="Public print status lookup policy"><select className="desk-input w-full" value={publicPrintStatusLookupPolicy}
         disabled={settings.isLoading || updatePrintStatusLookupPolicy.isPending}
         onChange={event => updatePrintStatusLookupPolicy.mutate(event.target.value as Makerspace["public_print_status_lookup_policy"])}>
@@ -146,10 +152,14 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     </div>
   </SettingsRow>;
   return <>
+    {/* Every editor owns its own query, so the parent GET never gates the page: while it
+        loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a
+        failure is reported here instead of hiding payments, notifications and the rest. */}
     <SettingsLayout header={{ title: "Makerspace settings", subtitle: "Make this space work for your community.",
+      meta: settings.error ? <ErrorBlock className="w-full" onRetry={() => { void settings.refetch(); }}
+        error={new Error(`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)} /> : undefined,
       primary: { label: "View public site", href: `/m/${makerspace.slug}` } }}
-      state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready",
-        error: "Couldn't load makerspace settings. Try again.", onRetry: () => { void settings.refetch(); } }}
+      state={{ status: "ready" }}
       subnav="auto" sections={[
         { id: "general", title: "General", rows: <>
           <MakerspaceGeneralSettings {...shared} />
@@ -190,14 +200,15 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
         { id: "integrations", title: "Email & integrations", rows: <>
           <MakerspaceEmailSettings makerspace={makerspace} /><MakerspaceWebhookSettings makerspace={makerspace} />
           {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
-          <IntegrationHealthPanel makerspace={makerspace} />
+          <IntegrationHealthPanel makerspace={makerspace} isSuperadmin={isSuperadmin} />
         </> },
         { id: "privacy", title: "Privacy & evidence", rows: <>{privacy}
           {canManageMakerspace ? <EvidenceRetentionPanel makerspaceId={makerspace.id} /> : null}
         </> },
       ]} danger={canManageMakerspace ? [{ title: "Archive this makerspace",
-        consequence: "Request archival for this makerspace. A superadmin must confirm before staff access is removed.",
-        action: { label: "Request archival", onClick: () => setArchiveOpen(true) } }] : []} />
+        consequence: archivePending ? "An archival request is pending superadmin review. Open it to see the request or withdraw it."
+          : "Request archival for this makerspace. A superadmin must confirm before staff access is removed.",
+        action: { label: archivePending ? "View pending request" : "Request archival", onClick: () => setArchiveOpen(true) } }] : []} />
     <Modal open={archiveOpen} onClose={() => setArchiveOpen(false)} title="Archive this makerspace" size="xl">
       <MakerspaceArchiveRequestPanel makerspaceId={makerspace.id} canManageMakerspace={canManageMakerspace} />
     </Modal>

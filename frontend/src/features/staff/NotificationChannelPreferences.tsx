@@ -85,7 +85,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
                 onChange={event => updatePreference.mutate({ feature: feature.key, channel: channel.key, enabled: event.target.checked })} />
             </label>;
           } })),
-      ]} emptyTitle="No notification channels yet." />
+      ]} caption="Notification channels enabled per feature. Checked means enabled." emptyTitle="No notification channels yet." />
       {warnings.length ? (
         <div
           className="mt-3 rounded-md border border-warn bg-warn-soft p-3 text-sm text-warn-ink"

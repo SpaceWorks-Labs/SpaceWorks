@@ -92,7 +92,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
       }),
     onSuccess: () => {
       setSmtpForm((current) => ({ ...current, smtp_password: "" }));
-      queryClient.invalidateQueries({ queryKey: ["api-settings", makerspace.id] });
+      queryClient.invalidateQueries({ queryKey: ["api-settings", makerspace.id], exact: true });
     },
   });
 
@@ -104,7 +104,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
       }),
     onSuccess: () => {
       setSmtpForm((current) => ({ ...current, smtp_password: "" }));
-      queryClient.invalidateQueries({ queryKey: ["api-settings", makerspace.id] });
+      queryClient.invalidateQueries({ queryKey: ["api-settings", makerspace.id], exact: true });
     },
   });
   const saveRecipients = useMutation({
@@ -224,7 +224,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
         {!recipients.isLoading && recipients.data?.length === 0 ? (
           <p className="mt-3 text-sm text-muted">No managers to notify yet.</p>
         ) : null}
-        {recipients.error ? <ErrorBlock error={new Error("Couldn't load email. Try again.")} onRetry={() => { void recipients.refetch(); }} /> : null}
+        {recipients.error ? <ErrorBlock error={new Error("Couldn't load notification recipients. Try again.")} onRetry={() => { void recipients.refetch(); }} /> : null}
         {saveRecipients.error ? (
           <p className="mt-3 text-sm text-danger">{saveRecipients.error.message}</p>
         ) : null}

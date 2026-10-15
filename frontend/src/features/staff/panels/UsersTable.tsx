@@ -40,11 +40,11 @@ export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, on
         title={membership.user.username} identity={{ kind: "avatar", name: membership.user.username, seed: String(membership.user.id) }}
         meta={<>{membership.user.email || "No email"} · {roleLabel(membership)} · {makerspaceNames.get(membership.makerspace_id) ?? membership.makerspace_slug}</>}
         right={<div className="flex flex-wrap items-center gap-3"><AccessBadge status={membership.user.access_status} />
+          {membership.user.access_status !== "active" ? <button className="desk-button" type="button" onClick={() => onRestore(membership)}>Restore</button> : null}
           <button className="desk-button" type="button" disabled={!assignableRoles.length} onClick={() => openChange(membership)}>Change role</button>
           <OverflowMenu label={`Actions for ${membership.user.username}`} actions={[
             { label: "Restrict", tone: "danger", onClick: () => onRestrict(membership) },
             { label: "Reset password", onClick: () => onResetPassword(membership) },
-            { label: "Restore", disabled: membership.user.access_status === "active", disabledReason: "Access is already active.", onClick: () => onRestore(membership) },
             { label: "Revoke", tone: "danger", onClick: () => onRevoke(membership) },
           ]} />
         </div>} />)}</div>

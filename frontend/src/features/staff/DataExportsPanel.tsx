@@ -15,7 +15,8 @@ import { getJobSession, trackJob } from "../../components/ui/jobStore";
 
 export function DataExportsPanel({ makerspaceId }: { makerspaceId: number }) {
   const queryClient = useQueryClient();
-  const [disclosureOpen, setDisclosureOpen] = useState(false);
+  // Open by default: this is the disclosure people must read before requesting an export.
+  const [disclosureOpen, setDisclosureOpen] = useState(true);
   const queryKey = ["data-exports", makerspaceId];
   const jobs = useQuery({
     queryKey,

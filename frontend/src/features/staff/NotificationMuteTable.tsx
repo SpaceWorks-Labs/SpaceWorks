@@ -17,7 +17,7 @@ export function NotificationMuteTable({ entry, mutes, emailEnabled, disabledMess
           onChange={event => onChange({ target, stream: entry.stream, event: eventName, audience: entry.audience, muted: event.target.checked })} />
       </label>;
     } })),
-  ]} emptyTitle="No recipient mutes yet." />;
+  ]} caption={`Muted ${humanize(entry.stream)} emails by recipient and event. Checked means muted.`} emptyTitle="No recipient mutes yet." />;
 }
 function humanize(value: string) {
   const label = value.replace(/_/g, " ");

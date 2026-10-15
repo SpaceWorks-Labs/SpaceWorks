@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog, DangerZone, ErrorBlock, Skeleton, SettingsActions, SettingsRow, StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
+import { DELIVERY_SETTINGS_KEY } from "./MakerspaceWebhookSettings";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 type ApiSettings = {
   telegram_group_chat_id: string;
@@ -19,8 +20,16 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
     telegram_group_chat_id: "",
     telegram_bot_token: "",
   });
+  // Its own cache entry: the SMTP form on the same page reads the same endpoint, and a shared
+  // key let saving one refetch and re-seed the other, wiping its unsaved edits.
+  const queryKey = ["api-settings", makerspace.id, "telegram"];
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey, exact: true });
+    // Channel setup warnings read the token too.
+    queryClient.invalidateQueries({ queryKey: DELIVERY_SETTINGS_KEY(makerspace.id), exact: true });
+  };
   const settings = useStaffGet<ApiSettings>(
-    ["api-settings", makerspace.id],
+    queryKey,
     `/admin/makerspace/${makerspace.id}/api-settings`,
   );
   useEffect(() => {
@@ -41,7 +50,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
         ...current,
         telegram_bot_token: "",
       }));
-      queryClient.invalidateQueries({ queryKey: ["api-settings", makerspace.id] });
+      refresh();
     },
   });
   const clearTelegramToken = useMutation({
@@ -52,7 +61,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
       }),
     onSuccess: () => {
       setSettingsForm((current) => ({ ...current, telegram_bot_token: "" }));
-      queryClient.invalidateQueries({ queryKey: ["api-settings", makerspace.id] });
+      refresh();
     },
   });
   const testTelegram = useMutation({
@@ -66,7 +75,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
       }),
   });
   return (
-    <div className="rounded-md border border-line bg-surface p-3">
+    <div id="telegram-settings" tabIndex={-1} className="scroll-mt-6 rounded-md border border-line bg-surface p-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <h3 className="title-section">Telegram</h3>
       <StatusPill label={settings.data?.telegram_bot_token_set ? "Token saved" : "No token saved"} />
       <div className="mt-3 divide-y divide-line">

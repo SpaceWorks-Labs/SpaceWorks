@@ -17,6 +17,15 @@ def changed(serializer, instance):
 
 
 def save_space(actor, space, values):
+    # Location settings have their own boundary validator. The general editor
+    # deliberately does not expose them, so setup must use the profile contract.
+    values = dict(values)
+    profile = {key: values.pop(key) for key in ("timezone",) if key in values}
+    if profile:
+        from apps.admin_api.serializers_makerspace_profile import MakerspaceProfileSerializer
+        check = MakerspaceProfileSerializer(data=profile, partial=True)
+        validate(check)
+        profile = check.validated_data
     serializer = MakerspaceSerializer(space, data=values, partial=True,
                                      context={"request": SimpleNamespace(user=actor)})
     validate(serializer)
@@ -28,6 +37,13 @@ def save_space(actor, space, values):
         if before != space.enabled_features:
             audit.record(actor, "makerspace.features_changed", makerspace=space, target=space,
                          meta={"before": before, "after": space.enabled_features})
+    changed_profile = [key for key, value in profile.items() if getattr(space, key) != value]
+    if changed_profile:
+        for key in changed_profile:
+            setattr(space, key, profile[key])
+        space.save(update_fields=[*changed_profile, "updated_at"])
+        audit.record(actor, "makerspace.updated", makerspace=space, target=space,
+                     meta={"fields": sorted(changed_profile)})
     return space
 
 

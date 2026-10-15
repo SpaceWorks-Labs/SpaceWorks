@@ -43,6 +43,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=app:app . .
 
+# Keep the fixed printable font vocabulary outside live source bind mounts and
+# verify the actual ReportLab/shaping runtime while building, not during issuance.
+RUN python -m scripts.verify_printable_runtime --bundle
+
 ARG BUILD_GIT_SHA=unknown
 ARG BUILD_GIT_DESCRIBE=unknown
 RUN BUILD_GIT_SHA="$BUILD_GIT_SHA" BUILD_GIT_DESCRIBE="$BUILD_GIT_DESCRIBE" \

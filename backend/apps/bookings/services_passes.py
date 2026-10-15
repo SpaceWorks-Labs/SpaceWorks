@@ -3,6 +3,7 @@ from django.db import transaction
 from rest_framework.exceptions import NotFound
 
 from apps.accounts import rbac
+from apps.audit import services as audit
 from apps.presence.guard import require_active_account
 from . import booking_authority
 from .confirmation_access import require_feature
@@ -11,7 +12,7 @@ from .models import Booking
 from .pass_rendering import pass_values, render_pass, sample_values
 from .pass_templates import normalize_pass_template
 from .services_arrival import require_arrival_access
-from .services_bookings import _audit, _locked_booking, _locked_space
+from .services_bookings import _locked_booking, _locked_space
 
 
 def require_passes(space):
@@ -25,7 +26,7 @@ def save_pass_template(space, template, *, actor):
     require_passes(locked)
     locked.pass_template = normalize_pass_template(template)
     locked.save(update_fields=["pass_template", "updated_at"])
-    _audit(locked, actor, "booking.pass_template_updated", locked)
+    audit.record(actor, "booking.pass_template_updated", makerspace=locked.makerspace, target=locked)
     return locked.pass_template
 
 
@@ -36,7 +37,7 @@ def preview_pass(space, template, *, actor):
     require_passes(locked)
     # Fixed sample data only. Editors cannot select a real booking for preview.
     payload = render_pass(template, sample_values())
-    _audit(locked, actor, "booking.pass_previewed", locked)
+    audit.record(actor, "booking.pass_previewed", makerspace=locked.makerspace, target=locked)
     return payload
 
 
@@ -59,5 +60,5 @@ def booking_pass(booking, *, actor, scanner=False):
     # No cached PDF or confirmation PNG: revalidate the stored template and
     # rebuild an answer-free snapshot after waiting for resource -> booking locks.
     payload = render_pass(space.pass_template, pass_values(locked))
-    _audit(space, actor, "booking.pass_downloaded", locked)
+    audit.record(actor, "booking.pass_downloaded", makerspace=space.makerspace, target=locked)
     return payload

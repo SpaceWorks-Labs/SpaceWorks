@@ -17,6 +17,8 @@ JSON_REFERENCE_FIELDS = frozenset(
         # Booking pass geometry and four fixed field names; no identifiers or PII.
         ("bookings.BookableSpace", "pass_template"),
         ("bookings.Booking", "custom_answers"),
+        # Reservation-status enum strings select recipients; no account references.
+        ("bookings.BookingBroadcast", "statuses"),
         ("events.Event", "custom_form"),
         # Public tag strings are discovery labels, never model identifiers.
         ("events.Event", "tags"),

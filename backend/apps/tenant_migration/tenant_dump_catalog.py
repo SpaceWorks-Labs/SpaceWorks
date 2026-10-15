@@ -93,9 +93,9 @@ class TenantDumpCatalogError(AssertionError):
 # BK-B: nullable cancellation timestamp and prior reservation state.
 # BK-G: reconcile the integrated Lane E/BK-C graph plus the scalar pass template.
 # Literal reconstruction reproduces b90ce9de before the later merged model additions.
-CATALOG_SCHEMA_SHA256 = "0154ba8ca1e81ac7b2ec3f379fd4ca75c63cdb225f1c0641d45b40cae1e20acb"
 # BK-D adds typed booking campaign/delivery history. Literal reconstruction
-# reproduced HEAD's complete graph before computing the new digest.
+# reproduces the integrated checkpoint graph, including both broadcast histories.
+CATALOG_SCHEMA_SHA256 = "7bdaab3e2acb95af9dd6ac4513bce94f93ba512f3c77dc0def52c610e41f5364"
 
 
 def catalog_models(apps_registry=apps):

@@ -7,6 +7,7 @@ text, secrets, object keys or before/after payloads)."""
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P("booking.broadcast.created", "Booking broadcast created"),
     P("booking.pass_template_updated", "Booking pass template updated"),
     P("booking.pass_previewed", "Booking pass previewed"),
     P("booking.pass_downloaded", "Booking pass downloaded"),

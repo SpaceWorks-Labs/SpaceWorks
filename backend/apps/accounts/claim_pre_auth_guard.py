@@ -72,6 +72,9 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.events.throttles.EventCalendarFeedIpThrottle": {"get_cache_key"},
     # Ticket renders only set a per-user scope/rate; all lifecycle methods are DRF's.
     "apps.events.views_ticket.TicketRenderThrottle": set(),
+    # Certificate downloads share a principal-keyed render budget. The only hook
+    # selects that cache key; it never authenticates or grants claim authority.
+    "apps.events.throttles.CredentialRenderThrottle": {"get_cache_key"},
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},

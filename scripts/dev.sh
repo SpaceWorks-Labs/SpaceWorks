@@ -56,10 +56,10 @@ test_suite() {
   trap cleanup EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
-  if ! docker image inspect spaceworks-backend >/dev/null 2>&1; then
-    echo "Missing spaceworks-backend image; build it with: dev.sh up --build" >&2
-    return 1
-  fi
+  # Source is bind-mounted below; dependencies and fonts come from the image.
+  # Always use Docker's layer cache to reconcile both before allocating test infra.
+  # Otherwise an old image can run current tests with missing shaping/fonts.
+  docker build --tag spaceworks-backend "$HOST_ROOT/backend"
   docker network create "$RUN" >/dev/null
   docker run -d --name "$RUN-db" --network "$RUN" --network-alias db \
     --label "spaceworks.test=$RUN" --tmpfs /var/lib/postgresql/data \

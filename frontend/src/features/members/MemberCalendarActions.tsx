@@ -80,7 +80,7 @@ export function MemberCalendarActions({ makerspaceId, makerspaceSlug }: {
     </p> : null}
     {issuedUrl ? <div className="mt-3 border-l-2 border-warn pl-3">
       <p className="font-semibold text-ink">Copy this link now. It will not be shown again.</p>
-      <input className="desk-input mt-2 w-full code-text text-xs" readOnly value={issuedUrl} aria-label="Private calendar subscription link" onFocus={(event) => event.currentTarget.select()} />
+      <input className="desk-input mt-2 w-full code-text" readOnly value={issuedUrl} aria-label="Private calendar subscription link" onFocus={(event) => event.currentTarget.select()} />
       <button className="desk-button mt-2" type="button" onClick={() => navigator.clipboard.writeText(issuedUrl).catch(() => undefined)}>Copy link</button>
       <p className="mt-2 text-xs text-danger">Treat this URL like a password. Rotate it if it is shared accidentally.</p>
     </div> : null}

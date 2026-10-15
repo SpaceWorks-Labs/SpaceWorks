@@ -96,8 +96,9 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
           <h3 className="title-section">Request this space</h3>
           <p className="mt-1 text-sm text-muted">Times are shown in your device timezone.</p>
         </div>
-        {/* Side by side only when the form itself is wide; it also renders in a narrow action card. */}
-        <div className="grid gap-3 @md:grid-cols-2">
+        {/* Sized by the form, not the viewport: in the narrow desktop action card two
+            datetime pickers side by side would each be too cramped to read. */}
+        <div className="grid gap-3 @lg:grid-cols-2">
           <Field label="Starts" error={errorFor("starts_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></Field>
           <Field label="Ends" error={errorFor("ends_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required /></Field>
         </div>

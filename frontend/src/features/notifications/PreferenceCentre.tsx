@@ -1,4 +1,3 @@
-import { SettingsRow } from "../../components/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../lib/api";
 import { personalRecipientKey } from "./personalQueryKeys";
@@ -24,15 +23,17 @@ export function PreferenceCentre({ makerspaceId, digests = false }: { makerspace
     <p className="mt-2 text-sm text-muted">Choose optional messages for each family and personal channel. Safety and account recovery emails always remain enabled. Makerspace channel switches still apply.</p>
     {preferences.isLoading ? <p className="mt-3 text-sm text-muted">Loading preferences...</p> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error.message}</p> : null}
-    <div className="mt-3 grid gap-3 sm:grid-cols-2">{preferences.data?.cells.map((cell) => <div key={`${cell.feature}:${cell.channel}`}
-      className="rounded-md border border-line p-3 text-sm">
-      <SettingsRow label={`${cell.feature.replace(/_/g, " ")} · ${cell.channel === "in_app" ? "Inbox" : cell.channel.replace(/_/g, " ")}`}><label className="flex min-h-11 items-center gap-3"><input className="h-5 w-5" type="checkbox" aria-label={`${cell.feature} ${cell.channel} messages`} checked={cell.enabled} disabled={save.isPending || (!cell.available && !cell.enabled)}
+    {/* Each card stacks its title over its switches at every width: a side-by-side
+        label/control row inside a half-width card squeezed both to a sliver on tablets. */}
+    <div className="mt-3 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">{preferences.data?.cells.map((cell) => <fieldset key={`${cell.feature}:${cell.channel}`}
+      className="min-w-0 rounded-md border border-line p-3 text-sm">
+      <legend className="title-section float-left mb-1 w-full break-words">{`${cell.feature.replace(/_/g, " ")} · ${cell.channel === "in_app" ? "Inbox" : cell.channel.replace(/_/g, " ")}`}</legend><label className="flex min-h-11 items-center gap-3"><input className="h-5 w-5 shrink-0" type="checkbox" aria-label={`${cell.feature} ${cell.channel} messages`} checked={cell.enabled} disabled={save.isPending || (!cell.available && !cell.enabled)}
         onChange={() => save.mutate(cell)} />
       <span>Send me these messages
         {!cell.available ? <span className="block text-xs text-muted">Disabled by makerspace</span> : null}
         {cell.mandatory_events.length ? <span className="block text-xs text-muted">Safety emails stay enabled: {cell.mandatory_events.map((event) => event.replace(/_/g, " ")).join(", ")}</span> : null}
       </span></label>
-      {digests && cell.channel === "email" ? <label className="flex min-h-11 items-center gap-3 text-sm"><input className="h-5 w-5" type="checkbox" aria-label={`${cell.feature} daily digest`} checked={cell.daily_digest ?? false} disabled={save.isPending || !cell.enabled || !cell.available} onChange={() => save.mutate({ ...cell, changeDigest: true })} /> Daily digest for optional emails</label> : null}
-    </SettingsRow></div>)}</div>
+      {digests && cell.channel === "email" ? <label className="flex min-h-11 items-center gap-3 text-sm"><input className="h-5 w-5 shrink-0" type="checkbox" aria-label={`${cell.feature} daily digest`} checked={cell.daily_digest ?? false} disabled={save.isPending || !cell.enabled || !cell.available} onChange={() => save.mutate({ ...cell, changeDigest: true })} /> Daily digest for optional emails</label> : null}
+    </fieldset>)}</div>
   </section>;
 }

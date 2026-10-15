@@ -15,7 +15,7 @@ export function AnnouncementFeed({ makerspaceId }: { makerspaceId: number }) {
     {feed.isLoading ? <p role="status">Loading announcements…</p> : null}
     {feed.error ? <ErrorBlock error={new Error("Couldn't load announcements. Try again.")} onRetry={() => void feed.refetch()} /> : null}
     {feed.data?.results.length === 0 ? <EmptyState message="No announcements yet." /> : null}
-    <ul className="mt-3 grid gap-3">{feed.data?.results.map((row) => <li key={row.id}><ListRow title={row.title} meta={<><span className="block whitespace-pre-wrap">{row.summary}</span><RelativeTime date={row.created_at} /></>} /></li>)}</ul>
-    {feed.data?.next || feed.data?.previous ? <div className="mt-3 flex gap-2"><button className="desk-button" disabled={!feed.data.previous || feed.isFetching} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!feed.data.next || feed.isFetching} onClick={() => setPage(page + 1)}>Next</button></div> : null}
+    <ul className="mt-3 grid gap-3">{feed.data?.results.map((row) => <li key={row.id}><ListRow title={row.title} meta={<><span className="block whitespace-pre-wrap break-words">{row.summary}</span><RelativeTime date={row.created_at} /></>} /></li>)}</ul>
+    {feed.data?.next || feed.data?.previous ? <div className="mt-3 flex flex-wrap gap-2"><button className="desk-button" disabled={!feed.data.previous || feed.isFetching} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!feed.data.next || feed.isFetching} onClick={() => setPage(page + 1)}>Next</button></div> : null}
   </section>;
 }

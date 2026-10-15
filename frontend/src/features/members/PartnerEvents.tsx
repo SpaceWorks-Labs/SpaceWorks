@@ -184,8 +184,8 @@ export function PartnerEvents({
               {open ? <div className="mt-3 grid gap-2">
                 <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={register.isPending} />
                 <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={event.currency ?? ""} disabled={register.isPending} />
-                {event.registration_audience === "invite" ? <label>Invitation code<input className="desk-input" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
-                {event.promo_codes_enabled ? <label>Promo code (optional)<input className="desk-input" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
+                {event.registration_audience === "invite" ? <label className="grid gap-1 text-sm">Invitation code<input className="desk-input" autoCapitalize="characters" spellCheck={false} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
+                {event.promo_codes_enabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" autoCapitalize="characters" spellCheck={false} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
               </div> : null}
               {!event.registration_open && event.effective_registration_cutoff_at ? <p className="mt-2 text-xs text-muted">Closed at {new Date(event.effective_registration_cutoff_at).toLocaleString()}</p> : null}
               {/* Unmounted when closed rather than hidden, so keyboard users cannot tab
@@ -198,10 +198,10 @@ export function PartnerEvents({
                   <div className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md border border-line bg-bg p-2 text-sm text-muted">
                     {waiver.body}
                   </div>
-                  <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+                  <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-ink">
                     <input
                       type="checkbox"
-                      className="h-4 w-4"
+                      className="h-5 w-5 shrink-0"
                       checked={!blocked}
                       onChange={(e) => setAcceptedWaiver(
                         e.target.checked && waiver

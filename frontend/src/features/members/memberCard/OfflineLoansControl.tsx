@@ -11,7 +11,7 @@ export function OfflineLoansControl({ space, loans }: { space: string; loans: Of
     if (enabled && !saveOfflineLoans(space, loans)) { setChoice({ owner, enabled: false }); setError("This browser could not save offline loans."); }
   }, [space, loans, enabled, owner]);
   return <div className="mt-3 grid gap-2 text-sm">
-    <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={enabled} onChange={event => {
+    <label className="flex min-h-11 items-center gap-3"><input type="checkbox" className="h-5 w-5 shrink-0" checked={enabled} onChange={event => {
       setError("");
       if (event.target.checked) {
         const saved = saveOfflineLoans(space, loans); setChoice({ owner, enabled: saved });

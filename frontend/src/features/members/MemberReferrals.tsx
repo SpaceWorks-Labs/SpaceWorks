@@ -91,7 +91,7 @@ function InvitationApplication({ invitation, schema, admissionMode, pending, onC
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   return <li className="rounded border border-line p-3">
-    <p className="text-sm font-medium text-ink">{invitation.makerspace.name}</p>
+    <p className="break-words text-sm font-medium text-ink">{invitation.makerspace.name}</p>
     <p className="mt-1 text-sm text-muted">{invitation.inviter ? `Invited by ${invitation.inviter}` : "You have been invited."}{invitation.is_staff ? " Claiming sends this to a manager for approval." : admissionMode ? " Admission conditions apply when you claim." : invitation.auto_activates ? " Claiming activates your membership." : " Claiming sends this to a manager for approval."}</p>
     {admissionMode === "closed" ? <p className="mt-3 text-sm text-muted">Membership applications are closed.</p> : <form className="mt-3 grid gap-3" onSubmit={(event) => {
       event.preventDefault();
@@ -100,7 +100,7 @@ function InvitationApplication({ invitation, schema, admissionMode, pending, onC
       if (!Object.keys(next).length) schema?.length ? onClaim(invitation.id, answers) : onClaim(invitation.id);
     }}>
       <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} errors={errors} disabled={pending} />
-      <button type="submit" className="desk-button-brand w-fit" disabled={pending}>{pending ? "Claiming…" : "Claim invitation"}</button>
+      <button type="submit" className="desk-button-brand w-full sm:w-fit" disabled={pending}>{pending ? "Claiming…" : "Claim invitation"}</button>
     </form>}
   </li>;
 }

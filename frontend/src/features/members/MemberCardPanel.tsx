@@ -4,6 +4,7 @@ import { Callout, EmptyState, StatusPill, TicketCard, Icon } from "../../compone
 import { StructuredApiError } from "../../lib/api";
 import { CardPhotoUpload } from "./memberCard/CardPhotoUpload";
 import { OfflineCardSave } from "./memberCard/OfflineCardSave";
+import { ScanQrView } from "./memberCard/ScanQrView";
 import { forgetOfflineCard } from "./memberCard/offlineCard";
 import { useCardPreview, useMyMemberCard, useRenameCard } from "./memberCard/api";
 
@@ -52,31 +53,36 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
   }
 
   const row = card.data;
+  const scannable = row.is_active && row.qr_active && row.qr_image ? row.qr_image : null;
 
   return (
     <section className="desk-panel p-5">
-      <TicketCard organisation={spaceName} title={row.printed_name} fields={[
+      <div className="max-w-md"><TicketCard organisation={spaceName} title={row.printed_name} fields={[
         { label: "Card number", value: <span className="tabular-nums">{row.card_number}</span> },
         { label: "Status", value: <StatusPill label={row.is_active ? "Active" : "Revoked"} tone={row.is_active ? "success" : "danger"} /> },
         { label: "Printed", value: `${row.print_count} ${row.print_count === 1 ? "time" : "times"}` },
         { label: "Issued", value: new Date(row.issued_at).toLocaleDateString() },
-      ]} qr={row.is_active && row.qr_active && row.qr_image ? <img src={row.qr_image} alt="Your member card QR code" /> : <div className="flex h-full items-center justify-center rounded-xl bg-surface"><Icon name="User" className="h-16 w-16 text-muted" /></div>}
-        caption={row.is_active ? "Your member card · ask the front desk to scan your printed card." : "This card is no longer valid."} />
+      ]} qr={scannable ? <img src={scannable} alt="Your member card QR code" /> : <div className="flex h-full items-center justify-center rounded-xl bg-surface"><Icon name="User" className="h-16 w-16 text-muted" /></div>}
+        caption={row.is_active ? "Your member card · ask the front desk to scan your printed card." : "This card is no longer valid."} /></div>
+      {scannable || compact ? <div className="mt-4 flex flex-wrap gap-3">
+        {scannable ? <ScanQrView src={scannable} name={row.printed_name} /> : null}
+        {compact ? <a className="desk-button w-full sm:w-auto" href={cardHref}>View your member card</a> : null}
+      </div> : null}
       {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead="This card was revoked." body="Ask staff for a new one." /></div> : null}
       {!compact ? <>
-      <label className="mt-4 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
+      <label className="mt-6 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
         Name printed on the card
       </label>
       <input
         id="member-card-printed-name"
-        className="desk-input mt-1 w-full"
+        className="desk-input mt-1 w-full max-w-md"
         value={printedName}
         onChange={(event) => {
           setDirty(true);
           setPrintedName(event.target.value);
         }}
       />
-      <div className="desk-actions mt-3 flex flex-wrap gap-2">
+      <div className="desk-actions mt-3 flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none">
         <button
           className="desk-button-brand"
           type="button"
@@ -113,7 +119,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
         consentAt={row.photo_consent_at}
       />
       <OfflineCardSave card={row} space={spaceName} checkedAt={card.dataUpdatedAt} />
-      </> : <a className="desk-button mt-4" href={cardHref}>View your member card</a>}
+      </> : null}
     </section>
   );
 }

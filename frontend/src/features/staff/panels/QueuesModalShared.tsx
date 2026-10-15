@@ -2,7 +2,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 
 import QrScanner from "../../../components/ui/QrScanner";
-import { Field } from "../../../components/ui";
+import { Field, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 
 export function BoxCodeField({ value, onChange, makerspaceId, pending }: { value: string; onChange: (code: string) => void; makerspaceId: number; pending: boolean }) {
@@ -56,7 +56,7 @@ export function BoxCodeField({ value, onChange, makerspaceId, pending }: { value
         <div className="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className={value ? "min-w-0 truncate font-medium text-ink" : "min-w-0 truncate text-muted"}>{value ? displayLabel || value : "No container selected"}</span>
-            {value ? <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-xs text-muted">Selected</span> : null}
+            {value ? <StatusPill label="Selected" tone="success" /> : null}
           </div>
         </div>
         <button className="desk-button-ghost shrink-0" type="button" disabled={pending} onClick={() => setScanOpen(true)}>Scan</button>
@@ -64,7 +64,7 @@ export function BoxCodeField({ value, onChange, makerspaceId, pending }: { value
       {containers.length ? (
         <Field label="Available container">
           <select className="desk-input" value="" disabled={pending} onChange={(event) => event.target.value && onChange(event.target.value)}>
-            <option value="">Choose an available container...</option>
+            <option value="">Choose an available container…</option>
             {containers.map((container) => <option key={container.id} value={container.code ?? ""}>{container.label}</option>)}
           </select>
         </Field>
@@ -83,7 +83,7 @@ export function FormFooter({ formId, pending, submitLabel, tone = "default", onC
   return (
     <div className="desk-actions flex flex-wrap justify-end gap-2">
       <button className="desk-button-ghost" type="button" disabled={pending} onClick={onCancel}>Cancel</button>
-      <button className={tone === "danger" ? "desk-button-danger" : "desk-button-success"} type="submit" form={formId} disabled={pending}>{pending ? "Working..." : submitLabel}</button>
+      <button className={tone === "danger" ? "desk-button-danger" : "desk-button-success"} type="submit" form={formId} disabled={pending}>{pending ? "Working…" : submitLabel}</button>
     </div>
   );
 }

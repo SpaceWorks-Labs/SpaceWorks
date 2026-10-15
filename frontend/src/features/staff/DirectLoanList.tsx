@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { staffRequest } from "../../lib/api";
 import { evidenceErrorText } from "./evidenceUi";
-import { Panel } from "./StaffPanels";
+import { ListRow, OverflowMenu, RelativeTime, StatusPill } from "../../components/ui";
 
 export type DirectLoan = {
   has_kit_checklist?: boolean;
@@ -49,75 +49,21 @@ export function DirectLoanList({
       });
     }
   };
-  return (
-    <Panel title="Direct handout loans">
-      <div className="grid gap-2">
-        {loans.map((loan) => (
-          <article key={loan.id} className="rounded-md border border-line bg-surface p-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="font-extrabold text-ink">{loan.target_label}</h3>
-                <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted">
-                  <span className={`status-box ${directLoanStatusClassName(loan.status)}`}>
-                    {directLoanStatusLabel(loan.status)}
-                  </span>
-                  {loan.container_label ? <span>given in: {loan.container_label}</span> : null}
-                  {loan.due_at ? <span>due {new Date(loan.due_at).toLocaleString()}</span> : null}
-                  {loan.issued_by ? <span>Issued by {loan.issued_by.username}</span> : null}
-                </p>
-              </div>
-              {loan.status === "checked_out" ? (
-                <button className="desk-button" onClick={() => onReturn(loan)}>
-                  Return
-                </button>
-              ) : null}
-            </div>
-            <p className="mt-2 text-xs text-muted">
-              {loan.items.map((item) => `${item.product_name} x${item.quantity}`).join(", ")}
-            </p>
-            {loan.issue_evidence_id || (loan.status !== "checked_out" && loan.return_evidence_id) ? (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {loan.issue_evidence_id ? (
-                  <button className="desk-button text-xs" type="button" onClick={() => void openEvidence(loan.id, loan.issue_evidence_id as number)}>
-                    View issue photo
-                  </button>
-                ) : null}
-                {loan.status !== "checked_out" && loan.return_evidence_id ? (
-                  <button className="desk-button text-xs" type="button" onClick={() => void openEvidence(loan.id, loan.return_evidence_id as number)}>
-                    View return photo
-                  </button>
-                ) : null}
-                {loan.status !== "checked_out" && loan.return_notes ? <p className="text-xs text-muted">{loan.return_notes}</p> : null}
-                {evidenceError?.loanId === loan.id ? (
-                  <p className="w-full text-sm text-danger" role="alert">{evidenceError.message}</p>
-                ) : null}
-              </div>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-function directLoanStatusClassName(status: string) {
-  switch (status) {
-    case "checked_out":
-      return "status-box-active";
-    case "returned":
-      return "status-box-done";
-    default:
-      return "";
-  }
-}
-
-function directLoanStatusLabel(status: string) {
-  switch (status) {
-    case "checked_out":
-      return "Lent";
-    case "returned":
-      return "Returned";
-    default:
-      return status.replace(/_/g, " ");
-  }
+  return <div className="grid gap-3">{loans.map(loan => <ListRow key={loan.id} title={loan.target_label}
+    identity={loan.due_at ? { kind: "date", date: loan.due_at } : { kind: "avatar", name: loan.target_label, seed: String(loan.id) }}
+    meta={<span className="grid gap-2">
+      <span className="flex flex-wrap items-center gap-2"><StatusPill label={loan.status === "checked_out" ? "Lent" : loan.status === "returned" ? "Returned" : loan.status.replace(/_/g, " ")} tone={loan.status === "returned" ? "success" : loan.status === "checked_out" ? "accent" : "neutral"} />
+        {loan.due_at ? <span>Due <RelativeTime date={loan.due_at} /></span> : null}
+      </span>
+      <span>Handout #{loan.id} · {loan.items.map(item => `${item.product_name} × ${item.quantity}`).join(", ")}{loan.container_label ? ` · In ${loan.container_label}` : ""}{loan.issued_by ? ` · by ${loan.issued_by.username}` : ""}</span>
+      {loan.status !== "checked_out" && loan.return_notes ? <span>{loan.return_notes}</span> : null}
+      {evidenceError?.loanId === loan.id ? <span className="text-danger" role="alert">{evidenceError.message}</span> : null}
+    </span>}
+    right={<div className="flex items-center gap-2">
+      {loan.status === "checked_out" ? <button className="desk-button" onClick={() => onReturn(loan)}>Return</button> : null}
+      <OverflowMenu label={`More actions for handout ${loan.id}`} actions={[
+        ...(loan.issue_evidence_id ? [{ label: "View issue photo", onClick: () => void openEvidence(loan.id, loan.issue_evidence_id as number) }] : []),
+        ...(loan.status !== "checked_out" && loan.return_evidence_id ? [{ label: "View return photo", onClick: () => void openEvidence(loan.id, loan.return_evidence_id as number) }] : []),
+      ]} />
+    </div>} />)}</div>;
 }

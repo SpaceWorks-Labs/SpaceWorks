@@ -6,21 +6,16 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import QrScanner from "../../components/ui/QrScanner";
-import { Pagination } from "../../components/ui/Pagination";
+import { ListLayout } from "../../components/layouts";
+import { useSearchParams } from "react-router-dom";
 import { staffRequest } from "../../lib/api";
 import { usePaginatedQuery } from "../../lib/usePaginatedQuery";
 import { DirectLoanList, type DirectLoan } from "./DirectLoanList";
 import { invalidateInventoryViews } from "./queryInvalidation";
 import { DirectLoanReturnModal } from "./DirectLoanReturnModal";
-import { Panel, type Makerspace, useStaffGet } from "./StaffPanels";
+import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { MemberClaimCodes } from "./MemberClaimCodes";
-import {
-  DirectLoanBorrowerFields,
-  DirectLoanContainerField,
-  DirectLoanIssueEvidence,
-  DirectLoanItemLines,
-  DirectLoanQrSection,
-} from "./DirectLoanIssueFields";
+import { DirectLoanCompactWork } from "./DirectLoanCompactWork";
 import { useDirectLoanReturn } from "./useDirectLoanReturn";
 import {
   labelForTarget,
@@ -35,6 +30,10 @@ import {
 export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const queryClient = useQueryClient();
   const [guided, setGuided] = useState(false);
+  const [params] = useSearchParams();
+  const rawTab = params.get("handout");
+  const tab = rawTab === "returned" || rawTab === "claim-codes" ? rawTab : "on-loan";
+  const status = tab === "returned" ? "returned" : "checked_out";
   useQuickCreate("request", () => setGuided(true));
   const [borrowerId, setBorrowerId] = useState("");
   const [lineRows, setLineRows] = useState<LineDraft[]>([{ key: 1, productId: "", quantity: "1" }]);
@@ -90,9 +89,10 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const activeProducts = (products.data?.results ?? []).filter((product) => !product.is_archived);
   const productById = new Map(activeProducts.map((product) => [product.id, product]));
   const loans = usePaginatedQuery<DirectLoan>({
-    key: ["direct-loans", makerspace.id],
-    path: `/admin/makerspace/${makerspace.id}/direct-loans`,
-    resetKey: String(makerspace.id),
+    key: ["direct-loans", makerspace.id, status],
+    path: `/admin/makerspace/${makerspace.id}/direct-loans?status=${status}`,
+    resetKey: `${makerspace.id}:${status}`,
+    enabled: tab !== "claim-codes",
   });
   const pastedQrPayloads = qrPayloads.split("\n").map((value) => value.trim()).filter(Boolean);
   const validManualLines = lineRows.filter((line) => {
@@ -123,6 +123,7 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
         }),
       }),
     onSuccess: () => {
+      setGuided(false);
       queryClient.invalidateQueries({ queryKey: ["direct-loans", makerspace.id] });
       invalidateInventoryViews(queryClient, makerspace.id, makerspace.slug);
       setLineRows([{ key: 1, productId: "", quantity: "1" }]);
@@ -200,83 +201,40 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
     }
   };
 
-  return (
-    <div className="grid gap-4">
-      <Panel title="Direct handout">
-        <button className="desk-button-primary mb-3" onClick={() => setGuided(true)}>Guided handout</button>
-        {guided ? <DirectHandoverWizard key={makerspace.id} makerspace={makerspace} onClose={() => setGuided(false)} /> : null}
-        <DirectLoanBorrowerFields
-          makerspaceId={makerspace.id}
-          borrowerId={borrowerId}
-          onBorrowerIdChange={setBorrowerId}
-          memberOptions={memberOptions}
-          membersLoading={members.isLoading}
-          membersError={members.error?.message}
-        />
-        <DirectLoanContainerField
-          containerId={containerId}
-          onContainerIdChange={setContainerId}
-          containerOptions={containerOptions}
-          containersLoading={containers.isLoading}
-          scanError={containerScanError}
-          onScanClick={() => {
-            setContainerScanError("");
-            setShowContainerScanner(true);
-          }}
-        />
-        <DirectLoanItemLines
-          lineRows={lineRows}
-          activeProducts={activeProducts}
-          productById={productById}
-          productsLoading={products.isLoading}
-          onAdd={addLine}
-          onUpdate={updateLine}
-          onRemove={removeLine}
-        />
-        <DirectLoanQrSection
-          scanned={scanned}
-          qrPayloads={qrPayloads}
-          onOpenScanner={() => setShowScanner(true)}
-          onRemoveScanned={removeScanned}
-          onQrPayloadsChange={setQrPayloads}
-        />
-        <DirectLoanIssueEvidence
-          uploadKey={issueUploadKey}
-          makerspaceId={makerspace.id}
-          disabled={issue.isPending}
-          onUploaded={setIssueEvidenceId}
-          remark={issueRemark}
-          onRemarkChange={setIssueRemark}
-        />
+  const compactWork = <DirectLoanCompactWork
+    borrower={{ makerspaceId: makerspace.id, borrowerId, onBorrowerIdChange: setBorrowerId, memberOptions, membersLoading: members.isLoading, membersError: members.error?.message }}
+    container={{ containerId, onContainerIdChange: setContainerId, containerOptions, containersLoading: containers.isLoading, scanError: containerScanError, onScanClick: () => { setContainerScanError(""); setShowContainerScanner(true); } }}
+    items={{ lineRows, activeProducts, productById, productsLoading: products.isLoading, onAdd: addLine, onUpdate: updateLine, onRemove: removeLine }}
+    qr={{ scanned, qrPayloads, onOpenScanner: () => setShowScanner(true), onRemoveScanned: removeScanned, onQrPayloadsChange: setQrPayloads }}
+    evidence={{ uploadKey: issueUploadKey, makerspaceId: makerspace.id, disabled: issue.isPending, onUploaded: setIssueEvidenceId, remark: issueRemark, onRemarkChange: setIssueRemark }}>
         <KitChecklistCapture checklist={kits} />
         {issueEvidenceId === null ? <p className="mt-3 text-sm text-muted">Upload an issue photo before issuing.</p> : null}
         {!hasIssueContent ? <p className="mt-3 text-sm text-muted">Add at least one item, QR payload, or container before issuing.</p> : null}
-        <button className="desk-button-primary mt-3" disabled={!canIssue} onClick={() => issue.mutate()}>
-          Issue direct handout
-        </button>
         {issue.error ? <p className="mt-3 text-sm text-danger">{issue.error.message}</p> : null}
         {products.error ? <p className="mt-3 text-sm text-danger">{products.error.message}</p> : null}
         {containers.error ? <p className="mt-3 text-sm text-danger">{containers.error.message}</p> : null}
         {showScanner ? <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} /> : null}
         {showContainerScanner ? <QrScanner onScan={handleContainerScan} onClose={() => setShowContainerScanner(false)} /> : null}
-      </Panel>
-      <MemberClaimCodes makerspaceId={makerspace.id} members={memberOptions} />
-      <DirectLoanList loans={loans.results} onReturn={returnFlow.openReturnModal} />
-      <Pagination page={loans.page} totalPages={loans.totalPages} onChange={loans.setPage} count={loans.count} pageSize={loans.pageSize} />
+  </DirectLoanCompactWork>;
+  const shown = loans.results;
+  const tabHref = (key: string) => { const next = new URLSearchParams(params); next.set("handout", key); return `?${next}`; };
+  return <ListLayout standalone={false}
+    header={{ title: "Direct handout", subtitle: "Lend tools straight from the shelf, without a request.", primary: { label: "New handout", icon: "Plus", onClick: () => setGuided(true) } }}
+    state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: "Couldn't load direct handouts. Try again.", onRetry: () => void loans.refetch() }}
+    tabs={[{ key: "on-loan", label: "On loan", count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: "Returned", count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: "Claim codes", href: tabHref("claim-codes") }]} activeTab={tab}
+    isEmpty={tab !== "claim-codes" && !shown.length}
+    empty={{ message: tab === "returned" ? "No direct handouts returned yet." : "No tools are out on direct handout. Start one with New handout above.", action: tab === "returned" ? undefined : { label: "New handout", onClick: () => setGuided(true) } }}
+    body={{ kind: "rows", rows: tab === "claim-codes" ? <MemberClaimCodes makerspaceId={makerspace.id} members={memberOptions} /> : <DirectLoanList loans={shown} onReturn={returnFlow.openReturnModal} /> }}
+    pagination={tab === "claim-codes" ? undefined : { page: loans.page, pageSize: loans.pageSize, count: loans.count, onChange: loans.setPage }}
+    detail={<>
+      {guided ? <DirectHandoverWizard key={makerspace.id} makerspace={makerspace} onClose={() => setGuided(false)} compactWork={compactWork} compactAction={{ label: "Issue direct handout", disabled: !canIssue, pending: issue.isPending, onClick: () => issue.mutate() }} /> : null}
       <DirectLoanReturnModal
-        loan={returnFlow.returningLoan}
-        makerspaceId={makerspace.id}
-        evidenceId={returnFlow.returnEvidenceId}
-        notes={returnFlow.returnNotes}
-        qrPayload={returnFlow.returnQrPayload}
-        pending={returnFlow.pending}
-        error={returnFlow.error}
-        onEvidenceUploaded={returnFlow.setReturnEvidenceId}
-        onNotesChange={returnFlow.setReturnNotes}
-        onQrPayloadChange={returnFlow.setReturnQrPayload}
-        onCancel={returnFlow.closeReturnModal}
-        onSubmit={returnFlow.submitReturn}
+        loan={returnFlow.returningLoan} makerspaceId={makerspace.id}
+        evidenceId={returnFlow.returnEvidenceId} notes={returnFlow.returnNotes} qrPayload={returnFlow.returnQrPayload}
+        pending={returnFlow.pending} error={returnFlow.error} onEvidenceUploaded={returnFlow.setReturnEvidenceId}
+        onNotesChange={returnFlow.setReturnNotes} onQrPayloadChange={returnFlow.setReturnQrPayload}
+        onCancel={returnFlow.closeReturnModal} onSubmit={returnFlow.submitReturn}
       />
-    </div>
-  );
+    </>}
+  />;
 }

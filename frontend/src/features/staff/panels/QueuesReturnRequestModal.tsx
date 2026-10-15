@@ -1,10 +1,11 @@
+import { RequestFlowDialog } from "./RequestFlowDialog";
 import { useEffect, useState } from "react";
 
-import { ErrorText, Modal } from "../../../components/ui";
+import { ErrorText } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { evidenceErrorText } from "../evidenceUi";
 import { EvidenceUpload } from "./EvidenceUpload";
-import { BoxCodeField, FormFooter, ShelfLine, submitForm } from "./QueuesModalShared";
+import { BoxCodeField, ShelfLine, submitForm } from "./QueuesModalShared";
 import type { AssetReturnOutcome, FormModalProps, ReturnRequestValues } from "./QueuesModalTypes";
 import { KitChecklistCapture, useKitChecklist } from "../../inventory/KitChecklist";
 
@@ -78,7 +79,7 @@ export function ReturnRequestModal({ row, open, pending, error, onClose, onSubmi
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={row ? `Return request #${row.id}` : "Return request"} footer={<FormFooter formId="return-request-form" pending={pending} submitLabel="Submit return" onCancel={onClose} />}>
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Return request #${row.id}` : "Return request"} formId="return-request-form" pending={pending} submitLabel="Submit return">
       <form id="return-request-form" className="grid gap-3" onSubmit={(event) => submitForm(event, submitReturn)}>
         <div className="grid gap-3 sm:grid-cols-2">
           {issueUrl ? <div className="grid min-w-0 gap-1 text-sm"><span className="font-medium text-ink">Issue photo</span><img src={issueUrl} alt="Issue photo for comparison" className="max-h-56 w-full rounded-md border border-line object-contain" /></div> : null}
@@ -92,7 +93,7 @@ export function ReturnRequestModal({ row, open, pending, error, onClose, onSubmi
         <ErrorText message={validationError || error} />
         <KitChecklistCapture checklist={kits} />
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 
   function submitReturn() {

@@ -1,10 +1,11 @@
+import { RequestFlowDialog } from "./RequestFlowDialog";
 import { useEffect, useState } from "react";
 
-import { ErrorText, Modal } from "../../../components/ui";
+import { ErrorText } from "../../../components/ui";
 import QrScanner from "../../../components/ui/QrScanner";
 import { staffRequest } from "../../../lib/api";
 import { EvidenceUpload } from "./EvidenceUpload";
-import { BoxCodeField, FormFooter, ShelfLine, submitForm } from "./QueuesModalShared";
+import { BoxCodeField, ShelfLine, submitForm } from "./QueuesModalShared";
 import type { AssignIssueValues, FormModalProps } from "./QueuesModalTypes";
 import { KitChecklistCapture, useKitChecklist } from "../../inventory/KitChecklist";
 
@@ -62,7 +63,7 @@ export function AssignIssueModal({ row, open, pending, error, onClose, onSubmit,
   }));
 
   return (
-    <Modal open={open} onClose={onClose} title={row ? `Assign and issue request #${row.id}` : "Assign and issue"} footer={<FormFooter formId="assign-issue-form" pending={pending} submitLabel="Assign + issue" onCancel={onClose} />}>
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Assign and issue request #${row.id}` : "Assign and issue"} formId="assign-issue-form" pending={pending} submitLabel="Assign + issue">
       <form id="assign-issue-form" className="grid gap-3" onSubmit={(event) => submitForm(event, () => submitAssign())}>
         {row?.assigned_box_label ? <p className="text-xs text-muted">Box: <span className="font-medium text-ink">{row.assigned_box_label}</span></p> : null}
         <BoxCodeField value={boxCode} onChange={setBoxCode} makerspaceId={makerspaceId} pending={pending} />
@@ -80,7 +81,7 @@ export function AssignIssueModal({ row, open, pending, error, onClose, onSubmit,
         <ErrorText message={validationError || error} />
         <KitChecklistCapture checklist={kits} />
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 
   function submitAssign() {

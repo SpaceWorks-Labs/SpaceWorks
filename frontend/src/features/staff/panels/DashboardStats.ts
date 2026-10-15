@@ -1,0 +1,60 @@
+export type DashboardCounts = {
+  upcoming_events?: number;
+  pending_event_registrations?: number;
+  pending_bookings?: number;
+  upcoming_bookings?: number;
+  scope_mode: "machine" | "full";
+  overdue_loans?: number;
+  pending_requests?: number;
+  awaiting_issue?: number;
+  open_problem_reports?: number;
+  low_stock?: number;
+  pending_prints?: number;
+  active_prints?: number;
+  prints_awaiting_collection?: number;
+  failed_emails?: number;
+  stocktakes_awaiting_approval?: number;
+  warranty_expiring?: number;
+  maintenance_overdue?: number;
+  pending_payments?: number;
+};
+
+// Tiles keep their semantic intent; only emphasis is a filled attention pill.
+// Numbers and labels otherwise sit on neutral panels.
+type Tone = "accent" | "emphasis" | "success" | "warn" | "danger";
+
+type Tile = {
+  key: Exclude<keyof DashboardCounts, "scope_mode">;
+  label: string;
+  actionNeeded: boolean;
+  tone: Tone;
+};
+
+export const TILES: Tile[] = [
+  { key: "upcoming_events", label: "Upcoming events", actionNeeded: false, tone: "accent" },
+  { key: "pending_event_registrations", label: "Registrations awaiting approval", actionNeeded: true, tone: "warn" },
+  { key: "pending_bookings", label: "Bookings awaiting approval", actionNeeded: true, tone: "warn" },
+  { key: "upcoming_bookings", label: "Upcoming bookings", actionNeeded: false, tone: "accent" },
+  { key: "overdue_loans", label: "Overdue loans", actionNeeded: true, tone: "danger" },
+  { key: "pending_requests", label: "Pending requests", actionNeeded: true, tone: "warn" },
+  { key: "awaiting_issue", label: "Awaiting issue", actionNeeded: true, tone: "warn" },
+  { key: "open_problem_reports", label: "Problem reports", actionNeeded: true, tone: "danger" },
+  { key: "low_stock", label: "Out of stock", actionNeeded: true, tone: "danger" },
+  { key: "pending_prints", label: "Pending prints", actionNeeded: false, tone: "warn" },
+  { key: "active_prints", label: "Active prints", actionNeeded: false, tone: "accent" },
+  { key: "prints_awaiting_collection", label: "Ready to collect", actionNeeded: false, tone: "success" },
+  { key: "failed_emails", label: "Failed emails", actionNeeded: true, tone: "danger" },
+  { key: "stocktakes_awaiting_approval", label: "Stocktakes awaiting approval", actionNeeded: true, tone: "warn" },
+  { key: "warranty_expiring", label: "Warranties expiring", actionNeeded: true, tone: "warn" },
+  { key: "maintenance_overdue", label: "Maintenance overdue", actionNeeded: true, tone: "danger" },
+  { key: "pending_payments", label: "Pending payments", actionNeeded: true, tone: "emphasis" },
+];
+
+export const MACHINE_TILE_KEYS = new Set<Tile["key"]>([
+  "pending_prints",
+  "active_prints",
+  "prints_awaiting_collection",
+  "warranty_expiring",
+  "maintenance_overdue",
+]);
+

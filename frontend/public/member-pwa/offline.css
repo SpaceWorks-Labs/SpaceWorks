@@ -1,5 +1,5 @@
 :root { color-scheme: light; font: 1rem/1.6 Gilroy, sans-serif; }
-body { margin: 0; background: #FFF4E8; color: #142C2A; }
+body { margin: 0; min-height: 100vh; min-height: 100dvh; background: #FFF4E8; color: #142C2A; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 main { max-width: 38rem; margin: 2rem auto; padding: 1.5rem; }
 section { border: 1px solid #142C2A; border-radius: .5rem; padding: 1rem; margin: 1rem 0; }
 img { display: block; width: 16rem; max-width: 100%; background: #FFF4E8; }

@@ -1,13 +1,22 @@
 import { PublicLayout } from "../components/layouts";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { ListRow } from "../components/ui";
+import { ActionControl, ListRow } from "../components/ui";
 import { LICENSE_URL } from "./inventory/PublicPageChrome";
 
+/** About opens with a Citron field (brand p.2): ink statement type, teal caps eyebrow, teal primary. */
+function AboutHero() {
+  return <section aria-labelledby="about-title" className="sw-field-citron mb-8 grid gap-4 rounded-[20px] px-5 py-7 md:mb-10 md:gap-5 md:rounded-[28px] md:px-10 md:py-10">
+    <p className="sw-field-eyebrow">About</p>
+    <h1 id="about-title" className="sw-field-heading">Open-source makerspace management</h1>
+    <p className="sw-hero-lede">Tools to run a community workshop, with care for every handover.</p>
+    <div><ActionControl action={{ label: "Browse spaces", href: "/" }} primary /></div>
+  </section>;
+}
+
 export function AboutPage() {
-  return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }}
+  return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
     nav={[{ label: "Browse spaces", href: "/" }]} headerAction={{ label: "Sign in", href: "/member" }}
-    liveStatus={<ThemeToggle />} width="narrow" state={{ status: "ready" }}
-    header={{ eyebrow: "About", title: "Open-source makerspace management", subtitle: "Tools to run a community workshop, with care for every handover.", primary: { label: "Browse spaces", href: "/" } }}
+    liveStatus={<ThemeToggle variant="icon" />} width="narrow" state={{ status: "ready" }} hero={<AboutHero />}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "License", href: LICENSE_URL, external: true }, { label: "Staff sign-in", href: "/admin" }] }}>
     <div className="space-y-5 text-base leading-7 text-muted">
       <p>Space Works brings public equipment catalogues, traceable hardware loans, 3D-print requests, and makerspace operations together.</p>

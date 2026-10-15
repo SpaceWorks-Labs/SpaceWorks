@@ -27,9 +27,10 @@ export function ProductCard({
   const idLabel = `ID: ${String(product.id).padStart(4, "0")}`;
 
   return (
-    <article className="group flex h-full flex-col rounded-xl border border-line bg-panel ">
+    <article className="group flex h-full min-w-0 flex-col rounded-xl border border-line bg-panel">
+      {/* A photo gets a 4:3 frame; an item without one gets a short initials band, not a tall empty panel. */}
       <button
-        className="relative h-44 overflow-hidden rounded-t-xl border-b border-line bg-surface text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className={`relative w-full overflow-hidden rounded-t-xl border-b border-line bg-surface text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${product.image_url ? "aspect-[4/3]" : "h-24"}`}
         type="button"
         onClick={onOpenDetails}
         aria-label={`Open details for ${product.name}`}
@@ -42,8 +43,8 @@ export function ProductCard({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="bg-surface grid h-full w-full place-items-center">
-            <span className="font-display text-4xl font-semibold uppercase text-ink">
+          <div className="bg-surface flex h-full w-full items-center px-4">
+            <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-control border border-line bg-panel font-display text-lg font-semibold uppercase text-muted">
               {product.name.slice(0, 2)}
             </span>
           </div>
@@ -52,8 +53,8 @@ export function ProductCard({
       </button>
 
       <div className="flex flex-1 flex-col p-4">
-        <h2 className="title-panel">
-          {detailUrl ? <Link className="inline-flex min-h-11 break-words items-center text-left underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" to={detailUrl}>{product.name}</Link> : <button
+        <h2 className="title-panel min-w-0 break-words">
+          {detailUrl ? <Link className="inline-flex min-h-11 max-w-full break-words items-center text-left underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" to={detailUrl}>{product.name}</Link> : <button
             className="min-h-11 break-words text-left underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             type="button"
             onClick={onOpenDetails}
@@ -96,7 +97,7 @@ export function ProductCard({
             </button>
           </div>
           <button
-            className="inline-flex min-h-11 min-w-0 items-center break-words text-xs font-semibold tracking-tight text-brand-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            className="inline-flex min-h-11 min-w-0 items-center break-words px-1 text-sm font-semibold text-brand-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             type="button"
             onClick={onOpenDetails}
           >

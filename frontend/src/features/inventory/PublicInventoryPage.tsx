@@ -88,7 +88,9 @@ export function PublicInventoryPage({ embedded }: { embedded?: EmbeddedCatalogue
       {query ? <button className="desk-button" type="button" onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}>Clear</button> : null}
     </form></Card>
     <QueryContent state={state} isEmpty={!products.length} empty={{ message: query ? "No matching items. Try another search." : "No public items yet. Check back soon.", action: query ? { label: "Clear search", onClick: () => { setSearchInput(""); setQuery(""); setPage(1); } } : undefined }}>
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{products.map(product => <ProductCard key={product.id} product={product}
+    {/* Columns come from the space the catalogue actually has (it shares the row with the request panel
+      at xl, and with the request column on the desk kiosk), not from the viewport width. */}
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4">{products.map(product => <ProductCard key={product.id} product={product}
       quantity={cart[product.id]?.quantity ?? 0} onDecrement={() => decrementItem(product)} onIncrement={() => incrementItem(product)}
       onOpenDetails={() => setSelectedProduct(product)} detailUrl={tenantPath(`items/${product.id}`)} />)}</div>
     <Pagination page={page} totalPages={pageCount} count={inventoryQuery.data?.count} pageSize={PAGE_SIZE} onChange={setPage} disabled={inventoryQuery.isFetching} />

@@ -2,7 +2,6 @@ import { SegmentedControl } from "../../components/ui";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Card } from "../../components/ui/Card";
 import type { RequestCartItem } from "../../types/inventory";
 import { BorrowRequestCard } from "./BorrowRequestCard";
 import { getAccessToken, refreshAccessToken } from "../../lib/api";
@@ -143,10 +142,14 @@ export function PublicRequestPanel({
     policyResolved &&
     !submitMutation.isPending;
 
+  // No cards inside this panel: its host already frames it (the public "Your request" card, the
+  // desk kiosk's card), and every nested card's padding took width from a ~300px desktop column.
+  // At xl the host card is sticky beside the catalogue, so the tab body scrolls inside a viewport-
+  // high panel instead of hiding the submit button below the fold until the page ends.
   return (
-    <aside className="space-y-4 lg:sticky lg:top-0 lg:max-h-[100dvh] lg:flex lg:flex-col lg:overflow-hidden">
+    <div className="grid min-w-0 gap-4 xl:max-h-[calc(100dvh-9rem)] xl:grid-rows-[auto_auto_minmax(0,1fr)]">
       {disabled ? (
-        <Card>
+        <div>
           <p className="eyebrow text-brand-ink">
             Requests
           </p>
@@ -154,16 +157,16 @@ export function PublicRequestPanel({
           <p className="mt-2 text-sm text-muted">
             This makerspace is publishing inventory without public requests.
           </p>
-        </Card>
+        </div>
       ) : (
         <>
-          <Card className="shrink-0" padding="sm">
+          <div>
             <h2 className="title-panel text-brand-ink">
               {accountLess && activeTab === "borrow"
                 ? "Borrow something"
                 : "Member borrowing"}
             </h2>
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-1 text-sm leading-6 text-muted">
               {/* Three states, because the requirements genuinely differ. Scoped to the
                   borrow tab: scanning a tool is self-checkout, which DOES require an
                   authenticated member with active presence, so "no account needed" would
@@ -176,11 +179,14 @@ export function PublicRequestPanel({
                   ? "You are signed in, so this request is filed against your account. Staff review it before anything is handed over."
                   : "Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required."}
             </p>
-          </Card>
+          </div>
 
-          <SegmentedControl label="Request actions" value={activeTab} options={[{ value: "borrow", label: "Borrow request" }, { value: "scan", label: "Scan a tool" }]} onChange={value => setActiveTab(value as ActiveTab)} />
+          <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
+            <SegmentedControl label="Request actions" value={activeTab} options={[{ value: "borrow", label: "Borrow request" }, { value: "scan", label: "Scan a tool" }]} onChange={value => setActiveTab(value as ActiveTab)} />
+          </div>
 
-          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          {/* p-1/-m-1 keeps focus outlines inside the scroll box from being clipped. */}
+          <div className="min-h-0 min-w-0 xl:-m-1 xl:overflow-y-auto xl:p-1">
             {activeTab === "borrow" ? (
               <div
                 id="public-request-borrow-panel"
@@ -224,6 +230,6 @@ export function PublicRequestPanel({
           </div>
         </>
       )}
-    </aside>
+    </div>
   );
 }

@@ -2494,6 +2494,13 @@ Load-bearing details that carried over unchanged:
 
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
+- **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,
+  and quarantine's credential reset does not cover it. `apps/data_export/restore_hooks.py` clears
+  bearers at all three seams that copy these rows: classic `rehydrate_control_record` (both kinds),
+  compound `DatabaseStateTarget.rehydrate` on the candidate alias, and delayed B1 slice merge, where
+  `slice_fixtures` scrubs the `DROP_ROW_TO_SLICE` `row_preimage` before staging. Tenant dumps never
+  carry this model (`OMITTED_MODELS`).
+
 ### Offsite destinations and the `backup` module (lane backup, 2026-10-09)
 
 - **An offsite copy is `bytes_verified`, never "restorable".** `offsite_push` streams the primary

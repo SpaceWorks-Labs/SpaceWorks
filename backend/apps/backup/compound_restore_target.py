@@ -4,6 +4,7 @@ from django.db import connections
 
 from apps.backup.database_identity import query_live_database_identity
 from apps.backup.models import DeploymentRecoveryState
+from apps.data_export.restore_hooks import invalidate_download_tokens_after_restore
 from apps.tenant_migration.tenant_restore_target_state import (
     establish_target_import_state,
     set_target_normal,
@@ -36,6 +37,7 @@ class DatabaseStateTarget:
             sibling=sibling,
             using=self.using,
         )
+        invalidate_download_tokens_after_restore(using=self.using)
         return {
             **state,
             "database_uuid": str(identity.database_uuid),

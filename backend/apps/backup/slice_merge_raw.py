@@ -9,6 +9,7 @@ from django.utils import timezone
 from apps.backup.main_projection_registry import boundary_rules, table_rules
 from apps.backup.slice_merge_types import SliceMergeError
 from apps.data_export.datasets import DATASET_SPECS
+from apps.data_export.restore_hooks import strip_download_bearer
 
 
 def slice_fixtures(root):
@@ -22,7 +23,12 @@ def slice_fixtures(root):
         for item in _read_list(path):
             preimage = item.get("row_preimage")
             if preimage:
-                result.append((apps.get_model(preimage["model"]), preimage))
+                model = apps.get_model(preimage["model"])
+                if model._meta.label == "data_export.DataExportJob":
+                    # Scrub boundary bearers before staging for verify_staged_rows equality
+                    # and no crash window.
+                    preimage = strip_download_bearer(preimage)
+                result.append((model, preimage))
     return result
 
 

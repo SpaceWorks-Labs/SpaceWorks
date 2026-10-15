@@ -350,6 +350,7 @@ while pack application explicitly asserts the target source gate before writes.
   are thin barrels: the exported field lists live in `classification_domain.py`, the global/omitted
   model reasons in `classification_platform.py`, and the declared `accounts.User` edges in
   `references_core.py`; adapter extensions compose `classification_7b.py`/`references_7b.py`.
+  `restore_hooks.py` clears copied download bearers during restore and slice staging.
   Credential omission checks live in `guards_credentials.py` behind the original `guards.py` exports. Its `guards._equal(subject, declared,
   actual)` is called with the *scanned* set passed as `declared`, so `extra=` in a failure means **scanned
   but not registered** — read the signature before deciding which side to fix.

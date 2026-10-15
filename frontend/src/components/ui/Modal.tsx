@@ -10,7 +10,7 @@ import {
   trapDialogFocus,
 } from "./dialogFocus";
 
-type ModalProps = {
+export type ModalProps = {
   open: boolean;
   onClose: () => void;
   title: string;
@@ -105,12 +105,12 @@ export function Modal({
         tabIndex={-1}
         className={`desk-panel shadow-overlay flex max-h-[calc(100dvh-1.5rem)] w-full ${maxWidthClass} flex-col overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:max-h-[calc(100dvh-2rem)]`}
       >
-        <div className="shrink-0 border-b border-line px-4 py-3">
-          <h2 id={titleId} className="title-section">
+        <div className="shrink-0 border-b border-line px-5 py-4">
+          <h2 id={titleId} className="title-panel">
             {title}
           </h2>
         </div>
-        <div className="desk-panel-body overflow-y-auto overflow-x-hidden min-w-0 p-4">{children}</div>
+        <div className="desk-panel-body overflow-y-auto overflow-x-hidden min-w-0 p-5">{children}</div>
         {footer ? <div className="shrink-0 border-t border-line px-4 py-3">{footer}</div> : null}
       </div>
     </div>

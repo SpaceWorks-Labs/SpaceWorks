@@ -20,6 +20,8 @@ rule each change introduced.
   prints the DNS, Certbot, installation and reload steps.
 - **API-only setup** — offers automatic HTTPS or your own reverse proxy and points you to the website
   hosted elsewhere.
+- **Upload limits fixed** — the built-in web server no longer rejects bulk inventory imports over 1 MB
+  or tenant-migration archive uploads; API bodies allow 10 MB and the archive import route 20 GB.
 - **Tests run locally only** — run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` before pushing.
   Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
   and optionally deploys through the self-hosted runner; `pip-audit` still runs on PRs.

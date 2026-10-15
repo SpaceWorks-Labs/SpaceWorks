@@ -90,7 +90,8 @@ Caddy on 80/443, and removes its website dependency. With an existing reverse pr
 
 For bundled Silo with HTTPS, point `files.<server-domain>` (or `files.<platform-domain>`) to the server.
 Caddy serves this hostname automatically. With your own proxy, forward it to `127.0.0.1:9000`.
-The Silo console stays at loopback 9001. Configure proxy upload-size limits for your evidence files.
+The Silo console stays at loopback 9001. With your own proxy, allow at least `128m` uploads on
+`files.<domain>` (printing accepts up to 100 MiB; evidence and documents 10 MiB).
 
 Choose **External S3-compatible buckets** to set both backend/browser endpoint URLs, region, private
 evidence bucket, public-image bucket, credentials, public image base URL and presign method.
@@ -120,7 +121,11 @@ The generated configuration redirects HTTP to HTTPS and forwards `<domain>` to `
 It keeps `/api/v1/live/` SSE streams unbuffered and keeps calendar subscription `.ics` URLs out of
 access and error logs because those URLs are bearer credentials. With bundled storage only, it also
 forwards `files.<domain>` to `127.0.0.1:9000`, preserving the Host header for presigned uploads.
-Both HTTPS servers allow uploads up to `128m`.
+Both HTTPS servers allow uploads up to `128m`, except tenant-migration archive imports
+(`/api/v1/admin/platform/tenant-migrations/imports`), which allow `20g` to match the app's
+own archive ceiling. The bundled website and API-only edges apply the same rule internally: `10m` for
+API bodies (bulk inventory import is the largest at 5 MiB) and `20g` for that one import route; every
+other file goes straight to storage through a presigned URL.
 
 1. Point DNS A/AAAA for `<domain>` at this server, plus `files.<domain>` with bundled storage.
 2. Obtain the certificate (include the second `-d` only with bundled storage):

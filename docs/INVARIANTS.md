@@ -2434,8 +2434,9 @@ no-store. CSV/XLSX keep the shared formula protection and export renders are thr
 Until BK-C supplies arrival facts it sets `arrival_counts_available=False`, without
 inventing zero counts or interpreting completion as arrival. Arrival counts must remain
 separately labelled from reservation hours. The shared PDF renderer embeds a Unicode
-font (DejaVu Sans supplied by `fonts-dejavu-core` in the backend image; installed Arial
-for native Windows QA), rather than silently dropping Greek glyphs from bundled Vera.
+font (bundled Apache-licensed Roboto through the shared, domain-independent font
+helper), rather than silently dropping Greek glyphs from bundled Vera. This keeps
+Latin, Greek and Cyrillic coverage independent of the host's installed fonts.
 
 This lane creates no persistent models/fields, stored report objects or new routes.
 Existing SavedView import projection resets state/sharing, so source subject IDs cannot

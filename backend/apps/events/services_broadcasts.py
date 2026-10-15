@@ -29,7 +29,7 @@ def compose(event, actor, **values):
     event = locked_event(event)
     campaign = EventBroadcast(event=event, makerspace=event.makerspace, created_by=actor, **values)
     authorize(campaign, actor)
-    # Unsaved mapped attributes are still plaintext and strict reads reject them.
+    # Validate caller input before encrypted persistence.
     validate_strings(values.get("subject", ""), values.get("body", ""), PLACEHOLDERS)
     from .models import EventRegistration
     if (not isinstance(campaign.statuses, list) or not campaign.statuses

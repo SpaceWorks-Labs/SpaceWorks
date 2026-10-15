@@ -15,7 +15,8 @@ AUDIENCE = "participating_organizations"
 FEATURE = "events.organization_audience"
 PROJECTION_FEATURES = (
     "events.invites", "events.ticket_types", "events.promo_codes", FEATURE,
-    "events.offline_checkin",
+    "events.offline_checkin", "events.broadcasts",
+    "reports.event_exports", "reports.event_pdf",
 )
 
 

@@ -1,6 +1,5 @@
 """Unicode report font, independent of every separable domain."""
 
-import os
 from pathlib import Path
 
 
@@ -10,12 +9,8 @@ def report_font_name():
 
     name = "ReportUnicode"
     if name not in pdfmetrics.getRegisteredFontNames():
-        # fonts-dejavu-core is installed by the backend image. ReportLab resolves
-        # the filename through its cross-platform TTFSearchPath. Native Windows
-        # QA uses the OS font without redistributing any proprietary font bytes.
-        font = "DejaVuSans.ttf"
-        windows = os.environ.get("WINDIR") or os.environ.get("SystemRoot")
-        if os.name == "nt" and windows:
-            font = str(Path(windows) / "Fonts" / "arial.ttf")
-        pdfmetrics.registerFont(TTFont(name, font))
+        # Bundle Unicode coverage independently of host fonts or separable apps.
+        # ReportLab's Vera lacks Greek glyphs and silently renders them as .notdef.
+        font = Path(__file__).parent / "fonts" / "RobotoStatic-Regular.ttf"
+        pdfmetrics.registerFont(TTFont(name, str(font)))
     return name

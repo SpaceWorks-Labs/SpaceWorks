@@ -24,6 +24,8 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("events.EventCertificateTemplateRevision", "parameters"),
         ("events.EventAttendanceCertificate", "layout_snapshot"),
         ("events.Event", "series_override_fields"),
+        # Registration status enum labels filter recipients; no account identifiers.
+        ("events.EventBroadcast", "statuses"),
         ("events.EventSeries", "custom_form"),
         ("events.EventRegistration", "custom_answers"),
         ("events.EventFeedbackSurvey", "questions"),

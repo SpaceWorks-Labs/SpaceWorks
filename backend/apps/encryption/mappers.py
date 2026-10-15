@@ -71,6 +71,11 @@ class ScopedPiiModelMixin(models.Model):
         if name in plain:
             return plain[name]
         if not is_envelope(value):
+            # Validation and model normalization precede the encrypted INSERT.
+            # Strict mode rejects persisted legacy plaintext; a new instance's
+            # caller-supplied values have not crossed the storage boundary yet.
+            if self._state.adding:
+                return value
             if settings.PII_ENCRYPTION_DUAL_READ:
                 plain[name] = value
                 return value

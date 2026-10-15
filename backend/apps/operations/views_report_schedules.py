@@ -156,7 +156,7 @@ class ReportScheduleRunNowView(APIView):
         schedule = _scoped_schedule(request.user, pk)
         definition = REPORT_REGISTRY.get(schedule.report_key)
         if definition is None:
-            raise ValidationError({"report_key": "Report is unavailable on this deployment."})
+            raise ValidationError({"report_key": ["Report is unavailable on this deployment."]})
         require_action(request.user, definition.required_action, schedule.makerspace_id)
         delivery = run_schedule(schedule.pk, force=True, actor=request.user)
         if delivery is None:

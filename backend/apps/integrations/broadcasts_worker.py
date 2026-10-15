@@ -113,18 +113,27 @@ def reconcile(kind, pk):
         transition(adapter, campaign, "failed" if deliveries.filter(status="failed").exists() else "sent")
 
 
-def recover_for_tenant(makerspace_id, *, operation, counts, callback, args):
-    try:
-        with fanout_tenant_write(makerspace_id, operation=operation, counts=counts) as allowed:
-            if allowed:
+def recover_for_tenants(work, *, operation, counts, callback):
+    """Run (tenant ID, callback arguments) work items with isolated write boundaries."""
+    for makerspace_id, args in work:
+        try:
+            with fanout_tenant_write(makerspace_id, operation=operation, counts=counts) as allowed:
+                if not allowed:
+                    continue
                 callback(*args)
-    except Exception as exc:
-        # Match the reminder sweep: a fenced/broken tenant cannot starve others.
-        counts["failed"] = counts.get("failed", 0) + 1
-        logger.error("broadcast_recovery_failed", extra={
-            "makerspace_id": makerspace_id, "operation": operation,
-            "failure_type": type(exc).__name__,
-        })
+        except Exception as exc:
+            # Match the reminder sweep: a fenced/broken tenant cannot starve others.
+            counts["failed"] = counts.get("failed", 0) + 1
+            logger.error("broadcast_recovery_failed", extra={
+                "makerspace_id": makerspace_id, "operation": operation,
+                "failure_type": type(exc).__name__,
+            })
+
+
+def recover_for_tenant(makerspace_id, *, operation, counts, callback, args):
+    # Keep the per-row entry point: a fetched outbox snapshot must be revalidated
+    # inside its tenant boundary, even if a manual retry commits before entry.
+    recover_for_tenants(((makerspace_id, args),), operation=operation, counts=counts, callback=callback)
 
 
 def recovery_rows(queryset, tenant_field):

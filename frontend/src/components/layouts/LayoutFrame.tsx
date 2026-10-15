@@ -1,0 +1,46 @@
+import { createContext, useContext, type ReactNode } from "react";
+import { EmptyState, ErrorBlock, Skeleton } from "../ui";
+import type { LayoutStateProps } from "./types";
+import "./layouts.css";
+
+const ContentTarget = createContext(false);
+export const PublicQueryState = createContext<LayoutStateProps | undefined>(undefined);
+
+/** Nested public layouts share one landmark and one skip destination. */
+export function LayoutFrame({ standalone = false, width = "default", children, className = "" }: {
+  standalone?: boolean;
+  width?: "default" | "wide" | "narrow";
+  children: ReactNode;
+  className?: string;
+}) {
+  const nested = useContext(ContentTarget);
+  const Root = standalone && !nested ? "main" : "div";
+  return <ContentTarget.Provider value={true}>
+    {standalone && !nested ? <a href="#main-content" className="skip-link">Skip to content</a> : null}
+    <Root id={nested ? undefined : "main-content"} tabIndex={nested ? undefined : -1}
+      className={`${nested ? "min-w-0" : `sw-layout sw-layout-${width}`} ${className}`}>
+      {children}
+    </Root>
+  </ContentTarget.Provider>;
+}
+
+export function useLayoutQuery(query: LayoutStateProps): LayoutStateProps {
+  const inherited = useContext(PublicQueryState);
+  return {
+    state: inherited && inherited.state.status !== "ready" ? inherited.state : query.state,
+    isEmpty: inherited?.isEmpty || query.isEmpty,
+    empty: inherited?.isEmpty ? inherited.empty : query.empty,
+  };
+}
+
+export function QueryContent({ children, ...props }: LayoutStateProps & { children: ReactNode }) {
+  const { state, isEmpty, empty } = useLayoutQuery(props);
+  if (state.status === "loading") return <div role="status" aria-label="Loading content" className="grid gap-3">
+    <span className="sr-only">Loading content</span>
+    <Skeleton className="h-24 w-full" /><Skeleton className="h-32 w-full" />
+  </div>;
+  if (state.status === "error") return <ErrorBlock error={new Error(state.error || "Couldn't load this page. Try again.")}
+    onRetry={state.onRetry} />;
+  if (isEmpty) return <EmptyState {...empty ?? { message: "Nothing here yet." }} />;
+  return <>{children}</>;
+}

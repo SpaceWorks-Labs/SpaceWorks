@@ -88,3 +88,8 @@ export type { SkeletonProps, SkeletonRowsProps } from "./Skeleton";
 export type { PageHeaderDetailSlots } from "./PageHeader";
 export type { Action, SecondaryAction, Tab, Stat, Identity, QueryState, EmptyProps, IconName, Tone } from "./types";
 export { formatRelativeTime } from "./RelativeTime";
+
+export { ScanWorkbench } from "./ScanWorkbench";
+export type { ScanWorkbenchProps } from "./ScanWorkbench";
+export { ResultPanel } from "./ResultPanel";
+export type { ResultPanelProps } from "./ResultPanel";

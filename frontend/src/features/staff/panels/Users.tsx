@@ -172,39 +172,43 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
         ...(canManageRoles ? [{ key: "roles", label: "Roles", href: "#roles", count: rolesList.data?.length ?? 0 }] : []),
         ...(canManageRoles && makerspaces.find(space => space.id === msId)?.enabled_features?.includes("staff.invitations") ? [{ key: "invitations", label: "Invitations", href: "#invitations" }] : []),
       ];
-  const activeQuery = tab === "roles" ? rolesList : memberships;
-  const panelError = memberships.error?.message ?? rolesList.error?.message ?? restore.error?.message;
+  // A makerspace switch can drop the Roles/Invitations tab; never leave the body blank.
+  const activeTab = sectionTabs.some(item => item.key === tab) ? tab : "staff";
+  const activeQuery = activeTab === "roles" ? rolesList : memberships;
+  const panelError = memberships.error?.message ?? rolesList.error?.message ?? restore.error?.message ?? revoke.error?.message;
+  const chooseMakerspace = (id: number) => { setMsId(id); setRoleFilter("all"); setTab("staff"); };
+  // The space picker, filters and invite banner sit in `filters`, outside the query body, so a
+  // failed list (e.g. a 403 on one space) never removes the way to switch to another space.
 
   return (
-    <ListLayout tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
+    <ListLayout tabs={sectionTabs} activeTab={activeTab} onTabChange={setTab}
     header={{ title: "Staff & roles", subtitle: "Give your team the access they need to run this space.", primary: { label: "Add staff", onClick: openAdd, disabled: !assignableRoles.length, disabledReason: "A role you can assign is needed first." }, secondary: isSuperadmin ? { label: "Create makerspace", onClick: () => setMakerspaceOpen(true) } : undefined }}
-      state={{ status: tab === "invitations" ? "ready" : activeQuery.isLoading ? "loading" : activeQuery.isError ? "error" : "ready", error: "Couldn't load staff and roles. Try again.", onRetry: () => { void activeQuery.refetch(); } }}
+      state={{ status: activeTab === "invitations" ? "ready" : activeQuery.isLoading ? "loading" : activeQuery.isError ? "error" : "ready", error: `Couldn't load staff and roles${activeQuery.error?.message ? ` (${activeQuery.error.message})` : ""}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
       empty={{ message: "No staff yet. Add someone to your team." }}
       stats={[{ label: "Staff", value: memberships.data?.length ?? 0 }, { label: "Roles", value: rolesList.data?.length ?? 0 }]}
-      body={{ kind: "rows", rows: <>
-      <div className="grid gap-4">
+      filters={{ toolbar: <div className="grid gap-3">
         {creationInvite ? <div role="status" className="rounded border border-line p-3"><p>First staff invitation delivery: {creationInvite.delivery_status}. Share this link privately if needed.</p><input className="desk-input w-full" aria-label="First staff invitation link" value={creationInvite.accept_url} readOnly onFocus={event => event.currentTarget.select()} /><button className="desk-button-ghost" onClick={() => setCreationInvite(null)}>Dismiss invitation link</button></div> : null}
         <div className="flex flex-wrap items-center gap-3">
-          {makerspaces.length > 1 ? (
-            <label className="eyebrow">
-              Makerspace{" "}
-              <select className="desk-input" value={msId} onChange={(event) => { setMsId(Number(event.target.value)); setRoleFilter("all"); }}>
-                {makerspaces.map((space) => <option key={space.id} value={space.id}>{space.name}</option>)}
-              </select>
-            </label>
-          ) : null}
+        {makerspaces.length > 1 ? (
           <label className="eyebrow">
-            Role{" "}
-            <select className="desk-input" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-              <option value="all">All roles</option>
-              {roleFilterOptions.map((name) => <option key={name} value={name}>{name}</option>)}
+            Makerspace{" "}
+            <select className="desk-input" value={msId} onChange={(event) => chooseMakerspace(Number(event.target.value))}>
+              {makerspaces.map((space) => <option key={space.id} value={space.id}>{space.name}</option>)}
             </select>
           </label>
-
-        </div>
-
+        ) : null}
+        {activeTab === "staff" ? <label className="eyebrow">
+          Role{" "}
+          <select className="desk-input" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+            <option value="all">All roles</option>
+            {roleFilterOptions.map((name) => <option key={name} value={name}>{name}</option>)}
+          </select>
+        </label> : null}
+      </div></div> }}
+      body={{ kind: "rows", rows: <>
+      <div className="grid gap-4">
         {panelError ? <p className="text-sm text-danger">{panelError}</p> : null}
-        {tab === "staff" ? <UsersTable
+        {activeTab === "staff" ? <UsersTable
           rows={rows}
           makerspaceNames={makerspaceNames}
           loading={memberships.isLoading}
@@ -215,8 +219,8 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
           onRevoke={setRevokeTarget}
           onChangeRole={(membership, roleId) => changeRole.mutateAsync({ membership, roleId })}
         /> : null}
-        {tab === "invitations" && canManageRoles && makerspaces.find((space) => space.id === msId)?.enabled_features?.includes("staff.invitations") ? <StaffInvitations key={msId} msId={msId} roles={assignableRoles} /> : null}
-        {canManageRoles && tab === "roles" ? (
+        {activeTab === "invitations" && canManageRoles && makerspaces.find((space) => space.id === msId)?.enabled_features?.includes("staff.invitations") ? <StaffInvitations key={msId} msId={msId} roles={assignableRoles} /> : null}
+        {canManageRoles && activeTab === "roles" ? (
           <RoleManager msId={msId} actorActions={actorActions} isSuperadmin={isSuperadmin} onRolesChanged={afterStaffChange} />
         ) : null}
       </div>

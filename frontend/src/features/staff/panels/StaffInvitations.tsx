@@ -40,10 +40,17 @@ export function StaffInvitations({ msId, roles }: { msId: number; roles: StaffRo
     {list.isLoading ? <p>Loading invitations…</p> : null}
     {list.data && !list.data.results.length ? <EmptyState message="No staff invitations yet. Invite someone to share the work." /> : null}
     <div className="grid gap-3">{list.data?.results.map(row => <ListRow key={row.id} title={row.email}
-      identity={{ kind: "avatar", name: row.email, seed: row.email }} meta={<>{row.role_name} · Expires <RelativeTime date={row.expires_at} /></>}
-      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={row.accepted_at ? "Accepted" : row.revoked_at ? "Revoked" : "Unused"} tone={row.accepted_at ? "success" : row.revoked_at ? "neutral" : "accent"} />
+      identity={{ kind: "avatar", name: row.email, seed: row.email }} meta={<>{row.role_name}{row.accepted_at || row.revoked_at ? null : <> · Expires <RelativeTime date={row.expires_at} /></>}</>}
+      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={invitationState(row)} tone={row.accepted_at ? "success" : row.revoked_at || isExpired(row) ? "neutral" : "accent"} />
       {!row.accepted_at && !row.revoked_at ? <><button className="desk-button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, action: "resend" })}>Resend</button>
-        <OverflowMenu label={`Actions for ${row.email}`} actions={[{ label: "Revoke", tone: "danger", disabled: update.isPending, disabledReason: update.isPending ? "Wait for the current invitation update." : undefined, onClick: () => update.mutate({ id: row.id, action: "revoke" }) }]} /></> : null}</div>} />)}</div>
+        <OverflowMenu label={`Actions for ${row.email}`} actions={[{ label: "Revoke", tone: "danger", disabled: update.isPending, disabledReason: update.isPending ? "Wait for the current invitation update." : undefined, confirm: { title: "Revoke invitation?", message: `The link sent to ${row.email} stops working. Send a new invitation if they still need access.`, confirmLabel: "Revoke" }, onClick: () => update.mutate({ id: row.id, action: "revoke" }) }]} /></> : null}</div>} />)}</div>
     <div className="flex gap-3"><button className="desk-button" disabled={!list.data?.previous} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!list.data?.next} onClick={() => setPage(page + 1)}>Next</button></div>
   </section>;
+}
+
+function isExpired(row: Invitation) {
+  return !row.accepted_at && !row.revoked_at && new Date(row.expires_at).getTime() < Date.now();
+}
+function invitationState(row: Invitation) {
+  return row.accepted_at ? "Accepted" : row.revoked_at ? "Revoked" : isExpired(row) ? "Expired" : "Unused";
 }

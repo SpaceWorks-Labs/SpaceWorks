@@ -55,11 +55,6 @@ def upload_archive(key, path):
         raise BackupStorageError("The encrypted backup archive could not be stored.") from exc
 
 
-def copy_archive(source_key, destination_key):
-    """Compatibility name for the create-only final-object promotion primitive."""
-    return create_final_from_staging(source_key, destination_key)
-
-
 def open_archive(key):
     try:
         return client(public_endpoint=True).get_object(

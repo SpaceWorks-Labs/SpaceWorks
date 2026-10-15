@@ -1,6 +1,6 @@
 # Recovery and tenant migration source map
 
-This is the recovery reference linked by [SOURCE-MAP.md](SOURCE-MAP.md).
+This is the recovery reference linked by [SOURCE-MAP-APPS.md](SOURCE-MAP-APPS.md).
 Update it with code moves; the repository tree remains authoritative.
 
 - `backend/apps/backup/` — deployment backup + restore (Phase 5A/Lane E). `outer_manifest.py` owns the

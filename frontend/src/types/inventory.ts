@@ -56,18 +56,6 @@ export type RequestSubmitResponse = {
   status: string;
 };
 
-export type PublicRequestStatus = {
-  public_token?: string;
-  requested_for?: string;
-  status: string;
-  rejection_reason: string;
-  created_at: string;
-  items: {
-    product_name: string;
-    requested_quantity: number;
-  }[];
-};
-
 export type PublicToolLoan = {
   public_token: string;
   status: string;

@@ -52,7 +52,7 @@ stack is unaffected unless you set them.
 
 ### How PUT mode closes the overwrite window
 A presigned PUT URL carries no upload-time size policy, and the key it names stays writable
-until the URL expires (`EVIDENCE_URL_TTL_SECONDS` / `PRINT_URL_TTL_SECONDS`, default 300s). PUT
+until the URL expires (`EVIDENCE_URL_TTL_SECONDS`, default 300s). PUT
 mode therefore never presigns the final key. The client uploads to a **staging key**, and
 `finalize_upload` (`backend/apps/evidence/storage.py`) does the promotion server-side:
 

@@ -57,7 +57,6 @@ GLOBAL_ADMIN_MODELS = {
     # Platform-scoped for the same reason as the built-in providers: identity resolves
     # before a makerspace is selected, so an OIDC provider cannot belong to one.
     "accounts.oidcprovider",
-    "auth.group",
     # Deployment-wide scheduler bookkeeping: one row per task name, no tenant.
     "operations.periodictaskrun",
     "axes.accessattempt",
@@ -95,6 +94,4 @@ GLOBAL_ADMIN_MODELS = {
     "backup.b1reservationentry", "backup.b1fencecontinuity",
     "backup.backupdestination", "backup.backupdestinationupload",
     "encryption.piiglobalwritefence",
-    "token_blacklist.blacklistedtoken",
-    "token_blacklist.outstandingtoken",
 }

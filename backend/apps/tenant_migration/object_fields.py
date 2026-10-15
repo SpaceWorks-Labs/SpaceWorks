@@ -40,11 +40,3 @@ def _rewrite_certificate_snapshot(row, object_key_map):
         **snapshot, "artwork_object_key": object_key_map[source_key],
         "artwork_version_id": "",
     }
-
-
-def bucket_kind_for_field(field_name):
-    if field_name in PRIVATE_FIELDS:
-        return "private"
-    if field_name in PUBLIC_FIELDS:
-        return "public_image"
-    return None

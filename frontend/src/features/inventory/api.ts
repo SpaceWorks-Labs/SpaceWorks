@@ -1,11 +1,10 @@
-import { apiGet, publicV1Request, tenantPublicRequest } from "../../lib/api";
+import { apiGet, tenantPublicRequest } from "../../lib/api";
 import type {
   Makerspace,
   PaginatedResponse,
   Product,
   PublicCategory,
   PublicToolLoan,
-  PublicRequestStatus,
   RequestSubmitResponse,
 } from "../../types/inventory";
 
@@ -94,14 +93,6 @@ export async function submitPublicRequest(
       body: JSON.stringify(payload),
       ...(idempotencyKey ? { headers: { "Idempotency-Key": idempotencyKey } } : {}),
     },
-  );
-}
-
-export async function fetchRequestStatus(
-  publicToken: string,
-): Promise<PublicRequestStatus> {
-  return publicV1Request<PublicRequestStatus>(
-    `/public/requests/${publicToken}/status`,
   );
 }
 

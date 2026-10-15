@@ -15,7 +15,6 @@ from apps.makerspaces.request_access import (
     MEMBERS,
     POLICY_LABELS,
     RequestAccessConflict,
-    effective_policy,
     set_anonymous_requests,
 )
 
@@ -72,8 +71,3 @@ class Command(BaseCommand):
                 )
             )
         return None
-
-
-def current_policy(makerspace) -> str:
-    """Shared with the installer's read-back step."""
-    return effective_policy(makerspace)

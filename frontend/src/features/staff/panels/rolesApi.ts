@@ -33,10 +33,6 @@ export type StaffMembershipRow = {
   created_at: string;
 };
 
-export function listRoles(msId: number) {
-  return staffRequest<StaffRole[]>(`/admin/makerspaces/${msId}/roles`);
-}
-
 export function createRole(msId: number, body: Pick<StaffRole, "name" | "granted_actions">) {
   return staffRequest<StaffRole>(`/admin/makerspaces/${msId}/roles`, { method: "POST", body: JSON.stringify(body) });
 }
@@ -77,14 +73,6 @@ export function setRoleMachineScope(
   return staffRequest<RoleMachineScope>(`/admin/makerspaces/${msId}/roles/${roleId}/machine-scope`, {
     method: "PUT", body: JSON.stringify(body),
   });
-}
-
-export function listCapabilities(msId: number) {
-  return staffRequest<Capability[]>(`/admin/makerspaces/${msId}/roles/capabilities`);
-}
-
-export function listMemberships(msId: number) {
-  return staffRequest<StaffMembershipRow[]>(`/admin/makerspaces/${msId}/memberships`);
 }
 
 export function createMembership(msId: number, body: {

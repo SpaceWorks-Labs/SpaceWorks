@@ -168,7 +168,6 @@ UNFOLD = {
                 "items": [
                     _item("Users", "person", "admin:accounts_user_changelist"),
                     _item("Staff memberships", "badge", "admin:makerspaces_makerspacemembership_changelist"),
-                    _item("Groups", "groups", "admin:auth_group_changelist"),
                 ],
             },
             {

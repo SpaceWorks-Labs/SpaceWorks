@@ -37,7 +37,6 @@ export {
 
 export {
   createMachine,
-  deleteMachineImage,
   getMachine,
   getMachinePublicPreview,
   getMachines,
@@ -47,7 +46,6 @@ export {
   setMachineStatus,
   unretireMachine,
   updateMachine,
-  uploadMachineImage,
 } from "./machinesApi/machines";
 
 export {

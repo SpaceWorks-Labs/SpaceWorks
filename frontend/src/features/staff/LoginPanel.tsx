@@ -59,7 +59,7 @@ export function LoginPanel({
       >
         <SpaceWorksBadge className="mb-5" />
         <p className="text-xs font-semibold tracking-wide text-accent-ink">
-          {guestOnly ? "Guest admin desk" : "Space Manager desk"}
+          {guestOnly ? "Handover desk" : "Space Manager desk"}
         </p>
         <h1 className="mt-2 text-2xl font-bold text-ink">Sign in</h1>
         <p className="mt-2 text-sm text-muted">

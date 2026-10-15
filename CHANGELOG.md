@@ -8,8 +8,8 @@ regenerating `frontend/openapi-schema.json` and `frontend/src/generated/api.ts`.
 
 Entries up to 0.2.0 below were generated automatically from conventional commits. That
 generation stopped afterwards, so **0.3.0 through 0.5.1 were never recorded here** — for that
-window see `git log` and the condensed changelog in `CLAUDE.md`, which also carries the design
-rule each change introduced.
+window see `git log` and the condensed changelog in `docs/PROJECT-HISTORY.md`, which also
+carries the design rule each change introduced.
 
 ## 0.9.2 (2026-10-14)
 

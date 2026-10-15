@@ -14,7 +14,6 @@ from apps.payments.models import Payment
 from apps.payments.reconciliation import reconcile_payments
 from apps.payments.serializers import StaffPaymentSerializer
 from apps.payments.serializers_reconciliation import PaymentOfflineSerializer
-from apps.payments.services import mark_offline, waive  # noqa: F401
 
 
 def _manageable_payment(actor, pk):

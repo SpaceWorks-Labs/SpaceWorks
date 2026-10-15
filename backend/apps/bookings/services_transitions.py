@@ -34,10 +34,14 @@ def _transition(booking, actor, new_status, action, event, *, require_ended=Fals
     if require_ended and locked.ends_at > timezone.now():
         raise BookingInvalidTransition('Booking has not ended yet.')
     old_status = locked.status
+    fields = ["status", "calendar_sequence", "calendar_updated_at"]
+    if cancelling:
+        from apps.operations.cancellation_restore import record_cancellation
+        fields.extend(record_cancellation(locked, now=timezone.now()))
     locked.status = new_status
     locked.calendar_sequence += 1
     locked.calendar_updated_at = timezone.now()
-    locked.save(update_fields=['status', 'calendar_sequence', 'calendar_updated_at'])
+    locked.save(update_fields=fields)
     _audit(
         space,
         actor,

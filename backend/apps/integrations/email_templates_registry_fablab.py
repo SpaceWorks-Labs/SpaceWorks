@@ -55,7 +55,7 @@ EVENTS_KEYS = (
     "series_generation_failed",
     "reminder",
 )
-BOOKINGS_KEYS = ("created", "confirmed", "rejected", "cancelled", "completed", "no_show", "reminder")
+BOOKINGS_KEYS = ("created", "confirmed", "rejected", "cancelled", "restored", "completed", "no_show", "reminder")
 MAINTENANCE_KEYS = (
     "schedule_created",
     "schedule_updated",

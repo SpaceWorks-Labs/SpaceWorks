@@ -71651,6 +71651,462 @@
         ],
         "description": "Lists only currently authorized resources, scoped to staff origin and optional makerspace_id. Grants never add tenant actions or general member access."
       }
+    },
+    "/api/v1/admin/spaces/{id}/clone/": {
+      "post": {
+        "operationId": "api_v1_admin_spaces_clone_create",
+        "summary": "Clone a resource into a private copy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Permission denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Workflow conflict."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookableSpaceAdmin"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Too many requests."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Service unavailable."
+          }
+        },
+        "description": "Requires tenant MANAGE_BOOKINGS and bookings.clone. Copying protected rules also requires MANAGE_MAKERSPACE.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCloneInput"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCloneInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCloneInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bookings/{id}/details/": {
+      "patch": {
+        "operationId": "api_v1_admin_bookings_details_partial_update",
+        "summary": "Edit private reservation note or answers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Permission denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Workflow conflict."
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingAdmin"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Too many requests."
+          }
+        },
+        "description": "Requires resource manage_reservations and bookings.staff_tools. Unknown fields are refused; answers use the current schema.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedBookingDetailsInput"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedBookingDetailsInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedBookingDetailsInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bookings/{id}/time/": {
+      "post": {
+        "operationId": "api_v1_admin_bookings_time_create",
+        "summary": "Move a pending or confirmed reservation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Permission denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Workflow conflict."
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingAdmin"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Too many requests."
+          }
+        },
+        "description": "Requires resource manage_reservations and bookings.staff_tools. Both old and proposed windows must be beyond the cutoff; ordinary admission rules apply. Identity, status and flat charge are preserved.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingTimeInput"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingTimeInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingTimeInput"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/admin/bookings/{id}/restore/": {
+      "post": {
+        "operationId": "api_v1_admin_bookings_restore_create",
+        "summary": "Undo a recent cancellation without money movement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Permission denied."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Workflow conflict."
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingAdmin"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": "Too many requests."
+          }
+        },
+        "description": "Requires resource manage_reservations and bookings.staff_tools. Within five minutes, restore the exact pending/confirmed state under current admission. Any historical or newly required charge refuses undo."
+      }
     }
   },
   "components": {
@@ -74727,6 +75183,18 @@
           "recurring_enabled": {
             "type": "boolean",
             "readOnly": true
+          },
+          "clone_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "staff_tools_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "can_copy_booking_rules": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -74734,9 +75202,11 @@
           "booking_lead_time_minutes",
           "buffer_after_minutes",
           "buffer_before_minutes",
+          "can_copy_booking_rules",
           "can_manage_grants",
           "cancellation_cutoff_hours",
           "capacity",
+          "clone_enabled",
           "created_at",
           "created_by_id",
           "custom_form",
@@ -74762,6 +75232,7 @@
           "show_public_booker_names",
           "staff_grants_enabled",
           "staff_permissions",
+          "staff_tools_enabled",
           "updated_at"
         ]
       },
@@ -74965,9 +75436,26 @@
             ],
             "nullable": true,
             "readOnly": true
+          },
+          "cancelled_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "status_before_cancel": {
+            "type": "string",
+            "readOnly": true
+          },
+          "restore_until": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
           }
         },
         "required": [
+          "cancelled_at",
           "created_at",
           "custom_answers",
           "email",
@@ -74978,9 +75466,11 @@
           "payment",
           "phone",
           "public_token",
+          "restore_until",
           "space_id",
           "starts_at",
-          "status"
+          "status",
+          "status_before_cancel"
         ]
       },
       "BookingEligibleMember": {
@@ -111670,6 +112160,44 @@
           "name",
           "source",
           "permissions"
+        ]
+      },
+      "BookingCloneInput": {
+        "type": "object",
+        "properties": {
+          "copy_booking_rules": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "PatchedBookingDetailsInput": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "custom_answers": {
+            "nullable": true
+          }
+        }
+      },
+      "BookingTimeInput": {
+        "type": "object",
+        "properties": {
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "ends_at",
+          "starts_at"
         ]
       }
     },

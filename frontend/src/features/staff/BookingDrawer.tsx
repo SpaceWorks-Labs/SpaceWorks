@@ -21,6 +21,10 @@ import { BookingStaffAccess } from "./BookingStaffAccess";
 import { bookingAccess } from "./bookingStaffPermissions";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
 
+import { BookingCloneControl } from "./BookingCloneControl";
+import { BookingReservationEditor } from "./BookingReservationEditor";
+import { BookingDrawerTabs, type BookingDrawerTab } from "./BookingDrawerTabs";
+
 type PendingAction = { booking: Booking; action: BookingAction };
 
 function errorText(error: unknown) {
@@ -34,6 +38,7 @@ function bookingTime(booking: Booking) {
 
 function actionLabel(action: BookingAction) {
   return {
+    restore: "Undo cancellation",
     approve: "Approve",
     reject: "Reject",
     cancel: "Cancel booking",
@@ -42,12 +47,14 @@ function actionLabel(action: BookingAction) {
   }[action];
 }
 
-export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled = false }: {
+export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled = false, additionalTabs = [] }: {
+  additionalTabs?: BookingDrawerTab[];
   recurringEnabled?: boolean;
   makerspaceId: number;
   spaceId: number;
   onClose: () => void;
 }) {
+  const [selectedTab, setSelectedTab] = useState("overview");
   const spaceQuery = useBookableSpace(spaceId);
   const space = spaceQuery.data;
   const access = bookingAccess(space);
@@ -74,6 +81,9 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
         {spaceQuery.error ? <EmptyState title="Unable to load space" description={errorText(spaceQuery.error)} /> : null}
         {space ? (
           <div className="grid gap-6">
+            <BookingDrawerTabs tabs={[{ id: "overview", label: "Resource and reservations", content: null }, ...additionalTabs]} selected={selectedTab} onSelect={setSelectedTab} />
+            {additionalTabs.find((tab) => tab.id === selectedTab)?.content}
+            {selectedTab === "overview" ? <>
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={space.is_active ? "active" : "inactive"} />
               <span className="text-sm text-muted">{space.effective_requester_notifications_enabled ? "Requester emails on" : "Requester emails off"}</span>
@@ -88,6 +98,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
               submitLabel="Save changes"
               disabled={!space.is_active}
             /> : access.edit ? <BookingDetailsEditor key={space.updated_at} space={space} pending={update.isPending} onSubmit={(payload) => update.mutate(payload)} /> : <p className="text-sm text-muted">{space.description || "Use your assigned resource permissions."}</p>}
+            {access.manager && space.clone_enabled ? <BookingCloneControl space={space} /> : null}
             {access.manager && space.staff_grants_enabled ? <BookingStaffAccess target={{ id: spaceId }} /> : null}
             {access.manager && space.is_active ? <button className="desk-button-danger w-fit" type="button" onClick={() => setConfirmDeactivate(true)}>Deactivate space</button> : !space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
             {access.reservations ? <section aria-labelledby="space-bookings-title">
@@ -140,13 +151,15 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
                           ["booking-space", spaceId],
                         ]}
                       /> : null}
-                      <BookingActions booking={booking} onAction={(nextAction) => setPendingAction({ booking, action: nextAction })} />
+                      {space.staff_tools_enabled ? <BookingReservationEditor key={`${booking.id}-${booking.starts_at}-${JSON.stringify(booking.custom_answers)}-${booking.note}`} space={space} booking={booking} /> : null}
+                      <BookingActions undoEnabled={space.staff_tools_enabled} booking={booking} onAction={(nextAction) => setPendingAction({ booking, action: nextAction })} />
                     </article>
                   ))}
                 </div>
               ) : null}
               {bookings.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="font-mono text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!bookings.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!bookings.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
             </section> : null}
+            </> : null}
             {actionError ? <p className="text-sm text-danger" role="alert">{errorText(actionError)}</p> : null}
           </div>
         ) : null}
@@ -166,12 +179,13 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
   );
 }
 
-function BookingActions({ booking, onAction }: { booking: Booking; onAction: (action: BookingAction) => void }) {
+function BookingActions({ booking, onAction, undoEnabled }: { undoEnabled?: boolean; booking: Booking; onAction: (action: BookingAction) => void }) {
   const ended = new Date(booking.ends_at) <= new Date();
   return (
     <div className="mt-3 flex flex-wrap gap-2">
+      {undoEnabled && booking.restore_until && new Date(booking.restore_until) > new Date() ? <button className="desk-button" type="button" onClick={() => onAction("restore")}>Undo cancellation</button> : null}
       {booking.status === "pending" ? <><button className="desk-button-success" type="button" onClick={() => onAction("approve")}>Approve</button><button className="desk-button-danger" type="button" onClick={() => onAction("reject")}>Reject</button></> : null}
-      {booking.status === "confirmed" ? <button className="desk-button-danger" type="button" onClick={() => onAction("cancel")}>Cancel</button> : null}
+      {["pending", "confirmed"].includes(booking.status) ? <button className="desk-button-danger" type="button" onClick={() => onAction("cancel")}>Cancel</button> : null}
       {booking.status === "confirmed" && ended ? <><button className="desk-button-success" type="button" onClick={() => onAction("complete")}>Complete</button><button className="desk-button-warn" type="button" onClick={() => onAction("no-show")}>No-show</button></> : null}
     </div>
   );

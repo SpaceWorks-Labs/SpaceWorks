@@ -120,8 +120,11 @@ export const openApiPaths = [
   "/api/v1/admin/bookings/{id}/approve/",
   "/api/v1/admin/bookings/{id}/cancel/",
   "/api/v1/admin/bookings/{id}/complete/",
+  "/api/v1/admin/bookings/{id}/details/",
   "/api/v1/admin/bookings/{id}/no-show/",
   "/api/v1/admin/bookings/{id}/reject/",
+  "/api/v1/admin/bookings/{id}/restore/",
+  "/api/v1/admin/bookings/{id}/time/",
   "/api/v1/admin/categories/{id}",
   "/api/v1/admin/certification-grants/{id}/renew",
   "/api/v1/admin/certification-grants/{id}/revoke",
@@ -529,6 +532,7 @@ export const openApiPaths = [
   "/api/v1/admin/spaces/{id}/",
   "/api/v1/admin/spaces/{id}/booking-rules/",
   "/api/v1/admin/spaces/{id}/bookings/",
+  "/api/v1/admin/spaces/{id}/clone/",
   "/api/v1/admin/spaces/{id}/deactivate/",
   "/api/v1/admin/spaces/{id}/eligible-members/",
   "/api/v1/admin/spaces/{id}/image/",
@@ -1481,6 +1485,9 @@ export type BookableSpaceAdmin = {
   "can_manage_grants": boolean;
   "staff_grants_enabled": boolean;
   "recurring_enabled": boolean;
+  "clone_enabled": boolean;
+  "staff_tools_enabled": boolean;
+  "can_copy_booking_rules": boolean;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1530,6 +1537,13 @@ export type BookingAdmin = {
   "custom_answers": unknown | null;
   "created_at": string;
   "payment": StaffPaymentSummary | null;
+  "cancelled_at": string | null;
+  "status_before_cancel": string;
+  "restore_until": string | null;
+};
+
+export type BookingCloneInput = {
+  "copy_booking_rules"?: boolean;
 };
 
 export type BookingEligibleMember = {
@@ -1631,6 +1645,11 @@ export type BookingStaffGrantPermissions = {
 
 export type BookingStaffGrantRedeem = {
   "token": string;
+};
+
+export type BookingTimeInput = {
+  "starts_at": string;
+  "ends_at": string;
 };
 
 export type BookingUtilizationReport = {
@@ -6592,6 +6611,11 @@ export type PatchedBookableSpaceWrite = {
   "requester_notifications_enabled"?: boolean | null;
   "payment_amount"?: string;
   "machine_type"?: number | null;
+};
+
+export type PatchedBookingDetailsInput = {
+  "note"?: string;
+  "custom_answers"?: unknown | null;
 };
 
 export type PatchedBookingStaffGrantPermissions = {

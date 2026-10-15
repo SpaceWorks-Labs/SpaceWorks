@@ -47,6 +47,8 @@ class Booking(ScopedPiiModelMixin, models.Model):
         choices=Status.choices,
         default=Status.CONFIRMED,
     )
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    status_before_cancel = models.CharField(max_length=16, blank=True, default="")
     note = models.TextField(blank=True)
     custom_answers = models.JSONField(null=True, blank=True, default=None)
     calendar_sequence = models.PositiveIntegerField(default=0)

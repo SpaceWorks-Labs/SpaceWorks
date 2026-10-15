@@ -38,7 +38,13 @@ from apps.bookings.views_admin_spaces import (
 
 from .views_recurrence import StaffRecurringBookingView
 
+from .views_staff_tools import BookingCloneView, BookingDetailsEditView, BookingTimeEditView, BookingRestoreView
+
 urlpatterns = [*staff_grant_patterns,
+    path("spaces/<int:pk>/clone/", BookingCloneView.as_view(), name="admin-bookable-space-clone"),
+    path("bookings/<int:pk>/details/", BookingDetailsEditView.as_view(), name="admin-booking-details-edit"),
+    path("bookings/<int:pk>/time/", BookingTimeEditView.as_view(), name="admin-booking-time-edit"),
+    path("bookings/<int:pk>/restore/", BookingRestoreView.as_view(), name="admin-booking-restore"),
     path('spaces/<int:pk>/recurring-bookings/', StaffRecurringBookingView.as_view(), name='admin-recurring-bookings'),
     path(
         'makerspaces/<int:makerspace_id>/booking-machine-types/',

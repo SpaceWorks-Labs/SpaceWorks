@@ -2312,6 +2312,47 @@ preserving other domains; whole-tenant purge removes all. These models own no S3
 manual PDF bytes are streamed, never stored. Retention/encryption/purge declarations survive
 tombstoning while adapters, feature rows and report definitions disappear.
 
+### Booking clone, edits and cancellation undo (BK-B)
+
+`bookings.clone` and `bookings.staff_tools` are opt-in Bookings features with no
+Events dependency. Cloning requires tenant `MANAGE_BOOKINGS`, copies declared
+configuration into an active private resource with a fresh UUID and owned cover key,
+and never copies reservations, grants, feeds, payments or delivery/arrival history.
+Rules use model defaults unless explicitly copied by a `MANAGE_MAKERSPACE` actor;
+machine links revalidate installed modules and tenant ownership. The shared durable
+clone transaction accounts storage and cleans failed copies. Query-free extensions
+in always-present makerspaces infrastructure let website adapters copy their children
+inside that transaction; a copied website must remain unreleased.
+
+Reservation note/answer and time edits require live `manage_reservations` authority
+and run under source/write fences and resource then booking locks. Inputs are strict
+allow-lists; answer edits validate the current schema into the existing private
+snapshot format, and audit only changed field names. Time edits permit only pending
+or confirmed rows whose old start is strictly beyond the current cutoff; the proposed
+start must also be strictly beyond it, using one server-clock snapshot. Shared
+`bookings/admission.py` checks active resource/owner, optional-membership waiver,
+certification, duration, lead/horizon, opening hours and buffers. Moves check conflicts,
+retain status/identity/flat charge and increment the calendar revision. Approval
+intentionally retains its established narrower policy. BK-C must put active-arrival
+refusal and credential invalidation into the same locked movement boundary when it
+adds those projections; no arrival credential exists in BK-B.
+
+Cancellation records nullable `cancelled_at` and `status_before_cancel` in the same
+atomic transaction as calendar changes, audit and required pending-debt cancellation.
+Legacy null provenance refuses undo. Undo requires current cancelled state, prior
+pending/confirmed, and `cancelled_at <= now < cancelled_at + five minutes`. Any
+historical payment row or newly required charge refuses it. Ordinary current admission
+must yield exactly the prior state; previously approved confirmations cannot bypass
+an approval policy. Pending restores occupy no window, matching creation. Restore
+preserves creation time/identity, clears cancellation provenance, increments calendar
+revision, audits `booking.restored` and schedules `restored` after commit through the
+normal registered requester/staff templates and preference/module gates. Refusal or
+rollback emits no restored event. These scalar provenance fields travel with the
+existing booking dataset; they add no User edges, PII mapping or object ownership.
+Existing booking module/tenant purge and owned-image collection cover clones, while
+the core payment ledger remains retained. Target undo still needs live authority,
+current admission and its server clock; portable provenance is never permission.
+
 ### Booking resource staff grants (BK-A)
 
 `bookings/booking_authority.py` owns every booking staff predicate, including locked

@@ -40,7 +40,7 @@ FEATURE_EVENTS = {
         "reminder",
     ),
     F.BOOKINGS: (
-        "created", "confirmed", "rejected", "cancelled", "completed", "no_show",
+        "created", "confirmed", "rejected", "cancelled", "restored", "completed", "no_show",
         "reminder",
     ),
     F.MAINTENANCE: (

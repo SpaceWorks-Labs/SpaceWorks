@@ -77,7 +77,7 @@ def create_booking(
     space, *, starts_at, ends_at, member=None, name=None, email=None, phone=None,
     custom_answers=None, note='', actor=None, certification_override_reason='',
 ):
-    from apps.bookings.services_rules import enforce_booking_rules
+    from apps.bookings.admission import admission_status, validate_admission
     from apps.encryption.write_fence import assert_mapped_write_allowed
 
     assert_mapped_write_allowed(space.makerspace_id)
@@ -93,16 +93,8 @@ def create_booking(
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Staff booking requires an active local member.")
         require_active_member(member, locked_space.makerspace)
-    if not locked_space.is_active:
-        raise BookingInvalidTransition('Inactive spaces cannot accept bookings.')
-    _require_certification(locked_space, member, actor, certification_override_reason)
-
     now = timezone.now()
-    status = (
-        Booking.Status.CONFIRMED
-        if locked_space.approval_mode == BookableSpace.ApprovalMode.INSTANT
-        else Booking.Status.PENDING
-    )
+    status = admission_status(locked_space)
     if member is not None:
         name = member.display_name or member.get_full_name() or member.username
         email = member.email
@@ -118,22 +110,13 @@ def create_booking(
         note=note,
         status=status,
     )
-    _validate(booking)
-    enforce_booking_rules(locked_space, starts_at, ends_at, now)
-    if ends_at <= now:
-        raise serializers.ValidationError(
-            {'ends_at': 'End time must be in the future.'}
-        )
+    validate_admission(locked_space, booking, now=now, actor=actor,
+                       override_reason=certification_override_reason)
     booking.custom_answers = validate_answers(
         locked_space.custom_form, custom_answers
     )
     require_module_locked(locked_space.makerspace, 'bookings')
     limits.check_quota(locked_space.makerspace, 'bookings', adding=1)
-    if status == Booking.Status.CONFIRMED and _confirmed_overlap(
-        locked_space, starts_at, ends_at
-    ):
-        raise BookingConflict('This space is already booked for that time.')
-
     booking.save()
     _audit(
         locked_space,
@@ -151,6 +134,8 @@ def create_booking(
 
 
 def _locked_booking(booking):
+    from apps.encryption.write_fence import assert_mapped_write_allowed
+    assert_mapped_write_allowed(booking.space.makerspace_id)
     space = _locked_space(booking.space_id)
     locked = Booking.objects.select_for_update().get(pk=booking.pk)
     if locked.space_id != space.pk:

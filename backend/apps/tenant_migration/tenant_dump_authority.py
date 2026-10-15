@@ -20,6 +20,9 @@ def _build(entries):
 
 AUTHORITY_FIELD_OVERRIDES = _build((
     *AUTHORITY_ENTRIES,
+    *((("bookings.Booking", field), authority(D.PRESERVE,
+        "Historical cancellation provenance; undo still requires live target authority, clock and exact ordinary admission."))
+      for field in ("cancelled_at", "status_before_cancel")),
     *EVENT_AUTHORITY_ENTRIES,
     *MODULE_AUTHORITY_ENTRIES,
     *wp3_authority(authority, D).items(),

@@ -8,6 +8,10 @@ import type { PaymentSummary } from "./PaymentReconcileActions";
 export type BookingStatus = "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
 export type BookableSpace = {
   id: number;
+  clone_enabled?: boolean;
+  staff_tools_enabled?: boolean;
+  can_copy_booking_rules?: boolean;
+  cancellation_cutoff_hours?: number;
   recurring_enabled?: boolean;
   staff_grants_enabled?: boolean;
   staff_permissions?: string[];
@@ -54,6 +58,9 @@ export type Booking = {
   note: string;
   custom_answers: CustomAnswerSnapshot | null;
   payment: PaymentSummary | null;
+  cancelled_at?: string | null;
+  status_before_cancel?: string;
+  restore_until?: string | null;
   created_at: string;
 };
 
@@ -65,6 +72,7 @@ const SPACE_DETAIL_PATH: ApiPath = "/api/v1/admin/spaces/{id}/";
 const SPACE_DEACTIVATE_PATH: ApiPath = "/api/v1/admin/spaces/{id}/deactivate/";
 const SPACE_BOOKINGS_PATH: ApiPath = "/api/v1/admin/spaces/{id}/bookings/";
 const ACTION_PATHS = {
+  restore: "/api/v1/admin/bookings/{id}/restore/",
   approve: "/api/v1/admin/bookings/{id}/approve/",
   reject: "/api/v1/admin/bookings/{id}/reject/",
   cancel: "/api/v1/admin/bookings/{id}/cancel/",
@@ -116,13 +124,15 @@ export function useSpaceBookings(spaceId: number, filters: BookingFilters, page 
   });
 }
 
-function useSpaceInvalidation(makerspaceId: number, spaceId?: number) {
+export function useSpaceInvalidation(makerspaceId: number, spaceId?: number) {
   const queryClient = useQueryClient();
   return async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: bookingKeys.spaces(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: ["public-spaces"] }),
       queryClient.invalidateQueries({ queryKey: ["operations-report"] }),
+      queryClient.invalidateQueries({ queryKey: ["member"] }),
+      queryClient.invalidateQueries({ queryKey: ["bookings", "accessible"] }),
       ...(spaceId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: bookingKeys.detail(spaceId) }),
         queryClient.invalidateQueries({ queryKey: bookingKeys.bookings(spaceId) }),

@@ -153,3 +153,19 @@ submits descriptive fields only. Query keys include resource IDs and page/filter
 grant mutations invalidate access lists and resource detail, booking mutations retain the
 existing reservation/availability/report invalidation. Backend tests for this lane live
 under `backend/tests/bookings/test_resource_*` (gitignored per repository convention).
+
+Booking staff tools (BK-B): `bookings/admission.py` shares ordinary current admission
+between creation, exact undo and validated moves; approval keeps its existing policy.
+`services_staff_edit.py` owns note/answer edits and the locked movement boundary used
+by staff and member rescheduling; `services_restore.py` adapts the always-present
+`operations/cancellation_restore.py` contract. Cancellation provenance lives on
+`models_booking.py` (migration `0013_booking_cancellation_provenance`).
+`services_clone.py` declares copyable configuration and owned cover copying through
+`makerspaces/resource_clone.py`; `resource_clone_extensions.py` registers child-copy
+adapters without importing separable apps. `serializers_staff_tools.py`,
+`serializers_reservation.py` and `views_staff_tools.py` supply strict inputs and scoped
+staff routes, re-exported by the existing barrels where appropriate.
+`BookingReservationEditor.tsx`, `BookingCloneControl.tsx` and `bookingToolsApi.ts`
+provide staff controls/cache invalidation. `BookingDrawerTabs.tsx` supplies the drawer
+extension slots for later lanes. Restored lifecycle catalog/defaults remain in the
+normal integrations template registry; no second notification dispatcher is created.

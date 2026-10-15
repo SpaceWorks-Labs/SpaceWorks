@@ -3,6 +3,14 @@
 
 def definitions(FeatureDefinition):
     features = (FeatureDefinition(
+        "bookings.clone", "bookings", "Clone resources",
+        "Duplicate descriptive configuration into a private resource with independent assets.",
+        requires_modules=("bookings",),
+    ), FeatureDefinition(
+        "bookings.staff_tools", "bookings", "Staff reservation tools",
+        "Edit reservation details or times and safely undo a recent cancellation without money movement.",
+        requires_modules=("bookings",),
+    ), FeatureDefinition(
         "bookings.staff_grants", "bookings", "Resource staff grants",
         "Delegate descriptive editing, reservations, arrival or page release for one resource.",
         requires_modules=("bookings",),

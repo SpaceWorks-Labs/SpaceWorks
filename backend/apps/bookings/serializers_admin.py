@@ -5,7 +5,6 @@ from apps.bookings import storage
 from apps.bookings.exceptions import BookerNamesRequiresAvailability
 from apps.bookings.models import BookableSpace, Booking
 from apps.forms_schema.serializers import CustomFormSchemaField
-from apps.admin_api.serializers_payment_summary import PaymentSummaryMixin
 
 
 class BookableSpaceWriteSerializer(serializers.Serializer):
@@ -75,10 +74,32 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     effective_requester_notifications_enabled = serializers.SerializerMethodField()
 
+    clone_enabled = serializers.SerializerMethodField()
+    staff_tools_enabled = serializers.SerializerMethodField()
+    can_copy_booking_rules = serializers.SerializerMethodField()
     recurring_enabled = serializers.SerializerMethodField()
     staff_grants_enabled = serializers.SerializerMethodField()
     staff_permissions = serializers.SerializerMethodField()
     can_manage_grants = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_clone_enabled(self, obj):
+        return self._features(obj)["clone_enabled"]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_staff_tools_enabled(self, obj):
+        return self._features(obj)["staff_tools_enabled"]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_can_copy_booking_rules(self, obj):
+        from apps.accounts import rbac
+        actor = self.context.get("actor")
+        if actor is None:
+            return False
+        cache = self.context.setdefault("booking_rule_authority", {})
+        if obj.makerspace_id not in cache:
+            cache[obj.makerspace_id] = rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, obj.makerspace_id)
+        return cache[obj.makerspace_id]
 
     @extend_schema_field(serializers.BooleanField())
     def get_recurring_enabled(self, obj):
@@ -116,6 +137,7 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = BookableSpace
         fields = (
+            "clone_enabled", "staff_tools_enabled", "can_copy_booking_rules",
             "recurring_enabled", "staff_grants_enabled", "staff_permissions", "can_manage_grants",
             'id',
             'public_token',
@@ -176,28 +198,7 @@ class BookableSpaceBookingRulesSerializer(serializers.ModelSerializer):
         )
 
 
-class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
-    space_id = serializers.IntegerField(read_only=True)
-    payment = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Booking
-        fields = (
-            'id',
-            'public_token',
-            'space_id',
-            'name',
-            'email',
-            'phone',
-            'starts_at',
-            'ends_at',
-            'status',
-            'note',
-            'custom_answers',
-            'created_at',
-            'payment',
-        )
-        read_only_fields = fields
+from .serializers_reservation import BookingAdminSerializer
 
 
 class SpaceImagePresignRequestSerializer(serializers.Serializer):

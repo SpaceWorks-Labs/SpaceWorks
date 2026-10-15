@@ -3,13 +3,14 @@ export type RequestTab = typeof REQUEST_TABS[number];
 export const requestTabLabels: Record<RequestTab, string> = {
   pending: "Pending review", accepted: "Ready for handover", active: "Active loans", history: "History",
 };
-// Each tab needs an action that lets the actor work its rows: a return-only role must still reach
-// Active loans to record returns, and anyone who works requests may read History.
+// Mirrors the list endpoints' own authority (hardware_requests/queue_views.py): pending-requests is
+// scoped by ACCEPT_REQUEST, and accepted-requests, active-loans and request-history all by
+// ISSUE_REQUEST. A tab the server would 404 is never shown, so a reviewer is not probed into errors.
 const TAB_ACTIONS: Record<RequestTab, readonly string[]> = {
   pending: ["accept_request"],
   accepted: ["issue_request"],
-  active: ["issue_request", "return_request"],
-  history: ["accept_request", "issue_request", "return_request"],
+  active: ["issue_request"],
+  history: ["issue_request"],
 };
 export function visibleRequestTabs(guestOnly: boolean, actions: readonly string[] = [], isSuperadmin = false): RequestTab[] {
   return REQUEST_TABS.filter(tab => (tab !== "pending" && tab !== "active" || !guestOnly)

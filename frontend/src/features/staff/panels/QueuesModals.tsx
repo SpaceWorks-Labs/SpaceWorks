@@ -1,5 +1,5 @@
 import { RequestFlowDialog } from "./RequestFlowDialog";
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ErrorText } from "../../../components/ui";
 import { submitForm } from "./QueuesModalShared";

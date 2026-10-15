@@ -8,8 +8,23 @@ import { Spinner } from "./Spinner";
 import { ListColumns } from "./ListColumns";
 import type { UrlListState } from "../../lib/useUrlListState";
 
+/** Where a cell sits in the stacked phone card: a small grid with the selection box and `lead` (a thumbnail)
+ * on the left, the `title` with its `status` directly under it on the right, then one "Label value" line per
+ * `detail` cell and the actions last. `hidden` cells are tablet+ only. Defaults: the first column is the title,
+ * a `status` key is the status, `actions` sit at the bottom, everything else is a detail. */
+export type PhoneRole = "lead" | "title" | "status" | "detail" | "hidden";
 export type DataTableColumn<T> = {
   key: Extract<keyof T, string> | string; header: ReactNode; render?: (row: T) => ReactNode; sortable?: boolean; className?: string;
+  phone?: PhoneRole;
+};
+const PHONE_CELL: Record<PhoneRole | "actions" | "select", string> = {
+  select: "max-md:col-start-1 max-md:row-span-2 max-md:row-start-1 max-md:mr-2 max-md:self-center max-md:p-0",
+  lead: "max-md:col-start-2 max-md:row-span-2 max-md:row-start-1 max-md:mr-3 max-md:self-center max-md:p-0",
+  title: "max-md:col-start-3 max-md:row-start-1 max-md:self-end max-md:p-0 max-md:font-semibold",
+  status: "max-md:col-start-3 max-md:row-start-2 max-md:self-start max-md:p-0",
+  detail: "max-md:col-span-full max-md:flex max-md:items-baseline max-md:gap-2 max-md:p-0 max-md:pt-1",
+  hidden: "max-md:hidden",
+  actions: "max-md:col-span-full max-md:mt-2 max-md:border-t max-md:border-line max-md:p-0 max-md:pt-2",
 };
 
 type SortState = { key: string; direction: "asc" | "desc" };
@@ -22,8 +37,6 @@ export type DataTableProps<T> = {
   listState?: UrlListState;
   /** Optional screen-reader caption naming the table. */
   caption?: string;
-  /** Phones: put the `actions` cell at the top of each stacked card so the primary action is visible first. */
-  actionsFirstOnPhone?: boolean;
 };
 
 export function DataTable<T>({
@@ -37,7 +50,7 @@ export function DataTable<T>({
   emptyDescription,
   emptyAction,
   skeletonCols,
-  ordering, onOrderingChange, listState, caption, actionsFirstOnPhone = false,
+  ordering, onOrderingChange, listState, caption,
 }: DataTableProps<T>) {
   const [localSort, setSort] = useState<SortState | null>(null);
   const sort: SortState | null = ordering !== undefined ? { key: ordering.replace(/^-/, ""), direction: ordering.startsWith("-") ? "desc" : "asc" } : localSort;
@@ -53,7 +66,11 @@ export function DataTable<T>({
   const columnLabels = new Map(visibleColumns.map(column => [column.key, headerText(column.header)]));
   const cellPadding = listState?.values.density === "compact" ? "px-3 py-1" : "px-3 py-2";
   // Phones read rows as stacked cards: only interactive headers (sort, select all) stay visible.
-  const phoneHeader = selectionEnabled || visibleColumns.some(column => column.sortable);
+  // When the page drives ordering (its toolbar has a Sort select), sort chips would repeat it on phones.
+  const phoneSortChips = ordering === undefined && visibleColumns.some(column => column.sortable);
+  const phoneHeader = selectionEnabled || phoneSortChips;
+  const phoneRole = (column: DataTableColumn<T>, index: number): PhoneRole | "actions" =>
+    column.key === "actions" ? "actions" : column.phone ?? (column.key === "status" ? "status" : index === 0 ? "title" : "detail");
 
   useEffect(() => {
     if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected && !allSelected;
@@ -102,7 +119,7 @@ export function DataTable<T>({
             {visibleColumns.map((column) => (
               <th role="columnheader"
                 key={column.key}
-                className={`${column.sortable ? "block" : "max-md:sr-only"} px-3 py-2 font-semibold md:table-cell ${column.className ?? ""}`}
+                className={`${column.sortable && phoneSortChips ? "block" : "max-md:sr-only"} px-3 py-2 font-semibold md:table-cell ${column.className ?? ""}`}
                 aria-sort={sort?.key === column.key ? ariaSort(sort.direction) : undefined}
                 scope="col"
               >
@@ -129,19 +146,22 @@ export function DataTable<T>({
             sortedData.map((row) => {
               const id = getRowId(row);
               return (
-                <tr role="row" key={id} className={`m-3 block min-w-0 ${actionsFirstOnPhone ? "max-md:flex max-md:flex-col" : ""} rounded-xl border border-line md:m-0 md:table-row md:rounded-none md:border-x-0 md:border-t-0 md:last:border-b-0 ${selectedSet.has(id) ? "bg-accent-soft" : "hover:bg-hover"}`}>
+                <tr role="row" key={id} className={`m-3 block min-w-0 max-md:grid max-md:grid-cols-[auto_auto_minmax(0,1fr)] max-md:gap-y-1 max-md:p-3 rounded-xl border border-line md:m-0 md:table-row md:rounded-none md:border-x-0 md:border-t-0 md:last:border-b-0 ${selectedSet.has(id) ? "bg-accent-soft" : "hover:bg-hover"}`}>
                   {selectionEnabled ? (
-                    <td role="cell" className="block px-3 py-2 md:table-cell">
+                    <td role="cell" className={`block px-3 py-2 md:table-cell ${PHONE_CELL.select}`}>
                       <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" aria-label={`Select row ${String(id)}`} checked={selectedSet.has(id)} onChange={(event) => changeRow(id, event.target.checked)} /></label>
                     </td>
                   ) : null}
-                  {visibleColumns.map((column, index) => (
-                    <td role="cell" key={column.key} className={`${cellPadding} block min-w-0 break-words text-ink md:table-cell ${index === 0 ? "max-md:font-semibold" : ""} ${column.key === "actions" ? `${actionsFirstOnPhone ? "max-md:order-first max-md:border-b" : "max-md:border-t"} max-md:border-line [&_button]:min-h-11 [&_button]:min-w-11 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:items-center` : ""} ${column.className ?? ""}`}>
-                      {/* Generated labels avoid duplicating cell text or controls during CSS reflow. */}
-                      {columnLabels.get(column.key) ? <span aria-hidden="true" data-label={columnLabels.get(column.key)} className="mb-1 block text-xs text-muted before:content-[attr(data-label)] md:hidden" /> : null}
+                  {visibleColumns.map((column, index) => {
+                    const role = phoneRole(column, index);
+                    const label = role === "detail" ? columnLabels.get(column.key) : undefined;
+                    const place = PHONE_CELL[role];
+                    return <td role="cell" key={column.key} className={`${cellPadding} block min-w-0 break-words text-ink md:table-cell ${place} ${role === "actions" ? "[&_button]:min-h-11 [&_button]:min-w-11 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:items-center" : ""} ${column.className ?? ""}`}>
+                      {/* Generated labels avoid duplicating cell text or controls during CSS reflow; only detail cells carry one. */}
+                      {label ? <span aria-hidden="true" data-label={label} className="shrink-0 text-xs text-muted before:content-[attr(data-label)] md:hidden" /> : null}
                       {column.render ? column.render(row) : String(getCellValue(row, column.key) ?? "")}
-                    </td>
-                  ))}
+                    </td>;
+                  })}
                 </tr>
               );
             })

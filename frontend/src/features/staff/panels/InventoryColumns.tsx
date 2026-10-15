@@ -10,11 +10,11 @@ export function inventoryColumns({ openEdit, openFix, openToBuy, archive, unarch
  stockTab?: boolean;
 }): DataTableColumn<AdminProduct>[] {
  return [
- { key: "image", header: "", render: item => <ImageThumbnail src={item.image_url} alt={item.name} className="h-13 w-13" /> },
- { key: "name", header: "Item", sortable: true, render: item => <button className="desk-button-ghost max-w-full justify-start text-left [overflow-wrap:anywhere]" onClick={() => openEdit(item)}>{item.name}</button> },
+ { key: "image", header: "", phone: "lead", render: item => <ImageThumbnail src={item.image_url} alt={item.name} className="h-13 w-13" /> },
+ { key: "name", header: "Item", sortable: true, phone: "title", render: item => <button className="desk-button-ghost max-w-full justify-start text-left [overflow-wrap:anywhere]" onClick={() => openEdit(item)}>{item.name}</button> },
  { key: "tracking_mode", header: "Mode", sortable: true, render: item => <>{item.tracking_mode === "individual" ? "Individual" : "Count"}{item.is_archived ? <StatusBadge status="archived" /> : null}</> },
  { key: "total_quantity", header: "Total", sortable: true, className: "tabular-nums md:text-right" },
- { key: "available_quantity", header: "Available", sortable: true, className: "tabular-nums md:text-right", render: item => <InventoryAvailability product={item} /> },
+ { key: "available_quantity", header: "Available", sortable: true, phone: "status", className: "tabular-nums md:text-right", render: item => <InventoryAvailability product={item} /> },
  // On phones the table stacks into cards; the secondary counts drop out there (the item's Stock tab
  // still shows them) so each card stays short enough to scan with its action in view.
  ...["issued_quantity", "damaged_quantity", "lost_quantity"].map(key => ({ key, header: key.replace("_quantity", "").replace(/^./, x => x.toUpperCase()), sortable: true, className: "max-md:hidden tabular-nums md:text-right" })),

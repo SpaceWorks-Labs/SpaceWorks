@@ -45,7 +45,3 @@ export const reportDefinitions: ReportCatalogItem[] = [
   grains: ["day"], chart_hint: "table",
   aggregate_supported: aggregateSupportedKeys.has(key),
 }));
-
-export function reportTitle(key: ReportKey, definitions = reportDefinitions) {
-  return definitions.find((report) => report.key === key)?.title ?? key;
-}

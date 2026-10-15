@@ -106,11 +106,6 @@ class IntakeSerializer(serializers.Serializer):
         return value
 
 
-class PublicIntakeSerializer(serializers.Serializer):
-    materials = MaterialSerializer(many=True)
-    intake_schema = serializers.JSONField()
-
-
 class PublicMaterialSerializer(serializers.Serializer):
     id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()

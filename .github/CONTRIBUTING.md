@@ -42,7 +42,7 @@ to get a change merged.
 - **Document every API endpoint in OpenAPI** (drf-spectacular `@extend_schema`). An undocumented
   endpoint is incomplete.
 - **Production-quality code:** validate inputs at the boundary, handle external-service failure
-  explicitly (the Check-In API must fail safe), use structured logging, return typed errors, and
+  explicitly (Telegram alerts must fail safe), use structured logging, return typed errors, and
   emit an audit-log entry from every state-changing endpoint.
 - **Tests:** add/extend pytest coverage under `backend/tests/` for behavior changes (test external
   behavior, not implementation). Keep the suite green.

@@ -171,7 +171,6 @@ storage endpoint and expire no later than the archive retention boundary.
 | `PRINT_ALLOWED_MODEL_EXT` | `['stl', '3mf', 'step', 'stp', 'obj', 'amf', 'ply', 'gcode...` |  |
 | `PRINT_ALLOWED_MODEL_MIME` | `['application/octet-stream', 'model/stl', 'application/sl...` |  |
 | `PRINT_UPLOAD_MAX_BYTES` | `104857600` |  |
-| `PRINT_URL_TTL_SECONDS` | `300` |  |
 | `PROCUREMENT_RECEIPT_ALLOWED_MIME` | `['application/pdf', 'image/jpeg', 'image/png', 'image/webp']` |  |
 | `PROCUREMENT_RECEIPT_MAX_BYTES` | `10485760` |  |
 | `REPORT_DELIVERY_URL_TTL_SECONDS` | `6 * 60 * 60` |  |

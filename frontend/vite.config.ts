@@ -3,11 +3,6 @@ import { defineConfig } from "vitest/config";
 import { kioskPwa } from "./scripts/kiosk-pwa";
 import { memberPwa } from "./scripts/member-pwa";
 
-// This config file runs in Node, but the project carries no @types/node (the app
-// itself is browser-only). Declaring the one global we need keeps `tsc -b` happy
-// without pulling in a dependency the app never uses.
-declare const process: { env: Record<string, string | undefined> };
-
 export default defineConfig({
   plugins: [react(), memberPwa(), kioskPwa()],
   server: {

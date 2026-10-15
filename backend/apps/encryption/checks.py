@@ -42,7 +42,7 @@ def check_pii_wrapping_configuration(app_configs, **kwargs):
             errors.append(
                 Error(
                     "PII_KEY_BROKER=aws_kms requires boto3 "
-                    "(install backend/requirements-kms.txt).",
+                    "from backend/requirements.txt.",
                     id="encryption.E002",
                 )
             )

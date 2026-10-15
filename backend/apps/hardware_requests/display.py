@@ -84,18 +84,3 @@ def label_from_candidates(*values, fallback="Member"):
         if label and not is_internal_checkin_username(label):
             return label
     return fallback
-
-
-def requester_label_for_user(*, username="", external_checkin_user_id="", fallback="Member"):
-    """Readable label when only the requester User's fields are available.
-
-    Used by per-requester aggregates (top borrowers / top print requesters) where the
-    grouping carries ``requester__username`` + ``requester__external_checkin_user_id``
-    but not the per-request contact fields. Prefers the external Check-In id (the
-    email/phone) over the possibly-hashed username.
-    """
-    for value in (external_checkin_user_id, username):
-        label = clean_label(value)
-        if label and not is_internal_checkin_username(label):
-            return label
-    return fallback

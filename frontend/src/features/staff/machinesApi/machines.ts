@@ -1,5 +1,4 @@
 import { staffRequest } from "../../../lib/api";
-import { uploadPublicImage } from "../ImageUploader";
 import type {
   Machine,
   MachineListResponse,
@@ -65,14 +64,6 @@ export function updateMachine(machineId: number, payload: MachinePatch) {
 
 export function machineImageEndpoint(machineId: number) {
   return `/admin/machines/${machineId}/image`;
-}
-
-export function uploadMachineImage(machineId: number, file: File) {
-  return uploadPublicImage(machineImageEndpoint(machineId), file);
-}
-
-export function deleteMachineImage(machineId: number) {
-  return staffRequest<Machine>(machineImageEndpoint(machineId), { method: "DELETE" });
 }
 
 export function setMachineStatus(machineId: number, status: MachineStatus) {

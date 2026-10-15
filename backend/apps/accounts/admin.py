@@ -3,7 +3,6 @@ from django.contrib import admin
 from django.contrib import messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.admin import GroupAdmin as DjangoGroupAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 from django.db import transaction
@@ -57,26 +56,28 @@ class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
-    fieldsets = DjangoUserAdmin.fieldsets + (
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "email")}),
+        ("Status", {"fields": ("is_active", "is_staff", "is_superuser")}),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
         (
             "Space Works Access",
             {
-                "fields": (
-                    "phone",
-                    "external_checkin_user_id",
-                    "role",
-                    "access_status",
-                    "restriction_reason",
-                ),
+                "fields": ("phone", "role", "access_status", "restriction_reason"),
             },
         ),
     )
     list_display = ("username", "email", "role", "access_status", "is_staff")
-    list_filter = DjangoUserAdmin.list_filter + (
+    list_filter = (
+        "is_staff",
+        "is_superuser",
+        "is_active",
         "role",
         "access_status",
         "makerspace_memberships__makerspace",
     )
+    filter_horizontal = ()
     inlines = (MakerspaceMembershipInline,)
 
     def user_change_password(self, request, id, form_url=""):
@@ -282,13 +283,8 @@ class NativeAppRegistrationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
 admin.site.unregister(Group)
 
-from apps.accounts import admin_claim, admin_social  # noqa: E402,F401
+from apps.accounts import admin_claim, admin_social, admin_tokens  # noqa: E402,F401
 from apps.accounts import admin_password_reset  # noqa: E402,F401
-
-
-@admin.register(Group)
-class GroupAdmin(SuperuserOnlyModelAdmin, DjangoGroupAdmin, ModelAdmin):
-    pass
 
 
 def _api_exception_message(exc):

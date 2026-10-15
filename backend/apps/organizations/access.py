@@ -1,6 +1,5 @@
 """Read and locked authorization helpers for global organizations."""
 
-from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts.models import User
@@ -56,14 +55,3 @@ def lock_governance_membership(actor, organization, action):
     if action not in governance.actions_for_membership(membership):
         raise PermissionDenied()
     return membership
-
-
-def organization_membership_q(actor):
-    """Reusable active-membership predicate for assignable organization lists."""
-    if is_superadmin(actor):
-        return Q(is_active=True)
-    return Q(
-        is_active=True,
-        memberships__user=actor,
-        memberships__status=OrganizationMembership.Status.ACTIVE,
-    )

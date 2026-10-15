@@ -103,11 +103,6 @@ export function categoryResults(data?: CategoryListResponse) {
   return Array.isArray(data) ? data : data.results;
 }
 
-export function JsonRows({ data }: { data: unknown[] }) {
-  if (!data.length) return <p className="mt-3 text-sm text-muted">No records.</p>;
-  return <pre className="mt-3 max-h-80 overflow-auto rounded-md border border-line bg-bg p-3 text-xs text-muted">{JSON.stringify(data, null, 2)}</pre>;
-}
-
 export function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="desk-panel overflow-hidden">

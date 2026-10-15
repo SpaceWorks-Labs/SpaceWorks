@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
-import type { CustomAnswers, CustomFormQuestion } from "../forms/customFormTypes";
+import type { CustomFormQuestion } from "../forms/customFormTypes";
 import { eventKeys, staffPath, type Paginated } from "./eventsApiTypes";
 import { organizedEventKeys } from "./organizedEventsApi";
 
@@ -133,5 +133,3 @@ export function useCertificateDownload(eventId: number, makerspaceId: number) {
     onSuccess: invalidate,
   });
 }
-
-export type FeedbackSubmission = { answers: CustomAnswers; email?: string };

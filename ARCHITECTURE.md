@@ -150,13 +150,9 @@ flowchart TD
 ```
 
 Check-In is retired as a runtime integration: `apps.checkin` is not installed
-(`backend/config/settings.py:78-116`), no Check-In routes are present in the URL configuration,
-and the M7 test asserts the removed import surface and routes
-(`backend/tests/accounts/test_checkin_retirement_m7.py:17-36`). Historical columns such as
-`User.external_checkin_user_id` and `PrintRequestFile.owner_checkin_user_id` remain read-only
-legacy data to keep old records and staff labels interpretable; they are not populated by the
-member flows (`backend/apps/accounts/models.py:25-45`,
-`backend/tests/accounts/test_checkin_retirement_m7.py:38-73`).
+(`backend/config/settings.py:78-116`), and no Check-In routes are present in the URL configuration.
+`User.external_checkin_user_id` remains read-only legacy data to keep old staff labels
+interpretable; it is not populated by the member flows (`backend/apps/accounts/models.py:25-45`).
 
 ## 5. Core domain modules
 
@@ -415,8 +411,7 @@ latest tags, then creates `vX.Y.Z` and a GitHub Release
 
 - M1-M7 are explicitly identified in the `dev` commit history through `73a480c`; the member activity
   portal and member machine-service submission are represented by `610abea` and `cb003a7`, and N6/N7
-  scoped-PII hardening is represented by `7d91633`. M7 removed Check-In runtime code. The remaining
-  `backend/apps/checkin/` directory contains only `__pycache__`, not Python source or an installed app.
+  scoped-PII hardening is represented by `7d91633`. M7 removed the Check-In app entirely.
 - M9 closeout (2026-07-19) proved clean migrations from an empty PostgreSQL database, ran the three
   required foreground test chunks (2,107 passing tests), regenerated the 302-path OpenAPI client, and
   passed `tsc -b` plus the production Vite build. The isolated H4 review found two rollback/runbook

@@ -21,11 +21,3 @@ def rewrite_object_fields(model, row, object_key_map):
             raise ArchiveFormatError(
                 f"Archive object manifest does not account for {source_key!r}."
             ) from exc
-
-
-def bucket_kind_for_field(field_name):
-    if field_name in PRIVATE_FIELDS:
-        return "private"
-    if field_name in PUBLIC_FIELDS:
-        return "public_image"
-    return None

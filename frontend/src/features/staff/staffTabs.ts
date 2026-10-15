@@ -54,7 +54,6 @@ const TAB_MODULES: Record<string, string[]> = {
 // request. Tabs that do have their own key need no entry: the server already omits a
 // tombstoned app's key from `enabled_modules`.
 const TAB_APPS: Record<string, string> = {
-  granted: "events",
   organized: "events",
   warranty: "warranty",
   migration: "tenant_migration",
@@ -99,7 +98,8 @@ export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?:
   // Checked before the module gate and outside the early return below: an app the
   // deployment does not ship is unreachable no matter what the tenant enabled, and a
   // makerspace row that has not loaded its modules yet must not show it either.
-  const shipped = tabs.filter((tabName) => !unavailable.has(TAB_APPS[tabName] ?? ""));
+  const shipped = tabs.filter((tabName) => !unavailable.has(TAB_APPS[tabName] ?? "")
+    && !(tabName === "granted" && unavailable.has("events") && unavailable.has("bookings")));
 
   const modules = makerspace?.enabled_modules;
   if (!modules) return shipped;

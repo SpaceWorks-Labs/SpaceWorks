@@ -19,6 +19,11 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("events.EventBroadcast", "created_by"),
         ("events.EventBroadcastDelivery", "recipient"),
         # Excluded credential rows never pull these accounts into an archive.
+        ("bookings.BookingSpaceStaffGrant", "user"),
+        ("bookings.BookingSpaceStaffGrant", "granted_by"),
+        ("bookings.BookingSpaceStaffGrant", "revoked_by"),
+        ("bookings.BookingSpaceStaffGrantInvite", "created_by"),
+        ("bookings.BookingSpaceStaffGrantInvite", "redeemed_by"),
         ("events.EventStaffGrant", "user"),
         ("events.EventStaffGrant", "granted_by"),
         ("events.EventStaffGrant", "revoked_by"),
@@ -189,6 +194,14 @@ RELATIONAL_USER_FIELDS = frozenset(
 )
 
 _EXCLUDED_USER_EDGE_REASONS = {
+    **{edge: "Booking resource authority and credentials are omitted at both fidelities."
+       for edge in (
+           ("bookings.BookingSpaceStaffGrant", "user"),
+           ("bookings.BookingSpaceStaffGrant", "granted_by"),
+           ("bookings.BookingSpaceStaffGrant", "revoked_by"),
+           ("bookings.BookingSpaceStaffGrantInvite", "created_by"),
+           ("bookings.BookingSpaceStaffGrantInvite", "redeemed_by"),
+       )},
     **{
         edge: "Event staff credentials and authority are omitted at both fidelities; reissue on the target."
         for edge in (

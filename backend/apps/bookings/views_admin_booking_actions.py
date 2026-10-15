@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,7 +20,6 @@ from apps.hardware_requests.view_helpers import (
     ERROR_404,
     ERROR_409,
 )
-from apps.makerspaces.guards import require_module
 from apps.payments.models import Payment
 
 
@@ -43,22 +41,12 @@ class _BookingPagination(PageNumberPagination):
 
 
 def _manageable_booking(actor, pk):
+    from .booking_authority import visible_spaces, require
     booking = get_object_or_404(
-        rbac.scope_by_visibility_or_action(
-            actor,
-            rbac.Action.MANAGE_BOOKINGS,
-            Booking.objects.select_related('space__makerspace'),
-            field='space__makerspace_id',
-        ),
-        pk=pk,
+        Booking.objects.select_related("space__makerspace").filter(
+            space_id__in=visible_spaces(actor).values("pk")), pk=pk,
     )
-    require_module(booking.space.makerspace, 'bookings')
-    if not rbac.can(
-        actor,
-        rbac.Action.MANAGE_BOOKINGS,
-        booking.space.makerspace_id,
-    ):
-        raise PermissionDenied()
+    require(actor, booking.space, "manage_reservations")
     return booking
 
 

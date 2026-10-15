@@ -16,6 +16,9 @@ import {
   type BookingFilters,
 } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
+import { BookingDetailsEditor } from "./BookingDetailsEditor";
+import { BookingStaffAccess } from "./BookingStaffAccess";
+import { bookingAccess } from "./bookingStaffPermissions";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
 
 type PendingAction = { booking: Booking; action: BookingAction };
@@ -47,13 +50,14 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
 }) {
   const spaceQuery = useBookableSpace(spaceId);
   const space = spaceQuery.data;
+  const access = bookingAccess(space);
   const [params] = useSearchParams();
   const list = useUrlListState({ page: "1", status: "", starts_at: "", ends_at: "", ordering: "starts_at" }, `booking-${spaceId}.`);
   const { page, setPage } = list;
   const filters: BookingFilters = { ...list.values, status: list.values.status as BookingFilters["status"], booking_id: Number(params.get("space")) === spaceId ? Number(params.get("booking")) || undefined : undefined };
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
-  const bookings = useSpaceBookings(spaceId, filters, page, list.values.ordering);
+  const bookings = useSpaceBookings(spaceId, filters, page, list.values.ordering, access.reservations);
   const update = useUpdateBookableSpace(makerspaceId, spaceId);
   const deactivate = useDeactivateBookableSpace(makerspaceId, spaceId);
   const action = useBookingAction(makerspaceId, spaceId);
@@ -74,7 +78,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
               <StatusBadge status={space.is_active ? "active" : "inactive"} />
               <span className="text-sm text-muted">{space.effective_requester_notifications_enabled ? "Requester emails on" : "Requester emails off"}</span>
             </div>
-            <BookableSpaceForm
+            {access.manager ? <BookableSpaceForm
               makerspaceId={makerspaceId}
               key={space.updated_at}
               initialValues={valuesForSpace(space)}
@@ -83,10 +87,11 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
               error={update.error ? errorText(update.error) : undefined}
               submitLabel="Save changes"
               disabled={!space.is_active}
-            />
-            {space.is_active ? <button className="desk-button-danger w-fit" type="button" onClick={() => setConfirmDeactivate(true)}>Deactivate space</button> : <p className="text-sm text-muted">This space is inactive and read-only.</p>}
-            <section aria-labelledby="space-bookings-title">
-              {space.is_active ? <StaffBookingForm recurringEnabled={recurringEnabled} makerspaceId={makerspaceId} space={space} /> : null}
+            /> : access.edit ? <BookingDetailsEditor key={space.updated_at} space={space} pending={update.isPending} onSubmit={(payload) => update.mutate(payload)} /> : <p className="text-sm text-muted">{space.description || "Use your assigned resource permissions."}</p>}
+            {access.manager && space.staff_grants_enabled ? <BookingStaffAccess target={{ id: spaceId }} /> : null}
+            {access.manager && space.is_active ? <button className="desk-button-danger w-fit" type="button" onClick={() => setConfirmDeactivate(true)}>Deactivate space</button> : !space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
+            {access.reservations ? <section aria-labelledby="space-bookings-title">
+              {space.is_active ? <StaffBookingForm recurringEnabled={recurringEnabled || space.recurring_enabled} makerspaceId={makerspaceId} space={space} /> : null}
               <div className="mb-3">
                 <h3 id="space-bookings-title" className="title-section">Bookings <span className="font-mono">({bookings.data?.count ?? 0})</span></h3>
                 <p className="mt-1 text-xs text-muted">Contact details and custom answers are staff-only.</p>
@@ -127,21 +132,21 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
                         <summary className="cursor-pointer text-sm font-semibold text-ink">View custom answers</summary>
                         <div className="mt-3"><CustomAnswersView snapshot={booking.custom_answers} /></div>
                       </details>
-                      <PaymentReconcileActions
+                      {access.manager ? <PaymentReconcileActions
                         makerspaceId={makerspaceId}
                         payment={booking.payment}
                         invalidateKeys={[
                           ["booking-space", spaceId, "bookings"],
                           ["booking-space", spaceId],
                         ]}
-                      />
+                      /> : null}
                       <BookingActions booking={booking} onAction={(nextAction) => setPendingAction({ booking, action: nextAction })} />
                     </article>
                   ))}
                 </div>
               ) : null}
               {bookings.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="font-mono text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!bookings.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!bookings.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
-            </section>
+            </section> : null}
             {actionError ? <p className="text-sm text-danger" role="alert">{errorText(actionError)}</p> : null}
           </div>
         ) : null}

@@ -2067,7 +2067,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/bookings/{id}/cancel/": {
@@ -2153,7 +2154,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/bookings/{id}/complete/": {
@@ -2239,7 +2241,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/bookings/{id}/no-show/": {
@@ -2325,7 +2328,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/bookings/{id}/reject/": {
@@ -2411,7 +2415,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/categories/{id}": {
@@ -49637,7 +49642,8 @@
             },
             "description": "Not found."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       },
       "patch": {
         "operationId": "api_v1_admin_spaces_partial_update",
@@ -49740,7 +49746,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/booking-rules/": {
@@ -49807,7 +49814,8 @@
             },
             "description": "Not found."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       },
       "patch": {
         "operationId": "api_v1_admin_spaces_booking_rules_partial_update",
@@ -49901,7 +49909,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/bookings/": {
@@ -50036,7 +50045,8 @@
             },
             "description": "Not found."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       },
       "post": {
         "operationId": "api_v1_admin_spaces_bookings_create",
@@ -50161,7 +50171,8 @@
             },
             "description": "Tenant write gate unavailable."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/deactivate/": {
@@ -50247,7 +50258,8 @@
             },
             "description": "Workflow conflict."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/eligible-members/": {
@@ -50331,7 +50343,8 @@
             },
             "description": "Not found."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/image/": {
@@ -50410,7 +50423,8 @@
             },
             "description": "Service unavailable."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/image/finalize/": {
@@ -50516,7 +50530,8 @@
             },
             "description": "Service unavailable."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/image/presign/": {
@@ -50622,13 +50637,14 @@
             },
             "description": "Service unavailable."
           }
-        }
+        },
+        "description": " Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
       }
     },
     "/api/v1/admin/spaces/{id}/recurring-bookings/": {
       "post": {
         "operationId": "api_v1_admin_spaces_recurring_bookings_create",
-        "description": "Create a finite weekly series in makerspace local time. Each occurrence has its own flat charge and cancellation. Conflicts are reported, never silently skipped.",
+        "description": "Create a finite weekly series in makerspace local time. Each occurrence has its own flat charge and cancellation. Conflicts are reported, never silently skipped. Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE.",
         "parameters": [
           {
             "in": "path",
@@ -70672,6 +70688,969 @@
         },
         "description": "Requires manage_invitations and events.invites. Up to 200 email-bound invites; emails contain only event navigation, never admission codes. Verified account email is required for code-free admission."
       }
+    },
+    "/api/v1/admin/spaces/{id}/staff-grants/": {
+      "get": {
+        "operationId": "api_v1_admin_spaces_staff_grants_retrieve",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingStaffGrantList"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Field validation, module or feature disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once. Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
+      }
+    },
+    "/api/v1/admin/spaces/{id}/staff-invites/": {
+      "get": {
+        "operationId": "api_v1_admin_spaces_staff_invites_retrieve",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingStaffGrantInviteList"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Field validation, module or feature disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once. Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
+      },
+      "post": {
+        "operationId": "api_v1_admin_spaces_staff_invites_create",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingStaffGrantInviteCreated"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Field validation, module or feature disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingStaffGrantInviteInput"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingStaffGrantInviteInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingStaffGrantInviteInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once. Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
+      }
+    },
+    "/api/v1/admin/booking-staff-grants/{id}/": {
+      "patch": {
+        "operationId": "api_v1_admin_booking_staff_grants_{id}_partial_update",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingStaffGrant"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Field validation, module or feature disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedBookingStaffGrantPermissions"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedBookingStaffGrantPermissions"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedBookingStaffGrantPermissions"
+              }
+            }
+          },
+          "required": true
+        },
+        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once."
+      }
+    },
+    "/api/v1/admin/booking-staff-grants/{id}/revoke/": {
+      "post": {
+        "operationId": "api_v1_admin_booking_staff_grants_revoke_create",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingStaffGrant"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Field validation, module or feature disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once."
+      }
+    },
+    "/api/v1/admin/booking-staff-invites/{id}/revoke/": {
+      "post": {
+        "operationId": "api_v1_admin_booking_staff_invites_revoke_create",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingStaffGrantInvite"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Field validation, module or feature disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once."
+      }
+    },
+    "/api/v1/admin/booking-staff-invites/redeem/": {
+      "post": {
+        "operationId": "api_v1_admin_booking_staff_invites_redeem_create",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingStaffGrant"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Field validation, module or feature disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingStaffGrantRedeem"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingStaffGrantRedeem"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingStaffGrantRedeem"
+              }
+            }
+          },
+          "required": true
+        },
+        "description": "Authenticated active accounts may redeem once without existing staff authority. Matching verified email, selected origin/tenant, seven-day expiry and current sender authority are checked under locks. Rate limited to 10/min/account; private/no-store."
+      }
+    },
+    "/api/v1/admin/accessible-booking-spaces/": {
+      "get": {
+        "operationId": "api_v1_admin_accessible_booking_spaces_retrieve",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookableSpaceListResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "makerspace_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "description": "Lists only currently authorized resources, scoped to staff origin and optional makerspace_id. Grants never add tenant actions or general member access."
+      }
     }
   },
   "components": {
@@ -72808,6 +73787,12 @@
             "items": {
               "$ref": "#/components/schemas/GrantedEventEntry"
             }
+          },
+          "booking_grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrantedBookingEntry"
+            }
           }
         },
         "required": [
@@ -73723,6 +74708,25 @@
             "type": "string",
             "format": "date-time",
             "readOnly": true
+          },
+          "staff_permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
+          },
+          "can_manage_grants": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "staff_grants_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "recurring_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -73730,6 +74734,7 @@
           "booking_lead_time_minutes",
           "buffer_after_minutes",
           "buffer_before_minutes",
+          "can_manage_grants",
           "cancellation_cutoff_hours",
           "capacity",
           "created_at",
@@ -73751,9 +74756,12 @@
           "name",
           "payment_amount",
           "public_token",
+          "recurring_enabled",
           "requester_notifications_enabled",
           "show_public_availability",
           "show_public_booker_names",
+          "staff_grants_enabled",
+          "staff_permissions",
           "updated_at"
         ]
       },
@@ -110259,6 +111267,409 @@
           "next",
           "previous",
           "results"
+        ]
+      },
+      "BookingStaffGrant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "makerspace": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "user": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "edit_details",
+                "manage_reservations",
+                "check_in",
+                "publish_page"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 4,
+            "readOnly": true
+          },
+          "granted_by": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "revoked_by": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "space": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "created_at",
+          "granted_by",
+          "id",
+          "makerspace",
+          "permissions",
+          "revoked_at",
+          "revoked_by",
+          "space",
+          "user"
+        ]
+      },
+      "BookingStaffGrantInvite": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "makerspace": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "edit_details",
+                "manage_reservations",
+                "check_in",
+                "publish_page"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 4,
+            "readOnly": true
+          },
+          "created_by": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "redeemed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "space": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "created_at",
+          "created_by",
+          "expires_at",
+          "id",
+          "makerspace",
+          "permissions",
+          "redeemed_at",
+          "revoked_at",
+          "space"
+        ]
+      },
+      "BookingStaffGrantInviteCreated": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "makerspace": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "edit_details",
+                "manage_reservations",
+                "check_in",
+                "publish_page"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 4,
+            "readOnly": true
+          },
+          "created_by": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "redeemed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "token": {
+            "type": "string",
+            "readOnly": true
+          },
+          "space": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "created_at",
+          "created_by",
+          "expires_at",
+          "id",
+          "makerspace",
+          "permissions",
+          "redeemed_at",
+          "revoked_at",
+          "space",
+          "token"
+        ]
+      },
+      "BookingStaffGrantInviteInput": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "edit_details",
+                "manage_reservations",
+                "check_in",
+                "publish_page"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 4
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "default": ""
+          },
+          "send_email": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "BookingStaffGrantInviteList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "previous": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingStaffGrantInvite"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "next",
+          "previous",
+          "results"
+        ]
+      },
+      "BookingStaffGrantList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "previous": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingStaffGrant"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "next",
+          "previous",
+          "results"
+        ]
+      },
+      "BookingStaffGrantPermissions": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "edit_details",
+                "manage_reservations",
+                "check_in",
+                "publish_page"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 4
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "BookingStaffGrantRedeem": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 32,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "PatchedBookingStaffGrantPermissions": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "edit_details",
+                "manage_reservations",
+                "check_in",
+                "publish_page"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 4
+          }
+        },
+        "required": []
+      },
+      "GrantedBookingEntry": {
+        "type": "object",
+        "properties": {
+          "space_id": {
+            "type": "integer"
+          },
+          "makerspace_id": {
+            "type": "integer"
+          },
+          "makerspace_slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "booking_grant"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "edit_details",
+                "manage_reservations",
+                "check_in",
+                "publish_page"
+              ]
+            }
+          }
+        },
+        "required": [
+          "space_id",
+          "makerspace_id",
+          "makerspace_slug",
+          "name",
+          "source",
+          "permissions"
         ]
       }
     },

@@ -43,6 +43,7 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "events" / "organization_audience.py",
     APPS_DIR / "organizations" / "audience.py",
     APPS_DIR / "makerspaces" / "resource_grant_sources.py",
+    APPS_DIR / "makerspaces" / "resource_grant_locks.py",
     APPS_DIR / "makerspaces" / "resource_grants_services.py",
     APPS_DIR / "accounts" / "rbac.py",
     APPS_DIR / "accounts" / "rbac_catalogue.py",

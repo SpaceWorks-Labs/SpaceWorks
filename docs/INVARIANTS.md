@@ -2312,6 +2312,48 @@ preserving other domains; whole-tenant purge removes all. These models own no S3
 manual PDF bytes are streamed, never stored. Retention/encryption/purge declarations survive
 tombstoning while adapters, feature rows and report definitions disappear.
 
+### Booking resource staff grants (BK-A)
+
+`bookings/booking_authority.py` owns every booking staff predicate, including locked
+service mutations. Tenant `MANAGE_BOOKINGS` retains local custom-role and organization
+action authority. A resource grant adds only its typed `BookableSpace`: `edit_details`
+allows name/kind/description/capacity/location/form and images; `manage_reservations`
+allows roster, purpose-limited member selection, ordinary on-behalf creation/recurrence
+and lifecycle transitions. `check_in` and `publish_page` reserve their separate scanner
+and page-release boundaries for their owning lanes; neither admits roster or contact data.
+No grant conveys rules (`MANAGE_MAKERSPACE`), pricing, machine links/certification
+overrides, activation, public/name policy, payment controls, cloning or delegation.
+Staff creation retains active local membership/current waiver and ordinary booking rules;
+account-only self-booking remains independent of membership. Grant-only rosters have no
+payment summary; finance actions retain existing tenant finance/payment permissions.
+
+`bookings.staff_grants` is opt-in, parented on Bookings, with no events dependency. Live
+queries recheck account standing, module/feature, canonical servability, target ownership
+and revocation. Hard-hidden tenants suppress resource-only discovery and new invite creation/redemption;
+their real local staff keep ordinary RBAC authority and can revoke dormant credentials. Origin target registration applies to every new route.
+The shared source registry projects `source="booking_grant"` with resource permissions,
+never tenant actions; sign-in/refresh/MFA discover it without importing events. Mixed
+assignments share the narrow workspace. Revocation is effective on the next request and
+before a locked mutation. Always-present `resource_grant_locks.py` stabilizes delegation
+against local roles, accounts and organization authority, shared by events and bookings.
+
+Concrete `BookingSpaceStaffGrant` and `BookingSpaceStaffGrantInvite` use the shared
+seven-day HMAC-only invitation lifecycle and typed resource FKs. Only tenant
+`MANAGE_BOOKINGS` creates, updates or revokes; redemption revalidates the sender's live
+authority, permission subset and matching verified email under resource/tenant/invite
+locks. No grantee can delegate. State changes audit `booking.staff_grant_*` without
+credentials or contacts. Raw invitation tokens appear once or in synchronous redacted
+email fragment links; no persisted outbox body or query cache contains them.
+
+Both entire models are omitted at both export fidelities and DROP on portable import.
+They have no datasets or unique-value materialization. All five User edges are excluded
+from archive closure; audit targets retain inert source provenance. These rows contain
+only keyed email digests and account FKs, no new PII fields or S3 objects: no encryption,
+write-fence mapping or object collector is needed. Module purge explicitly deletes both
+credential tables in that tenant; whole-tenant purge cascades them. Retention registration
+survives tombstoning; runtime discovery/routes/features do not. Source migration gates
+apply before grant mutations. The catalog pin includes both concrete model graphs.
+
 ### Event-scoped staff grants
 
 `events/event_authority.py` is the staff event authority API: tenant `MANAGE_EVENTS`,

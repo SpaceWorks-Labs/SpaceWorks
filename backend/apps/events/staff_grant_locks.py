@@ -1,8 +1,6 @@
 """Stabilize delegation authority without changing organizer/RBAC semantics."""
 
-from apps.accounts.models import User
-from apps.makerspaces.models import MakerspaceMembership, MakerspaceRole
-from apps.organizations.models import Organization, OrganizationMakerspace, OrganizationMembership
+from apps.organizations.models import OrganizationMakerspace
 
 from .models import EventOrganizer, EventSeriesOrganizer
 
@@ -25,27 +23,7 @@ def authority_sources(target):
 
 
 def lock_authority(actor, target):
-    if actor is None:
-        return None
-    # The domain target and tenant are already locked. Organization parents precede
-    # their users/links/memberships, matching organization administration. Local role
-    # changes take the same tenant lock before touching memberships/roles.
+    from apps.makerspaces.resource_grant_locks import lock_tenant_authority
     links, events, series, organization_ids = authority_sources(target)
-    list(Organization.objects.select_for_update().filter(pk__in=organization_ids).order_by("pk"))
-    # Protect account status/credentials while allowing FK KEY SHARE on invitee
-    # identities; reciprocal redemptions must not deadlock on the two User rows.
-    locked_actor = User.objects.select_for_update(no_key=True).filter(pk=actor.pk).first()
-    if locked_actor is None:
-        return None
-    memberships = list(MakerspaceMembership.objects.select_for_update().filter(
-        user=locked_actor, makerspace_id=target.makerspace_id,
-    ).order_by("pk"))
-    role_ids = [row.assigned_role_id for row in memberships if row.assigned_role_id]
-    list(MakerspaceRole.objects.select_for_update().filter(pk__in=role_ids).order_by("pk"))
-    list(links.select_for_update().order_by("pk"))
-    list(events.select_for_update().order_by("pk"))
-    list(series.select_for_update().order_by("pk"))
-    list(OrganizationMembership.objects.select_for_update().filter(
-        user=locked_actor, organization_id__in=organization_ids,
-    ).order_by("pk"))
-    return locked_actor
+    return lock_tenant_authority(actor, target, extra_organization_ids=organization_ids,
+                                 extra_links=(events, series))

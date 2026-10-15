@@ -47,6 +47,7 @@ MAKERSPACE_KWARG_ROUTES.update(WP4_ROUTES)
 # queryset is explicitly narrowed by the named makerspace query parameter.
 QUERY_SCOPED_ROUTES = {
     'admin-accessible-events',
+    'admin-accessible-booking-spaces',
     'admin-search',                # ?makerspace_id= is mandatory
     'admin-api-key-requests',       # requester-owned API-key requests; ?makerspace=
     'admin-audit-logs',             # tenant audit-log listing; ?makerspace=

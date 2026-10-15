@@ -2,6 +2,10 @@
 
 Continued from [SOURCE-MAP.md](SOURCE-MAP.md); paths are relative to the repository root.
 
+`makerspaces/capability_eligibility.py` shares configuration prerequisite checks between
+`platform.feature_enabled` and batched live tenant discovery, with recovery
+exclusions applied in SQL rather than queried per tenant.
+
 - `backend/apps/hardware_requests/` — Hardware Request Workflow: `HardwareRequest`/`HardwareRequestItem`,
   `HardwareRequestItemAsset` through-model, immutable `ReturnEvent`/`RequesterAccountability`,
   `PublicToolLoan`, `PublicProblemReport`. `workflow.py` is the **single source of truth** for state
@@ -129,3 +133,23 @@ Frontend `StaffTabLoaders.tsx` holds lazy imports; `StaffPlatformTabContent.tsx`
 panels. `panels/DevicesPanel.tsx`, `DeviceIdentitySection.tsx` and `DeviceEnrollmentModal.tsx` render
 7a identity/status/enrollment controls through `devicesApi.ts` and `deviceQueryKeys.ts`.
 Printer adapter and label-command controls require the sibling 7b/7c lanes and are not present here.
+
+Booking resource authority (BK-A): `bookings/booking_authority.py` and
+`booking_permissions.py` centralize live tenant/resource policy and permission vocabulary;
+`booking_authority_page.py` batches list-response authority to avoid per-row grant queries;
+`models_staff_grants.py`, migration `0012_booking_staff_grants.py`,
+`services_staff_grants.py`, `serializers_staff_grants.py`, `views_staff_grants.py`,
+`views_grant_pagination.py` and `urls_staff_grants.py` adapt the shared invitation lifecycle.
+`staff_payload.py` registers booking-only workspace discovery; `views_accessible_spaces.py`
+serves a paginated live resource list. Existing space/booking/recurrence services enforce
+policy under their resource locks. `makerspaces/resource_grant_locks.py` supplies shared
+local-role/account/organization delegation locks, used by the event adapter too.
+
+Frontend: `bookingStaffGrantsApi.ts`, `BookingStaffAccess.tsx`, `BookingPermissionFields.tsx`
+and `BookingStaffInvitePage.tsx` own grant server state, management and acceptance;
+`GrantedBookingSpacesPanel.tsx` joins event assignments in the narrow workspace.
+`bookingStaffPermissions.ts` gates `BookingDrawer.tsx` actions; `BookingDetailsEditor.tsx`
+submits descriptive fields only. Query keys include resource IDs and page/filter state;
+grant mutations invalidate access lists and resource detail, booking mutations retain the
+existing reservation/availability/report invalidation. Backend tests for this lane live
+under `backend/tests/bookings/test_resource_*` (gitignored per repository convention).

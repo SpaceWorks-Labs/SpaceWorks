@@ -60,6 +60,7 @@ function FamilyHome() {
 
 const MfaAccountPage = lazy(() => import("./features/auth/MfaAccountPage").then((m) => ({ default: m.MfaAccountPage })));
 const StaffInvitationAcceptPage = lazy(() => import("./features/auth/StaffInvitationAcceptPage").then((m) => ({ default: m.StaffInvitationAcceptPage })));
+const BookingStaffInvitePage = lazy(() => import("./features/staff/BookingStaffInvitePage").then((m) => ({ default: m.BookingStaffInvitePage })));
 const EventStaffInvitePage = lazy(() => import("./features/staff/EventStaffInvitePage").then((m) => ({ default: m.EventStaffInvitePage })));
 
 function RouteFallback() {
@@ -73,6 +74,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes><Route path="/mfa" element={<MfaAccountPage />} /></Routes>;
   } else if (location.pathname === "/staff-invitations/accept") {
     routes = <Routes><Route path="/staff-invitations/accept" element={<StaffInvitationAcceptPage />} /></Routes>;
+  } else if (location.pathname === "/staff/booking-invite") {
+    routes = <Routes><Route path="/staff/booking-invite" element={<BookingStaffInvitePage />} /></Routes>;
   } else if (location.pathname === "/staff/event-invite") {
     routes = <Routes><Route path="/staff/event-invite" element={<EventStaffInvitePage />} /></Routes>;
   } else if (location.pathname === "/member/archived") {

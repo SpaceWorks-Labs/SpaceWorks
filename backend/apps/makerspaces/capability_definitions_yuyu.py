@@ -3,6 +3,10 @@
 
 def definitions(FeatureDefinition):
     features = (FeatureDefinition(
+        "bookings.staff_grants", "bookings", "Resource staff grants",
+        "Delegate descriptive editing, reservations, arrival or page release for one resource.",
+        requires_modules=("bookings",),
+    ), FeatureDefinition(
         "events.organization_audience", "events", "Participating organizations audience",
         "Admit active accounts belonging to live event organizers or the venue owner, "
         "directly or through their owned makerspaces. Imported audiences need local review.",

@@ -29,7 +29,7 @@ export const TAB_LABELS: Record<string, string> = {
   devices: "Devices",
   events: "Events",
   organized: "Organized events",
-  granted: "Assigned events",
+  granted: "Assigned resources",
   bookings: "Bookings",
   members: "Members",
   cards: "Member cards",
@@ -81,7 +81,9 @@ export function getStaffAccess(
   singleTenantLocked: boolean,
   _isMachineOnly = false,
   hasEventGrants = false,
+  hasBookingGrants = false,
 ) {
+  const hasGrants = hasEventGrants || hasBookingGrants;
   const has = (action: string) => isSuperadmin || actions.includes(action);
   const canEditInventory = has("edit_inventory");
   const canViewInventory = has("view_inventory");
@@ -119,11 +121,11 @@ export function getStaffAccess(
   const canCollectServiceRequests = has("collect_service_request") || canManageMachines;
   const printingOnly = canSeePrinting && !canEditInventory && !canManageMakerspace;
   const baseTabs = handoutOnly ? (["requests", "direct", "handover", "payments", "notifications", "granted"] as const) : ALL_TABS;
-  const grantOnly = !isSuperadmin && actions.length === 0 && hasEventGrants;
+  const grantOnly = !isSuperadmin && actions.length === 0 && hasGrants;
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.
   const allowedTabs: readonly string[] = grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
-    if (tabName === "granted") return hasEventGrants;
+    if (tabName === "granted") return hasGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;
     if (tabName === "usage") return canManageMakerspace;
     if (tabName === "dashboard") return !handoutOnly && (isSuperadmin || canSeeDashboard);

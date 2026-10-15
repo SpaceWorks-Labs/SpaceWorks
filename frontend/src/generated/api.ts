@@ -35,6 +35,7 @@ export const openApiTags = [
   "Backup destinations",
   "Backup recipients",
   "Backup recovery",
+  "Bookings",
   "Bulk import",
   "Containers",
   "Dashboard",
@@ -99,6 +100,7 @@ export const openApiPaths = [
   "/api/public/{makerspace_slug}/inventory/{id}/",
   "/api/public/{makerspace_slug}/inventory/{id}/watch/",
   "/api/public/{makerspace_slug}/stats/",
+  "/api/v1/admin/accessible-booking-spaces/",
   "/api/v1/admin/accessible-events/",
   "/api/v1/admin/analytics/{report_key}",
   "/api/v1/admin/api-clients/{id}",
@@ -111,6 +113,10 @@ export const openApiPaths = [
   "/api/v1/admin/assets/{id}/warranty",
   "/api/v1/admin/audit-logs",
   "/api/v1/admin/backups/{archive_id}/download-url",
+  "/api/v1/admin/booking-staff-grants/{id}/",
+  "/api/v1/admin/booking-staff-grants/{id}/revoke/",
+  "/api/v1/admin/booking-staff-invites/redeem/",
+  "/api/v1/admin/booking-staff-invites/{id}/revoke/",
   "/api/v1/admin/bookings/{id}/approve/",
   "/api/v1/admin/bookings/{id}/cancel/",
   "/api/v1/admin/bookings/{id}/complete/",
@@ -529,6 +535,8 @@ export const openApiPaths = [
   "/api/v1/admin/spaces/{id}/image/finalize/",
   "/api/v1/admin/spaces/{id}/image/presign/",
   "/api/v1/admin/spaces/{id}/recurring-bookings/",
+  "/api/v1/admin/spaces/{id}/staff-grants/",
+  "/api/v1/admin/spaces/{id}/staff-invites/",
   "/api/v1/admin/stock-transfers/{id}",
   "/api/v1/admin/stocktakes/{id}",
   "/api/v1/admin/stocktakes/{id}/apply-adjustments",
@@ -1270,6 +1278,7 @@ export type AuthUserPayload = {
   "must_change_password": boolean;
   "makerspaces": Array<AuthMembership>;
   "event_grants"?: Array<GrantedEventEntry>;
+  "booking_grants"?: Array<GrantedBookingEntry>;
 };
 
 export type AvailabilityEnum = "Available" | "Limited" | "Full";
@@ -1468,6 +1477,10 @@ export type BookableSpaceAdmin = {
   "created_by_id": number | null;
   "created_at": string;
   "updated_at": string;
+  "staff_permissions": Array<string>;
+  "can_manage_grants": boolean;
+  "staff_grants_enabled": boolean;
+  "recurring_enabled": boolean;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1553,6 +1566,71 @@ export type BookingMachineTypePage = {
 export type BookingReschedule = {
   "starts_at": string;
   "ends_at": string;
+};
+
+export type BookingStaffGrant = {
+  "id": number;
+  "makerspace": number;
+  "user": number;
+  "permissions": Array<"edit_details" | "manage_reservations" | "check_in" | "publish_page">;
+  "granted_by": number | null;
+  "created_at": string;
+  "revoked_at": string | null;
+  "revoked_by": number | null;
+  "space": number;
+};
+
+export type BookingStaffGrantInvite = {
+  "id": number;
+  "makerspace": number;
+  "permissions": Array<"edit_details" | "manage_reservations" | "check_in" | "publish_page">;
+  "created_by": number | null;
+  "created_at": string;
+  "expires_at": string;
+  "redeemed_at": string | null;
+  "revoked_at": string | null;
+  "space": number;
+};
+
+export type BookingStaffGrantInviteCreated = {
+  "id": number;
+  "makerspace": number;
+  "permissions": Array<"edit_details" | "manage_reservations" | "check_in" | "publish_page">;
+  "created_by": number | null;
+  "created_at": string;
+  "expires_at": string;
+  "redeemed_at": string | null;
+  "revoked_at": string | null;
+  "token": string;
+  "space": number;
+};
+
+export type BookingStaffGrantInviteInput = {
+  "permissions": Array<"edit_details" | "manage_reservations" | "check_in" | "publish_page">;
+  "email"?: string;
+  "send_email"?: boolean;
+};
+
+export type BookingStaffGrantInviteList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<BookingStaffGrantInvite>;
+};
+
+export type BookingStaffGrantList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<BookingStaffGrant>;
+};
+
+export type BookingStaffGrantPermissions = {
+  "permissions": Array<"edit_details" | "manage_reservations" | "check_in" | "publish_page">;
+};
+
+export type BookingStaffGrantRedeem = {
+  "token": string;
 };
 
 export type BookingUtilizationReport = {
@@ -3211,6 +3289,15 @@ export type GenericAnalyticsReport = {
 
 export type GenericObject = {
   "detail"?: string;
+};
+
+export type GrantedBookingEntry = {
+  "space_id": number;
+  "makerspace_id": number;
+  "makerspace_slug": string;
+  "name": string;
+  "source": "booking_grant";
+  "permissions": Array<"edit_details" | "manage_reservations" | "check_in" | "publish_page">;
 };
 
 export type GrantedEventEntry = {
@@ -6505,6 +6592,10 @@ export type PatchedBookableSpaceWrite = {
   "requester_notifications_enabled"?: boolean | null;
   "payment_amount"?: string;
   "machine_type"?: number | null;
+};
+
+export type PatchedBookingStaffGrantPermissions = {
+  "permissions"?: Array<"edit_details" | "manage_reservations" | "check_in" | "publish_page">;
 };
 
 export type PatchedBox = {

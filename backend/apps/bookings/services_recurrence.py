@@ -15,13 +15,11 @@ from apps.makerspaces.platform import feature_enabled
 
 @transaction.atomic
 def create_recurring_bookings(space, *, actor, starts_at, ends_at, count, interval_weeks=1, **values):
-    from apps.accounts import rbac
-    from rest_framework.exceptions import PermissionDenied
     from apps.makerspaces.guards import require_module_locked
     locked = _locked_space(space.pk)
     locked.makerspace = require_module_locked(locked.makerspace, 'bookings')
-    if not rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, locked.makerspace_id):
-        raise PermissionDenied()
+    from .booking_authority import require
+    require(actor, locked, "manage_reservations")
     if not feature_enabled(locked.makerspace, 'bookings.recurring'):
         raise ValidationError({'feature': 'Recurring bookings are disabled.'})
     if type(count) is not int or not 2 <= count <= 52 or type(interval_weeks) is not int or not 1 <= interval_weeks <= 12:

@@ -49,6 +49,12 @@ class BookableSpaceWriteSerializer(serializers.Serializer):
     # `machines` is installed; null clears it.
     machine_type = serializers.IntegerField(allow_null=True, min_value=1, required=False)
 
+    def to_internal_value(self, data):
+        unknown = set(data) - set(self.fields) if isinstance(data, dict) else set()
+        if unknown:
+            raise serializers.ValidationError({key: "Unexpected field." for key in sorted(unknown)})
+        return super().to_internal_value(data)
+
     def validate(self, attrs):
         availability = attrs.get(
             'show_public_availability',
@@ -69,9 +75,48 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     effective_requester_notifications_enabled = serializers.SerializerMethodField()
 
+    recurring_enabled = serializers.SerializerMethodField()
+    staff_grants_enabled = serializers.SerializerMethodField()
+    staff_permissions = serializers.SerializerMethodField()
+    can_manage_grants = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_recurring_enabled(self, obj):
+        return self._features(obj)["recurring_enabled"]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_staff_grants_enabled(self, obj):
+        return self._features(obj)["staff_grants_enabled"]
+
+    def _features(self, obj):
+        from .booking_authority_page import features_for_page
+        cache = self.context.setdefault("booking_features", {})
+        if obj.makerspace_id not in cache:
+            cache.update(features_for_page([obj]))
+        return cache[obj.makerspace_id]
+
+    def _authority(self, obj):
+        from .booking_authority import can_manage_grants, permissions_for
+        from .booking_permissions import PERMISSIONS
+        cache = self.context.setdefault("booking_authority", {})
+        if obj.pk not in cache:
+            actor = self.context.get("actor")
+            manager = can_manage_grants(actor, obj)
+            cache[obj.pk] = (manager, list(PERMISSIONS) if manager else permissions_for(actor, obj))
+        return cache[obj.pk]
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_staff_permissions(self, obj):
+        return self._authority(obj)[1]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_can_manage_grants(self, obj):
+        return self._authority(obj)[0]
+
     class Meta:
         model = BookableSpace
         fields = (
+            "recurring_enabled", "staff_grants_enabled", "staff_permissions", "can_manage_grants",
             'id',
             'public_token',
             'makerspace_id',

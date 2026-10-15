@@ -75,7 +75,7 @@ export function StaffWorkspace({
     grantOnly,
     handoutOnly,
     printingOnly,
-  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly, Boolean(user.event_grants?.length));
+  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly, Boolean(user.event_grants?.length), Boolean(user.booking_grants?.length));
   const visibleMakerspaces =
     singleTenantLocked && activeMakerspace
       ? [activeMakerspace]

@@ -39,10 +39,10 @@ export function StaffHeader({
           <SpaceWorksBadge className="shrink-0" />
           <div className="min-w-0">
             <p className="eyebrow truncate text-accent-ink">
-              {activeMakerspace?.public_code ?? activeMakerspace?.slug ?? (user.event_grants?.length ? "Event staff" : "No workspace")}
+              {activeMakerspace?.public_code ?? activeMakerspace?.slug ?? ((user.event_grants?.length || user.booking_grants?.length) ? "Resource staff" : "No workspace")}
             </p>
             <h1 className="title-page break-words uppercase">
-              {activeMakerspace?.name ?? (user.event_grants?.length ? "Assigned events" : "Inventory Control")}
+              {activeMakerspace?.name ?? ((user.event_grants?.length || user.booking_grants?.length) ? "Assigned resources" : "Inventory Control")}
             </h1>
             {roleName ? <p className="eyebrow truncate">{roleName}</p> : null}
           </div>

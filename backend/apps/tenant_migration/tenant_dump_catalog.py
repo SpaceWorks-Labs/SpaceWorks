@@ -90,7 +90,7 @@ class TenantDumpCatalogError(AssertionError):
 # reproduced the preceding pin before adding these four fields.
 # Lane D: two concrete history models and durable outbox source identity. The
 # standalone graph check reproduced the preceding pin before adding these fields.
-CATALOG_SCHEMA_SHA256 = "a89f46e967310654f6ce99652d980033cc5b17e8bc463ba5886d2a130efdf321"
+CATALOG_SCHEMA_SHA256 = "fac0b88c1e0b00e17155d20276b2e167dc7bba317712b57e139b553ca76c06eb"
 
 
 def catalog_models(apps_registry=apps):

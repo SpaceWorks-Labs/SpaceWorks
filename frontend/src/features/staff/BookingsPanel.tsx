@@ -39,7 +39,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const create = useCreateBookableSpace(makerspaceId);
   const apiError = spaces.error instanceof StructuredApiError ? spaces.error : null;
 
-  if (apiError?.status === 403) return <Panel title="Bookings"><p className="text-sm text-muted">Only Space Managers can manage bookings.</p></Panel>;
+  if (apiError?.status === 403) return <Panel title="Bookings"><p className="text-sm text-muted">Booking management requires an assigned role or resource permission.</p></Panel>;
   if (apiError?.status === 400 && apiError.body.module) return <Panel title="Bookings"><p className="text-sm text-muted">The Bookings module is not enabled for this makerspace.</p></Panel>;
 
   return (

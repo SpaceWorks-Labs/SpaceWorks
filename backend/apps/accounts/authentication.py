@@ -182,7 +182,12 @@ MEMBER_SURFACE_PREFIXES = CLAIM_REACHABLE_PREFIXES + ("/api/v1/integrations/push
 
 
 def _member_surface_path_allowed(path):
-    return path.rstrip("/") == "/api/v1/admin/event-staff-invites/redeem" or path.startswith(MEMBER_SURFACE_PREFIXES)
+    # Accepting one's own invitation precedes staff access. Keep these exact paths:
+    # listing, creating and revoking invitations still require a staff session.
+    return path.rstrip("/") in {
+        "/api/v1/admin/event-staff-invites/redeem",
+        "/api/v1/admin/booking-staff-invites/redeem",
+    } or path.startswith(MEMBER_SURFACE_PREFIXES)
 
 
 def _verification_path_allowed(path):

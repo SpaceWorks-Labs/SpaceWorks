@@ -12,6 +12,9 @@ def _transition(booking, actor, new_status, action, event, *, require_ended=Fals
     from apps.bookings.services_bookings import _audit, _locked_booking, _refresh
 
     space, locked = _locked_booking(booking)
+    if not member_cancel:
+        from .booking_authority import require
+        require(actor, space, "manage_reservations")
     cancelling = new_status == Booking.Status.CANCELLED
     allowed = (Booking.Status.PENDING, Booking.Status.CONFIRMED) if cancelling else (Booking.Status.CONFIRMED,)
     if locked.status not in allowed:

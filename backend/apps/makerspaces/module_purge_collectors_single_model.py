@@ -47,6 +47,9 @@ def _cascade_model_labels(model, seen=None):
 def bookings_delete(makerspace, cursor):
     from apps.accounts import rbac
     from apps.bookings.models import BookableSpace, Booking, BookingCalendarFeed
+    from apps.bookings.models_staff_grants import BookingSpaceStaffGrant, BookingSpaceStaffGrantInvite
+    grants, grant_labels = _delete(BookingSpaceStaffGrant.objects.filter(makerspace=makerspace))
+    invites, invite_labels = _delete(BookingSpaceStaffGrantInvite.objects.filter(makerspace=makerspace))
     feeds, feed_labels = _delete(rbac.scope_notification_policy(BookingCalendarFeed.objects.all(), makerspace_id=makerspace.pk))
 
     bookings, booking_labels = _delete(
@@ -54,7 +57,8 @@ def bookings_delete(makerspace, cursor):
     )
     spaces, space_labels = _delete(rbac.scope_notification_policy(BookableSpace.objects.all(), makerspace_id=makerspace.pk))
     return _counts(
-        model_labels=booking_labels | space_labels | feed_labels,
+        model_labels=booking_labels | space_labels | feed_labels | grant_labels | invite_labels,
+        staff_grants=grants, staff_invites=invites,
         calendar_feeds=feeds,
         bookings=bookings,
         bookable_spaces=spaces,

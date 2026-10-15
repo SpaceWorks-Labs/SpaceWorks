@@ -33,15 +33,10 @@ class SpaceBookingListView(StaffBookingCreateMixin, APIView):
         },
     )
     def get(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "manage_reservations")
         filters = BookingListFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
-        queryset = rbac.scope_by_action(
-            request.user,
-            rbac.Action.MANAGE_BOOKINGS,
-            Booking.objects.filter(space=space),
-            field='space__makerspace_id',
-        )
+        queryset = Booking.objects.filter(space=space)
         data = filters.validated_data
         if data.get('booking_id'):
             queryset = queryset.filter(pk=data['booking_id'])

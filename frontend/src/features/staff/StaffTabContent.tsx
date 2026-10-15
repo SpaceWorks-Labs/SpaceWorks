@@ -8,7 +8,7 @@ import { filterTabsByEnabledModules } from "./staffTabs";
 import { StaffPlatformTabContent } from "./StaffPlatformTabContent";
 import { Panel, type Makerspace } from "./panels/shared";
 import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
-import { PlatformDashboardPanel, GrantedEventsPanel } from "./StaffTabLoaders";
+import { PlatformDashboardPanel, GrantedEventsPanel, GrantedBookingSpacesPanel } from "./StaffTabLoaders";
 
 import { PaymentsPanel, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
@@ -74,9 +74,9 @@ export function StaffTabContent({
   if (activeTab === "organizations") {
     return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
   }
-  if (activeTab === "granted" && currentUser.event_grants?.length) {
+  if (activeTab === "granted" && (currentUser.event_grants?.length || currentUser.booking_grants?.length)) {
     if (singleTenantLocked && lockedMakerspaceId === undefined) return <Panel title="No makerspace">Unable to resolve this makerspace.</Panel>;
-    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><GrantedEventsPanel grants={currentUser.event_grants} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><div className="grid gap-6">{currentUser.event_grants?.length ? <GrantedEventsPanel grants={currentUser.event_grants} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /> : null}{currentUser.booking_grants?.length ? <GrantedBookingSpacesPanel makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /> : null}</div></Suspense></StaffPanelErrorBoundary>;
   }
   if (!activeMakerspace) {
     return <Panel title="No makerspace">Assign a makerspace to this account.</Panel>;

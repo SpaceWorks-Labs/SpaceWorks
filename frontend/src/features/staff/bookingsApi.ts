@@ -8,6 +8,10 @@ import type { PaymentSummary } from "./PaymentReconcileActions";
 export type BookingStatus = "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
 export type BookableSpace = {
   id: number;
+  recurring_enabled?: boolean;
+  staff_grants_enabled?: boolean;
+  staff_permissions?: string[];
+  can_manage_grants?: boolean;
   public_token: string;
   makerspace_id: number;
   name: string;
@@ -98,7 +102,7 @@ export function useBookableSpace(spaceId: number) {
   });
 }
 
-export function useSpaceBookings(spaceId: number, filters: BookingFilters, page = 1, ordering = "starts_at") {
+export function useSpaceBookings(spaceId: number, filters: BookingFilters, page = 1, ordering = "starts_at", enabled = true) {
   const timestamp = (value: string) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toISOString(); };
   const query = new URLSearchParams({ page: String(page), ordering });
   if (filters.status) query.set("status", filters.status);
@@ -106,6 +110,7 @@ export function useSpaceBookings(spaceId: number, filters: BookingFilters, page 
   if (filters.starts_at) query.set("starts_at", timestamp(filters.starts_at));
   if (filters.ends_at) query.set("ends_at", timestamp(filters.ends_at));
   return useQuery({
+    enabled,
     queryKey: [...bookingKeys.bookings(spaceId), filters.status ?? "", filters.starts_at ?? "", filters.ends_at ?? "", filters.booking_id ?? "", page, ordering],
     queryFn: () => staffRequest<Paginated<Booking>>(staffPath(SPACE_BOOKINGS_PATH, { id: spaceId }) + "?" + query),
   });

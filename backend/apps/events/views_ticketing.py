@@ -10,7 +10,7 @@ from apps.audit.services import record
 from apps.events.models import EventCategory, EventPromoCode
 from apps.events.event_permissions import MANAGE_REGISTRATIONS
 from apps.events.promos import create_promo, revoke_promo
-from apps.events.invites import require_feature
+from apps.events.feature_gates import require_feature
 from apps.events.ticketing import create_ticket
 from apps.events.views_admin_event_detail import _manageable_event, _visible_makerspace
 from apps.events.views_invites import ERRORS, PAGE_PARAMETERS, paginated, manageable_event_code

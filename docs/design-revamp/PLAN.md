@@ -222,6 +222,11 @@ word/icon, icons 24/2 px rounded, voice "Say / Skip" rules, sentence case.
     as manually checked.
 - **Visual check:** a browser-pane check of each layout and of the per-screen delight checklist (§5),
   done by Claude, with screenshots in the wave report.
+- **Source-fidelity audit (owner, 2026-10-15):** after each wave merge and before owner QA, every screen is
+  compared side by side against the two sources in the local `SpaceWorks-Design` checkout
+  (`brand/space-works-brand-guidelines-v1.pdf` for colour/type/logo/icons/voice; `references/yuyu/*.png` for
+  layout/UX). Deviations are fixed before the wave is marked done. The Yuyu boards are never committed to
+  either repository (gitignored in SpaceWorks-Design; read from local disk only).
 - **Process rules:**
   - Never run two pytest processes against one DB.
   - Never run the full suite concurrently with `codex review`.

@@ -1,7 +1,6 @@
 import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { useState } from "react";
 import { SettingsLayout, type SettingsLayoutSection } from "../../components/layouts";
-import { PHONE_HIDES_SETTINGS_NAV, SettingsSectionJump } from "./SettingsSectionJump";
 import { ApiClientsTelegramSettings } from "./ApiClientsTelegramSettings";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MakerspaceArchiveRequest } from "../../generated/api";
@@ -201,20 +200,16 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
   return <>
     {/* Every editor owns its own query, so the parent GET never gates the page: while it
         loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a
-        failure is reported here instead of hiding payments, notifications and the rest.
-        Phones swap the eleven-chip section strip for one select (see SettingsSectionJump). */}
-    <div className={PHONE_HIDES_SETTINGS_NAV}>
+        failure is reported here instead of hiding payments, notifications and the rest. */}
     <SettingsLayout header={{ title: "Makerspace settings", subtitle: "Make this space work for your community.",
       meta: <>{settings.error ? <ErrorBlock className="w-full" onRetry={() => { void settings.refetch(); }}
-        error={new Error(`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)} /> : null}
-        <SettingsSectionJump sections={sections} /></>,
+        error={new Error(`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)} /> : null}</>,
       primary: { label: "View public site", href: `/m/${makerspace.slug}` } }}
       state={{ status: "ready" }}
       subnav="auto" sections={sections} danger={canManageMakerspace ? [{ title: "Archive this makerspace",
         consequence: archivePending ? "An archival request is pending superadmin review. Open it to see the request or withdraw it."
           : "Request archival for this makerspace. A superadmin must confirm before staff access is removed.",
         action: { label: archivePending ? "View pending request" : "Request archival", onClick: () => setArchiveOpen(true) } }] : []} />
-    </div>
     <Modal open={archiveOpen} onClose={() => setArchiveOpen(false)} title="Archive this makerspace" size="xl">
       <MakerspaceArchiveRequestPanel makerspaceId={makerspace.id} canManageMakerspace={canManageMakerspace} />
     </Modal>

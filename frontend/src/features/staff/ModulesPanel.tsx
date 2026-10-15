@@ -7,7 +7,6 @@ import { StructuredApiError, staffRequest } from "../../lib/api";
 import { useStaffGet } from "./panels/shared";
 import { adminQueryState } from "./adminPresentation";
 import { DeploymentModules, ModuleSettingsRow, type ModulesResponse } from "./ModuleSettingsRows";
-import { PHONE_HIDES_SETTINGS_NAV, SettingsSectionJump } from "./SettingsSectionJump";
 
 const errorText = (error: unknown) => error instanceof StructuredApiError
   ? error.detail ?? error.message : "Couldn't change this module. Try again.";
@@ -59,9 +58,8 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
       </div>)}</> })),
     ...(modules.data?.deployment ? [{ id: "deployment", title: "Deployment", rows: <DeploymentModules deployment={modules.data.deployment} /> }] : []),
   ];
-  return <div className={PHONE_HIDES_SETTINGS_NAV}><SettingsLayout header={{ title: "Modules", subtitle: "Switch feature families on for this space. Turning one off keeps its data; turning it back on restores everything. Delete data separately from the command line.",
-    meta: <SettingsSectionJump sections={sections} /> }}
+  return <SettingsLayout header={{ title: "Modules", subtitle: "Switch feature families on for this space. Turning one off keeps its data; turning it back on restores everything. Delete data separately from the command line." }}
     state={adminQueryState(modules, "modules")} isEmpty={groups.length === 0}
     empty={{ message: "No modules are available yet. Check the deployment configuration." }}
-    sections={sections} /></div>;
+    sections={sections} />;
 }

@@ -92,7 +92,7 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
     body={{ kind: "rows", rows: suppressed ? <SuppressionAdmin makerspaceId={makerspaceId} embedded dialogOpen={suppressOpen} onDialogClose={() => setSuppressOpen(false)} /> : <>
       {logs.data?.results.map(row => <ListRow key={`${row.kind}:${row.id}`} title={`${FAMILIES[row.feature] ?? words(row.feature)} · ${words(row.event)}`}
         identity={{ kind: "icon", icon: row.channel === "email" ? "ArrowUpRight" : "Info", tone: "accent" }}
-        meta={<span className="grid gap-1"><span>{row.destination_label || "Personal devices"} · {row.attempts} attempts · <RelativeTime date={row.created_at} /></span>
+        meta={<span className="grid gap-1"><span>{words(row.channel)} · {row.destination_label || "Personal devices"} · {row.attempts} attempts · <RelativeTime date={row.created_at} /></span>
           {row.error ? <span className="break-words text-danger">{row.error}</span> : null}</span>}
         right={<div className="flex items-center gap-3"><StatusPill label={words(row.status)} tone={row.status === "failed" ? "danger" : row.status === "sent" ? "success" : "neutral"} />
           {row.status === "failed" ? <button className="desk-button" aria-label="Retry failed delivery" disabled={retry.isPending} onClick={() => retry.mutate(row)}>Retry</button> : null}</div>} />)}

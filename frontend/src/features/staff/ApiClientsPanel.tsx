@@ -21,6 +21,8 @@ import {
 } from "./apiClientsApi";
 import { ApiClientsAccessSummary } from "./ApiClientsAccessSummary";
 import { SettingsLayout } from "../../components/layouts";
+import { Modal } from "../../components/ui";
+import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 
 export function ApiClientsPanel({
@@ -39,6 +41,9 @@ export function ApiClientsPanel({
   const [scopes, setScopes] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [oneTimeSecret, setOneTimeSecret] = useState<ApiClientCreateResponse | null>(null);
+  // A rotated secret opens over the list, next to the action, rather than in the create
+  // section above it where a show-once secret could appear off-screen.
+  const [rotatedSecret, setRotatedSecret] = useState<ApiClientCreateResponse | null>(null);
   const requests = useStaffGet<{ results: ApiKeyRequest[] }>(
     apiKeyRequestsQueryKey(makerspace.id),
     `/admin/api-key-requests?makerspace=${makerspace.id}`,
@@ -97,7 +102,7 @@ export function ApiClientsPanel({
   const rotateClient = useMutation({
     mutationFn: rotateApiClient,
     onSuccess: (rotated) => {
-      setOneTimeSecret(rotated);
+      setRotatedSecret(rotated);
       queryClient.invalidateQueries({ queryKey: apiClientsQueryKey(makerspace.id) });
     },
   });
@@ -121,7 +126,10 @@ export function ApiClientsPanel({
     setOrigins(value);
     if (!canManageMakerspace) setSubmitted(false);
   };
-  return (
+  return (<>
+    <Modal open={Boolean(rotatedSecret)} onClose={() => setRotatedSecret(null)} title="New client secret">
+      {rotatedSecret ? <ApiClientSecretReveal secret={rotatedSecret.client_secret} onDismiss={() => setRotatedSecret(null)} /> : null}
+    </Modal>
     <SettingsLayout header={{ title: "API access", subtitle: `Let your own tools work with ${makerspace.name}, without sharing anyone’s login.` }}
       state={{ status: "ready" }} sections={[{ id: "new-client", title: canManageMakerspace ? "New API client" : "Request API access", rows: (<>
           <ApiClientCreateCard
@@ -170,5 +178,5 @@ export function ApiClientsPanel({
             onScopesUpdate={(clientId, nextScopes) => updateScopes.mutate({ clientId, nextScopes })}
           />
           </>) }, { id: "developer-reference", title: "Developer reference", rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={() => { void settings.refetch(); }} /> }]} />
-  );
+  </>);
 }

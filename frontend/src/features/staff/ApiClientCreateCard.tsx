@@ -1,5 +1,6 @@
-import { Callout, ErrorBlock, Field, Skeleton } from "../../components/ui";
+import { ErrorBlock, Field, Skeleton } from "../../components/ui";
 import { ApiClientScopePicker } from "./ApiClientScopePicker";
+import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
 import type { ApiClientCreateResponse, ApiClientScopeOption } from "./apiClientsApi";
 import { splitOrigins } from "./apiClientsApi";
 type Props = {
@@ -87,26 +88,7 @@ export function ApiClientCreateCard({
           {isPending ? "Creating…" : "Create API client"}
         </button>
         {error ? <p className="mt-2 text-sm text-danger">{error.message}</p> : null}
-        {oneTimeSecret ? (
-          <div className="mt-3 rounded-md border border-line bg-warn-soft p-3">
-            <Callout size="inline" tone="warn" lead="Copy the secret now." body="It’s shown once." />
-            <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 code-text text-xs text-ink">
-              {oneTimeSecret.client_secret}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                className="desk-button"
-                type="button"
-                onClick={() => void navigator.clipboard.writeText(oneTimeSecret.client_secret)}
-              >
-                Copy
-              </button>
-              <button className="desk-button-primary" type="button" onClick={onDismissSecret}>
-                Done
-              </button>
-            </div>
-          </div>
-        ) : null}
+        {oneTimeSecret ? <ApiClientSecretReveal secret={oneTimeSecret.client_secret} onDismiss={onDismissSecret} /> : null}
       </article>
     );
   }

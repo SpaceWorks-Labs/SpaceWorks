@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "../../components/layouts";
-import { DataTable, EmptyState, KeyValueCard, ListRow, RelativeTime, StatusPill } from "../../components/ui";
+import { type CalloutProps, DataTable, EmptyState, KeyValueCard, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { adminQueryState } from "./adminPresentation";
 import { getPlatformDashboard, getPlatformProblems, usageAmount } from "./platformMonitoringApi";
 import { UsageTable } from "./TenantUsagePanel";
@@ -11,12 +11,16 @@ export function PlatformDashboardPanel() {
   const data = dashboard.data;
   const attention = problems.data?.results.find(problem => problem.status === "error");
   const refresh = () => { void dashboard.refetch(); void problems.refetch(); };
-  const state = adminQueryState(dashboard, "platform dashboard");
+  // Problems has its own query: a failed dashboard must not hide the checks that explain it.
+  const state = dashboard.isLoading && problems.isLoading ? adminQueryState(dashboard, "platform dashboard") : { status: "ready" as const };
+  const callout: CalloutProps | undefined = dashboard.isError
+    ? { size: "banner", tone: "danger", lead: "Couldn't load the platform dashboard.", body: dashboard.error.message, action: { label: "Retry", onClick: () => { void dashboard.refetch(); } } }
+    : attention ? { size: "banner", tone: "danger", lead: attention.message, body: "Review this check before your next deployment change.", action: { label: "Inspect", href: attention.fix_url } } : undefined;
   return <DashboardLayout header={{ title: "Platform", eyebrow: "Space Works",
     subtitle: "Hidden tenants are excluded. Usage totals cover live, available tenants.",
     meta: data ? <>Checked <RelativeTime date={data.checked_at} /></> : undefined,
     secondary: { label: "Run checks now", onClick: refresh, disabled: dashboard.isFetching || problems.isFetching, disabledReason: "Checks are running." } }}
-    callout={attention ? { size: "banner", tone: "danger", lead: attention.message, body: "Review this check before your next deployment change.", action: { label: "Inspect", href: attention.fix_url } } : undefined}
+    callout={callout}
     state={state} stats={data ? Object.entries(data.tenants_by_state).map(([name, value]) => ({ label: `${name.replace(/_/g, " ")} tenants`, value })) : []}
     overflowStats={data ? { label: "Delivery and usage totals", stats: [
       { label: "Failed emails", value: data.failed_deliveries.email },
@@ -26,7 +30,7 @@ export function PlatformDashboardPanel() {
     main={[
       { title: "Problems", empty: { message: "All checks passed. Run checks again after a deployment change." },
         content: problems.isLoading ? <p role="status">Running checks…</p> : problems.isError ? <EmptyState message="Couldn't load problems. Try again." action={{ label: "Retry", onClick: () => { void problems.refetch(); } }} />
-          : <div className="grid gap-3"><p className="text-sm text-muted">Checks also run every 15 minutes through the platform scheduler.</p>
+          : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <>Checked <RelativeTime date={problems.data.checked_at} />. </> : null}Checks also run every 15 minutes through the platform scheduler.</p>
             {problems.data?.results.map((row, index) => <ListRow key={`${row.key}:${row.makerspace_id}:${index}`} title={row.message}
               meta={<StatusPill tone={row.status === "error" ? "danger" : row.status === "warn" ? "warn" : "success"} label={row.status === "ok" ? "OK" : row.status === "warn" ? "Warning" : "Error"} />}
               right={<a className="desk-button" href={row.fix_url}>Inspect</a>} />)}</div>,

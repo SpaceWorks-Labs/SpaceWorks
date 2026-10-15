@@ -21,6 +21,7 @@ import { MemberActivityPanel, type MemberActivity } from "./MemberActivity";
 import { MemberDues, MemberHistory, MemberNotices, MemberTerm } from "./MemberDashboardSections";
 import { PartnerEvents } from "./PartnerEvents";
 import { MemberDirectory } from "./MemberDirectory";
+import { MakerspaceDiscovery } from "./MakerspaceDiscovery";
 import { MemberCardPanel } from "./MemberCardPanel";
 import { MemberInstall } from "./MemberInstall";
 import { forgetOfflineMemberData } from "./memberCard/offlineCard";
@@ -188,6 +189,7 @@ export function MemberArea() {
       {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history} /> : null}
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
       {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
+    {activeTab === "overview" && memberships.data ? <MakerspaceDiscovery currentSlug={resolvedSlug} memberships={memberships.data.memberships} requests={memberships.data.requests} /> : null}
     {/* OUTSIDE the membership branch. A loan deposit is raised against a borrower, who
         needs an active account rather than a membership -- nesting this meant the person
         who owed the money was the one person who could not see it. */}

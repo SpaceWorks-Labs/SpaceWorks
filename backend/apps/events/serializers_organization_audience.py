@@ -14,7 +14,8 @@ class OrganizationAudienceListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
         from .organization_audience import audience_projections
         rows = list(data.all() if isinstance(data, BaseManager) else data)
-        self.context["organization_audience_projection"] = audience_projections(rows)
+        flags = self.context.setdefault("event_feature_flags", {})
+        self.context["organization_audience_projection"] = audience_projections(rows, feature_flags=flags)
         return super().to_representation(rows)
 
 

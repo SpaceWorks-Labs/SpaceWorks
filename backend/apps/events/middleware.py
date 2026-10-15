@@ -1,5 +1,21 @@
 import re
 
+from django.utils.cache import patch_vary_headers
+
+
+_PRIVATE_EVENT_ROUTES = frozenset({
+    "public-event-organization-eligibility", "member-collaborative-events",
+})
+
+
+def private_event_response(request, response):
+    """Apply privacy to success AND errors without overriding DRF auth hooks."""
+    match = getattr(request, "resolver_match", None)
+    if match and match.view_name in _PRIVATE_EVENT_ROUTES:
+        response["Cache-Control"] = "private, no-store"
+        patch_vary_headers(response, ("Cookie", "Authorization"))
+    return response
+
 
 _FEED_PATH = re.compile(
     r"(/api/v1/(?:public/[^/\s]+/(?:event-calendar|bookings/calendar)|"
@@ -31,7 +47,7 @@ class CalendarFeedLogRedactionMiddleware:
             request.META["RAW_URI"] = redact_calendar_feed_uri(raw_uri)
         feed_path = request.path_info if is_calendar_feed_bearer_path(request.path_info) else None
         try:
-            return self.get_response(request)
+            return private_event_response(request, self.get_response(request))
         finally:
             # Resolution and the view need the real token. Access/error logging happens
             # after the response, so replace every request-line source only on unwind.

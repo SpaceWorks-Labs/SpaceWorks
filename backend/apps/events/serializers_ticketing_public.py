@@ -17,9 +17,10 @@ class EventTicketingPublicSerializer(serializers.Serializer):
         # checks once per host, rather than querying restoration state per field/row.
         cache = self.context.setdefault("ticket_feature_flags", {})
         if obj.makerspace_id not in cache:
+            projected = self.context.get("event_feature_flags", {}).get(obj.makerspace_id)
             cache[obj.makerspace_id] = {
-                "tickets": feature_enabled(obj.makerspace, "events.ticket_types"),
-                "promos": feature_enabled(obj.makerspace, "events.promo_codes"),
+                "tickets": projected["events.ticket_types"] if projected is not None else feature_enabled(obj.makerspace, "events.ticket_types"),
+                "promos": projected["events.promo_codes"] if projected is not None else feature_enabled(obj.makerspace, "events.promo_codes"),
                 "membership": module_enabled(obj.makerspace, "membership"),
             }
         return cache[obj.makerspace_id]

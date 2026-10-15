@@ -77,12 +77,6 @@ def _collaborative_events(makerspace):
 class MemberCollaborativeEventListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def finalize_response(self, request, response, *args, **kwargs):
-        response = super().finalize_response(request, response, *args, **kwargs)
-        response["Cache-Control"] = "private, no-store"
-        response["Vary"] = "Cookie, Authorization"
-        return response
-
     @extend_schema(
         tags=["Member events"],
         summary="List events hosted by accepted collaborators",

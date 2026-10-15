@@ -91,7 +91,13 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_ticketing_features(self, obj):
-        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience") if feature_enabled(obj.makerspace, key)]
+        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience") if self._feature_enabled(obj, key)]
+
+    def _feature_enabled(self, obj, key):
+        flags = self.context.get("event_feature_flags", {}).get(obj.makerspace_id)
+        if flags is not None:
+            return flags[key]
+        return feature_enabled(obj.makerspace, key)
 
     @extend_schema_field(serializers.BooleanField())
     def get_broadcasts_enabled(self, obj):
@@ -156,7 +162,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.BooleanField())
     def get_offline_checkin_enabled(self, obj):
-        return feature_enabled(obj.makerspace, "events.offline_checkin")
+        return self._feature_enabled(obj, "events.offline_checkin")
 
     @extend_schema_field(EventRegistrationCountsSerializer)
     def get_registration_counts(self, obj):

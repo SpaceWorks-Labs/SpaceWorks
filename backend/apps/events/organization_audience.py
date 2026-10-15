@@ -13,6 +13,10 @@ from apps.organizations.models import Organization, OrganizationMakerspace
 
 AUDIENCE = "participating_organizations"
 FEATURE = "events.organization_audience"
+PROJECTION_FEATURES = (
+    "events.invites", "events.ticket_types", "events.promo_codes", FEATURE,
+    "events.offline_checkin",
+)
 
 
 class OrganizationAudienceRefused(APIException):
@@ -54,13 +58,18 @@ def _projection(rows):
             if rows else "Open to members of participating organizations (none currently available)"}
 
 
-def audience_projections(events):
+def audience_projections(events, *, feature_flags=None):
     """Batch public attribution for one response, never cache admission proofs."""
     events = list(events)
     if not events:
         return {}
     host_ids = {event.makerspace_id for event in events}
-    usable_hosts = set(usable_spaces().filter(pk__in=host_ids).values_list("pk", flat=True))
+    hosts = list(usable_spaces().filter(pk__in=host_ids).only("pk", "enabled_modules", "enabled_features"))
+    usable_hosts = {host.pk for host in hosts}
+    if feature_flags is not None:
+        from apps.makerspaces.capability_projection import feature_flags_for_servable
+        feature_flags.update({pk: {key: False for key in PROJECTION_FEATURES} for pk in host_ids})
+        feature_flags.update({host.pk: feature_flags_for_servable(host, PROJECTION_FEATURES) for host in hosts})
     owners = dict(OrganizationMakerspace.objects.filter(
         makerspace_id__in=usable_hosts, relationship="owner",
     ).values_list("makerspace_id", "organization_id"))

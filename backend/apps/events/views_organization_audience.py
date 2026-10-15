@@ -22,12 +22,6 @@ class EventOrganizationEligibilityView(APIView):
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "public_read"
 
-    def finalize_response(self, request, response, *args, **kwargs):
-        response = super().finalize_response(request, response, *args, **kwargs)
-        response["Cache-Control"] = "private, no-store"
-        response["Vary"] = "Cookie, Authorization"
-        return response
-
     @extend_schema(
         tags=["Public events"], summary="Read private organization audience eligibility",
         description="Account-specific advisory only, private/no-store. Owned live registrations may renew host consent after signup closes, until the event ends. No membership or eligibility-source identities. Admission rechecks all proofs and current host consent transactionally.",

@@ -56,10 +56,10 @@ export function DirectLoanList({
         {loan.due_at ? <span>Due <RelativeTime date={loan.due_at} /></span> : null}
       </span>
       <span>Handout #{loan.id} · {loan.items.map(item => `${item.product_name} × ${item.quantity}`).join(", ")}{loan.container_label ? ` · In ${loan.container_label}` : ""}{loan.issued_by ? ` · by ${loan.issued_by.username}` : ""}</span>
-      {loan.status !== "checked_out" && loan.return_notes ? <span>{loan.return_notes}</span> : null}
+      {loan.status !== "checked_out" && loan.return_notes ? <span className="break-words">{loan.return_notes}</span> : null}
       {evidenceError?.loanId === loan.id ? <span className="text-danger" role="alert">{evidenceError.message}</span> : null}
     </span>}
-    right={<div className="flex items-center gap-2">
+    right={<div className="flex flex-wrap items-center gap-2">
       {loan.status === "checked_out" ? <button className="desk-button" onClick={() => onReturn(loan)}>Return</button> : null}
       <OverflowMenu label={`More actions for handout ${loan.id}`} actions={[
         ...(loan.issue_evidence_id ? [{ label: "View issue photo", onClick: () => void openEvidence(loan.id, loan.issue_evidence_id as number) }] : []),

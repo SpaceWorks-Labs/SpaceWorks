@@ -16,7 +16,7 @@ export function paymentColumns({ access, pending, amendPending, run, onAmend, on
     { key: "subject_type", header: "Type", render: row => <span className="text-muted">{labelFor(PAYMENT_SUBJECTS, row.subject_type)}</span> },
     { key: "status", header: "Status", render: row => <StatusPill label={labelFor(PAYMENT_STATUSES, row.status)} tone={row.status === "pending" ? "warn" : row.status.startsWith("paid_") ? "success" : "neutral"} /> },
     { key: "due_at", header: "Due", render: row => <PaymentDueBadge payment={row} /> },
-    { key: "amount", header: "Amount", render: row => formatMoney(row.amount, row.currency), className: "text-right font-semibold tabular-nums text-ink" },
+    { key: "amount", header: "Amount", render: row => formatMoney(row.amount, row.currency), className: "font-semibold tabular-nums text-ink md:text-right" },
     { key: "refunded_amount", header: "Refunded", render: row => Number(row.refunded_amount) > 0 ? formatMoney(row.refunded_amount, row.currency) : "—", className: "text-muted tabular-nums" },
     { key: "settlement", header: "Received", render: row => row.settlement ? <div className="grid justify-items-start gap-1"><span>{settlementLabel(row.settlement)}</span>{row.settlement.corrected ? <StatusPill label="Corrected" /> : null}</div> : "—" },
     { key: "created_at", header: "Created", render: row => <RelativeTime date={row.created_at} /> },

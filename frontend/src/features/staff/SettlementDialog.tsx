@@ -45,7 +45,7 @@ export function SettlementDialog({
       <p className="mt-1 text-sm text-muted">
         How and when the money arrived. This is kept as a permanent receipt.
       </p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+      <div className="@container mt-3"><div className="grid gap-3 @2xl:grid-cols-3">
         <label className="block text-sm">
           <span className="eyebrow">Method</span>
           <select
@@ -77,7 +77,7 @@ export function SettlementDialog({
             value={receivedAt}
           />
         </label>
-      </div>
+      </div></div>
       {receivedValid ? null : (
         <p className="mt-2 text-sm text-danger" role="alert">
           Enter the date and time the money was received.

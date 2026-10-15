@@ -44,11 +44,14 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
       status={query.data ? <StatusBadge domain="event" status={query.data.status} label={opsStatusLabel(query.data.status)} /> : undefined}
       meta={query.data ? [`${query.data.future_occurrence_count} active occurrences`, `Revision ${query.data.revision}`] : undefined}
       state={opsQueryState(query, "series")} tabs={tabs.tabs} activeTab={tabs.active}
-      actions={{ primary: query.data?.status === "draft" ? { label: "Publish series", confirms: true, onClick: () => setConfirm("publish") } : query.data?.status === "published" ? { label: "Extend now", onClick: () => setConfirm("extend") } : undefined }}
+      actions={{ primary: query.data?.status === "draft" ? { label: "Publish series", confirms: true, onClick: () => setConfirm("publish") } : query.data?.status === "published" ? { label: "Extend now", onClick: () => setConfirm("extend") } : undefined,
+        overflow: query.data?.status === "published" ? [{ label: "Complete series", confirms: true, onClick: () => setConfirm("complete") },
+          { label: "Cancel series", confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
+      banner={query.data?.last_generation_error_code ? { size: "banner", tone: "danger", lead: `Automatic extension needs attention (${query.data.last_generation_error_code}).`,
+        body: "Correct the schedule in Settings, then use Extend now.", action: query.data.status === "published" ? { label: "Extend now", onClick: () => setConfirm("extend") } : undefined } : undefined}
       danger={tabs.active === "settings" && query.data?.status === "published" ? [{ title: "Cancel series", consequence: "Future occurrences close and registrants are notified.", action: { label: "Cancel series", onClick: () => setConfirm("cancel") } }] : []}
       main={query.data ? <div className="grid gap-5">
         {tabs.active === "settings" ? <div className="grid gap-5">
-        {query.data.last_generation_error_code ? <div className="rounded-lg border border-danger bg-panel p-3 text-sm text-danger" role="alert">Automatic extension needs attention ({query.data.last_generation_error_code}). Use Extend now after correcting the schedule.</div> : null}
         <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} />
         <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields values={values} setValues={setValues} disabled={terminal} />{!terminal ? <div className="sticky bottom-0 flex justify-end gap-3 border-t border-line bg-panel py-4"><button className="desk-button" type="button" disabled={update.isPending} onClick={() => setValues(valuesForSeries(query.data!))}>Discard</button><button className="desk-button-primary" type="submit" disabled={update.isPending}>Save future occurrences</button></div> : null}</form>
         {query.data.status === "published" ? <button className="desk-button justify-self-start" type="button" onClick={() => setConfirm("complete")}>Complete series</button> : null}

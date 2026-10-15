@@ -7,6 +7,8 @@ import { EmptyState, StatusBadge, Tabs, DataTable } from "../../../../components
 import { ImageThumbnail } from "../../../../components/ui/ImageThumbnail";
 import { DetailLayout, FlowLayout } from "../../../../components/layouts";
 import { useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
+import { machineTypeIdentity } from "./MachineTypeCards";
 import { useOpsTabs } from "../../opsPresentation";
 import type { PrinterPool } from "../../../../generated/api";
 import { isBuiltinPrinterType } from "../../machinesApi";
@@ -56,6 +58,10 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
   detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools }: Props) {
   const [creating, setCreating] = useState(false);
   const [createdMachineId, setCreatedMachineId] = useState<number | null>(null);
+  // Lifted here so the Service queue tab header can open manual usage in one click.
+  const [logging, setLogging] = useState(false);
+  const [params] = useSearchParams();
+  const queueStatus = params.get("job_status") ?? undefined;
   const service = machineServiceEnabled && canManage;
   const choices = [{ key: "machines", label: "Machines", count: allMachines.length },
     ...(service ? [{ key: "queue", label: "Service queue" }, { key: "consumables", label: "Consumables" }] : []),
@@ -79,8 +85,8 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       </Tabs>
     </section> : null}
     {service ? isBuiltinPrinterType(machineType) ?
-      <PrinterServiceConsole visible={view.active === "queue"} makerspaceId={makerspaceId} canManage={canManage} printingEnabled={printingEnabled} reportsEnabled={reportsEnabled} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} /> :
-      <MachineServiceConsole visible={view.active === "queue"} makerspaceId={makerspaceId} canManage={canManage} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} /> : null}
+      <PrinterServiceConsole visible={view.active === "queue"} makerspaceId={makerspaceId} canManage={canManage} printingEnabled={printingEnabled} reportsEnabled={reportsEnabled} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} queueStatus={queueStatus} logging={logging} onLogging={setLogging} /> :
+      <MachineServiceConsole visible={view.active === "queue"} makerspaceId={makerspaceId} canManage={canManage} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} queueStatus={queueStatus} logging={logging} onLogging={setLogging} /> : null}
     {service ? <>
       <ConsumablePoolCreateForm visible={view.active === "consumables"} makerspaceId={makerspaceId} machineType={machineType} existingPools={existingPools} />
       <ConsumablePoolList visible={view.active === "consumables"} makerspaceId={makerspaceId} pools={typePools} />
@@ -90,7 +96,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       {canConfigureMachineTypes && (enabledFeatures.includes("machines.material_catalogue") || enabledFeatures.includes("machines.structured_intake")) ? <MaterialCataloguePanel visible={view.active === "settings"} makerspaceId={makerspaceId} typeId={machineType.id} custom={machineType.makerspace !== null} materialsEnabled={enabledFeatures.includes("machines.material_catalogue")} intakeEnabled={enabledFeatures.includes("machines.structured_intake")} /> : null}
       {canConfigureMachineTypes ? <MachineReminderPolicy visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}{settings}
     </>
-    {creating ? <FlowLayout presentation="dialog" open title="Add machine" steps={[]} current="create" state={{ status: "ready" }} onCancel={() => setCreating(false)}
+    {creating ? <FlowLayout presentation="dialog" open title="Add machine" steps={[]} current="create" state={{ status: "ready" }} onCancel={() => { setCreating(false); setCreatedMachineId(null); }}
       work={<MachineCreateForm makerspaceId={makerspaceId} machineType={machineType} hideSubmit onCreated={setCreatedMachineId}
         onDone={() => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); if (id !== null) onSelectMachine(id); }} />}
       footer={createdMachineId === null ? { next: { label: "Add machine", onClick: () => document.querySelector<HTMLFormElement>("#machine-create-form")?.requestSubmit() } }
@@ -98,10 +104,11 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
     {detail}
   </>;
   return <div onClickCapture={view.onClickCapture}>
-    <DetailLayout title={indexHref ? machineType.name : "Machines"} identity={{ kind: "icon", icon: "Cog", tone: "accent" }}
+    <DetailLayout title={indexHref ? machineType.name : "Machines"} identity={machineTypeIdentity(machineType)}
       back={indexHref ? { label: "All machine types", href: indexHref } : undefined}
       meta={[...(indexHref ? [] : [machineType.name]), plural(allMachines.length, "machine"), `${allMachines.filter(machine => machine.status === "running").length} running`]}
-      actions={{ primary: canManage && machineType.can_create_machine === true ? { label: "Add machine", icon: "Plus", onClick: () => setCreating(true) } : undefined }}
+      actions={{ primary: canManage && machineType.can_create_machine === true ? { label: "Add machine", icon: "Plus", onClick: () => setCreating(true) } : undefined,
+        secondary: service && view.active === "queue" ? { label: "Log usage", onClick: () => setLogging(true) } : undefined }}
       banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: onRetryPools } } : undefined}
       tabs={view.tabs} activeTab={view.active} main={main}
       state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: "Couldn't load machines. Try again.", onRetry } : { status: "ready" }} />

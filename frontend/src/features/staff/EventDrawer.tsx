@@ -27,10 +27,12 @@ import { eventErrorText } from "./eventUi";
 
 type Action = "publish" | "cancel" | "complete";
 
-export function EventDrawer({ eventId, makerspaceId, onClose }: {
+export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
   eventId: number;
   makerspaceId: number;
   onClose: () => void;
+  /** Opens the occurrence's recurring series (the "Recurring · <series>" badge links there when set). */
+  onOpenSeries?: (seriesId: number) => void;
 }) {
   const eventQuery = useEvent(eventId);
   const event = eventQuery.data;
@@ -57,6 +59,10 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
   };
 
   const ticketing = event?.ticketing_features ?? [];
+  const series = event?.series_summary;
+  const seriesId = series?.id;
+  const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink hover:bg-info-soft" onClick={() => onOpenSeries(seriesId)}>Recurring · {series.title}</button>
+    : <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">Recurring · {series.title}</span> : null;
   const tabs = useOpsTabs("eventTab", [
     { key: "overview", label: "Overview" },
     { key: "registrations", label: "Registrations", count: event ? Object.values(event.registration_counts).reduce((sum, count) => sum + count, 0) : undefined },
@@ -69,11 +75,14 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
       <DetailLayout title={event?.title ?? "Event details"} back={{ label: "All events", onClick: onClose }}
         identity={event ? { kind: "date", date: event.starts_at } : undefined}
         status={event ? <StatusBadge domain="event" status={event.status} label={opsStatusLabel(event.status)} /> : undefined}
-        meta={event ? [event.is_public ? "Public" : "Private", event.location, `${event.registration_counts.registered + event.registration_counts.attended} / ${event.capacity || "unlimited"} going`] : undefined}
+        meta={event ? [...(recurring ? [recurring] : []), event.is_public ? "Public" : "Private", event.location, `${event.registration_counts.registered + event.registration_counts.attended} / ${event.capacity || "unlimited"} going`] : undefined}
         state={opsQueryState(eventQuery, "event")} tabs={tabs.tabs} activeTab={tabs.active}
         actions={{ primary: event?.status === "draft" ? { label: "Publish", confirms: true, onClick: () => setConfirm("publish") }
           : event?.status === "published" ? { label: "Open check-in", targetsTab: "checkin", onClick: () => tabs.select("checkin") }
-          : event?.status === "completed" ? { label: "View feedback", targetsTab: "feedback", onClick: () => tabs.select("feedback") } : undefined }}
+          : event?.status === "completed" ? { label: "View feedback", targetsTab: "feedback", onClick: () => tabs.select("feedback") } : undefined,
+          // Ending an event is routine on event day, so it sits one click away in the header, not only in Settings.
+          overflow: event?.status === "published" ? [{ label: "Complete event", confirms: true, onClick: () => setConfirm("complete") },
+            { label: "Cancel event", confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
         banner={readOnly ? { size: "banner", tone: "warn", lead: `This event is ${event?.status}. It can’t be edited.` } : undefined}
         danger={tabs.active === "settings" && event?.status === "published" ? [{ title: "Cancel event", consequence: "Registrants are notified and registration closes.", action: { label: "Cancel event", onClick: () => setConfirm("cancel") } }] : []}
         aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={() => tabs.select("checkin")} /> : undefined}

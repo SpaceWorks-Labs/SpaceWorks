@@ -36,8 +36,10 @@ function actionLabel(action: BookingAction) {
   }[action];
 }
 
-export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled = false }: {
+export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled = false, initialCreateOpen = false }: {
   recurringEnabled?: boolean;
+  /** Open the New booking form on arrival (the bookings list "New booking" space picker). */
+  initialCreateOpen?: boolean;
   makerspaceId: number;
   spaceId: number;
   onClose: () => void;
@@ -62,7 +64,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
   const tabs = useOpsTabs("bookingTab", [{ key: "calendar", label: "Calendar" },
     { key: "requests", label: "Requests", count: bookings.data?.count }, { key: "settings", label: "Settings" }],
     params.get("booking") ? "requests" : "calendar");
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(initialCreateOpen);
   const openBooking = (bookingId: number) => setParams(current => {
     const next = new URLSearchParams(current);
     next.set("space", String(spaceId));
@@ -90,7 +92,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
                 onSubmit={payload => update.mutate(payload)} pending={update.isPending}
                 error={update.error ? errorText(update.error) : undefined} submitLabel="Save changes" disabled={!space.is_active} />
               {!space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
-            </> : tabs.active === "calendar" ? <BookingAgenda bookings={bookings} page={page} setPage={setPage} onOpen={openBooking} /> : <BookingRequests makerspaceId={makerspaceId} spaceId={spaceId} bookings={bookings} list={list}
+            </> : tabs.active === "calendar" ? <BookingAgenda spaceId={spaceId} onOpen={openBooking} /> : <BookingRequests makerspaceId={makerspaceId} spaceId={spaceId} bookings={bookings} list={list}
               filters={filters} setFilter={setFilter} page={page} setPage={setPage}
               onAction={(booking, nextAction) => setPendingAction({ booking, action: nextAction })} />}
             {actionError ? <ErrorBlock error={actionError} /> : null}

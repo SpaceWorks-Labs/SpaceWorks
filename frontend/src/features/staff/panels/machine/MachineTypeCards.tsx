@@ -1,4 +1,5 @@
 import { EmptyState, ListRow, Skeleton, StatusPill } from "../../../../components/ui";
+import type { Identity } from "../../../../components/ui/types";
 import type { Machine, MachineType, MachineStatus } from "../../machinesApi";
 
 type Props = {
@@ -19,6 +20,12 @@ const HIGHLIGHT: { status: MachineStatus; label: string; tone: "success" | "warn
   { status: "maintenance", label: "in maintenance", tone: "warn" },
   { status: "offline", label: "offline", tone: "danger" },
 ];
+
+/** The type's own configured icon (short text the space chose) when set, else the generic cog. */
+export function machineTypeIdentity(machineType: MachineType): Identity {
+  const icon = machineType.icon?.trim();
+  return icon ? { kind: "code", code: icon } : { kind: "icon", icon: "Cog", tone: "accent" };
+}
 
 /** The machines index: one card per reachable machine type.
  *
@@ -70,7 +77,7 @@ export function MachineTypeCards({
           <ListRow
             key={machineType.id}
             href={hrefFor(machineType)} title={machineType.name}
-            identity={{ kind: "icon", icon: "Cog", tone: "accent" }}
+            identity={machineTypeIdentity(machineType)}
             meta={<span className="flex flex-wrap items-center gap-2">
               {/* A count is stated as fact, so it must not be stated while the fleet is
                   still loading or after the request failed. */}

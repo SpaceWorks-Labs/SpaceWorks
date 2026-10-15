@@ -1,4 +1,5 @@
 import { machineStatusLabel } from "./machineStatusLabel";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { MachineServiceRequest, PrinterPool, TypedManualUsageResponse } from "../../../../generated/api";
@@ -21,11 +22,19 @@ type Props = {
   pools: PrinterPool[];
   draft: ServiceDraft;
   setDraft: (update: (draft: ServiceDraft) => ServiceDraft) => void;
+  /** Queue sub-tab to open first (`?job_status=` deep link). */
+  queueStatus?: string;
+  /** Manual-usage dialog state, lifted to the type page so its header can open it. */
+  logging?: boolean;
+  onLogging?: (open: boolean) => void;
 };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
-export function MachineServiceConsole({ makerspaceId, canManage, machineType, machines, pools, draft, setDraft, visible = true }: Props) {
+export function MachineServiceConsole({ makerspaceId, canManage, machineType, machines, pools, draft, setDraft, visible = true, queueStatus, logging: liftedLogging, onLogging: setLiftedLogging }: Props) {
+  const [ownLogging, setOwnLogging] = useState(false);
+  const logging = liftedLogging ?? ownLogging;
+  const setLogging = setLiftedLogging ?? setOwnLogging;
   const queryClient = useQueryClient();
   const meteringUnit = (machineType.capability_config?.metering_unit ?? "count") as MeteringUnit;
   const unitLabel = unitLabels[meteringUnit];
@@ -74,6 +83,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
     }),
     onSuccess: () => {
       setDraft((current) => ({ ...current, manual: { ...current.manual, machine_id: "", consumable_pool_id: "", duration_minutes: "", quantity: "", outcome: "success", percent_complete: "100", reason: "", note: "" } }));
+      setLogging(false);
       invalidate();
     },
   });
@@ -98,7 +108,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
         <p className="mb-3 text-sm text-muted">
           This type is metered in {unitLabel}. {poolUnit ? "Choose a machine before selecting its consumable pool." : "Minutes-based services do not use consumable pools."}
         </p>
-        <ServiceQueueTabs rows={requests.data}>{visible => <div className="grid gap-3">
+        <ServiceQueueTabs rows={requests.data} initialStatus={queueStatus}>{visible => <div className="grid gap-3">
           {visible?.map((request) => (
             <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
                 meta={<> {request.requester_name} · Planned {request.planned_quantity ?? "0"} {unitLabel} · actual {request.actual_consumed_quantity ?? "0"} {unitLabel}</>}
@@ -120,7 +130,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
           /><ErrorBlock error={runAction.error} /></Modal>
         ) : null}
       </Subsection>} manualForm={<ManualUsageForm draft={draft} setDraft={setDraft} machines={machines} pools={manualPools} unitLabel={unitLabel} hasPool={!!poolUnit} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />} manualRows={<div className="mt-3 grid gap-2">
-          {manualUsage.data?.length === 0 ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{manualUsage.data?.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_quantity} {unitLabel}{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={undefined} />
+          {manualUsage.data?.length === 0 ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{manualUsage.data?.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_quantity} {unitLabel}{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={undefined} logging={logging} onLogging={setLogging} />
       <ErrorBlock error={[requests.error, manualUsage.error, submitManual.error, runAction.error].find((item) => item instanceof Error)} />
     </div>
   );

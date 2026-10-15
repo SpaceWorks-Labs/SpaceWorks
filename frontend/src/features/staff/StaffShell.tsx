@@ -60,6 +60,9 @@ export function StaffShell(props: Props) {
       search={space ? { label: "Search and commands", shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
       status={space ? <JobTrayPill makerspaceId={space.id} /> : null}
       user={{ name: user.username, role: props.roleName, menu: [{ label: "Account & two-step sign-in", href: "/mfa" }, ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
+      {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
+          Both pills share the job-status query keys, so this adds no polling. */}
+      {space ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}
       {props.children}
     </AppShell>
     {space ? <CommandPalette key={space.id} makerspaceId={space.id} makerspaceSlug={space.slug} allowedTabs={allowedTabs}

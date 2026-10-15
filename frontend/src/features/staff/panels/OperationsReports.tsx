@@ -13,7 +13,7 @@ import { OperationsReportsCoverage } from "./OperationsReportsCoverage";
 import { OperationsReportExports, useOperationsReportExport } from "./OperationsReportExports";
 import { SegmentedControl } from "../../../components/ui";
 import { DetailLayout } from "../../../components/layouts";
-import { OperationsReportNavigation } from "./OperationsReportNavigation";
+import { OperationsReportNavigation, OperationsReportPicker } from "./OperationsReportNavigation";
 import { ReportSchedules } from "./ReportSchedules";
 import { reportFormats } from "./operationsReportsConfig";
 import { type Makerspace, useStaffGet } from "./shared";
@@ -129,11 +129,12 @@ export function OperationsReports({
         hardware={hardwareEnabled} finance={canViewFinance || isSuperadmin} machines={canManageMachines}>
       <div className="space-y-6">
       <section aria-label="Report configuration" className="rounded-xl border border-line bg-panel p-5">
+        <OperationsReportPicker reports={catalogEntries} selected={selectedReport} onSelect={selectReport} />
         <div className="mb-5"><SegmentedControl label="Date range" value={rangePreset} onChange={setPreset}
           options={[{ value: "7", label: "7 days" }, { value: "30", label: "30 days" }, { value: "90", label: "Quarter" }, { value: "custom", label: "Custom" }]} /></div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0 flex-1 basis-64">
             <h3 className="title-section">
               {printingOnly ? "3D printing reporting" : "Operations reporting"} for {scopeLabel}
             </h3>
@@ -154,12 +155,12 @@ export function OperationsReports({
             </label>
             <label className="eyebrow grid gap-1">
               <span>Grain</span>
-              <select className="desk-input" value={effectiveGrain} onChange={(event) => setGrain(event.target.value)}>
+              <select className="desk-input max-w-full" value={effectiveGrain} onChange={(event) => setGrain(event.target.value)}>
                 {(selected?.grains ?? ["day"]).map((value) => <option key={value} value={value}>{value}</option>)}
               </select>
             </label>
             {isSuperadmin ? (
-              <label className="flex items-center gap-2 pb-2 text-sm text-ink">
+              <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
                 <input
                   type="checkbox"
                   className="h-4 w-4 accent-current"
@@ -174,8 +175,8 @@ export function OperationsReports({
         {catalog.error ? <p className="mt-3 text-sm text-danger">{catalog.error instanceof Error ? catalog.error.message : "Could not load report catalog."}</p> : null}
         {selectedReport === "member-retention" ? <label className="eyebrow grid gap-1 mt-3">Retention months (blank: 3, 6, 12)<input className="desk-input" type="number" min={1} max={120} value={months} onChange={(event) => setMonths(event.target.value)} /></label> : null}
         {selectedReport === "payment-reconciliation" ? <div className="flex flex-wrap gap-2 mt-3">
-          <label className="eyebrow grid gap-1">Report payment status<select className="desk-input" value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}><option value="">All statuses</option>{PAYMENT_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          <label className="eyebrow grid gap-1">Report charge type<select className="desk-input" value={paymentSubject} onChange={(event) => setPaymentSubject(event.target.value)}><option value="">All types</option>{PAYMENT_SUBJECTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label className="eyebrow grid gap-1">Report payment status<select className="desk-input max-w-full" value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}><option value="">All statuses</option>{PAYMENT_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label className="eyebrow grid gap-1">Report charge type<select className="desk-input max-w-full" value={paymentSubject} onChange={(event) => setPaymentSubject(event.target.value)}><option value="">All types</option>{PAYMENT_SUBJECTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         </div> : null}
         {!aggregate && reportsEnabled && (makerspace.enabled_features ?? []).includes("reports.saved_views") ?
           <ServerReportViews key={makerspace.id} makerspaceId={makerspace.id} state={savedState} fields={selected?.fields ?? []} onColumns={setColumns} onApply={applyView} /> : null}

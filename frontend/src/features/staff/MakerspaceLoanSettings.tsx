@@ -111,7 +111,7 @@ export function MakerspaceLoanSettings({ makerspaceId }: { makerspaceId: number 
 
   return (
     <SettingsQueryState query={settings} resource="loan"><SettingsRow label="Loans" helper="Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue."><form
-      className="mt-4 rounded-md border border-line bg-surface p-3"
+      className="@container mt-4 rounded-md border border-line bg-surface p-3"
 
       onSubmit={(event) => {
         event.preventDefault();
@@ -120,7 +120,7 @@ export function MakerspaceLoanSettings({ makerspaceId }: { makerspaceId: number 
     >
 
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3 grid gap-2 @md:grid-cols-2">
         <Field label="Deposit mode" error={problems.loan_deposit_mode}>
           <select
             className="desk-input"

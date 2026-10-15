@@ -21,7 +21,7 @@ export function ModuleSettingsRow({ module, pending, onChange }: {
   const reason = blocked ? `Turn off ${module.required_by.join(", ")} first.`
     : !module.available ? "Not shipped by this deployment." : undefined;
   return <SettingsRow label={module.label} helper={module.description}>
-    <div className="grid gap-2">
+    <div className="@container grid gap-2">
       {module.core ? <StatusPill tone="neutral" label="Always on" />
         : <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-control focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus">
           <input type="checkbox" role="switch" aria-label={module.label} aria-describedby={reason ? `module-${module.key}-reason` : undefined}

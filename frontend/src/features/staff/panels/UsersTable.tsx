@@ -38,7 +38,7 @@ export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, on
     <>
       <div className="grid gap-3">{rows.map(membership => <ListRow key={membership.id}
         title={membership.user.username} identity={{ kind: "avatar", name: membership.user.username, seed: String(membership.user.id) }}
-        meta={<>{membership.user.email || "No email"} · {roleLabel(membership)} · {makerspaceNames.get(membership.makerspace_id) ?? membership.makerspace_slug}</>}
+        meta={<><span className="[overflow-wrap:anywhere]">{membership.user.email || "No email"}</span> · {roleLabel(membership)} · {makerspaceNames.get(membership.makerspace_id) ?? membership.makerspace_slug}</>}
         right={<div className="flex flex-wrap items-center gap-3"><AccessBadge status={membership.user.access_status} />
           {membership.user.access_status !== "active" ? <button className="desk-button" type="button" onClick={() => onRestore(membership)}>Restore</button> : null}
           <button className="desk-button" type="button" disabled={!assignableRoles.length} onClick={() => openChange(membership)}>Change role</button>
@@ -64,7 +64,7 @@ function ChangeRoleModal({ target, roleId, roles, pending, error, onClose, onCha
   onSubmit: () => void;
 }) {
   useEffect(() => { if (target && roleId === "" && roles[0]) onChange(roles[0].id); }, [target, roleId, roles, onChange]);
-  return <Modal open={Boolean(target)} onClose={onClose} title={target ? `Change role for ${target.user.username}` : "Change role"} footer={<div className="desk-actions flex justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button><button className="desk-button-primary" type="button" disabled={roleId === "" || pending} onClick={onSubmit}>{pending ? "Saving..." : "Save role"}</button></div>}><div className="grid gap-2"><label className="grid gap-1"><span className="eyebrow">Role</span><select className="desk-input w-full" value={roleId} onChange={(event) => onChange(Number(event.target.value))}>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label>{error ? <p className="text-sm text-danger">{error}</p> : null}</div></Modal>;
+  return <Modal open={Boolean(target)} onClose={onClose} title={target ? `Change role for ${target.user.username}` : "Change role"} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button><button className="desk-button-primary" type="button" disabled={roleId === "" || pending} onClick={onSubmit}>{pending ? "Saving..." : "Save role"}</button></div>}><div className="grid gap-2"><label className="grid gap-1"><span className="eyebrow">Role</span><select className="desk-input w-full" value={roleId} onChange={(event) => onChange(Number(event.target.value))}>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label>{error ? <p className="text-sm text-danger">{error}</p> : null}</div></Modal>;
 }
 
 function AccessBadge({ status }: { status: string }) {

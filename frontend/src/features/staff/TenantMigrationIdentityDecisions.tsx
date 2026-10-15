@@ -59,7 +59,7 @@ export function TenantMigrationIdentityDecisions({ job, active = true }: { job: 
             <article className="rounded-md border border-line bg-surface p-3" key={identity.id}>
               <p className="font-semibold text-ink">{identity.display_name || identity.username}</p>
               <p className="break-words text-xs text-muted">{identity.email || "No email"} · {identity.phone || "No phone"} · source user {identity.id}</p>
-              {choicesAvailable ? <div className="mt-2 grid gap-3 md:grid-cols-3">
+              {choicesAvailable ? <div className="mt-2 grid gap-3 @2xl:grid-cols-3">
                 <label className="text-sm text-ink">
                   Identity resolution
                   <select

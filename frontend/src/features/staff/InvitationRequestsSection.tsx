@@ -57,7 +57,7 @@ export function InvitationRequestsSection({ makerspaceId, roles }: { makerspaceI
         return (
           <ListRow key={row.id} title={row.name || row.email} identity={{ kind: "avatar", name: row.name || row.email, seed: row.email }}
             meta={<>
-                {row.email}{row.phone ? ` · ${row.phone}` : ""} · <RelativeTime date={row.created_at} />
+                <span className="[overflow-wrap:anywhere]">{row.email}</span>{row.phone ? ` · ${row.phone}` : ""} · <RelativeTime date={row.created_at} />
               {row.message ? <span className="mt-1 block whitespace-pre-wrap">{row.message}</span> : null}
             </>}
             right={<div className="flex flex-wrap items-center gap-2">

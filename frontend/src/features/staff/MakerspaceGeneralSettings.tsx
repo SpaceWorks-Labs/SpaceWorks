@@ -65,7 +65,7 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
 
   return <>
     <SettingsRow label="Default loan days" helper="Set the default return window applied when a hardware request is issued."><form
-          className="grid min-w-0 gap-2"
+          className="@container grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
             updateDefaultLoanDays.mutate(defaultLoanDays);
@@ -92,7 +92,7 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
           ) : null}
         </form></SettingsRow>
     <SettingsRow label="Public inventory" helper="Show the public catalogue. Turning this off keeps your inventory data.">
-      <div className="grid gap-3"><Badge label="" tone={publicInventoryEnabled ? "success" : "neutral"}>{publicInventoryEnabled ? "On" : "Off"}</Badge>
+      <div className="@container grid gap-3"><Badge label="" tone={publicInventoryEnabled ? "success" : "neutral"}>{publicInventoryEnabled ? "On" : "Off"}</Badge>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={publicInventoryEnabled}
           disabled={loading || updatePublicInventory.isPending} onChange={event => updatePublicInventory.mutate(event.target.checked)} />Show public inventory</label>
         {updatePublicInventory.error ? <p role="alert" className="text-sm text-danger">{updatePublicInventory.error.message}</p> : null}

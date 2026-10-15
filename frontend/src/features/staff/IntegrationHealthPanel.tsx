@@ -74,7 +74,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
 
   return (
     // A failed background refresh keeps the last known readings; only a first load blanks the row.
-    <SettingsQueryState query={{ isLoading: health.isLoading, error: health.data ? null : health.error, refetch: health.refetch }} resource="integration health"><SettingsRow label="Integration health" helper="Check connected services and delivery before sending alerts."><div className="grid min-w-0 gap-4">
+    <SettingsQueryState query={{ isLoading: health.isLoading, error: health.data ? null : health.error, refetch: health.refetch }} resource="integration health"><SettingsRow label="Integration health" helper="Check connected services and delivery before sending alerts."><div className="@container grid min-w-0 gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -96,9 +96,9 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
       </div>
 
       {data ? (
-        <div className="mt-4 grid gap-3 xl:grid-cols-2">
+        <div className="mt-4 grid gap-3 @3xl:grid-cols-2">
           <HealthBlock title="Email" status={data.email.status} detail={data.email.detail}>
-            <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 text-sm @md:grid-cols-5">
               <Metric label="Total" value={data.email.total} />
               <Metric label="Pending" value={data.email.pending} />
               <Metric label="Sent" value={data.email.sent} />
@@ -121,7 +121,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
           </HealthBlock>
 
           <HealthBlock title="Deliveries by stream" status={data.deliveries_by_stream.status} detail={data.deliveries_by_stream.detail}>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 @sm:grid-cols-2">
               <StreamDelivery label="Hardware" value={data.deliveries_by_stream.hardware} />
               <StreamDelivery label="Printing" value={data.deliveries_by_stream.printing} />
             </div>
@@ -158,7 +158,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
           </HealthBlock>
 
           <HealthBlock title="Worker" status={data.worker.status} detail={data.worker.detail} wide>
-            <div className="grid gap-2 text-sm sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 text-sm @md:grid-cols-4">
               <BooleanMetric label="Broker" value={data.worker.broker_configured} trueLabel="Configured" falseLabel="Eager only" />
               <BooleanMetric label="Eager" value={data.worker.eager} trueLabel="On" falseLabel="Off" />
               <BooleanMetric label="Stale" value={data.worker.stale} trueLabel="Yes" falseLabel="No" danger={data.worker.stale} />
@@ -188,7 +188,7 @@ function HealthBlock({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`min-w-0 rounded-md border border-line bg-bg p-3 ${wide ? "xl:col-span-2" : ""}`}>
+    <section className={`@container min-w-0 rounded-md border border-line bg-bg p-3 ${wide ? "@3xl:col-span-2" : ""}`}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-semibold text-ink">{title}</h4>
         <Badge label="" tone={statusTone(status)}>{statusLabel(status)}</Badge>

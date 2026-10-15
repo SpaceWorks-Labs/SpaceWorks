@@ -39,7 +39,7 @@ export function TenantMigrationImports({ pairings, active = true, phase = "impor
       <p className="eyebrow">Target deployment</p>
       <h3 className="title-section" id="migration-import-title">Import and verify target</h3>
       <p className="mt-2 text-sm text-ink">Upload the age-encrypted archive and bind it to the digest shown on the source export. Materialization creates an IMPORTING tenant; it is not live until separately activated.</p>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="mt-3 grid gap-3 @xl:grid-cols-2">
         <label className="text-sm text-ink">Encrypted archive<input className="desk-input mt-1 w-full" type="file" onChange={(event) => setArchive(event.target.files?.[0] ?? null)} /></label>
         <label className="text-sm text-ink">Source archive digest<input className="desk-input mt-1 w-full code-text" value={digest} onChange={(event) => setDigest(event.target.value)} /></label>
       </div>
@@ -148,7 +148,7 @@ function ImportJobCard({ job: listedJob, pairing, active, phase }: { job: Import
         <div className="mt-3 rounded-md border border-danger-line bg-panel p-3">
           <h4 className="title-section">One-way target cutover</h4>
           <p className="mt-1 text-sm text-ink">Activation and abort are mutually exclusive. Activation cannot be undone from this screen.</p>
-          <label className="mt-2 block text-sm text-ink">Source cutover receipt<textarea className="desk-input mt-1 min-h-28 w-full code-text text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
+          <label className="mt-2 block text-sm text-ink">Source cutover receipt<textarea className="desk-input mt-1 min-h-28 w-full code-text text-base md:text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
           <DangerZone title={`Activate target ${tenantName}`} consequence="Activation consumes the source cutover receipt and cannot be undone from this screen."
             action={{ label: `Activate target ${tenantName}`, disabled: !sourceReceipt || !verification.data || cutoverPending, disabledReason: "Add a valid source receipt and wait for verification before activating.", pending: activate.isPending, pendingLabel: "Activating target…",
               onClick: () => { if (sourceReceipt) confirmCutover({ title: `Activate target ${tenantName}`, name: tenantName, consequence: "This target cutover cannot be undone from this screen.", onConfirm: () => activate.mutate(sourceReceipt) }); } }} />
@@ -167,7 +167,7 @@ function ImportJobCard({ job: listedJob, pairing, active, phase }: { job: Import
     {active && phase === "verify" && job.status === "ready" ? (
       <div className="mt-3 rounded-md border border-line bg-bg p-3">
         <h4 className="title-section">Materialize target</h4>
-        <div className="mt-2 grid gap-3 md:grid-cols-2">
+        <div className="mt-2 grid gap-3 @xl:grid-cols-2">
           <label className="text-sm text-ink">Target tenant name (optional)<input className="desk-input mt-1 w-full" value={targetName} onChange={(event) => setTargetName(event.target.value)} /></label>
           <label className="text-sm text-ink">Target tenant slug (optional)<input className="desk-input mt-1 w-full" value={targetSlug} onChange={(event) => setTargetSlug(event.target.value)} /></label>
         </div>
@@ -191,7 +191,7 @@ function VerificationReportView({ report, loading, error }: { report?: Verificat
       <ErrorText error={error} />
       {report ? <>
         <p className="mt-2 text-sm text-ink">Target makerspace {report.target_makerspace_id} · {report.identities_linked} linked · {report.identities_created} walk-ins · {report.external_references_created} external references</p>
-        <div className="mt-2 grid gap-2 md:grid-cols-3">
+        <div className="mt-2 grid gap-2 @2xl:grid-cols-3">
           {(["imported", "resolved", "dropped"] as const).map((key) => <div className="rounded border border-line bg-bg p-2" key={key}><p className="eyebrow">{key}</p><pre className="mt-1 overflow-auto text-xs text-muted">{JSON.stringify(report[key], null, 2)}</pre></div>)}
         </div>
       </> : null}

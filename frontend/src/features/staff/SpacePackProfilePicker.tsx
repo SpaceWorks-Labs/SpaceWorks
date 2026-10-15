@@ -19,7 +19,7 @@ export function SpacePackProfilePicker({ value, onChange, disabled = false, enab
       </select>
     </Field>
     {profiles.error ? <ErrorBlock error={new Error("Couldn't load space pack profile. Try again.")} onRetry={() => { void profiles.refetch(); }} /> : null}
-    {(profiles.data?.count ?? 0) > 24 ? <div className="flex gap-2">
+    {(profiles.data?.count ?? 0) > 24 ? <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button" disabled={disabled || page === 1}
         onClick={() => { onChange(null); setPage(page - 1); }}>Previous profiles</button>
       <button type="button" className="desk-button" disabled={disabled || !profiles.data?.next}

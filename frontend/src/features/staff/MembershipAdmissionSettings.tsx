@@ -37,29 +37,29 @@ export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: nu
   if (settings.isError || !value) return <SettingsQueryState query={settings} resource="membership admission" />;
   const update = <K extends keyof AdmissionSettings>(key: K, next: AdmissionSettings[K]) => { setDraft({ ...value, [key]: next }); save.reset(); };
   const activePlans = plans.data?.filter((plan) => plan.is_active) ?? [];
-  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label="Membership admission" helper="Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."><form className="grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
+  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label="Membership admission" helper="Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."><form className="@container grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
     <div></div>
     <fieldset disabled={save.isPending} className="grid gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm text-ink">Admission recipe<select className="desk-input" value={recipe} onChange={(event) => {
+      <div className="grid gap-3 @md:grid-cols-2">
+        <label className="grid gap-1 text-sm text-ink">Admission recipe<select className="desk-input max-w-full" value={recipe} onChange={(event) => {
           const next = event.target.value as AdmissionRecipe | "";
           setRecipe(next);
           if (next) setDraft(admissionRecipeDraft(value, next));
           save.reset();
         }}><option value="">Custom settings</option>{ADMISSION_RECIPES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
-        <label className="grid gap-1 text-sm text-ink">Join mode<select className="desk-input" value={value.join_mode} onChange={(event) => update("join_mode", event.target.value as JoinMode)}><option value="open">Open</option><option value="approval">Approval</option><option value="invite_only">Invite-only</option><option value="vouch">Vouch</option><option value="closed">Closed</option></select></label>
-        <label className="grid gap-1 text-sm text-ink">Payment timing<select className="desk-input" value={value.payment_timing} onChange={(event) => update("payment_timing", event.target.value as PaymentTiming)}><option value="after_activation">Activate then charge</option><option value="before_activation">Pay before activation</option></select></label>
-        <label className="grid gap-1 text-sm text-ink">Default admission plan<select className="desk-input" value={value.default_plan ?? ""} disabled={plans.isPending || plans.isError} onChange={(event) => update("default_plan", event.target.value ? Number(event.target.value) : null)}><option value="">No default plan</option>{activePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · {plan.amount} {plan.currency.toUpperCase()}</option>)}</select></label>
+        <label className="grid gap-1 text-sm text-ink">Join mode<select className="desk-input max-w-full" value={value.join_mode} onChange={(event) => update("join_mode", event.target.value as JoinMode)}><option value="open">Open</option><option value="approval">Approval</option><option value="invite_only">Invite-only</option><option value="vouch">Vouch</option><option value="closed">Closed</option></select></label>
+        <label className="grid gap-1 text-sm text-ink">Payment timing<select className="desk-input max-w-full" value={value.payment_timing} onChange={(event) => update("payment_timing", event.target.value as PaymentTiming)}><option value="after_activation">Activate then charge</option><option value="before_activation">Pay before activation</option></select></label>
+        <label className="grid gap-1 text-sm text-ink">Default admission plan<select className="desk-input max-w-full" value={value.default_plan ?? ""} disabled={plans.isPending || plans.isError} onChange={(event) => update("default_plan", event.target.value ? Number(event.target.value) : null)}><option value="">No default plan</option>{activePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · {plan.amount} {plan.currency.toUpperCase()}</option>)}</select></label>
         <label className="grid gap-1 text-sm text-ink">Joining fee<input className="desk-input" type="number" required min="0" step="0.01" value={value.joining_fee} onChange={(event) => update("joining_fee", event.target.value)} /></label>
         <label className="grid gap-1 text-sm text-ink">Joining fee currency<input className="desk-input" required pattern="[a-zA-Z]{3}" maxLength={3} value={value.joining_fee_currency} onChange={(event) => update("joining_fee_currency", event.target.value.toLowerCase())} /></label>
-        <label className="grid gap-1 text-sm text-ink">Re-join dues<select className="desk-input" value={value.rejoin_dues_rule} onChange={(event) => update("rejoin_dues_rule", event.target.value as AdmissionSettings["rejoin_dues_rule"])}><option value="once">Once per person</option><option value="each_join">On every re-join</option></select></label>
+        <label className="grid gap-1 text-sm text-ink">Re-join dues<select className="desk-input max-w-full" value={value.rejoin_dues_rule} onChange={(event) => update("rejoin_dues_rule", event.target.value as AdmissionSettings["rejoin_dues_rule"])}><option value="once">Once per person</option><option value="each_join">On every re-join</option></select></label>
         <NumberField label="Application expiry (days)" value={value.request_expiry_days} min={1} onChange={(next) => update("request_expiry_days", next)} />
       </div>
       <SettingsQueryState query={plans} resource="admission plans" />
       {recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn-ink">Choose a priced default plan or joining fee for this paid recipe.</p> : null}
       <fieldset className="grid gap-3 rounded border border-line p-3"><legend className="text-sm font-semibold text-ink">Vouch rules</legend>
         <p className="text-sm text-muted">Vouchers must be active, unrestricted members. Vouches record accountability without automatically restricting anyone.</p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @md:grid-cols-2">
           <NumberField label="Vouches required" min={1} value={value.vouches_required} onChange={(next) => update("vouches_required", next)} />
           <NumberField label="Minimum voucher tenure (days)" min={0} value={value.voucher_min_tenure_days} onChange={(next) => update("voucher_min_tenure_days", next)} />
           <NumberField label="Pending applicants per voucher" min={1} value={value.voucher_pending_limit} onChange={(next) => update("voucher_pending_limit", next)} />

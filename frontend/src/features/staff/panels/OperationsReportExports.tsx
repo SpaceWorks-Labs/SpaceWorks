@@ -62,7 +62,7 @@ export function OperationsReportExports({
           {reports.map((definition) => (
             <div key={definition.key} className={`rounded-md border p-3 ${selectedReport === definition.key ? "border-accent bg-accent-soft" : "border-line bg-bg"}`}>
               <h3 className="title-section">{definition.title}</h3>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {reportFormats(definition).map((format) => (
                   <button key={format} className="desk-button" type="button" disabled={exportReport.isPending} onClick={() => { onSelect(definition.key); exportReport.mutate({ report: definition.key, format }); }}>
                     {format.toUpperCase()}

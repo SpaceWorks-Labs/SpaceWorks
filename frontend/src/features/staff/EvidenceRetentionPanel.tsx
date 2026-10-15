@@ -50,7 +50,7 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
   if (!policy.data) return null;
 
   return (
-    <><SettingsRow label="Evidence photo retention" helper="Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window."><div className="grid min-w-0 gap-4">
+    <><SettingsRow label="Evidence photo retention" helper="Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window."><div className="@container grid min-w-0 gap-4">
 
 
       <p className="mt-2 text-sm font-semibold text-warn-ink" role="note">

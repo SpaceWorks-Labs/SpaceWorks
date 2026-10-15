@@ -67,18 +67,18 @@ export function DestinationForm({
 
   return (
     <form
-      className="grid gap-3 rounded-md border border-line bg-bg p-3"
+      className="@container grid gap-3 rounded-md border border-line bg-bg p-3"
       onSubmit={(event) => {
         event.preventDefault();
         setError("");
         save.mutate();
       }}
     >
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 @md:grid-cols-2">
         <label className="grid gap-1 text-sm">
           <span className="text-muted">Channel</span>
           <select
-            className="desk-input"
+            className="desk-input max-w-full"
             disabled={Boolean(destination)}
             onChange={(event) => setChannel(event.target.value as typeof channel)}
             value={channel}
@@ -156,7 +156,7 @@ export function DestinationForm({
       ) : null}
 
       {channel === "webhook" ? <label className="grid gap-1 text-sm">Payload format
-          <select className="desk-input" value={payloadVersion} onChange={(event) => setPayloadVersion(Number(event.target.value) as 1 | 2)}>
+          <select className="desk-input max-w-full" value={payloadVersion} onChange={(event) => setPayloadVersion(Number(event.target.value) as 1 | 2)}>
             <option value={1}>v1 legacy envelope</option><option value={2}>v2 structured domain IDs</option>
           </select>
       </label> : null}
@@ -172,7 +172,7 @@ export function DestinationForm({
       <ScopePicker onChange={setScope} options={options} scope={scope} />
 
       {error ? <p className="text-sm text-danger">{error}</p> : null}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" disabled={save.isPending} type="submit">
           {save.isPending ? "Saving…" : "Save room"}
         </button>

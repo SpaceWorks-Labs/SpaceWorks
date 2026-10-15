@@ -56,7 +56,7 @@ export function ReceiptOutput({ label, receipt }: { label: string; receipt?: Rec
       <label className="text-sm font-semibold text-ink" htmlFor={`${label.replace(/\W+/g, "-")}-receipt`}>{label}</label>
       <textarea
         id={`${label.replace(/\W+/g, "-")}-receipt`}
-        className="desk-input mt-1 min-h-32 w-full code-text text-xs"
+        className="desk-input mt-1 min-h-32 w-full code-text text-base md:text-xs"
         readOnly
         value={JSON.stringify(receipt, null, 2)}
       />

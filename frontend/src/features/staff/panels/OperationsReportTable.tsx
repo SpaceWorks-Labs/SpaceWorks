@@ -1,5 +1,6 @@
 import { useReportColumns } from "./OperationsReportSelection";
 import { DataTable, EmptyState } from "../../../components/ui";
+import { STICKY_FIRST_COLUMN } from "../matrixColumns";
 import { formatReportCell, reportHeaders, reportRows, type ReportCell, type ReportRows } from "./OperationsReportState";
 
 export function PerMakerspaceTables({ data, nameOf, emptyLabel = "No activity in this period. Try a longer range." }: {
@@ -30,6 +31,6 @@ export function ReportTable({ data }: { data?: ReportRows }) {
   return <div className="mt-4 min-w-0"><DataTable<{ id: number; cells: ReportCell[] }> data={rows}
     emptyTitle="No activity in this period. Try a longer range."
     columns={headers.map((header, index) => ({ key: `${header}-${index}`, header: header.replace(/_/g, " "),
-      className: rows.some(row => typeof row.cells[index] === "number") ? "tabular-nums md:text-right" : "",
+      className: `${index === 0 ? STICKY_FIRST_COLUMN : ""} ${rows.some(row => typeof row.cells[index] === "number") ? "tabular-nums md:text-right" : ""}`,
       render: row => formatReportCell(row.cells[index]) }))} /></div>;
 }

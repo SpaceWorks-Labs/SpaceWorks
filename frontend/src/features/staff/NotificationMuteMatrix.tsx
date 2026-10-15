@@ -1,6 +1,5 @@
 import { SettingsQueryState } from "./SettingsQueryState";
 import { NotificationMuteTable } from "./NotificationMuteTable";
-import { SettingsRow } from "../../components/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -60,10 +59,14 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
   return (
     <SettingsQueryState query={rules} resource="mute matrix"><div className="mt-4 grid min-w-0 gap-6">
       <NotificationChannelPreferences makerspaceId={makerspaceId} rules={rules.data} />
-      <SettingsRow label="Advanced email recipient/event mutes" helper="Checked = muted for that individual email recipient and event. These mutes apply only while the matching feature's Email channel above is enabled. Return reminders cannot be individually muted."><div className="grid min-w-0 gap-4">
-
-
-        <div className="mt-4 grid min-w-0 gap-4">
+      {/* Full width like the channel matrix above: a half-width settings row squeezed these
+          recipient-by-event tables into a sideways scroll from tablet up. */}
+      <section aria-labelledby={`advanced-mutes-${makerspaceId}`} className="grid min-w-0 gap-4">
+        <div>
+          <h4 id={`advanced-mutes-${makerspaceId}`} className="text-sm font-semibold text-ink">Advanced email recipient/event mutes</h4>
+          <p className="mt-2 max-w-prose text-sm text-muted">Checked = muted for that individual email recipient and event. These mutes apply only while the matching feature&apos;s Email channel above is enabled. Return reminders cannot be individually muted.</p>
+        </div>
+        <div className="grid min-w-0 gap-4">
           {rules.data.catalog.map((entry) => {
             const emailEnabled = isEmailEnabled(entry, rules.data);
             const disabledMessageId = `email-disabled-${entry.stream}-${entry.audience}`;
@@ -91,7 +94,7 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
             {updateMute.error.message}
           </p>
         ) : null}
-      </div></SettingsRow>
+      </section>
     </div></SettingsQueryState>
   );
 }

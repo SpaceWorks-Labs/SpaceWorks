@@ -32,10 +32,10 @@ export function CardTemplateForm({ editor, tabs, activeTab }: {
     tabs={tabs} activeTab={activeTab} state={opsQueryState(template, "the card layout")} subnav={false}
     sections={draft ? [
       { id: "paper", title: "Paper and size", rows: [
-        { label: "Page", children: <select className="desk-input" aria-label="Page" value={draft.page}
+        { label: "Page", children: <select className="desk-input max-w-full" aria-label="Page" value={draft.page}
           onChange={event => patch({ page: event.target.value as CardTemplate["page"] })}>
           {PAGES.map(value => <option key={value} value={value}>{value.toUpperCase()}</option>)}</select> },
-        { label: "Orientation", children: <select className="desk-input" aria-label="Orientation" value={draft.orientation}
+        { label: "Orientation", children: <select className="desk-input max-w-full" aria-label="Orientation" value={draft.orientation}
           onChange={event => patch({ orientation: event.target.value as CardTemplate["orientation"] })}>
           {ORIENTATIONS.map(value => <option key={value} value={value}>{value}</option>)}</select> },
         ...MM_FIELDS.map(([key, label]) => ({ label, children: <input className="desk-input" aria-label={label} type="number"

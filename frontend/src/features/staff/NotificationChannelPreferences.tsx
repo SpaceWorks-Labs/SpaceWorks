@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { DELIVERY_SETTINGS_KEY } from "./MakerspaceWebhookSettings";
+import { MATRIX_TOGGLE_CELL, STICKY_FIRST_COLUMN } from "./matrixColumns";
 import type {
   NotificationPreferenceCell,
   NotificationRulesResponse,
@@ -65,7 +66,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
   const warnings = deliveryWarnings(rules.preferences, settings.data);
 
   return (
-    <section aria-labelledby="notification-channel-heading">
+    <section aria-labelledby="notification-channel-heading" className="min-w-0">
       <h4 id="notification-channel-heading" className="text-sm font-semibold text-ink">
         Notification channels
       </h4>
@@ -75,8 +76,8 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
       </p>
       <SettingsQueryState query={settings} resource="channel setup" />
       <DataTable data={rules.features} getRowId={feature => feature.key} columns={[
-        { key: "feature", header: "Feature", render: feature => feature.label },
-        ...rules.channels.map(channel => ({ key: channel.key, header: channel.label,
+        { key: "feature", header: "Feature", className: `font-semibold ${STICKY_FIRST_COLUMN}`, render: feature => feature.label },
+        ...rules.channels.map(channel => ({ key: channel.key, header: channel.label, className: MATRIX_TOGGLE_CELL,
           render: (feature: NotificationRulesResponse["features"][number]) => {
             const checked = preferenceCell(rules.preferences, feature.key, channel.key)?.enabled ?? false;
             return <label className="inline-flex min-h-11 min-w-11 items-center justify-center">

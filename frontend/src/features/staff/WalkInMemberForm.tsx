@@ -138,7 +138,7 @@ export function WalkInMemberForm({
           {create.error instanceof Error ? create.error.message : "Unable to add the walk-in."}
         </p>
       ) : null}
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <button
           className="desk-button-primary"
           type="button"

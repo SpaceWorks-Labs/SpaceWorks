@@ -31,7 +31,7 @@ export function AbandonedUploadCleanupSection({ policy, preview, pending, onChan
   };
 
   return (
-    <SettingsRow label="Abandoned upload cleanup" helper="Removes only old upload slots that were never used by any handover. Attached evidence rows are immutable and are never deleted, and photos recorded before this feature (legacy) are never eligible."><div className="grid min-w-0 gap-4">
+    <SettingsRow label="Abandoned upload cleanup" helper="Removes only old upload slots that were never used by any handover. Attached evidence rows are immutable and are never deleted, and photos recorded before this feature (legacy) are never eligible."><div className="@container grid min-w-0 gap-4">
 
 
       <label className="min-h-11 mt-3 flex items-center gap-2 text-sm font-semibold text-ink">

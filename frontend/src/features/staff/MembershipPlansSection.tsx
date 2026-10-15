@@ -139,7 +139,7 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
           <input className="desk-input" maxLength={120} value={form.name} onChange={(event) => set("name", event.target.value)} />
         </Field>
         <Field label="Interval">
-          <select className="desk-input" value={form.interval} onChange={(event) => set("interval", event.target.value as PlanInterval)}>
+          <select className="desk-input max-w-full" value={form.interval} onChange={(event) => set("interval", event.target.value as PlanInterval)}>
             {PLAN_INTERVALS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </Field>
@@ -152,7 +152,7 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
             onChange={(event) => set("custom_days", event.target.value)}
           />
         </Field>
-        <label className="flex items-center gap-2 self-end pb-2 text-sm text-ink">
+        <label className="flex min-h-11 items-center gap-2 self-end text-sm text-ink">
           <input className="h-4 w-4" type="checkbox" checked={form.is_active} onChange={(event) => set("is_active", event.target.checked)} />
           Active
         </label>
@@ -162,7 +162,7 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
         <Field label="Currency">
           <input className="desk-input" maxLength={3} value={form.currency} onChange={(event) => set("currency", event.target.value.toLowerCase())} />
         </Field>
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <button className="desk-button-primary" type="submit" disabled={save.isPending}>
             {save.isPending ? "Saving…" : editing ? "Save plan" : "Create plan"}
           </button>

@@ -52,7 +52,7 @@ export function IntegrationHealthRooms({
     return <p className="text-sm text-muted">No chat or webhook rooms are configured.</p>;
   }
   return (
-    <ul className="grid gap-2 sm:grid-cols-2">
+    <ul className="grid gap-2 @lg:grid-cols-2">
       {rooms.map((room) => (
         <RoomRow
           key={`room-${room.id}`}

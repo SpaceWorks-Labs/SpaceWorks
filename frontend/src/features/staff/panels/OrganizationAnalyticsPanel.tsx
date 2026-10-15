@@ -4,6 +4,7 @@ import { DataTable, EmptyState, ErrorText, Pagination } from "../../../component
 import { useOrganizationAnalytics, type OrganizationReportRows } from "../organizationAnalyticsApi";
 import { useOrganizations } from "../organizationsApi";
 import { adminQueryState } from "../adminPresentation";
+import { STICKY_FIRST_COLUMN } from "../matrixColumns";
 import { reportDefinitions, type ReportKey } from "./operationsReportsConfig";
 import type { Makerspace } from "./shared";
 
@@ -23,7 +24,7 @@ export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Maker
   return <DashboardLayout header={{ title: "Organization analytics", eyebrow: "Across your spaces", subtitle: "Your organization's spaces, side by side.", meta: <div className="grid gap-4">
         <div className="flex flex-wrap items-end gap-4">
           <label className="grid min-w-0 gap-2 text-sm">Organization
-            <select className="desk-input" value={organizationValue} onChange={event => {
+            <select className="desk-input max-w-full" value={organizationValue} onChange={event => {
               setOrganizationValue(event.target.value);
               setOrganizationName(choices.find(org => String(org.id) === event.target.value)?.name ?? "");
             }}><option value="">Choose an organization</option>
@@ -32,7 +33,7 @@ export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Maker
             </select>
           </label>
           <label className="grid gap-2 text-sm">Report
-            <select className="desk-input" value={reportKey} onChange={event => setReportKey(event.target.value as ReportKey)}>
+            <select className="desk-input max-w-full" value={reportKey} onChange={event => setReportKey(event.target.value as ReportKey)}>
               {reportDefinitions.filter(definition => definition.aggregate_supported).map(definition => <option key={definition.key} value={definition.key}>{definition.title}</option>)}
             </select>
           </label>
@@ -64,7 +65,8 @@ function AnalyticsRowsTable({ rows, caption }: { rows: OrganizationReportRows["r
   const headers = [...new Set(rows.flatMap(row => Object.keys(row)))];
   return <div role="region" aria-label={caption}><DataTable<OrganizationReportRows["rows"][number]> data={rows} getRowId={row => rows.indexOf(row)}
     emptyDescription="No records yet. Choose another report."
-    columns={headers.map(header => ({ key: header, header: header.replace(/_/g, " "), render: row => formatCell(row[header]) }))} /></div>;
+    columns={headers.map((header, index) => ({ key: header, header: header.replace(/_/g, " "), className: index === 0 ? STICKY_FIRST_COLUMN : undefined,
+      render: row => formatCell(row[header]) }))} /></div>;
 }
 function formatCell(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";

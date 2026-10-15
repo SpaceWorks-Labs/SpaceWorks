@@ -192,14 +192,14 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
         {makerspaces.length > 1 ? (
           <label className="eyebrow">
             Makerspace{" "}
-            <select className="desk-input" value={msId} onChange={(event) => chooseMakerspace(Number(event.target.value))}>
+            <select className="desk-input max-w-full" value={msId} onChange={(event) => chooseMakerspace(Number(event.target.value))}>
               {makerspaces.map((space) => <option key={space.id} value={space.id}>{space.name}</option>)}
             </select>
           </label>
         ) : null}
         {activeTab === "staff" ? <label className="eyebrow">
           Role{" "}
-          <select className="desk-input" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+          <select className="desk-input max-w-full" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
             <option value="all">All roles</option>
             {roleFilterOptions.map((name) => <option key={name} value={name}>{name}</option>)}
           </select>

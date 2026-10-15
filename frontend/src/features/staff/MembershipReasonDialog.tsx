@@ -11,7 +11,7 @@ export function MembershipReasonDialog({ title, pending, error, onConfirm, onClo
       <p className="text-sm text-muted">Record the reason for this decision. It will remain in the membership history.</p>
       <Field label="Decision reason"><textarea className="desk-input" required value={reason} onChange={(event) => setReason(event.target.value)} /></Field>
       {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
-      <div className="flex gap-2"><button className="desk-button" type="button" disabled={pending} onClick={onClose}>Cancel</button>
+      <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={pending} onClick={onClose}>Cancel</button>
         <button className="desk-button-primary" type="submit" disabled={pending || !reason.trim()}>{pending ? "Saving…" : "Confirm decision"}</button></div>
     </form>
   </Modal>;

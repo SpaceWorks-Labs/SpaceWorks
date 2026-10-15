@@ -52,7 +52,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
   const savedMapUrl = currentMapUrl.trim();
 
   return (
-    <SettingsRow label="Location" helper="Public location label and optional Google Maps link shown on public pages."><div className="grid min-w-0 gap-4">
+    <SettingsRow label="Location" helper="Public location label and optional Google Maps link shown on public pages."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {
@@ -62,7 +62,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
           }
         }}
       >
-        <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="grid min-w-0 gap-3 @md:grid-cols-[minmax(0,1fr)_auto] @md:items-start">
           <div className="grid min-w-0 max-w-2xl gap-2">
             <div className="flex flex-wrap items-center gap-2">
 
@@ -75,7 +75,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
           <SettingsEditorActions dirty={changed} onDiscard={() => { setLocationInput(currentLocation); setMapUrlInput(currentMapUrl); }} pending={updateLocation.isPending} disabled={saveDisabled} />
         </div>
 
-        <div className="grid min-w-0 gap-3 xl:grid-cols-2">
+        <div className="grid min-w-0 gap-3 @xl:grid-cols-2">
           <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
             <span>Location label</span>
             <input

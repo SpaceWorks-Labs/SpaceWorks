@@ -58,7 +58,7 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
   };
 
   return (
-    <SettingsRow label="Feature settings" helper="Modules are set by the platform administrator. Enable the available sub-features for this makerspace."><div className="grid min-w-0 gap-4">
+    <SettingsRow label="Feature settings" helper="Modules are set by the platform administrator. Enable the available sub-features for this makerspace."><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-2">
 
 

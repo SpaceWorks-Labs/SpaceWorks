@@ -58,14 +58,14 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
     create.mutate();
   }
 
-  return <SettingsRow label="Kiosk stations" helper="A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person."><div className="grid min-w-0 gap-4">
+  return <SettingsRow label="Kiosk stations" helper="A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person."><div className="@container grid min-w-0 gap-4">
     <div className="grid max-w-2xl gap-2">
 
 
     </div>
     <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={submit}>
       <label className="grid gap-1 text-sm">Name<input id="kiosk-station-name" className="desk-input" required maxLength={160} value={name} onChange={(event) => setName(event.target.value)} /></label>
-      <label className="grid gap-1 text-sm">Kind<select className="desk-input" value={kind} onChange={(event) => setKind(event.target.value as KioskStation["kind"])}>
+      <label className="grid gap-1 text-sm">Kind<select className="desk-input max-w-full" value={kind} onChange={(event) => setKind(event.target.value as KioskStation["kind"])}>
         <option value="handover">Handover</option>
         <option value="scanner">Scanner</option>
       </select></label>
@@ -84,7 +84,7 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
       {(stations.data ?? []).map(station => <li key={station.id}>
         <ListRow title={station.name} meta={<span className="flex flex-wrap items-center gap-2">
           <Badge label={station.kind} /><Badge label={station.enabled ? "Enabled" : "Disabled"} tone={station.enabled ? "success" : "warn"} />
-        </span>} right={<div className="flex items-center gap-2">
+        </span>} right={<div className="flex flex-wrap items-center gap-2">
           <button className="desk-button" type="button" disabled={rotate.isPending} onClick={() => rotate.mutate(station.id)}>{station.enabled ? "Rotate PIN" : "Re-enable with new PIN"}</button>
           {station.enabled ? <OverflowMenu label={`Actions for ${station.name}`} actions={[
             { label: "Reveal PIN", onClick: () => { setRevealFor(station); setPassword(""); } },

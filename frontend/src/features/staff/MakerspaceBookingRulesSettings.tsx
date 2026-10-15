@@ -59,7 +59,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Mak
   const activeSpaces = spaces.data?.results.filter((space) => space.is_active) ?? [];
 
   return (
-    <SettingsQueryState query={spaces} resource="booking rules"><SettingsRow label="Booking rules per space" helper="Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts."><div className="grid min-w-0 gap-4">
+    <SettingsQueryState query={spaces} resource="booking rules"><SettingsRow label="Booking rules per space" helper="Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts."><div className="@container grid min-w-0 gap-4">
 
 
       {spaces.isLoading ? <p className="mt-3 text-sm text-muted">Loading bookable spaces…</p> : null}
@@ -138,7 +138,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
       }}
     >
       <h4 className="text-sm font-semibold text-ink">{space.name}</h4>
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 ">
+      <div className="grid min-w-0 gap-3 @md:grid-cols-2">
         {NUMBER_FIELDS.map(({ key, label, min }) => (
           <label className="grid min-w-0 content-start gap-1 text-sm text-ink" key={key}>
             <span className="font-semibold">{label}</span>

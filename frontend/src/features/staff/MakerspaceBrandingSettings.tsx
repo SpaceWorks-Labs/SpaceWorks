@@ -77,7 +77,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
           onChanged={refreshBranding}
         /></SettingsRow>
     <SettingsRow label="Registered name" helper="The official name used across Space Works."><form
-          className="grid min-w-0 gap-2"
+          className="@container grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
             if (!registeredNameSaveDisabled) {
@@ -107,7 +107,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
           ) : null}
         </form></SettingsRow>
     <SettingsRow label="Public display name" helper="Leave blank to use the registered name."><form
-          className="grid min-w-0 gap-2"
+          className="@container grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
             if (!displayNameSaveDisabled) {

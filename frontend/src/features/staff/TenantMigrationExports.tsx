@@ -103,7 +103,7 @@ export function TenantMigrationExports({
       </p>
 
       {phase === "export" ? <>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid gap-3 @xl:grid-cols-2">
         <label className="text-sm text-ink">
           Approved closure
           <select className="desk-input mt-1 w-full" value={selectedApproval} onChange={(event) => setApprovalId(event.target.value)}>
@@ -160,7 +160,7 @@ export function TenantMigrationExports({
                   <p className="text-xs text-muted">Pinned pairing <span className="tabular-nums">{pairing.id}</span></p>
                   <label className="mt-2 block text-sm text-ink">
                     Target ABORTED receipt (only for recovery after target abort)
-                    <textarea className="desk-input mt-1 min-h-24 w-full code-text text-xs" value={abortReceiptText} onChange={(event) => setAbortReceipts((current) => ({ ...current, [pairing.id]: event.target.value }))} />
+                    <textarea className="desk-input mt-1 min-h-24 w-full code-text text-base md:text-xs" value={abortReceiptText} onChange={(event) => setAbortReceipts((current) => ({ ...current, [pairing.id]: event.target.value }))} />
                   </label>
                   <DangerZone title={`Recover source ${tenantName}`} consequence="Recover only after the target is ABORTED and its signed receipt is available."
                     action={{ label: `Recover source ${tenantName}`, disabled: !abortReceipt, disabledReason: "Paste a valid signed target ABORTED receipt first.", pending: recover.isPending, pendingLabel: "Recovering source…",

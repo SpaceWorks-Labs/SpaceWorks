@@ -39,12 +39,12 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
   );
 
   return (
-    <SettingsQueryState query={settings} resource="webhook"><SettingsRow label="Chat webhooks" helper="Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."><div className="grid min-w-0 gap-4">
+    <SettingsQueryState query={settings} resource="webhook"><SettingsRow label="Chat webhooks" helper="Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."><div className="@container grid min-w-0 gap-4">
       <div className="grid max-w-2xl gap-2">
 
 
       </div>
-      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 @3xl:grid-cols-3">
         <ProviderCard
           configured={settings.data?.slack_webhook_url_set ?? false}
           label="Slack"
@@ -130,7 +130,7 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
           onChange={(event) => setWebhookUrl(event.target.value)}
         />
       </label>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3">
         <SettingsEditorActions dirty={Boolean(webhookUrl)} onDiscard={() => setWebhookUrl("")} pending={saveWebhook.isPending} disabled={!webhookUrl.trim() || pending} onSave={() => saveWebhook.mutate(webhookUrl.trim())} />
 
       </div>

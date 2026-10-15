@@ -107,7 +107,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
     Boolean(currentDomain) && !record && status === "verified" && !domainChanged;
 
   return (
-    <SettingsRow label="Custom domain" helper="Route this makerspace's public and staff surfaces through a dedicated domain."><div className="grid min-w-0 gap-4">
+    <SettingsRow label="Custom domain" helper="Route this makerspace's public and staff surfaces through a dedicated domain."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {
@@ -217,7 +217,7 @@ function DnsRecord({ record }: { record: DomainRecord }) {
   return (
     <div className="grid min-w-0 gap-2">
       <p className="font-semibold text-ink">DNS TXT record</p>
-      <dl className="grid min-w-0 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
+      <dl className="grid min-w-0 gap-2 @sm:grid-cols-[96px_minmax(0,1fr)]">
         <dt className="text-xs uppercase text-muted">Host</dt>
         <dd className="break-all code-text text-xs text-ink">{record.host}</dd>
         <dt className="text-xs uppercase text-muted">Type</dt>

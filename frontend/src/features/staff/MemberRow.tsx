@@ -35,6 +35,9 @@ export function MemberRow({ makerspaceId, member, roles, canManageMakerspace, ca
     right={<div className="flex flex-wrap items-center gap-2">
       <StatusPill label={member.status ?? "Unknown"} tone={active ? "success" : "neutral"} />
       {membershipEnabled ? <StatusPill tone={member.verified_at ? "success" : "neutral"} label={member.verified_at ? "Verified" : "Not verified"} /> : null}
+      {/* Who owes money is roster-level information: amount, Mark offline and Waive stay on the row. */}
+      {canViewFinance && member.payment?.status === "pending" ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={member.payment}
+        canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace} invalidateKeys={[["members", makerspaceId]]} /> : null}
       {active && member.waiver_required && !member.waiver_current ? <button className="desk-button" disabled={changingWitness} onClick={onWitness}>Record witnessed acceptance</button> : null}
       {active ? <OverflowMenu label={`Actions for ${displayName}`} actions={[
         { label: "Member details", onClick: () => setOpen(true) },
@@ -54,7 +57,7 @@ export function MemberRow({ makerspaceId, member, roles, canManageMakerspace, ca
         </> : null}
         <SettingsRow label="Waiver"><span>{member.waiver_required ? member.waiver_current ? "Current" : "Acceptance needed" : "Not required"}</span></SettingsRow>
         <MembershipVouchers vouches={(member as AdminMembership & { vouches?: AdmissionVouch[] }).vouches} />
-        {canViewFinance ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={member.payment} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace} invalidateKeys={[["members", makerspaceId]]} /> : null}
+        {canViewFinance && member.payment?.status !== "pending" ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={member.payment} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace} invalidateKeys={[["members", makerspaceId]]} /> : null}
       </div>}
       danger={active && manageable ? [{ title: "Revoke membership", consequence: "Remove this member's access to the space. A reason is required.", action: { label: "Revoke", onClick: () => { setOpen(false); onRevoke(); } } }] : []} />
   </>;

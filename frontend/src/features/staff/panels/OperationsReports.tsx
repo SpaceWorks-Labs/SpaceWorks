@@ -10,7 +10,7 @@ import { OperationsReportsPayments } from "./OperationsReportsPayments";
 import { OperationsReportsFinance } from "./OperationsReportsFinance";
 import { OperationsReportsPrinterService } from "./OperationsReportsPrinterService";
 import { OperationsReportsCoverage } from "./OperationsReportsCoverage";
-import { useOperationsReportExport } from "./OperationsReportExports";
+import { OperationsReportExports, useOperationsReportExport } from "./OperationsReportExports";
 import { SegmentedControl } from "../../../components/ui";
 import { DetailLayout } from "../../../components/layouts";
 import { OperationsReportNavigation } from "./OperationsReportNavigation";
@@ -48,6 +48,7 @@ export function OperationsReports({
 }) {
   const [rangePreset, setRangePreset] = useState("custom");
   const [schedulesOpen, setSchedulesOpen] = useState(false);
+  const [exportsOpen, setExportsOpen] = useState(false);
   const [allMakerspaces, setAllMakerspaces] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -121,7 +122,8 @@ export function OperationsReports({
       actions={{ primary: !printingOnly ? { label: "Export", pending: exportReport.isPending, pendingLabel: "Exporting…",
         disabled: !canExport, disabledReason: !canExport ? "Choose an available exportable report." : undefined, onClick: () => exportSelected(formats[0] ?? "csv") } : undefined,
         secondary: !printingOnly && !aggregate && reportsEnabled ? { label: "Schedule…", onClick: () => setSchedulesOpen(true) } : undefined,
-        overflow: !printingOnly && canExport ? formats.map(format => ({ label: `Export ${format.toUpperCase()}`, onClick: () => exportSelected(format) })) : [] }}
+        overflow: !printingOnly ? [...(canExport ? formats.map(format => ({ label: `Export ${format.toUpperCase()}`, onClick: () => exportSelected(format) })) : []),
+          ...(availableExports.length ? [{ label: "Export any report", confirms: true, onClick: () => setExportsOpen(true) }] : [])] : [] }}
       aside={<OperationsReportNavigation reports={catalogEntries} selected={selectedReport} onSelect={selectReport} />}
       main={<ReportSelectionProvider selected={printingOnly ? null : selectedReport} columns={columns} grain={effectiveGrain} catalog={catalogEntries}
         hardware={hardwareEnabled} finance={canViewFinance || isSuperadmin} machines={canManageMachines}>
@@ -227,7 +229,11 @@ export function OperationsReports({
 
       <OperationsReportsPrinterService makerspace={makerspace} aggregate={aggregate} canManageMachines={canManageMachines} reportsEnabled={reportsEnabled} startDate={startDate} endDate={endDate} makerspaceName={makerspaceName} />
       <OperationsReportsMachineService makerspace={makerspace} aggregate={aggregate} canManageMachines={canManageMachines} reportsEnabled={reportsEnabled} startDate={startDate} endDate={endDate} makerspaceName={makerspaceName} />
-      {exportReport.error ? <p role="alert" className="text-sm text-danger">Couldn't export this report. Try again.</p> : null}
+      {exportReport.error ? <p role="alert" className="text-sm text-danger">Couldn't export this report: {exportReport.error.message}</p> : null}
+    {!printingOnly && availableExports.length ? <DetailLayout presentation="drawer" open={exportsOpen} onClose={() => setExportsOpen(false)}
+      title="Export reports" state={{ status: "ready" }} main={<OperationsReportExports reports={availableExports} selectedReport={selectedReport}
+        onSelect={selectReport} reportsBase={reportsBase} dateSuffix={dateSuffix} grain={effectiveGrain} aggregate={aggregate}
+        filters={{ months, status: paymentStatus, subject_type: paymentSubject }} />} /> : null}
     {!printingOnly && !aggregate && reportsEnabled ? <DetailLayout presentation="drawer" open={schedulesOpen} onClose={() => setSchedulesOpen(false)}
       title="Scheduled reports" state={{ status: "ready" }} main={<ReportSchedules makerspaceId={makerspace.id}
         reports={availableExports.filter(report => report.schedulable !== false)} />} /> : null}

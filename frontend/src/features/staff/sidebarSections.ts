@@ -47,10 +47,16 @@ export function sidebarSections(moduleAllowedTabs: readonly string[], activeKey:
   return SIDEBAR_SECTIONS.map(section => {
     const items = section.tabs.filter(key => moduleAllowedTabs.includes(key)).map(item);
     const more = section.more?.filter(key => moduleAllowedTabs.includes(key)).map(item);
-    if (section.key === "settings" && items.length) return { key: section.key, items: [{
-      key: "settings-family", label: "Settings", href: items[0].href, icon: Settings,
-      onSelect: items[0].onSelect, children: items.some(child => child.key === activeKey) ? items : undefined,
-    }] };
+    if (section.key === "settings" && items.length) {
+      const familyOpen = items.some(child => child.key === activeKey);
+      // Staff & roles is a daily destination, not a setting: keep it one click away even
+      // while the Settings family is collapsed.
+      const staff = !familyOpen && items[0].key !== "users" ? items.filter(child => child.key === "users") : [];
+      return { key: section.key, items: [{
+        key: "settings-family", label: "Settings", href: items[0].href, icon: Settings,
+        onSelect: items[0].onSelect, children: familyOpen ? items : undefined,
+      }, ...staff] };
+    }
     return { key: section.key, label: section.label, caption: section.caption, items, more };
   }).filter(section => section.items.length || section.more?.length);
 }

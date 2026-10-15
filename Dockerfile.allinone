@@ -67,10 +67,11 @@ RUN BUILD_GIT_SHA="$BUILD_GIT_SHA" BUILD_GIT_DESCRIBE="$BUILD_GIT_DESCRIBE" \
 # multi-service image.
 COPY --from=frontend /app/dist /srv/www
 COPY frontend/docker-entrypoint.d/30-write-config.sh /app/allinone/write-config.sh
+COPY frontend/docker-entrypoint.d/40-web-analytics.sh /app/allinone/web-analytics.sh
 COPY docker/allinone/nginx.conf /app/allinone/nginx.conf
 COPY docker/allinone/run.sh /app/allinone/run.sh
-RUN sed -i 's/\r$//' /app/allinone/write-config.sh /app/allinone/run.sh \
-    && chmod +x /app/allinone/write-config.sh /app/allinone/run.sh \
+RUN sed -i 's/\r$//' /app/allinone/write-config.sh /app/allinone/web-analytics.sh /app/allinone/run.sh \
+    && chmod +x /app/allinone/write-config.sh /app/allinone/web-analytics.sh /app/allinone/run.sh \
     && mkdir -p /app/staticfiles /var/lib/celery /var/lib/spaceworks/ops /var/lib/spaceworks/nginx \
        /var/lib/spaceworks/redis /run/spaceworks-host \
     && chown -R app:app /app/staticfiles /var/lib/celery /var/lib/spaceworks /srv/www

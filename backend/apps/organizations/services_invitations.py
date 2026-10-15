@@ -110,8 +110,8 @@ def create_invitation(
 
 @transaction.atomic
 def revoke_invitation(invitation, *, actor):
+    organization = Organization.objects.select_for_update().get(pk=invitation.organization_id)
     locked = OrganizationInvitation.objects.select_for_update().get(pk=invitation.pk)
-    organization = Organization.objects.select_for_update().get(pk=locked.organization_id)
     lock_governance_membership(
         actor, organization, governance.MANAGE_ORGANIZATION_MEMBERS
     )
@@ -131,12 +131,16 @@ def revoke_invitation(invitation, *, actor):
 
 @transaction.atomic
 def redeem_invitation(token, *, actor):
-    invitation = OrganizationInvitation.objects.select_for_update().filter(
-        token_digest=_digest(token)
-    ).first()
+    digest = _digest(token)
+    candidate = OrganizationInvitation.objects.filter(token_digest=digest).first()
+    if candidate is None:
+        raise Http404()
+    organization = Organization.objects.select_for_update().filter(pk=candidate.organization_id).first()
+    if organization is None:
+        raise Http404()
+    invitation = OrganizationInvitation.objects.select_for_update().filter(token_digest=digest).first()
     if invitation is None:
         raise Http404()
-    organization = Organization.objects.select_for_update().get(pk=invitation.organization_id)
     locked_actor = User.objects.select_for_update().get(pk=actor.pk)
     if (
         not locked_actor.is_active

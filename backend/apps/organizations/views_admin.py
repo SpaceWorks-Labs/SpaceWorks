@@ -132,6 +132,18 @@ class OrganizationDetailView(APIView):
         )
 
 
+    @extend_schema(tags=["Admin organizations"], request=None,
+                   summary="Delete an unlinked organization after recent re-authentication",
+                   responses={204: None, **WRITE_ERRORS})
+    def delete(self, request, pk):
+        from apps.accounts.reauthentication import require_recent_reauth
+        from apps.organizations.services_governance import delete_organization
+        organization = _organization(request.user, pk)
+        require_recent_reauth(request)
+        delete_organization(organization, actor=request.user)
+        return Response(status=204)
+
+
 class OrganizationMembershipListView(APIView):
     permission_classes = [IsActiveStaff]
 
@@ -173,6 +185,8 @@ class OrganizationInvitationListCreateView(APIView):
         responses={201: OrganizationInvitationCreatedSerializer, **WRITE_ERRORS},
     )
     def post(self, request, pk):
+        from apps.accounts.reauthentication import require_recent_reauth
+        require_recent_reauth(request)
         organization = _organization(request.user, pk)
         serializer = OrganizationInvitationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -199,6 +213,8 @@ class OrganizationInvitationRevokeView(APIView):
         responses={204: None, **WRITE_ERRORS},
     )
     def delete(self, request, pk):
+        from apps.accounts.reauthentication import require_recent_reauth
+        require_recent_reauth(request)
         invitation = get_object_or_404(
             OrganizationInvitation.objects.select_related("organization").filter(
                 organization__in=visible_organizations(request.user)

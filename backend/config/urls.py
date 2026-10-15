@@ -67,8 +67,11 @@ def docs_root(_request):
 
 
 from apps.accounts.control_mfa import control_mfa
+from apps.accounts.reauthentication_control import control_reauthentication
+from apps.operations.control_storage import control_storage
 
 urlpatterns = [
+    path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
     path("mfa/control/", control_mfa, name="control-mfa"),
     path(
         "api/v1/backups/download/<uuid:archive_id>/<str:token>",
@@ -117,6 +120,7 @@ urlpatterns = [
         include("apps.organizations.urls_public"),
     ),
     *separable("events", "api/v1/public/", "apps.events.urls_public"),
+    *separable("events", "api/v1/events/", "apps.events.urls_integration"),
     *separable("bookings", "api/v1/public/", "apps.bookings.urls_public"),
     *separable("presence", "api/v1/public/", "apps.presence.urls"),
     # The LEDGER is unconditional: money owed, its receipts and its reconciliation
@@ -132,6 +136,7 @@ urlpatterns = [
     # Mounted at /control/ (not /admin/) so it never collides with the React staff
     # console, which owns /admin on the SPA. The Django admin is the Super Admin
     # control plane and lives on its own dedicated prefix.
+    path("control/storage/", admin.site.admin_view(control_storage), name="control-storage"),
     path("control/", admin.site.urls),
     path("api/", include("apps.inventory.urls")),          # existing, unchanged
     # Versioned alias of the public routes. Namespaced so it does NOT collide with the

@@ -21,14 +21,8 @@ _FEED_PATH = re.compile(
     r"(/api/v1/(?:public/[^/\s]+/(?:event-calendar|bookings/calendar)|"
     r"admin/makerspaces/[0-9]+/maintenance/feed)/)[^/?\s]+(\.ics)"
 )
-_FEED_BEARER_PATH = re.compile(
-    r"^/api/v1/(?:public/[^/]+/(?:event-calendar|bookings/calendar)|"
-    r"admin/makerspaces/[0-9]+/maintenance/feed)/[^/]+\.ics$"
-)
-
-
-def is_calendar_feed_bearer_path(value):
-    return bool(_FEED_BEARER_PATH.fullmatch(value or ""))
+# Compatibility export; shared HMAC infrastructure imports the core helper.
+from apps.makerspaces.calendar_bearers import is_calendar_feed_bearer_path
 
 
 def redact_calendar_feed_uri(value):

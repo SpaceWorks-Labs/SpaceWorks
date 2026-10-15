@@ -3,11 +3,20 @@ from django.urls import path
 from apps.accounts.views_mfa import (
     MFAConfirmView, MFADisableView, MFAEnrollmentView, MFARecoveryView, MFAStatusView, MFAVerifyView,
 )
+from apps.accounts.views_reauthentication import (
+    ReauthenticationView, ReauthenticationSocialStartView, ReauthenticationSocialCompleteView,
+    ReauthenticationEnrollmentEmailView, ReauthenticationEnrollmentConfirmView,
+)
 from apps.accounts.views_staff_invitations import (
     StaffInvitationAcceptView, StaffInvitationListView, StaffInvitationResendView, StaffInvitationRevokeView,
 )
 
 auth_urlpatterns = [
+    path("reauth", ReauthenticationView.as_view(), name="auth-reauth"),
+    path("reauth/social/start", ReauthenticationSocialStartView.as_view(), name="auth-reauth-social-start"),
+    path("reauth/social/complete", ReauthenticationSocialCompleteView.as_view(), name="auth-reauth-social-complete"),
+    path("reauth/enrollment/email", ReauthenticationEnrollmentEmailView.as_view(), name="auth-reauth-enrollment-email"),
+    path("reauth/enrollment/confirm", ReauthenticationEnrollmentConfirmView.as_view(), name="auth-reauth-enrollment-confirm"),
     path("mfa", MFAStatusView.as_view(), name="auth-mfa"),
     path("mfa/enroll", MFAEnrollmentView.as_view(), name="auth-mfa-enroll"),
     path("mfa/confirm", MFAConfirmView.as_view(), name="auth-mfa-confirm"),

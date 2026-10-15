@@ -77,5 +77,19 @@ def purge_spent_challenges(*, retention=RETENTION):
     except Exception:
         logger.exception("auth_challenge_purge_failed", extra={"model": label})
         deleted[label] = 0
+    from apps.accounts.models_reauthentication import ReauthenticationSession
+    # Step-up proof is platform session state, never tenant-owned retention.
+    label = ReauthenticationSession._meta.label
+    try:
+        from django.db import transaction
+        from apps.audit.services import record
+        with transaction.atomic():
+            count, _ = ReauthenticationSession.objects.filter(updated_at__lt=cutoff).delete()
+            if count:
+                record(None, "auth.reauthentication_proofs_purged", meta={"count": count})
+        deleted[label] = count
+    except Exception:
+        logger.exception("auth_challenge_purge_failed", extra={"model": label})
+        deleted[label] = 0
     logger.info("auth_challenge_purge_complete", extra={"deleted": deleted})
     return deleted

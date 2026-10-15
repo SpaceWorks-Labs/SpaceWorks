@@ -219,3 +219,39 @@ def verify(headers, raw_body: bytes, secret: str, tolerance=300) -> bool:
 Respond with any 2xx. Anything else, or a timeout, is retried by the delivery worker; after the retries a
 space manager can retry from Delivery logs, or a superadmin from `/control/`. Endpoints must be public HTTPS — private and
 loopback addresses are refused when the destination is saved and again at send time.
+
+## Signed staff-data reads (Lane F)
+
+GET and HEAD routes require a server client bound to exactly one makerspace,
+Events installed and `events.api_read` enabled:
+
+| Route | Required scopes |
+| --- | --- |
+| `/api/v1/events/` | `events:read` |
+| `/api/v1/events/<id>/` | `events:read` |
+| `/api/v1/events/<id>/participants/` | `events:read` AND `participants:read` |
+
+Only a platform superadmin grants these scopes. Browser/publishable keys, global
+clients, JWT sessions, `public:*` and frozen `legacy:v1` never authorize these
+routes. The prefix remains mandatory even if removed from an operator override
+or public-API enforcement is off. Sign the full path including its query string
+using the existing protocol above. Nonce, clock and rotation policies are unchanged.
+
+Events allow only ID, title, status, start/end and location. Participants allow
+registration ID, display name and registration date. With both prerequisite
+scopes, `participants:attendance:read` adds the current attendance date (null when
+no longer attended). Contacts, answers, ticket/check-in credentials and money are
+excluded. Participant reads audit an opaque client fingerprint and row count.
+
+Lists return `{ "next_cursor": string|null, "results": [...] }`. Use `page_size`
+1-200 (default 100) and return the cursor unchanged. Signed cursors expire after
+24 hours and bind client, tenant, subject and attendance projection. Ascending
+immutable IDs prevent inserts from duplicating earlier rows; this is live
+pagination, not a frozen export. Responses are private/no-store. Foreign IDs,
+hidden/unservable tenants and unknown targets fail closed. Client, scope, module
+and feature revocations apply on the next request.
+
+`apiclients/read_contract.py` is core infrastructure: domain live startup registers
+typed `ReadTarget` adapters. Add explicit GET/HEAD registry entries, dedicated
+server-only scopes and a mandatory prefix for a new domain; never import Events
+to reuse authentication, target resolution, throttles or signed keyset pagination.

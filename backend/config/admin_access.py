@@ -57,6 +57,14 @@ class AdminSuperuserOnlyMiddleware:
                 return HttpResponseForbidden()
         return self.get_response(request)
 
+    def process_view(self, request, callback, callback_args, callback_kwargs):
+        if request.method != "POST" or not self._is_admin_path(request.path):
+            return None
+        from apps.accounts.reauthentication_control import sensitive_control_request, RecentReauthenticationAdminMixin
+        if sensitive_control_request(request, callback):
+            return RecentReauthenticationAdminMixin()._recent_redirect(request)
+        return None
+
     def _is_admin_path(self, path):
         return path == self.admin_root or path.startswith(self.admin_prefix)
 

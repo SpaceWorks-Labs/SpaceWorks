@@ -34,6 +34,7 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("integrations.EmailSuppression", "created_by"),
         ("integrations.EmailLog", "recipient"),
         ("accounts.UserMFA", "user"),
+        ("accounts.ReauthenticationSession", "user"),
         ("accounts.MFAChallenge", "user"),
         ("accounts.StaffInvitation", "created_by"),
         ("accounts.StaffInvitation", "accepted_by"),
@@ -194,6 +195,7 @@ RELATIONAL_USER_FIELDS = frozenset(
 )
 
 _EXCLUDED_USER_EDGE_REASONS = {
+    ("accounts.ReauthenticationSession", "user"): "Source-bound browser proof is never portable and never expands the user closure.",
     **{edge: "Booking resource authority and credentials are omitted at both fidelities."
        for edge in (
            ("bookings.BookingSpaceStaffGrant", "user"),

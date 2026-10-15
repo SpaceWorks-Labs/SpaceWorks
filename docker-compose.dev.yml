@@ -31,6 +31,9 @@ services:
     user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
     environment:
       DEBUG: "True"
+      # runserver has one serving process and no Gunicorn directory lifecycle.
+      # Remove the variable entirely: even an empty value selects file storage.
+      PROMETHEUS_MULTIPROC_DIR: !reset null
       # Playwright signs in many times from one IP; keep this higher limit dev-only.
       THROTTLE_LOGIN: ${THROTTLE_LOGIN:-200/min}
       # Vite proxies with changeOrigin, so Django can see `Host: backend`.
@@ -86,6 +89,8 @@ services:
 
   candidate-backend:
     command: ["--role", "backend", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+    environment:
+      PROMETHEUS_MULTIPROC_DIR: !reset null
     volumes:
       - ./backend:/app
 

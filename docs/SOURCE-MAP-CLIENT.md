@@ -65,3 +65,12 @@ Account changes and logout clear these snapshots and any offline card currently
 displayed in another tab. `MemberCardPanel.tsx` refuses retained Query data after
 a failed card refresh; access denial also clears the saved snapshot.
 Neither worker caches API data.
+
+Lane F browser infrastructure: `lib/webAnalytics.ts` and `components/WebAnalytics.tsx`
+project public route templates and enforce credential navigation boundaries. Runtime
+nginx configuration comes from `docker-entrypoint.d/40-web-analytics.sh`.
+`features/auth/ReauthenticationDialog.tsx`, `ReauthenticationReturn.tsx`,
+`PasswordlessMfaProof.tsx`, `reauthenticationApi.ts`, `reauthenticationSocial.ts` and
+`lib/api/reauthentication.ts` own browser step-up and same-session mutation retry.
+Organization self-creation lives in `features/organizations/OrganizationSelfCreation.tsx`
+and its query API; staff membership/deletion controls reuse the governance endpoints.

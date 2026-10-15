@@ -17,6 +17,15 @@ x-spaceworks-host-orchestration:
   sibling_lifecycle: provider-isolated-database
 x-app-env: &app-env
   SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+  WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+  WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+  WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+  ROUTE_METRICS_ENABLED: ${ROUTE_METRICS_ENABLED:-False}
+  PROMETHEUS_MULTIPROC_DIR: ${PROMETHEUS_MULTIPROC_DIR:-/tmp/spaceworks-prometheus}
+  METRICS_TOKEN: ${METRICS_TOKEN:-}
+  ORGANIZATION_SELF_CREATION_ENABLED: ${ORGANIZATION_SELF_CREATION_ENABLED:-False}
+  ORGANIZATION_SELF_CREATION_MAX_OWNED: ${ORGANIZATION_SELF_CREATION_MAX_OWNED:-3}
+  ORGANIZATION_SELF_CREATION_MAX_PER_DAY: ${ORGANIZATION_SELF_CREATION_MAX_PER_DAY:-1}
   DEBUG: "False"
   ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
   DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
@@ -130,7 +139,7 @@ services:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
       - ./scripts:/run/spaceworks-privileged-scripts:ro
-    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-60} --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile -"]
+    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn --config python:config.gunicorn_metrics config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-60} --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile -"]
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     healthcheck:
@@ -160,7 +169,7 @@ services:
     profiles: [host-recovery]
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     environment: *app-env
-    command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/readiness/', timeout=3).read()\""]
       interval: 10s
@@ -173,6 +182,11 @@ services:
   frontend:
     image: ${MAKERSPACE_FRONTEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-frontend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
+    environment:
+      WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+      WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+      WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
     logging: *default-logging
     ports:
       - "${FRONTEND_PORT:-8080}:80"

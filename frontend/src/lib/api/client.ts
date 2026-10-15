@@ -1,3 +1,4 @@
+import { browserSessionIdentity, requestReauthentication } from "./reauthentication";
 import { removeStorage } from "../safeStorage";
 import { configuredApiUrl } from "../runtimeConfig";
 import { clearOfflineCards, rememberOfflineCardOwner } from "../../features/members/memberCard/offlineCard";
@@ -75,8 +76,13 @@ export function expireStaffAuthSession() {
   authExpiredListeners.forEach((listener) => listener());
 }
 
-function canRefreshAfterUnauthorized(path: string) {
-  return !["/auth/login", "/auth/refresh", "/auth/logout"].includes(path);
+async function canRefreshAfterUnauthorized(path: string, response: Response) {
+  if (["/auth/login", "/auth/refresh", "/auth/logout"].includes(path)) return false;
+  if (!path.startsWith("/auth/reauth")) return true;
+  // SimpleJWT rejects expired access tokens before the factor handler runs.
+  // Factor failures also return 401, but refreshing cannot fix those or end the session.
+  const body = await response.clone().json().catch(() => null) as { code?: string } | null;
+  return body?.code === "token_not_valid";
 }
 
 export function setAccessToken(token: string) {
@@ -165,15 +171,23 @@ export async function staffFetch(
 
   let response = await makeRequest();
 
-  if (response.status === 401 && canRefreshAfterUnauthorized(path)) {
+  if (response.status === 401 && await canRefreshAfterUnauthorized(path, response)) {
     const refreshed = await refreshAccessToken();
     if (refreshed) {
       response = await makeRequest();
-      if (response.status === 401) {
+      if (response.status === 401 && await canRefreshAfterUnauthorized(path, response)) {
         expireStaffAuthSession();
       }
     } else {
       expireStaffAuthSession();
+    }
+  }
+  if (response.status === 403 && !path.startsWith("/auth/reauth")) {
+    const body = await response.clone().json().catch(() => ({})) as { code?: string };
+    const identity = browserSessionIdentity(accessToken);
+    if (body.code === "recent_reauth_required" && identity && await requestReauthentication()
+        && identity === browserSessionIdentity(accessToken)) {
+      response = await makeRequest();
     }
   }
   return response;

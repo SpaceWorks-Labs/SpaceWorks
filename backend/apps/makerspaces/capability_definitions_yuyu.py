@@ -3,6 +3,10 @@
 
 def definitions(FeatureDefinition):
     features = (FeatureDefinition(
+        "events.api_read", "events", "Signed event integration reads",
+        "Privileged tenant-bound server clients can read minimal events and participants with HMAC signatures.",
+        requires_modules=("events",),
+    ), FeatureDefinition(
         "bookings.staff_grants", "bookings", "Resource staff grants",
         "Delegate descriptive editing, reservations, arrival or page release for one resource.",
         requires_modules=("bookings",),

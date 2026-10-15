@@ -6,6 +6,7 @@ override in tenant_dump_authority.py before the catalog guard will pass.
 """
 
 FIRST_PARTY_FIELD_NAMES = {
+    "accounts.ReauthenticationSession": frozenset("id user session_id surface auth_generation credential_fingerprint mfa_version auth_time social_verified_at enrollment_confirmed_at created_at updated_at".split()),
     "bookings.BookingSpaceStaffGrant": frozenset("id makerspace space permissions created_at revoked_at user granted_by revoked_by".split()),
     "bookings.BookingSpaceStaffGrantInvite": frozenset("id makerspace space permissions created_at revoked_at token_digest email_digest created_by expires_at redeemed_at redeemed_by".split()),
     "events.EventStaffGrant": frozenset("id makerspace event series permissions created_at revoked_at user granted_by revoked_by".split()),

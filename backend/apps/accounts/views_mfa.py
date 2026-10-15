@@ -10,7 +10,7 @@ from apps.accounts.mfa_sessions import context
 from apps.accounts.serializers_mfa import (
     MFAChallengeSerializer, MFAChallengeResponseSerializer, MFACompletedSerializer,
     MFAEnrollmentSerializer, MFAPasswordSerializer, MFARecoverySerializer,
-    MFAStatusSerializer, MFAVerifySerializer,
+    MFAStatusSerializer, MFAVerifySerializer, MFAEnrollmentStartSerializer,
 )
 from apps.accounts.services_mfa import change
 from apps.accounts.throttles_mfa import MFAChallengeThrottle, MFAUserThrottle
@@ -31,14 +31,18 @@ class MFAStatusView(APIView):
     @extend_schema(tags=["MFA"], responses={200: MFAStatusSerializer, **errors(401, 403, 429)})
     def get(self, request):
         row = mfa_policy.credential(request.user)
-        return Response({"enabled": bool(row and row.enabled_at), "required": mfa_policy.required(request.user)})
+        return Response({"enabled": bool(row and row.enabled_at), "required": mfa_policy.required(request.user),
+                         "password_available": request.user.has_usable_password()})
 
-    @extend_schema(tags=["MFA"], request=MFAPasswordSerializer,
+    @extend_schema(tags=["MFA"], request=MFAEnrollmentStartSerializer,
                    responses={200: MFAChallengeResponseSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         from rest_framework.exceptions import AuthenticationFailed
-        data = _validated(MFAPasswordSerializer, request)
-        if not request.user.check_password(data["password"]):
+        data = _validated(MFAEnrollmentStartSerializer, request)
+        if not request.user.has_usable_password():
+            from apps.accounts.reauthentication import require_enrollment_proof
+            require_enrollment_proof(request)
+        elif not request.user.check_password(data["password"]):
             raise AuthenticationFailed("Password verification failed.")
         from rest_framework.exceptions import PermissionDenied
         if getattr(request, "device_grant", None):

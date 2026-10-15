@@ -8,6 +8,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
 from apps.apiclients import telemetry
+from apps.apiclients.read_prefixes import requires_signed_read
 from apps.apiclients.crypto import decrypt_secret
 from apps.inventory.middleware_nonce import (
     NONCE_MAX_LENGTH,
@@ -60,6 +61,8 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
             return False
         if settings.API_CLIENT_AUTH_REQUIRED:
             return True
+        if requires_signed_read(request.path_info):
+            return True
         # Authentication remains optional during rollout, but credentials that opt in
         # to the nonce protocol must fail closed. Otherwise a replay would merely fall
         # through as anonymous while API_CLIENT_AUTH_REQUIRED is disabled.
@@ -79,11 +82,11 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
         # 256-bit, independently rate-limited feed token is the authentication for this
         # one route, so applying the frontend-client gate would make every subscription
         # fail when API_CLIENT_AUTH_REQUIRED is enabled.
-        from apps.events.middleware import is_calendar_feed_bearer_path
+        from apps.makerspaces.calendar_bearers import is_calendar_feed_bearer_path
 
         if is_calendar_feed_bearer_path(request.path_info):
             return False
-        return any(
+        return requires_signed_read(request.path_info) or any(
             request.path.startswith(p) for p in settings.HMAC_PROTECTED_PATH_PREFIXES
         )
 
@@ -92,7 +95,7 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
         # X-Nonce selects the signed protocol. It must never be accepted through the
         # publishable-key or browser-client paths, where it would be replay decoration
         # rather than authenticated input.
-        if not self._has_hmac_credentials(request):
+        if not self._has_hmac_credentials(request) and not requires_signed_read(request.path_info):
             if self._publishable_key_is_valid(request):
                 return True
             if self._frontend_client_is_valid(request):
@@ -180,6 +183,7 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
                     extra={"client_id": client_id},
                 )
             request.api_client = client
+            request.api_client_signature_verified = True
             telemetry.record_signed_client_observation(request, client)
             return True
         except Exception:  # fail safe - never 500 the request flow

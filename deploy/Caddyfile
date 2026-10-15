@@ -4,6 +4,7 @@
 import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
 {$PUBLIC_DOMAIN} {
     encode zstd gzip
+    header Referrer-Policy strict-origin
 
     handle /api/v1/internal/* {
         respond 403

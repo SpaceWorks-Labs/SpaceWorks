@@ -7,6 +7,7 @@
 
 # Shared application routing for platform and custom-domain hosts.
 (backend_paths) {
+    header Referrer-Policy strict-origin
     # The TLS ask endpoint is internal-only, even though it also fails closed.
     handle /api/v1/internal/* {
         respond 403

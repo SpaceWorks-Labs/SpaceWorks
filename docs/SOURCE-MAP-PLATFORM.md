@@ -47,3 +47,10 @@
   PostgreSQL role boundary. `cloud_environment.py` captures host-rendered Cloud Compose interpolation into
   durable static configuration without consulting later ambient shells; only the root-only
   `scripts/init-cloud-environment.py` renderer invokes Compose.
+
+- Lane F ops: `operations/route_metrics.py`, `config/gunicorn_metrics*.py` own
+  bounded multi-process HTTP instrumentation; `operations/control_storage.py` and
+  `templates/admin/storage.html` render existing storage totals. `config/web_analytics.py`
+  validates optional origins. `charts/spaceworks` supplies H1-preserving deployment,
+  migration-hook, service and ingress manifests. Operational contracts are in
+  `docs/monitoring-and-analytics.md` and `docs/helm.md`; installer paths are unchanged.

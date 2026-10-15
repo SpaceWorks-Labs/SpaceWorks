@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import PermissionDenied
@@ -39,7 +40,7 @@ class StaffGrantRedeemThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": request.user.pk}
 
 
-class BookingStaffGrantListView(APIView):
+class BookingStaffGrantListView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     def target(self, request, pk):
@@ -82,7 +83,7 @@ def _manageable_row(actor, model, pk):
     return row
 
 
-class BookingStaffGrantDetailView(APIView):
+class BookingStaffGrantDetailView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin bookings"], description=MANAGER_CONTRACT, request=BookingStaffGrantPermissionsSerializer,
@@ -96,7 +97,7 @@ class BookingStaffGrantDetailView(APIView):
         )).data)
 
 
-class BookingStaffGrantRevokeView(APIView):
+class BookingStaffGrantRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin bookings"], description=MANAGER_CONTRACT, request=EmptyActionSerializer,
@@ -107,7 +108,7 @@ class BookingStaffGrantRevokeView(APIView):
         return Response(BookingStaffGrantSerializer(services.revoke_grant(row, actor=request.user)).data)
 
 
-class BookingStaffInviteRevokeView(APIView):
+class BookingStaffInviteRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin bookings"], description=MANAGER_CONTRACT, request=EmptyActionSerializer,
@@ -118,7 +119,7 @@ class BookingStaffInviteRevokeView(APIView):
         return Response(BookingStaffGrantInviteSerializer(services.revoke_invite(row, actor=request.user)).data)
 
 
-class BookingStaffInviteRedeemView(APIView):
+class BookingStaffInviteRedeemView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [StaffGrantRedeemThrottle]
 

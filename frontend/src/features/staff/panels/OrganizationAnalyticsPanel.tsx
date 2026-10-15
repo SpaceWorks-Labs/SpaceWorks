@@ -4,6 +4,7 @@ import { DataTable, EmptyState, ErrorText, Pagination } from "../../../component
 import { useOrganizationAnalytics, type OrganizationReportRows } from "../organizationAnalyticsApi";
 import { useOrganizations } from "../organizationsApi";
 import { adminQueryState } from "../adminPresentation";
+import { STICKY_FIRST_COLUMN } from "../matrixColumns";
 import { reportDefinitions, type ReportKey } from "./operationsReportsConfig";
 import type { Makerspace } from "./shared";
 
@@ -64,7 +65,8 @@ function AnalyticsRowsTable({ rows, caption }: { rows: OrganizationReportRows["r
   const headers = [...new Set(rows.flatMap(row => Object.keys(row)))];
   return <div role="region" aria-label={caption}><DataTable<OrganizationReportRows["rows"][number]> data={rows} getRowId={row => rows.indexOf(row)}
     emptyDescription="No records yet. Choose another report."
-    columns={headers.map(header => ({ key: header, header: header.replace(/_/g, " "), render: row => formatCell(row[header]) }))} /></div>;
+    columns={headers.map((header, index) => ({ key: header, header: header.replace(/_/g, " "), className: index === 0 ? STICKY_FIRST_COLUMN : undefined,
+      render: row => formatCell(row[header]) }))} /></div>;
 }
 function formatCell(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";

@@ -13,7 +13,7 @@ import { OperationsReportsCoverage } from "./OperationsReportsCoverage";
 import { OperationsReportExports, useOperationsReportExport } from "./OperationsReportExports";
 import { SegmentedControl } from "../../../components/ui";
 import { DetailLayout } from "../../../components/layouts";
-import { OperationsReportNavigation } from "./OperationsReportNavigation";
+import { OperationsReportNavigation, OperationsReportPicker } from "./OperationsReportNavigation";
 import { ReportSchedules } from "./ReportSchedules";
 import { reportFormats } from "./operationsReportsConfig";
 import { type Makerspace, useStaffGet } from "./shared";
@@ -129,11 +129,12 @@ export function OperationsReports({
         hardware={hardwareEnabled} finance={canViewFinance || isSuperadmin} machines={canManageMachines}>
       <div className="space-y-6">
       <section aria-label="Report configuration" className="rounded-xl border border-line bg-panel p-5">
+        <OperationsReportPicker reports={catalogEntries} selected={selectedReport} onSelect={selectReport} />
         <div className="mb-5"><SegmentedControl label="Date range" value={rangePreset} onChange={setPreset}
           options={[{ value: "7", label: "7 days" }, { value: "30", label: "30 days" }, { value: "90", label: "Quarter" }, { value: "custom", label: "Custom" }]} /></div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0 flex-1 basis-64">
             <h3 className="title-section">
               {printingOnly ? "3D printing reporting" : "Operations reporting"} for {scopeLabel}
             </h3>
@@ -159,7 +160,7 @@ export function OperationsReports({
               </select>
             </label>
             {isSuperadmin ? (
-              <label className="flex items-center gap-2 pb-2 text-sm text-ink">
+              <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
                 <input
                   type="checkbox"
                   className="h-4 w-4 accent-current"

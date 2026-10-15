@@ -4,12 +4,13 @@ import { DashboardLayout } from "../../components/layouts";
 import { Card, DataTable, ProgressBar, StatusPill } from "../../components/ui";
 import type { Makerspace } from "./panels/shared";
 import { adminQueryState } from "./adminPresentation";
+import { STICKY_FIRST_COLUMN } from "./matrixColumns";
 import { getTenantUsage, usageAmount, type TenantUsage } from "./platformMonitoringApi";
 
 export function UsageTable({ data }: { data: TenantUsage }) {
   return <div role="region" aria-label="Resource usage against effective limits"><DataTable data={data.resources} getRowId={row => row.key}
     columns={[
-      { key: "label", header: "Resource" },
+      { key: "label", header: "Resource", className: STICKY_FIRST_COLUMN },
       { key: "used", header: "Used", render: row => usageAmount(row.used, row.unit) },
       { key: "limit", header: "Limit", render: row => row.limit === null ? "Unlimited" : usageAmount(row.limit, row.unit) },
       { key: "percentage", header: "Allowance used", render: row => {

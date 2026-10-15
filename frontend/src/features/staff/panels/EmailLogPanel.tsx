@@ -57,16 +57,16 @@ export function EmailLogPanel({ makerspace }: { makerspace: Makerspace }) {
     isEmpty={logs.data?.results.length === 0} filtered={Boolean(status || list.values.recent_days)}
     empty={{ message: "No email logs yet. Sent emails will appear here." }}
     filteredEmpty={{ message: "No email logs match. Try another status or date range." }}
-    filters={{ controls: <div className="flex flex-wrap gap-3">
+    filters={{ controls: <div className="grid gap-3">
       {list.values.recent_days ? <button className="desk-button" onClick={() => list.setFilter("recent_days", "")}>Show all dates (currently last {list.values.recent_days} days)</button> : null}
-      <select aria-label="Email log status" className="desk-input" value={status} onChange={event => updateStatus(event.target.value as EmailLogStatus)}>
+      <select aria-label="Email log status" className="desk-input w-full" value={status} onChange={event => updateStatus(event.target.value as EmailLogStatus)}>
         <option value="">All</option>{["sent", "failed", "pending", "sending", "skipped"].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}
       </select></div> }}
     body={{ kind: "rows", rows: <>{retry.error ? <ErrorBlock error={retry.error} /> : null}{logs.data?.results.map(log => <ListRow key={log.id}
       title={log.subject || log.event || "Email"} identity={{ kind: "date", date: log.created_at }}
-      meta={<span className="grid gap-1"><span>{log.to_email} · {log.event || "email"} · {log.stream || "general"}</span>
+      meta={<span className="grid gap-1"><span className="[overflow-wrap:anywhere]">{log.to_email} · {log.event || "email"} · {log.stream || "general"}</span>
         <RelativeTime date={log.created_at} />{log.status === "failed" || log.status === "skipped" ? <span>{truncate(log.error)}</span> : null}</span>}
-      right={<div className="flex gap-3"><StatusPill label={log.status} tone={log.status === "failed" ? "danger" : log.status === "sent" ? "success" : "neutral"} />
+      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={log.status} tone={log.status === "failed" ? "danger" : log.status === "sent" ? "success" : "neutral"} />
         {log.status === "failed" || log.status === "sending" ? <button className="desk-button" disabled={retry.isPending} onClick={() => retry.mutate(log.id)}>Retry</button> : null}</div>} />)}</> }}
     pagination={{ page, pageSize: 24, count: logs.data?.count ?? 0, onChange: setPage }} />;
 }

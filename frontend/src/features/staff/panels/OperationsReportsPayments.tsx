@@ -1,4 +1,5 @@
 import { DataTable, StatusPill } from "../../../components/ui";
+import { STICKY_FIRST_COLUMN } from "../matrixColumns";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, PieChart } from "./OperationsReportsParts";
 import { useStaffGet } from "./shared";
@@ -75,7 +76,7 @@ function PaymentChart({ rows }: { rows: PaymentReportRow[] }) {
 function PaymentTable({ rows }: { rows: PaymentReportRow[] }) {
   return <div className="mt-4 min-w-0"><DataTable<PaymentReportRow & { id: number }> data={rows.map((row, id) => ({ ...row, id }))}
     columns={[
-      { key: "currency", header: "Currency", render: row => row.currency.toUpperCase() },
+      { key: "currency", header: "Currency", className: STICKY_FIRST_COLUMN, render: row => row.currency.toUpperCase() },
       { key: "subject_type", header: "Subject", render: row => label(row.subject_type) },
       { key: "status", header: "Status", render: row => <StatusPill label={label(row.status)}
         tone={row.status === "paid" ? "success" : row.status === "pending" ? "warn" : "neutral"} /> },

@@ -21,7 +21,8 @@ export function CenteredCardLayout({ media, eyebrow, title, body, content, prima
   width = 440, standalone = true, ...query }: CenteredCardLayoutProps) {
   return <LayoutFrame standalone={standalone}>
     <a href="/" aria-label="Open makerspace listing" className="mb-8 inline-flex rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-      <SpaceWorksLogo variant="stacked" size={180} />
+      <span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>
+      <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span>
     </a>
     <div className="grid min-h-[60dvh] items-center">
       <div className={`sw-centered-card ${width === "wide" ? "sw-centered-wide" : width === 480 ? "sw-centered-480" : ""}`}>

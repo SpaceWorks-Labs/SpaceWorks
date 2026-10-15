@@ -12,6 +12,8 @@ export type PublicHeaderProps = {
   nav: { label: string; href: string }[];
   account: Action;
   liveStatus?: ReactNode;
+  /** canvas: no bar, for pages that open with a brand field (landing, About). */
+  chrome?: "bar" | "canvas";
 };
 
 /** Collapses the inline links into the menu as soon as they no longer fit beside the name. */
@@ -42,7 +44,7 @@ function useNavFits(enabled: boolean, navKey: string) {
 }
 
 /** Name first, links next, then status and the account action at the end. Phones and tablets get a menu. */
-export function PublicHeader({ makerspace, nav, account, liveStatus }: PublicHeaderProps) {
+export function PublicHeader({ makerspace, nav, account, liveStatus, chrome = "bar" }: PublicHeaderProps) {
   const compact = useLayoutMedia("(max-width: 1023px)");
   const { slot, list, collapsed } = useNavFits(!compact && nav.length > 0, nav.map(link => link.href).join("|"));
   const [open, setOpen] = useState(false);
@@ -67,11 +69,11 @@ export function PublicHeader({ makerspace, nav, account, liveStatus }: PublicHea
         className={`border-transparent ${stacked ? "w-full justify-start" : "whitespace-nowrap"}`} /></li>)}
     </ul>
   </nav>;
-  return <header className="border-b border-line bg-panel">
+  return <header className={chrome === "canvas" ? "bg-bg" : "border-b border-line bg-panel"}>
     <div className="sw-layout sw-layout-wide sw-public-chrome flex min-w-0 items-center gap-3 md:gap-4">
       <RouteLink href={makerspace.homeHref ?? `/m/${makerspace.slug}`}
         className="min-w-0 shrink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-        {centralIdentity ? <><span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>
+        {centralIdentity ? <><span className="inline-flex sm:hidden"><SpaceWorksLogo variant="symbol" size={48} /></span>
           <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span></>
           : <MakerspaceBrand name={makerspace.name} logoUrl={makerspace.logo} fallback="logo" wrap />}
       </RouteLink>

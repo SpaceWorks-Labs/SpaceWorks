@@ -28,12 +28,14 @@ import { useEventEligibleMembers, useRegisterMemberForEvent, type StaffEvent } f
 export function EventRegisterMember({
   makerspaceId,
   eventId,
+  visible = true,
   customForm,
   disabled,
   audience = "members", ticketsEnabled = false, promosEnabled = false,
 }: {
   makerspaceId: number;
   eventId: number;
+  visible?: boolean;
   customForm: StaffEvent["custom_form"];
   disabled: boolean;
   audience?: "members" | "accounts" | "invite"; ticketsEnabled?: boolean; promosEnabled?: boolean;
@@ -60,7 +62,7 @@ export function EventRegisterMember({
     setTicketId(""); setInviteCode(""); setPromoCode("");
   };
 
-  if (disabled) return null;
+  if (disabled || !visible) return null;
 
   const serverAnswerErrors = customAnswerErrors(
     register.error instanceof StructuredApiError

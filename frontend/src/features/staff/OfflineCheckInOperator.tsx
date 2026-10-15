@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import QrScanner from "../../components/ui/QrScanner";
+import { DangerZone, ScanWorkbench } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import type {
   OfflineRoster,
@@ -140,13 +140,13 @@ export function OfflineCheckInOperator({
       <div className="flex flex-wrap gap-2">
         <button type="button" className={`desk-button-primary ${FOCUS}`} onClick={() => setScanning(true)}>Scan offline</button>
         <button type="button" className={`desk-button ${FOCUS}`} disabled={!online || busy || !state.operations.length} onClick={syncNow}>Synchronize</button>
-        <button type="button" className={`desk-button-danger ${FOCUS}`} onClick={wipe}>Wipe attendee data</button>
       </div>
       <p aria-live="polite" className="sr-only">{state.operations.length} queued check-ins. {state.conflicts.length} conflicts.</p>
       {state.conflicts.length ? <div role="alert" className="rounded-md border border-warn bg-warn-soft p-2 text-warn-ink"><strong>{state.conflicts.length} synchronization conflicts</strong><ul className="mt-1 list-disc pl-5">{state.conflicts.map((item) => <li key={item.operation_id}>{item.outcome.replace(/_/g, " ")}</li>)}</ul></div> : null}
     </div> : <p className="mt-3 text-sm text-muted">No attendee data is stored on this device.</p>}
     {resolved ? <div className="mt-3 rounded-md border border-line p-3"><p className="font-medium text-ink">{resolved.name}</p><p className="text-sm text-muted">Waiver: {resolved.host_waiver_state.replace(/_/g, " ")}</p><div className="mt-2 flex gap-2"><button className={`desk-button-primary ${FOCUS}`} type="button" onClick={confirm}>Confirm attendance</button><button className={`desk-button ${FOCUS}`} type="button" onClick={() => setResolved(null)}>Cancel</button></div></div> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-    {scanning ? <QrScanner onScan={handleScan} onClose={() => setScanning(false)} /> : null}
+    {scanning ? <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find an offline check-in code" controls={<button className="desk-button" type="button" onClick={() => setScanning(false)}>Done</button>} /> : null}
+    {state ? <DangerZone title="Remove offline attendee data" consequence="The roster and unsynchronized attendance on this device will be removed." action={{ label: "Wipe attendee data", onClick: wipe }} /> : null}
   </section>;
 }

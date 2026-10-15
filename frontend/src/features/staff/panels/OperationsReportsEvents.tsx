@@ -1,5 +1,6 @@
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, LineChart, PieChart, ReportTable, StatCards } from "./OperationsReportsParts";
-import { Panel } from "./shared";
+
 import { groupReportByMakerspace, sum, useFablabReport, type EventAttendanceRow, type FablabPanelProps, type ReportResponse } from "./operationsReportsFablabApi";
 
 export function OperationsReportsEvents(props: FablabPanelProps) {
@@ -9,7 +10,7 @@ export function OperationsReportsEvents(props: FablabPanelProps) {
   const groups = groupReportByMakerspace(query.data);
   return (
     <Panel title="Events attendance">
-      <DataState loading={query.isLoading} error={query.error} empty={!rows.length}>
+      <DataState loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()} empty={!rows.length}>
         {props.aggregate ? <div className="mt-4 space-y-6">{groups.map((group) => (
           <section key={group.makerspaceId} className="rounded-md border border-line p-4">
             <h4 className="eyebrow">{props.makerspaceName(group.makerspaceId)}</h4>

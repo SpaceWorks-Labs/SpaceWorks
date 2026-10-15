@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useEventTicketing, type EventCode } from "./eventTicketingApi";
 
-export function EventInvitesPanel({ eventId, disabled = false }: { eventId: number; disabled?: boolean }) {
+export function EventInvitesPanel({ visible = true,  eventId, disabled = false }: { visible?: boolean;  eventId: number; disabled?: boolean }) {
   const [page, setPage] = useState(1);
   const { rows, create, revoke } = useEventTicketing<EventCode>(eventId, "invites", page);
   const [email, setEmail] = useState("");
@@ -9,6 +9,7 @@ export function EventInvitesPanel({ eventId, disabled = false }: { eventId: numb
   const [expires, setExpires] = useState("");
   const [code, setCode] = useState("");
   const error = rows.error || create.error || revoke.error;
+  if (!visible) return null;
   return <section className="grid gap-3" aria-label="Event invitations">
     <h3 className="title-section">Invitations</h3>
     <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); create.mutate({ email, max_uses: limit, expires_at: expires ? new Date(expires).toISOString() : null }, { onSuccess: (row) => setCode(row.code ?? "") }); }}>

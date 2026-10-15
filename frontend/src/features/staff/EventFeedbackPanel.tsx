@@ -1,3 +1,4 @@
+import { opsStatusLabel } from "./opsPresentation";
 import { useEffect, useState } from "react";
 
 import { Skeleton, StatusBadge } from "../../components/ui";
@@ -16,7 +17,7 @@ const FEEDBACK_TYPES = [
   "short_text", "paragraph", "number", "single_choice", "multi_choice", "dropdown", "yes_no",
 ] as const;
 
-export function EventFeedbackPanel({ eventId, makerspaceId }: { eventId: number; makerspaceId: number }) {
+export function EventFeedbackPanel({ visible = true,  eventId, makerspaceId }: { visible?: boolean;  eventId: number; makerspaceId: number }) {
   const surveyQuery = useEventFeedbackSurvey(eventId);
   const survey = surveyQuery.data?.survey;
   const [title, setTitle] = useState("");
@@ -38,12 +39,13 @@ export function EventFeedbackPanel({ eventId, makerspaceId }: { eventId: number;
   const error = configure.error || open.error || close.error;
   const pending = configure.isPending || open.isPending || close.isPending;
 
+  if (!visible) return null;
   return <section className="border-t border-line pt-5" aria-labelledby="feedback-title">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div><h3 id="feedback-title" className="title-section">Post-event feedback</h3>
         <p className="text-sm text-muted">Answered questions stay immutable; unopened questions remain editable.</p>
       </div>
-      {survey ? <StatusBadge status={survey.is_open ? "open" : "closed"} /> : null}
+      {survey ? <StatusBadge status={survey.is_open ? "open" : "closed"} label={opsStatusLabel(survey.is_open ? "open" : "closed")} /> : null}
     </div>
     {surveyQuery.isLoading ? <Skeleton className="mt-3 h-32 w-full" /> : null}
     {surveyQuery.error ? <p className="mt-3 text-sm text-danger">{eventErrorText(surveyQuery.error)}</p> : null}

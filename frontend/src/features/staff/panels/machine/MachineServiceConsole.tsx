@@ -1,7 +1,9 @@
+import { machineStatusLabel } from "./machineStatusLabel";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { MachineServiceRequest, PrinterPool, TypedManualUsageResponse } from "../../../../generated/api";
-import { ErrorBlock } from "../../../../components/ui";
+import { ErrorBlock, ListRow, StatusBadge, OverflowMenu, Modal, EmptyState } from "../../../../components/ui";
+import { ServiceConsoleSections, ServiceQueueTabs } from "./ServiceConsoleSections";
 import { staffRequest } from "../../../../lib/api";
 import { machineKeys } from "../../machinesApi";
 import type { Machine, MachineType, MeteringUnit } from "../../machinesApi";
@@ -11,6 +13,7 @@ import type { ServiceActionName, ServiceDraft } from "./serviceDrafts";
 import { poolQueryKey, poolUnits, unitLabels, usablePools } from "./servicePools";
 
 type Props = {
+  visible?: boolean;
   makerspaceId: number;
   canManage: boolean;
   machineType: MachineType;
@@ -22,7 +25,7 @@ type Props = {
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
-export function MachineServiceConsole({ makerspaceId, canManage, machineType, machines, pools, draft, setDraft }: Props) {
+export function MachineServiceConsole({ makerspaceId, canManage, machineType, machines, pools, draft, setDraft, visible = true }: Props) {
   const queryClient = useQueryClient();
   const meteringUnit = (machineType.capability_config?.metering_unit ?? "count") as MeteringUnit;
   const unitLabel = unitLabels[meteringUnit];
@@ -88,24 +91,22 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
     },
   });
 
-  if (!canManage) return null;
+  if (!canManage || !visible) return null;
   return (
-    <div className="grid gap-4 border-t border-line p-3">
-      <Subsection title="Service queue">
+    <div className="grid gap-4">
+      <ServiceConsoleSections queue={<Subsection title="Service queue">
         <p className="mb-3 text-sm text-muted">
           This type is metered in {unitLabel}. {poolUnit ? "Choose a machine before selecting its consumable pool." : "Minutes-based services do not use consumable pools."}
         </p>
-        <div className="grid gap-2">
-          {requests.data?.map((request) => (
-            <article className="rounded-md border border-line bg-surface p-3" key={request.id}>
-              <div className="flex flex-wrap items-center justify-between gap-2"><strong>{request.title}</strong><span>{request.status.replace("_", " ")}</span></div>
-              <p className="mt-1 text-xs text-muted">Planned {request.planned_quantity ?? "0"} {unitLabel} · actual {request.actual_consumed_quantity ?? "0"} {unitLabel}</p>
-              <div className="mt-2 flex flex-wrap gap-2"><ServiceActions request={request} onAction={(name) => setDraft((current) => ({ ...current, action: { id: request.id, name } }))} /></div>
-            </article>
+        <ServiceQueueTabs rows={requests.data}>{visible => <div className="grid gap-3">
+          {visible?.map((request) => (
+            <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
+                meta={<> {request.requester_name} · Planned {request.planned_quantity ?? "0"} {unitLabel} · actual {request.actual_consumed_quantity ?? "0"} {unitLabel}</>}
+                right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} label={machineStatusLabel(request.status)} /><ServiceActions request={request} onAction={name => setDraft(current => ({ ...current, action: { id: request.id, name } }))} /></div>} />
           )) ?? <p className="text-sm text-muted">Loading service queue...</p>}
-        </div>
+        </div>}</ServiceQueueTabs>
         {draft.action ? (
-          <ServiceActionForm
+          <Modal open title={`${draft.action.name} job`} onClose={() => setDraft(current => ({ ...current, action: null }))}><ServiceActionForm
             action={draft.action.name}
             values={draft.actionValues}
             setValues={(actionValues) => setDraft((current) => ({ ...current, actionValues }))}
@@ -116,15 +117,10 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
             pending={runAction.isPending}
             onSubmit={() => runAction.mutate()}
             onCancel={() => setDraft((current) => ({ ...current, action: null }))}
-          />
+          /><ErrorBlock error={runAction.error} /></Modal>
         ) : null}
-      </Subsection>
-      <Subsection title="Manual usage">
-        <ManualUsageForm draft={draft} setDraft={setDraft} machines={machines} pools={manualPools} unitLabel={unitLabel} hasPool={!!poolUnit} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />
-        <div className="mt-3 grid gap-2">
-          {manualUsage.data?.map((entry) => <p className="rounded-md border border-line p-2 tabular-nums text-sm" key={entry.id}>{entry.outcome} · {entry.consumed_quantity} {unitLabel} · {entry.duration_minutes} min</p>)}
-        </div>
-      </Subsection>
+      </Subsection>} manualForm={<ManualUsageForm draft={draft} setDraft={setDraft} machines={machines} pools={manualPools} unitLabel={unitLabel} hasPool={!!poolUnit} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />} manualRows={<div className="mt-3 grid gap-2">
+          {manualUsage.data?.length === 0 ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{manualUsage.data?.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_quantity} {unitLabel}{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={undefined} />
       <ErrorBlock error={[requests.error, manualUsage.error, submitManual.error, runAction.error].find((item) => item instanceof Error)} />
     </div>
   );
@@ -139,9 +135,9 @@ function actionBody(action: ServiceActionName, values: ServiceDraft["actionValue
 }
 
 function ServiceActions({ request, onAction }: { request: MachineServiceRequest; onAction: (name: ServiceActionName) => void }) {
-  if (request.status === "pending") return <><button className="desk-button-success" onClick={() => onAction("accept")}>Accept</button><button className="desk-button-danger" onClick={() => onAction("reject")}>Reject</button></>;
+  if (request.status === "pending") return <><button className="desk-button-success" onClick={() => onAction("accept")}>Accept</button><OverflowMenu actions={[{ label: "Reject", tone: "danger", onClick: () => onAction("reject") }]} /></>;
   if (request.status === "accepted") return <button className="desk-button-primary" onClick={() => onAction("start")}>Start</button>;
-  if (request.status === "in_progress") return <><button className="desk-button-success" onClick={() => onAction("complete")}>Complete</button><button className="desk-button-danger" onClick={() => onAction("fail")}>Fail</button></>;
+  if (request.status === "in_progress") return <><button className="desk-button-success" onClick={() => onAction("complete")}>Complete</button><OverflowMenu actions={[{ label: "Fail", tone: "danger", onClick: () => onAction("fail") }]} /></>;
   return request.status === "completed" ? <button className="desk-button-success" onClick={() => onAction("collect")}>Collect</button> : null;
 }
 

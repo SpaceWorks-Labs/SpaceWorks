@@ -22,10 +22,10 @@ const STATUS_LABEL: Record<string, string> = {
  * before any of its members become eligible, so one space cannot attach itself — or be
  * attached — to another's event unilaterally.
  */
-export function EventCollaborators({
+export function EventCollaborators({ visible = true,
   makerspaceId,
   eventId,
-}: {
+}: { visible?: boolean;
   makerspaceId: number;
   eventId: number;
 }) {
@@ -49,6 +49,7 @@ export function EventCollaborators({
     replace.mutate(slugs, { onSuccess: () => setSlug("") });
   };
 
+  if (!visible) return null;
   return (
     <section aria-labelledby="collaborators-title" className="mt-5">
       <h3 id="collaborators-title" className="mb-1 font-extrabold text-ink">

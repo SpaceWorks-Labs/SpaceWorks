@@ -1,8 +1,12 @@
+import { machineStatusLabel } from "./machineStatusLabel";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../../../components/ui";
+import { StatusBadge, Tabs, StatusPill } from "../../../../components/ui";
+import { DetailLayout } from "../../../../components/layouts";
+import { opsQueryState } from "../../opsPresentation";
+import { useMachineStatus } from "./useMachineStatus";
 import { getMachine, machineKeys } from "../../machinesApi";
 import { ConsumablesTab } from "./ConsumablesTab";
 import { DocumentsTab } from "./DocumentsTab";
@@ -33,6 +37,7 @@ export function MachineDrawer({
     queryFn: () => getMachine(machineId),
   });
   const details = machine.data;
+  const changeStatus = useMachineStatus(machineId, makerspaceId, details?.status === "idle" ? "running" : "idle");
   const maintenanceAllowed = maintenanceEnabled && details?.can_operate === true;
   const tabs: readonly MachineTab[] = [
     ...BASE_TABS.slice(0, 4),
@@ -41,47 +46,16 @@ export function MachineDrawer({
     ...(details?.can_edit ? ["Warranty" as const] : []),
   ];
 
-  return (
-    <DetailDrawer open title={details?.name ?? "Machine details"} onClose={onClose}>
-      {machine.isLoading ? (
-        <div className="grid gap-3">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-48 w-full" />
-        </div>
-      ) : null}
-      {machine.error instanceof Error ? (
-        <EmptyState title="Unable to load machine" description={machine.error.message} />
-      ) : null}
-      {details ? (
-        <div className="grid gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={details.status} />
-            {!details.is_active ? (
-              <span className="rounded-md bg-warn-soft px-2 py-1 text-xs font-medium text-warn-ink">Retired</span>
-            ) : null}
-            <span className="text-sm text-muted">
-              {details.machine_type.name} · {details.usage_hours} total hours
-            </span>
-          </div>
-          {/* WRAPS rather than scrolls. `min-w-max` inside `overflow-x-auto` is right for a
-              genuinely wide child like a table, but for six short labels it produced a row
-              clipped mid-word at the panel edge with the remaining tabs reachable only by a
-              horizontal scroll nobody notices. Wrapping shows every tab at every width. */}
-          <div className="flex flex-wrap gap-1 border-b border-line pb-2" role="tablist" aria-label="Machine details">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab}
-                className={activeTab === tab ? "desk-button-primary" : "desk-button-ghost"}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-          <div role="tabpanel">
+  return <DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={720}
+    title={details?.name ?? "Machine details"} state={opsQueryState(machine, "machine")}
+    identity={details?.image_url ? { kind: "image", src: details.image_url } : { kind: "icon", icon: "Settings", tone: "accent" }}
+    status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label="Retired" tone="warn" /> : null}</> : undefined}
+    actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? "Mark running" : "Mark idle", pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
+    meta={details ? [details.machine_type.name, `${details.usage_hours} total hours`] : undefined}
+    main={details ? <div className="grid gap-6 [&_[role=tablist]]:flex-wrap [&_[role=tablist]]:overflow-visible [&_[role=tablist]]:[mask-image:none]">
+      {changeStatus.error ? <p role="alert" className="text-sm text-danger">{changeStatus.error.message}</p> : null}
+      <Tabs label="Machine details" tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)} />
+      <div role="tabpanel">
             {activeTab === "Overview" ? (
               <OverviewTab
                 publicDetailsEnabled={enabledFeatures.includes("machines.public_detail")}
@@ -124,10 +98,6 @@ export function MachineDrawer({
             ) : null}
             {activeTab === "Warranty" && details.can_edit ? (
               <WarrantyTab machineId={machineId} />
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-    </DetailDrawer>
-  );
+            ) : null}</div>
+    </div> : null} />;
 }

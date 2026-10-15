@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 
-import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
+import { ConfirmDialog, StatCard, StatusBadge } from "../../components/ui";
+import { DetailLayout } from "../../components/layouts";
+import { EventAtAGlance, EventOverview } from "./EventOverview";
+import { EventSettings } from "./EventSettings";
+import { EventCheckInOperator } from "./EventCheckInOperator";
+import { opsQueryState, useOpsTabs, opsStatusLabel } from "./opsPresentation";
 import { EventInvitesPanel } from "./EventInvitesPanel";
 import { EventTicketsPanel } from "./EventTicketsPanel";
 import { EventPromosPanel } from "./EventPromosPanel";
-import { EventCategoriesField } from "./EventCategoriesField";
 import { EventCollaborators } from "./EventCollaborators";
 import { EventOrganizers } from "./EventOrganizers";
-import { EventFields, emptyEventForm, payloadFor, valuesFor } from "./EventFormFields";
+import { emptyEventForm, payloadFor, valuesFor } from "./EventFormFields";
 import { EventFeedbackPanel } from "./EventFeedbackPanel";
 import { EventRegistrationRoster } from "./EventRegistrationRoster";
-import { ImageUploader } from "./ImageUploader";
 import {
   useCancelEvent,
   useCompleteEvent,
@@ -53,35 +56,45 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
     update.mutate(changed);
   };
 
+  const ticketing = event?.ticketing_features ?? [];
+  const tabs = useOpsTabs("eventTab", [
+    { key: "overview", label: "Overview" },
+    { key: "registrations", label: "Registrations", count: event ? Object.values(event.registration_counts).reduce((sum, count) => sum + count, 0) : undefined },
+    ...(event?.status === "published" || event?.status === "completed" ? [{ key: "checkin", label: "Check-in" }] : []),
+    ...(ticketing.some(value => ["events.invites", "events.ticket_types", "events.promo_codes"].includes(value)) ? [{ key: "tickets", label: "Tickets & invites" }] : []),
+    { key: "feedback", label: "Feedback" }, { key: "team", label: "Team" }, { key: "settings", label: "Settings" },
+  ], "overview");
   return <>
-    <DetailDrawer open title={event?.title ?? "Event details"} onClose={onClose}>
-      {eventQuery.isLoading ? <Skeleton className="h-64 w-full" /> : null}
-      {eventQuery.error ? <EmptyState title="Unable to load event" description={eventErrorText(eventQuery.error)} /> : null}
-      {event ? <div className="grid gap-5">
-        <div className="flex flex-wrap items-center gap-2"><StatusBadge domain="event" status={event.status} />{event.series_summary ? <span className="rounded-full border border-accent px-2 py-1 text-xs font-semibold text-accent-ink">Recurring · {event.series_summary.title}</span> : null}<span className="text-sm text-muted">{event.capacity === 0 ? "Unlimited capacity" : `${event.capacity} places`} · Registration {event.registration_open ? "open" : "closed"}</span></div>
-        {event.effective_registration_cutoff_at ? <p className="text-sm text-muted">Effective cutoff: <span className="tabular-nums">{new Date(event.effective_registration_cutoff_at).toLocaleString()}</span></p> : null}
-        <ImageUploader endpoint={`/admin/events/${eventId}/image`} currentUrl={event.image_url} label="Event photo (shown publicly)" shape="wide" disabled={readOnly} onChanged={invalidateEvent} />
-        <form onSubmit={(e) => { e.preventDefault(); saveOccurrence(); }}>
-          {event.series_summary ? <h3 className="title-section mb-3">Edit this occurrence</h3> : null}
-          <EventCategoriesField makerspaceId={makerspaceId} value={values.category_id ?? null} onChange={(category_id) => setValues({ ...values, category_id })} disabled={readOnly} />
-          <EventFields values={values} setValues={setValues} disabled={readOnly} approvalLocked={event.status !== "draft"} />
-          {!readOnly ? <button className="desk-button-primary mt-3" type="submit" disabled={update.isPending}>{update.isPending ? "Saving..." : "Save changes"}</button> : <p className="mt-3 text-sm text-muted">Terminal events are read-only.</p>}
-        </form>
-        {event.series_summary && event.series_override_fields.length && !readOnly ? <section><h3 className="title-section">Occurrence overrides</h3><p className="mt-1 text-sm text-muted">Reset a field to inherit the current series template again.</p><div className="mt-2 flex flex-wrap gap-2">{event.series_override_fields.map((field) => <button key={field} className="desk-button" type="button" disabled={update.isPending} onClick={() => update.mutate({ inherit_fields: [field] })}>Reset {field.replace(/_/g, " ")}</button>)}</div></section> : null}
-        <div className="flex flex-wrap gap-2">
-          {event.status === "draft" ? <button className="desk-button-primary" type="button" onClick={() => setConfirm("publish")}>Publish</button> : null}
-          {event.status === "published" ? <><button className="desk-button-success" type="button" onClick={() => setConfirm("complete")}>Complete</button><button className="desk-button-danger" type="button" onClick={() => setConfirm("cancel")}>Cancel event</button></> : null}
-        </div>
-        {actionError ? <p className="text-sm text-danger" role="alert">{eventErrorText(actionError)}</p> : null}
-        {event.ticketing_features?.includes("events.invites") ? <EventInvitesPanel key={eventId} eventId={eventId} disabled={readOnly} /> : null}
-        {event.ticketing_features?.includes("events.ticket_types") ? <EventTicketsPanel key={eventId} eventId={eventId} disabled={readOnly} /> : null}
-        {event.ticketing_features?.includes("events.promo_codes") ? <EventPromosPanel key={eventId} eventId={eventId} disabled={readOnly} /> : null}
-        <EventRegistrationRoster key={eventId} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} />
-        <EventFeedbackPanel eventId={eventId} makerspaceId={makerspaceId} />
-        <EventOrganizers event={event} makerspaceId={makerspaceId} disabled={readOnly} />
-        <EventCollaborators makerspaceId={makerspaceId} eventId={eventId} />
-      </div> : null}
-    </DetailDrawer>
+    <div onClickCapture={tabs.onClickCapture}>
+      <DetailLayout title={event?.title ?? "Event details"} back={{ label: "All events", onClick: onClose }}
+        identity={event ? { kind: "date", date: event.starts_at } : undefined}
+        status={event ? <StatusBadge domain="event" status={event.status} label={opsStatusLabel(event.status)} /> : undefined}
+        meta={event ? [event.is_public ? "Public" : "Private", event.location, `${event.registration_counts.registered + event.registration_counts.attended} / ${event.capacity || "unlimited"} going`] : undefined}
+        state={opsQueryState(eventQuery, "event")} tabs={tabs.tabs} activeTab={tabs.active}
+        actions={{ primary: event?.status === "draft" ? { label: "Publish", confirms: true, onClick: () => setConfirm("publish") }
+          : event?.status === "published" ? { label: "Open check-in", targetsTab: "checkin", onClick: () => tabs.select("checkin") }
+          : event?.status === "completed" ? { label: "View feedback", targetsTab: "feedback", onClick: () => tabs.select("feedback") } : undefined }}
+        banner={readOnly ? { size: "banner", tone: "warn", lead: `This event is ${event?.status}. It can’t be edited.` } : undefined}
+        danger={tabs.active === "settings" && event?.status === "published" ? [{ title: "Cancel event", consequence: "Registrants are notified and registration closes.", action: { label: "Cancel event", onClick: () => setConfirm("cancel") } }] : []}
+        aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={() => tabs.select("checkin")} /> : undefined}
+        main={event ? <div className="grid gap-6">
+          {tabs.active === "overview" ? <EventOverview event={event} onRegistrations={() => tabs.select("registrations")} /> : null}
+          <EventRegistrationRoster key={eventId} visible={tabs.active === "registrations"} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} showCheckIn={false} />
+          {event.status === "published" || event.status === "completed" ? <>
+            {tabs.active === "checkin" ? <StatCard label="Checked in" value={event.registration_counts.attended} of={event.registration_counts.registered + event.registration_counts.attended || undefined} /> : null}
+            <EventCheckInOperator visible={tabs.active === "checkin"} makerspaceId={makerspaceId} eventId={eventId} offlineEnabled={event.offline_checkin_enabled} />
+          </> : null}
+          {ticketing.includes("events.invites") ? <EventInvitesPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+          {ticketing.includes("events.ticket_types") ? <EventTicketsPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+          {ticketing.includes("events.promo_codes") ? <EventPromosPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+          <EventFeedbackPanel visible={tabs.active === "feedback"} eventId={eventId} makerspaceId={makerspaceId} />
+          <EventOrganizers visible={tabs.active === "team"} event={event} makerspaceId={makerspaceId} disabled={readOnly} />
+          <EventCollaborators visible={tabs.active === "team"} makerspaceId={makerspaceId} eventId={eventId} />
+          {tabs.active === "settings" ? <EventSettings event={event} makerspaceId={makerspaceId} values={values} setValues={setValues}
+            save={saveOccurrence} pending={update.isPending} invalidate={invalidateEvent} resetField={field => update.mutate({ inherit_fields: [field] })} complete={() => setConfirm("complete")} /> : null}
+          {actionError ? <p role="alert" className="text-sm text-danger">{eventErrorText(actionError)}</p> : null}
+        </div> : null} />
+    </div>
     <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Confirm"} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => lifecycle.mutate(undefined, { onSuccess: () => setConfirm(null), onError: () => setConfirm(null) })} />
   </>;
 }

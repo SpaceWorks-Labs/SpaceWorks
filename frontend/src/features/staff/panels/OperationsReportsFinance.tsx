@@ -1,6 +1,7 @@
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { DataState, LineChart, PerMakerspaceTables, ReportTable, typedRows, type ReportRows } from "./OperationsReportsParts";
 import { reportGrain, type ReportCatalogItem } from "./operationsReportsConfig";
-import { Panel, useStaffGet } from "./shared";
+import { useStaffGet } from "./shared";
 
 const FINANCE_KEYS = new Set(["payments-ledger", "revenue-over-time", "cash-book", "accounting-journal"]);
 
@@ -9,7 +10,7 @@ export function OperationsReportsFinance(props: {
   startDate: string; endDate: string; grain: string; aggregate: boolean;
   makerspaceName: (id: number) => string;
 }) {
-  return <section className="grid gap-4 xl:grid-cols-2" aria-label="Financial reports">
+  return <section className="contents" aria-label="Financial reports">
     {props.catalog.filter(report => FINANCE_KEYS.has(report.key)).map(report => <FinanceReport key={report.key} {...props} report={report} />)}
   </section>;
 }
@@ -22,8 +23,8 @@ function FinanceReport({ report, ...props }: Parameters<typeof OperationsReports
   const result = useStaffGet<ReportRows>(["operations-report", report.key, props.scopeKey, props.startDate, props.endDate, grain],
     `${props.analyticsBase}/${report.key}?${query}`, report.available !== false);
   const currencies = [...new Set(typedRows(result.data).map(row => String(row.currency)))];
-  return <Panel title={report.title}>
-    <DataState loading={result.isLoading} error={result.error} empty={!typedRows(result.data).length}>
+  return <Panel title={report.title} reportKey={report.key}>
+    <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={!typedRows(result.data).length}>
       {props.aggregate ? <PerMakerspaceTables data={result.data} nameOf={props.makerspaceName} /> : <>
         {report.key === "revenue-over-time" ? <>
           <p className="text-xs text-muted">Collected and refunded use the money date. Owed is currently pending debt grouped by its creation date. All dates use the space's timezone.</p>

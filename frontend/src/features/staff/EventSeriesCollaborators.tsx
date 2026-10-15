@@ -10,7 +10,7 @@ type Collaborator = {
   id: number; makerspace_name: string; makerspace_slug: string; status: string;
 };
 
-export function EventSeriesCollaborators({ seriesId, makerspaceId }: { seriesId: number; makerspaceId: number }) {
+export function EventSeriesCollaborators({ visible = true,  seriesId, makerspaceId }: { visible?: boolean;  seriesId: number; makerspaceId: number }) {
   const client = useQueryClient();
   const [slug, setSlug] = useState("");
   const path = `/admin/event-series/${seriesId}/collaborators/`;
@@ -35,6 +35,7 @@ export function EventSeriesCollaborators({ seriesId, makerspaceId }: { seriesId:
     onSuccess: invalidate,
   });
   const rows = query.data ?? [];
+  if (!visible) return null;
   return <section aria-labelledby="series-collaborators-title">
     <h3 id="series-collaborators-title" className="title-section">Series partners</h3>
     <p className="mt-1 text-sm text-muted">One accepted invitation applies to every current and future occurrence.</p>

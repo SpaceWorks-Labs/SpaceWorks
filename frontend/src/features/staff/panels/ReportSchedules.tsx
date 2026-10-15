@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, ConfirmDialog } from "../../../components/ui";
+import { ConfirmDialog, EmptyState, OverflowMenu, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 import { emptyScheduleForm, ReportScheduleForm, scheduleToForm } from "./ReportScheduleForm";
 import {
@@ -19,7 +19,7 @@ import {
 } from "./reportSchedulesApi";
 import { Panel } from "./shared";
 
-const when = (value: string | null) => (value ? new Date(value).toLocaleString() : "never");
+const when = (value: string | null) => (value ? <RelativeTime date={value} /> : "never");
 
 /** Recurring exports. `reports` is the catalog already filtered to exportable + available. */
 export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: number; reports: ReportCatalogItem[] }) {
@@ -71,9 +71,9 @@ export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: numbe
       <p className="mb-3 text-sm text-muted">
         Generate an export on a cadence and deliver it to a chat destination, by email, or both. Files expire after the retention window.
       </p>
-      {schedules.isLoading ? <p className="text-sm text-muted">Loading schedules…</p> : null}
+      {schedules.isLoading ? <Skeleton className="h-24 w-full" /> : null}
       {schedules.isError ? <p className="text-sm text-danger" role="alert">{scheduleErrorText(schedules.error, "Could not load schedules.")}</p> : null}
-      {schedules.data?.length === 0 ? <p className="text-sm text-muted">No schedules yet.</p> : null}
+      {schedules.data?.length === 0 ? <EmptyState message="No schedules yet. Create your first scheduled report." /> : null}
       {schedules.data?.map((schedule) => (
         <div key={schedule.id} className="border-t border-line py-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -97,13 +97,14 @@ export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: numbe
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={schedule.is_active ? "success" : "neutral"}>{schedule.is_active ? "Active" : "Paused"}</Badge>
-              <button className="desk-button" type="button" disabled={run.isPending} onClick={() => run.mutate(schedule.id)}>Run now</button>
-              <button className="desk-button" type="button" onClick={() => { setCreating(false); setEditing(schedule); }}>Edit</button>
-              <button className="desk-button" type="button" disabled={toggle.isPending} onClick={() => toggle.mutate(schedule)}>
-                {schedule.is_active ? "Pause" : "Resume"}
-              </button>
-              <button className="desk-button-danger" type="button" onClick={() => setDeleting(schedule)}>Delete</button>
+              <StatusPill tone={schedule.is_active ? "success" : "neutral"} label={schedule.is_active ? "Active" : "Paused"} />
+              <button className="desk-button" type="button" disabled={run.isPending && run.variables === schedule.id} onClick={() => run.mutate(schedule.id)}>{run.isPending && run.variables === schedule.id ? "Running…" : "Run now"}</button>
+              <OverflowMenu label={`Actions for ${title(schedule.report_key)}`} actions={[
+                { label: "Edit", onClick: () => { setCreating(false); setEditing(schedule); } },
+                { label: schedule.is_active ? "Pause" : "Resume", disabled: toggle.isPending && toggle.variables?.id === schedule.id,
+                  disabledReason: toggle.isPending && toggle.variables?.id === schedule.id ? "Updating this schedule." : undefined, onClick: () => toggle.mutate(schedule) },
+                { label: "Delete", tone: "danger", onClick: () => setDeleting(schedule) },
+              ]} />
             </div>
           </div>
           {runResult?.id === schedule.id ? (
@@ -142,7 +143,7 @@ export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: numbe
             onCancel={() => setCreating(false)}
           />
         ) : (
-          <button className="desk-button-primary" type="button" disabled={!reports.length} onClick={() => { setEditing(null); setCreating(true); }}>
+          <button className="desk-button-primary" type="button" disabled={!reports.length} title={!reports.length ? "Choose an available schedulable report." : undefined} onClick={() => { setEditing(null); setCreating(true); }}>
             New schedule
           </button>
         )}

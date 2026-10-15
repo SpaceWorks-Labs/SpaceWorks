@@ -7,6 +7,27 @@ import { reportFormats, reportGrain, type ReportCatalog, type ReportKey } from "
 
 type ReportEntry = ReportCatalog["results"][number];
 
+export function useOperationsReportExport({ reports, grain, filters = {}, reportsBase, dateSuffix, aggregate }: {
+  reports: ReportEntry[]; grain: string; filters?: { months?: string; status?: string; subject_type?: string };
+  reportsBase: string; dateSuffix: string; aggregate: boolean;
+}) {
+  return useMutation({
+    mutationFn: ({ report, format }: { report: string; format: "csv" | "xlsx" }) => {
+      const exportGrain = reportGrain(reports.find(definition => definition.key === report), grain);
+      const params = new URLSearchParams();
+      if (report === "member-retention" && filters.months) params.set("months", filters.months);
+      if (report === "payment-reconciliation") {
+        if (filters.status) params.set("status", filters.status);
+        if (filters.subject_type) params.set("subject_type", filters.subject_type);
+      }
+      return downloadStaffFile(
+        `${reportsBase}/${report}/export?format=${format}${dateSuffix}&grain=${encodeURIComponent(exportGrain)}${params.size ? `&${params}` : ""}`,
+        `${aggregate ? "all-makerspaces-" : ""}${report}.${format}`,
+      );
+    },
+  });
+}
+
 // The export/schedule block of the reports tab, split out of OperationsReports.tsx so
 // that file stays under the size ceiling. It owns the export mutation (a file download,
 // not server state, so nothing is invalidated) and hands schedules their definitions.
@@ -33,21 +54,7 @@ export function OperationsReportExports({
   makerspaceId: number;
   reportsEnabled: boolean;
 }) {
-  const exportReport = useMutation({
-    mutationFn: ({ report, format }: { report: string; format: "csv" | "xlsx" }) => {
-      const exportGrain = reportGrain(reports.find((definition) => definition.key === report), grain);
-      const params = new URLSearchParams();
-      if (report === "member-retention" && filters.months) params.set("months", filters.months);
-      if (report === "payment-reconciliation") {
-        if (filters.status) params.set("status", filters.status);
-        if (filters.subject_type) params.set("subject_type", filters.subject_type);
-      }
-      return downloadStaffFile(
-        `${reportsBase}/${report}/export?format=${format}${dateSuffix}&grain=${encodeURIComponent(exportGrain)}${params.size ? `&${params}` : ""}`,
-        `${aggregate ? "all-makerspaces-" : ""}${report}.${format}`,
-      );
-    },
-  });
+  const exportReport = useOperationsReportExport({ reports, grain, filters, reportsBase, dateSuffix, aggregate });
 
   return (
     <>

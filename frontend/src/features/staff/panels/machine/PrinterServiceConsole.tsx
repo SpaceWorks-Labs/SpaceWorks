@@ -1,8 +1,10 @@
+import { machineStatusLabel } from "./machineStatusLabel";
 import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { MachineServiceRequest, PrinterPool, PrinterServiceReport, TypedManualUsageResponse } from "../../../../generated/api";
-import { ErrorBlock } from "../../../../components/ui";
+import { ErrorBlock, ListRow, StatusBadge, OverflowMenu, Modal, EmptyState } from "../../../../components/ui";
+import { ServiceConsoleSections, ServiceQueueTabs } from "./ServiceConsoleSections";
 import { staffRequest } from "../../../../lib/api";
 import { machineKeys } from "../../machinesApi";
 import type { Machine, MachineType } from "../../machinesApi";
@@ -12,6 +14,7 @@ import type { ServiceActionName, ServiceDraft } from "./serviceDrafts";
 import { poolQueryKey, usablePools } from "./servicePools";
 
 type Props = {
+  visible?: boolean;
   makerspaceId: number;
   canManage: boolean;
   printingEnabled: boolean;
@@ -27,7 +30,7 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-
 // Mirrors backend `printer_capabilities.PRINTER_SLUG`.
 const PRINTER_SLUG = "3d_printer";
 
-export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled, reportsEnabled = true, machineType, machines, pools, draft, setDraft }: Props) {
+export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled, reportsEnabled = true, machineType, machines, pools, draft, setDraft, visible = true }: Props) {
   const queryClient = useQueryClient();
   // Filter by the stable machine-type ID, not the slug: slugs are not unique across the
   // global/tenant split, so a makerspace-local type sharing a built-in's slug would pull in
@@ -104,36 +107,25 @@ export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled
     },
   });
 
-  if (!canManage) return null;
+  if (!canManage || !visible) return null;
   return (
-    <div className="grid gap-4 border-t border-line p-3">
-      {printingEnabled ? (
-        <Subsection title="3D-printer queue">
+    <div className="grid gap-4">
+      <ServiceConsoleSections queue={printingEnabled ? (<Subsection title="3D-printer queue">
           <p className="mb-3 text-sm text-muted">Accept jobs, reserve filament, start work, reconcile actual grams, then complete, fail, collect, or reprint.</p>
-          <div className="grid gap-2">
-            {requests.data?.map((request) => (
-              <article className="rounded-md border border-line bg-surface p-3" key={request.id}>
-                <div className="flex flex-wrap items-center justify-between gap-2"><strong>{request.title}</strong><span>{request.status.replace("_", " ")}</span></div>
-                <p className="mt-1 text-xs text-muted">Planned {request.planned_grams}g</p>
-                <div className="mt-2 flex flex-wrap gap-2"><ServiceActions request={request} onAction={(name) => setDraft((current) => ({ ...current, action: { id: request.id, name } }))} /></div>
-              </article>
+          <ServiceQueueTabs rows={requests.data}>{visible => <div className="grid gap-3">
+            {visible?.map((request) => (
+              <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
+                meta={<> {request.requester_name} · Planned {request.planned_grams} g · actual {request.actual_consumed_quantity ?? "0"} g</>}
+                right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} label={machineStatusLabel(request.status)} /><ServiceActions request={request} onAction={name => setDraft(current => ({ ...current, action: { id: request.id, name } }))} /></div>} />
             )) ?? <p className="text-sm text-muted">Loading printer queue…</p>}
-          </div>
-          {draft.action ? <ActionForm action={draft.action.name} values={draft.actionValues} setValues={(actionValues) => setDraft((current) => ({ ...current, actionValues }))} printers={machines} pools={actionPools} pending={runAction.isPending} onCancel={() => setDraft((current) => ({ ...current, action: null }))} onSubmit={() => runAction.mutate()} /> : null}
-        </Subsection>
-      ) : null}
-      <Subsection title="Manual usage">
-        <ManualUsageForm draft={draft} setDraft={setDraft} printers={machines} pools={manualPools} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />
-        <div className="mt-3 grid gap-2">{printerUsage.map((entry) => <p className="rounded-md border border-line p-2 tabular-nums text-sm" key={entry.id}>{entry.outcome} · {entry.consumed_grams}g · {entry.duration_minutes} min{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</p>)}</div>
-      </Subsection>
-      {printingEnabled && reportsEnabled ? (
-        <Subsection title="Printer reports">
+          </div>}</ServiceQueueTabs>
+          {draft.action ? <Modal open title={`${draft.action.name} job`} onClose={() => setDraft(current => ({ ...current, action: null }))}><ActionForm action={draft.action.name} values={draft.actionValues} setValues={(actionValues) => setDraft((current) => ({ ...current, actionValues }))} printers={machines} pools={actionPools} pending={runAction.isPending} onCancel={() => setDraft((current) => ({ ...current, action: null }))} onSubmit={() => runAction.mutate()} /><ErrorBlock error={runAction.error} /></Modal> : null}
+        </Subsection>) : undefined} manualForm={<ManualUsageForm draft={draft} setDraft={setDraft} printers={machines} pools={manualPools} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />} manualRows={<div className="mt-3 grid gap-2">{manualUsage.data && !printerUsage.length ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{printerUsage.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_grams} g{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={printingEnabled && reportsEnabled ? (<Subsection title="Printer reports">
           <div className="grid gap-2 md:grid-cols-2">
             {report.data?.printer_metrics.map((metric) => <p className="rounded-md border border-line p-3 text-sm" key={`${metric.makerspace_id ?? makerspaceId}:${metric.machine_id}`}><strong>{metric.machine_name}</strong><span className="mt-1 block text-xs text-muted">{metric.completed_hours}h complete - {metric.failed_partial_hours}h failed - {metric.manual_hours}h manual - {metric.consumed_grams}g used</span></p>)}
             {report.data && report.data.printer_metrics.length === 0 ? <p className="text-sm text-muted">No completed printer activity yet.</p> : null}
           </div>
-        </Subsection>
-      ) : null}
+        </Subsection>) : undefined} />
       <ErrorBlock error={[requests.error, manualUsage.error, report.error, submitManual.error, runAction.error].find((item) => item instanceof Error)} />
     </div>
   );
@@ -148,9 +140,9 @@ function actionBody(action: ServiceActionName, values: ServiceDraft["actionValue
 }
 
 function ServiceActions({ request, onAction }: { request: MachineServiceRequest; onAction: (name: ServiceActionName) => void }) {
-  if (request.status === "pending") return <><button className="desk-button-success" onClick={() => onAction("accept")}>Accept</button><button className="desk-button-danger" onClick={() => onAction("reject")}>Reject</button></>;
+  if (request.status === "pending") return <><button className="desk-button-success" onClick={() => onAction("accept")}>Accept</button><OverflowMenu actions={[{ label: "Reject", tone: "danger", onClick: () => onAction("reject") }]} /></>;
   if (request.status === "accepted") return <button className="desk-button-primary" onClick={() => onAction("start")}>Start</button>;
-  if (request.status === "in_progress") return <><button className="desk-button-success" onClick={() => onAction("complete")}>Complete</button><button className="desk-button-danger" onClick={() => onAction("fail")}>Fail</button></>;
+  if (request.status === "in_progress") return <><button className="desk-button-success" onClick={() => onAction("complete")}>Complete</button><OverflowMenu actions={[{ label: "Fail", tone: "danger", onClick: () => onAction("fail") }]} /></>;
   if (request.status === "completed") return <button className="desk-button-success" onClick={() => onAction("collect")}>Collect</button>;
   return request.status === "failed" ? <button className="desk-button-warn" onClick={() => onAction("reprint")}>Reprint</button> : null;
 }

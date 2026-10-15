@@ -64,15 +64,20 @@ function CapabilityPresetEditors({ config, disabled = false, onChange }: {
   </div>;
 }
 
-function PricingEditor({ makerspaceId, machineType, currency, canConfigure }: {
-  makerspaceId: number; machineType: MachineType; currency: string; canConfigure: boolean;
+type PricingDraft = { rate: string; flatFee: string; paymentEnabled: boolean | null };
+type TypeDraft = { name: string; icon: string; config: MachineTypeCapabilityConfig };
+const blankPricing = (): PricingDraft => ({ rate: "", flatFee: "", paymentEnabled: null });
+
+function PricingEditor({ makerspaceId, machineType, currency, canConfigure, draft, onDraftChange }: {
+  makerspaceId: number; machineType: MachineType; currency: string; canConfigure: boolean; draft: PricingDraft; onDraftChange: (value: PricingDraft) => void;
 }) {
   const queryClient = useQueryClient();
   const pricing = useQuery({ queryKey: machineKeys.pricing(makerspaceId), queryFn: () => getMachineTypePricing(makerspaceId), enabled: canConfigure });
   const row = pricing.data?.results.find((item) => item.machine_type_id === machineType.id);
-  const [rate, setRate] = useState("");
-  const [flatFee, setFlatFee] = useState("");
-  const [paymentEnabled, setPaymentEnabled] = useState<boolean | null>(null);
+  const { rate, flatFee, paymentEnabled } = draft;
+  const setRate = (rate: string) => onDraftChange({ ...draft, rate });
+  const setFlatFee = (flatFee: string) => onDraftChange({ ...draft, flatFee });
+  const setPaymentEnabled = (paymentEnabled: boolean) => onDraftChange({ ...draft, paymentEnabled });
   const mutation = useMutation({
     mutationFn: () => setMachineTypePricing(makerspaceId, machineType.id, {
       rate_per_unit: rate || row?.rate_per_unit || "0.00",
@@ -102,13 +107,14 @@ function PricingEditor({ makerspaceId, machineType, currency, canConfigure }: {
   </div>;
 }
 
-function CustomTypeRow({ makerspaceId, machineType, canConfigure, currency }: {
-  makerspaceId: number; machineType: MachineType; canConfigure: boolean; currency: string;
+function CustomTypeRow({ makerspaceId, machineType, canConfigure, currency, draft, onDraftChange, pricingDraft, onPricingChange }: {
+  makerspaceId: number; machineType: MachineType; canConfigure: boolean; currency: string; draft: TypeDraft; onDraftChange: (value: TypeDraft) => void; pricingDraft: PricingDraft; onPricingChange: (value: PricingDraft) => void;
 }) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState(machineType.name);
-  const [icon, setIcon] = useState(machineType.icon);
-  const [config, setConfig] = useState(configFor(machineType));
+  const { name, icon, config } = draft;
+  const setName = (name: string) => onDraftChange({ ...draft, name });
+  const setIcon = (icon: string) => onDraftChange({ ...draft, icon });
+  const setConfig = (config: MachineTypeCapabilityConfig) => onDraftChange({ ...draft, config });
   const rename = useMutation({
     mutationFn: () => updateMachineType(makerspaceId, machineType.id, { name: name.trim(), icon: icon.trim(), capability_config: config }),
     onSuccess: async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: machineKeys.types(makerspaceId) }), queryClient.invalidateQueries({ queryKey: machineKeys.list(makerspaceId) })]); },
@@ -124,12 +130,16 @@ function CustomTypeRow({ makerspaceId, machineType, canConfigure, currency }: {
       <p className="text-xs text-muted md:col-span-4">Slug: {machineType.slug} (fixed)</p>
       {rename.error instanceof Error ? <p className="text-sm text-danger md:col-span-4">{rename.error.message}</p> : null}
     </form>
-    <PricingEditor makerspaceId={makerspaceId} machineType={machineType} currency={currency} canConfigure={canConfigure} />
+    <PricingEditor makerspaceId={makerspaceId} machineType={machineType} currency={currency} canConfigure={canConfigure} draft={pricingDraft} onDraftChange={onPricingChange} />
   </div>;
 }
 
-export function MachineTypesPanel({ makerspaceId, canConfigureMachineTypes }: { makerspaceId: number; canConfigureMachineTypes: boolean }) {
+export function MachineTypesPanel({ makerspaceId, canConfigureMachineTypes, visible = true }: { makerspaceId: number; canConfigureMachineTypes: boolean; visible?: boolean }) {
   const queryClient = useQueryClient();
+  const [typeDrafts, setTypeDrafts] = useState<Record<number, TypeDraft>>({});
+  const [priceDrafts, setPriceDrafts] = useState<Record<number, PricingDraft>>({});
+  const priceFor = (id: number) => priceDrafts[id] ?? blankPricing();
+  const changePrice = (id: number, value: PricingDraft) => setPriceDrafts(current => ({ ...current, [id]: value }));
   const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
@@ -143,8 +153,9 @@ export function MachineTypesPanel({ makerspaceId, canConfigureMachineTypes }: { 
   const types = collectionResults(machineTypes.data);
   const currency = pricing.data?.currency ?? "Currency";
 
-  return <details className="mb-4 overflow-hidden rounded-xl border border-line bg-panel">
-    <summary className="cursor-pointer bg-surface px-3 py-2 text-sm font-semibold text-ink">Machine types and pricing</summary>
+  if (!visible) return null;
+  return <details id="machine-type-settings" className="mb-4 overflow-hidden rounded-xl border border-line bg-panel">
+    <summary className="min-h-11 cursor-pointer bg-surface px-4 py-3 text-sm font-semibold text-ink">Machine types and pricing</summary>
     <div className="grid gap-3 p-3">
       <p className="text-sm text-muted">Structural configuration is fixed for built-in types. Prices are makerspace-specific and use the default currency shown beside each amount.</p>
       <p className="text-sm text-muted">Machine time bookings are not available. The requires booking flag does not block service requests or job starts.</p>
@@ -160,7 +171,7 @@ export function MachineTypesPanel({ makerspaceId, canConfigureMachineTypes }: { 
       </form> : <p className="text-sm text-muted">You have read-only access to machine types and pricing.</p>}
       {machineTypes.isLoading ? <Skeleton className="h-20 w-full" /> : null}
       {machineTypes.error instanceof Error ? <p className="text-sm text-danger">{machineTypes.error.message}</p> : null}
-      {types.length ? <div className="overflow-hidden rounded-xl border border-line">{types.map((machineType) => machineType.is_builtin || machineType.makerspace === null ? <div key={machineType.id} className="grid gap-2 border-t border-line p-3 first:border-t-0"><div className="flex flex-wrap items-center justify-between gap-2"><span><strong className="block text-sm text-ink">{machineType.name}</strong><span className="text-xs text-muted">{machineType.icon || "No icon"} · {machineType.slug} · {configFor(machineType).metering_unit} · {configFor(machineType).requires_booking ? "booking flag on (not yet enforced)" : "booking flag off"}</span></span><Badge tone="neutral">Built-in · structural config read-only</Badge></div><PricingEditor makerspaceId={makerspaceId} machineType={machineType} currency={currency} canConfigure={canConfigureMachineTypes} /></div> : <CustomTypeRow key={machineType.id} makerspaceId={makerspaceId} machineType={machineType} canConfigure={canConfigureMachineTypes} currency={currency} />)}</div> : null}
+      {types.length ? <div className="overflow-hidden rounded-xl border border-line">{types.map((machineType) => machineType.is_builtin || machineType.makerspace === null ? <div key={machineType.id} className="grid gap-2 border-t border-line p-3 first:border-t-0"><div className="flex flex-wrap items-center justify-between gap-2"><span><strong className="block text-sm text-ink">{machineType.name}</strong><span className="text-xs text-muted">{machineType.icon || "No icon"} · {machineType.slug} · {configFor(machineType).metering_unit} · {configFor(machineType).requires_booking ? "booking flag on (not yet enforced)" : "booking flag off"}</span></span><Badge tone="neutral">Built-in · structural config read-only</Badge></div><PricingEditor makerspaceId={makerspaceId} machineType={machineType} currency={currency} canConfigure={canConfigureMachineTypes} draft={priceFor(machineType.id)} onDraftChange={value => changePrice(machineType.id, value)} /></div> : <CustomTypeRow key={machineType.id} makerspaceId={makerspaceId} machineType={machineType} canConfigure={canConfigureMachineTypes} currency={currency} draft={typeDrafts[machineType.id] ?? { name: machineType.name, icon: machineType.icon, config: configFor(machineType) }} onDraftChange={value => setTypeDrafts(current => ({ ...current, [machineType.id]: value }))} pricingDraft={priceFor(machineType.id)} onPricingChange={value => changePrice(machineType.id, value)} />)}</div> : null}
     </div>
   </details>;
 }

@@ -1,13 +1,14 @@
 import { useId, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Modal } from "../../../components/ui";
+import { ErrorBlock, ListRow, Modal, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { invalidateInventoryViews } from "../queryInvalidation";
-import { Panel, type Makerspace, useStaffGet } from "./shared";
+import { type Makerspace, useStaffGet } from "./shared";
 import type { AccountabilityResponse, Offender } from "./AccountabilityTypes";
 import { ProblemReportCard } from "./ProblemReportCard";
-import { useUrlListState } from "../../../lib/useUrlListState";
+import { ListLayout } from "../../../components/layouts";
+import { opsQueryState, opsStatusLabel, useOpsTabs } from "../opsPresentation";
 
 export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: Makerspace; isSuperadmin: boolean }) {
   const queryClient = useQueryClient();
@@ -17,8 +18,13 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
   const report = useStaffGet<AccountabilityResponse>(["accountability", makerspace.id], `/admin/makerspace/${makerspace.id}/accountability`);
   const data = report.data;
   const anonymous = data?.anonymous_accountability;
-  const list = useUrlListState({ section: "" });
-  const section = ["overdue", "problems"].includes(list.values.section) ? list.values.section : "";
+  const tabs = useOpsTabs("section", [
+    { key: "overdue", label: "Overdue", count: data?.overdue.length },
+    { key: "problems", label: "Problems", count: data?.problem_reports.length },
+    { key: "offenders", label: "Repeat offenders", count: data?.repeat_offenders.length },
+    { key: "restricted", label: "Restricted", count: data?.restrictions.length },
+  ], "overdue");
+  const section = tabs.active;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["accountability", makerspace.id] });
@@ -52,136 +58,53 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
     if (target && reason) restrict.mutate({ userId: target.requester_id, reason });
   };
 
-  return (
-    <div className="grid gap-4">
-      {section ? <button className="desk-button-ghost w-fit" type="button" onClick={() => list.setFilter("section", "")}>Show all accountability sections</button> : null}
-      {report.isLoading ? <p className="text-sm text-muted">Loading accountability...</p> : null}
-      {report.error ? <p className="text-sm text-danger">{(report.error as Error).message}</p> : null}
-
-      {!section || section === "overdue" ? <Panel title="Overdue loans">
-        {!data?.overdue.length ? (
-          <p className="text-sm text-muted">No overdue loans.</p>
-        ) : (
-          <div className="grid gap-2">
-            {data.overdue.map((row) => (
-              <div key={`${row.type}-${row.reference_id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface p-2 text-sm">
-                <div className="min-w-0">
-                  <p className="font-medium text-ink">{row.label || "(unnamed)"}</p>
-                  <p className="text-xs text-muted">{row.requester_username} | {row.type === "direct" ? "direct handout" : "request"}</p>
-                </div>
-                <span className="status-box status-box-danger">{row.days_overdue}d overdue</span>
-              </div>
-            ))}
-            {data.truncated.overdue ? <p className="text-xs text-muted">Showing the earliest overdue loans only.</p> : null}
-          </div>
-        )}
-      </Panel> : null}
-
-      {!section || section === "problems" ? <Panel title="Reported problems">
-        {!data?.problem_reports.length ? (
-          <p className="text-sm text-muted">No open problem reports from public returns.</p>
-        ) : (
-          <div className="grid gap-3">
-            {data.problem_reports.map((row) => (
-              <ProblemReportCard key={row.id} row={row} makerspace={makerspace} onTriaged={refreshAfterTriage} />
-            ))}
-            {data.truncated.problem_reports ? <p className="text-xs text-muted">Showing the oldest open reports only.</p> : null}
-          </div>
-        )}
-      </Panel> : null}
-
-      {!section ? <><Panel title="Repeat offenders">
-        {anonymous && anonymous.total_issues > 0 ? (
-          <div className="mb-4 rounded-xl border border-warn bg-warn-soft px-3 py-2">
-            <p className="text-sm font-medium text-ink">
-              Account-less loans: {anonymous.total_issues}{" "}
-              {anonymous.total_issues === 1 ? "incident" : "incidents"} ({anonymous.total_quantity}{" "}
-              {anonymous.total_quantity === 1 ? "item" : "items"})
-            </p>
-            <p className="mt-1 text-xs text-muted">
-              {anonymous.damaged} damaged, {anonymous.missing} missing. These have no person to
-              rank or restrict, so they are reported as a total rather than as a row above.
-            </p>
-          </div>
-        ) : null}
-        {!data?.repeat_offenders.length ? (
-          <p className="text-sm text-muted">
-            {anonymous && anonymous.total_issues > 0
-              ? "No damage or loss recorded against a named person."
-              : "No damage or loss on record."}
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[36rem] text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase text-muted">
-                  <th scope="col" className="p-2">Requester</th>
-                  <th scope="col" className="p-2">Damaged</th>
-                  <th scope="col" className="p-2">Missing</th>
-                  <th scope="col" className="p-2">Total issues</th>
-                  <th scope="col" className="p-2">Status</th>
-                  {isSuperadmin ? <th scope="col" className="p-2">Action</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {data.repeat_offenders.map((row) => (
-                  <tr key={row.requester_id} className="border-t border-line">
-                    <td className="p-2 font-medium text-ink">{row.username}</td>
-                    <td className="p-2 tabular-nums">{row.damaged}</td>
-                    <td className="p-2 tabular-nums">{row.missing}</td>
-                    <td className="p-2 tabular-nums">{row.total_issues} ({row.total_quantity} units)</td>
-                    <td className="p-2 capitalize">{row.access_status}</td>
-                    {isSuperadmin ? (
-                      <td className="p-2">
-                        {row.access_status === "active" ? (
-                          <button
-                            className="desk-button-danger"
-                            type="button"
-                            disabled={restrict.isPending}
-                            onClick={() => setRestrictionTarget({ requester_id: row.requester_id, username: row.username })}
-                          >
-                            Restrict
-                          </button>
-                        ) : (
-                          <button className="desk-button-success" type="button" disabled={restore.isPending} onClick={() => restore.mutate(row.requester_id)}>
-                            Restore
-                          </button>
-                        )}
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {data.truncated.repeat_offenders ? <p className="mt-2 text-xs text-muted">Showing the top offenders only.</p> : null}
-          </div>
-        )}
-      </Panel>
-
-      <Panel title="Restricted requesters">
-        {!data?.restrictions.length ? (
-          <p className="text-sm text-muted">No restricted requesters with accountability records here.</p>
-        ) : (
-          <div className="grid gap-2">
-            {data.restrictions.map((row) => (
-              <div key={row.requester_id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface p-2 text-sm">
-                <div className="min-w-0">
-                  <p className="font-medium text-ink">{row.username} <span className="text-xs capitalize text-muted">({row.access_status})</span></p>
-                  {row.restriction_reason ? <p className="text-xs text-muted">{row.restriction_reason}</p> : null}
-                </div>
-                {isSuperadmin ? (
-                  <button className="desk-button-success" type="button" disabled={restore.isPending} onClick={() => restore.mutate(row.requester_id)}>
-                    Restore access
-                  </button>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </Panel>
-      </> : null}
-      {restrict.error ? <p className="text-sm text-danger">{(restrict.error as Error).message}</p> : null}
-      {restore.error ? <p className="text-sm text-danger">{(restore.error as Error).message}</p> : null}
+  const selectedCount = section === "overdue" ? data?.overdue.length : section === "problems"
+    ? data?.problem_reports.length : section === "offenders" ? data?.repeat_offenders.length : data?.restrictions.length;
+  const empty = { overdue: "No overdue loans. Nice.", problems: "No open problem reports.",
+    offenders: "No damage or loss on record against a named person.", restricted: "No one is restricted here." }[section]!;
+  const status = (value: string) => <StatusPill label={opsStatusLabel(value)} tone={value === "active" ? "success" : "danger"} />;
+  return <div onClickCapture={tabs.onClickCapture}>
+    <ListLayout header={{ title: "Accountability", subtitle: "Late, lost or damaged — and who it's tied to." }}
+      state={opsQueryState(report, "accountability")} tabs={tabs.tabs} activeTab={section}
+      stats={[
+        { label: "Overdue loans", value: data?.overdue.length ?? 0, href: tabs.href("overdue") },
+        { label: "Open problems", value: data?.problem_reports.length ?? 0, href: tabs.href("problems") },
+        { label: "Repeat offenders", value: data?.repeat_offenders.length ?? 0, href: tabs.href("offenders") },
+        { label: "Restricted", value: data?.restrictions.length ?? 0, href: tabs.href("restricted") },
+      ]} isEmpty={!selectedCount && !(section === "offenders" && anonymous && anonymous.total_issues > 0)}
+      empty={{ message: empty }} body={{ kind: "rows", rows: <>
+        {section === "overdue" ? <>{data?.overdue.map(row => <ListRow key={row.type + "-" + row.reference_id}
+          title={row.label || "(unnamed)"} identity={{ kind: "avatar", name: row.requester_username, seed: row.requester_username }}
+          meta={row.requester_username + " · " + (row.type === "direct" ? "Direct handout" : "Request")}
+          right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={"Overdue " + row.days_overdue + " d"} tone="danger" />
+            {row.type === "request" ? <a className="desk-button" href={"/m/" + makerspace.slug + "/admin/requests?id=" + row.reference_id}>Open loan</a> : null}</div>} />)}
+          {data?.truncated.overdue ? <p className="text-sm text-muted">Showing the earliest overdue loans only.</p> : null}</> : null}
+        {section === "problems" ? <>{data?.problem_reports.map(row => <ProblemReportCard key={row.id} row={row}
+          makerspace={makerspace} onTriaged={refreshAfterTriage} />)}
+          {data?.truncated.problem_reports ? <p className="text-sm text-muted">Showing the oldest open reports only.</p> : null}</> : null}
+        {section === "offenders" ? <>
+          {anonymous && anonymous.total_issues > 0 ? <div className="rounded-xl border border-line bg-surface p-4">
+            <h2 className="title-section">Account-less loans</h2>
+            <p className="mt-2 text-sm">{anonymous.total_issues} {anonymous.total_issues === 1 ? "incident" : "incidents"} · {anonymous.total_quantity} {anonymous.total_quantity === 1 ? "item" : "items"}</p>
+            <p className="mt-1 text-sm text-muted">{anonymous.damaged} damaged, {anonymous.missing} missing. These have no person to rank or restrict, so they are reported as a total.</p>
+          </div> : null}
+          {data?.repeat_offenders.map(row => <ListRow key={row.requester_id} title={row.username}
+            identity={{ kind: "avatar", name: row.username, seed: String(row.requester_id) }}
+            meta={row.damaged + " damaged · " + row.missing + " missing · " + row.total_issues + " issues (" + row.total_quantity + " units)"}
+            right={<div className="flex flex-wrap items-center gap-3">{status(row.access_status)}
+              {isSuperadmin ? row.access_status === "active"
+                ? <button className="desk-button" type="button" disabled={restrict.isPending} onClick={() => setRestrictionTarget({ requester_id: row.requester_id, username: row.username })}>Restrict…</button>
+                : <button className="desk-button" type="button" disabled={restore.isPending} onClick={() => restore.mutate(row.requester_id)}>{restore.isPending && restore.variables === row.requester_id ? "Restoring…" : "Restore access"}</button> : null}</div>} />)}
+          {!data?.repeat_offenders.length ? <p className="text-sm text-muted">{empty}</p> : null}
+          {data?.truncated.repeat_offenders ? <p className="text-sm text-muted">Showing the top offenders only.</p> : null}
+        </> : null}
+        {section === "restricted" ? data?.restrictions.map(row => <ListRow key={row.requester_id} title={row.username}
+          identity={{ kind: "avatar", name: row.username, seed: String(row.requester_id) }}
+          meta={row.restriction_reason} right={<div className="flex flex-wrap items-center gap-3">{status(row.access_status)}
+            {isSuperadmin ? <button className="desk-button" type="button" disabled={restore.isPending} onClick={() => restore.mutate(row.requester_id)}>{restore.isPending && restore.variables === row.requester_id ? "Restoring…" : "Restore access"}</button> : null}</div>} />) : null}
+      </> }} detail={<>
+        {restrict.error ? <ErrorBlock error={restrict.error} /> : null}
+        {restore.error ? <ErrorBlock error={restore.error} /> : null}
       <Modal
         open={restrictionTarget !== null}
         onClose={closeRestrictionDialog}
@@ -192,7 +115,7 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
             {/* Submit no-ops on a blank reason, so leaving it enabled renders a dead button that
                 reports nothing. Disabling states the requirement instead of failing silently. */}
             <button className="desk-button-danger" type="submit" form={restrictionFormId} disabled={!restrictionReason.trim() || restrict.isPending}>
-              {restrict.isPending ? "Restricting..." : "Restrict requester"}
+              {restrict.isPending ? "Restricting…" : "Restrict " + (restrictionTarget?.username ?? "requester")}
             </button>
           </div>
         )}
@@ -201,7 +124,8 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
           <p className="text-sm text-muted">
             Restrict {restrictionTarget?.username ?? "this requester"} from making new requests.
           </p>
-          <label className="eyebrow grid gap-2">
+          <p className="text-sm text-muted">Add a reason to continue.</p>
+          <label className="grid gap-2 text-sm font-semibold">
             <span>Reason for restriction</span>
             <textarea
               className="desk-input min-h-24"
@@ -212,6 +136,6 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
           </label>
         </form>
       </Modal>
-    </div>
-  );
+      </>} />
+  </div>;
 }

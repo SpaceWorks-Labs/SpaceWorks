@@ -18,14 +18,18 @@ const inboxKey = (makerspaceId: number) => [
   "events", makerspaceId, "series-collaboration-inbox",
 ] as const;
 
-export function EventSeriesCollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
-  const client = useQueryClient();
-  const inbox = useQuery({
+export function useSeriesCollaborationInbox(makerspaceId: number) {
+  return useQuery({
     queryKey: inboxKey(makerspaceId),
     queryFn: () => staffRequest<SeriesInvitation[]>(
       `/admin/makerspaces/${makerspaceId}/event-series-collaborations/`,
     ),
   });
+}
+
+export function EventSeriesCollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
+  const client = useQueryClient();
+  const inbox = useSeriesCollaborationInbox(makerspaceId);
   const respond = useMutation({
     mutationFn: ({ id, accept }: { id: number; accept: boolean }) =>
       staffRequest(`/admin/event-series-collaborations/${id}/respond/`, {

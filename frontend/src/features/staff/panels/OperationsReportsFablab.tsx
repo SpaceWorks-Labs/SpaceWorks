@@ -1,9 +1,10 @@
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { DataState, PerMakerspaceTables, ReportTable, StatCards } from "./OperationsReportsParts";
 import { OperationsReportsBookings } from "./OperationsReportsBookings";
 import { OperationsReportsEvents } from "./OperationsReportsEvents";
 import { OperationsReportsMachineUsage } from "./OperationsReportsMachineUsage";
 import { OperationsReportsMaintenance } from "./OperationsReportsMaintenance";
-import { Panel, type Makerspace } from "./shared";
+import { type Makerspace } from "./shared";
 import { useFablabReport, type FabLabHealthRow, type FablabPanelProps } from "./operationsReportsFablabApi";
 
 export function OperationsReportsFablab({
@@ -33,10 +34,10 @@ export function OperationsReportsFablab({
   if (healthRow?.maintenance_available) healthStats.push(["Maintenance logs", healthRow.maintenance_logs ?? 0], ["Overdue schedules (snapshot)", healthRow.maintenance_overdue_schedules ?? 0]);
   if (healthRow?.bookings_available) healthStats.push(["Upcoming bookings", healthRow.bookings_upcoming ?? 0]);
   return (
-    <section className="space-y-4" aria-label="FabLab analytics">
+    <section className="contents" aria-label="FabLab analytics">
       <Panel title="FabLab health">
         {!reportsEnabled ? <p className="text-sm text-muted">Module disabled</p> : (
-          <DataState loading={health.isLoading} error={health.error} empty={!health.data?.typed_rows.length}>
+          <DataState loading={health.isLoading} error={health.error} onRetry={() => void health.refetch()} empty={!health.data?.typed_rows.length}>
             {aggregate ? (
               <PerMakerspaceTables data={health.data} nameOf={makerspaceName} />
             ) : healthRow ? (

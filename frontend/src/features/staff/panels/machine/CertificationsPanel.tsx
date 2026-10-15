@@ -5,7 +5,7 @@ import { certificationKeys, createCertificationType, deactivateCertificationType
 import { CertificationTypeForm } from "./CertificationTypeForm";
 import { CertificationGrants } from "./CertificationGrants";
 
-export function CertificationsPanel({ makerspaceId, machineTypeId }: { makerspaceId: number; machineTypeId: number }) {
+export function CertificationsPanel({ makerspaceId, machineTypeId , visible = true }: { visible?: boolean; makerspaceId: number; machineTypeId: number }) {
   const client = useQueryClient();
   const [selected, setSelected] = useState<number | null>(null);
   const [editing, setEditing] = useState<CertificationType | "new" | null>(null);
@@ -16,6 +16,7 @@ export function CertificationsPanel({ makerspaceId, machineTypeId }: { makerspac
   const remove = useMutation({ mutationFn: deactivateCertificationType, onSuccess: async () => { setDeactivate(null); await refresh(); } });
   const rows = types.data?.filter((row) => row.machine_type === machineTypeId) ?? [];
   const initial: CertificationInput = editing && editing !== "new" ? editing : { machine_type: machineTypeId, name: "", description: "", validity_days: null, is_required_for_booking: false, is_required_for_service: false };
+  if (!visible) return null;
   return <section className="grid gap-3 rounded-xl border border-line bg-panel p-3" aria-label="Certifications">
     <h3 className="title-panel">Certifications</h3>
     {types.isLoading ? <p role="status">Loading certifications…</p> : null}

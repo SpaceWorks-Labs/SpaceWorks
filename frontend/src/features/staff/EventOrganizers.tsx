@@ -4,7 +4,7 @@ import type { StaffEvent } from "./eventsApi";
 import { useReplaceEventOrganizers } from "./eventsApi";
 import { useOrganizations } from "./organizationsApi";
 
-export function EventOrganizers({ event, makerspaceId, disabled }: {
+export function EventOrganizers({ visible = true, event, makerspaceId, disabled }: { visible?: boolean;
   event: StaffEvent;
   makerspaceId: number;
   disabled: boolean;
@@ -21,6 +21,7 @@ export function EventOrganizers({ event, makerspaceId, disabled }: {
     setSelected((values) => values.includes(id) ? values.filter((item) => item !== id) : [...values, id]);
   }
 
+  if (!visible) return null;
   return (
     <section className="rounded-xl border border-line bg-bg p-4" aria-labelledby={`event-${event.id}-organizers`}>
       <h3 className="title-section" id={`event-${event.id}-organizers`}>Organization organizers</h3>

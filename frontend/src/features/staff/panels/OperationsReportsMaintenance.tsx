@@ -1,5 +1,6 @@
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
-import { Panel } from "./shared";
+
 import { groupReportByMakerspace, sum, useFablabReport, type FablabPanelProps, type MaintenanceActivityRow, type ReportResponse } from "./operationsReportsFablabApi";
 
 export function OperationsReportsMaintenance(props: FablabPanelProps) {
@@ -9,7 +10,7 @@ export function OperationsReportsMaintenance(props: FablabPanelProps) {
   const groups = groupReportByMakerspace(query.data);
   return (
     <Panel title="Maintenance activity">
-      <DataState loading={query.isLoading} error={query.error} empty={!rows.length}>
+      <DataState loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()} empty={!rows.length}>
         {props.aggregate ? <>
           <p className="mt-3 text-xs text-muted">Recorded costs remain per makerspace and are never combined across makerspaces.</p>
           <div className="mt-4 space-y-6">{groups.map((group) => (

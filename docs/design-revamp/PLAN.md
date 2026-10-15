@@ -323,3 +323,22 @@ shell-contracts §1B, §3 · 6 dashboard data → shell-contracts §4 (unavailab
 DataTable behaviour → shell-contracts §3, §5 · 9 docs in owning phase → INVARIANTS in dr-tokens,
 SOURCE-MAP in dr-shell · 10 asset/font inventory, font-mono, System theme → dr-brand-assets list, H.6,
 "System" dropped.
+
+## 11. Queued after wave 4 (owner request 2026-10-15) — separate plan + Stage-1 gate
+
+1. Merge `dev` into `feature/design-revamp` after all revamp phases (owner instruction) and revamp the new
+   events pages it brings with the same layouts/brand, so no screen stays in the old style.
+2. Two new protected default roles, **"Events Manager"** and **"Bookings Manager"** (owner update
+   2026-10-15), seeded per makerspace like Space Manager / Inventory Manager / Machine Manager / Member, each
+   holding everything to run its area so no custom role is needed. **One person can hold both** at the same
+   makerspace (multi-role or composed-role design decided in the follow-up plan). On sign-in every staff
+   member sees exactly the sidebar sections their combined permissions allow.
+3. Dashboard access for Super Admin, Space Manager, Events Manager and Bookings Manager.
+4. Per-machine assignment: a Space Manager assigns (and later reassigns) who manages each machine when it is
+   created, without creating a custom role per machine.
+These change RBAC, migrations and machine-scoping invariants, so they get their own plan
+(research: `research/roles-events-machines.md`), Codex plan review and owner approval before implementation.
+5. Every new screen from items 1–4 (dev's new events pages, the Events Manager / Bookings Manager role screens, the
+   per-machine assignment flow — e.g. an "Assign people" step when a machine is created and a "Managed by"
+   panel with Reassign on the machine detail) is built ONLY from the two owner sources: brand guidelines v1
+   (visual) and the Yuyu boards (UX), composed from the revamp's layouts/primitives — no one-off pages.

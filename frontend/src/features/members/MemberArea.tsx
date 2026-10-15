@@ -1,10 +1,13 @@
+import { MemberSectionNavigation } from "./MemberSectionNavigation";
 import { MemberPortalTabs, useMemberTab } from "./MemberPortalTabs";
 import { SupportContact } from "../../components/SupportContact";
-import { PageHeader } from "../../components/ui";
+import { CenteredCardLayout } from "../../components/layouts";
+import { EmptyState, StatusPill } from "../../components/ui";
+import { MemberScreenLayout } from "./MemberScreenLayout";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import type { ArchivedPaymentSummary, MembershipPolicyEnum } from "../../generated/api";
 import { bootstrapTenant, logout, memberRequest, refreshAccessToken, StructuredApiError } from "../../lib/api";
@@ -49,8 +52,11 @@ function message(error: unknown) {
 export function MemberArea() {
   const { slug = "" } = useParams();
   const client = useQueryClient();
+  const [search] = useSearchParams();
+
   const [restoring, setRestoring] = useState(true);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [hasPartnerEvents, setHasPartnerEvents] = useState(false);
   const [claimSession, setClaimSession] = useState(hasClaimSession);
   useEffect(() => {
     refreshAccessToken().then(() => { setClaimSession(hasClaimSession()); return client.invalidateQueries({ queryKey: ["member"] }); }).finally(() => setRestoring(false));
@@ -72,6 +78,15 @@ export function MemberArea() {
   // errors -- the dashboard simply does not exist for a space that runs no memberships.
   const activeTab = useMemberTab(bootstrap.data?.modules ?? []);
   const membershipModuleOn = (bootstrap.data?.modules ?? []).includes("membership");
+  const accountSections = ["profile", "card", "certifications", "community", "invitations"].filter(key => key === "certifications"
+    ? membership?.membership_status === "active" && Boolean(bootstrap.data?.modules.includes("machines"))
+    : key === "invitations" ? Boolean(memberAccess && resolvedSlug && makerspaceId >= 0)
+      : membershipModuleOn && membership?.membership_status === "active");
+  const requestedSection = search.get("section");
+  const section = activeTab === "account" ? requestedSection && accountSections.includes(requestedSection) ? requestedSection : accountSections[0] || "access"
+    : requestedSection || (activeTab === "loans" ? "current" : activeTab === "events" ? "going" : activeTab === "inbox" ? "notices" : "");
+  const accountSelfService = Boolean(membershipModuleOn && membership?.membership_status === "active" && bootstrap.data?.modules.includes("member_accounts") && (bootstrap.data.features?.includes("membership.self_service") || bootstrap.data.features?.includes("membership.self_export")));
+
   useEffect(() => {
     if (membershipRefused || (memberships.isSuccess && bootstrap.isSuccess && (!membership || membership.membership_status !== "active" || !membershipModuleOn))) forgetOfflineMemberData();
   }, [membershipRefused, memberships.isSuccess, bootstrap.isSuccess, membership, membershipModuleOn]);
@@ -124,9 +139,9 @@ export function MemberArea() {
   // The card panel exists only where the `membership` module is installed -- the card is
   // hung off a membership, so every one of its endpoints refuses with 400 without it.
 
-  if (restoring) return <main className="desk-shell grid place-items-center px-5 text-sm text-muted">Restoring session…</main>;
+  if (restoring) return <CenteredCardLayout title="Your makerspace access" body="Restoring session..." primary={{ label: "Browse catalogue", href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} /></div>;
-  if (showSignIn) return <div style={brandStyle}><MemberAuthPanel makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
+  if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: bootstrap.data.branding?.display_name || bootstrap.data.makerspace.name, logo: bootstrap.data.branding?.logo_url || undefined } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
   return <div style={brandStyle}>
     <MemberPortalTabs modules={bootstrap.data?.modules ?? []} active={activeTab}
@@ -134,8 +149,11 @@ export function MemberArea() {
         avatar: { kind: "avatar", name: bootstrap.data.makerspace.name, seed: resolvedSlug }, locked: true } : undefined}
       user={{ name: profile.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }],
         onSignOut: () => { void logout().catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
-    <PageHeader title="Your makerspace access" eyebrow="Member area" />
-    {membershipModuleOn ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "SpaceWorks member"} /> : null}
+    <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"}
+      name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
+      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrap.isError && !archivedUnknown && !archivedPayments.data?.length ? { status: "error", error: "Couldn't load your makerspace. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
+      primary={membership?.membership_status === "active" && bootstrap.data?.modules.includes("presence") ? { label: presence.data?.active ? "End presence" : "Start 2-hour presence", onClick: () => presence.data?.active ? end.mutate() : start.mutate(), pending: start.isPending || end.isPending } : undefined}>
+    {membershipModuleOn ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
     {activeTab === "account" && profile.data ? <Link className="desk-button-brand inline-flex" to="/mfa">Manage two-step sign-in</Link> : null}
     {archivedPayments.data?.length ? <section className="desk-panel p-5"><h2 className="title-panel">Payments from closed makerspaces</h2><p className="mt-1 text-sm text-muted">Receipts and outstanding charges remain available after a makerspace closes.</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">View archived payments</Link></section> : null}
     {archivedUnknown ? <section className="desk-panel p-5"><h2 className="title-panel">Closed makerspace?</h2><p className="mt-1 text-sm text-muted">If a makerspace you belonged to has closed, its receipts and any outstanding charges are still reachable. You may need to sign in there.</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">View archived payments</Link></section> : null}
@@ -147,27 +165,28 @@ export function MemberArea() {
     {activeTab === "overview" && (membershipModuleOn && latestApplication?.id ? <MemberAdmission makerspaceId={makerspaceId} request={ownApplication.data?.id === latestApplication.id && ownApplication.data.state === latestApplication.state ? ownApplication.data : latestApplication as AdmissionRequest} /> : requested ? <section className="desk-panel p-5"><h2 className="title-panel">Membership request sent</h2><p className="mt-1 text-sm text-muted">Staff will review your request.</p></section> : null)}
     {activeTab === "overview" && canReadApplication && ownApplication.error ? <p className="text-sm text-danger" role="alert">{ownApplication.error.message}</p> : null}
     {unauthenticated && resolvedSlug ? <MemberClaimRedemption slug={resolvedSlug} onRedeemed={() => setClaimSession(true)} /> : null}
-    {membership ? <>{activeTab === "overview" ? <section className={`desk-panel ${membership.membership_status === "active" ? "border-success" : "border-warn"} p-5`}><h2 className="title-panel">Membership</h2><p className="eyebrow mt-2">{membership.makerspace.name} · {membership.membership_status} · {membership.role}</p></section> : null}
+    {membership ? <>{activeTab === "overview" ? <section className={`desk-panel ${membership.membership_status === "active" ? "border-success" : "border-warn"} p-5`}><h2 className="title-panel">Membership</h2><div className="mt-2 flex flex-wrap items-center gap-3"><StatusPill label={membership.membership_status} tone={membership.membership_status === "active" ? "success" : "warn"} /><p className="text-sm text-muted">{membership.makerspace.name} · {membership.role.replace(/_/g, " ")}</p></div></section> : null}
       {activeTab === "account" && membershipModuleOn && bootstrap.data?.modules.includes("member_accounts") && membership.membership_status === "active" && (bootstrap.data?.features?.includes("membership.self_service") || bootstrap.data?.features?.includes("membership.self_export")) ? <Link className="desk-button-brand inline-flex" to={`${slug ? `/m/${slug}/member` : "/member"}/account`}>Manage your account</Link> : null}
-      {activeTab === "overview" && waiver.data?.has_waiver ? <section className="desk-panel p-5"><h2 className="title-panel">Current waiver (<span className="tabular-nums">{waiver.data.version}</span>)</h2><p className="mt-3 whitespace-pre-wrap text-sm text-muted">{waiver.data.body}</p>{membership.waiver_acceptance_required ? <button className="desk-button-brand mt-4" disabled={accept.isPending} onClick={() => accept.mutate()}>Accept waiver</button> : <p className="mt-3 text-sm text-success-ink">Current waiver acceptance is on file.</p>}</section> : null}
+      {activeTab === "overview" && waiver.data?.has_waiver ? <section id="current-waiver" className="desk-panel p-5"><h2 className="title-panel">Current waiver (<span className="tabular-nums">{waiver.data.version}</span>)</h2><p className="mt-3 whitespace-pre-wrap text-sm text-muted">{waiver.data.body}</p>{membership.waiver_acceptance_required ? <button className="desk-button-brand mt-4" disabled={accept.isPending} onClick={() => accept.mutate()}>Accept waiver</button> : <p className="mt-3 text-sm text-success-ink">Current waiver acceptance is on file.</p>}</section> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" && membership.can_verify ? <MemberVerifierPanel makerspaceId={makerspaceId} /> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" && admission.data?.join_mode === "vouch" ? <MemberVouch makerspaceId={makerspaceId} /> : null}
-      {activeTab === "overview" && membership.membership_status === "active" && bootstrap.data?.modules.includes("presence") ? <section className={`desk-panel ${presence.data?.active ? "border-success" : "border-brand"} p-5`}><h2 className="title-panel">Presence</h2><p className="mt-1 text-sm text-muted">{presence.data?.active ? <>Active until <span className="tabular-nums">{new Date(presence.data.session?.expires_at ?? "").toLocaleTimeString()}</span></> : "No active session."}</p><button className="desk-button-brand mt-4" disabled={start.isPending || end.isPending || (!presence.data?.active && !bootstrap.data)} onClick={() => presence.data?.active ? end.mutate() : start.mutate()}>{presence.data?.active ? "End presence" : "Start 2-hour presence"}</button></section> : null}
+      {activeTab === "overview" && membership.membership_status === "active" && bootstrap.data?.modules.includes("presence") ? <section className={`desk-panel ${presence.data?.active ? "border-success" : "border-brand"} p-5`}><h2 className="title-panel">Presence</h2><p className="mt-1 text-sm text-muted">{presence.data?.active ? <>Active until <span className="tabular-nums">{new Date(presence.data.session?.expires_at ?? "").toLocaleTimeString()}</span></> : "No active session."}</p></section> : null}
       {/* Notices first: they are the reason to open a dashboard at all. */}
-      {(activeTab === "overview" || activeTab === "inbox") && memberActivity ? <MemberNotices notices={memberActivity.notices} /> : null}
-      {activeTab === "account" && membership?.membership_status === "active" && (bootstrap.data?.modules ?? []).includes("machines") ? <MemberCertifications key={makerspaceId} makerspaceId={makerspaceId} /> : null}
+      {(activeTab === "overview" || activeTab === "inbox" && section === "notices") && memberActivity ? <MemberNotices notices={memberActivity.notices} /> : null}
+      {activeTab === "account" && section === "certifications" && membership?.membership_status === "active" && (bootstrap.data?.modules ?? []).includes("machines") ? <MemberCertifications key={makerspaceId} makerspaceId={makerspaceId} /> : null}
       {activeTab === "inbox" && membership.membership_status === "active" && bootstrap.data?.modules.includes("notifications") ? <MemberNotifications makerspaceId={makerspaceId} features={bootstrap.data.features ?? []} /> : null}
-      {["overview", "loans", "bookings", "events"].includes(activeTab) && memberActivity ? <MemberActivityPanel modules={bootstrap.data?.modules ?? []} section={activeTab === "overview" ? "overview" : activeTab as "loans" | "bookings" | "events"} activity={memberActivity} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} /> : null}
+      {(["overview", "events"].includes(activeTab) && section !== "partners" || activeTab === "loans" && section !== "history") && memberActivity ? <MemberActivityPanel modules={bootstrap.data?.modules ?? []} section={activeTab === "overview" ? "overview" : activeTab as "loans" | "bookings" | "events"} activity={memberActivity} eventPeriod={section === "past" ? "past" : "going"} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} /> : null}
       {activeTab === "overview" && memberActivity ? <MemberTerm term={memberActivity.membership_term} /> : null}
+      {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" ? <MemberCardPanel compact cardHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=card`} makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : null}
       {activeTab === "payments" && memberActivity ? <MemberDues dues={memberActivity.membership_dues} /> : null}
-      {activeTab === "loans" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history} /> : null}
-      {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} /> : null}
-      {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <><MemberProfilePanel makerspaceId={makerspaceId} /><MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /><MemberDirectory makerspaceId={makerspaceId} /></> : null}</> : null}
+      {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history} /> : null}
+      {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
+      {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
     {/* OUTSIDE the membership branch. A loan deposit is raised against a borrower, who
         needs an active account rather than a membership -- nesting this meant the person
         who owed the money was the one person who could not see it. */}
     {activeTab === "payments" && paymentRows?.length ? <section className="desk-panel p-5"><h2 className="title-panel">Payments</h2><MemberPaymentRows makerspaceId={makerspaceId} payments={paymentRows} checkoutPaymentId={generatePaymentLink.isPending ? generatePaymentLink.variables : undefined} onCheckout={(paymentId) => generatePaymentLink.mutate(paymentId)} /></section> : null}
-    {activeTab === "account" && memberAccess && resolvedSlug && makerspaceId >= 0 ? <MemberReferrals
+    {activeTab === "account" && section === "invitations" && memberAccess && resolvedSlug && makerspaceId >= 0 ? <MemberReferrals
       canRefer={membershipModuleOn && membership?.membership_status === "active" && membership.can_refer}
       referralsEnabled={membershipModuleOn && membership?.membership_status === "active" && membership.referrals_enabled}
       emailVerified={profile.data?.email_verified}
@@ -191,12 +210,13 @@ export function MemberArea() {
     {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} /> : null}
     {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>Sign in to your account</button> : null}
     {["loans", "events", "inbox"].includes(activeTab) && !memberships.isLoading && membership?.membership_status !== "active" ? <p className="text-sm text-muted">An active membership is required to view your activity.</p> : null}
-    {activeTab === "inbox" && memberActivity && !memberActivity.notices?.length ? <p className="text-sm text-muted">No notices need your attention.</p> : null}
+    {activeTab === "inbox" && section === "notices" && memberActivity && !memberActivity.notices?.length ? <p className="text-sm text-muted">No notices need your attention.</p> : null}
     {["loans", "bookings", "events", "inbox"].includes(activeTab) && activity.isLoading ? <p role="status" className="text-sm text-muted">Loading your activity...</p> : null}
     {activeTab === "payments" && payments.isLoading ? <p role="status" className="text-sm text-muted">Loading payments...</p> : null}
-    {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <p className="text-sm text-muted">No payments to show.</p> : null}
+    {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <EmptyState message="Nothing to pay. You?re all settled." /> : null}
     {activeTab === "payments" && payments.error ? <p role="alert" className="text-sm text-danger">{message(payments.error)}</p> : null}
     <SupportContact branding={bootstrap.data?.branding} />
+    </MemberScreenLayout></MemberSectionNavigation>
     </MemberPortalTabs>
   </div>;
 }

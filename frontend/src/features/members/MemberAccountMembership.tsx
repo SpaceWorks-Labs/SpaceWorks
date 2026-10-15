@@ -1,3 +1,4 @@
+import { DangerZone, StatusPill } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accountKey, endMembership, ownMembership } from "./memberAccountApi";
@@ -16,7 +17,7 @@ export function MemberAccountMembership({ makerspaceId, onLeft }: { makerspaceId
     {membership.isLoading ? <p role="status">Loading membership…</p> : null}
     {membership.data?.renewal_cancelled_at ? <p role="status">Renewal is cancelled. Your current term remains available until it ends.</p> : null}
     <p className="text-sm text-muted mt-2">Cancel renewal to keep your current term. Leaving ends your membership immediately. Existing loans and payment records remain on file.</p>
-    {membership.data ? <div className="flex flex-wrap gap-2 mt-3"><button className="desk-button-brand" disabled={Boolean(membership.data.renewal_cancelled_at) || change.isPending} onClick={() => { change.reset(); setAction("cancel"); }}>Cancel renewal</button><button className="desk-button-brand" disabled={change.isPending} onClick={() => { change.reset(); setAction("leave"); }}>Leave makerspace</button></div> : null}
+    {membership.data ? <><div className="mt-3"><StatusPill label={membership.data.status || "Membership"} /></div><DangerZone title="Cancel renewal" consequence="Your current term stays available until it ends." action={{ label: "Cancel renewal", disabled: Boolean(membership.data.renewal_cancelled_at) || change.isPending, disabledReason: membership.data.renewal_cancelled_at ? "Renewal is already cancelled" : change.isPending ? "Updating membership" : undefined, onClick: () => { change.reset(); setAction("cancel"); } }} /><DangerZone title="Leave makerspace" consequence="Membership ends immediately. Existing loans and payment records remain on file." action={{ label: "Leave makerspace", disabled: change.isPending, disabledReason: change.isPending ? "Updating membership" : undefined, onClick: () => { change.reset(); setAction("leave"); } }} /></> : null}
     {action ? <form className="mt-4 grid gap-3" onSubmit={(event) => { event.preventDefault(); change.mutate(); }}>
       <label className="text-sm">Reason<textarea className="desk-input mt-1" required maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} /></label>
       <p>{action === "leave" ? "Confirm that you want to leave this makerspace now." : "Confirm that you want to stop future renewal."}</p>

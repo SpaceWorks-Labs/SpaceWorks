@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
+import { CenteredCardLayout } from "../../components/layouts";
+
 type Props = {
   children: ReactNode;
   resetKey: string;
@@ -29,16 +31,9 @@ export class StaffPanelErrorBoundary extends Component<Props, State> {
   render() {
     if (!this.state.error) return this.props.children;
 
-    return (
-      <section className="desk-panel p-6" role="alert">
-        <h2 className="title-panel">This page could not be displayed</h2>
-        <p className="mt-2 text-sm text-muted">
-          The rest of Space Works is still available. Reload this page to try again.
-        </p>
-        <button className="desk-button-primary mt-4" type="button" onClick={() => window.location.reload()}>
-          Reload page
-        </button>
-      </section>
-    );
+    return <CenteredCardLayout standalone={false} state={{ status: "ready" }}
+      media={{ icon: "TriangleAlert", tone: "danger" }} title="This page couldn't load"
+      body="Something went wrong on our side. Reloading usually fixes it."
+      primary={{ label: "Reload page", onClick: () => window.location.reload() }} />;
   }
 }

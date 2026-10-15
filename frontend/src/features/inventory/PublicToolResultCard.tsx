@@ -17,7 +17,7 @@ export function ResultCard({ result }: { result: PublicToolLoanResult }) {
       <div className="mt-3 space-y-2">
         {result.items.map((item) => (
           <div
-            className="flex items-center justify-between gap-3 rounded-lg border border-on-success/20 bg-panel/80 px-3 py-2 text-sm"
+            className="flex items-center justify-between gap-3 rounded-lg border border-line bg-panel text-ink px-3 py-2 text-sm"
             key={item.product_name}
           >
             <span>{item.product_name}</span>

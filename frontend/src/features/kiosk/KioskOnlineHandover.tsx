@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { ListRow, ResultPanel, StatusPill } from "../../components/ui";
 
 import { EvidenceUpload } from "../staff/panels/EvidenceUpload";
 import { KitChecklistCapture, useSuppliedKitChecklist } from "../inventory/KitChecklist";
@@ -17,6 +18,8 @@ type Props = { token: string; lease: KioskLease; makerspaceId: number;
 // issue or return through the lease-checked command route. Evidence goes straight to
 // object storage via the kiosk presign; the server promotes it inside the workflow.
 export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }: Props) {
+  const [loadingWork, setLoadingWork] = useState(false);
+  const [running, setRunning] = useState<string | null>(null);
   const [requestId, setRequestId] = useState("");
   const [work, setWork] = useState<KioskWorkPackage | null>(null);
   const [boxCode, setBoxCode] = useState("");
@@ -30,7 +33,7 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
   const presign = (body: object) => prepareEvidence(token, lease.lease_token, body);
 
   async function load(id: number) {
-    setError(null);
+    setLoadingWork(true); setError(null);
     try {
       const loaded = await loadWorkPackage(token, lease.lease_token, "reviewed_request", id);
       setWork(loaded);
@@ -38,22 +41,25 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
       await onWorkLoaded?.(loaded);
     }
     catch { setWork(null); setError("That request is not available to this Station."); }
+    finally { setLoadingWork(false); }
   }
 
   function submitLoad(event: FormEvent) {
     event.preventDefault();
+    if (loadingWork || running) return;
     setMessage(null);
     void load(Number(requestId));
   }
 
   async function run(kind: string, payload: object, done: string) {
-    if (!work) return;
-    setError(null);
+    if (!work || running) return;
+    setRunning(kind); setError(null);
     try {
       await runOnlineCommand(token, lease.lease_token, kind, { request_id: work.id, ...payload });
       setMessage(done); setRemark(""); setBoxCode(""); setEvidenceId(null);
       await load(work.id);
     } catch { setError("The handover was refused. Check the box, photo and remark, then try again."); }
+    finally { setRunning(null); }
   }
 
   const resolutions = (work?.lines ?? []).filter((line) => line.quantity > line.returned).map((line) => ({
@@ -65,14 +71,15 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
   return <div className="grid gap-4">
     <form className="flex flex-wrap items-end gap-3" onSubmit={submitLoad}>
       <label className="grid gap-1 text-sm">Request number<input className="desk-input tabular-nums" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
-      <button className="desk-button-brand" type="submit" disabled={!requestId}>Load request</button>
+      <button className="desk-button-brand" type="submit" disabled={!requestId || loadingWork || Boolean(running)}>{loadingWork ? "Loading…" : "Load request"}</button>
     </form>
     {work ? <section className="grid gap-3" aria-label={work.display_label}>
-      <p className="text-sm"><strong>{work.display_label}</strong> · {work.person_display || "Requester"} · {work.status}{work.box ? ` · box ${work.box}` : ""}</p>
-      <ul className="text-sm">{work.lines.map((line) => <li key={line.item_id}>{line.label} × {line.quantity} (returned {line.returned})</li>)}</ul>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="title-panel">{work.display_label}</h2><StatusPill label={work.status.replace(/_/g, " ")} tone="accent" /></div>
+      <p className="text-sm text-muted">{work.person_display || "Requester"}{work.box ? ` · box ${work.box}` : ""}</p>
+      <div className="grid gap-3">{work.lines.map(line => <ListRow key={line.item_id} title={line.label} right={<span className="text-sm tabular-nums">{line.returned} / {line.quantity} returned</span>} />)}</div>
       {work.status === "accepted" && !work.box && allowed.has("assign_box") ? <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); void run("assign_box", { box_code: boxCode.trim() }, "Box assigned."); }}>
         <label className="grid gap-1 text-sm">Box code<input className="desk-input tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label>
-        <button className="desk-button-primary" type="submit">Assign box</button>
+        <button className="desk-button-primary" type="submit" disabled={Boolean(running)}>{running === "assign_box" ? "Assigning…" : "Assign box"}</button>
       </form> : null}
       {canIssue || canReturn ? <form className="grid gap-3" onSubmit={(event) => {
         event.preventDefault();
@@ -84,10 +91,10 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
         {canReturn ? <label className="grid gap-1 text-sm">Scan the box<input className="desk-input tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label> : null}
         <label className="grid gap-1 text-sm">Remark<input className="desk-input" required={canReturn} value={remark} onChange={(event) => setRemark(event.target.value)} /></label>
         <KitChecklistCapture checklist={kits} />
-        <button className="desk-button-primary" type="submit" disabled={evidenceId === null || !kits.ready}>{canIssue ? "Issue items" : "Return all items"}</button>
+        <p className="text-sm text-muted">{evidenceId === null ? `Add the ${canIssue ? "issue" : "return"} photo${canReturn ? " and a return remark" : ""} to continue.` : !kits.ready ? "Check every kit part to continue." : "Review the details before confirming this handover."}</p><button className="desk-button-primary" type="submit" disabled={evidenceId === null || !kits.ready || Boolean(running)}>{running ? canIssue ? "Issuing…" : "Returning…" : canIssue ? "Issue items" : "Return all items"}</button>
       </form> : null}
     </section> : null}
-    {message ? <p className="text-sm" role="status">{message}</p> : null}
+    {message ? <ResultPanel tone="success" title={message} summary="The handover is recorded." next={{ label: "Next", onClick: () => setMessage(null) }} /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
   </div>;
 }

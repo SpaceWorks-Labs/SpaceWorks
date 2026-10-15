@@ -34,9 +34,10 @@ function failureMessage(error: StructuredApiError | null) {
   return error.detail ?? "The booking service is unavailable. Please try again.";
 }
 
-export function PublicBookingForm({ makerspaceSlug, space }: {
+export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }: {
   makerspaceSlug: string;
   space: PublicBookableSpace;
+  showCalendar?: boolean;
 }) {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
@@ -56,7 +57,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
   if (booking.data) {
     const pending = booking.data.status === "pending";
     return (
-      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn-soft" : "border-success bg-success-soft"} p-4 outline-none`} role="status" tabIndex={-1}>
+      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn-soft" : "border-success bg-success-soft"} p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`} role="status" tabIndex={-1}>
         <h3 className="title-section">{pending ? "Booking request received" : "Space booked"}</h3>
         <p className="mt-1 text-sm text-muted">
           {pending ? "Staff must approve this request before the slot is confirmed." : "Your selected slot is confirmed and booked."}
@@ -89,7 +90,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
 
   return (
     <div className="grid gap-4">
-      <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} />
+      {showCalendar ? <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} /> : null}
       <form className="grid gap-4 rounded-lg border border-brand bg-bg p-4" onSubmit={submit} noValidate>
         <div>
           <h3 className="title-section">Request this space</h3>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { PublicLayout, CenteredCardLayout } from "../../components/layouts";
+import { EmptyState, StatusPill } from "../../components/ui";
 
 import type { ArchivedPaymentSummary } from "../../generated/api";
 import { StructuredApiError, staffRequest } from "../../lib/api";
@@ -43,9 +44,7 @@ function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSumma
             This makerspace is closed. Outstanding charges can still be settled and receipts remain readable here.
           </p>
         </div>
-        <span className="chip">
-          {summary.pending_count} pending · {summary.total_count} total
-        </span>
+        <StatusPill label={`${summary.pending_count} pending / ${summary.total_count} total`} tone={summary.pending_count ? "warn" : "neutral"} />
       </div>
       {payments.isLoading ? (
         <p className="mt-4 text-sm text-muted">Loading payment history…</p>
@@ -88,21 +87,7 @@ export function ArchivedPayments() {
   const removed = discovery.error instanceof StructuredApiError
     && discovery.error.status === 404;
 
-  if (removed) {
-    return (
-      <main className="desk-shell grid min-h-[60vh] place-items-center px-5">
-        <div className="desk-panel w-full max-w-md p-6 text-center">
-          <p className="eyebrow text-brand-ink">
-            Space Works
-          </p>
-          <h1 className="title-page mt-2">Page not found</h1>
-          <Link className="desk-button-ghost mt-5 inline-flex" to="/">
-            Back to Space Works
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  if (removed) return <CenteredCardLayout title="Page not found" body="This page is unavailable on this deployment." primary={{ label: "Back to Space Works", href: "/" }} state={{ status: "ready" }} />;
 
   if (unauthenticated) {
     return (
@@ -116,45 +101,9 @@ export function ArchivedPayments() {
     );
   }
 
-  return (
-    <main className="desk-shell mx-auto max-w-3xl space-y-5 px-5 py-8">
-      <header>
-        <p className="eyebrow text-brand-ink">
-          Archived makerspaces
-        </p>
-        <h1 className="title-page mt-2">Payments and receipts</h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          Closed makerspaces no longer appear in the normal member area. This page remains available so outstanding charges can be settled and past receipts can be read.
-        </p>
-      </header>
-
-      {discovery.isLoading ? (
-        <section className="desk-panel p-5 text-sm text-muted">
-          Loading archived makerspace charges…
-        </section>
-      ) : null}
-      {discovery.isError ? (
-        <section className="desk-panel p-5">
-          <p className="text-sm text-danger" role="alert">
-            {errorMessage(discovery.error)}
-          </p>
-        </section>
-      ) : null}
-      {discovery.data?.length === 0 ? (
-        <section className="desk-panel p-5">
-          <h2 className="title-panel">No archived payments</h2>
-          <p className="mt-1 text-sm text-muted">
-            No charges outstanding from closed makerspaces.
-          </p>
-        </section>
-      ) : null}
-      {discovery.data?.map((summary) => (
-        <ArchivedMakerspacePayments key={summary.makerspace.id} summary={summary} />
-      ))}
-
-      <Link className="desk-button-ghost inline-flex" to="/">
-        Back to Space Works
-      </Link>
-    </main>
-  );
+  return <PublicLayout state={discovery.isLoading ? { status: "loading" } : discovery.isError ? { status: "error", error: "Couldn't load archived payments. Try again.", onRetry: () => void discovery.refetch() } : { status: "ready" }}
+    makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} nav={[]} headerAction={{ label: "Member area", href: "/member" }}
+    header={{ title: "Payments and receipts", eyebrow: "Archived makerspaces", subtitle: "Closed makerspaces no longer appear in the normal member area. Outstanding charges and past receipts remain available here.", primary: { label: "Back to Space Works", href: "/" } }} footer={{ links: [] }}>
+    <div className="grid gap-6">{discovery.data?.length === 0 ? <EmptyState message="No charges outstanding from closed makerspaces." /> : discovery.data?.map(summary => <ArchivedMakerspacePayments key={summary.makerspace.id} summary={summary} />)}</div>
+  </PublicLayout>;
 }

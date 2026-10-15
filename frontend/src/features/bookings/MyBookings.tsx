@@ -1,3 +1,4 @@
+import { EmptyState, ListRow, StatusPill, Tabs, OverflowMenu, ErrorBlock } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -54,24 +55,16 @@ function OwnBookings({ slug, recipient }: { slug: string; recipient: number | "s
   return <section className="desk-panel p-5" aria-labelledby="my-bookings-heading">
     <h2 className="title-panel" id="my-bookings-heading">My bookings</h2>
     <BookingCalendar key={`${slug}:${recipient}`} slug={slug} />
-    <div className="mt-3 flex gap-2" role="group" aria-label="Booking period">
-      {(["upcoming", "past"] as const).map((value) => <button key={value} type="button" className="desk-button-brand" aria-pressed={period === value} onClick={() => { setPeriod(value); setPage(1); setSelected(null); }}>{value === "upcoming" ? "Upcoming" : "Past"}</button>)}
-    </div>
+    <Tabs label="Booking period" activeKey={period} tabs={[{ key: "upcoming", label: "Upcoming", href: "#upcoming" }, { key: "past", label: "Past", href: "#past" }]} onChange={value => { setPeriod(value as "upcoming" | "past"); setPage(1); setSelected(null); setMoving(null); }} />
     {bookings.isLoading ? <p className="mt-3 text-sm text-muted" role="status">Loading bookings…</p> : null}
-    {error ? <p className="mt-3 text-sm text-danger" role="alert">{error instanceof Error ? error.message : "Unable to load bookings."}</p> : null}
-    {bookings.isError ? <button type="button" className="desk-button-brand mt-3" onClick={() => void bookings.refetch()}>Retry</button> : null}
-    {bookings.data?.results.length === 0 ? <p className="mt-3 text-sm text-muted">No {period} bookings.</p> : null}
+    {error ? <ErrorBlock error={error instanceof Error ? error : new Error("Couldn't load bookings. Try again.")} onRetry={bookings.isError ? () => void bookings.refetch() : undefined} /> : null}
+    {bookings.data?.results.length === 0 ? <EmptyState message={period === "upcoming" ? "No upcoming bookings. Book a bench or room when you need one." : "No past bookings yet. Your visits will appear here."} /> : null}
     <ul className="mt-3 space-y-3">
-      {bookings.data?.results.map((booking) => <li key={booking.public_token} className="rounded-lg border border-line p-3">
-        <h3 className="font-extrabold">{booking.space_name}</h3>
-        <p className="mt-1 text-sm">{dateLabel(booking.starts_at, booking.timezone)} – {dateLabel(booking.ends_at, booking.timezone)} ({booking.timezone})</p>
-        <p className="mt-1 text-sm text-muted">{booking.status.replace(/_/g, " ")}</p>
-        {booking.can_cancel ? <>
-          <p className="mt-1 text-sm text-muted">Cancel before {dateLabel(booking.cancellation_cutoff_at, booking.timezone)}.</p>
-          <button type="button" className="desk-button-brand mt-2 mr-2" disabled={cancel.isPending} onClick={() => { setSelected(null); setMoving(booking); }}>Reschedule booking</button>
-          <button type="button" className="desk-button-brand mt-2" disabled={cancel.isPending} onClick={() => { cancel.reset(); setMoving(null); setSelected(booking); }}>Cancel booking</button>
-        </> : null}
-      </li>)}
+      {bookings.data?.results.map(booking => <li key={booking.public_token}><ListRow title={booking.space_name} identity={{ kind: "date", date: booking.starts_at }}
+        meta={<>{dateLabel(booking.starts_at, booking.timezone)} – {dateLabel(booking.ends_at, booking.timezone)} ({booking.timezone}){booking.can_cancel ? <span className="mt-1 block">Cancel before {dateLabel(booking.cancellation_cutoff_at, booking.timezone)}.</span> : null}</>}
+        right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={booking.status.replace(/_/g, " ")} tone={booking.status === "confirmed" ? "success" : "neutral"} />
+          {booking.can_cancel ? <><button type="button" className="desk-button" disabled={cancel.isPending} onClick={() => { setSelected(null); setMoving(booking); }}>Reschedule booking</button>
+          <OverflowMenu label="Booking actions" actions={[{ label: "Cancel booking", tone: "danger", onClick: () => { cancel.reset(); setMoving(null); setSelected(booking); } }]} /></> : null}</div>} /></li>)}
     </ul>
     {moving ? <BookingReschedule key={moving.public_token} booking={moving} slug={slug} onClose={() => setMoving(null)} /> : null}
     {selected ? <div className="mt-3 rounded-lg border border-warn p-3" aria-label="Confirm cancellation">

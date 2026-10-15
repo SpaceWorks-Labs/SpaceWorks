@@ -87,7 +87,7 @@ export function PrintDetailsForm({
   return (
     <Card>
       <h2 className="title-panel text-brand-ink">
-        Print Details
+        Print details
       </h2>
       <form className="mt-4 space-y-4" onSubmit={onSubmit}>
         {/* Honeypot: hidden from humans; bots that autofill it trigger the server decoy. */}
@@ -100,7 +100,7 @@ export function PrintDetailsForm({
           value={website}
           onChange={(event) => onWebsiteChange(event.target.value)}
         />
-        <fieldset className="space-y-4" disabled={submitPending}>
+        <fieldset className="space-y-4" disabled={submitPending}><legend className="title-section mb-4">Your print</legend>
           <TextInput
             label="Title"
             required
@@ -117,6 +117,8 @@ export function PrintDetailsForm({
             value={form.preferredSettings}
             onChange={(value) => updateField("preferredSettings", value)}
           />
+        </fieldset>
+        <fieldset className="space-y-4" disabled={submitPending}><legend className="title-section mb-4">Material</legend>
           {catalogue?.materials.length ? <div className="grid gap-3 md:grid-cols-2">
             <label className="grid gap-1 text-sm">Material<select className="desk-input" value={form.material} onChange={event => { updateField("material", event.target.value); updateField("color", ""); updateField("consumablePoolId", ""); }}><option value="">No preference</option>{catalogue.materials.map(material => <option key={material.name}>{material.name}</option>)}</select></label>
             <label className="grid gap-1 text-sm">Colour<select className="desk-input" value={form.color} required={Boolean(form.material)} onChange={event => updateField("color", event.target.value)}><option value="">Choose a colour</option>{catalogue.materials.find(m => m.name === form.material)?.colours.map(c => <option key={c}>{c}</option>)}</select></label>
@@ -156,7 +158,7 @@ export function PrintDetailsForm({
                   ))}
                 </select>
                 {poolsQuery.isLoading ? (
-                  <p className="mt-1 text-xs text-muted">Loading filament...</p>
+                  <p className="mt-1 text-xs text-muted">Loading filament…</p>
                 ) : null}
                 {poolsQuery.isError ? (
                   <p className="mt-1 text-xs text-danger">
@@ -199,6 +201,8 @@ export function PrintDetailsForm({
             </label>
             <TextInput label="Source link (optional)" value={form.sourceLink} onChange={(value) => updateField("sourceLink", value)} />
           </div>
+        </fieldset>
+        <fieldset className="space-y-4" disabled={submitPending}><legend className="title-section mb-4">Files</legend>
           <div className="grid gap-4 md:grid-cols-2">
             <FilePicker
               accept=".stl,.3mf,.step,.stp,.obj,.amf,.ply,.gcode,.gco,.iges,.igs,.dxf"
@@ -217,7 +221,7 @@ export function PrintDetailsForm({
 
         {uploadProgress ? <p className="text-sm text-muted">{uploadProgress}</p> : null}
         {submitError ? (
-          <p className="rounded-lg border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">
+          <p className="rounded-lg border border-danger-line bg-panel px-3 py-2 text-sm text-danger">
             {submitError.message}
           </p>
         ) : null}
@@ -229,7 +233,7 @@ export function PrintDetailsForm({
           }
           type="submit"
         >
-          {submitPending ? "Submitting..." : "Submit print request"}
+          {submitPending ? "Sending…" : "Send print request"}
         </button>
       </form>
     </Card>

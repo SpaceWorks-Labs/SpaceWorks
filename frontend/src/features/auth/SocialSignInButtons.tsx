@@ -18,15 +18,17 @@ export function SocialSignInButtons({
   onSuccess,
   email = "",
   makerspaceSlug = "",
+  onMfaChallenge,
 }: {
   surface: SocialSurface;
   onSuccess: (result: SocialLoginResult) => void;
   email?: string;
   makerspaceSlug?: string;
+  onMfaChallenge?: (challenge: MfaChallenge) => void;
 }) {
   const [challenge, setChallenge] = useState<MfaChallenge>();
   const receive = (result: SocialLoginResult | MfaChallenge) => {
-    if (isMfaChallenge(result)) setChallenge(result);
+    if (isMfaChallenge(result)) { if (onMfaChallenge) onMfaChallenge(result); else setChallenge(result); }
     else onSuccessRef.current(result);
   };
   const googleHost = useRef<HTMLDivElement>(null);
@@ -97,13 +99,12 @@ export function SocialSignInButtons({
     onComplete={(result) => { setChallenge(undefined); onSuccessRef.current({ access: result.access, user: result.user as unknown as Record<string, unknown>, outcome: "existing" }); }} />;
   if (!showGoogle && !showApple && oidcProviders.length === 0) return null;
   return (
-    <section className="mt-5 border-t border-line pt-5" aria-label="Social sign in">
-      <p className="eyebrow mb-3 text-center">Or continue with</p>
+    <section aria-label="Social sign in">
       <div className="flex flex-col items-center gap-3">
         {showGoogle ? <div ref={googleHost} className="min-h-10 w-full text-center" /> : null}
         {showApple ? (
           <button
-            className="desk-button-brand w-full max-w-[360px]"
+            className="desk-button w-full max-w-[360px]"
             type="button"
             disabled={applePending}
             onClick={async () => {
@@ -126,7 +127,7 @@ export function SocialSignInButtons({
           return (
             <button
               key={key}
-              className="desk-button-brand w-full max-w-[360px]"
+              className="desk-button w-full max-w-[360px]"
               type="button"
               disabled={Boolean(oidcPending)}
               onClick={async () => {

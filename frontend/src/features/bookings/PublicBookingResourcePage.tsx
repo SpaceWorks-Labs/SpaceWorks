@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageMetadata } from "../../components/PageMetadata";
 import { SkipLink } from "../../components/SkipLink";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { useTenant, useTenantPath } from "../../lib/tenant";
+import { getAccessToken, refreshAccessToken } from "../../lib/api";
+import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { PublicBookingForm } from "./PublicBookingForm";
 import { BookingResourceWebsite } from "./BookingResourceWebsite";
 import { usePublicBookingResource } from "./bookingWebsiteApi";
@@ -12,6 +15,16 @@ export function PublicBookingResourcePage() {
   const tenant = useTenant();
   const tenantSlug = tenant.mode === "single" ? tenant.slug : slug;
   const path = useTenantPath(tenantSlug);
+  const [session, setSession] = useState<"restoring" | "authenticated" | "anonymous">(() => getAccessToken() ? "authenticated" : "restoring");
+  useEffect(() => {
+    let active = true;
+    if (!getAccessToken()) {
+      void refreshAccessToken().then((restored) => {
+        if (active) setSession(restored ? "authenticated" : "anonymous");
+      }).catch(() => { if (active) setSession("anonymous"); });
+    }
+    return () => { active = false; };
+  }, []);
   // A canonical tenant-prefixed link on a single-site installation stays tenant-bound.
   const valid = tenant.mode !== "single" || !slug || slug === tenant.slug;
   const query = usePublicBookingResource(valid ? tenantSlug : "", resourceToken);
@@ -32,7 +45,12 @@ export function PublicBookingResourcePage() {
           <p>Changes and cancellation close {resource.rules.cancellation_cutoff_hours} hours before the start. {resource.approval_mode === "approve" ? "Staff approval is required." : "Available times confirm immediately."}</p>
         </section>
         {resource.website ? <BookingResourceWebsite page={resource.website} slug={tenantSlug} /> : null}
-        <section className="desk-panel p-5"><h2 className="title-section">Choose a time</h2><PublicBookingForm makerspaceSlug={tenantSlug} space={resource} /></section>
+        <section className="desk-panel p-5"><h2 className="title-section">Choose a time</h2>
+          {session === "restoring" ? <p role="status">Restoring your session...</p> : session === "anonymous" ? <>
+            <p>Sign in to submit a booking.</p>
+            <MemberAuthPanel makerspaceSlug={tenantSlug} onAuthenticated={() => setSession("authenticated")} />
+          </> : <PublicBookingForm key={resourceToken} makerspaceSlug={tenantSlug} space={resource} />}
+        </section>
       </> : null}
     </div>
   </main>;

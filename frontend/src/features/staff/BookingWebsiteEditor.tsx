@@ -9,12 +9,20 @@ import type { BookableSpace } from "./bookingsApi";
 export function BookingWebsiteEditor({ space }: { space: BookableSpace }) {
   const query = useBookingWebsite(space.makerspace_id, space.id);
   if (query.isLoading) return <p role="status">Loading website…</p>;
-  if (query.error) return <div role="alert"><p>{query.error.message}</p><button className="desk-button" onClick={() => query.refetch()}>Reload website</button></div>;
-  return query.data ? <WebsiteForm key={query.data.revision} space={space} saved={query.data} /> : null;
+  return <>
+    {query.error ? <div role="alert"><p>{query.error.message}</p><button className="desk-button" onClick={() => query.refetch()}>Retry website</button></div> : null}
+    {query.data ? <WebsiteForm key={`${space.makerspace_id}:${space.id}`} space={space} saved={query.data} onReload={async () => {
+      const result = await query.refetch();
+      return result.isSuccess ? result.data : undefined;
+    }} /> : null}
+  </>;
 }
 
-function WebsiteForm({ space, saved }: { space: BookableSpace; saved: BookingWebsite }) {
+function WebsiteForm({ space, saved, onReload }: { space: BookableSpace; saved: BookingWebsite; onReload: () => Promise<BookingWebsite | undefined> }) {
   const [page, setPage] = useState(saved);
+  // Refetches update server state; the draft keeps the snapshot it was based on.
+  const [baseline, setBaseline] = useState(saved);
+  const [reloading, setReloading] = useState(false);
   const [preview, setPreview] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [alt, setAlt] = useState("");
@@ -23,7 +31,15 @@ function WebsiteForm({ space, saved }: { space: BookableSpace; saved: BookingWeb
   const manager = Boolean(space.can_manage_grants);
   const edit = manager || space.staff_permissions?.includes("edit_details");
   const publish = manager || space.staff_permissions?.includes("publish_page");
-  const dirty = JSON.stringify(page.sections) !== JSON.stringify(saved.sections);
+  const dirty = JSON.stringify(page.sections) !== JSON.stringify(baseline.sections);
+  const reload = async () => {
+    setReloading(true);
+    try {
+      const latest = await onReload();
+      if (latest) { setPage(latest); setBaseline(latest); }
+    } finally { setReloading(false); }
+  };
+  const mutate = (input: Parameters<typeof mutation.mutate>[0]) => mutation.mutate(input, { onSuccess: reload });
   const embedUrl = saved.embed_path ? new URL(saved.embed_path, new URL(API_URL || "/", window.location.origin)).href : "";
   const update = (index: number, values: Partial<BookingWebsite["sections"][number]>) => setPage({ ...page,
     sections: page.sections.map((row, n) => n === index ? { ...row, ...values } : row),
@@ -33,8 +49,10 @@ function WebsiteForm({ space, saved }: { space: BookableSpace; saved: BookingWeb
     <p className="text-sm text-muted">{saved.released ? "Website released" : "Website unreleased"}. Only published sections appear after release. Rules are still enforced by the booking service.</p>
     {mutation.error ? <p role="alert" className="text-danger">{mutation.error.message}</p> : null}
     {mutation.isSuccess ? <p role="status">Website updated.</p> : null}
+    {saved.revision !== page.revision ? <p role="status">The website has changed. Your draft is preserved. Reload to discard it and load the latest website.</p> : null}
+    <button className="desk-button w-fit" type="button" disabled={mutation.isPending || reloading} onClick={() => { void reload(); }}>Reload website (discard draft)</button>
     <button className="desk-button w-fit" type="button" onClick={() => setPreview(!preview)}>{preview ? "Edit sections" : "Private preview"}</button>
-    <fieldset disabled={mutation.isPending} className="grid gap-4">
+    <fieldset disabled={mutation.isPending || reloading} className="grid gap-4">
       {page.sections.map((section, index) => <article className="desk-panel grid gap-3 p-4" key={index}>
         {preview ? <><h4 className="title-section">{section.title} ({section.visibility})</h4><RestrictedMarkdown text={section.body} />
           {edit && section.asset_id ? <PrivateWebsiteImage url={`/api/v1/admin/spaces/${space.id}/website/assets/${section.asset_id}/`} alt={page.assets?.find((asset) => asset.id === section.asset_id)?.alt_text || section.title} /> : null}</> : <>
@@ -51,8 +69,8 @@ function WebsiteForm({ space, saved }: { space: BookableSpace; saved: BookingWeb
       </article>)}
       {edit ? <div className="flex flex-wrap gap-3"><button className="desk-button" disabled={page.sections.length >= 100} onClick={() => setPage({ ...page, sections: [...page.sections, {
         kind: "rules", slug: `section-${page.sections.length + 1}`, title: "New section", body: "", url: "", visibility: "draft", position: page.sections.length, asset_id: null,
-      }] })}>Add section</button><button className="desk-button-primary" onClick={() => mutation.mutate({ page })}>Save content</button></div> : null}
-      {publish ? <button className="desk-button-secondary w-fit" disabled={!saved.revision || dirty || (!saved.released && (!space.is_public || !space.is_active))} onClick={() => mutation.mutate({ revision: saved.revision, released: !saved.released })}>{saved.released ? "Unrelease website" : "Release website"}</button> : null}
+      }] })}>Add section</button><button className="desk-button-primary" onClick={() => mutate({ page })}>Save content</button></div> : null}
+      {publish ? <button className="desk-button-secondary w-fit" disabled={!page.revision || dirty || (!page.released && (!space.is_public || !space.is_active))} onClick={() => mutate({ revision: page.revision, released: !page.released })}>{page.released ? "Unrelease website" : "Release website"}</button> : null}
       {dirty ? <p role="status">Save content before releasing or changing images.</p> : null}
       {edit ? <div className="grid gap-3 border-t border-line pt-4"><h4 className="title-section">Private gallery</h4>
         <label>Image (JPEG, PNG or WebP, up to 5 MB)<input className="desk-input" type="file" accept="image/jpeg,image/png,image/webp" disabled={dirty} onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
@@ -60,9 +78,9 @@ function WebsiteForm({ space, saved }: { space: BookableSpace; saved: BookingWeb
         <label>Replace image<select className="desk-input" value={replace} onChange={(e) => setReplace(e.target.value)}><option value="">New image</option>{page.assets?.map((asset) => <option key={asset.id} value={asset.id}>{asset.alt_text}</option>)}</select></label>
         <button className="desk-button w-fit" disabled={dirty || !file || !alt.trim()} onClick={() => {
           const asset = new FormData(); asset.set("file", file!); asset.set("alt_text", alt); if (replace) asset.set("replace_id", replace);
-          mutation.mutate({ asset });
+          mutate({ asset });
         }}>Upload private image</button>
-        {page.assets?.map((asset) => <div key={asset.id} className="flex items-center gap-3"><span>{asset.alt_text} ({asset.size_bytes} bytes)</span><button className="desk-button-danger" disabled={dirty} onClick={() => mutation.mutate({ remove: asset.id })}>Delete {asset.alt_text}</button></div>)}
+        {page.assets?.map((asset) => <div key={asset.id} className="flex items-center gap-3"><span>{asset.alt_text} ({asset.size_bytes} bytes)</span><button className="desk-button-danger" disabled={dirty} onClick={() => mutate({ remove: asset.id })}>Delete {asset.alt_text}</button></div>)}
       </div> : null}
     </fieldset>
     {saved.public_url ? <a className="underline" href={saved.public_url} target="_blank" rel="noopener noreferrer">Open public resource page</a> : null}

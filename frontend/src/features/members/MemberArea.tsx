@@ -1,14 +1,13 @@
-import { SkipLink } from "../../components/SkipLink";
 import { MemberPortalTabs, useMemberTab } from "./MemberPortalTabs";
 import { SupportContact } from "../../components/SupportContact";
-import { ThemeToggle } from "../../components/ThemeToggle";
+import { PageHeader } from "../../components/ui";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import type { ArchivedPaymentSummary, MembershipPolicyEnum } from "../../generated/api";
-import { bootstrapTenant, memberRequest, refreshAccessToken, StructuredApiError } from "../../lib/api";
+import { bootstrapTenant, logout, memberRequest, refreshAccessToken, StructuredApiError } from "../../lib/api";
 import { MemberAuthPanel } from "./MemberAuthPanel";
 import { MyBookings } from "../bookings/MyBookings";
 import { InvitationRequestForm } from "./InvitationRequestForm";
@@ -39,7 +38,7 @@ type Memberships = { memberships: Membership[]; requests: (Partial<AdmissionRequ
 type Waiver = { has_waiver: boolean; body?: string; version?: string };
 type Presence = { active: boolean; session: { expires_at: string } | null };
 type Invitations = { invitations: ClaimableInvitation[] };
-type Profile = { email_verified: boolean };
+type Profile = { email_verified: boolean; username?: string };
 type ReferralOutcome = { state: "invited" };
 type ClaimOutcome = { id: number; outcome: "active" | "pending_approval" | "awaiting_vouches" | "awaiting_payment" };
 function message(error: unknown) {
@@ -129,10 +128,14 @@ export function MemberArea() {
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} /></div>;
   if (showSignIn) return <div style={brandStyle}><MemberAuthPanel makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
-  return <main style={brandStyle} className="desk-shell mx-auto max-w-3xl space-y-5 px-5 py-8"><header><p className="eyebrow text-brand-ink">Member area</p><h1 className="title-page mt-2">Your makerspace access</h1><ThemeToggle /></header>
-    <SkipLink />
+  return <div style={brandStyle}>
+    <MemberPortalTabs modules={bootstrap.data?.modules ?? []} active={activeTab}
+      workspace={bootstrap.data ? { name: bootstrap.data.makerspace.name, subtitle: membership?.membership_status ?? "Member area",
+        avatar: { kind: "avatar", name: bootstrap.data.makerspace.name, seed: resolvedSlug }, locked: true } : undefined}
+      user={{ name: profile.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }],
+        onSignOut: () => { void logout().catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
+    <PageHeader title="Your makerspace access" eyebrow="Member area" />
     {membershipModuleOn ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "SpaceWorks member"} /> : null}
-    <MemberPortalTabs modules={bootstrap.data?.modules ?? []} active={activeTab}>
     {activeTab === "account" && profile.data ? <Link className="desk-button-brand inline-flex" to="/mfa">Manage two-step sign-in</Link> : null}
     {archivedPayments.data?.length ? <section className="desk-panel p-5"><h2 className="title-panel">Payments from closed makerspaces</h2><p className="mt-1 text-sm text-muted">Receipts and outstanding charges remain available after a makerspace closes.</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">View archived payments</Link></section> : null}
     {archivedUnknown ? <section className="desk-panel p-5"><h2 className="title-panel">Closed makerspace?</h2><p className="mt-1 text-sm text-muted">If a makerspace you belonged to has closed, its receipts and any outstanding charges are still reachable. You may need to sign in there.</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">View archived payments</Link></section> : null}
@@ -193,7 +196,7 @@ export function MemberArea() {
     {activeTab === "payments" && payments.isLoading ? <p role="status" className="text-sm text-muted">Loading payments...</p> : null}
     {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <p className="text-sm text-muted">No payments to show.</p> : null}
     {activeTab === "payments" && payments.error ? <p role="alert" className="text-sm text-danger">{message(payments.error)}</p> : null}
-    </MemberPortalTabs>
     <SupportContact branding={bootstrap.data?.branding} />
-  </main>;
+    </MemberPortalTabs>
+  </div>;
 }

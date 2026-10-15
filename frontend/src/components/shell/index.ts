@@ -1,0 +1,11 @@
+export { AppShell } from "./AppShell";
+export { Sidebar } from "./Sidebar";
+export { SidebarSection } from "./SidebarSection";
+export { SidebarItem } from "./SidebarItem";
+export { WorkspaceSwitcher } from "./WorkspaceSwitcher";
+export { UserMenu } from "./UserMenu";
+export { MobileTopBar } from "./MobileTopBar";
+export { BottomTabs } from "./BottomTabs";
+export { SidebarDrawer } from "./SidebarDrawer";
+export { JobTrayPill } from "./JobTrayPill";
+export type { AppShellProps, ShellItem, ShellSection, ShellWorkspace, ShellUser } from "./types";

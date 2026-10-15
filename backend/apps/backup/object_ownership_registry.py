@@ -53,6 +53,7 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("events.Event", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("events.EventSeries", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("events.EventAttendanceCertificate", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("events.EventCertificateArtwork", "object_key", BucketRule.PRIVATE),
     # retention_aware: phase 9 may expire these bytes while the row survives, so capture
     # must tolerate a missing object rather than treat it as corruption.
     FieldObjectRule(

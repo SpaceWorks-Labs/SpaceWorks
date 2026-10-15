@@ -15,6 +15,10 @@ def definitions(FeatureDefinition):
         "Delegate descriptive editing, reservations, arrival or page release for one resource.",
         requires_modules=("bookings",),
     ), FeatureDefinition(
+        "events.certificate_designer", "events", "Certificate designer",
+        "Design private certificate artwork and immutable issuance-time layouts.",
+        requires_modules=("events",),
+    ), FeatureDefinition(
         "events.organization_audience", "events", "Participating organizations audience",
         "Admit active accounts belonging to live event organizers or the venue owner, "
         "directly or through their owned makerspaces. Imported audiences need local review.",

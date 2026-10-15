@@ -5,6 +5,11 @@ from .projection_wp4 import ROW_POLICIES as WP4_ROW_POLICIES
 
 
 ROW_POLICIES = {
+    "events.EventCertificateArtwork": RowPolicy(
+        RowDisposition.DROP,
+        "Unpromoted upload reservations have no durable artwork or portable authority.",
+        condition=("promoted_at", None),
+    ),
     **WP4_ROW_POLICIES,
     "makerspaces.MakerspaceLoanPolicy": RowPolicy(
         RowDisposition.PRESERVE_LIVE,

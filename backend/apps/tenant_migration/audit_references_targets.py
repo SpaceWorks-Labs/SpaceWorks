@@ -36,14 +36,17 @@ def audit_target_dispositions(models=MODELS):
     dispositions = {}
     for label, model_disposition in models.items():
         key = normalize_audit_target_type(label)
-        if label in {"operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule"}:
-            # Preferences can be deleted while their immutable audit rows survive.
+        if label in {"operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule", "events.EventCertificateArtwork"}:
+            # Preferences can be deleted; unpromoted artwork reservations do not
+            # travel. Their immutable audit history still survives projection.
             # Keep the source ID as typed provenance, never a live target binding
             # requiring a row that may no longer exist in the portable archive.
             dispositions[key] = AuditReference(
                 AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT,
                 label,
-                "audit_saved_view_target" if label == "operations.SavedView" else "audit_wp4_preference_target",
+                ("audit_saved_view_target" if label == "operations.SavedView" else
+                 "audit_unpromoted_artwork_target" if label == "events.EventCertificateArtwork"
+                 else "audit_wp4_preference_target"),
             )
         elif isinstance(model_disposition, Exported):
             dispositions[key] = AuditReference(

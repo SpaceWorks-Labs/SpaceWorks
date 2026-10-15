@@ -35,6 +35,11 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
     )
     serial = models.UUIDField(default=uuid4, unique=True, editable=False)
     revision = models.PositiveIntegerField()
+    template_revision = models.ForeignKey(
+        "events.EventCertificateTemplateRevision", on_delete=models.PROTECT,
+        null=True, blank=True, related_name="certificates",
+    )
+    layout_snapshot = models.JSONField(default=dict, blank=True)
     recipient_name = models.TextField()
     event_title = models.CharField(max_length=200)
     event_starts_at = models.DateTimeField()
@@ -88,6 +93,8 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
                 )
         if self.content_type != "application/pdf":
             raise ValidationError({"content_type": "Certificates must be PDF files."})
+        if self.template_revision_id and self.template_revision.event_id != self.registration.event_id:
+            raise ValidationError({"template_revision": "Template belongs to another event."})
 
     def save(self, *args, **kwargs):
         if self.pk:
@@ -96,7 +103,7 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
                 "response_id", "registration_id", "serial", "revision",
                 "recipient_name", "event_title", "event_starts_at",
                 "event_ends_at", "issuer_name", "object_key", "content_type",
-                "issued_at",
+                "issued_at", "template_revision_id", "layout_snapshot",
             )
             if any(
                 getattr(self, field) != getattr(original, field)

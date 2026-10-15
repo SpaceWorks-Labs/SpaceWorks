@@ -3,7 +3,7 @@
 
 def collect_private_object_keys(makerspace, *, include_coordination=True):
     from apps.evidence.models import EvidencePhoto
-    from apps.events.models import EventAttendanceCertificate
+    from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork
     from apps.maintenance.models import MaintenanceLogDocument
     from apps.machines.models import MachineDocument
     from apps.machines.service_lifecycle import collect_private_object_keys as collect_service
@@ -28,6 +28,13 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
         for key in model.objects.filter(**lookup).values_list("object_key", flat=True):
             add(key)
     collect_service(makerspace, add)
+    artwork = EventCertificateArtwork.objects.filter(event__makerspace=makerspace)
+    if not include_coordination:
+        artwork = artwork.filter(promoted_at__isnull=False)
+    for key in artwork.values_list("object_key", flat=True):
+        add(key)
+        if include_coordination:
+            add(f"staging/{key}")
     if include_coordination:
         _collect_private_coordination_keys(makerspace, add)
     return keys

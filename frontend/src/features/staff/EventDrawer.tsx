@@ -16,6 +16,7 @@ import { EventFeedbackPanel } from "./EventFeedbackPanel";
 import { EventFeedbackResponses } from "./EventFeedbackResponses";
 import { EventRegistrationRoster } from "./EventRegistrationRoster";
 import { EventCheckInOperator } from "./EventCheckInOperator";
+import { EventCertificateDesigner } from "./EventCertificateDesigner";
 import { EventBadgeActions } from "./EventBadgeActions";
 import { EventStaffAccess } from "./EventStaffAccess";
 import { eventAccess } from "./eventStaffPermissions";
@@ -91,6 +92,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
         {access.registrations ? <EventRegistrationRoster key={`roster:${eventId}`} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} /> : null}
         {!access.registrations && access.checkIn ? <EventCheckInOperator makerspaceId={makerspaceId} eventId={eventId} offlineEnabled={event.offline_checkin_enabled} canManageStation={access.manager} /> : null}
         {!access.registrations && access.edit ? <EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={[]} includeAttended={false} onIncludeAttended={() => {}} canPrint={false} /> : null}
+        {access.edit && event.ticketing_features?.includes("events.certificate_designer") ? <EventCertificateDesigner key={`certificate:${eventId}`} makerspaceId={makerspaceId} eventId={eventId} /> : null}
         {access.edit ? <EventFeedbackPanel eventId={eventId} makerspaceId={makerspaceId} canViewResponses={access.registrations} canManageCertificates={access.manager} /> : access.registrations ? <EventFeedbackResponses eventId={eventId} makerspaceId={makerspaceId} responseCount={0} canManageCertificates={false} /> : null}
         {access.registrations && event.broadcasts_enabled ? <EventBroadcastsPanel makerspaceId={makerspaceId} eventId={eventId} /> : null}
         {event.report_features?.includes("analytics") ? <EventAnalyticsPanel makerspaceId={makerspaceId} eventId={eventId} endsAt={event.ends_at} features={event.report_features} /> : null}

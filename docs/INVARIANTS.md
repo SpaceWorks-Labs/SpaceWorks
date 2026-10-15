@@ -2252,6 +2252,52 @@ Load-bearing details that carried over unchanged:
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
+### Event printable credentials (Lane E)
+
+- Badge templates read as version 2 with top-left millimetre boxes, grid snapping,
+  bundled font choices, 6-48 pt size, bold, alignment and colour. Version 1 converts
+  on read without mutating the stored template; legacy contact selectors are removed
+  from that safe projection (name is the fallback). New contact bindings refuse.
+  ReportLab remains authoritative:
+  text shrinks no lower than 6 pt, then overflow refuses with a typed validation error.
+  Shared `operations/printable_*` geometry, serializers, fonts and PDF primitives
+  never import events or bookings. Noto fonts ship in the backend image; CJK uses
+  the standard PDF CID fallback. RTL wraps logical lines before bidi reordering.
+- Printed badges never contain email, phone or a bearer check-in QR. Custom-answer
+  bindings retain current-form validation and require live registration-management
+  authority AND tenant `VIEW_AUDIT` before reading answers. Template-edit authority
+  cannot widen printing authority. Check-in-only staff may print attended rows only;
+  the existing check-in result offers a single attended badge through the same path.
+- `events.certificate_designer` defaults off, is parented to Events and needs only
+  Events. Live `edit_details` designs and previews; issue/revoke/reissue retains full
+  event management. A preview accepts a fixed sample recipient, never staff-supplied
+  recipient data. Render/download paths are private/no-store, throttled and audited.
+- Every certificate-design save inserts an immutable `EventCertificateTemplateRevision`.
+  Issuance locks the event and copies both its revision FK and complete layout/artwork
+  parameters into the immutable certificate snapshot. Pending, failed and retried
+  renders use that snapshot even after edits or feature disablement. Database triggers
+  enforce revision/snapshot immutability and same-event artwork/template ownership.
+  Recurrence edits cancel configured old drafts instead of deleting retained designs.
+- Artwork is private PNG/JPEG input, at most 10 MiB and 16 million decoded pixels.
+  Ten-minute PUTs bind MIME and length to staging keys only. Server validation strips
+  metadata and re-encodes PNG; conditional final-key creation promotes once. Reads
+  verify SHA-256, using the frozen S3 version when available; restored versions may
+  fall back to canonical bytes only with the same checksum. Final keys are never
+  client writable. Object I/O runs outside row-lock transactions.
+- Presigning reserves 10 MiB of managed quota transactionally with the owned row and
+  audit. Signer failure rolls all three back. Successful promotion replaces the
+  reservation with canonical size; failed uploads/attachments keep their reserved
+  budget and purgeable keys. Transient staging bytes follow existing storage-accounting
+  conventions rather than being charged twice. Purge releases artwork quota only
+  after both final and staging keys are confirmed deleted.
+- Design rows have no User FK or textual PII; recipient names remain on the existing
+  encrypted certificate model. Revisions/artwork remain retained until module/tenant
+  purge, ordered certificates -> revisions -> artwork. Purges collect both key forms
+  and preserve foreign tenants. Unpromoted reservations are omitted from portable
+  data and object capture. Portable import remaps artwork keys in rows AND issuance
+  JSON through the object manifest, clears source bucket VersionIds and preserves
+  checksums. Deployment backups preserve the complete design/snapshot metadata.
+
 ### Event communications and subject reports (Lane D)
 
 `integrations/broadcasts_models.py`, `broadcasts_registry.py`, `broadcasts_worker.py`

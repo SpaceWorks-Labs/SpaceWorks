@@ -55,8 +55,20 @@ def update_series(series, *, actor, effective_from=None, **changes):
     removed = []
     if recurrence_changed:
         for event in future:
+            # Immutable designs and owned artwork must survive recurrence edits.
+            # Keep those old occurrences as cancelled history; never cascade-delete
+            # a private artifact or break a protected template reference.
+            has_design = event.certificate_template_revisions.exists() or event.certificate_artworks.exists()
             if event.status == Event.Status.PUBLISHED:
                 services.cancel(event, actor=actor, notify=False)
+            elif has_design:
+                event.status = Event.Status.CANCELLED
+                # Cancelled occurrences have public calendars. A retained draft
+                # has never been published, so retirement must also keep it private.
+                event.is_public = False
+                event.save(update_fields=("status", "is_public", "updated_at"))
+                services._audit(event, actor, "event.cancelled", event,
+                                {"old_status": Event.Status.DRAFT, "new_status": Event.Status.CANCELLED})
             else:
                 event_id = event.pk
                 event.delete()

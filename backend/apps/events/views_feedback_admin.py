@@ -136,14 +136,16 @@ class EventRegistrationCorrectAttendanceView(APIView):
 
 class EventCertificateDownloadView(APIView):
     permission_classes = [IsActiveStaff]
+    from apps.events.throttles import CredentialRenderThrottle
+    throttle_classes = [CredentialRenderThrottle]
 
-    @extend_schema(tags=["Admin events"], responses={200: CertificateDownloadSerializer, 410: OpenApiResponse(ErrorSerializer, description="Certificate revoked."), 503: OpenApiResponse(ErrorSerializer, description="Certificate storage unavailable."), **ERRORS})
+    @extend_schema(tags=["Admin events"], description="Private audited certificate download; configurable renders are bounded to 30/hour per account.", responses={200: CertificateDownloadSerializer, 429: ErrorSerializer, 410: OpenApiResponse(ErrorSerializer, description="Certificate revoked."), 503: OpenApiResponse(ErrorSerializer, description="Certificate storage unavailable."), **ERRORS})
     def get(self, request, pk):
         certificate = _manageable_certificate(request.user, pk)
         if certificate.status == EventAttendanceCertificate.Status.REVOKED:
             return Response({"detail": "Certificate revoked.", "code": "certificate_revoked"}, status=status.HTTP_410_GONE)
         try:
-            certificate, url = download_url(certificate)
+            certificate, url = download_url(certificate, actor=request.user)
         except CertificateStorageUnavailable:
             return Response({"detail": "Certificate storage is unavailable.", "code": "storage_unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response({"url": url, "expires_at": timezone.now() + timedelta(seconds=settings.EVIDENCE_URL_TTL_SECONDS)})

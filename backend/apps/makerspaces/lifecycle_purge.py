@@ -232,6 +232,9 @@ def _delete_object_graph(makerspace):
         EventAttendanceCertificate.objects.filter(
             registration__event__makerspace=makerspace
         ).delete()
+        from apps.events.models import EventCertificateArtwork, EventCertificateTemplateRevision
+        EventCertificateTemplateRevision.objects.filter(event__makerspace=makerspace).delete()
+        EventCertificateArtwork.objects.filter(event__makerspace=makerspace).delete()
         EventFeedbackResponse.objects.filter(
             survey__event__makerspace=makerspace
         ).delete()

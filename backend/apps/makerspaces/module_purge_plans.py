@@ -106,7 +106,7 @@ PLANS = (
         # The one-line description is what the purge confirmation shows an operator, so it
         # has to name what actually goes: registrations are only the first layer.
         "events",
-        "Events, series, registrations, check-in history, feedback, certificates and "
+        "Events, series, registrations, check-in history, feedback, certificates, template revisions, artwork and "
         "calendar feeds.",
         events_delete,
         pii_labels=(

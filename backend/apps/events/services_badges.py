@@ -19,14 +19,15 @@ from apps.events.badge_templates import (
 from apps.events.exceptions import EventInvalidTransition
 from apps.events.models import Event, EventRegistration
 from apps.events import event_authority
-from apps.events.event_permissions import MANAGE_REGISTRATIONS
+from apps.events.event_permissions import MANAGE_REGISTRATIONS, CHECK_IN, EDIT_DETAILS
+from apps.accounts import rbac
+from rest_framework.exceptions import PermissionDenied
 from apps.makerspaces.guards import require_module_locked
 
 
 @dataclass(frozen=True)
 class BadgeSnapshot:
     registration_id: int
-    checkin_token: str
     fields: tuple[tuple[str, str], ...]
 
 
@@ -81,8 +82,13 @@ def _field_values(event, registration, selectors):
 
 @transaction.atomic
 def save_badge_template(event, template, *, actor):
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+    assert_write_allowed(event.makerspace_id)
     locked = Event.objects.select_for_update().get(pk=event.pk)
     require_module_locked(locked.makerspace_id, "events")
+    from apps.events.staff_grant_locks import lock_authority
+    actor = lock_authority(actor, locked)
+    event_authority.require(actor, locked, EDIT_DETAILS)
     if locked.status == Event.Status.CANCELLED:
         raise EventInvalidTransition("Cancelled events cannot change badge templates.")
     normalized = normalize_badge_template(template, locked)
@@ -106,6 +112,12 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
         raise serializers.ValidationError({"registration_ids": "Duplicate IDs are not allowed."})
     locked = Event.objects.select_for_update().get(pk=event.pk)
     require_module_locked(locked.makerspace_id, "events")
+    from apps.events.staff_grant_locks import lock_authority
+    actor = lock_authority(actor, locked)
+    event_authority.require(actor, locked, CHECK_IN)
+    manager = event_authority.can_manage_grants(actor, locked)
+    if not manager and template_override is not None:
+        raise PermissionDenied()
     if locked.status not in (Event.Status.PUBLISHED, Event.Status.COMPLETED):
         raise EventInvalidTransition("Badges require a published or completed event.")
     normalized = normalize_badge_template(
@@ -115,6 +127,8 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
     # Check the effective, locked template before reading any registration PII.
     if set(normalized["fields"]) - SAFE_FIELDS:
         event_authority.require(actor, locked, MANAGE_REGISTRATIONS)
+        if not rbac.can(actor, rbac.Action.VIEW_AUDIT, locked.makerspace_id):
+            raise PermissionDenied()
     _width, _height, columns, rows = page_layout(normalized)
     pages = (len(registration_ids) + columns * rows - 1) // (columns * rows)
     if pages > MAX_PAGES:
@@ -129,9 +143,10 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
         allowed.add(EventRegistration.Status.ATTENDED)
     if any(registration.status not in allowed for registration in registrations):
         raise EventInvalidTransition("A selected registration is not eligible for a badge.")
+    if not manager and any(row.status != EventRegistration.Status.ATTENDED for row in registrations):
+        raise PermissionDenied()
     snapshots = tuple(BadgeSnapshot(
         registration_id=registration.pk,
-        checkin_token=str(registration.checkin_token),
         fields=_field_values(locked, registration, normalized["fields"]),
     ) for registration in registrations)
     selected_digest = hashlib.sha256(json.dumps(

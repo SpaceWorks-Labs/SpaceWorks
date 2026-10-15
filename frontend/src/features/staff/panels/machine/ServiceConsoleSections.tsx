@@ -2,20 +2,26 @@ import { useState, type ReactNode } from "react";
 import { EmptyState, Modal, Tabs } from "../../../../components/ui";
 import type { MachineServiceRequest } from "../../../../generated/api";
 
+// "Active" (everything not yet finished) is the default so running and ready jobs are never hidden
+// behind an empty Pending tab — the pre-revamp console listed every job at once.
+const ACTIVE = new Set(["pending", "accepted", "in_progress", "completed"]);
 const statuses = [
-  { key: "all", label: "All jobs" },
-  { key: "pending", label: "Pending" }, { key: "accepted", label: "Accepted" },
-  { key: "in_progress", label: "Printing" }, { key: "completed", label: "Ready" },
-  { key: "failed", label: "Failed" },
+  { key: "active", label: "Active" }, { key: "pending", label: "Pending" }, { key: "accepted", label: "Accepted" },
+  { key: "in_progress", label: "In progress" }, { key: "completed", label: "Ready" },
+  { key: "failed", label: "Failed" }, { key: "all", label: "All jobs" },
 ];
-export function ServiceQueueTabs({ rows, children }: {
-  rows: MachineServiceRequest[] | undefined; children: (rows: MachineServiceRequest[] | undefined) => ReactNode;
+const matches = (key: string, status: string) => key === "all" || (key === "active" ? ACTIVE.has(status) : status === key);
+const emptyCopy: Record<string, string> = {
+  active: "No jobs waiting or running. New requests land here.", all: "No jobs yet. New requests land here.",
+};
+export function ServiceQueueTabs({ rows, children, initialStatus = "active" }: {
+  rows: MachineServiceRequest[] | undefined; children: (rows: MachineServiceRequest[] | undefined) => ReactNode; initialStatus?: string;
 }) {
-  const [status, setStatus] = useState("pending");
-  const visible = rows?.filter(row => status === "all" || row.status === status);
+  const [status, setStatus] = useState(initialStatus);
+  const visible = rows?.filter(row => matches(status, row.status));
   return <div className="grid gap-4"><Tabs activeKey={status} label="Job status" onChange={setStatus}
-    tabs={statuses.map(item => ({ ...item, href: "#", count: rows?.filter(row => item.key === "all" || row.status === item.key).length }))}>
-    {visible?.length === 0 ? <EmptyState message="No jobs waiting. New requests land here." /> : children(visible)}
+    tabs={statuses.map(item => ({ ...item, href: "#", count: rows?.filter(row => matches(item.key, row.status)).length }))}>
+    {visible?.length === 0 ? <EmptyState message={emptyCopy[status] ?? "No jobs in this state."} /> : children(visible)}
   </Tabs></div>;
 }
 

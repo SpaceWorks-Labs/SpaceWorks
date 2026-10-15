@@ -1,3 +1,4 @@
+import { plural } from "../../../lib/plural";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -178,7 +179,7 @@ function MachinesWorkspace({
       detail={detail} indexHref={onTypePage ? indexHref : undefined} settings={settings} statusFilter={statusFilter}
       onStatusFilter={setStatusFilter} onRetry={() => { void machines.refetch(); void machineTypes.refetch(); }}
       poolError={poolQuery.error instanceof Error ? poolQuery.error.message : undefined} onRetryPools={() => { void poolQuery.refetch(); }} /> :
-      <ListLayout header={{ title: "Machines", subtitle: `${allMachines.length} machines across ${reachableTypes.length} types`,
+      <ListLayout header={{ title: "Machines", subtitle: `${plural(allMachines.length, "machine")} across ${plural(reachableTypes.length, "type")}`,
         primary: canConfigureMachineTypes ? { label: "Add machine type", icon: "Plus", onClick: () => {
           const section = document.querySelector<HTMLDetailsElement>("#machine-type-settings");
           if (section) { section.open = true; section.scrollIntoView({ behavior: "smooth", block: "start" }); section.querySelector<HTMLInputElement>("input")?.focus(); }

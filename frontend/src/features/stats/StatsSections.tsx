@@ -1,3 +1,4 @@
+import { plural } from "../../lib/plural";
 import type { PublicStatsCurrentLoan, PublicStatsHardware, PublicStatsPrinting } from "./api";
 import { DataTable, EmptyState, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { ImageThumbnail } from "../../components/ui/ImageThumbnail";
@@ -40,7 +41,7 @@ export function HardwareSection({ hardware }: { hardware: PublicStatsHardware })
     <div className="grid gap-4 sm:grid-cols-3"><StatTile label="Public library" value={hardware.library.library_size} />
       <StatTile label="Available now" value={hardware.library.available_count} /><StatTile label="Currently out" value={hardware.library.currently_out_count} /></div>
     <div className="grid gap-6 lg:grid-cols-3">
-      <div><h3 className="title-section">Most popular</h3><CompactList empty="No lending history yet. Loans will appear here as tools are borrowed." rows={hardware.most_popular.map(row => ({ label: row.name, value: `${row.times_lent} loans / ${row.total_quantity_lent} total` }))} /></div>
+      <div><h3 className="title-section">Most popular</h3><CompactList empty="No lending history yet. Loans will appear here as tools are borrowed." rows={hardware.most_popular.map(row => ({ label: row.name, value: `${plural(row.times_lent, "loan")} / ${row.total_quantity_lent} total` }))} /></div>
       <div><h3 className="title-section">Tools out</h3><CompactList empty="No tools are out. Browse the catalogue to find your next tool." rows={hardware.tools_out.map(row => ({ label: row.name, value: `${row.quantity_out} out` }))} /></div>
       <div><h3 className="title-section">Recently added</h3><div className="mt-3 grid gap-3">{hardware.recently_added.length ? hardware.recently_added.map((row, index) => <ListRow key={`${row.name}-${index}`} title={row.name} right={<RelativeTime date={row.created_at} />} />) : <EmptyState message="No new public gear this month. Check back for new tools." />}</div></div>
     </div>

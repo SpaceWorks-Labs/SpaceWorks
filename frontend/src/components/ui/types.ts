@@ -6,7 +6,9 @@ export type Tone = "success" | "warn" | "danger" | "accent" | "emphasis" | "info
 // Shared slot contracts from ux-yuyu-spec §1A.0.
 export type Action = { label: string; href?: string; onClick?: () => void; icon?: IconName;
   pending?: boolean; pendingLabel?: string; disabled?: boolean; disabledReason?: string; // required when disabled
-  tone?: "default" | "danger"; external?: boolean; confirms?: boolean };              // confirms → label gets "…"
+  tone?: "default" | "danger"; external?: boolean; confirms?: boolean;              // confirms → label gets "…"
+  /** When set, the shared controls ask this before running onClick (destructive or hard-to-undo actions). */
+  confirm?: { title: string; message: string; confirmLabel?: string } };
 export type SecondaryAction = Action | { label: string; menu: Action[] };
 export type Tab = { key: string; label: string; href?: string; count?: number };              // gated tabs are omitted, never disabled
 export type Stat = { label: string; value: number | string; of?: number; progress?: number;   // 0–1

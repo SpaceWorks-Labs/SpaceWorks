@@ -43,5 +43,5 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
       {active === "custody" && canViewAudit ? <ChainOfCustodyBlock productId={product.id} /> : null}
       <ErrorText message={error} />
     </>}
-    danger={!product.is_archived ? [{ title: "Archive item", consequence: "Hides this item from active inventory and the public catalogue. You can undo this change.", action: { label: "Archive", onClick: onArchive } }] : undefined} /></InventoryDetailNavigation>;
+    danger={!product.is_archived ? [{ title: "Archive item", consequence: "Hides this item from active inventory and the public catalogue. You can undo this change.", action: { label: "Archive", onClick: onArchive, confirm: { title: `Archive ${product.name}?`, message: "It leaves the catalogue and can no longer be requested. You can bring it back from the Archived tab." } } }] : undefined} /></InventoryDetailNavigation>;
 }

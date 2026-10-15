@@ -1,3 +1,4 @@
+import { EmptyState } from "../../components/ui/EmptyState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -79,7 +80,7 @@ export function MemberTermsDialog({
         </button>
       </form>
       {terms.isLoading ? <p className="mt-3 text-sm text-muted">Loading terms…</p> : null}
-      {terms.data?.length === 0 ? <p className="mt-3 text-sm text-muted">No terms yet.</p> : null}
+      {terms.data?.length === 0 ? <EmptyState message="No terms yet." /> : null}
       {terms.data?.length ? (
         <ul className="mt-3 divide-y divide-line text-sm">
           {terms.data.map((term) => (

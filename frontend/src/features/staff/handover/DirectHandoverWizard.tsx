@@ -1,3 +1,4 @@
+import { plural } from "../../../lib/plural";
 import { useContext, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FlowLayout } from "../../../components/layouts";
@@ -93,7 +94,7 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
     </fieldset>
       </>}
       {issue.error || scanError ? <div role="alert"><Callout size="inline" tone="danger" lead={scanError || issue.error?.message || "Couldn't issue handout. Try again."} /></div> : null}
-    {scanning ? <QrScanner feedback={<><p role="status">{scanning === "items" ? `${payloads.length} tools scanned` : "Check borrower card"}</p>{scanError ? <p role="alert">{scanError}</p> : null}</>} onScan={payload => { if (scanning === "card") { if (!card.isPending) void scanCard(payload); } else void scanItem(payload); }} onClose={() => setScanning(null)} /> : null}
+    {scanning ? <QrScanner feedback={<><p role="status">{scanning === "items" ? `${plural(payloads.length, "tool")} scanned` : "Check borrower card"}</p>{scanError ? <p role="alert">{scanError}</p> : null}</>} onScan={payload => { if (scanning === "card") { if (!card.isPending) void scanCard(payload); } else void scanItem(payload); }} onClose={() => setScanning(null)} /> : null}
     </>}
   />;
 }

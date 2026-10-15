@@ -1,10 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { RouteLink } from "./RouteLink";
 import { Icon } from "./icon";
 import type { Action } from "./types";
 import { rove, rovingItems } from "./useRovingFocus";
-export type OverflowMenuProps = { actions: Action[]; label?: string; className?: string; mobileActions?: Action[] };
-export function OverflowMenu({ actions, label = "More actions", className = "", mobileActions = [] }: OverflowMenuProps) {
+export type OverflowMenuProps = { actions: Action[]; label?: string; className?: string; mobileActions?: Action[]; showLabel?: boolean };
+export function OverflowMenu({ actions, label = "More actions", className = "", mobileActions = [], showLabel = false }: OverflowMenuProps) {
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState<Action | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -24,16 +27,19 @@ export function OverflowMenu({ actions, label = "More actions", className = "", 
     const text = action.pending ? action.pendingLabel ?? "Working…" : `${action.label}${action.confirms && !action.label.endsWith("…") ? "…" : ""}`;
     const classes = `flex min-h-11 w-full items-center gap-2 rounded-control px-3 py-2 text-left text-sm hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${disabled ? "cursor-not-allowed bg-surface text-muted" : action.tone === "danger" ? "text-danger" : "text-ink"}`;
     const content = <>{action.icon ? <Icon name={action.icon} /> : null}{text}{action.disabledReason ? <span className="sr-only"> · {action.disabledReason}</span> : null}</>;
-    const click = () => { if (!disabled) { close(true); action.onClick?.(); } };
+    const click = () => { if (!disabled) { close(true); if (action.confirm) setConfirming(action); else action.onClick?.(); } };
     return <div role="none" key={`${mobile}-${index}`} className={mobile ? "md:hidden" : undefined}>
-      {action.href ? <a role="menuitem" tabIndex={-1} aria-disabled={disabled || undefined} aria-busy={action.pending || undefined} href={disabled ? undefined : action.href}
+      {action.href ? <RouteLink role="menuitem" tabIndex={-1} aria-disabled={disabled || undefined} aria-busy={action.pending || undefined} href={disabled ? undefined : action.href}
         target={action.external ? "_blank" : undefined} rel={action.external ? "noopener noreferrer" : undefined}
-        className={classes} onClick={click}>{content}</a>
+        className={classes} onClick={click}>{content}</RouteLink>
         : <button role="menuitem" type="button" tabIndex={-1} aria-disabled={disabled || undefined} aria-busy={action.pending || undefined}
           className={classes} onClick={click}>{content}</button>}
     </div>;
   };
   if (!actions.length && !mobileActions.length) return null;
+  const dialog = confirming?.confirm ? <ConfirmDialog open title={confirming.confirm.title} message={confirming.confirm.message}
+    confirmLabel={confirming.confirm.confirmLabel ?? confirming.label} tone={confirming.tone === "danger" ? "danger" : "default"}
+    onCancel={() => setConfirming(null)} onConfirm={() => { const run = confirming.onClick; setConfirming(null); run?.(); }} /> : null;
   return <div ref={root} className={`relative ${className}`} onBlur={event => {
     if (!event.currentTarget.contains(event.relatedTarget as Node)) setOpen(false);
   }}>
@@ -44,7 +50,7 @@ export function OverflowMenu({ actions, label = "More actions", className = "", 
         if (["ArrowDown", "ArrowUp"].includes(event.key)) {
           event.preventDefault(); focusLast.current = event.key === "ArrowUp"; setOpen(true);
         }
-      }}><Icon name="Ellipsis" /></button>
+      }}>{showLabel ? <>{label}<Icon name="ChevronDown" /></> : <Icon name="Ellipsis" />}</button>
     {open ? <div id={id} ref={menu} role="menu" aria-label={label}
       className="absolute right-0 z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-panel p-1 shadow-overlay"
       onKeyDown={event => {
@@ -62,5 +68,6 @@ export function OverflowMenu({ actions, label = "More actions", className = "", 
       {mobileActions.map((action, i) => item(action, i, true))}
       {actions.map((action, i) => item(action, i, false))}
     </div> : null}
+    {dialog}
   </div>;
 }

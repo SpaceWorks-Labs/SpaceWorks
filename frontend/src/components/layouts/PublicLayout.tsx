@@ -1,5 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { MakerspaceBrand } from "../MakerspaceBrand";
+import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { RouteLink } from "../ui/RouteLink";
 import { ActionControl, PageHeader } from "../ui";
 import type { Action, PageHeaderProps } from "../ui";
 import { LayoutFrame, PublicQueryState, QueryContent } from "./LayoutFrame";
@@ -21,16 +23,18 @@ export type PublicLayoutProps = Omit<LayoutProps, "width"> & PublicBody & {
 };
 export function PublicLayout({ makerspace, nav, headerAction, liveStatus, width = "default", breadcrumb, aside, children,
   footer, header, standalone = true, state, isEmpty, empty }: PublicLayoutProps) {
+  const centralIdentity = !makerspace.slug && makerspace.name === "Space Works" && !makerspace.logo;
   const content = <div className={aside ? "sw-public-columns" : "min-w-0"}>
     <div className="min-w-0">{children}</div>{aside ? <PublicActionCard {...aside} /> : null}
   </div>;
   return <div className={`min-h-dvh bg-bg text-ink ${aside ? "pb-28 md:pb-0" : ""}`}>
     <header className="border-b border-line bg-panel">
       <div className="sw-layout sw-public-chrome flex flex-wrap items-center gap-4">
-        <a href={makerspace.homeHref ?? `/m/${makerspace.slug}`} className="min-w-0 flex-1 rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-          <MakerspaceBrand name={makerspace.name} logoUrl={makerspace.logo} />
-        </a>
-        <a href="/" className="desk-button-ghost text-sm">space works</a>
+        <RouteLink href={makerspace.homeHref ?? `/m/${makerspace.slug}`} className={`min-w-0 flex-1 rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${centralIdentity ? "basis-full sm:basis-auto" : ""}`}>
+          {centralIdentity ? <><span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>
+            <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span></>
+            : <MakerspaceBrand name={makerspace.name} logoUrl={makerspace.logo} fallback="logo" className="w-full" />}
+        </RouteLink>
         {headerAction ? <ActionControl action={headerAction} /> : <ActionControl action={{ label: "Sign in", href: `/m/${makerspace.slug}/member` }} />}
         <nav aria-label="Public navigation" className="order-last flex w-full min-w-0 gap-2 overflow-x-auto xl:order-none xl:w-auto">
           {nav.map(link => <ActionControl key={link.href} action={link} className="shrink-0 border-transparent" />)}
@@ -50,7 +54,9 @@ export function PublicLayout({ makerspace, nav, headerAction, liveStatus, width 
     </LayoutFrame>
     <footer className="border-t border-line">
       <div className="sw-layout sw-public-chrome flex flex-wrap items-center justify-between gap-4">
-        <p className="text-sm text-muted">{footer.credit ?? "Powered by space works"}</p>
+        <RouteLink href="/" className="inline-flex items-center gap-2 rounded-control text-sm text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+          <SpaceWorksLogo variant="symbol" size={48} decorative /><span>{footer.credit ?? "Powered by Space Works"}</span>
+        </RouteLink>
         <nav aria-label="Footer" className="flex flex-wrap gap-2">{footer.links.map(link => <ActionControl key={link.label} action={link} />)}</nav>
       </div>
     </footer>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { Search } from "lucide-react";
 
 export type FilterBarProps = {
   value: string;
@@ -21,18 +22,21 @@ export function FilterBar({
   const searchId = useId();
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line bg-panel p-3 sm:flex-row sm:items-center">
+    <div className="flex min-w-0 flex-wrap items-center gap-3">
+      <div className="relative min-w-0 flex-1 basis-full sm:basis-48">
       <label className="sr-only" htmlFor={searchId}>
         {searchLabel}
       </label>
       <input
         id={searchId}
-        className="desk-input min-w-0 flex-1 bg-sidebar dark:bg-surface"
+        className="desk-input h-11 w-full min-w-0 border-outline bg-success pl-11 text-on-success placeholder:text-on-success dark:bg-surface dark:text-ink dark:placeholder:text-muted"
         type="search"
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
+      <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-on-success dark:text-muted" />
+      </div>
       {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
       {actions ? <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{actions}</div> : null}
     </div>

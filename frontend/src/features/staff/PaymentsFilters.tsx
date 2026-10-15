@@ -5,7 +5,9 @@ import { DUE_OPTIONS } from "./PaymentDueBadge";
 import { PAYMENT_SUBJECTS } from "./paymentsApi";
 
 export function PaymentsFilters({ list, makerspaceId }: { list: ReturnType<typeof useUrlListState>; makerspaceId: number }) {
-  return <>
+  return <ListViewControls state={list} makerspaceId={makerspaceId} entity="payments" search={false}
+    sorts={[["due_at", "Due date"], ["-due_at", "Due date descending"], ["-created_at", "Newest"], ["created_at", "Oldest"], ["amount", "Amount ascending"], ["-amount", "Amount descending"]]}
+    activeCount={Number(Boolean(list.values.subject_type)) + Number(Boolean(list.values.due_state))} controls={<>
     {list.values.status === "pending" ? <SegmentedControl label="Due" value={list.values.due_state}
       options={[["", "All due dates"], ...DUE_OPTIONS].map(([value, label]) => ({ value, label }))}
       onChange={value => list.update({ due_state: value })} /> : null}
@@ -15,7 +17,5 @@ export function PaymentsFilters({ list, makerspaceId }: { list: ReturnType<typeo
         {PAYMENT_SUBJECTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
     </label>
-    <ListViewControls state={list} makerspaceId={makerspaceId} entity="payments" search={false}
-      sorts={[["due_at", "Due date"], ["-due_at", "Due date descending"], ["-created_at", "Newest"], ["created_at", "Oldest"], ["amount", "Amount ascending"], ["-amount", "Amount descending"]]} />
-  </>;
+  </>} />;
 }

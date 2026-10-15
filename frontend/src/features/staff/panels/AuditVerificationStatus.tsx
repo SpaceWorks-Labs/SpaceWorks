@@ -1,3 +1,4 @@
+import { plural } from "../../../lib/plural";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -112,7 +113,7 @@ export function AuditVerificationStatus({
       ) : null}
       {run?.terminal ? (
         <p className="mt-1 text-xs text-muted">
-          {run.coverage.row_count} rows · {run.coverage.mac_valid_count} MAC-valid ·{" "}
+          {plural(run.coverage.row_count, "row")} · {run.coverage.mac_valid_count} MAC-valid ·{" "}
           {run.coverage.local_batch_verified_count} in a verified batch · chain {run.coverage.chain_status} ·
           anchor {run.coverage.anchor_status.replace("_", " ")}
         </p>

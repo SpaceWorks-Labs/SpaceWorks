@@ -47,7 +47,7 @@
   .desk-shell { @apply min-h-screen min-w-0 bg-bg text-ink; }
   .desk-panel { @apply min-w-0 rounded-xl border border-line bg-panel; }
   .desk-input {
-    @apply min-h-11 rounded-control border border-outline bg-panel px-3 py-2 text-body text-ink transition-colors duration-120 placeholder:text-muted hover:border-ink focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+    @apply min-h-11 rounded-control border border-outline bg-panel dark:bg-surface px-3 py-2 text-body text-ink transition-colors duration-120 placeholder:text-muted hover:border-ink focus:border-accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
   }
   .desk-input[aria-invalid="true"] { @apply border-danger; }
   .desk-nav-item {
@@ -59,7 +59,7 @@
   .desk-tab {
     @apply min-h-11 flex-1 border-b-2 border-transparent px-3 py-1.5 text-label font-medium text-muted transition-colors duration-120 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted;
   }
-  .desk-tab-active { @apply border-accent font-semibold text-ink; }
+  .desk-tab-active { @apply border-accent-ink font-semibold text-ink; }
   .desk-actions button:not([class*="desk-button"]) {
     @apply min-h-11 inline-flex items-center justify-center rounded-control border border-line px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
   }
@@ -75,7 +75,7 @@
   .desk-actions button:enabled[class*="text-ink"] { @apply hover:text-ink; }
   .desk-panel-body > button:not([class*="desk-"]):not([class*="text-"]):not([class*="bg-"]),
   .desk-panel-body > div:not(.desk-actions) > button:not([class*="desk-"]):not([class*="text-"]):not([class*="bg-"]) {
-    @apply min-h-11 inline-flex items-center justify-center gap-2 rounded-control border border-line bg-accent px-3 py-2 text-label font-semibold text-on-accent transition-colors duration-120 hover:bg-accent-hover active:bg-accent-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+    @apply min-h-11 inline-flex items-center justify-center gap-2 rounded-control border border-accent-ink bg-accent px-3 py-2 text-label font-semibold text-on-accent transition-colors duration-120 hover:bg-accent-hover active:bg-accent-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
   }
 }
 /* A tenant fill can need a stronger control boundary than its own colour. */

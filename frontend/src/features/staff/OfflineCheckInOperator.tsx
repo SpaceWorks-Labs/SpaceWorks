@@ -147,6 +147,6 @@ export function OfflineCheckInOperator({
     {resolved ? <div className="mt-3 rounded-md border border-line p-3"><p className="font-medium text-ink">{resolved.name}</p><p className="text-sm text-muted">Waiver: {resolved.host_waiver_state.replace(/_/g, " ")}</p><div className="mt-2 flex gap-2"><button className={`desk-button-primary ${FOCUS}`} type="button" onClick={confirm}>Confirm attendance</button><button className={`desk-button ${FOCUS}`} type="button" onClick={() => setResolved(null)}>Cancel</button></div></div> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
     {scanning ? <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find an offline check-in code" controls={<button className="desk-button" type="button" onClick={() => setScanning(false)}>Done</button>} /> : null}
-    {state ? <DangerZone title="Remove offline attendee data" consequence="The roster and unsynchronized attendance on this device will be removed." action={{ label: "Wipe attendee data", onClick: wipe }} /> : null}
+    {state ? <DangerZone title="Remove offline attendee data" consequence="The roster and unsynchronized attendance on this device will be removed." action={{ label: "Wipe attendee data", onClick: wipe, confirm: { title: "Wipe attendee data from this device?", message: "The roster and any check-ins not yet synced are removed from this device. This can't be undone." } }} /> : null}
   </section>;
 }

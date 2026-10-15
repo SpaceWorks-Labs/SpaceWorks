@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SpaceWorksLogo } from "../SpaceWorksLogo";
 import { ActionControl, Callout, Card, ConfirmDialog, PageHeader, StatusPill } from "../ui";
 import type { Action, Identity } from "../ui";
 import { KioskPin, type KioskPinProps } from "./KioskPin";
@@ -22,11 +23,14 @@ export function KioskLayout({ context, connection, progress, headerActions, mode
   const connectionLabel = `${connection.online ? "Online" : "Offline"}${connection.queued ? ` · ${connection.queued} queued` : ""}`;
   return <div className="sw-kiosk bg-bg text-ink">
     <LayoutFrame standalone={standalone} width={width}>
-      <PageHeader title={context.title} subtitle={context.subtitle} identity={context.identity}
+      <div className="mb-6 flex min-w-0 items-start gap-3">
+        <SpaceWorksLogo variant="symbol" size={48} />
+        <div className="min-w-0 flex-1 [&>header]:mb-0"><PageHeader title={context.title} subtitle={context.subtitle} identity={context.identity}
         meta={<div className="flex flex-wrap items-center gap-4">
           {progress ? <span className="font-display text-2xl tabular-nums">{`${progress.done} / ${progress.of} ${progress.label}`}</span> : null}
           <StatusPill label={connectionLabel} tone={connection.online ? "success" : "warn"} />
-        </div>} />
+        </div>} /></div>
+      </div>
       <div className="mb-8 flex flex-wrap justify-end gap-3">{headerActions.map(action => <ActionControl key={action.label} action={action} />)}</div>
       {idleCountdown ? <div className="mb-6"><Callout size="panel" tone="warn" lead={`Station locks in ${idleCountdown.seconds} seconds.`}
         action={{ label: "Keep working", onClick: idleCountdown.onKeep }} /></div> : null}

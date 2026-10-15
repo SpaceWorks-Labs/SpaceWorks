@@ -1,3 +1,4 @@
+import { EmptyState } from "../../components/ui/EmptyState";
 import { MonthCalendar } from "../discovery/MonthCalendar";
 import { monthWindow } from "../discovery/useDiscoveryState";
 import { dayStart } from "../discovery/calendarDates";
@@ -24,7 +25,7 @@ export function SpaceDiscoveryCalendar({ slug, space, month, timeZone = "UTC" }:
   const intervals = [...new Map(combined.map((interval) => [`${interval.starts_at}-${interval.ends_at}`, interval])).values()];
   return <div className="mt-5">
     <p className="mb-3 text-sm text-muted">Confirmed bookings only. Empty dates do not guarantee a bookable time; rules are checked when you submit.</p>
-    {!intervals.length ? <p className="mb-3 text-sm text-muted">No confirmed bookings are published in this month.</p> : null}
+    {!intervals.length ? <EmptyState message="No confirmed bookings are published in this month." /> : null}
     <MonthCalendar month={month} timeZone={timeZone} label={`${space.name} published bookings`} entries={intervals.map((interval, index) => ({
       id: `${interval.starts_at}-${index}`, startsAt: interval.starts_at, endsAt: interval.ends_at,
       label: `Booked ${new Date(interval.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", timeZone })}–${new Date(interval.ends_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", timeZone })}${space.show_public_booker_names && interval.booker_name ? ` · ${interval.booker_name}` : ""}`,

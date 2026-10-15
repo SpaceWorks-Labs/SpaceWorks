@@ -10,15 +10,15 @@ INK, CREAM = (20, 44, 42), (255, 244, 232)
 BLACK, WHITE = (0, 0, 0), (255, 255, 255)
 SURFACES = {
     "light": ((255, 244, 232), (246, 236, 224), (255, 255, 255), (239, 230, 219)),
-    "dark": ((20, 44, 42), (27, 50, 48), (34, 56, 53), (46, 66, 63)),
+    "dark": ((20, 44, 42), (34, 56, 53), (48, 68, 65), (60, 78, 74)),
 }
 PRODUCT_FILL = {
     "light": (0, 110, 99),
-    "dark": (87, 156, 144),
+    "dark": (0, 110, 99),
 }
 BODY_TEXT = {
     "light": ((20, 44, 42), (91, 104, 99)),
-    "dark": ((255, 244, 232), (192, 190, 181)),
+    "dark": ((255, 244, 232), (189, 188, 179)),
 }
 FIXED_INKS = {
     "light": ((0, 110, 99), (83, 109, 73), (105, 104, 52), (81, 105, 123), (185, 28, 28)),
@@ -26,7 +26,7 @@ FIXED_INKS = {
 }
 FIXED_SOFTS = {
     "light": ((224, 238, 236), (255, 238, 233), (251, 255, 242), (255, 250, 233), (246, 249, 255)),
-    "dark": ((40, 68, 64), (61, 63, 55), (57, 80, 64), (61, 75, 55), (52, 74, 77)),
+    "dark": ((45, 71, 67), (60, 71, 65), (59, 79, 70), (60, 77, 65), (56, 76, 76)),
 }
 
 
@@ -81,6 +81,8 @@ def derive_palette(theme, mode):
         if all(contrast(text, candidate) >= 4.55 for text in texts):
             soft = candidate
             break
+    if not custom:
+        soft = FIXED_SOFTS[mode][0]
     backgrounds = list(zip(("bg", "surface", "panel", "hover"), surfaces)) + [("brand-soft", soft)]
     backgrounds += list(zip(("accent-soft", "emphasis-soft", "success-soft", "warn-soft", "info-soft"), FIXED_SOFTS[mode]))
     ink = FIXED_INKS[mode][0]

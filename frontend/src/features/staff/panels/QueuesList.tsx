@@ -35,7 +35,7 @@ export function RequestList({ rows, canViewAudit = false, actions, primary, menu
     const identity = !pending && row.return_due_at ? { kind: "date" as const, date: row.return_due_at }
       : { kind: "avatar" as const, name: row.requester_display || row.requester_username, seed: row.requester_username };
     const overflow: Action[] = [
-      { label: "View details", onClick: () => open(row) }, ...(menu?.(row) ?? []),
+      { label: pending ? "Review details" : "View details", onClick: () => open(row) }, ...(pending && reject ? [reject(row)] : []), ...(menu?.(row) ?? []),
       ...(canViewAudit ? [{ label: "View timeline", onClick: () => open(row, "timeline") }] : []),
       ...(row.issue_evidence_id || row.return_evidence_ids?.length ? [{ label: "View photos", onClick: () => open(row, "evidence") }] : []),
       { label: "Copy link", onClick: () => { void copyLink(row); } },
@@ -46,9 +46,9 @@ export function RequestList({ rows, canViewAudit = false, actions, primary, menu
           {row.requested_for ? <span className="mt-1 block break-words">{row.requested_for}</span> : null}
           {row.return_due_at ? <span className="mt-1 block">{new Date(row.return_due_at).getTime() < Date.now() ? "Overdue · " : "Due "}<RelativeTime date={row.return_due_at} /></span> : null}</>}
         right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={row.status} />
-          {pending ? <ActionControl action={{ label: "Review", onClick: () => open(row) }} />
-            : next ? <ActionControl action={{ ...next, label: row.status === "issued" || row.status === "partially_returned" ? "Return" : next.label }} /> : null}
-          {actions?.(row)}<OverflowMenu label={`More actions for request #${row.id}`} actions={overflow} /></div>} />
+          {next ? <ActionControl primary action={{ ...next, label: row.status === "issued" || row.status === "partially_returned" ? "Return" : next.label }} />
+            : pending ? <ActionControl action={{ label: "Review", onClick: () => open(row) }} /> : null}
+          {extra?.(row)}{actions?.(row)}<OverflowMenu label={`More actions for request #${row.id}`} actions={overflow} /></div>} />
     </article>;
   })}
     {detail ? <RequestDetail row={detail} canViewAudit={canViewAudit} primary={primary?.(detail)} secondary={reject?.(detail)}

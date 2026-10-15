@@ -7,10 +7,10 @@ export function SidebarItem({ item, activeKey, onNavigate }: { item: ShellItem; 
   const badge = item.badge ?? 0;
   return <li>
     <Link to={item.href} aria-current={current ? "page" : undefined}
-      aria-label={badge > 0 ? `${item.label}, ${badge} ${item.badgeLabel ?? "needs action"}` : undefined}
+      aria-label={badge > 0 ? `${item.label}, ${badge} ${item.badgeLabel ?? "needs action"}` : item.label}
       onFocus={event => event.currentTarget.scrollIntoView?.({ block: "nearest" })}
       onClick={() => { item.onSelect?.(); onNavigate?.(); }}
-      className={`flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-2 text-[15px] ${focusRing} ${current ? "bg-sidebar-active font-semibold text-on-accent" : "text-ink hover:bg-sidebar-hover"}`}>
+      className={`flex min-h-11 items-center gap-2.5 rounded-lg border px-2.5 py-2 text-[15px] ${focusRing} ${current ? "border-accent-ink bg-sidebar-active font-semibold text-on-accent" : "border-transparent text-ink hover:bg-sidebar-hover"}`}>
       <Glyph aria-hidden="true" size={24} strokeWidth={2} className="shrink-0" />
       <span className="min-w-0 flex-1 break-words">{item.label}</span>
       {badge > 0 ? <span aria-hidden="true" className={`rounded-full px-2 text-xs tabular-nums ${current ? "bg-panel text-ink" : "bg-accent-soft text-accent-ink"}`}>{badge > 99 ? "99+" : badge}</span> : null}

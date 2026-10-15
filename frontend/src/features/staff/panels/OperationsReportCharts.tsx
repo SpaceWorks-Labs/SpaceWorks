@@ -1,3 +1,4 @@
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { formatNumber, type ChartRow } from "./OperationsReportState";
 
 export const REPORT_CHART_COLORS = [
@@ -7,7 +8,7 @@ export const REPORT_CHART_COLORS = [
 
 export function BarChart({ rows, valueLabel }: { rows: ChartRow[]; valueLabel?: string }) {
   const maxValue = Math.max(...rows.map((row) => row.value), 0);
-  if (!rows.length || maxValue <= 0) return <p className="text-sm text-muted">No chart data.</p>;
+  if (!rows.length || maxValue <= 0) return <EmptyState message="No chart data." />;
   return (
     <div className="space-y-2" aria-label={`Bar chart of ${valueLabel ?? "values"}`} role="img">
       {rows.map((row, index) => (
@@ -25,7 +26,7 @@ export function LineChart({ rows, valueLabel }: { rows: ChartRow[]; valueLabel?:
   const width = 640;
   const height = 180;
   const max = Math.max(...rows.map((row) => row.value), 0);
-  if (!rows.length || max <= 0) return <p className="text-sm text-muted">No chart data.</p>;
+  if (!rows.length || max <= 0) return <EmptyState message="No chart data." />;
   const points = rows.map((row, index) => ({
     ...row,
     x: rows.length === 1 ? width / 2 : (index / (rows.length - 1)) * (width - 32) + 16,
@@ -48,7 +49,7 @@ export type StackedChartRow = { label: string; segments: { label: string; value:
 
 export function StackedBarChart({ rows, valueLabel }: { rows: StackedChartRow[]; valueLabel?: string }) {
   const max = Math.max(...rows.map((row) => row.segments.reduce((sum, segment) => sum + segment.value, 0)), 0);
-  if (!rows.length || max <= 0) return <p className="text-sm text-muted">No chart data.</p>;
+  if (!rows.length || max <= 0) return <EmptyState message="No chart data." />;
   const labels = [...new Set(rows.flatMap((row) => row.segments.map((segment) => segment.label)))];
   return (
     <div role="img" aria-label={`Stacked bar chart of ${valueLabel ?? "values"}`} className="space-y-3">
@@ -66,7 +67,7 @@ export function StackedBarChart({ rows, valueLabel }: { rows: StackedChartRow[];
 export function PieChart({ rows, valueLabel }: { rows: ChartRow[]; valueLabel?: string }) {
   const data = rows.filter((row) => row.value > 0);
   const total = data.reduce((sum, row) => sum + row.value, 0);
-  if (!data.length || total <= 0) return <p className="text-sm text-muted">No chart data.</p>;
+  if (!data.length || total <= 0) return <EmptyState message="No chart data." />;
   let consumed = 0;
   const circumference = 2 * Math.PI * 60;
   return (

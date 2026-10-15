@@ -1,3 +1,4 @@
+import { EmptyState } from "../../components/ui/EmptyState";
 import { useState } from "react";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import { validateCustomAnswers, type CustomAnswers, type CustomFormSchema } from "../forms/customFormTypes";
@@ -73,7 +74,7 @@ export function MemberReferrals({
       {emailVerified === false ? <p className="mt-2 text-sm text-muted">Verify your email to discover and claim invitations.</p> : null}
       {invitationsLoading ? <p className="mt-2 text-sm text-muted">Checking pending invitations…</p> : null}
       {invitationError ? <p className="mt-2 text-sm text-danger" role="alert">{invitationError.message}</p> : null}
-      {emailVerified !== false && !invitationsLoading && invitations.length === 0 ? <p className="mt-2 text-sm text-muted">No pending invitations for this makerspace.</p> : null}
+      {emailVerified !== false && !invitationsLoading && invitations.length === 0 ? <EmptyState message="No pending invitations for this makerspace." /> : null}
       {emailVerified !== false && invitations.length ? <ul className="mt-3 space-y-3">
         {invitations.map((invitation) => <InvitationApplication key={invitation.id} invitation={invitation} schema={invitation.is_staff ? null : applicationSchema ?? null} admissionMode={admissionMode} pending={claimingId === invitation.id} onClaim={onClaim} />)}
       </ul> : null}

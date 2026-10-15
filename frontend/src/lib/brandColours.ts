@@ -5,15 +5,15 @@ export type BrandTokens = { fillText: RGB; surfaces: RGB[]; defaultFill: RGB };
 export type ContrastPair = { mode: string; pair: string; ratio: number; minimum: number };
 export const BRAND_SURFACES: Record<"light" | "dark", RGB[]> = {
   light: [[255, 244, 232], [246, 236, 224], [255, 255, 255], [239, 230, 219]],
-  dark: [[20, 44, 42], [27, 50, 48], [34, 56, 53], [46, 66, 63]],
+  dark: [[20, 44, 42], [34, 56, 53], [48, 68, 65], [60, 78, 74]],
 };
 export const PRODUCT_FILL: Record<"light" | "dark", RGB> = {
   light: [0, 110, 99],
-  dark: [87, 156, 144],
+  dark: [0, 110, 99],
 };
 export const BODY_TEXT: Record<"light" | "dark", RGB[]> = {
   light: [[20, 44, 42], [91, 104, 99]],
-  dark: [[255, 244, 232], [192, 190, 181]],
+  dark: [[255, 244, 232], [189, 188, 179]],
 };
 export const FIXED_INKS: Record<"light" | "dark", RGB[]> = {
   light: [[0, 110, 99], [83, 109, 73], [105, 104, 52], [81, 105, 123], [185, 28, 28]],
@@ -21,7 +21,7 @@ export const FIXED_INKS: Record<"light" | "dark", RGB[]> = {
 };
 export const FIXED_SOFTS: Record<"light" | "dark", RGB[]> = {
   light: [[224, 238, 236], [255, 238, 233], [251, 255, 242], [255, 250, 233], [246, 249, 255]],
-  dark: [[40, 68, 64], [61, 63, 55], [57, 80, 64], [61, 75, 55], [52, 74, 77]],
+  dark: [[45, 71, 67], [60, 71, 65], [59, 79, 70], [60, 77, 65], [56, 76, 76]],
 };
 const INK: RGB = [20, 44, 42], CREAM: RGB = [255, 244, 232];
 const BLACK: RGB = [0, 0, 0], WHITE: RGB = [255, 255, 255];
@@ -72,6 +72,7 @@ export function deriveBrandPalette(theme: Record<string, string>, mode: "light" 
     const candidate = blend(surfaces[2], fill, .12 * (1 - step / 100));
     if (texts.every((text) => contrast(text, candidate) >= 4.55)) { soft = candidate; break; }
   }
+  if (!custom) soft = FIXED_SOFTS[mode][0];
   const names = ["bg", "surface", "panel", "hover"];
   const backgrounds = [...surfaces.map((color, i) => ({ name: names[i], color })), { name: "brand-soft", color: soft },
     ...FIXED_SOFTS[mode].map((color, i) => ({ name: `${["accent", "emphasis", "success", "warn", "info"][i]}-soft`, color }))];

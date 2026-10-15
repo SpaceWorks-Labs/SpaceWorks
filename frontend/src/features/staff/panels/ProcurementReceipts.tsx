@@ -1,3 +1,4 @@
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { ConfirmDialog, OverflowMenu, RelativeTime } from "../../../components/ui";
 import { useId, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -68,7 +69,7 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
             <button type="button" className="desk-button-ghost text-xs" onClick={() => openReceipt(receipt.id)}>View</button>
             <OverflowMenu label="Receipt actions" actions={[{ label: "Delete receipt", confirms: true, tone: "danger", disabled: remove.isPending, onClick: () => setDeleteId(receipt.id) }]} />
           </div>
-        )) : <p className="text-xs text-muted">No receipts.</p>}
+        )) : <EmptyState message="No receipts." />}
       </div>
       <label htmlFor={inputId} className="sr-only">Add receipt</label>
       <input

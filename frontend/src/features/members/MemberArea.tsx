@@ -210,10 +210,10 @@ export function MemberArea() {
     {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} /> : null}
     {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>Sign in to your account</button> : null}
     {["loans", "events", "inbox"].includes(activeTab) && !memberships.isLoading && membership?.membership_status !== "active" ? <p className="text-sm text-muted">An active membership is required to view your activity.</p> : null}
-    {activeTab === "inbox" && section === "notices" && memberActivity && !memberActivity.notices?.length ? <p className="text-sm text-muted">No notices need your attention.</p> : null}
+    {activeTab === "inbox" && section === "notices" && memberActivity && !memberActivity.notices?.length ? <EmptyState message="No notices need your attention." /> : null}
     {["loans", "bookings", "events", "inbox"].includes(activeTab) && activity.isLoading ? <p role="status" className="text-sm text-muted">Loading your activity...</p> : null}
     {activeTab === "payments" && payments.isLoading ? <p role="status" className="text-sm text-muted">Loading payments...</p> : null}
-    {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <EmptyState message="Nothing to pay. You?re all settled." /> : null}
+    {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <EmptyState message="Nothing to pay. You are all settled." /> : null}
     {activeTab === "payments" && payments.error ? <p role="alert" className="text-sm text-danger">{message(payments.error)}</p> : null}
     <SupportContact branding={bootstrap.data?.branding} />
     </MemberScreenLayout></MemberSectionNavigation>

@@ -20,7 +20,9 @@ export type CenteredCardLayoutProps = Omit<LayoutProps, "width"> & {
 export function CenteredCardLayout({ media, eyebrow, title, body, content, primary, escape, footer,
   width = 440, standalone = true, ...query }: CenteredCardLayoutProps) {
   return <LayoutFrame standalone={standalone}>
-    <div className="mb-8"><SpaceWorksLogo variant="stacked" size={180} /></div>
+    <a href="/" aria-label="Open makerspace listing" className="mb-8 inline-flex rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      <SpaceWorksLogo variant="stacked" size={180} />
+    </a>
     <div className="grid min-h-[60dvh] items-center">
       <div className={`sw-centered-card ${width === "wide" ? "sw-centered-wide" : width === 480 ? "sw-centered-480" : ""}`}>
         {media ? <div className="mb-6">

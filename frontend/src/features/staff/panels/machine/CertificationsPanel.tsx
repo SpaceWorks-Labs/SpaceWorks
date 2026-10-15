@@ -1,3 +1,4 @@
+import { EmptyState } from "../../../../components/ui/EmptyState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog } from "../../../../components/ui";
@@ -20,7 +21,7 @@ export function CertificationsPanel({ makerspaceId, machineTypeId , visible = tr
   return <section className="grid gap-3 rounded-xl border border-line bg-panel p-3" aria-label="Certifications">
     <h3 className="title-panel">Certifications</h3>
     {types.isLoading ? <p role="status">Loading certifications…</p> : null}
-    {types.isSuccess && !rows.length ? <p className="text-sm text-muted">No certifications defined for this machine type.</p> : null}
+    {types.isSuccess && !rows.length ? <EmptyState message="No certifications defined for this machine type." /> : null}
     {rows.map((row) => <article key={row.id} className="grid gap-2 rounded-lg border border-line p-3">
       <h4 className="title-section">{row.name}{!row.is_active ? " (inactive)" : ""}</h4><p className="text-sm text-muted">{row.validity_days ? `Valid for ${row.validity_days} days` : "No expiry"}{row.is_required_for_service ? " · Service required" : ""}{row.is_required_for_booking ? " · Booking required" : ""}</p>
       <div className="flex flex-wrap gap-2"><button className="desk-button-ghost" onClick={() => setSelected(selected === row.id ? null : row.id)}>{selected === row.id ? "Hide grants" : "View grants"}</button>{row.is_active ? <><button className="desk-button-ghost" onClick={() => setEditing(row)}>Edit type</button><button className="desk-button-danger" onClick={() => setDeactivate(row.id)}>Deactivate</button></> : null}</div>

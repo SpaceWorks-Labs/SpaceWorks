@@ -1,3 +1,4 @@
+import { EmptyState } from "../../components/ui/EmptyState";
 import { useMemo, useState } from "react";
 
 import { usePublicAvailability } from "./publicBookingsApi";
@@ -59,7 +60,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
         <p className="mt-3 text-sm text-muted">Availability is not published. You may still submit your selected time for the makerspace to check.</p>
       ) : null}
       {availability.data?.availability?.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">No confirmed bookings are published in this window.</p>
+        <EmptyState message="No confirmed bookings are published in this window." />
       ) : null}
       {availability.data?.availability?.length ? (
         <ul className="mt-3 grid gap-2">

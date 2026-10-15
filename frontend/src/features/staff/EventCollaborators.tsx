@@ -1,3 +1,4 @@
+import { EmptyState } from "../../components/ui/EmptyState";
 import { useState } from "react";
 
 import {
@@ -84,7 +85,7 @@ export function EventCollaborators({ visible = true,
           ))}
         </ul>
       ) : (
-        <p className="mb-3 text-sm text-muted">No partner makerspaces yet.</p>
+        <EmptyState message="No partner makerspaces yet." />
       )}
 
       <div className="flex flex-wrap items-end gap-2">

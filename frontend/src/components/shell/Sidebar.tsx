@@ -11,8 +11,8 @@ export function Sidebar({ variant, workspace, search, nav, activeKey, footerLink
   const root = useRef<HTMLElement>(null);
   useEffect(() => { root.current?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ block: "nearest" }); }, [activeKey]);
   return <aside ref={root} className="flex h-full min-h-0 w-full flex-col bg-sidebar text-ink">
-    <div className="shrink-0 space-y-3 px-3.5 pb-3">
-      <div className="flex h-24 items-center justify-center"><SpaceWorksLogo variant="stacked" size={180} /></div>
+    <div className="shrink-0 space-y-2 px-3.5 pb-3">
+      <div className="flex items-center justify-center"><SpaceWorksLogo variant="stacked" size={180} /></div>
       <WorkspaceSwitcher workspace={workspace} />
       {search ? <button type="button" aria-label={search.label} aria-haspopup="dialog" onClick={search.onOpen}
         className={`flex min-h-11 w-full items-center gap-2 rounded-lg bg-sidebar px-2.5 text-sm hover:bg-sidebar-hover dark:bg-surface ${focusRing}`}>

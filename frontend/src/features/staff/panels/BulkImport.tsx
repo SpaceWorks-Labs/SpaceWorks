@@ -1,3 +1,4 @@
+import { plural } from "../../../lib/plural";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -99,7 +100,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
     setStep("map");
     setError("");
   };
-  const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file).then(loadRows).catch(() => setError("We couldn't read that file. Save it as CSV or .xlsx and try again.")); };
+  const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file).then(loadRows).catch((exc: unknown) => setError(`We couldn't read that file${exc instanceof Error && exc.message ? `: ${exc.message}` : ""}. Save it as CSV or .xlsx and try again.`)); };
   const errors = result?.summary?.errors ?? result?.errors?.length ?? 0;
   const finish = step === "import" && !pending && Boolean(result) && activeJob?.status !== "failed";
   const preview = () => selectedFile ? startFileJob("preview") : submitRows(false, mappedRows());
@@ -110,9 +111,9 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
     onCancel={() => { setStep("upload"); setSourceRows([]); setSelectedFile(null); setJobId(null); syncMutation.reset(); jobMutation.reset(); }}
     leaveGuard={sourceRows.length && !finish ? "Leave this import? Your selected file and mapping will be cleared. A running import continues in the background." : undefined}
     footer={{ back: step === "import" && failure && !pending ? { label: "Review and try again", onClick: () => setStep(source === "json" ? "upload" : "map") } : step !== "upload" && step !== "import" ? { label: "Back", disabled: pending, onClick: () => setStep(step === "review" ? source === "json" ? "upload" : "map" : "upload") } : undefined,
-      next: { label: step === "upload" ? "Match columns" : step === "map" ? "Preview" : step === "review" ? `Import ${result?.summary?.total ?? sourceRows.length} rows` : "Importing…",
-        pending, pendingLabel: step === "review" ? "Importing…" : "Preparing…", disabled: step === "review" ? errors > 0 || !result : step === "import",
-        disabledReason: errors ? `Fix ${errors} errors to continue.` : step === "import" ? "Wait for the import to finish." : undefined,
+      next: { label: step === "upload" ? "Match columns" : step === "map" ? "Preview" : step === "review" ? errors > 0 ? `Import ${plural(Math.max(0, (result?.summary?.total ?? sourceRows.length) - errors), "valid row")}, skip ${errors}` : `Import ${plural(result?.summary?.total ?? sourceRows.length, "row")}` : "Importing…",
+        pending, pendingLabel: step === "review" ? "Importing…" : "Preparing…", disabled: step === "review" ? !result : step === "import",
+        disabledReason: step === "import" ? "Wait for the import to finish." : undefined,
         onClick: () => { if (step === "upload") { if (source === "json") submitJson(false); else if (selectedFile) setStep("map"); else loadRows(parseDelimited(tableText)); } else if (step === "map") preview(); else if (step === "review") { setStep("import"); apply(); } } } }}
     result={finish ? { tone: "success", title: "Import complete", summary: <><p>Your inventory is ready to review.</p>{result ? <ImportSummary result={result} /> : null}</>, next: { label: "View inventory →", href: `/m/${makerspace.slug}/admin/inventory` } } : undefined}
     work={<div className="grid gap-6">

@@ -1,3 +1,4 @@
+import { plural } from "../../lib/plural";
 import { PublicLayout } from "../../components/layouts";
 import { QueryContent } from "../../components/layouts/LayoutFrame";
 import { publicPageChrome } from "./PublicPageChrome";
@@ -95,8 +96,8 @@ export function PublicInventoryPage({ embedded = false }: { embedded?: boolean }
     {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
     {embedded ? <>{body}{request}</>
       : <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} width="wide" state={{ status: "ready" }}
-        header={{ title: `Borrow tools from ${displayName}`, subtitle: `${inventoryQuery.data?.count ?? 0} tools and kits`, primary: { label: "Member area", href: tenantPath("member") } }}
-        isEmpty={false} aside={{ title: "Your request", form: request, state: "open", mobileBar: { summary: `${totalItems} items`, label: "Review request" } }}>
+        header={{ title: `Borrow tools from ${displayName}`, subtitle: `${plural(inventoryQuery.data?.count ?? 0, "tool")} and kits`, primary: { label: "Member area", href: tenantPath("member") } }}
+        isEmpty={false} aside={{ title: "Your request", form: request, state: "open", mobileBar: { summary: plural(totalItems, "item"), label: "Review request" } }}>
         {body}
       </PublicLayout>}
 

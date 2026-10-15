@@ -1,3 +1,4 @@
+import { plural } from "../../lib/plural";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -50,7 +51,7 @@ export function DataExportsPanel({ makerspaceId }: { makerspaceId: number }) {
       action: { label: disclosureOpen ? "Hide what's included" : "Read what's included", onClick: () => setDisclosureOpen(!disclosureOpen) } }}
     body={{ kind: "rows", rows: rows.map(job => <ListRow key={job.id} title="Export" identity={{ kind: "date", date: job.created_at }}
       meta={<><RelativeTime date={job.created_at} /> · <StatusPill label={statusLabel(job)} tone={job.status === "failed" ? "danger" : job.status === "available" ? "success" : "warn"} />
-        {typeof job.manifest.total_rows === "number" ? ` · ${job.manifest.total_rows} rows` : ""}
+        {typeof job.manifest.total_rows === "number" ? ` · ${plural(job.manifest.total_rows, "row")}` : ""}
         {job.status === "failed" ? <span className="mt-2 block text-danger" role="alert">{job.failure_code === "deadline_exceeded" ? "This export took too long. Try again at a quieter time." : job.failure_detail || "The export failed. Request a new export to try again."}</span> : null}
       </>} right={job.status === "available" ? <button className="desk-button" type="button" disabled={download.isPending && download.variables === job.id} onClick={() => download.mutate(job.id)}>
         {download.isPending && download.variables === job.id ? "Preparing link…" : "Download"}

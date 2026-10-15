@@ -100,7 +100,9 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
       identity={{ kind: "icon", icon: "Circle", tone: "accent" }} meta={<>{row.container ? containers.data?.results.find(container => container.id === row.container)?.label : "All containers"}{row.started_at ? <> · Started <RelativeTime date={row.started_at} /></> : null}{row.lines ? ` · ${row.lines.length} lines counted` : ""}</>}
       onClick={() => setParams(current => { current.set("session", String(row.id)); return current; })}
       right={<div className="flex items-center gap-3"><StatusPill label={row.status.replace(/_/g, " ")} />
-        <button className="desk-button-ghost" onClick={() => setParams(current => { current.set("session", String(row.id)); return current; })}>{canCount(row.status) ? "Continue" : "Open count"}</button></div>} />) }}
+        {(() => { const next = canCount(row.status) ? undefined : nextAction(row);
+          return next ? <button className="desk-button-ghost" disabled={next.pending} onClick={event => { event.stopPropagation(); next.onClick(); }}>{next.label}</button>
+            : <button className="desk-button-ghost" onClick={() => setParams(current => { current.set("session", String(row.id)); return current; })}>{canCount(row.status) ? "Continue" : "Open count"}</button>; })()}</div>} />) }}
     pagination={{ page: stocktakes.page, pageSize: stocktakes.pageSize, count: stocktakes.count, onChange: stocktakes.setPage }} detail={detail} />;
 }
 function canCount(status: string) { return status === "draft" || status === "counting"; }

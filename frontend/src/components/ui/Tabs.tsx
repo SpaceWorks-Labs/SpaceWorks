@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from "react";
+import { RouteLink } from "./RouteLink";
 import { rove } from "./useRovingFocus";
 import type { Tab } from "./types";
 export type TabsProps = { tabs: Tab[]; activeKey: string; label?: string;
@@ -15,8 +16,8 @@ export function Tabs({ tabs, activeKey, label = "Page sections", onChange, child
     return onChange ? <button key={tab.key} id={`${id}-tab-${index}`} aria-controls={`${id}-panel`}
       role="tab" type="button" aria-label={accessibleLabel} aria-selected={selected}
       tabIndex={selected ? 0 : -1} className={classes} onClick={() => onChange(tab.key)}>{body}</button>
-      : <a key={tab.key} href={tab.href} aria-label={accessibleLabel} aria-current={selected ? "page" : undefined}
-        tabIndex={selected ? 0 : -1} className={classes}>{body}</a>;
+      : <RouteLink key={tab.key} href={tab.href} aria-label={accessibleLabel} aria-current={selected ? "page" : undefined}
+        tabIndex={selected ? 0 : -1} className={classes}>{body}</RouteLink>;
   });
   return onChange ? <>
     <div role="tablist" aria-label={label} className={barClass}

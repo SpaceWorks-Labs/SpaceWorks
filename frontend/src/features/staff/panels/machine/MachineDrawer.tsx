@@ -1,3 +1,4 @@
+import { plural } from "../../../../lib/plural";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -51,7 +52,7 @@ export function MachineDrawer({
     identity={details?.image_url ? { kind: "image", src: details.image_url } : { kind: "icon", icon: "Cog", tone: "accent" }}
     status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label="Retired" tone="warn" /> : null}</> : undefined}
     actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? "Mark running" : "Mark idle", pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
-    meta={details ? [details.machine_type.name, `${details.usage_hours} total hours`] : undefined}
+    meta={details ? [details.machine_type.name, plural(Number(details.usage_hours), "total hour")] : undefined}
     main={details ? <div className="grid gap-6 [&_[role=tablist]]:flex-wrap [&_[role=tablist]]:overflow-visible [&_[role=tablist]]:[mask-image:none]">
       {changeStatus.error ? <p role="alert" className="text-sm text-danger">{changeStatus.error.message}</p> : null}
       <Tabs label="Machine details" tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)}>

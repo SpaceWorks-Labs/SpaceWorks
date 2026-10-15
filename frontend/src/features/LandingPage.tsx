@@ -4,7 +4,8 @@ import { PublicLayout } from "../components/layouts";
 import { MakerspaceBrand } from "../components/MakerspaceBrand";
 import { MakerspaceMapLink } from "../components/MakerspaceMapLink";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { EmptyState, Field, StatusPill } from "../components/ui";
+import { EmptyState, FilterBar, StatusPill } from "../components/ui";
+import { plural } from "../lib/plural";
 import type { Makerspace } from "../types/inventory";
 import { usePublicMakerspaces } from "./inventory/usePublicInventory";
 
@@ -23,17 +24,15 @@ export function LandingPage() {
   const total = makerspacesQuery.data?.length ?? 0;
   if (total === 1) return <Navigate replace to={`/m/${makerspacesQuery.data![0].slug}`} />;
 
-  const searchToolbar = <form role="search" className="mb-8 flex flex-wrap items-end gap-3" onSubmit={event => event.preventDefault()}>
-      <Field label="Search makerspaces" className="min-w-0 flex-1" hint="Search by name, code or place.">
-        <input className="desk-input w-full" type="search" placeholder="Search by name, code or place" value={searchInput} onChange={event => setSearchInput(event.target.value)} />
-      </Field>
+  const searchToolbar = <form role="search" className="flex w-full min-w-0 flex-wrap items-center gap-3" onSubmit={event => event.preventDefault()}>
+      <div className="min-w-0 flex-1 basis-full sm:basis-64"><FilterBar searchLabel="Search makerspaces" placeholder="Search by name, code or place" value={searchInput} onChange={setSearchInput} /></div>
       {searchInput ? <button className="desk-button" type="button" onClick={() => setSearchInput("")}>Clear search</button> : null}
-      <p className="py-3 text-sm tabular-nums text-muted" aria-live="polite">{filtered.length} / {total} spaces</p>
+      <p className="py-3 text-sm tabular-nums text-muted" aria-live="polite">{filtered.length} / {plural(total, "space")}</p>
     </form>;
   return <div className="[&_h1]:font-accent"><PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }}
     nav={[{ label: "About", href: "/about" }]} headerAction={{ label: "Sign in", href: "/member" }} liveStatus={<ThemeToggle />}
     state={makerspacesQuery.isLoading ? { status: "loading" } : makerspacesQuery.isError ? { status: "error", error: "Couldn't load spaces. Try again.", onRetry: () => { void makerspacesQuery.refetch(); } } : { status: "ready" }}
-    header={{ eyebrow: "Space Works", title: "Find a space. Borrow the tool.", subtitle: "Public catalogues from community workshops, labs and makerspaces.", meta: searchToolbar }}
+    header={{ title: "Less searching. More making.", subtitle: "Find shared tools and your next community workshop.", meta: searchToolbar }}
     isEmpty={!filtered.length} empty={{ message: searchQuery ? `No spaces match '${searchQuery}'. Try another name or place.` : "No public spaces yet. They appear here once a space turns on its catalogue.", action: searchQuery ? { label: "Clear search", onClick: () => setSearchInput("") } : undefined }}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "About", href: "/about" }, { label: "Staff sign-in", href: "/admin" }] }}>
     <LandingSpaces spaces={filtered} search={searchQuery} clear={() => setSearchInput("")} />

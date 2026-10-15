@@ -106,7 +106,7 @@ export function MemberClaimCodes({
           {issue.isPending ? "Issuing…" : "Issue claim code"}
         </button>
       </div>
-      {!walkIns.length ? <p className="mt-2 text-sm text-muted">No eligible walk-ins in this member list.</p> : null}
+      {!walkIns.length ? <EmptyState message="No eligible walk-ins in this member list." /> : null}
       {issued ? (
         <div className="mt-4 grid gap-4 rounded-lg border border-line bg-surface p-4 md:grid-cols-[1fr_180px]">
           <div>

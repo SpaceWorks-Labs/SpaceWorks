@@ -115,8 +115,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
     empty={{ message: "No members yet. Invite someone to your space." }}
     body={{ kind: "rows", rows: <>
     {tab === "members" ? <section aria-label="Member roster" className="grid gap-3">
-      <ListViewControls state={list} makerspaceId={makerspaceId} entity="members" sorts={[["user__username", "Username"], ["-user__username", "Username descending"], ["status", "Status"]]} />
-      <label className="text-xs text-muted">Status<select className="desk-input" value={list.values.status} onChange={(event) => list.setFilter("status", event.target.value)}><option value="">All</option><option value="active">Active</option><option value="revoked">Revoked</option></select></label>
+      <ListViewControls state={list} makerspaceId={makerspaceId} entity="members" searchLabel="Search members" sorts={[["user__username", "Username"], ["-user__username", "Username descending"], ["status", "Status"]]} activeCount={Number(Boolean(list.values.status))} controls={<label className="grid gap-1 text-sm">Status<select className="desk-input" value={list.values.status} onChange={(event) => list.setFilter("status", event.target.value)}><option value="">All</option><option value="active">Active</option><option value="revoked">Revoked</option></select></label>} />
       <p className="mb-4 text-sm text-muted">Membership, referral and verification delegation, waiver compliance, and active presence for this makerspace.</p>
       {rosterRows.map((row) => <MemberRow
         key={row.id}

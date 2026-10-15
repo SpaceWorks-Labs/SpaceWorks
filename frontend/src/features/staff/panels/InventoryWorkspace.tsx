@@ -14,7 +14,8 @@ import { ListLayout, DetailLayout } from "../../../components/layouts";
 import { useSearchParams } from "react-router-dom";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { InventoryItemDetail } from "./InventoryItemDetail";
-import { SavedViewsMenu } from "../SavedViewsMenu";
+import { ListViewControls } from "../ListViewControls";
+import { plural } from "../../../lib/plural";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
 import { featureEnabled } from "../../../lib/features";
 import { ReorderSuggestions } from "./ReorderSuggestions";
@@ -42,7 +43,6 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const kitEnabled = featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist");
   const list = useUrlListState({ id: "", q: "", ordering: "name", page: "1", archived: "false", low_stock: "false", out_of_stock: "false" });
   const search = list.values.q;
-  const setSearch = (value: string) => list.setFilter("q", value);
   const [selectedIds, setSelectedIds] = useState<Key[]>([]);
   const [form, setForm] = useState<ItemForm>(emptyForm);
   const [adjustForm, setAdjustForm] = useState<AdjustmentForm>(emptyAdjust);
@@ -210,12 +210,12 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   </ItemModal>;
   return (
     <ListLayout width="wide" header={{ title: "Inventory", subtitle: "Parts, tools and the stock ready for your next project.", primary: addItem,
-      secondary: { label: "Export", menu: [{ label: "Export CSV", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: "Export Excel", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, meta: `${products.data?.count ?? 0} items` }}
+      secondary: { label: "Export", menu: [{ label: "Export CSV", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: "Export Excel", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, meta: plural(products.data?.count ?? 0, "item") }}
       state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id)}
       empty={{ message: "No parts added yet. Add your first item.", action: addItem }} filteredEmpty={{ message: showArchived ? "No archived items." : showLowStock ? "Nothing low on stock." : "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
       tabs={[{ key: "all", label: "All", href: href("false", "false", "false") }, { key: "low", label: "Low stock", href: href("false", "true", "false") }, { key: "out", label: "Out of stock", href: href("false", "false", "true") }, { key: "archived", label: "Archived", href: href("true", "false", "false") }]} activeTab={activeTab}
-      filters={{ search: { label: "Search inventory", value: search, onChange: setSearch }, controls: <SavedViewsMenu makerspaceId={makerspace.id} entity="inventory" state={list.values} onRestore={list.restore} />,
-        chips: list.values.id ? [{ key: "id", label: "Selected result", onRemove: () => list.setFilter("id", "") }] : [] }}
+      filters={{ toolbar: <ListViewControls state={list} makerspaceId={makerspace.id} entity="inventory" searchLabel="Search inventory"
+        sorts={[["name", "Name"], ["-name", "Name descending"], ["available_quantity", "Available first"], ["-available_quantity", "Available last"]]} /> }}
       bulkBar={{ count: selectedIds.length, onClear: () => setSelectedIds([]), actions: [{ label: "Enable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(true); } }, { label: "Disable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(false); } }, { label: "Export selected", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }] }}
       body={{ kind: "table", table: <><ReorderSuggestions key={makerspace.id} makerspaceId={makerspace.id} canProcure={canUseToBuy} /><DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={value => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={row => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} /></> }}
       pagination={{ page: list.page, pageSize: 24, count: products.data?.count ?? 0, onChange: list.setPage }}

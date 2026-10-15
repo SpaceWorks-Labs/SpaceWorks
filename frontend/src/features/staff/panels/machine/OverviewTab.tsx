@@ -108,7 +108,10 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
       ) : null}
       {canChangeLifecycle ? <DangerZone title={machine.is_active ? "Retire machine" : "Reactivate machine"}
         consequence={machine.is_active ? "Takes this machine out of service and off the public page." : "Returns this machine to service."}
-        action={{ label: machine.is_active ? "Retire" : "Reactivate", pending: lifecycle.isPending, onClick: () => lifecycle.mutate(machine.is_active ? "retire" : "unretire") }} /> : null}
+        action={{ label: machine.is_active ? "Retire" : "Reactivate", pending: lifecycle.isPending, onClick: () => lifecycle.mutate(machine.is_active ? "retire" : "unretire"),
+          confirm: machine.is_active
+            ? { title: `Retire ${machine.name}?`, message: "It stops taking jobs and leaves the public page. You can reactivate it later." }
+            : { title: `Reactivate ${machine.name}?`, message: "It returns to service and can take jobs again." } }} /> : null}
     </div>
   );
 }

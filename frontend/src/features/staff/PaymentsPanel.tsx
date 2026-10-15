@@ -117,7 +117,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     empty={{ message: status === "pending" ? "Nothing to collect. Every charge here is paid or waived." : "No payments yet. Charges appear here when someone books, registers or borrows." }}
     filtered={Boolean(subject || dueState)} filteredEmpty={{ message: "No matching payments. Try another filter.", action: { label: "Clear filters", onClick: () => list.update({ subject_type: "", due_state: "" }) } }}
     tabs={tabs} activeTab={status || "all"}
-    filters={{ controls: <PaymentsFilters list={list} makerspaceId={makerspaceId} /> }}
+    filters={{ toolbar: <PaymentsFilters list={list} makerspaceId={makerspaceId} /> }}
     bulkBar={{ count: selected.length, actions: bulkActions, onClear: () => setSelected([]) }}
     pagination={{ page: list.page, count: payments.data?.count ?? 0, pageSize: 24, onChange: list.setPage }}
     body={{ kind: "table", table: <DataTable listState={list} columns={columns} data={payments.data?.results ?? []}

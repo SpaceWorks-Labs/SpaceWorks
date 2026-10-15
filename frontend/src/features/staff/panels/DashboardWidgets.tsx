@@ -5,6 +5,10 @@ import { usePaginatedQuery, type Paginated } from "../../../lib/usePaginatedQuer
 import { staffTabPath } from "../staffTabs";
 import { useStaffGet, type Makerspace } from "./shared";
 import type { HardwareRequest } from "./Queues";
+import { RouteLink } from "../../../components/ui/RouteLink";
+
+/** Mirrors `UNRECOGNIZED_LABEL` in backend/apps/audit/presentation_catalog.py. */
+const UNRECOGNIZED_AUDIT_LABEL = "Unrecognized audit action";
 
 type Routing = { makerspace: Makerspace; guestOnly: boolean; singleTenantLocked: boolean };
 type AuditEntry = { id: number; actor_display: string | null; action_label: string; created_at: string; target_link?: string | null };
@@ -16,17 +20,21 @@ export function DashboardActivity({ makerspace, guestOnly, singleTenantLocked, c
   const query = `makerspace=${makerspace.id}`;
   const activity = useStaffGet<Paginated<AuditEntry>>(["audit", query], `/admin/audit-logs?${query}`);
   const all: Action = { label: "See all activity →", href: staffTabPath("audit", guestOnly, makerspace.slug, singleTenantLocked) };
-  if (activity.isLoading || activity.error || !activity.data?.results.length) return children(undefined, [{
-    title: "Recent activity", action: all, isEmpty: activity.isSuccess && !activity.data?.results.length,
+  // The backend withholds actions its presentation catalogue does not describe; a dashboard rail
+  // full of "Unrecognized audit action" says nothing, so only described activity is shown here
+  // (the Audit log page still lists every row).
+  const readable = (activity.data?.results ?? []).filter(row => row.action_label !== UNRECOGNIZED_AUDIT_LABEL);
+  if (activity.isLoading || activity.error || !readable.length) return children(undefined, [{
+    title: "Recent activity", action: all, isEmpty: activity.isSuccess && !readable.length,
     empty: { message: "No activity yet. New handovers and updates will appear here." },
     content: activity.error ? <ErrorBlock error={activity.error} resource="recent activity" onRetry={() => { void activity.refetch(); }} />
       : <div role="status" aria-label="Loading recent activity"><Skeleton className="h-24 w-full" /></div>,
   }]);
   return children({ title: "Recent activity", seeAll: all,
-    items: activity.data?.results.slice(0, 8).map(row => ({ key: String(row.id), actor: row.actor_display || "Space Works",
+    items: readable.slice(0, 8).map(row => ({ key: String(row.id), actor: row.actor_display || "Space Works",
       date: row.created_at, children: row.target_link?.startsWith("/") && !row.target_link.startsWith("//")
-        ? <a className="inline-flex min-h-11 items-center underline focus-visible:outline-2 focus-visible:outline-focus" href={row.target_link}>{row.action_label}</a>
-        : row.action_label })) ?? [],
+        ? <RouteLink className="inline-flex min-h-11 items-center underline focus-visible:outline-2 focus-visible:outline-focus" href={row.target_link}>{row.action_label}</RouteLink>
+        : row.action_label })),
   });
 }
 

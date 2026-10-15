@@ -1,5 +1,6 @@
 import type { Stat } from "./types";
 import { ProgressBar } from "./ProgressBar";
+import { RouteLink } from "./RouteLink";
 import { StatusPill } from "./StatusPill";
 export type StatCardProps = Stat;
 export function StatCard({ label, value, of, progress, tone = "neutral", href }: StatCardProps) {
@@ -14,6 +15,6 @@ export function StatCard({ label, value, of, progress, tone = "neutral", href }:
     </div>
     {progress !== undefined ? <div className="mt-3"><ProgressBar value={progress} label={`${label} progress`} /></div> : null}
   </>;
-  return href ? <a href={href} className={`${classes} hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>{content}</a>
+  return href ? <RouteLink href={href} className={`${classes} hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>{content}</RouteLink>
     : <div className={classes}>{content}</div>;
 }

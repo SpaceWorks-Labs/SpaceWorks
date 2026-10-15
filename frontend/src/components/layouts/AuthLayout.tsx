@@ -20,8 +20,11 @@ export function AuthLayout({ brand, eyebrow, title, modeSwitch, social, dividerL
   standalone = true, width, ...query }: AuthLayoutProps) {
   return <LayoutFrame standalone={standalone} width={width}>
     <div className="sw-auth">
-      <div className="sw-auth-form min-w-0 py-6">
-        <div className="mb-8 xl:hidden"><SpaceWorksLogo variant="stacked" size={180} /></div>
+      <div className="flex min-w-0 flex-col">
+        <a href="/" aria-label="Open makerspace listing" className="mb-6 inline-flex self-start rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+          <SpaceWorksLogo variant="stacked" size={180} />
+        </a>
+        <div className="sw-auth-form min-w-0 py-6">
         {brand.tenant ? <div className="mb-6"><MakerspaceBrand name={brand.tenant.name} logoUrl={brand.tenant.logo} /></div> : null}
         <PageHeader eyebrow={eyebrow} title={title} />
         <QueryContent {...query}>
@@ -33,9 +36,10 @@ export function AuthLayout({ brand, eyebrow, title, modeSwitch, social, dividerL
             {legal ? <div className="text-sm text-muted">{legal}</div> : null}
           </div>
         </QueryContent>
+        </div>
       </div>
       <aside aria-label="Space Works" className="sw-auth-brand min-w-0 flex-col justify-center rounded-[28px] bg-accent-soft p-6 xl:p-10">
-        <div className="hidden xl:block"><SpaceWorksLogo variant="stacked" size={180} /></div>
+        <div className="hidden xl:block"><SpaceWorksLogo variant="stacked" size={240} /></div>
         <p className="max-w-lg break-words font-accent text-xl text-ink xl:mt-8 xl:text-4xl">{brand.headline ?? "Less searching. More making."}</p>
         {brand.showcase ? <div aria-hidden="true" inert className="sw-auth-showcase relative mt-10 hidden min-w-0 xl:grid xl:gap-4 [&>*]:shadow-overlay">{brand.showcase}</div> : null}
       </aside>

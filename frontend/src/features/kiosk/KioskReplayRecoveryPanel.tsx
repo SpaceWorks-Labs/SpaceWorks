@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { EmptyState, ErrorBlock, Field, ListRow, RelativeTime, StatusPill } from "../../components/ui";
+import { CollapsibleSection, EmptyState, ErrorBlock, Field, ListRow, RelativeTime, StatusPill } from "../../components/ui";
+import { plural } from "../../lib/plural";
 import { KioskReplayDetail } from "./KioskReplayDetail";
 import { KioskReplayResolution } from "./KioskReplayResolution";
 import { useKioskReplays, useReplayDetail } from "./useKioskReplays";
@@ -12,11 +13,13 @@ function RecoveryPanel({ makerspaceId }: { makerspaceId: number }) {
   const [resolution, setResolution] = useState("unresolved");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<boolean | null>(null);
   const list = useKioskReplays(makerspaceId, resolution, page);
   const detail = useReplayDetail(selected);
-  return <section aria-label="Failed kiosk handovers" className="grid gap-4">
-    <h2 className="title-panel">Failed kiosk handovers</h2>
-    <div className="grid gap-3">
+  const open = expanded ?? (list.isPending || list.isError || (list.data?.count ?? 0) > 0);
+  return <CollapsibleSection title={`Failed kiosk handovers · ${list.data?.count ?? "…"}`}
+    open={open} onToggle={() => setExpanded(!open)}>
+    <div className="grid gap-3 p-4">
       <p className="text-sm text-muted">Review retained failed attempts for operations you may currently perform.</p>
       <Field label="Recovery status"><select className="desk-input" value={resolution} onChange={(event) => {
         setResolution(event.target.value); setPage(1); setSelected(null);
@@ -40,9 +43,9 @@ function RecoveryPanel({ makerspaceId }: { makerspaceId: number }) {
       </ul>}
       {list.data ? <nav className="flex gap-3 text-sm" aria-label="Recovery pages">
         <button type="button" className="desk-button" disabled={!list.data.previous || list.isFetching} onClick={() => { setPage(page - 1); setSelected(null); }}>Previous failures</button>
-        <span>Page {page} · {list.data.count} failures</span>
+        <span>Page {page} · {plural(list.data.count, "failure")}</span>
         <button type="button" className="desk-button" disabled={!list.data.next || list.isFetching} onClick={() => { setPage(page + 1); setSelected(null); }}>Next failures</button>
       </nav> : null}
     </div>
-  </section>;
+  </CollapsibleSection>;
 }

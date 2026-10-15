@@ -69,6 +69,8 @@ export type HardwareRequest = {
 
 export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery }: { makerspace: Makerspace; guestOnly: boolean; canViewAudit?: boolean; recovery?: ReactNode }) {
   const queryClient = useQueryClient();
+  // Tab counts reuse the dashboard numbers the shell already caches; no extra request is made.
+  const counts = queryClient.getQueryData<{ pending_requests?: number; awaiting_issue?: number }>(["dashboard", makerspace.id]);
   const authority = useContext(StaffListContext);
   const can = (action: string) => authority.isSuperadmin || authority.actions?.includes(action);
   const [guided, setGuided] = useState<{ row: HardwareRequest; mode: "issue" | "return" } | null>(null);
@@ -164,8 +166,8 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery }
   };
   const menu = (row: HardwareRequest): Action[] => tab === "history" ? [] : [
     { label: "Set due", onClick: () => openModal(setDueRow, row), disabled: action.isPending },
-    ...(tab === "accepted" ? [{ label: "Assign + issue", onClick: () => openModal(setAssignIssueRow, row), disabled: action.isPending }] : []),
-    ...(tab === "active" ? [{ label: "Compact return", onClick: () => openModal(setReturnRow, row), disabled: action.isPending }] : []),
+    ...(tab === "accepted" ? [{ label: "Assign + issue (quick form)", onClick: () => openModal(setAssignIssueRow, row), disabled: action.isPending }] : []),
+    ...(tab === "active" ? [{ label: "Partial return (quick form)", onClick: () => openModal(setReturnRow, row), disabled: action.isPending }] : []),
   ];
   const messages: Record<RequestTab, string> = {
     pending: "No requests waiting for review. Check Ready for handover for the next step.",
@@ -187,15 +189,15 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery }
     <ListLayout header={{ title: "Requests", subtitle: "Borrow requests from members, from review to return.",
       meta: queues.finding ? <span role="status">Finding request #{list.values.id || list.values.request}…</span> : undefined,
       primary: tab === "accepted" && selected.count === 1 && selected.results[0] ? primary(selected.results[0]) : undefined }}
-      tabs={visible.map(key => ({ key, label: requestTabLabels[key], href: requestTabHref(location.pathname, location.search, key) }))}
+      tabs={visible.map(key => ({ key, label: requestTabLabels[key], href: requestTabHref(location.pathname, location.search, key),
+        count: key === "pending" ? counts?.pending_requests : key === "accepted" ? counts?.awaiting_issue : undefined }))}
       activeTab={tab} state={state} isEmpty={!visible.length || queues.notFound || !selected.results.length}
       empty={{ message: !visible.length ? "You don't have access to request queues in this makerspace."
         : queues.notFound ? `We couldn't find request #${list.values.id || list.values.request} in your queues.` : messages[tab ?? "pending"] }}
       filtered={Boolean(search || list.values.id || list.values.request)}
       filteredEmpty={{ message: queues.notFound ? `We couldn't find request #${list.values.id || list.values.request} in your queues.` : "No requests match these filters. Clear filters to see your queue.",
         action: { label: "Clear filters", onClick: () => list.update({ search: "", id: "", request: "", requestView: "overview" }) } }}
-      filters={{ search: { label: "Search requests", value: search, onChange: value => list.setFilter("search", value) },
-        controls: <ListViewControls state={list} makerspaceId={makerspace.id} entity="requests" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["return_due_at", "Due first"]]} /> }}
+      filters={{ toolbar: <ListViewControls searchControl={{ label: "Search requests", placeholder: "Search by name, email, phone or purpose", value: search, onChange: value => list.setFilter("search", value) }} state={list} makerspaceId={makerspace.id} entity="requests" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["return_due_at", "Due first"]]} /> }}
       body={{ kind: "rows", rows: <div role="region" aria-label={requestTabLabels[tab ?? "pending"]}>
         <RequestList rows={selected.results} canViewAudit={canViewAudit} primary={primary} menu={menu}
           reject={tab === "pending" ? row => ({ label: "Reject", tone: "danger", onClick: () => openModal(setRejectRow, row) }) : undefined}

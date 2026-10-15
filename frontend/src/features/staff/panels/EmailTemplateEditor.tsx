@@ -160,7 +160,9 @@ export function EmailTemplateEditor({
       status={<StatusPill label={detail.data?.is_overridden ? "Edited" : "Default"} tone={detail.data?.is_overridden ? "warn" : "neutral"} />}
       meta={[`${selected.stream} · to ${selected.audience}`]}
       state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: "Couldn't load the template. Try again.", onRetry: () => { void detail.refetch(); } }}
-      actions={{ primary: { label: "Save", pending: save.isPending, onClick: () => save.mutate() },
+      actions={{ primary: { label: "Save", pending: save.isPending, onClick: () => save.mutate(),
+        // Never save before the template has loaded: an empty draft would overwrite it.
+        disabled: !detail.data, disabledReason: !detail.data ? "Wait for the template to load." : undefined },
         secondary: { label: "Preview", onClick: () => setTab("preview") },
         overflow: [{ label: selected.machineType ? "Fall back to space default" : "Reset to built-in default", onClick: () => setResetDialogOpen(true), confirms: true, disabled: reset.isPending }] }}
       tabs={["edit", "preview", "default"].map(value => { const next = new URLSearchParams(search); next.set("template_view", value); return { key: value, label: value[0].toUpperCase() + value.slice(1), href: `?${next}` }; })} activeTab={tab}
@@ -168,7 +170,7 @@ export function EmailTemplateEditor({
         <EmailTemplateTypeSelector canEditSpaceDefault={selected.canEditSpaceDefault} types={selected.overridableTypes} selectedTypeId={selected.machineType?.id ?? null} onSelect={onSelectMachineType} />
         {tab === "edit" ? edit : tab === "preview" ? <PreviewPane preview={preview.data} loading={preview.isFetching} error={preview.error} onRetry={() => { void preview.refetch(); }} /> : detail.data ? <DefaultReference detail={detail.data} typeOverride={Boolean(selected.machineType)} /> : null}
         {save.error || reset.error ? <p className="text-sm text-danger" role="alert">{(save.error ?? reset.error)?.message}</p> : null}
-        {dirty ? <><p className="text-sm text-muted">Unsaved changes</p><SettingsActions pending={save.isPending} onSave={() => save.mutate()} onDiscard={() => { if (detail.data) setDraft(detailToDraft(detail.data)); }} /></> : null}
+        {dirty && detail.data ? <><p className="text-sm text-muted">Unsaved changes</p><SettingsActions pending={save.isPending} onSave={() => save.mutate()} onDiscard={() => { if (detail.data) setDraft(detailToDraft(detail.data)); }} /></> : null}
       </div>} aside={detail.data && tab === "edit" ? <MergeFields detail={detail.data} onInsert={insertField} /> : undefined} />
     <ConfirmDialog open={resetDialogOpen} title="Reset email template?" message={selected.machineType ? "Reset this override to the space default?" : "Reset this email template to the built-in default?"}
       confirmLabel="Reset template" tone="danger" pending={reset.isPending} onConfirm={() => reset.mutate()} onCancel={() => setResetDialogOpen(false)} />

@@ -1,3 +1,4 @@
+import { plural } from "../../lib/plural";
 import { useState } from "react";
 
 import { EmptyState, ErrorText, ListRow, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
@@ -26,7 +27,7 @@ export function OrganizationMemberships({ organization }: { organization: Organi
       {memberships.data ? (
         <div className="mt-3 flex items-center justify-between gap-3">
           <button className="desk-button" type="button" disabled={!memberships.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
-          <span className="tabular-nums text-xs text-muted">Page {page} · {memberships.data.count} members</span>
+          <span className="tabular-nums text-xs text-muted">Page {page} · {plural(memberships.data.count, "member")}</span>
           <button className="desk-button" type="button" disabled={!memberships.data.next} onClick={() => setPage((value) => value + 1)}>Next</button>
         </div>
       ) : null}

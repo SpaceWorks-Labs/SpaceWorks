@@ -40,7 +40,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
     secondary: unavailable ? undefined : { label: "New booking", onClick: () => setChoosingBooking(true) } }}
     state={unavailable ? { status: "ready" } : opsQueryState(spaces, "bookable spaces")}
     stats={[{ label: "Spaces", value: spaces.data?.count ?? 0 }]}
-    filters={unavailable ? undefined : { controls: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings"
+    filters={unavailable ? undefined : { toolbar: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings" searchLabel="Search spaces"
       sorts={[["name", "Name"], ["-name", "Name descending"], ["kind", "Type"]]} /> }}
     filtered={Boolean(list.values.q)} isEmpty={Boolean(unavailable) || spaces.data?.results.length === 0}
     empty={{ message: unavailable ?? "No bookable spaces yet. Create one to start taking bookings.",

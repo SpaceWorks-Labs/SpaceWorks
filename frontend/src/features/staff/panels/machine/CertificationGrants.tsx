@@ -1,3 +1,4 @@
+import { EmptyState } from "../../../../components/ui/EmptyState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog } from "../../../../components/ui";
@@ -29,7 +30,7 @@ export function CertificationGrants({ typeId, active }: { typeId: number; active
   });
   return <div className="grid gap-3">
     {grants.isLoading ? <p role="status">Loading training records…</p> : null}
-    {grants.isSuccess && !grants.data.count ? <p className="text-sm text-muted">No grants yet.</p> : null}
+    {grants.isSuccess && !grants.data.count ? <EmptyState message="No grants yet." /> : null}
     <ul className="grid gap-2">{grants.data?.results.map((grant) => <li key={grant.id} className="rounded-lg border border-line p-3 text-sm">
       <strong>{grant.member_name}</strong><p className="text-muted">Granted {new Date(grant.granted_at).toLocaleDateString()} · {grant.revoked_at ? "Revoked" : grant.is_live ? "Valid" : "Expired"} · {grant.expires_at ? `Expires ${new Date(grant.expires_at).toLocaleDateString()}` : "No expiry"}</p>
       {grant.notes ? <p>{grant.notes}</p> : null}

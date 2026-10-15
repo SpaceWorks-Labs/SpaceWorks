@@ -3,9 +3,17 @@ export type RequestTab = typeof REQUEST_TABS[number];
 export const requestTabLabels: Record<RequestTab, string> = {
   pending: "Pending review", accepted: "Ready for handover", active: "Active loans", history: "History",
 };
+// Each tab needs an action that lets the actor work its rows: a return-only role must still reach
+// Active loans to record returns, and anyone who works requests may read History.
+const TAB_ACTIONS: Record<RequestTab, readonly string[]> = {
+  pending: ["accept_request"],
+  accepted: ["issue_request"],
+  active: ["issue_request", "return_request"],
+  history: ["accept_request", "issue_request", "return_request"],
+};
 export function visibleRequestTabs(guestOnly: boolean, actions: readonly string[] = [], isSuperadmin = false): RequestTab[] {
   return REQUEST_TABS.filter(tab => (tab !== "pending" && tab !== "active" || !guestOnly)
-    && (isSuperadmin || actions.includes(tab === "pending" ? "accept_request" : "issue_request")));
+    && (isSuperadmin || TAB_ACTIONS[tab].some(action => actions.includes(action))));
 }
 /** Read legacy links without rewriting them; only an explicit tab click canonicalises the URL. */
 export function resolveRequestTab(values: Record<string, string>, visible: RequestTab[]): RequestTab | "resolve-id" | undefined {

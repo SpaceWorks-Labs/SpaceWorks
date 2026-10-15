@@ -5,7 +5,7 @@
 .sw-layout:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: -2px; }
 .sw-columns, .sw-detail-columns, .sw-public-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns { display: grid; min-width: 0; gap: 24px; }
 .sw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.sw-auth { display: grid; gap: 24px; min-height: calc(100dvh - 48px); }
+.sw-auth { display: grid; gap: 24px; min-height: calc(100dvh - 80px); }
 .sw-auth-brand { display: none; }
 .sw-auth-form { width: 100%; max-width: 400px; margin: auto; }
 .sw-centered-card { width: 100%; max-width: 440px; margin: auto; }

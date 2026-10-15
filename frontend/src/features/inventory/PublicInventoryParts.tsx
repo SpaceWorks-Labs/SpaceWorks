@@ -1,4 +1,5 @@
 import { Card } from "../../components/ui/Card";
+import { EmptyState as EmptyCard } from "../../components/ui/EmptyState";
 import { Spinner } from "../../components/ui/Spinner";
 import type { PublicCategory } from "../../types/inventory";
 
@@ -24,18 +25,9 @@ export function LoadingState() {
 }
 
 export function EmptyState({ query }: { query: string }) {
-  return (
-    <Card className="mx-auto max-w-lg border-brand text-center">
-      <h2 className="title-panel">
-        {query ? "No matching items." : "No public items yet."}
-      </h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
-        {query
-          ? "Try a different search term or clear the search field."
-          : "This makerspace has not shared any inventory items publicly."}
-      </p>
-    </Card>
-  );
+  return <EmptyCard message={query
+    ? "No matching items. Try a different search or clear the search field."
+    : "No public items yet. Check back after this makerspace shares its tools."} />;
 }
 
 export function ErrorState({ error }: { error: Error }) {

@@ -83,7 +83,7 @@ export function DataTable<T>({
     <div className="overflow-x-auto rounded-xl border border-line bg-panel">
       {listState ? <ListColumns columns={columns} value={{ columns: listState.values.columns ?? "", density: listState.values.density ?? "comfortable" }} onChange={value => listState.restore({ ...listState.values, ...value })} /> : null}
       <table role="table" className="block w-full text-left text-sm md:table md:min-w-[640px]" aria-busy={loading}>
-        <thead role="rowgroup" className="block bg-surface text-xs text-muted md:table-header-group">
+        <thead role="rowgroup" className="block bg-surface dark:bg-hover text-xs text-muted md:table-header-group">
           <tr role="row" className="flex flex-wrap items-center border-b border-line md:table-row">
             {selectionEnabled ? (
               <th role="columnheader" className="block w-16 px-3 py-2 md:table-cell" scope="col">

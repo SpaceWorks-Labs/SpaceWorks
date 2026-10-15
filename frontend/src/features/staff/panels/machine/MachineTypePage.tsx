@@ -1,3 +1,4 @@
+import { plural } from "../../../../lib/plural";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { MaterialCataloguePanel } from "./MaterialCataloguePanel";
 import { CertificationsPanel } from "./CertificationsPanel";
@@ -54,6 +55,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
   typePools, formPools, existingPools, machinesLoading, machinesFailed, onSelectMachine, draft, setDraft,
   detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools }: Props) {
   const [creating, setCreating] = useState(false);
+  const [createdMachineId, setCreatedMachineId] = useState<number | null>(null);
   const service = machineServiceEnabled && canManage;
   const choices = [{ key: "machines", label: "Machines", count: allMachines.length },
     ...(service ? [{ key: "queue", label: "Service queue" }, { key: "consumables", label: "Consumables" }] : []),
@@ -68,7 +70,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       {!allMachines.length ? <EmptyState message="No machines are registered for this type. Add the first one with Add machine." /> :
         !visibleMachines.length ? <EmptyState message="No machines match the selected status. Choose another status." /> :
         <DataTable data={visibleMachines} columns={[
-          { key: "name", header: "Name", render: machine => <button className="desk-button-ghost min-h-11 text-left" onClick={() => onSelectMachine(machine.id)}>{machine.image_url ? <ImageThumbnail src={machine.image_url} alt="" className="h-10 w-10" /> : null}<span>
+          { key: "name", header: "Name", render: machine => <button className="desk-button-ghost min-h-11 text-left" onClick={() => onSelectMachine(machine.id)}><ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10" /><span>
             <strong className="block">{machine.name}</strong><span className="block text-sm text-muted">{[machine.type_payload?.model, machine.location || "No location"].filter(Boolean).join(" · ")}</span>
           </span></button> },
           { key: "status", header: "Status", render: machine => <StatusBadge status={machine.status} label={machineStatusLabel(machine.status)} /> },
@@ -89,14 +91,16 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       {canConfigureMachineTypes ? <MachineReminderPolicy visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}{settings}
     </>
     {creating ? <FlowLayout presentation="dialog" open title="Add machine" steps={[]} current="create" state={{ status: "ready" }} onCancel={() => setCreating(false)}
-      work={<MachineCreateForm makerspaceId={makerspaceId} machineType={machineType} onCreated={id => { setCreating(false); onSelectMachine(id); }} />}
-      footer={{ next: { label: "Add machine", onClick: () => document.querySelector<HTMLFormElement>("#machine-create-form")?.requestSubmit() } }} /> : null}
+      work={<MachineCreateForm makerspaceId={makerspaceId} machineType={machineType} hideSubmit onCreated={setCreatedMachineId}
+        onDone={() => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); if (id !== null) onSelectMachine(id); }} />}
+      footer={createdMachineId === null ? { next: { label: "Add machine", onClick: () => document.querySelector<HTMLFormElement>("#machine-create-form")?.requestSubmit() } }
+        : { next: { label: "Done", onClick: () => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); onSelectMachine(id); } } }} /> : null}
     {detail}
   </>;
   return <div onClickCapture={view.onClickCapture}>
     <DetailLayout title={indexHref ? machineType.name : "Machines"} identity={{ kind: "icon", icon: "Cog", tone: "accent" }}
       back={indexHref ? { label: "All machine types", href: indexHref } : undefined}
-      meta={[...(indexHref ? [] : [machineType.name]), `${allMachines.length} machines`, `${allMachines.filter(machine => machine.status === "running").length} running`]}
+      meta={[...(indexHref ? [] : [machineType.name]), plural(allMachines.length, "machine"), `${allMachines.filter(machine => machine.status === "running").length} running`]}
       actions={{ primary: canManage && machineType.can_create_machine === true ? { label: "Add machine", icon: "Plus", onClick: () => setCreating(true) } : undefined }}
       banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: onRetryPools } } : undefined}
       tabs={view.tabs} activeTab={view.active} main={main}

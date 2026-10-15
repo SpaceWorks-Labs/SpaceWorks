@@ -1,8 +1,9 @@
+import { plural } from "../../../lib/plural";
 import { DataTable, ProgressBar, StatCard, StatusPill } from "../../../components/ui";
 import { messageFor, type BulkImportJob, type ImportResult } from "./BulkImportHelpers";
 export function ImportProgress({ job, loading }: { job?: BulkImportJob; loading: boolean }) {
  const total = job?.total_rows ?? 0, processed = job?.processed_rows ?? 0;
- return <div role="status" className="grid gap-2"><p className="text-sm text-muted">{job ? `${processed} / ${total} rows` : loading ? "Preparing import…" : "Ready"}</p><ProgressBar value={total ? processed / total : 0} label={job ? `${processed} / ${total} rows` : loading ? "Preparing import…" : "Ready"} /></div>;
+ return <div role="status" className="grid gap-2"><p className="text-sm text-muted">{job ? `${processed} / ${plural(total, "row")}` : loading ? "Preparing import…" : "Ready"}</p><ProgressBar value={total ? processed / total : 0} label={job ? `${processed} / ${plural(total, "row")}` : loading ? "Preparing import…" : "Ready"} /></div>;
 }
 export function ImportSummary({ result }: { result: ImportResult }) {
  const errorRows = new Map((result.errors ?? []).map(item => [item.row, item.errors]));

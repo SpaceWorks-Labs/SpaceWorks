@@ -33,10 +33,8 @@ export function AuditLog({ makerspaceId }: { makerspaceId?: number }) {
     isEmpty={Boolean(logs.data && !logs.data.results.length)} filtered={chips.length > 0}
     empty={{ message: "No audit entries yet. Complete a workflow to start the trail." }}
     filteredEmpty={{ message: "No entries match these filters. Clear filters to see the trail.", action: { label: "Clear filters", onClick: clear } }}
-    filters={{ chips, onClear: clear, controls: <div className="grid min-w-0 gap-4">
-      {makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["action", "Action"]]} /> : null}
-      <AuditLogFilters filters={filters} onChange={next => list.update(next)} />
-    </div> }}
+    filters={{ sort: makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["action", "Action"]]} /> : undefined,
+      activeCount: chips.length, controls: <AuditLogFilters filters={filters} onChange={next => list.update(next)} />, onClear: clear }}
     body={{ kind: "table", table: <DataTable data={logs.data?.results ?? []} listState={list}
       ordering={list.values.ordering} onOrderingChange={ordering => list.update({ ordering })}
       columns={[

@@ -1,3 +1,4 @@
+import { plural } from "../../../lib/plural";
 ﻿import { useState } from "react";
 
 import { useStaffGet } from "./shared";
@@ -85,8 +86,8 @@ function AssetGroups({ groups }: { groups: AssetGroup[] }) {
 
 function QuantitySummaryView({ summary }: { summary: QuantitySummary }) {
   const parts = [
-    `${summary.loan_count} reviewed loans`,
-    `${summary.direct_loan_count} direct loans`,
+    plural(summary.loan_count, "reviewed loan"),
+    plural(summary.direct_loan_count, "direct loan"),
     `${summary.issued_quantity} issued`,
     `${summary.returned_quantity} returned`,
     `${summary.damaged_quantity} damaged`,

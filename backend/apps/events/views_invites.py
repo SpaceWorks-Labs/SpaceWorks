@@ -7,7 +7,8 @@ from rest_framework.pagination import PageNumberPagination
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
-from apps.events.invites import create_invite, revoke_invite, require_feature
+from apps.events.feature_gates import require_feature
+from apps.events.invites import create_invite, revoke_invite
 from apps.events.models import Event, EventInvite
 from apps.events import event_authority
 from apps.events.event_permissions import MANAGE_INVITATIONS

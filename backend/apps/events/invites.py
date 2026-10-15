@@ -9,20 +9,15 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
+from apps.events.feature_gates import require_feature as require_feature
 from apps.events.models import EventInvite
 from apps.events.services import _audit, _locked_event
 from apps.makerspaces.guards import require_module_locked
-from apps.makerspaces.platform import feature_enabled
 
 
 def code_digest(value, purpose):
     message = f"events:{purpose}:{str(value).strip().lower()}".encode()
     return hmac.new(settings.SECRET_KEY.encode(), message, hashlib.sha256).hexdigest()
-
-
-def require_feature(event, key):
-    if not feature_enabled(event.makerspace, key):
-        raise ValidationError({"detail": "This events feature is disabled."})
 
 
 @transaction.atomic

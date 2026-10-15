@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
-from apps.events.invites import require_feature
+from apps.events.feature_gates import require_feature
 from apps.events.models import EventTicketType
 from apps.events.registration_access import has_active_event_membership
 from apps.makerspaces.platform import feature_enabled

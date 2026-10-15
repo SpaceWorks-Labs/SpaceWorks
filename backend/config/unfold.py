@@ -1,5 +1,6 @@
 import os
 
+from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
@@ -67,23 +68,32 @@ def _managed_item(title, icon, route, app_label=None):
 UNFOLD = {
     "SITE_TITLE": SITE_NAME,
     "SITE_HEADER": SITE_NAME,
-    "SITE_SYMBOL": "inventory_2",
+    "SITE_ICON": {
+        "light": lambda request: static("brand/symbol.svg"),
+        "dark": lambda request: static("brand/symbol-reversed.svg"),
+    },
+    "SITE_LOGO": {
+        "light": lambda request: static("brand/lockup-horizontal.svg"),
+        "dark": lambda request: static("brand/lockup-stacked-reversed.svg"),
+    },
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "THEME": "dark",
     "COLORS": {
+        # Derived sRGB mixes: Teal toward Cream (50-400), Teal at 500/600,
+        # then toward Deep Ink by 30/45/60/75 percent (700-950).
         "primary": {
-            "50": "245 243 255",
-            "100": "237 233 254",
-            "200": "221 214 254",
-            "300": "196 181 253",
-            "400": "167 139 250",
-            "500": "139 92 246",
-            "600": "124 58 237",
-            "700": "109 40 217",
-            "800": "91 33 182",
-            "900": "76 29 149",
-            "950": "46 16 101",
+            "50": "230 231 219",
+            "100": "191 210 199",
+            "200": "140 184 172",
+            "300": "89 157 146",
+            "400": "38 130 119",
+            "500": "0 110 99",
+            "600": "0 110 99",
+            "700": "6 90 82",
+            "800": "9 80 73",
+            "900": "12 70 65",
+            "950": "15 60 56",
         }
     },
     "SIDEBAR": {

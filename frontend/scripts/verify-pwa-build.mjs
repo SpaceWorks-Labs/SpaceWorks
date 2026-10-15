@@ -25,6 +25,13 @@ for (const asset of await readdir(resolve(output, "assets"))) {
     assert(manifest.some(({ url }) => url === `/assets/${asset}`), `Emitted asset absent: ${asset}`);
   }
 }
+for (const size of [192, 512]) {
+  const prepared = await readFile(resolve("public", "brand", `icon-${size}.png`));
+  assert.equal(prepared.readUInt32BE(16), size);
+  assert.equal(prepared.readUInt32BE(20), size);
+  assert.deepEqual(await readFile(resolve(output, "member-pwa", `icon-${size}.png`)), prepared,
+    "member-pwa must emit the prepared brand icon bytes.");
+}
 console.log(`PWA verified: ${manifest.length} revisioned shell/assets, kiosk navigation fallback, scanner WASM.`);
 
 const memberWorker = await readFile(resolve(output, "member-sw.js"), "utf8");
@@ -59,6 +66,9 @@ for (const scope of ["/member", "/m/forge/member"]) {
   assert.equal(await offline.text(), "offline:/member-pwa/offline.html");
   const appManifest = await (await dispatch(`${scope}/manifest.webmanifest?name=Forge`, "same-origin")).json();
   assert.equal(appManifest.scope, scope); assert.equal(appManifest.start_url, scope); assert.equal(appManifest.id, scope);
+  assert.equal(appManifest.background_color, "#FFF4E8");
+  assert.equal(appManifest.theme_color, "#FFF4E8");
+  assert(appManifest.icons.every(icon => icon.purpose === "any maskable"));
   assert.equal(appManifest.name, "Forge"); assert.equal(appManifest.display, "standalone");
   assert.deepEqual(appManifest.icons.map(icon => icon.sizes), ["192x192", "512x512"]);
 }

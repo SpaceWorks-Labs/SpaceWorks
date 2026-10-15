@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useEventTicketing, type StaffTicket } from "./eventTicketingApi";
 
-export function EventTicketsPanel({ eventId, disabled = false }: { eventId: number; disabled?: boolean }) {
+export function EventTicketsPanel({ visible = true,  eventId, disabled = false }: { visible?: boolean;  eventId: number; disabled?: boolean }) {
   const [page, setPage] = useState(1);
   const { rows, create } = useEventTicketing<StaffTicket>(eventId, "ticket-types", page);
   const [name, setName] = useState("");
@@ -10,6 +10,7 @@ export function EventTicketsPanel({ eventId, disabled = false }: { eventId: numb
   const [capacity, setCapacity] = useState(0);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  if (!visible) return null;
   return <section className="grid gap-3" aria-label="Event ticket types">
     <h3 className="title-section">Ticket types</h3>
     <p className="text-sm text-muted">Member tickets are available only while membership is enabled and the attendee is an active member. Quotes are fixed at registration.</p>

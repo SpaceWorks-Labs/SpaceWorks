@@ -1,0 +1,81 @@
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import type { Dispatch, SetStateAction } from "react";
+import { ListRow, OverflowMenu, Pagination, StatusBadge } from "../../components/ui";
+import { QueryContent } from "../../components/layouts/LayoutFrame";
+import { CustomAnswersView } from "../forms/CustomAnswersView";
+import { PaymentReconcileActions } from "./PaymentReconcileActions";
+import { opsQueryState, opsStatusLabel } from "./opsPresentation";
+import { useSpaceBookings, type Booking, type BookingAction, type BookingFilters } from "./bookingsApi";
+import { useUrlListState } from "../../lib/useUrlListState";
+
+type Props = { makerspaceId: number; spaceId: number; bookings: ReturnType<typeof useSpaceBookings>;
+  list: ReturnType<typeof useUrlListState<{ page: string; status: string; starts_at: string; ends_at: string; ordering: string }>>;
+  filters: BookingFilters; setFilter: <K extends keyof BookingFilters>(key: K, value: BookingFilters[K]) => void;
+  page: number; setPage: Dispatch<SetStateAction<number>>; onAction: (booking: Booking, action: BookingAction) => void };
+function bookingTime(booking: Booking) {
+  const format = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return format.format(new Date(booking.starts_at)) + " – " + format.format(new Date(booking.ends_at));
+}
+export function BookingRequests({ makerspaceId, spaceId, bookings, list, filters, setFilter, page, setPage, onAction }: Props) {
+  const [, setParams] = useSearchParams();
+  return <section aria-labelledby="space-bookings-title" className="grid gap-4">
+    <div><h2 id="space-bookings-title" className="title-panel">Bookings <span className="tabular-nums">({bookings.data?.count ?? 0})</span></h2>
+      <p className="mt-1 text-sm text-muted">Contact details and custom answers are staff-only.</p></div>
+    {filters.booking_id ? <button className="desk-button w-fit" onClick={() => setParams(current => {
+      const next = new URLSearchParams(current); next.delete("booking"); return next;
+    })}>Show all bookings</button> : null}
+    <label className="grid gap-1 text-sm">Sort<select className="desk-input" value={list.values.ordering}
+      onChange={event => list.setFilter("ordering", event.target.value)}>
+      <option value="starts_at">Starts first</option><option value="-starts_at">Starts last</option><option value="created_at">Created first</option>
+    </select></label>
+    <div className="grid gap-3 sm:grid-cols-3">
+      <label className="grid gap-1 text-sm">Status<select className="desk-input" value={filters.status ?? ""}
+        onChange={event => setFilter("status", event.target.value as BookingFilters["status"])}>
+        <option value="">All statuses</option>{["pending", "confirmed", "rejected", "cancelled", "completed", "no_show"].map(status =>
+          <option key={status} value={status}>{status === "no_show" ? "No-show" : status[0].toUpperCase() + status.slice(1)}</option>)}
+      </select></label>
+      <label className="grid gap-1 text-sm">Starts after<input className="desk-input" type="datetime-local" value={filters.starts_at ?? ""} onChange={event => setFilter("starts_at", event.target.value)} /></label>
+      <label className="grid gap-1 text-sm">Ends before<input className="desk-input" type="datetime-local" value={filters.ends_at ?? ""} onChange={event => setFilter("ends_at", event.target.value)} /></label>
+    </div>
+    <QueryContent state={opsQueryState(bookings, "bookings")} isEmpty={bookings.data?.results.length === 0}
+      empty={{ message: "No matching bookings. Change the filters or create a booking." }}>
+      <div className="grid gap-3">{bookings.data?.results.map(booking => <article className="rounded-xl border border-line bg-panel" key={booking.id}>
+        <ListRow title={booking.name} identity={{ kind: "date", date: booking.starts_at }} meta={bookingTime(booking)}
+          right={<StatusBadge status={booking.status} label={opsStatusLabel(booking.status)} />} />
+        <div className="grid gap-3 p-4">
+          <div className="text-sm"><a className="flex min-h-11 items-center break-all hover:underline" href={"mailto:" + booking.email}>{booking.email}</a>
+            <a className="flex min-h-11 items-center text-muted hover:underline" href={"tel:" + booking.phone}>{booking.phone}</a></div>
+          <BookingAnswers booking={booking} />
+          <PaymentReconcileActions makerspaceId={makerspaceId} payment={booking.payment}
+            invalidateKeys={[["booking-space", spaceId, "bookings"], ["booking-space", spaceId]]} />
+          <BookingActions booking={booking} onAction={action => onAction(booking, action)} />
+        </div>
+      </article>)}</div>
+      {bookings.data ? <Pagination page={page} pageSize={24} count={bookings.data.count} totalPages={Math.ceil(bookings.data.count / 24)} onChange={setPage} /> : null}
+    </QueryContent>
+  </section>;
+}
+function BookingActions({ booking, onAction }: { booking: Booking; onAction: (action: BookingAction) => void }) {
+  const ended = new Date(booking.ends_at) <= new Date();
+  const primary = booking.status === "pending" ? { label: "Approve", action: "approve" as const }
+    : booking.status === "confirmed" && ended ? { label: "Complete", action: "complete" as const } : undefined;
+  const overflow = booking.status === "pending" ? [{ label: "Reject", onClick: () => onAction("reject"), confirms: true, tone: "danger" as const }]
+    : booking.status === "confirmed" ? [
+      { label: "Cancel", onClick: () => onAction("cancel"), confirms: true, tone: "danger" as const },
+      ...(ended ? [{ label: "No-show", onClick: () => onAction("no-show"), confirms: true }] : []),
+    ] : [];
+  return <div className="flex flex-wrap items-center justify-end gap-3">
+    {primary ? <button className="desk-button" type="button" onClick={() => onAction(primary.action)}>{primary.label}</button> : null}
+    {overflow.length ? <OverflowMenu label={"Actions for " + booking.name} actions={overflow} /> : null}
+  </div>;
+}
+
+
+function BookingAnswers({ booking }: { booking: Booking }) {
+  const [open, setOpen] = useState(false);
+  return <div className="rounded-lg border border-line p-3">
+    <button className="desk-button-ghost" type="button" aria-expanded={open} onClick={() => setOpen(!open)}>View custom answers</button>
+    {open ? <CustomAnswersView snapshot={booking.custom_answers} /> : null}
+  </div>;
+}

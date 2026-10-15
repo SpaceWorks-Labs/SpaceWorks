@@ -1,3 +1,5 @@
+import { ListRow, RelativeTime } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -32,25 +34,14 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
   return (
     <section>
       <h3 className="title-section mb-3">Usage</h3>
-      {usage.isLoading ? <p className="text-sm text-muted">Loading usage...</p> : null}
-      {usage.error instanceof Error ? <p className="text-sm text-danger">{usage.error.message}</p> : null}
-      {!usage.isLoading && !usage.error && !items.length ? (
-        <p className="text-sm text-muted">No usage logged yet.</p>
-      ) : null}
+      <MachineTabContent query={usage} resource="usage" empty={!items.length} message="No usage logged yet. Add the first entry.">
       <div className="grid gap-2">
         {items.map((entry) => (
-          <div key={entry.id} className="rounded-md border border-line bg-bg p-2 text-sm">
-            <div className="flex items-center justify-between gap-2">
-              <strong className="tabular-nums text-ink">{entry.hours} h</strong>
-              <span className="tabular-nums text-xs text-muted">{formatDate(entry.created_at)}</span>
-            </div>
-            {entry.note ? <p className="mt-1 break-words text-muted">{entry.note}</p> : null}
-            <p className="mt-1 text-xs text-muted">
-              {entry.source}{entry.logged_by_username ? ` · ${entry.logged_by_username}` : ""}
-            </p>
-          </div>
+          <ListRow key={entry.id} title={`${entry.hours} h`} meta={<>{entry.note ? <span className="block break-words">{entry.note}</span> : null}{entry.source}{entry.logged_by_username ? ` · ${entry.logged_by_username}` : ""}</>}
+            right={<RelativeTime date={entry.created_at} />} />
         ))}
       </div>
+      </MachineTabContent>
       {canOperate ? (
         <form className="mt-3 grid gap-2 sm:grid-cols-[8rem_minmax(0,1fr)_auto] sm:items-end"
           onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
@@ -70,9 +61,4 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
       {add.error instanceof Error ? <p className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
     </section>
   );
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }

@@ -6,7 +6,7 @@ import { usePaginatedQuery } from "../../../../lib/usePaginatedQuery";
 
 type Material = { id: number; name: string; colours: string[]; is_active: boolean };
 
-export function MaterialCataloguePanel({ makerspaceId, typeId, custom, materialsEnabled, intakeEnabled }: { makerspaceId: number; typeId: number; custom: boolean; materialsEnabled: boolean; intakeEnabled: boolean }) {
+export function MaterialCataloguePanel({ makerspaceId, typeId, custom, materialsEnabled, intakeEnabled , visible = true }: { visible?: boolean; makerspaceId: number; typeId: number; custom: boolean; materialsEnabled: boolean; intakeEnabled: boolean }) {
   const client = useQueryClient();
   const path = `/admin/makerspaces/${makerspaceId}/machine-materials`;
   const key = ["machine-materials", makerspaceId, typeId];
@@ -20,6 +20,7 @@ export function MaterialCataloguePanel({ makerspaceId, typeId, custom, materials
   const toggle = useMutation({ mutationFn: (row: Material) => staffRequest(`${path}/${row.id}`, { method: "PATCH", body: JSON.stringify({ is_active: !row.is_active }) }), onSuccess: refresh });
   const intake = useQuery({ queryKey: ["staff-intake", makerspaceId, typeId], queryFn: () => staffRequest<{ intake_schema: unknown }>(`/admin/makerspaces/${makerspaceId}/machine-types/${typeId}/intake`), enabled: custom && intakeEnabled });
   const saveSchema = useMutation({ mutationFn: (parsed: unknown) => staffRequest(`/admin/makerspaces/${makerspaceId}/machine-types/${typeId}/intake`, { method: "PUT", body: JSON.stringify({ intake_schema: parsed }) }), onSuccess: () => client.invalidateQueries({ queryKey: ["staff-intake", makerspaceId, typeId] }) });
+  if (!visible) return null;
   return <section className="grid gap-3 rounded border border-line p-3">
     <h3 className="title-section">Material catalogue and job intake</h3>
     <p className="text-sm text-muted">Colours belong to each material. Pricing stays in the existing pricing settings.</p>

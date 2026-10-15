@@ -103,7 +103,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Prop
 
   return (
     <section className="grid gap-4 border-b border-line p-3" aria-labelledby={`add-machine-${machineType.id}`}>
-      <form
+      <form id="machine-create-form"
         className="grid gap-3 sm:grid-cols-2 sm:items-end"
         onSubmit={(event) => { event.preventDefault(); create.mutate(); }}
       >

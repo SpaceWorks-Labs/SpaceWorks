@@ -9,7 +9,7 @@ import { downloadStaffRoster, syncStaffRoster } from "./eventCheckInOfflineApi";
 import { OfflineCheckInOperator } from "./OfflineCheckInOperator";
 import { wipeOfflineState } from "./eventCheckInOfflineStore";
 
-export function EventCheckInOperator({ makerspaceId, eventId, offlineEnabled }: {
+export function EventCheckInOperator({ visible = true, makerspaceId, eventId, offlineEnabled }: { visible?: boolean;
   makerspaceId: number; eventId: number; offlineEnabled: boolean;
 }) {
   const [scanning, setScanning] = useState(false);
@@ -24,6 +24,7 @@ export function EventCheckInOperator({ makerspaceId, eventId, offlineEnabled }: 
     queryClient.invalidateQueries({ queryKey: eventKeys.checkinHistory(eventId) }),
     queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
   ]); };
+  if (!visible) return null;
   return <section aria-labelledby="event-checkin-operator-title">
     <h4 id="event-checkin-operator-title" className="title-section mt-3">Attendance check-in</h4>
     {scanning ? <EventCheckInScanner makerspaceId={makerspaceId} eventId={eventId} onClose={() => setScanning(false)} /> : <button className="desk-button mt-3" type="button" onClick={() => setScanning(true)}>Scan online</button>}

@@ -1,5 +1,6 @@
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { DataState, ReportTable, type ReportRows } from "./OperationsReportsParts";
-import { Panel, useStaffGet } from "./shared";
+import { useStaffGet } from "./shared";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 import type { ReportViewState } from "./reportViewsApi";
 
@@ -24,11 +25,11 @@ export function SelectedReportPreview({ report, analyticsBase, scopeKey, start, 
   const rows = result.data?.rows ?? [];
   const indexes = columns.length && rows[0] ? columns.map((column) => rows[0].indexOf(column)).filter((index) => index >= 0) : [];
   const visible = indexes.length ? { rows: rows.map((row) => indexes.map((index) => row[index])) } : result.data;
-  return <Panel title={`${report.title} preview`}>
-    <DataState loading={result.isLoading} error={result.error} empty={rows.length <= 1}>
+  return <><Panel title={`${report.title} preview`} reportKey={report.key} generic>
+    <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={rows.length <= 1}>
       <ReportTable data={visible} />
-    </DataState>
+    </DataState></Panel>
     {result.data?.meta?.definition ? <p className="mt-2 text-xs text-muted">{result.data.meta.definition}</p> : null}
     {result.data?.meta?.limitations ? <p className="mt-2 text-xs text-muted">{result.data.meta.limitations}</p> : null}
-  </Panel>;
+  </>;
 }

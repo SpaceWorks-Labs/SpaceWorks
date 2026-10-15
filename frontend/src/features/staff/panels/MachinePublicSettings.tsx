@@ -1,3 +1,4 @@
+import { SettingsSection, SettingsRow } from '../../../components/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -52,8 +53,8 @@ export function MachinePublicSettings({ machine, makerspaceId }: {
   });
 
   return (
-    <section className={'border-t border-line pt-4'}>
-      <h3 className="title-section">Public listing</h3>
+    <SettingsSection title="Public listing">
+      <SettingsRow label="Visibility" helper="Retired machines remain hidden even when this setting is on.">
       <label className={'mt-3 flex items-start gap-3 rounded-xl border border-line bg-bg p-3'}>
         <input
           type={'checkbox'}
@@ -68,6 +69,7 @@ export function MachinePublicSettings({ machine, makerspaceId }: {
           </span>
         </span>
       </label>
+      </SettingsRow>
       {publicity.error instanceof Error ? (
         <p className={'mt-2 text-sm text-danger'}>{publicity.error.message}</p>
       ) : null}
@@ -79,6 +81,6 @@ export function MachinePublicSettings({ machine, makerspaceId }: {
         ) : null}
         {preview.data ? <PreviewValue value={preview.data} /> : null}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

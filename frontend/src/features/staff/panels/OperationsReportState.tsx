@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { Skeleton, SkeletonRows } from "../../../components/ui";
+import { EmptyState, Skeleton, SkeletonRows, StatCard } from "../../../components/ui";
 
 export type ReportCell = string | number | boolean | null;
 export type TypedReportRow = Record<string, ReportCell | undefined>;
@@ -36,10 +36,13 @@ export function chartRows(data: ReportRows | undefined, labelKey: string, valueK
   }));
 }
 
-export function DataState(props: { loading: boolean; error: unknown; empty: boolean; children: React.ReactNode }) {
+export function DataState(props: { loading: boolean; error: unknown; empty: boolean; onRetry?: () => void; children: React.ReactNode }) {
   if (props.loading) return <ReportSkeleton />;
-  if (props.error) return <p className="mt-3 text-sm text-danger">{props.error instanceof Error ? props.error.message : "Unable to load report."}</p>;
-  if (props.empty) return <p className="mt-3 text-sm text-muted">No records.</p>;
+  if (props.error) return <div role="alert" className="mt-3 rounded-xl border border-danger bg-danger-soft p-4 text-sm text-danger">
+    <p>Couldn't load this report. Try again.</p>
+    {props.onRetry ? <button type="button" className="desk-button mt-3" onClick={props.onRetry}>Retry</button> : null}
+  </div>;
+  if (props.empty) return <EmptyState message="No activity in this period. Try a longer range." />;
   return <>{props.children}</>;
 }
 
@@ -64,9 +67,7 @@ export function StatCards({ stats }: { stats: [string, number | undefined][] }) 
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map(([label, value]) => (
-        <div key={label} className="rounded-xl border border-line bg-panel p-3">
-          <p className="font-display tabular-nums text-[32px] leading-[38px] font-extrabold text-ink">{formatNumber(value ?? 0)}</p><p className="eyebrow">{label}</p>
-        </div>
+        <StatCard key={label} label={label} value={formatNumber(value ?? 0)} />
       ))}
     </div>
   );

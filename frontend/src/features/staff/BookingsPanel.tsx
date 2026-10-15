@@ -1,28 +1,16 @@
 import { useEffect, useState } from "react";
 
-import { Badge, DataTable, Modal, type DataTableColumn } from "../../components/ui";
+import { ListRow, StatusPill } from "../../components/ui";
+import { ListLayout } from "../../components/layouts";
+import { opsQueryState } from "./opsPresentation";
 import { StructuredApiError } from "../../lib/api";
 import { BookableSpaceForm } from "./BookableSpaceForm";
 import { BookingDrawer } from "./BookingDrawer";
-import { useBookableSpaces, useCreateBookableSpace, type BookableSpace } from "./bookingsApi";
+import { useBookableSpaces, useCreateBookableSpace } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
 import { ListViewControls } from "./ListViewControls";
 import { useSearchParams } from "react-router-dom";
-import { Panel } from "./panels/shared";
 import { useQuickCreate } from "./quickCreate";
-
-const columns = (onOpen: (id: number) => void): DataTableColumn<BookableSpace>[] => [
-  {
-    key: "name",
-    header: "Space",
-    sortable: true,
-    render: (space) => <button className="desk-button-ghost h-auto flex-col items-start px-0 text-left" type="button" onClick={() => onOpen(space.id)}>{space.name}<span className="mt-1 block text-xs font-normal text-muted">{space.location || "No location label"}</span></button>,
-  },
-  { key: "kind", header: "Type", render: (space) => space.kind.replace("_", " ") },
-  { key: "approval_mode", header: "Approval", render: (space) => space.approval_mode === "approve" ? "Staff approval" : "Instant" },
-  { key: "is_public", header: "Public", render: (space) => <Badge tone={space.is_public ? "success" : "neutral"}>{space.is_public ? "Public" : "Private"}</Badge> },
-  { key: "is_active", header: "Status", render: (space) => <Badge tone={space.is_active ? "success" : "neutral"}>{space.is_active ? "Active" : "Inactive"}</Badge> },
-];
 
 export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { makerspaceId: number; recurringEnabled?: boolean }) {
   const list = useUrlListState({ q: "", ordering: "name", page: "1" });
@@ -39,31 +27,33 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const create = useCreateBookableSpace(makerspaceId);
   const apiError = spaces.error instanceof StructuredApiError ? spaces.error : null;
 
-  if (apiError?.status === 403) return <Panel title="Bookings"><p className="text-sm text-muted">Only Space Managers can manage bookings.</p></Panel>;
-  if (apiError?.status === 400 && apiError.body.module) return <Panel title="Bookings"><p className="text-sm text-muted">The Bookings module is not enabled for this makerspace.</p></Panel>;
-
-  return (
-    <Panel title="Bookings">
-      {choosingBooking ? <p role="status" className="mb-3 rounded border border-line p-3">Choose a bookable space below, then enter the booking details.</p> : null}
-      <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings" sorts={[["name", "Name"], ["-name", "Name descending"], ["kind", "Type"]]} />
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div><h3 className="title-section">Bookable spaces</h3><p className="mt-1 text-sm text-muted">Manage public settings, forms, and booking requests.</p></div>
-        <button className="desk-button-primary" type="button" onClick={() => setCreateOpen(true)}>Create space</button>
-      </div>
-      {spaces.error ? <p className="mb-3 text-sm text-danger" role="alert">{spaces.error.message}</p> : null}
-      <DataTable listState={list} ordering={list.values.ordering} onOrderingChange={(value) => list.setFilter("ordering", value)} columns={columns(setSelectedId)} data={spaces.data?.results ?? []} loading={spaces.isLoading} skeletonCols={5} emptyTitle="No bookable spaces" emptyDescription="Create a space to start accepting bookings." />
-      {spaces.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="tabular-nums text-xs text-muted">Page {page} - {spaces.data.count} total</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!spaces.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!spaces.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create bookable space" size="xl">
-        <BookableSpaceForm
-          makerspaceId={makerspaceId}
-          onSubmit={(payload) => create.mutate(payload, { onSuccess: (space) => { setCreateOpen(false); setSelectedId(space.id); } })}
-          pending={create.isPending}
-          error={create.error?.message}
-          submitLabel="Create space"
-        />
-        <button className="desk-button mt-3" type="button" disabled={create.isPending} onClick={() => setCreateOpen(false)}>Cancel</button>
-      </Modal>
-      {selectedId !== null ? <BookingDrawer recurringEnabled={recurringEnabled} key={selectedId} makerspaceId={makerspaceId} spaceId={selectedId} onClose={closeSelection} /> : null}
-    </Panel>
-  );
+  const unavailable = apiError?.status === 403 ? "Only Space Managers can manage bookings."
+    : apiError?.status === 400 && apiError.body.module ? "The Bookings module is not enabled for this makerspace." : undefined;
+  if (!unavailable && selectedId !== null) return <BookingDrawer recurringEnabled={recurringEnabled} key={selectedId}
+    makerspaceId={makerspaceId} spaceId={selectedId} onClose={closeSelection} />;
+  if (!unavailable && createOpen) return <BookableSpaceForm mode="create" makerspaceId={makerspaceId}
+    onSubmit={payload => create.mutate(payload, { onSuccess: space => { setCreateOpen(false); setSelectedId(space.id); } })}
+    pending={create.isPending} error={create.error?.message} submitLabel="Create space" onCancel={() => setCreateOpen(false)} />;
+  return <ListLayout header={{ title: "Bookings",
+    subtitle: choosingBooking ? "Choose a space below, then enter the booking details." : "Manage spaces, booking requests and public availability.",
+    primary: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) },
+    secondary: unavailable ? undefined : { label: "New booking", onClick: () => setChoosingBooking(true) } }}
+    state={unavailable ? { status: "ready" } : opsQueryState(spaces, "bookable spaces")}
+    stats={[{ label: "Spaces", value: spaces.data?.count ?? 0 }]}
+    filters={unavailable ? undefined : { controls: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings"
+      sorts={[["name", "Name"], ["-name", "Name descending"], ["kind", "Type"]]} /> }}
+    filtered={Boolean(list.values.q)} isEmpty={Boolean(unavailable) || spaces.data?.results.length === 0}
+    empty={{ message: unavailable ?? "No bookable spaces yet. Create one to start taking bookings.",
+      action: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) } }}
+    filteredEmpty={{ message: "No spaces match your search. Try another name.", action: { label: "Clear filters", onClick: () => list.setFilter("q", "") } }}
+    body={{ kind: "rows", rows: spaces.data?.results.map(space => <ListRow key={space.id} title={space.name}
+      identity={{ kind: "icon", icon: "Calendar", tone: "info" }} onClick={() => setSelectedId(space.id)}
+      meta={<>{space.kind.replace(/_/g, " ")} · {space.location || "No location label"}</>}
+      right={<div className="flex flex-wrap items-center gap-2">
+        <StatusPill label={space.approval_mode === "approve" ? "Staff approval" : "Instant"} tone="neutral" />
+        <StatusPill label={space.is_public ? "Public" : "Private"} tone={space.is_public ? "success" : "neutral"} />
+        <StatusPill label={space.is_active ? "Active" : "Inactive"} tone={space.is_active ? "success" : "neutral"} />
+        <button className="desk-button" type="button" onClick={() => setSelectedId(space.id)}>View bookings</button>
+      </div>} />) }}
+    pagination={spaces.data ? { page, pageSize: 24, count: spaces.data.count, onChange: setPage } : undefined} />;
 }

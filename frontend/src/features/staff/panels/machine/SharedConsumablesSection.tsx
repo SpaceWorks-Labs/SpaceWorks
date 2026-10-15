@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Badge, CollapsibleSection, ErrorBlock } from "../../../../components/ui";
 import type { PrinterPool } from "../../../../generated/api";
 import { staffRequest } from "../../../../lib/api";
-import { ConsumablePoolCreateForm } from "./ConsumablePoolCreateForm";
+import { blankPool, ConsumablePoolCreateForm } from "./ConsumablePoolCreateForm";
 import { poolLabel, poolQueryKey } from "./servicePools";
 
 type Props = {
+  visible?: boolean;
   makerspaceId: number;
   pools: PrinterPool[];
   existingPools: PrinterPool[];
@@ -36,14 +37,17 @@ export function poolStockState(pool: PrinterPool): StockState {
   return { label: "In stock", band: "bg-success text-on-success", fill: "bg-success" };
 }
 
-export function SharedConsumablesSection({ makerspaceId, pools, existingPools, poolError, open, onToggle }: Props) {
+export function SharedConsumablesSection({ makerspaceId, pools, existingPools, poolError, open, onToggle, visible = true }: Props) {
+  const [poolDraft, setPoolDraft] = useState(blankPool);
+  const [stockDraft, setStockDraft] = useState<StockDraft>({ adjustingId: null, quantityDelta: "" });
+  if (!visible) return null;
   return (
     <CollapsibleSection title="Shared consumables" count={pools.length} open={open} onToggle={onToggle}>
       <div className="grid gap-4 p-3">
-        <ConsumablePoolCreateForm makerspaceId={makerspaceId} existingPools={existingPools} />
+        <ConsumablePoolCreateForm makerspaceId={makerspaceId} existingPools={existingPools} draft={poolDraft} onDraftChange={setPoolDraft} />
         <section>
           <h4 className="title-section mb-2">Space-wide stock</h4>
-          <ConsumablePoolList makerspaceId={makerspaceId} pools={pools} />
+          <ConsumablePoolList makerspaceId={makerspaceId} pools={pools} draft={stockDraft} onDraftChange={setStockDraft} />
         </section>
         <ErrorBlock className="mt-2" error={poolError} />
       </div>
@@ -51,10 +55,14 @@ export function SharedConsumablesSection({ makerspaceId, pools, existingPools, p
   );
 }
 
-export function ConsumablePoolList({ makerspaceId, pools }: { makerspaceId: number; pools: PrinterPool[] }) {
+type StockDraft = { adjustingId: number | null; quantityDelta: string };
+export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft, onDraftChange }: { makerspaceId: number; pools: PrinterPool[]; visible?: boolean; draft?: StockDraft; onDraftChange?: Dispatch<SetStateAction<StockDraft>> }) {
   const queryClient = useQueryClient();
-  const [adjustingId, setAdjustingId] = useState<number | null>(null);
-  const [quantityDelta, setQuantityDelta] = useState("");
+  const [localDraft, setLocalDraft] = useState<StockDraft>({ adjustingId: null, quantityDelta: "" });
+  const { adjustingId, quantityDelta } = draft ?? localDraft;
+  const changeDraft = onDraftChange ?? setLocalDraft;
+  const setAdjustingId = (value: number | null) => changeDraft(current => ({ ...current, adjustingId: value }));
+  const setQuantityDelta = (value: string) => changeDraft(current => ({ ...current, quantityDelta: value }));
   const refresh = () => queryClient.invalidateQueries({ queryKey: poolQueryKey(makerspaceId) });
   const adjustPool = useMutation({
     mutationFn: ({ id, quantity_delta }: { id: number; quantity_delta: string }) => staffRequest(`/admin/machine-service/consumable-pools/${id}/adjustments`, {
@@ -75,6 +83,7 @@ export function ConsumablePoolList({ makerspaceId, pools }: { makerspaceId: numb
     onSuccess: refresh,
   });
 
+  if (!visible) return null;
   return (
     <>
       <div className="grid gap-3">

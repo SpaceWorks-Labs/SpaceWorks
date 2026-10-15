@@ -1,6 +1,8 @@
+import { opsStatusLabel } from "./opsPresentation";
 import { useState } from "react";
 
-import QrScanner from "../../components/ui/QrScanner";
+import { ScanWorkbench } from "../../components/ui";
+import { useCorrectAttendance } from "./eventFeedbackApi";
 import { StructuredApiError } from "../../lib/api";
 import {
   useMarkEventAttended,
@@ -26,15 +28,15 @@ export default function EventCheckInScanner({
   eventId: number;
   onClose: () => void;
 }) {
-  const [scanning, setScanning] = useState(true);
   const [resolved, setResolved] = useState<EventCheckInResolution | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
+  const [confirmedId, setConfirmedId] = useState<number | null>(null);
+  const correct = useCorrectAttendance(makerspaceId, eventId);
   const resolve = useResolveEventCheckIn(eventId);
   const attend = useMarkEventAttended(makerspaceId, eventId, "qr");
 
   const handleScan = async (value: string) => {
-    setScanning(false);
     setError(null);
     setConfirmed(null);
     setResolved(null);
@@ -60,6 +62,7 @@ export default function EventCheckInScanner({
     try {
       await attend.mutateAsync(resolved.registration_id);
       setConfirmed(`${resolved.name} checked in.`);
+      setConfirmedId(resolved.registration_id);
       setResolved(null);
     } catch (cause) {
       if (cause instanceof StructuredApiError && cause.status === 409) {
@@ -96,87 +99,14 @@ export default function EventCheckInScanner({
             ? "This event was cancelled, so attendance cannot be confirmed."
             : `Attendance cannot be confirmed while this event is ${resolved.event_status}.`;
 
-  return (
-    <section
-      className="mt-3 rounded-lg border border-line bg-panel p-3"
-      aria-labelledby="event-checkin-title"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h4 id="event-checkin-title" className="font-extrabold text-ink">
-          Check in by QR
-        </h4>
-        <button type="button" className={`desk-button ${FOCUS}`} onClick={onClose}>
-          Done
-        </button>
-      </div>
-
-      {resolved ? (
-        <div className="mt-3">
-          <p className="text-ink">
-            <span className="font-medium">{resolved.name}</span> · {resolved.status}
-          </p>
-          {resolved.payment_status ? (
-            // Information only. A payment problem must never stop the door: staff take
-            // cash and reconcile later, and a card outage is not a reason to refuse
-            // someone entry to an event they registered for.
-            <p className="mt-1 text-sm text-muted">Payment: {resolved.payment_status}</p>
-          ) : null}
-          {resolved.host_waiver_state === "missing" ? (
-            // Reported, not enforced. Someone standing at the door with nothing on file is
-            // exactly who the host wants to hand a waiver to; refusing them entry is not
-            // this screen's job, the same way payment state is shown without blocking.
-            <p className="mt-1 text-sm text-muted">
-              No host waiver on file — take one at the desk.
-            </p>
-          ) : null}
-          {blockedReason ? (
-            <p className="mt-2 text-sm text-danger">{blockedReason}</p>
-          ) : null}
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              className={`desk-button-primary ${FOCUS}`}
-              disabled={!confirmable || attend.isPending}
-              onClick={handleConfirm}
-            >
-              Confirm attendance
-            </button>
-            <button
-              type="button"
-              className={`desk-button ${FOCUS}`}
-              onClick={() => {
-                setResolved(null);
-                setScanning(true);
-              }}
-            >
-              Scan another
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-3">
-          {confirmed ? <p className="text-sm text-ink">{confirmed}</p> : null}
-          <button
-            type="button"
-            className={`desk-button mt-2 ${FOCUS}`}
-            disabled={resolve.isPending}
-            onClick={() => {
-              setError(null);
-              setScanning(true);
-            }}
-          >
-            {resolve.isPending ? "Reading…" : "Scan a code"}
-          </button>
-        </div>
-      )}
-
-      {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
-
-      {/* Unmounted rather than hidden, so the camera stops and keyboard users cannot tab
-          into a scanner they cannot see. */}
-      {scanning ? (
-        <QrScanner onScan={handleScan} onClose={() => setScanning(false)} />
-      ) : null}
-    </section>
-  );
+  return <section aria-labelledby="event-checkin-title" className="grid gap-4">
+    <div className="flex items-center justify-between gap-3"><h3 id="event-checkin-title" className="title-panel">Check in by QR</h3><button className={`desk-button ${FOCUS}`} type="button" onClick={onClose}>Done</button></div>
+    <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find a guest by check-in code" helper="Paste the guest’s event check-in code. Confirm their name before recording attendance."
+      findPending={resolve.isPending || attend.isPending}
+      result={resolved ? { title: resolved.name, tone: confirmable ? "success" : "warn", summary: <div className="grid gap-2"><p>{opsStatusLabel(resolved.status)}</p>{resolved.payment_status ? <p>Payment: {resolved.payment_status}</p> : null}{resolved.host_waiver_state === "missing" ? <p>No host waiver on file — take one at the desk.</p> : null}{blockedReason ? <p>{blockedReason}</p> : null}</div>,
+        next: { label: "Confirm attendance", onClick: handleConfirm, disabled: !confirmable || attend.isPending, disabledReason: blockedReason || (attend.isPending ? "Attendance is being recorded." : undefined) },
+      } : error ? { title: "Couldn’t check in", tone: "danger", summary: error, next: { label: "Scan another", onClick: () => { setError(null); setResolved(null); } } } : confirmed ? { title: confirmed, tone: "success", next: { label: "Scan another", onClick: () => setConfirmed(null) } } : undefined}
+      controls={resolved ? <button className="desk-button" type="button" onClick={() => setResolved(null)}>Scan another</button> : undefined}
+      recent={confirmed ? [{ key: "latest", label: confirmed, tone: "success", undo: confirmedId !== null ? { label: "Undo", pending: correct.isPending, onClick: () => correct.mutate(confirmedId, { onSuccess: () => { setConfirmed(null); setConfirmedId(null); }, onError: cause => setError(cause instanceof Error ? cause.message : "Couldn’t undo attendance.") }) } : undefined }] : []} recentTitle="Recent check-ins" />
+  </section>;
 }

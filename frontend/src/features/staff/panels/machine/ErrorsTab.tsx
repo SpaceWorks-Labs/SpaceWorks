@@ -1,3 +1,6 @@
+import { machineStatusLabel } from "./machineStatusLabel";
+import { ListRow, RelativeTime, StatusPill } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -26,25 +29,14 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
   return (
     <section>
       <h3 className="title-section mb-3">Error logs</h3>
-      {logs.isLoading ? <p className="text-sm text-muted">Loading error logs...</p> : null}
-      {logs.error instanceof Error ? <p className="text-sm text-danger">{logs.error.message}</p> : null}
-      {!logs.isLoading && !logs.error && !items.length ? (
-        <p className="text-sm text-muted">No errors logged.</p>
-      ) : null}
+      <MachineTabContent query={logs} resource="error logs" empty={!items.length} message="No errors logged. Add a log when something needs attention.">
       <div className="grid gap-2">
         {items.map((entry) => (
-          <div key={entry.id} className="rounded-md border border-line bg-bg p-2 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <strong className="text-ink">{entry.severity}</strong>
-              <span className="tabular-nums text-xs text-muted">{formatDate(entry.created_at)}</span>
-            </div>
-            <p className="mt-1 whitespace-pre-wrap break-words text-muted">{entry.message}</p>
-            {entry.logged_by_username ? (
-              <p className="mt-1 text-xs text-muted">Logged by {entry.logged_by_username}</p>
-            ) : null}
-          </div>
+          <ListRow key={entry.id} title={entry.message} meta={<>{entry.logged_by_username ? `Logged by ${entry.logged_by_username} · ` : ""}<RelativeTime date={entry.created_at} /></>}
+            right={<StatusPill label={machineStatusLabel(entry.severity)} tone={entry.severity === "warning" ? "warn" : entry.severity === "info" ? "info" : "danger"} />} />
         ))}
       </div>
+      </MachineTabContent>
       {canOperate ? (
         <form className="mt-3 grid gap-2" onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
           <label className="eyebrow grid gap-1">Severity
@@ -64,9 +56,4 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
       {add.error instanceof Error ? <p className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
     </section>
   );
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }

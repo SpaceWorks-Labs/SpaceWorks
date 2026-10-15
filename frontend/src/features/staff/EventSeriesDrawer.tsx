@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 
-import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
+import { ConfirmDialog, ListRow, Skeleton, StatusBadge } from "../../components/ui";
+import { DetailLayout } from "../../components/layouts";
+import { opsQueryState, useOpsTabs, opsStatusLabel } from "./opsPresentation";
 import { EventSeriesCollaborators } from "./EventSeriesCollaborators";
 import { ImageUploader } from "./ImageUploader";
 import { EventSeriesFields, emptySeriesForm, seriesPayload, valuesForSeries } from "./EventSeriesForm";
@@ -35,21 +37,29 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
     const payload = seriesPayload(values);
     update.mutate({ ...payload, ...(query.data?.status === "published" ? { effective_from: new Date().toISOString() } : {}) });
   };
+  const tabs = useOpsTabs("seriesTab", [{ key: "occurrences", label: "Occurrences", count: occurrences.data?.count }, { key: "team", label: "Team" }, { key: "settings", label: "Settings" }], "occurrences");
   return <>
-    <DetailDrawer open title={query.data?.title ?? "Recurring series"} onClose={onClose}>
-      {query.isLoading ? <Skeleton className="h-64 w-full" /> : null}
-      {query.error ? <EmptyState title="Unable to load series" description={eventErrorText(query.error)} /> : null}
-      {query.data ? <div className="grid gap-5">
-        <div className="flex flex-wrap items-center gap-2"><StatusBadge domain="event" status={query.data.status} /><span className="text-sm text-muted">{query.data.future_occurrence_count} active occurrences · revision {query.data.revision}</span></div>
+    <div onClickCapture={tabs.onClickCapture}><DetailLayout title={query.data?.title ?? "Recurring series"} back={{ label: "All events", onClick: onClose }}
+      identity={{ kind: "icon", icon: "Calendar", tone: "accent" }}
+      status={query.data ? <StatusBadge domain="event" status={query.data.status} label={opsStatusLabel(query.data.status)} /> : undefined}
+      meta={query.data ? [`${query.data.future_occurrence_count} active occurrences`, `Revision ${query.data.revision}`] : undefined}
+      state={opsQueryState(query, "series")} tabs={tabs.tabs} activeTab={tabs.active}
+      actions={{ primary: query.data?.status === "draft" ? { label: "Publish series", confirms: true, onClick: () => setConfirm("publish") } : query.data?.status === "published" ? { label: "Extend now", onClick: () => setConfirm("extend") } : undefined }}
+      danger={tabs.active === "settings" && query.data?.status === "published" ? [{ title: "Cancel series", consequence: "Future occurrences close and registrants are notified.", action: { label: "Cancel series", onClick: () => setConfirm("cancel") } }] : []}
+      main={query.data ? <div className="grid gap-5">
+        {tabs.active === "settings" ? <div className="grid gap-5">
         {query.data.last_generation_error_code ? <div className="rounded-lg border border-danger bg-panel p-3 text-sm text-danger" role="alert">Automatic extension needs attention ({query.data.last_generation_error_code}). Use Extend now after correcting the schedule.</div> : null}
         <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} />
-        <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields values={values} setValues={setValues} disabled={terminal} />{!terminal ? <button className="desk-button-primary mt-3" type="submit" disabled={update.isPending}>Save future occurrences</button> : null}</form>
-        <div className="flex flex-wrap gap-2">{query.data.status === "draft" ? <button className="desk-button-primary" type="button" onClick={() => setConfirm("publish")}>Publish series</button> : null}{query.data.status === "published" ? <><button className="desk-button" type="button" onClick={() => setConfirm("extend")}>Extend now</button><button className="desk-button-success" type="button" onClick={() => setConfirm("complete")}>Complete series</button><button className="desk-button-danger" type="button" onClick={() => setConfirm("cancel")}>Cancel series</button></> : null}</div>
+        <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields values={values} setValues={setValues} disabled={terminal} />{!terminal ? <div className="sticky bottom-0 flex justify-end gap-3 border-t border-line bg-panel py-4"><button className="desk-button" type="button" disabled={update.isPending} onClick={() => setValues(valuesForSeries(query.data!))}>Discard</button><button className="desk-button-primary" type="submit" disabled={update.isPending}>Save future occurrences</button></div> : null}</form>
+        {query.data.status === "published" ? <button className="desk-button justify-self-start" type="button" onClick={() => setConfirm("complete")}>Complete series</button> : null}
+        </div> : null}
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}
-        <section><h3 className="title-section">Occurrences</h3><p className="mt-1 text-sm text-muted">Choose one occurrence to edit or cancel only that date.</p>{occurrences.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}<ul className="mt-3 space-y-2">{occurrences.data?.results.map((row) => <li key={row.id}><button className="desk-button-ghost w-full justify-between" type="button" onClick={() => onSelectOccurrence(row.id)}><span>{new Date(row.starts_at).toLocaleString()}</span><StatusBadge domain="event" status={row.status} /></button></li>)}</ul></section>
-        <EventSeriesCollaborators seriesId={seriesId} makerspaceId={makerspaceId} />
-      </div> : null}
-    </DetailDrawer>
+        {tabs.active === "occurrences" ? <section><h2 className="title-panel">Occurrences</h2><p className="mt-1 text-sm text-muted">Choose a date to edit or cancel only that occurrence.</p>
+          {occurrences.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
+          <div className="mt-3 grid gap-3">{occurrences.data?.results.map(row => <ListRow key={row.id} title={new Date(row.starts_at).toLocaleString()} identity={{ kind: "date", date: row.starts_at }} draft={row.status === "draft"} onClick={() => onSelectOccurrence(row.id)} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />)}</div>
+        </section> : null}
+        <EventSeriesCollaborators visible={tabs.active === "team"} seriesId={seriesId} makerspaceId={makerspaceId} />
+      </div> : null} /></div>
     <ConfirmDialog open={confirm !== null} title={`${confirm ?? "Change"} recurring series`} message={`This will ${confirm ?? "change"} the series and its applicable occurrences.`} confirmLabel="Confirm" tone={confirm === "cancel" ? "danger" : "default"} pending={action.isPending} onCancel={() => setConfirm(null)} onConfirm={() => action.mutate(undefined, { onSettled: () => setConfirm(null) })} />
   </>;
 }

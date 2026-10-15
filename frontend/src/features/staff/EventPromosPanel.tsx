@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useEventTicketing, type EventPromo } from "./eventTicketingApi";
 
-export function EventPromosPanel({ eventId, disabled = false }: { eventId: number; disabled?: boolean }) {
+export function EventPromosPanel({ visible = true,  eventId, disabled = false }: { visible?: boolean;  eventId: number; disabled?: boolean }) {
   const [page, setPage] = useState(1);
   const { rows, create, revoke } = useEventTicketing<EventPromo>(eventId, "promo-codes", page);
   const [mode, setMode] = useState("percent");
@@ -11,6 +11,7 @@ export function EventPromosPanel({ eventId, disabled = false }: { eventId: numbe
   const [limit, setLimit] = useState(1);
   const [expiry, setExpiry] = useState("");
   const [code, setCode] = useState("");
+  if (!visible) return null;
   return <section className="grid gap-3" aria-label="Event promo codes">
     <h3 className="title-section">Promo codes</h3>
     <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); create.mutate({ ...(mode === "percent" ? { percent_off: percent } : { amount_off: amount }), ...(customCode ? { code: customCode } : {}), max_uses: limit, expires_at: expiry ? new Date(expiry).toISOString() : null }, { onSuccess: (row) => setCode(row.code ?? "") }); }}>

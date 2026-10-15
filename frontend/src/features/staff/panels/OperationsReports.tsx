@@ -1,3 +1,4 @@
+import { ReportSelectionProvider } from "./OperationsReportSelection";
 import { useEffect, useState } from "react";
 
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
@@ -9,8 +10,13 @@ import { OperationsReportsPayments } from "./OperationsReportsPayments";
 import { OperationsReportsFinance } from "./OperationsReportsFinance";
 import { OperationsReportsPrinterService } from "./OperationsReportsPrinterService";
 import { OperationsReportsCoverage } from "./OperationsReportsCoverage";
-import { OperationsReportExports } from "./OperationsReportExports";
-import { Panel, type Makerspace, useStaffGet } from "./shared";
+import { useOperationsReportExport } from "./OperationsReportExports";
+import { SegmentedControl } from "../../../components/ui";
+import { DetailLayout } from "../../../components/layouts";
+import { OperationsReportNavigation } from "./OperationsReportNavigation";
+import { ReportSchedules } from "./ReportSchedules";
+import { reportFormats } from "./operationsReportsConfig";
+import { type Makerspace, useStaffGet } from "./shared";
 import { type ReportCatalog, type ReportKey } from "./operationsReportsConfig";
 import { ServerReportViews } from "./ServerReportViews";
 import { SelectedReportPreview } from "./SelectedReportPreview";
@@ -40,6 +46,8 @@ export function OperationsReports({
   canManageMachines: boolean;
   canViewFinance?: boolean;
 }) {
+  const [rangePreset, setRangePreset] = useState("custom");
+  const [schedulesOpen, setSchedulesOpen] = useState(false);
   const [allMakerspaces, setAllMakerspaces] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -83,15 +91,45 @@ export function OperationsReports({
       ...(selectedReport === "payment-reconciliation" && paymentSubject ? { subject_type: paymentSubject } : {}) },
   };
   const applyView = (state: ReportViewState) => {
+    setRangePreset("custom");
     setStartDate(state.filters.start ?? ""); setEndDate(state.filters.end ?? "");
     setSelectedReport(state.report_key); setGrain(state.grain); setColumns(state.columns);
     setMonths(state.filters.months ? String(state.filters.months) : "");
     setPaymentStatus(state.filters.status ?? ""); setPaymentSubject(state.filters.subject_type ?? "");
   };
 
-  return (
-    <div className="space-y-4">
-      <Panel title="Reports">
+  const exportReport = useOperationsReportExport({ reports: availableExports, grain: effectiveGrain,
+    filters: { months, status: paymentStatus, subject_type: paymentSubject }, reportsBase, dateSuffix, aggregate });
+  const formats = selected ? reportFormats(selected) : [];
+  const exportSelected = (format: "csv" | "xlsx") => exportReport.mutate({ report: selectedReport, format });
+  const canExport = availableExports.some(report => report.key === selectedReport);
+  const setPreset = (value: string) => {
+    setRangePreset(value);
+    if (value === "custom") return;
+    const end = new Date(); const start = new Date(); start.setDate(start.getDate() - Number(value) + 1);
+    const date = (value: Date) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+    setStartDate(date(start)); setEndDate(date(end));
+  };
+  const selectReport = (key: string) => { setSelectedReport(key); setColumns([]); };
+
+  return <>
+    <DetailLayout title="Reports" width="wide" asideSide="start"
+      meta={[`Operations reporting for ${scopeLabel}.`, selected?.title ?? "Choose a report"]}
+      state={{ status: catalog.isLoading ? "loading" : catalog.error ? "error" : "ready", error: "Couldn't load reports. Try again.", onRetry: () => void catalog.refetch() }}
+      isEmpty={reportsEnabled && Boolean(catalog.data && !catalogEntries.length)}
+      empty={{ message: "No reports available yet. Enable the reporting modules to get started." }}
+      actions={{ primary: !printingOnly ? { label: "Export", pending: exportReport.isPending, pendingLabel: "Exporting…",
+        disabled: !canExport, disabledReason: !canExport ? "Choose an available exportable report." : undefined, onClick: () => exportSelected(formats[0] ?? "csv") } : undefined,
+        secondary: !printingOnly && !aggregate && reportsEnabled ? { label: "Schedule…", onClick: () => setSchedulesOpen(true) } : undefined,
+        overflow: !printingOnly && canExport ? formats.map(format => ({ label: `Export ${format.toUpperCase()}`, onClick: () => exportSelected(format) })) : [] }}
+      aside={<OperationsReportNavigation reports={catalogEntries} selected={selectedReport} onSelect={selectReport} />}
+      main={<ReportSelectionProvider selected={printingOnly ? null : selectedReport} columns={columns} grain={effectiveGrain} catalog={catalogEntries}
+        hardware={hardwareEnabled} finance={canViewFinance || isSuperadmin} machines={canManageMachines}>
+      <div className="space-y-6">
+      <section aria-label="Report configuration" className="rounded-xl border border-line bg-panel p-5">
+        <div className="mb-5"><SegmentedControl label="Date range" value={rangePreset} onChange={setPreset}
+          options={[{ value: "7", label: "7 days" }, { value: "30", label: "30 days" }, { value: "90", label: "Quarter" }, { value: "custom", label: "Custom" }]} /></div>
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="title-section">
@@ -106,22 +144,11 @@ export function OperationsReports({
           <div className="flex flex-wrap items-end gap-2">
             <label className="eyebrow grid gap-1">
               <span>Start</span>
-              <input className="desk-input" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+              <input className="desk-input" type="date" value={startDate} onChange={(event) => { setRangePreset("custom"); setStartDate(event.target.value); }} />
             </label>
             <label className="eyebrow grid gap-1">
               <span>End</span>
-              <input className="desk-input" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
-            </label>
-            <label className="eyebrow grid gap-1">
-              <span>Report</span>
-              <select className="desk-input" value={selectedReport} onChange={(event) => { setSelectedReport(event.target.value as ReportKey); setColumns([]); }}>
-                {!catalogEntries.length ? <option value={selectedReport}>{catalog.isLoading ? "Loading reports..." : "No reports available"}</option> : null}
-                {catalogEntries.map((report) => (
-                  <option key={report.key} value={report.key} disabled={report.available === false}>
-                    {report.title}
-                  </option>
-                ))}
-              </select>
+              <input className="desk-input" type="date" value={endDate} onChange={(event) => { setRangePreset("custom"); setEndDate(event.target.value); }} />
             </label>
             <label className="eyebrow grid gap-1">
               <span>Grain</span>
@@ -150,8 +177,8 @@ export function OperationsReports({
         </div> : null}
         {!aggregate && reportsEnabled && (makerspace.enabled_features ?? []).includes("reports.saved_views") ?
           <ServerReportViews key={makerspace.id} makerspaceId={makerspace.id} state={savedState} fields={selected?.fields ?? []} onColumns={setColumns} onApply={applyView} /> : null}
-        {!printingOnly && hardwareEnabled ? (
-          <DataState loading={summary.isLoading} error={summary.error} empty={!summary.data}>
+        {!printingOnly && hardwareEnabled && selectedReport === "summary" ? (
+          <DataState loading={summary.isLoading} error={summary.error} onRetry={() => void summary.refetch()} empty={!summary.data}>
             <StatCards
               stats={[
                 ["Products", summary.data?.products],
@@ -183,23 +210,10 @@ export function OperationsReports({
             ] }} />
           </DataState>
         ) : !printingOnly && !reportsEnabled ? <p className="mt-3 text-sm text-muted">Module disabled</p> : null}
-      </Panel>
+      </section>
 
       {!printingOnly ? (
       <>
-      <OperationsReportExports
-        reports={availableExports}
-        selectedReport={selectedReport}
-        onSelect={(key) => { setSelectedReport(key); setColumns([]); }}
-        reportsBase={reportsBase}
-        dateSuffix={dateSuffix}
-        filters={{ months, status: paymentStatus, subject_type: paymentSubject }}
-        grain={effectiveGrain}
-        aggregate={aggregate}
-        makerspaceId={makerspace.id}
-        reportsEnabled={reportsEnabled}
-      />
-
       <SelectedReportPreview report={selected} analyticsBase={analyticsBase} scopeKey={scopeKey} start={startDate} end={endDate} grain={effectiveGrain} columns={columns} months={months} filters={savedState.filters} />
       <OperationsReportsHardware analyticsBase={analyticsBase} scopeKey={scopeKey} startDate={startDate} endDate={endDate} enabled={hardwareEnabled} aggregate={aggregate} makerspaceName={makerspaceName} />
       {canViewFinance || isSuperadmin ? <OperationsReportsFinance catalog={catalogEntries} analyticsBase={analyticsBase} scopeKey={scopeKey} startDate={startDate} endDate={endDate} grain={grain} aggregate={aggregate} makerspaceName={makerspaceName} /> : null}
@@ -213,6 +227,11 @@ export function OperationsReports({
 
       <OperationsReportsPrinterService makerspace={makerspace} aggregate={aggregate} canManageMachines={canManageMachines} reportsEnabled={reportsEnabled} startDate={startDate} endDate={endDate} makerspaceName={makerspaceName} />
       <OperationsReportsMachineService makerspace={makerspace} aggregate={aggregate} canManageMachines={canManageMachines} reportsEnabled={reportsEnabled} startDate={startDate} endDate={endDate} makerspaceName={makerspaceName} />
-    </div>
-  );
+      {exportReport.error ? <p role="alert" className="text-sm text-danger">Couldn't export this report. Try again.</p> : null}
+    {!printingOnly && !aggregate && reportsEnabled ? <DetailLayout presentation="drawer" open={schedulesOpen} onClose={() => setSchedulesOpen(false)}
+      title="Scheduled reports" state={{ status: "ready" }} main={<ReportSchedules makerspaceId={makerspace.id}
+        reports={availableExports.filter(report => report.schedulable !== false)} />} /> : null}
+    </div></ReportSelectionProvider>} />
+
+  </>;
 }

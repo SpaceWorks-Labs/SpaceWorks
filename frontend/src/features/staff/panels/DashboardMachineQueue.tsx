@@ -1,11 +1,13 @@
+import { machineStatusLabel } from "./machine/machineStatusLabel";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { ListLayout } from "../../../components/layouts";
+import { ListRow, RelativeTime, StatusBadge, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { useUrlListState } from "../../../lib/useUrlListState";
-import { Pagination } from "../../../components/ui/Pagination";
+
 import { collectionResults, getMachineTypes, machineKeys } from "../machinesApi";
 import { machineTypeSegment, staffTabPath } from "../staffTabs";
-import { Panel } from "./shared";
+
 
 const statuses: Record<string, string> = { pending_prints: "pending", active_prints: "in_progress", prints_awaiting_collection: "completed" };
 const labels: Record<string, string> = { pending_prints: "Pending prints", active_prints: "Active prints", prints_awaiting_collection: "Ready to collect", maintenance_overdue: "Maintenance overdue" };
@@ -25,14 +27,19 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
   const error = types.error ?? jobs.error ?? schedules.error;
   const scheduleRows = enabled && maintenance ? schedules.data?.results : undefined;
   const jobRows = enabled && !maintenance ? jobs.data : undefined;
-  return <Panel title={labels[queue]}>
-    <Link className="desk-button-ghost inline-flex mb-4" to={href}>All machines</Link>
-    {!enabled ? <p role="alert">This queue is unavailable because its module is disabled.</p> : null}
-    {enabled && (types.isLoading || jobs.isLoading || schedules.isLoading) ? <p role="status">Loading work list…</p> : null}
-    {enabled && error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
-    {enabled && !maintenance && types.isSuccess && !printer ? <p>No built-in printer type is available in your scope.</p> : null}
-    <ul className="grid gap-3">{scheduleRows?.map(row => <li key={row.id} className="desk-panel p-3"><Link className="underline" to={`${href}?machine=${row.machine_id}&detail_tab=Maintenance`}>{row.machine_name}: {row.description}</Link><p className="text-sm text-muted">Due {row.next_due}</p></li>)}{jobRows?.map(row => <li key={row.id} className="desk-panel p-3"><p>{row.title} · {row.status.replace(/_/g, " ")}</p>{printer ? <Link className="desk-button mt-2 inline-flex" to={staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}>Open printer queue</Link> : null}</li>)}</ul>
-    {(scheduleRows?.length === 0 || jobRows?.length === 0) ? <p className="text-sm text-muted">No work in this queue.</p> : null}
-    {enabled && maintenance ? <Pagination page={list.page} totalPages={Math.max(1, Math.ceil((schedules.data?.count ?? 0) / 24))} count={schedules.data?.count ?? 0} pageSize={24} onChange={list.setPage} /> : null}
-  </Panel>;
+  const loading = enabled && (types.isLoading || jobs.isLoading || schedules.isLoading);
+  return <ListLayout header={{ title: labels[queue], secondary: { label: "All machines", href } }}
+    state={loading ? { status: "loading" } : error ? { status: "error", error: "Couldn't load work list. Try again.", onRetry: () => { void types.refetch(); void jobs.refetch(); void schedules.refetch(); } } : { status: "ready" }}
+    isEmpty={enabled && (scheduleRows?.length === 0 || jobRows?.length === 0)}
+    empty={{ message: "No work in this queue. Open All machines to review your equipment." }}
+    body={{ kind: "rows", rows: <>
+      {!enabled ? <p role="alert">This queue is unavailable because its module is disabled.</p> : null}
+      {enabled && !maintenance && types.isSuccess && !printer ? <p>No built-in printer type is available in your scope.</p> : null}
+      {scheduleRows?.map(row => <ListRow key={row.id} title={`${row.machine_name}: ${row.description}`}
+        href={`${href}?machine=${row.machine_id}&detail_tab=Maintenance`} meta={<>Due <RelativeTime date={row.next_due} /></>}
+        right={<StatusPill label="Overdue" tone="danger" />} />)}
+      {jobRows?.map(row => <ListRow key={row.id} title={row.title} right={<StatusBadge status={row.status} label={machineStatusLabel(row.status)} />}
+        href={printer ? `${staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}?view=queue` : undefined}
+        meta="Open printer queue" />)}
+    </> }} pagination={enabled && maintenance ? { page: list.page, pageSize: 24, count: schedules.data?.count ?? 0, onChange: list.setPage } : undefined} />;
 }

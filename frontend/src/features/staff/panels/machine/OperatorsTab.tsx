@@ -1,3 +1,5 @@
+import { ListRow, OverflowMenu } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -45,23 +47,14 @@ export function OperatorsTab({ machineId, canDelegate }: { machineId: number; ca
   return (
     <section>
       <h3 className="title-section mb-3">Operators</h3>
-      {operators.isLoading ? <p className="text-sm text-muted">Loading operators...</p> : null}
-      {operators.error instanceof Error ? <p className="text-sm text-danger">{operators.error.message}</p> : null}
-      {!operators.isLoading && !operators.error && !items.length ? (
-        <p className="text-sm text-muted">No operators assigned.</p>
-      ) : null}
+      <MachineTabContent query={operators} resource="operators" empty={!items.length} message="No operators assigned. Add the first operator.">
       <div className="grid gap-2">
         {items.map((operator) => (
-          <div key={operator.id} className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-bg p-2 text-sm">
-            <span className="font-medium text-ink">{operator.username}</span>
-            <span className="text-muted">{operator.access_level}</span>
-            {canDelegate ? (
-              <button className="desk-button-danger ml-auto" type="button" disabled={remove.isPending}
-                onClick={() => remove.mutate(operator.user)}>Remove</button>
-            ) : null}
-          </div>
+          <ListRow key={operator.id} title={operator.username} identity={{ kind: "avatar", name: operator.username, seed: String(operator.user) }}
+            meta={operator.access_level} right={canDelegate ? <OverflowMenu actions={[{ label: "Remove", tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(operator.user) }]} /> : undefined} />
         ))}
       </div>
+      </MachineTabContent>
       {canDelegate ? (
         <form className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
           onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>

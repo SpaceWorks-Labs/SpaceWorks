@@ -1,3 +1,4 @@
+import { DangerZone, SettingsRow, SettingsSection, SettingsActions, StatCard } from "../../../../components/ui";
 import { PublicMachineDisclosure } from "./PublicMachineDisclosure";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,12 +7,12 @@ import {
   machineKeys,
   machineImageEndpoint,
   retireMachine,
-  setMachineStatus,
   unretireMachine,
   updateMachine,
   type Machine,
   type MachineStatus,
 } from "../../machinesApi";
+import { useMachineStatus } from "./useMachineStatus";
 import { ImageUploader } from "../../ImageUploader";
 import { MachinePublicSettings } from "../MachinePublicSettings";
 
@@ -61,10 +62,7 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
     }),
     onSuccess: refreshMachine,
   });
-  const setStatusMutation = useMutation({
-    mutationFn: () => setMachineStatus(machine.id, status),
-    onSuccess: refreshMachine,
-  });
+  const setStatusMutation = useMachineStatus(machine.id, makerspaceId, status);
   const lifecycle = useMutation({
     mutationFn: (action: "retire" | "unretire") =>
       action === "retire" ? retireMachine(machine.id) : unretireMachine(machine.id),
@@ -75,49 +73,18 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
   const canChangeLifecycle = machine.is_active ? canRetire : canUnretire;
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
+      <StatCard label="Usage hours" value={machine.usage_hours} />
       {canEdit && publicDetailsEnabled ? <PublicMachineDisclosure id={machine.id} makerspaceId={makerspaceId} fields={machine.public_fields ?? []} /> : null}
-      {canEdit ? (
-        <section className="grid gap-3">
-          <h3 className="title-section">Machine photo</h3>
-          <ImageUploader
-            endpoint={machineImageEndpoint(machine.id)}
-            currentUrl={machine.image_url}
-            label="Machine photo"
-            onChanged={() => { void refreshMachine(); }}
-          />
-        </section>
-      ) : null}
-      <section className="grid gap-3">
-        <h3 className="title-section">Machine details</h3>
-        <label className="eyebrow grid gap-1">Name
-          <input className="desk-input" value={form.name} disabled={!canEdit}
-            onChange={(event) => updateField("name", event.target.value)} />
-        </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="eyebrow grid gap-1">Location
-            <input className="desk-input" value={form.location} disabled={!canEdit}
-              onChange={(event) => updateField("location", event.target.value)} />
-          </label>
-          <label className="eyebrow grid gap-1">Firmware version
-            <input className="desk-input" value={form.firmware_version} disabled={!canEdit}
-              onChange={(event) => updateField("firmware_version", event.target.value)} />
-          </label>
-        </div>
-        <label className="eyebrow grid gap-1">Camera feed URL
-          <input className="desk-input" type="url" value={form.camera_feed_url} disabled={!canEdit}
-            onChange={(event) => updateField("camera_feed_url", event.target.value)} />
-        </label>
-        <label className="eyebrow grid gap-1">Notes
-          <textarea className="desk-input min-h-24" value={form.notes} disabled={!canEdit}
-            onChange={(event) => updateField("notes", event.target.value)} />
-        </label>
-        <button className="desk-button-primary justify-self-start" type="button"
-          disabled={!canEdit || save.isPending || !form.name.trim()} onClick={() => save.mutate()}>
-          {save.isPending ? "Saving..." : "Save changes"}
-        </button>
-        {save.error instanceof Error ? <p className="text-sm text-danger">{save.error.message}</p> : null}
-      </section>
+      <SettingsSection title="Machine details">
+        {canEdit ? <SettingsRow label="Machine photo"><ImageUploader endpoint={machineImageEndpoint(machine.id)} currentUrl={machine.image_url} label="Machine photo" onChanged={() => { void refreshMachine(); }} /></SettingsRow> : null}
+        {([['name', 'Name'], ['location', 'Location'], ['firmware_version', 'Firmware version'], ['camera_feed_url', 'Camera feed URL']] as const).map(([key, label]) =>
+          <SettingsRow key={key} label={label} htmlFor={`machine-${key}`}><input id={`machine-${key}`} className="desk-input w-full" type={key === 'camera_feed_url' ? 'url' : 'text'} value={form[key]} disabled={!canEdit} onChange={event => updateField(key, event.target.value)} /></SettingsRow>)}
+        <SettingsRow label="Notes" htmlFor="machine-notes"><textarea id="machine-notes" className="desk-input min-h-24 w-full" value={form.notes} disabled={!canEdit} onChange={event => updateField('notes', event.target.value)} /></SettingsRow>
+      </SettingsSection>
+      {canEdit ? <SettingsActions onDiscard={() => setForm({ name: machine.name, location: machine.location, notes: machine.notes, firmware_version: machine.firmware_version, camera_feed_url: machine.camera_feed_url })}
+        onSave={() => save.mutate()} pending={save.isPending} disabled={!form.name.trim()} /> : null}
+      {save.error instanceof Error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
       <section className="border-t border-line pt-4">
         <h3 className="title-section mb-3">Status</h3>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -131,10 +98,7 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
             disabled={!canOperate || setStatusMutation.isPending} onClick={() => setStatusMutation.mutate()}>
             {setStatusMutation.isPending ? "Setting..." : "Set status"}
           </button>
-          <button className={machine.is_active ? "desk-button-danger" : "desk-button-success"} type="button" disabled={!canChangeLifecycle || lifecycle.isPending}
-            onClick={() => lifecycle.mutate(machine.is_active ? "retire" : "unretire")}>
-            {machine.is_active ? "Retire" : "Reactivate"}
-          </button>
+
         </div>
         {setStatusMutation.error instanceof Error ? <p className="mt-2 text-sm text-danger">{setStatusMutation.error.message}</p> : null}
         {lifecycle.error instanceof Error ? <p className="mt-2 text-sm text-danger">{lifecycle.error.message}</p> : null}
@@ -142,6 +106,9 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
       {canManageMachines ? (
         <MachinePublicSettings machine={machine} makerspaceId={makerspaceId} />
       ) : null}
+      {canChangeLifecycle ? <DangerZone title={machine.is_active ? "Retire machine" : "Reactivate machine"}
+        consequence={machine.is_active ? "Takes this machine out of service and off the public page." : "Returns this machine to service."}
+        action={{ label: machine.is_active ? "Retire" : "Reactivate", pending: lifecycle.isPending, onClick: () => lifecycle.mutate(machine.is_active ? "retire" : "unretire") }} /> : null}
     </div>
   );
 }

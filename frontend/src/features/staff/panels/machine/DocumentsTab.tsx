@@ -1,3 +1,5 @@
+import { ListRow, OverflowMenu } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -44,27 +46,17 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
   return (
     <section>
       <h3 className="title-section mb-3">Documents</h3>
-      {documents.isLoading ? <p className="text-sm text-muted">Loading documents...</p> : null}
-      {documents.error instanceof Error ? <p className="text-sm text-danger">{documents.error.message}</p> : null}
-      {!documents.isLoading && !documents.error && !items.length ? (
-        <p className="text-sm text-muted">No machine documents uploaded.</p>
-      ) : null}
+      <MachineTabContent query={documents} resource="documents" empty={!items.length} message="No machine documents uploaded. Upload the first document.">
       <div className="grid gap-2">
         {items.map((document) => (
-          <div key={document.id} className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-bg p-2 text-sm">
-            <span className="min-w-0 flex-1">
-              <strong className="block truncate text-ink">{document.original_filename}</strong>
-              <span className="text-xs text-muted">{document.doc_type} · {formatBytes(document.size_bytes)}</span>
-            </span>
-            <button className="desk-button-ghost" type="button" disabled={view.isPending}
-              onClick={() => view.mutate(document.id)}>View</button>
-            {canEdit ? (
-              <button className="desk-button-danger" type="button" disabled={remove.isPending}
-                onClick={() => remove.mutate(document.id)}>Delete</button>
-            ) : null}
-          </div>
+          <ListRow key={document.id} title={document.original_filename} identity={{ kind: "icon", icon: "Wrench", tone: "neutral" }}
+            meta={`${document.doc_type} · ${formatBytes(document.size_bytes)}`} right={<div className="flex gap-2">
+              <button className="desk-button" type="button" disabled={view.isPending} onClick={() => view.mutate(document.id)}>View</button>
+              {canEdit ? <OverflowMenu actions={[{ label: "Delete", tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(document.id) }]} /> : null}
+            </div>} />
         ))}
       </div>
+      </MachineTabContent>
       {canEdit ? (
         <form className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto] sm:items-end"
           onSubmit={(event) => { event.preventDefault(); upload.mutate(); }}>

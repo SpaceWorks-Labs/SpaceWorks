@@ -1,5 +1,6 @@
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
-import { Panel, type Makerspace, useStaffGet } from "./shared";
+import { type Makerspace, useStaffGet } from "./shared";
 
 type Scoped = { makerspace_id?: number };
 type Status = Scoped & { submitted: number; accepted: number; in_progress: number; completed: number; collected: number; rejected: number; failed: number };
@@ -29,7 +30,7 @@ export function OperationsReportsMachineService({ makerspace, aggregate, canMana
   const groups = aggregate ? groupsFor(report.data) : [];
   return (
     <Panel title="Machine service">
-      <DataState loading={report.isLoading} error={report.error} empty={!hasRows}>
+      <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!hasRows}>
         {aggregate ? <div className="mt-4 space-y-6">{groups.map((group) => (
           <section key={group.id} className="rounded-md border border-line p-4">
             <h4 className="eyebrow">{makerspaceName(group.id)}</h4>

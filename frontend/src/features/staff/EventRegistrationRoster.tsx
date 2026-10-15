@@ -64,7 +64,7 @@ export function EventRegistrationRoster({ visible = true, event, makerspaceId, o
     {rows.data?.results.length ? <DataTable data={rows.data.results} columns={[
       { key: "badge", header: "Badge", render: row => <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input type="checkbox" aria-label={`Select ${row.name} for a badge`} disabled={row.status !== "registered" && !(includeAttended && row.status === "attended")} checked={selectedIds.includes(row.id)} onChange={e => setSelectedIds(ids => e.target.checked ? [...ids, row.id] : ids.filter(id => id !== row.id))} /></label> },
       { key: "name", header: "Name", render: row => <>{row.name}<PaymentReconcileActions makerspaceId={makerspaceId} payment={row.payment} invalidateKeys={[["event", event.id, "registrations"], ["event", event.id], ["events", makerspaceId]]} /></> },
-      { key: "contact", header: "Contact", render: row => <><a className="inline-flex min-h-11 items-center hover:underline" href={`mailto:${row.email}`}>{row.email}</a><a className="flex min-h-11 items-center text-muted hover:underline" href={`tel:${row.phone}`}>{row.phone}</a></> },
+      { key: "contact", header: "Contact", render: row => <><a className="inline-flex min-h-11 items-center [overflow-wrap:anywhere] hover:underline" href={`mailto:${row.email}`}>{row.email}</a><a className="flex min-h-11 items-center text-muted hover:underline" href={`tel:${row.phone}`}>{row.phone}</a></> },
       { key: "status", header: "Status", render: row => <StatusBadge status={row.status} label={opsStatusLabel(row.status)} /> },
       { key: "actions", header: "Action", render: row => {
         const pending = pendingFor(row.id);
@@ -81,6 +81,6 @@ export function EventRegistrationRoster({ visible = true, event, makerspaceId, o
           </div>{rowError ? <p className="mt-1 text-xs text-danger" role="alert">{eventErrorText(rowError)}</p> : null}</>;
       } },
     ]} /> : null}
-    <div className="mt-3 flex items-center justify-between gap-2"><span className="tabular-nums text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!rows.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!rows.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div>
+    <div className="mt-3 flex items-center justify-between gap-2"><span className="tabular-nums text-xs text-muted">Page {page}</span><div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={!rows.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!rows.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div>
   </section>;
 }

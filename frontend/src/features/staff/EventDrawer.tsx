@@ -61,7 +61,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
   const ticketing = event?.ticketing_features ?? [];
   const series = event?.series_summary;
   const seriesId = series?.id;
-  const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink hover:bg-info-soft" onClick={() => onOpenSeries(seriesId)}>Recurring · {series.title}</button>
+  const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="relative rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink before:absolute before:-inset-x-1 before:-inset-y-3 hover:bg-info-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" onClick={() => onOpenSeries(seriesId)}>Recurring · {series.title}</button>
     : <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">Recurring · {series.title}</span> : null;
   const tabs = useOpsTabs("eventTab", [
     { key: "overview", label: "Overview" },

@@ -55,7 +55,7 @@ export function EventFeedbackPanel({ visible = true,  eventId, makerspaceId }: {
     }}>
       <label className="grid gap-1"><span className="eyebrow">Survey title</span><input className="desk-input" required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
       <label className="grid gap-1"><span className="eyebrow">Thank-you message</span><textarea className="desk-input min-h-20" maxLength={2000} value={thankYou} onChange={(event) => setThankYou(event.target.value)} /></label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={certificateEnabled} onChange={(event) => setCertificateEnabled(event.target.checked)} />Require an attended member and issue an attendance certificate</label>
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={certificateEnabled} onChange={(event) => setCertificateEnabled(event.target.checked)} />Require an attended member and issue an attendance certificate</label>
       <CustomFormBuilder value={questions} onChange={(value) => setQuestions(value ?? [])} allowedTypes={FEEDBACK_TYPES} lockedQuestionIds={survey?.answered_question_ids} legend="Feedback questions" emptyMessage="Add at least one question before opening the survey." />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={pending}>Save survey</button>

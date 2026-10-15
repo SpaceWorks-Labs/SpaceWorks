@@ -13,6 +13,7 @@ import {
   useUpdateEventSeries,
 } from "./eventSeriesApi";
 import { eventErrorText } from "./eventUi";
+import { pageStickyActions } from "./stickyActions";
 
 type Action = "publish" | "cancel" | "complete" | "extend";
 
@@ -53,7 +54,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
       main={query.data ? <div className="grid gap-5">
         {tabs.active === "settings" ? <div className="grid gap-5">
         <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} />
-        <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields values={values} setValues={setValues} disabled={terminal} />{!terminal ? <div className="sticky bottom-0 flex justify-end gap-3 border-t border-line bg-panel py-4"><button className="desk-button" type="button" disabled={update.isPending} onClick={() => setValues(valuesForSeries(query.data!))}>Discard</button><button className="desk-button-primary" type="submit" disabled={update.isPending}>Save future occurrences</button></div> : null}</form>
+        <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields values={values} setValues={setValues} disabled={terminal} />{!terminal ? <div className={pageStickyActions}><button className="desk-button" type="button" disabled={update.isPending} onClick={() => setValues(valuesForSeries(query.data!))}>Discard</button><button className="desk-button-primary" type="submit" disabled={update.isPending}>Save future occurrences</button></div> : null}</form>
         {query.data.status === "published" ? <button className="desk-button justify-self-start" type="button" onClick={() => setConfirm("complete")}>Complete series</button> : null}
         </div> : null}
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}

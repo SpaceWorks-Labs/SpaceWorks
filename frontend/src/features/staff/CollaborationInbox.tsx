@@ -41,7 +41,7 @@ export function CollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
               </span>
             </span>
             {row.status === "invited" ? (
-              <span className="flex gap-2">
+              <span className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   className={`desk-button-primary ${FOCUS}`}

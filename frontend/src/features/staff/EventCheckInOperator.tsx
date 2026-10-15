@@ -27,7 +27,7 @@ export function EventCheckInOperator({ visible = true, makerspaceId, eventId, of
   if (!visible) return null;
   return <section aria-labelledby="event-checkin-operator-title">
     <h4 id="event-checkin-operator-title" className="title-section mt-3">Attendance check-in</h4>
-    {scanning ? <EventCheckInScanner makerspaceId={makerspaceId} eventId={eventId} onClose={() => setScanning(false)} /> : <button className="desk-button mt-3" type="button" onClick={() => setScanning(true)}>Scan online</button>}
+    {scanning ? <EventCheckInScanner makerspaceId={makerspaceId} eventId={eventId} onClose={() => setScanning(false)} /> : <button className="desk-button-primary mt-3 w-full sm:w-auto" type="button" onClick={() => setScanning(true)}>Scan online</button>}
     {offlineEnabled ? <><OfflineCheckInOperator scope={`staff:${eventId}`} download={() => downloadStaffRoster(eventId)} synchronize={(roster, operations) => syncStaffRoster(eventId, roster, operations)} onSynchronized={invalidate} /><EventStationSettings eventId={eventId} /></> : null}
   </section>;
 }

@@ -22,6 +22,6 @@ export function EventFeedbackResponses({ eventId, makerspaceId, responseCount }:
       <dl className="mt-2 grid gap-1">{response.answers.answers.map((answer) => <div key={answer.id}><dt className="eyebrow">{answer.label}</dt><dd className="whitespace-pre-wrap text-ink">{Array.isArray(answer.value) ? answer.value.join(", ") : String(answer.value)}</dd></div>)}</dl>
       {response.certificate ? <EventCertificateActions certificate={response.certificate} eventId={eventId} makerspaceId={makerspaceId} /> : null}
     </article>)}
-    <div className="mt-3 flex gap-2"><button className="desk-button" type="button" disabled={!responses.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!responses.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div>
+    <div className="mt-3 flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={!responses.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!responses.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div>
   </div>;
 }

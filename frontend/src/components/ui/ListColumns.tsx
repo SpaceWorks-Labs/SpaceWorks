@@ -12,8 +12,8 @@ export function ListColumns({ columns, value, onChange }: {
     <details><summary className="desk-button-ghost cursor-pointer">Columns</summary>
       <fieldset className="grid gap-2 p-2"><legend className="sr-only">Visible columns</legend>
         {columns.map(column => <label key={column.key} className="flex min-h-11 items-center gap-2 text-sm">
-          <input type="checkbox" checked={selected.includes(column.key)} disabled={selected.length === 1 && selected.includes(column.key)}
-            onChange={event => onChange({ ...value, columns: columns.filter(item => item.key === column.key ? event.target.checked : selected.includes(item.key)).map(item => item.key).join(",") })} />{column.header}
+          <input className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" checked={selected.includes(column.key)} disabled={selected.length === 1 && selected.includes(column.key)}
+            onChange={event => onChange({ ...value, columns: columns.filter(item => item.key === column.key ? event.target.checked : selected.includes(item.key)).map(item => item.key).join(",") })} />{column.header || column.key}
         </label>)}
       </fieldset>
       <button className="desk-button-ghost" type="button" onClick={() => onChange({ ...value, columns: "" })}>Show all columns</button>

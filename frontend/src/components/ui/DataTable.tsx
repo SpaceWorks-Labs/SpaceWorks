@@ -1,6 +1,7 @@
 import type { Key, ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { isValidElement, useEffect, useMemo, useRef, useState } from "react";
 
+import { Icon } from "./icon";
 import { EmptyState } from "./EmptyState";
 import { SkeletonRows } from "./Skeleton";
 import { Spinner } from "./Spinner";
@@ -13,7 +14,7 @@ export type DataTableColumn<T> = {
 
 type SortState = { key: string; direction: "asc" | "desc" };
 
-type DataTableProps<T> = {
+export type DataTableProps<T> = {
   columns: DataTableColumn<T>[]; data: T[]; getRowId?: (row: T) => Key; selectedIds?: Key[];
   onSelectionChange?: (ids: Key[]) => void; loading?: boolean; emptyTitle?: string; emptyDescription?: string; emptyAction?: ReactNode;
   skeletonCols?: number;
@@ -45,6 +46,7 @@ export function DataTable<T>({
   const chosen = listState?.values.columns?.split(",") ?? [];
   const filtered = columns.filter(column => chosen.includes(column.key));
   const visibleColumns = filtered.length ? filtered : columns;
+  const columnLabels = new Map(visibleColumns.map(column => [column.key, headerText(column.header)]));
   const cellPadding = listState?.values.density === "compact" ? "px-3 py-1" : "px-3 py-2";
 
   useEffect(() => {
@@ -80,37 +82,37 @@ export function DataTable<T>({
   return (
     <div className="overflow-x-auto rounded-xl border border-line bg-panel">
       {listState ? <ListColumns columns={columns} value={{ columns: listState.values.columns ?? "", density: listState.values.density ?? "comfortable" }} onChange={value => listState.restore({ ...listState.values, ...value })} /> : null}
-      <table className="w-full min-w-[640px] text-left text-sm" aria-busy={loading}>
-        <thead className="bg-surface text-xs text-muted">
-          <tr className="border-b border-line">
+      <table role="table" className="block w-full text-left text-sm md:table md:min-w-[640px]" aria-busy={loading}>
+        <thead role="rowgroup" className="block bg-surface text-xs text-muted md:table-header-group">
+          <tr role="row" className="flex flex-wrap items-center border-b border-line md:table-row">
             {selectionEnabled ? (
-              <th className="w-10 px-3 py-2" scope="col">
-                <input ref={selectAllRef} type="checkbox" aria-label="Select all rows" checked={allSelected} onChange={(event) => changeAll(event.target.checked)} />
+              <th role="columnheader" className="block w-16 px-3 py-2 md:table-cell" scope="col">
+                <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" ref={selectAllRef} type="checkbox" aria-label="Select all rows" checked={allSelected} onChange={(event) => changeAll(event.target.checked)} /></label>
               </th>
             ) : null}
             {visibleColumns.map((column) => (
-              <th
+              <th role="columnheader"
                 key={column.key}
-                className={`px-3 py-2 font-semibold ${column.className ?? ""}`}
+                className={`block px-3 py-2 font-semibold md:table-cell ${column.className ?? ""}`}
                 aria-sort={sort?.key === column.key ? ariaSort(sort.direction) : undefined}
                 scope="col"
               >
                 {column.sortable ? (
-                  <button type="button" className="inline-flex items-center gap-1 font-semibold" onClick={() => toggleSort(column)}>
+                  <button type="button" aria-label={columnLabels.get(column.key) ? undefined : column.key} className="inline-flex min-h-11 min-w-11 items-center gap-1 rounded-control font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" onClick={() => toggleSort(column)}>
                     {column.header}
-                    <span aria-hidden="true">{sort?.key === column.key ? sort.direction : "sort"}</span>
+                    <Icon name={sort?.key === column.key ? sort.direction === "asc" ? "ArrowUp" : "ArrowDown" : "ArrowUpDown"} className="h-4 w-4" />
                   </button>
                 ) : column.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup" className="block md:table-row-group">
           {loading && skeletonCols ? (
             <SkeletonRows rows={6} cols={listState ? visibleColumns.length + (selectionEnabled ? 1 : 0) : skeletonCols} />
           ) : loading ? (
-            <tr>
-              <td className="px-3 py-8 text-center" colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)}>
+            <tr role="row" className="block md:table-row">
+              <td role="cell" className="block px-3 py-8 text-center md:table-cell" colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)}>
                 <Spinner />
               </td>
             </tr>
@@ -118,14 +120,16 @@ export function DataTable<T>({
             sortedData.map((row) => {
               const id = getRowId(row);
               return (
-                <tr key={id} className="border-b border-line last:border-b-0">
+                <tr role="row" key={id} className={`m-3 block min-w-0 rounded-xl border border-line md:m-0 md:table-row md:rounded-none md:border-x-0 md:border-t-0 md:last:border-b-0 ${selectedSet.has(id) ? "bg-accent-soft" : "hover:bg-hover"}`}>
                   {selectionEnabled ? (
-                    <td className="px-3 py-2">
-                      <input type="checkbox" aria-label={`Select row ${String(id)}`} checked={selectedSet.has(id)} onChange={(event) => changeRow(id, event.target.checked)} />
+                    <td role="cell" className="block px-3 py-2 md:table-cell">
+                      <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" aria-label={`Select row ${String(id)}`} checked={selectedSet.has(id)} onChange={(event) => changeRow(id, event.target.checked)} /></label>
                     </td>
                   ) : null}
                   {visibleColumns.map((column) => (
-                    <td key={column.key} className={`${cellPadding} text-ink ${column.className ?? ""}`}>
+                    <td role="cell" key={column.key} className={`${cellPadding} block min-w-0 break-words text-ink md:table-cell ${column.key === "actions" ? "[&_button]:min-h-11 [&_button]:min-w-11 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:items-center" : ""} ${column.className ?? ""}`}>
+                      {/* Generated labels avoid duplicating cell text or controls during CSS reflow. */}
+                      {columnLabels.get(column.key) ? <span aria-hidden="true" data-label={columnLabels.get(column.key)} className="mb-1 block text-xs text-muted before:content-[attr(data-label)] md:hidden" /> : null}
                       {column.render ? column.render(row) : String(getCellValue(row, column.key) ?? "")}
                     </td>
                   ))}
@@ -158,4 +162,11 @@ function compareValues(left: unknown, right: unknown, direction: "asc" | "desc")
   if (right == null) return 1 * order;
   if (typeof left === "number" && typeof right === "number") return (left - right) * order;
   return String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: "base" }) * order;
+}
+
+function headerText(header: ReactNode): string {
+  if (typeof header === "string" || typeof header === "number") return String(header);
+  if (Array.isArray(header)) return header.map(headerText).join("");
+  if (isValidElement<{ children?: ReactNode }>(header)) return headerText(header.props.children);
+  return "";
 }

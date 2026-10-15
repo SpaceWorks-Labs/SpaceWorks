@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
 
-type FilterBarProps = {
+export type FilterBarProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -27,7 +27,7 @@ export function FilterBar({
       </label>
       <input
         id={searchId}
-        className="desk-input min-w-0 flex-1"
+        className="desk-input min-w-0 flex-1 bg-sidebar dark:bg-surface"
         type="search"
         value={value}
         placeholder={placeholder}

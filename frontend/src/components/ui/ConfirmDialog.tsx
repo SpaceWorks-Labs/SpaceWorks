@@ -1,6 +1,6 @@
 import { Modal } from "./Modal";
 
-type ConfirmDialogProps = {
+export type ConfirmDialogProps = {
   open: boolean;
   title: string;
   message: string;
@@ -34,7 +34,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </button>
           <button
-            className={tone === "danger" ? "desk-button-danger" : "desk-button"}
+            className={tone === "danger" ? "desk-button-danger" : "desk-button-primary"}
             type="button"
             disabled={pending}
             onClick={onConfirm}
@@ -44,7 +44,7 @@ export function ConfirmDialog({
         </div>
       )}
     >
-      <p className="text-sm text-muted">{message}</p>
+      <p className={tone === "danger" ? "rounded-control border border-danger-line bg-panel p-4 text-sm text-danger" : "text-sm text-muted"}>{message}</p>
     </Modal>
   );
 }

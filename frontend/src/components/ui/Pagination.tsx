@@ -1,4 +1,4 @@
-type PaginationProps = {
+export type PaginationProps = {
   page: number;
   totalPages: number;
   onChange: (page: number) => void;
@@ -23,7 +23,7 @@ export function Pagination({ page, totalPages, onChange, count, pageSize, disabl
       : null;
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted">
+    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted">
       {rangeLabel ? <span className="mr-auto">{rangeLabel}</span> : null}
       <button
         className="desk-button"
@@ -44,6 +44,6 @@ export function Pagination({ page, totalPages, onChange, count, pageSize, disabl
       >
         Next
       </button>
-    </div>
+    </nav>
   );
 }

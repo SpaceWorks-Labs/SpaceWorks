@@ -1,4 +1,4 @@
-import { Badge } from "./Badge";
+import { StatusPill } from "./StatusPill";
 
 export type StatusBadgeTone = "success" | "warn" | "info" | "accent" | "emphasis" | "danger" | "neutral";
 
@@ -16,7 +16,7 @@ export const statusToneMap: Record<string, StatusBadgeTone> = {
   rendering: "info", active: "success", revoked: "neutral",
 };
 
-type StatusBadgeProps = {
+export type StatusBadgeProps = {
   status: string;
   domain?: "event" | "service";
   label?: string;
@@ -29,5 +29,5 @@ export function StatusBadge({ status, label, domain }: StatusBadgeProps) {
   const tone = domain === "event" && normalized === "cancelled" ? "danger"
     : domain === "service" && normalized === "completed" ? "success"
     : statusToneMap[normalized] ?? "neutral";
-  return <Badge tone={tone}>{display}</Badge>;
+  return <StatusPill tone={tone} label={display} />;
 }

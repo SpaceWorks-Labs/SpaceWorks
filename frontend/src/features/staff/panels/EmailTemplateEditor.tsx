@@ -151,9 +151,9 @@ export function EmailTemplateEditor({
     <label className="grid gap-2 text-sm font-semibold">Subject
       <input ref={subjectRef} className="desk-input" value={draft.subject} onFocus={() => setLastFocused("subject")} onChange={event => setDraft({ ...draft, subject: event.target.value })} /></label>
     <label className="grid gap-2 text-sm font-semibold">Plain text body
-      <textarea ref={textRef} className="desk-input min-h-48 text-sm" value={draft.text_body} onFocus={() => setLastFocused("text_body")} onChange={event => setDraft({ ...draft, text_body: event.target.value })} /></label>
+      <textarea ref={textRef} className="desk-input min-h-48 text-base md:text-sm" value={draft.text_body} onFocus={() => setLastFocused("text_body")} onChange={event => setDraft({ ...draft, text_body: event.target.value })} /></label>
     <label className="grid gap-2 text-sm font-semibold">HTML body
-      <textarea ref={htmlRef} className="desk-input min-h-56 text-sm" value={draft.html_body} onFocus={() => setLastFocused("html_body")} onChange={event => setDraft({ ...draft, html_body: event.target.value })} /></label>
+      <textarea ref={htmlRef} className="desk-input min-h-56 text-base md:text-sm" value={draft.html_body} onFocus={() => setLastFocused("html_body")} onChange={event => setDraft({ ...draft, html_body: event.target.value })} /></label>
   </div>;
   return <>
     <DetailLayout title={detail.data?.label ?? "Email template"} back={onBack ? { label: "All templates", onClick: onBack } : undefined}

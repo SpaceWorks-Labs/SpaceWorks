@@ -48,7 +48,7 @@ export function RoleManager({ msId, actorActions, isSuperadmin, onRolesChanged }
             <ListRow key={role.id} title={role.name} identity={{ kind: "icon", icon: "User", tone: "accent" }}
               meta={<><span>{role.granted_actions.length} actions · {role.member_count} staff</span><br />{role.granted_actions.map(action => labels.get(action) ?? action).join(", ") || "No capabilities"}</>}
               onClick={() => { setDeleteError(""); setEditing(role); }}
-              right={<div className="flex items-center gap-3"><StatusPill label={role.is_default ? "Default" : "Custom"} />{role.is_protected ? <StatusPill label="Protected" /> : null}
+              right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={role.is_default ? "Default" : "Custom"} />{role.is_protected ? <StatusPill label="Protected" /> : null}
                 <OverflowMenu label={`Actions for ${role.name}`} actions={[{ label: "Edit", onClick: () => { setDeleteError(""); setEditing(role); } },
                   { label: "Delete", tone: "danger", disabled: role.is_protected || role.member_count > 0 || remove.isPending, disabledReason: role.is_protected ? "Default roles are protected." : role.member_count > 0 ? "Reassign all staff before deleting this role." : remove.isPending ? "Wait for the current role deletion." : undefined, onClick: () => setPendingDelete(role) }]} /></div>} />
           ))}

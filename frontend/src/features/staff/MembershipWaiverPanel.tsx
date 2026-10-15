@@ -27,7 +27,7 @@ function WaiverForm({ makerspaceId, current }: { makerspaceId: number; current: 
     {!current.has_waiver ? <p className="text-sm text-muted">No active waiver.</p> : <p className="text-sm text-muted">Publishing a new version requires members to accept it again. Choose a new version label.</p>}
     <Field label="Waiver version"><input className="desk-input" maxLength={64} value={version} onChange={(event) => setVersion(event.target.value)} /></Field>
     <Field label="Waiver text"><textarea className="desk-input min-h-28" value={body} onChange={(event) => setBody(event.target.value)} /></Field>
-    <div className="flex gap-2"><button className="desk-button-primary" disabled={!version.trim() || !body.trim() || save.isPending || version.trim() === current.version} onClick={() => save.mutate(false)}>{save.isPending ? "Saving…" : "Publish waiver"}</button>
+    <div className="flex flex-wrap gap-2"><button className="desk-button-primary" disabled={!version.trim() || !body.trim() || save.isPending || version.trim() === current.version} onClick={() => save.mutate(false)}>{save.isPending ? "Saving…" : "Publish waiver"}</button>
       {current.has_waiver ? <button className="desk-button" disabled={save.isPending} onClick={() => save.mutate(true)}>Deactivate waiver</button> : null}</div>
     {save.isError ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
   </div>;

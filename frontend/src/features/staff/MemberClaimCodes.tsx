@@ -117,7 +117,7 @@ export function MemberClaimCodes({
             </p>
           </div>
           <img
-            className="aspect-square w-full rounded-md border border-line bg-panel p-2"
+            className="mx-auto aspect-square w-full max-w-64 rounded-md border border-line bg-panel p-2"
             src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(issued.qr_svg)}`}
             alt={`Claim code QR for ${issued.member_display_name}`}
           />

@@ -57,11 +57,11 @@ export function OrganizationInvitations({ organization }: { organization: Organi
       {invitations.data?.results.length ? <div className="mt-5 grid gap-3">{invitations.data.results.map(invitation => <ListRow key={invitation.id}
         title={`Invitation #${invitation.id}`} identity={{ kind: "icon", icon: "User", tone: "accent" }}
         meta={<>Expires <RelativeTime date={invitation.expires_at} /></>}
-        right={<div className="flex items-center gap-3"><StatusPill label={invitation.state} tone={invitation.state === "active" ? "success" : "neutral"} />
+        right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={invitation.state} tone={invitation.state === "active" ? "success" : "neutral"} />
           {invitation.state === "active" ? <ActionControl action={{ label: "Revoke", tone: "danger", disabled: revoke.isPending, disabledReason: "Wait for the current revoke.",
             confirm: { title: "Revoke invitation?", message: "The link stops working for good. Create a new invitation if they still need to join.", confirmLabel: "Revoke" },
             onClick: () => revoke.mutate(invitation.id) }} /> : null}</div>} />)}</div> : null}
-      {invitations.data ? <div className="mt-3 flex items-center justify-between gap-3"><button className="desk-button" type="button" disabled={!invitations.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><span className="tabular-nums text-xs text-muted">Page {page}</span><button className="desk-button" type="button" disabled={!invitations.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div> : null}
+      {invitations.data ? <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><button className="desk-button" type="button" disabled={!invitations.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><span className="tabular-nums text-xs text-muted">Page {page}</span><button className="desk-button" type="button" disabled={!invitations.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div> : null}
     </section>
   );
 }

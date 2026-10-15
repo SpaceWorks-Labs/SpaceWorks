@@ -37,7 +37,7 @@ export function IssueRoster({
         right={<div className="flex flex-wrap items-center gap-3">
           {row.status ? <Badge tone={row.status === "active" ? "success" : "warn"}>{opsStatusLabel(row.status)}</Badge> : null}
           <label className="sr-only" htmlFor={"printed-name-" + row.id}>Printed name for {memberLabel(row)}</label>
-          <input id={"printed-name-" + row.id} className="desk-input sm:w-56" placeholder="Printed name (optional)"
+          <input id={"printed-name-" + row.id} className="desk-input w-full sm:w-56" placeholder="Printed name (optional)"
             value={names[row.id] ?? ""} onChange={event => setNames({ ...names, [row.id]: event.target.value })} />
           <button className="desk-button" type="button" disabled={issue.isPending}
             onClick={() => issue.mutate({ membershipId: row.id, printedName: names[row.id]?.trim() || undefined })}>

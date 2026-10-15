@@ -31,7 +31,7 @@ export function MemberRow({ makerspaceId, member, roles, canManageMakerspace, ca
   const manageable = canManageMakerspace || roles.some((role) => role.id === member.assigned_role?.id);
   const displayName = member.user.display_name || member.user.username || "Member";
   return <><ListRow title={displayName} identity={{ kind: "avatar", name: displayName, seed: String(member.user.id) }} onClick={() => setOpen(true)}
-    meta={<>{member.user.email || member.user.username} · {member.assigned_role?.name ?? "Member"} · Waiver {member.waiver_required ? (member.waiver_current ? "current" : "needed") : "not required"}</>}
+    meta={<><span className="[overflow-wrap:anywhere]">{member.user.email || member.user.username}</span> · {member.assigned_role?.name ?? "Member"} · Waiver {member.waiver_required ? (member.waiver_current ? "current" : "needed") : "not required"}</>}
     right={<div className="flex flex-wrap items-center gap-2">
       <StatusPill label={member.status ?? "Unknown"} tone={active ? "success" : "neutral"} />
       {membershipEnabled ? <StatusPill tone={member.verified_at ? "success" : "neutral"} label={member.verified_at ? "Verified" : "Not verified"} /> : null}

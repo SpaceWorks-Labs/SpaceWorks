@@ -26,8 +26,8 @@ export function StaffInvitations({ msId, roles }: { msId: number; roles: StaffRo
   return <section className="grid gap-4 rounded border border-line p-4">
     <h2 className="text-lg font-semibold">Staff invitations</h2>
     <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
-      <label>Email<input className="desk-input block" type="email" value={email} required onChange={(event) => setEmail(event.target.value)} /></label>
-      <label>Role<select className="desk-input block" value={roleId} required onChange={(event) => setRoleId(event.target.value)}>
+      <label className="grid min-w-0 flex-1 basis-56 gap-1">Email<input className="desk-input w-full" type="email" value={email} required onChange={(event) => setEmail(event.target.value)} /></label>
+      <label className="grid min-w-0 flex-1 basis-48 gap-1">Role<select className="desk-input w-full" value={roleId} required onChange={(event) => setRoleId(event.target.value)}>
         <option value="">Choose a role</option>{staffRoles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
       </select></label>
       <button className="desk-button-primary" disabled={create.isPending || !staffRoles.length}>Invite staff</button>
@@ -44,7 +44,7 @@ export function StaffInvitations({ msId, roles }: { msId: number; roles: StaffRo
       right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={invitationState(row)} tone={row.accepted_at ? "success" : row.revoked_at || isExpired(row) ? "neutral" : "accent"} />
       {!row.accepted_at && !row.revoked_at ? <><button className="desk-button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, action: "resend" })}>Resend</button>
         <OverflowMenu label={`Actions for ${row.email}`} actions={[{ label: "Revoke", tone: "danger", disabled: update.isPending, disabledReason: update.isPending ? "Wait for the current invitation update." : undefined, confirm: { title: "Revoke invitation?", message: `The link sent to ${row.email} stops working. Send a new invitation if they still need access.`, confirmLabel: "Revoke" }, onClick: () => update.mutate({ id: row.id, action: "revoke" }) }]} /></> : null}</div>} />)}</div>
-    <div className="flex gap-3"><button className="desk-button" disabled={!list.data?.previous} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!list.data?.next} onClick={() => setPage(page + 1)}>Next</button></div>
+    <div className="flex flex-wrap gap-3"><button className="desk-button" disabled={!list.data?.previous} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!list.data?.next} onClick={() => setPage(page + 1)}>Next</button></div>
   </section>;
 }
 

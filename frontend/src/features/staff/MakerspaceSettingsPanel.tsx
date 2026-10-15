@@ -1,7 +1,7 @@
 import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { useState } from "react";
 import { SettingsLayout, type SettingsLayoutSection } from "../../components/layouts";
-import { SettingsSectionJump } from "./SettingsSectionJump";
+import { PHONE_HIDES_SETTINGS_NAV, SettingsSectionJump } from "./SettingsSectionJump";
 import { ApiClientsTelegramSettings } from "./ApiClientsTelegramSettings";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MakerspaceArchiveRequest } from "../../generated/api";
@@ -203,11 +203,11 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
         loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a
         failure is reported here instead of hiding payments, notifications and the rest.
         Phones swap the eleven-chip section strip for one select (see SettingsSectionJump). */}
-    <div className="max-md:[&_.sw-settings-nav]:hidden">
+    <div className={PHONE_HIDES_SETTINGS_NAV}>
     <SettingsLayout header={{ title: "Makerspace settings", subtitle: "Make this space work for your community.",
       meta: <>{settings.error ? <ErrorBlock className="w-full" onRetry={() => { void settings.refetch(); }}
         error={new Error(`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)} /> : null}
-        <SettingsSectionJump sections={sections.map(section => ({ id: section.id, title: section.title ?? section.id }))} /></>,
+        <SettingsSectionJump sections={sections} /></>,
       primary: { label: "View public site", href: `/m/${makerspace.slug}` } }}
       state={{ status: "ready" }}
       subnav="auto" sections={sections} danger={canManageMakerspace ? [{ title: "Archive this makerspace",

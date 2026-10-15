@@ -72,11 +72,11 @@ export function PlatformEmailPanel({ embedded = false }: { embedded?: boolean })
       onDiscard: () => { setForm(savedForm); save.reset(); }, onSave: () => save.mutate() }}>
     <StatusPill label={settings.data?.smtp_host.trim() ? "SMTP host configured" : "Not configured"} tone={settings.data?.smtp_host.trim() ? "success" : "neutral"} />
     <div className="divide-y divide-line">
-          <SettingsRow label="SMTP host"><input aria-label="SMTP host" className="desk-input" disabled={formDisabled} value={form.smtp_host} onChange={(event) => setForm({ ...form, smtp_host: event.target.value })} /></SettingsRow>
-          <SettingsRow label="SMTP port"><input aria-label="SMTP port" className="desk-input" disabled={formDisabled} inputMode="numeric" value={form.smtp_port} onChange={(event) => setForm({ ...form, smtp_port: event.target.value })} /></SettingsRow>
-          <SettingsRow label="SMTP username"><input aria-label="SMTP username" className="desk-input" disabled={formDisabled} value={form.smtp_username} onChange={(event) => setForm({ ...form, smtp_username: event.target.value })} /></SettingsRow>
-          <SettingsRow label="SMTP password"><input aria-label="SMTP password" className="desk-input" disabled={formDisabled} placeholder={settings.data?.smtp_password_set ? "SMTP password set" : undefined} type="password" value={form.smtp_password} onChange={(event) => setForm({ ...form, smtp_password: event.target.value })} /></SettingsRow>
-          <SettingsRow label="From email"><input aria-label="From email" className="desk-input sm:col-span-2" disabled={formDisabled} value={form.from_email} onChange={(event) => setForm({ ...form, from_email: event.target.value })} /></SettingsRow>
+          <SettingsRow label="SMTP host"><input aria-label="SMTP host" className="desk-input w-full" disabled={formDisabled} value={form.smtp_host} onChange={(event) => setForm({ ...form, smtp_host: event.target.value })} /></SettingsRow>
+          <SettingsRow label="SMTP port"><input aria-label="SMTP port" className="desk-input w-full" disabled={formDisabled} inputMode="numeric" value={form.smtp_port} onChange={(event) => setForm({ ...form, smtp_port: event.target.value })} /></SettingsRow>
+          <SettingsRow label="SMTP username"><input aria-label="SMTP username" className="desk-input w-full" disabled={formDisabled} value={form.smtp_username} onChange={(event) => setForm({ ...form, smtp_username: event.target.value })} /></SettingsRow>
+          <SettingsRow label="SMTP password"><input aria-label="SMTP password" className="desk-input w-full" disabled={formDisabled} placeholder={settings.data?.smtp_password_set ? "SMTP password set" : undefined} type="password" value={form.smtp_password} onChange={(event) => setForm({ ...form, smtp_password: event.target.value })} /></SettingsRow>
+          <SettingsRow label="From email"><input aria-label="From email" className="desk-input w-full" disabled={formDisabled} value={form.from_email} onChange={(event) => setForm({ ...form, from_email: event.target.value })} /></SettingsRow>
         <div className="flex flex-wrap gap-4">
           <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
             <input

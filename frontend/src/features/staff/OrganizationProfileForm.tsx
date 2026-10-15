@@ -54,7 +54,7 @@ export function OrganizationProfileForm({ organization }: { organization: Organi
           <input type="checkbox" disabled={!allowed} checked={values.public_profile_enabled} onChange={(event) => setValues({ ...values, public_profile_enabled: event.target.checked })} />
           Publish this organization profile and its eligible event catalogue
         </label></SettingsRow>
-      {allowed && dirty ? <div className="sticky bottom-0 z-10 bg-panel"><SettingsActions onDiscard={() => setValues(original)} onSave={() => (document.getElementById("organization-name")?.closest("form") as HTMLFormElement)?.requestSubmit()} pending={update.isPending} /></div> : !allowed ? <p className="mt-4 text-sm text-muted">You have view-only access to this profile.</p> : null}
+      {allowed && dirty ? <div className="sticky bottom-0 z-10 bg-panel pb-[env(safe-area-inset-bottom)]"><SettingsActions onDiscard={() => setValues(original)} onSave={() => (document.getElementById("organization-name")?.closest("form") as HTMLFormElement)?.requestSubmit()} pending={update.isPending} /></div> : !allowed ? <p className="mt-4 text-sm text-muted">You have view-only access to this profile.</p> : null}
       {update.error ? <p className="mt-2 text-sm text-danger" role="alert">{update.error.message}</p> : null}
     </form>
   );

@@ -129,7 +129,7 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
-    "apps.integrations.broadcasts_worker.resume_broadcasts": "Recover durable campaigns and outboxes only inside each tenant's source gate.",
+    "apps.integrations.broadcasts_worker.recover_for_tenants": "Recover durable campaigns and outboxes only inside each tenant's source gate.",
     "apps.data_export.subject_tasks.sweep_subject_exports_task": "Personal export recovery gates each tenant.",
     "apps.makerspaces.membership_admission_payments.sweep_admissions": (
         "Admission expiry and settlement retries use separate skip-and-count tenant boundaries."

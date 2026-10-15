@@ -11,6 +11,7 @@ ENTRIES = (
     P("event.audience_updated", "Event audience updated"),
     P("event.badge_template_updated", "Event badge template updated"),
     P("event.badges_generated", "Event badges generated"),
+    P("event.broadcast.created", "Event broadcast created"),
     P("event.calendar_feed_created", "Event calendar feed created"),
     P("event.calendar_feed_revoked", "Event calendar feed revoked"),
     P("event.calendar_feed_rotated", "Event calendar feed rotated"),
@@ -29,6 +30,7 @@ ENTRIES = (
     P("event.host_waiver_accepted", "Event host waiver accepted"),
     P("event.image_removed", "Event image removed"),
     P("event.image_updated", "Event image updated"),
+    P("event.invitations_added", "Event invitations added"),
     P("event.organizers_updated", "Event organizers updated"),
     P("event.registration_calendar_downloaded", "Event registration calendar downloaded"),
     P("event.series_audience_updated", "Event series audience updated"),
@@ -70,4 +72,6 @@ ENTRIES = (
     P("presence.ended_membership_revoked", "Presence ended membership revoked"),
     P("presence.started", "Presence started"),
     P("presence.superseded", "Presence superseded"),
+    P("report.downloaded", "Report downloaded"),
+    P("report.previewed", "Report previewed"),
 )

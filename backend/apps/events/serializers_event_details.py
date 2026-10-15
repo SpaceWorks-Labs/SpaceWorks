@@ -101,7 +101,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.BooleanField())
     def get_broadcasts_enabled(self, obj):
-        return feature_enabled(obj.makerspace, "events.broadcasts")
+        return self._feature_enabled(obj, "events.broadcasts")
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_report_features(self, obj):
@@ -109,10 +109,17 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
         from apps.makerspaces.platform import module_enabled
         from . import event_authority
         actor = getattr(self.context.get("request"), "user", None)
-        if not module_enabled(obj.makerspace, "reports") or not event_authority._active(actor):
+        if not event_authority._active(actor):
             return []
         manager, permissions = self._authority(obj)
         if "manage_registrations" not in permissions:
+            return []
+        # Capability checks consult live restoration state. Cache them only for
+        # this response, so a list checks each tenant rather than each event.
+        modules = self.context.setdefault("event_report_modules", {})
+        if obj.makerspace_id not in modules:
+            modules[obj.makerspace_id] = module_enabled(obj.makerspace, "reports")
+        if not modules[obj.makerspace_id]:
             return []
         audit = self.context.setdefault("event_report_audit", {})
         if obj.makerspace_id not in audit:
@@ -120,9 +127,9 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
         if not audit[obj.makerspace_id]:
             return []
         keys = ["analytics"]
-        if feature_enabled(obj.makerspace, "reports.event_exports"):
+        if self._feature_enabled(obj, "reports.event_exports"):
             keys.append("exports")
-        if feature_enabled(obj.makerspace, "reports.event_pdf") and manager:
+        if manager and self._feature_enabled(obj, "reports.event_pdf"):
             keys.append("pdf")
         return keys
 

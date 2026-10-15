@@ -20,6 +20,8 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("events.Event", "tags"),
         ("events.Event", "badge_template"),
         ("events.Event", "series_override_fields"),
+        # Registration status enum labels filter recipients; no account identifiers.
+        ("events.EventBroadcast", "statuses"),
         ("events.EventSeries", "custom_form"),
         ("events.EventRegistration", "custom_answers"),
         ("events.EventFeedbackSurvey", "questions"),

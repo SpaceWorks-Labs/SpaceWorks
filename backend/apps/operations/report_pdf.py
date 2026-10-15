@@ -6,7 +6,6 @@ from xml.sax.saxutils import escape
 
 
 def render_pdf(rows, *, provenance, title):
-    import reportlab
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
@@ -14,10 +13,12 @@ def render_pdf(rows, *, provenance, title):
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, LongTable, TableStyle
 
-    fonts = Path(reportlab.__file__).parent / "fonts"
-    if "ReportVera" not in pdfmetrics.getRegisteredFontNames():
-        pdfmetrics.registerFont(TTFont("ReportVera", str(fonts / "Vera.ttf")))
-    style = ParagraphStyle("report", fontName="ReportVera", fontSize=9, leading=13, wordWrap="CJK")
+    # Bundle the font so Unicode coverage is independent of the host's fonts.
+    # ReportLab's Vera lacks Greek glyphs and silently renders them as .notdef.
+    fonts = Path(__file__).parent / "fonts"
+    if "ReportRoboto" not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(TTFont("ReportRoboto", str(fonts / "RobotoStatic-Regular.ttf")))
+    style = ParagraphStyle("report", fontName="ReportRoboto", fontSize=9, leading=13, wordWrap="CJK")
     def paragraph(value):
         return Paragraph(escape(str(value if value is not None else "")), style)
     buffer = BytesIO()
@@ -37,7 +38,7 @@ def render_pdf(rows, *, provenance, title):
                                    ("LINEBELOW", (0, 0), (-1, -1), .3, colors.HexColor("#d7dce2"))]))
         story.append(table)
     def footer(canvas, document):
-        canvas.setFont("ReportVera", 8)
+        canvas.setFont("ReportRoboto", 8)
         canvas.drawRightString(A4[0] - 40, 22, f"Page {document.page}")
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return buffer.getvalue()

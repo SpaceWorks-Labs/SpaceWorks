@@ -220,21 +220,21 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
     <div
       ref={layerRef}
       inert={!amTop}
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4"
+      className="sw-camera-layer fixed inset-0 z-[100] flex items-end justify-center bg-ink/70 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4"
       onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}
     >
-      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="flex max-h-full w-full max-w-lg flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-overlay outline-none sm:max-h-[90dvh] sm:rounded-lg sm:pb-4">
+      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="sw-camera-panel sw-camera flex max-h-full w-full max-w-lg flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-overlay outline-none sm:max-h-[90dvh] sm:rounded-lg sm:pb-4">
         <h2 id={titleId} className="text-lg font-semibold text-ink">{title}</h2>
         <div aria-live="assertive" aria-atomic="true">
           {error ? <p className="text-sm text-danger">{error}</p> : null}
         </div>
-        <div className={captured ? "hidden" : "relative"}>
-          <video ref={videoRef} className="max-h-[60dvh] w-full rounded-md bg-black object-contain" autoPlay playsInline muted onLoadedMetadata={updateReady} onCanPlay={updateReady} />
-          {!ready && !error ? <p className="absolute inset-0 grid place-items-center text-sm text-white">Starting camera...</p> : null}
+        <div className={`sw-camera-media ${captured ? "hidden" : "relative"}`}>
+          <video ref={videoRef} className="max-h-[60dvh] w-full rounded-md bg-surface object-contain" autoPlay playsInline muted onLoadedMetadata={updateReady} onCanPlay={updateReady} />
+          {!ready && !error ? <p className="absolute inset-0 grid place-items-center text-sm text-ink">Starting camera...</p> : null}
         </div>
         {captured ? (
           <>
-            <img src={captured.preview} alt="Captured photo preview" className="max-h-[60dvh] w-full rounded-md bg-black object-contain" />
+            <img src={captured.preview} alt="Captured photo preview" className="sw-camera-media max-h-[60dvh] w-full rounded-md bg-surface object-contain" />
             <div className="grid gap-2 sm:grid-cols-2">
               <button className="desk-button min-h-11" type="button" onClick={() => { setCaptured(null); setError(""); }}>
                 Retake

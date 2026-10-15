@@ -34,7 +34,7 @@ export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a Q
   return <section aria-label="Scan workbench" className="grid min-w-0 gap-6">
     <div className="grid min-w-0 gap-6 xl:grid-cols-2">
       <div className="grid min-w-0 content-start gap-3">
-        <div className="relative grid min-h-60 place-items-center overflow-hidden rounded-xl border border-outline bg-surface p-8 text-ink">
+        <div className="relative grid min-h-40 place-items-center overflow-hidden rounded-xl border border-outline bg-surface p-6 text-ink md:min-h-60 md:p-8">
           <div aria-hidden="true" className="pointer-events-none absolute inset-6 rounded-xl border-2 border-dashed border-outline" />
           <div className="relative grid justify-items-center gap-3 text-center"><Icon name="Search" className="h-16 w-16" />
             <p>Camera is off</p><p className="text-sm text-muted">{cameraLabel}</p></div>
@@ -42,7 +42,8 @@ export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a Q
         <ActionControl primary action={{ label: "Start scanning", onClick: () => setCameraOpen(true), disabled: blocked,
           disabledReason: blocked ? "Wait until the scanner is ready." : undefined }} className="w-full" />
       </div>
-      <div className="grid min-w-0 content-start gap-4">
+      {/* Phones: a result (and its Confirm) comes before the camera card instead of below the fold. */}
+      <div className={`grid min-w-0 content-start gap-4 ${result ? "max-md:order-first" : ""}`}>
         <form className="flex min-w-0 flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); if (value.trim() && !blocked) onFind(value.trim()); }}>
           <Field label={searchLabel} hint={helper} className="min-w-0 flex-1 basis-48"><input className="desk-input w-full" type="search"
             value={value} onChange={event => setValue(event.target.value)} disabled={blocked} /></Field>

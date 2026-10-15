@@ -10,6 +10,7 @@ import {
   trapDialogFocus,
 } from "./dialogFocus";
 import { revealFieldAboveKeyboard } from "./keyboardSafe";
+import { X } from "lucide-react";
 
 export type ModalProps = {
   open: boolean;
@@ -105,9 +106,9 @@ export function Modal({
         aria-modal={amTop ? "true" : undefined}
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`desk-panel shadow-overlay flex max-h-full w-full ${maxWidthClass} flex-col overflow-hidden rounded-b-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-xl`}
+        className={`desk-panel shadow-overlay relative flex max-h-full w-full ${maxWidthClass} flex-col overflow-hidden rounded-b-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-xl`}
       >
-        <div className="shrink-0 border-b border-line px-[max(1.25rem,env(safe-area-inset-left))] py-4 sm:px-5">
+        <div className="shrink-0 border-b border-line py-4 pr-16 pl-[max(1.25rem,env(safe-area-inset-left))] sm:px-5">
           <h2 id={titleId} className="title-panel break-words">
             {title}
           </h2>
@@ -115,6 +116,9 @@ export function Modal({
         <div className={`desk-panel-body min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain p-5 ${footer ? "" : "pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5"}`}
           onFocus={revealFieldAboveKeyboard}>{children}</div>
         {footer ? <div className="shrink-0 border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">{footer}</div> : null}
+        {/* Phones get a visible close in the sheet's corner. Last in the DOM so the first field still takes initial focus. */}
+        <button type="button" aria-label="Close dialog" onClick={onClose}
+          className="desk-button-ghost absolute top-2.5 right-2.5 min-h-11 min-w-11 px-2 sm:hidden"><X aria-hidden="true" size={20} /></button>
       </div>
     </div>
   );

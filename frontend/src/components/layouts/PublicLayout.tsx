@@ -44,7 +44,7 @@ export function PublicLayout({ makerspace, nav, headerAction, liveStatus, width 
         <RouteLink href="/" className="inline-flex items-center gap-2 rounded-control text-sm text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
           <SpaceWorksLogo variant="symbol" size={48} decorative /><span>{footer.credit ?? "Powered by Space Works"}</span>
         </RouteLink>
-        <nav aria-label="Footer" className="flex flex-wrap gap-2">{footer.links.map(link => <ActionControl key={link.label} action={link} />)}</nav>
+        <nav aria-label="Footer" className="flex min-w-0 flex-wrap gap-2">{footer.links.map(link => <ActionControl key={link.label} action={link} className="max-w-full [overflow-wrap:anywhere]" />)}</nav>
       </div>
     </footer>
   </div>;

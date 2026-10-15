@@ -50,7 +50,7 @@ export function AppShell(props: AppShellProps) {
     <div className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-line lg:flex"><Sidebar {...shellProps} /></div>
     <div className="min-w-0 lg:ml-[264px]">
       <MobileTopBar {...shellProps} unread={unread} onMenu={openNavigation} />
-      <main id="main-content" tabIndex={-1} className={`min-w-0 pt-5 pr-[max(1.25rem,env(safe-area-inset-right))] pb-[calc(2rem+var(--shell-bottom-tabs,0px))] pl-[max(1.25rem,env(safe-area-inset-left))] md:pt-7 lg:p-9 ${focusRing}`}>
+      <main id="main-content" tabIndex={-1} className={`min-w-0 pt-5 pr-[max(1.25rem,env(safe-area-inset-right))] pb-[calc(2rem+var(--shell-bottom-offset,0px))] pl-[max(1.25rem,env(safe-area-inset-left))] md:pt-7 lg:p-9 ${focusRing}`}>
         <div className="mx-auto w-full min-w-0 max-w-[1600px]"><ContentTarget.Provider value={true}>{children}</ContentTarget.Provider></div>
       </main>
     </div>

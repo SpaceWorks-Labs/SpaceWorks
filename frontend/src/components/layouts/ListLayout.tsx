@@ -33,7 +33,7 @@ export function ListLayout({ header, callout, stats = [], tabs, activeTab, onTab
       <QueryContent {...query} empty={hasFilters && filteredEmpty ? filteredEmpty : empty}>
         <div className={rail ? "sw-columns" : "min-w-0"}>
           <div className={`grid min-w-0 content-start gap-6 ${bulkBar?.count ? "pb-28 md:pb-0" : ""}`}>
-            {bulkBar?.count ? <div className="fixed inset-x-[max(1rem,env(safe-area-inset-left))] bottom-[calc(var(--shell-bottom-tabs,0px)+var(--shell-safe-bottom,env(safe-area-inset-bottom))+1rem)] z-20 md:static">
+            {bulkBar?.count ? <div className="fixed inset-x-[max(1rem,env(safe-area-inset-left))] bottom-[calc(var(--shell-bottom-offset,0px)+var(--shell-safe-bottom,env(safe-area-inset-bottom))+1rem)] z-20 md:static">
               <BulkActionToolbar selectedCount={bulkBar.count} onClear={bulkBar.onClear}
                 actions={<>{bulkBar.primary ? <ActionControl action={bulkBar.primary} primary /> : null}{bulkBar.actions.map(action => <ActionControl key={action.label} action={action} />)}</>} />
             </div> : null}

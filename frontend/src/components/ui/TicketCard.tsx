@@ -16,7 +16,7 @@ export function TicketCard({ organisation, title, fields, qr, caption }: TicketC
       <span className="absolute -right-2 -top-2 h-4 w-4 rounded-full border border-line bg-bg" />
     </div>
     <div className="flex flex-col items-center gap-4 p-5">
-      <div className="h-[172px] w-[172px] [&>svg]:h-full [&>svg]:w-full [&>img]:h-full [&>img]:w-full">{qr}</div>
+      <div className="aspect-square w-full max-w-[min(100%,18rem)] [&>svg]:h-full [&>svg]:w-full [&>img]:h-full [&>img]:w-full">{qr}</div>
       <p className="text-center text-sm text-muted">{caption}</p>
     </div>
   </article>;

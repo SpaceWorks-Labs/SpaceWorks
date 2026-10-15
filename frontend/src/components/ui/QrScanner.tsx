@@ -215,28 +215,29 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   };
 
   return createPortal(
-    <div ref={layerRef} inert={!amTop} className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
-      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="flex max-h-full w-full max-w-lg flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-overlay outline-none sm:max-h-[90dvh] sm:rounded-lg sm:pb-4">
+    <div ref={layerRef} inert={!amTop} className="sw-camera-layer fixed inset-0 z-[100] flex items-stretch justify-center bg-ink/70 sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="sw-camera-panel flex h-dvh w-full flex-col gap-3 overflow-y-auto overscroll-contain bg-panel pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] shadow-overlay outline-none sm:h-auto sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg sm:border sm:border-line sm:p-4">
         <h2 id={titleId} className="sr-only">QR scanner</h2>
         {error ? (
-          <div className="grid gap-3">
+          <div className="my-auto grid gap-3 sm:my-0">
             <p className="text-sm text-danger">{error}</p>
             <button className="desk-button w-full" type="button" onClick={close}>
               Close
             </button>
           </div>
         ) : (
-          <div className="grid gap-3">
-            <div className="relative">
+          <div className="sw-camera flex min-h-0 flex-1 flex-col gap-3 sm:grid sm:flex-none">
+            {/* Phones: the viewfinder takes the free height (portrait); tablet and up: a 16:9 preview. */}
+            <div className="sw-camera-media relative min-h-0 flex-1 sm:flex-none">
               <video
                 ref={videoRef}
-                className="aspect-square max-h-[60dvh] w-full rounded-md bg-black object-cover sm:aspect-video"
+                className="h-full min-h-[40dvh] w-full rounded-md bg-surface object-cover sm:aspect-video sm:h-auto sm:min-h-0 sm:max-h-[60dvh]"
                 autoPlay
                 muted
                 playsInline
               />
               {!ready ? (
-                <p className="absolute inset-0 grid place-items-center text-sm text-white">Starting camera...</p>
+                <p className="absolute inset-0 grid place-items-center text-sm text-ink">Starting camera...</p>
               ) : null}
             </div>
             <p className="text-center text-sm text-muted">Point the camera at a QR code</p>

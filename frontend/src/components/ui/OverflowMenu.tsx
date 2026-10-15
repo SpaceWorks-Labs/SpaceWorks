@@ -8,6 +8,12 @@ export type OverflowMenuProps = { actions: Action[]; label?: string; className?:
 export function OverflowMenu({ actions, label = "More actions", className = "", mobileActions = [], showLabel = false }: OverflowMenuProps) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState<Action | null>(null);
+  // A trigger near the left edge (a wrapped phone header row) opens its menu rightwards, never off-screen.
+  const [alignStart, setAlignStart] = useState(false);
+  const toggle = (next: boolean) => {
+    if (next) setAlignStart((trigger.current?.getBoundingClientRect().right ?? Infinity) < 272);
+    setOpen(next);
+  };
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -45,14 +51,14 @@ export function OverflowMenu({ actions, label = "More actions", className = "", 
   }}>
     <button ref={trigger} type="button" className="desk-button min-w-11 gap-2"
       aria-label={label} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? id : undefined}
-      onClick={() => { focusLast.current = false; setOpen(!open); }}
+      onClick={() => { focusLast.current = false; toggle(!open); }}
       onKeyDown={event => {
         if (["ArrowDown", "ArrowUp"].includes(event.key)) {
-          event.preventDefault(); focusLast.current = event.key === "ArrowUp"; setOpen(true);
+          event.preventDefault(); focusLast.current = event.key === "ArrowUp"; toggle(true);
         }
       }}>{showLabel ? <>{label}<Icon name="ChevronDown" /></> : <Icon name="Ellipsis" />}</button>
     {open ? <div id={id} ref={menu} role="menu" aria-label={label}
-      className="absolute right-0 z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-panel p-1 shadow-overlay"
+      className={`absolute ${alignStart ? "left-0" : "right-0"} z-30 mt-2 max-h-[min(60dvh,28rem)] w-64 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-1 shadow-overlay`}
       onKeyDown={event => {
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(true); }
         else if (event.key === "Tab") close(true);

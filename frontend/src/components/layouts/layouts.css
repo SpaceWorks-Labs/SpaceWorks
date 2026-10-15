@@ -1,6 +1,6 @@
 /* Geometry only. Colours, controls and type come from the wave-1/2a vocabulary. */
 .sw-layout { width: 100%; min-width: 0; max-width: 1192px; margin-inline: auto; padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
-.sw-layout-wide { max-width: none; }
+.sw-layout-wide { max-width: 1800px; }
 .sw-layout-narrow { max-width: 792px; }
 .sw-layout:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: -2px; }
 .sw-columns, .sw-detail-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns { display: grid; min-width: 0; gap: 24px; }
@@ -19,7 +19,7 @@
 .sw-kiosk-flow :is(button, input, select, a:not(.skip-link), summary) { min-height: 56px; min-width: 56px; font-size: 18px; }
 @media (min-width: 768px) {
   .sw-layout { padding: 32px max(24px, env(safe-area-inset-right)) 32px max(24px, env(safe-area-inset-left)); max-width: 1168px; }
-  .sw-layout-wide { max-width: none; }
+  .sw-layout-wide { max-width: 1800px; }
   .sw-layout-narrow { max-width: 768px; }
   .sw-auth-brand { display: flex; min-height: 120px; }
   .sw-auth { grid-template-rows: auto 1fr; }
@@ -31,7 +31,7 @@
 @media (min-width: 900px) { .sw-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 1280px) {
   .sw-layout { padding: 40px max(36px, env(safe-area-inset-right)) 40px max(36px, env(safe-area-inset-left)); max-width: 1192px; }
-  .sw-layout-wide { max-width: none; }
+  .sw-layout-wide { max-width: 1800px; }
   .sw-layout-narrow { max-width: 792px; }
   .sw-columns { grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; }
   .sw-detail-columns { grid-template-columns: minmax(0, 1fr) 280px; }
@@ -74,7 +74,7 @@
 /* Mobile header action sits above the shell navigation and the device safe area. */
 @media (max-width: 767px) {
   :is(div, main, section):has(> header .sw-sticky-primary) { padding-bottom: calc(96px + var(--shell-safe-bottom, env(safe-area-inset-bottom))); }
-  .sw-sticky-primary { position: fixed; inset-inline: 0; bottom: var(--shell-bottom-tabs, 0px); z-index: 20;
+  .sw-sticky-primary { position: fixed; inset-inline: 0; bottom: var(--shell-bottom-offset, 0px); z-index: 20;
     padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + var(--shell-safe-bottom, env(safe-area-inset-bottom))) max(16px, env(safe-area-inset-left));
     background: rgb(var(--color-panel)); border-top: 1px solid rgb(var(--color-line)); }
 }
@@ -91,3 +91,6 @@
 /* Drawers and dialogs are narrow regardless of the browser width: their column layouts stack. */
 .sw-detail-drawer :is(.sw-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns) { grid-template-columns: minmax(0, 1fr); }
 .sw-detail-drawer .sw-settings-nav { position: static; }
+
+/* A kiosk fills the device: its frame clears the notch, status bar and home indicator. */
+.sw-kiosk > .sw-layout { padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom)); }

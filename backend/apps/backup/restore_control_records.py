@@ -42,6 +42,9 @@ def export_control_record(restore_id, output, decision=None):
 @transaction.atomic
 def rehydrate_control_record(restore_id, options):
     from apps.accounts.models import User
+    from apps.backup.services_access import (
+        invalidate_download_tokens_after_restore as invalidate_archive_download_tokens_after_restore,
+    )
     from apps.data_export.restore_hooks import invalidate_download_tokens_after_restore
 
     control = json.loads(Path(options["control_record"]).read_text(encoding="utf-8"))
@@ -97,9 +100,14 @@ def rehydrate_control_record(restore_id, options):
     state.active_restore = restore
     state.save(update_fields=("mode", "active_restore", "updated_at"))
     count = invalidate_download_tokens_after_restore()
+    archive_count = invalidate_archive_download_tokens_after_restore()
     logger.info(
-        "restore_data_export_download_bearers_cleared",
-        extra={"restore_id": str(restore_id), "cleared": count},
+        "restore_download_bearers_cleared",
+        extra={
+            "restore_id": str(restore_id),
+            "data_export_bearers_cleared": count,
+            "archive_bearers_cleared": archive_count,
+        },
     )
     return restore
 

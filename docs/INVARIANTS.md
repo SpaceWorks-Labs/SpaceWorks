@@ -2500,6 +2500,11 @@ Load-bearing details that carried over unchanged:
   compound `DatabaseStateTarget.rehydrate` on the candidate alias, and delayed B1 slice merge, where
   `slice_fixtures` scrubs the `DROP_ROW_TO_SLICE` `row_preimage` before staging. Tenant dumps never
   carry this model (`OMITTED_MODELS`).
+- **A restored `backup.BackupArchive` download bearer is never usable.**
+  `apps/backup/services_access.invalidate_download_tokens_after_restore` clears bearers at classic
+  `rehydrate_control_record` and compound `DatabaseStateTarget.rehydrate`. B1 slice merge needs no sweep:
+  `BackupArchive.makerspace` is a `PROJECT_GLOBAL_BOUNDARIES` `PROJECT_NULL_TO_SLICE` boundary whose
+  delta carries only the `field_preimage`. Tenant dumps omit the model (`OMITTED_MODELS`).
 
 ### Offsite destinations and the `backup` module (lane backup, 2026-10-09)
 

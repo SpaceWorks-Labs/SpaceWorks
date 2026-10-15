@@ -2,7 +2,8 @@ import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { useState } from "react";
 import { SettingsLayout } from "../../components/layouts";
 import { ApiClientsTelegramSettings } from "./ApiClientsTelegramSettings";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { MakerspaceArchiveRequest } from "../../generated/api";
 
 import { ErrorBlock, StatusPill, Field, Modal, SettingsRow } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
@@ -48,6 +49,11 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     ["makerspace-settings", makerspace.id],
     `/admin/makerspaces/${makerspace.id}`,
   );
+  // Same cache entry as the archive panel: a pending request must be visible on the page,
+  // not only after opening the request form.
+  const archiveRequests = useQuery({ queryKey: ["staff", "archive-requests", makerspace.id] as const, enabled: canManageMakerspace,
+    queryFn: () => staffRequest<MakerspaceArchiveRequest[]>(`/admin/makerspace/${makerspace.id}/archive-requests`) });
+  const archivePending = Boolean(archiveRequests.data?.some(request => request.status === "pending"));
   const superadminAccessEnabled =
     settings.data?.superadmin_access_enabled ?? makerspace.superadmin_access_enabled ?? true;
   const staffNotificationsEnabled =
@@ -200,8 +206,9 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
           {canManageMakerspace ? <EvidenceRetentionPanel makerspaceId={makerspace.id} /> : null}
         </> },
       ]} danger={canManageMakerspace ? [{ title: "Archive this makerspace",
-        consequence: "Request archival for this makerspace. A superadmin must confirm before staff access is removed.",
-        action: { label: "Request archival", onClick: () => setArchiveOpen(true) } }] : []} />
+        consequence: archivePending ? "An archival request is pending superadmin review. Open it to see the request or withdraw it."
+          : "Request archival for this makerspace. A superadmin must confirm before staff access is removed.",
+        action: { label: archivePending ? "View pending request" : "Request archival", onClick: () => setArchiveOpen(true) } }] : []} />
     <Modal open={archiveOpen} onClose={() => setArchiveOpen(false)} title="Archive this makerspace" size="xl">
       <MakerspaceArchiveRequestPanel makerspaceId={makerspace.id} canManageMakerspace={canManageMakerspace} />
     </Modal>

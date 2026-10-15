@@ -6,6 +6,7 @@ import { ConfirmDialog, ErrorText, ListRow, OverflowMenu, StatusPill } from "../
 import { staffRequest } from "../../../lib/api";
 import { invalidateInventoryViews } from "../queryInvalidation";
 import { inventoryQueryState } from "./inventoryPresentation";
+import { QuantityStepper } from "../QuantityStepper";
 import { type Makerspace, useStaffGet } from "./shared";
 
 type ShelfItem = { id: number; name: string; needs_fix_quantity: number; available_quantity: number; total_quantity: number };
@@ -35,10 +36,10 @@ export function NeedsFixShelf({ makerspace }: { makerspace: Makerspace }) {
     stats={[{ label: "Units to fix", value: rows.reduce((sum, item) => sum + item.needs_fix_quantity, 0) }, { label: "Products affected", value: rows.length }]}
     body={{ kind: "rows", rows: rows.map(item => <ListRow key={item.id} title={item.name}
       identity={{ kind: "icon", icon: "Wrench", tone: "warn" }} meta={`${item.available_quantity} available · ${item.total_quantity} total`}
-      right={<div className="flex flex-wrap items-center gap-3"><StatusPill tone="warn" label={`${item.needs_fix_quantity} to fix`} />
-        <label className="grid gap-1 text-sm">Quantity<input className="desk-input w-24" type="number" min="1" max={item.needs_fix_quantity}
-          value={qty[item.id] ?? String(item.needs_fix_quantity)} onChange={event => setQty(current => ({ ...current, [item.id]: event.target.value }))} /></label>
-        <button className="desk-button-ghost" disabled={act.isPending || !valid(item)} onClick={() => run(item, "repair")}>{act.isPending && act.variables?.id === item.id ? "Repairing…" : "Repaired"}</button>
+      right={<div className="flex flex-wrap items-end gap-3"><StatusPill tone="warn" label={`${item.needs_fix_quantity} to fix`} />
+        <label className="grid gap-1 text-sm">Quantity<QuantityStepper label="quantity" min={1} max={item.needs_fix_quantity}
+          value={qty[item.id] ?? String(item.needs_fix_quantity)} onValueChange={value => setQty(current => ({ ...current, [item.id]: value }))} /></label>
+        <button className="desk-button self-end" disabled={act.isPending || !valid(item)} onClick={() => run(item, "repair")}>{act.isPending && act.variables?.id === item.id ? "Repairing…" : "Repaired"}</button>
         <OverflowMenu label={`Actions for ${item.name}`} actions={[{ label: "Scrap", confirms: true, tone: "danger", onClick: () => setScrapTarget(item), disabled: act.isPending || !valid(item), disabledReason: act.isPending || !valid(item) ? "Choose an eligible quantity." : undefined }]} />
       </div>} />) }}
     detail={<><ErrorText message={act.error?.message} />

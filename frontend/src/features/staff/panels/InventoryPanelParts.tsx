@@ -34,13 +34,13 @@ export function ItemModal({ title, open, onClose, pending, onSubmit, ...fields }
 
 export function QuantityAdjust({ product, form, setForm, pending, error, onSubmit }: { product: AdminProduct; form: AdjustmentForm; setForm: (updater: (current: AdjustmentForm) => AdjustmentForm) => void; pending: boolean; error?: string; onSubmit: () => void }) {
   return (
-    <div className="grid gap-3 border-t border-line pt-3">
+    <div className="@container grid gap-3 border-t border-line pt-3">
       <h3 className="title-section">Adjust quantities</h3>
-      <div className="grid gap-2 sm:grid-cols-3"><InventoryMetric label="Available" value={product.available_quantity} /><InventoryMetric label="Damaged" value={product.damaged_quantity} /><InventoryMetric label="Lost" value={product.lost_quantity} /></div>
-      <div className="grid gap-2 sm:grid-cols-3"><Field label="± Available"><input className="desk-input" type="number" value={form.delta_available} onChange={(e) => setForm((c) => ({ ...c, delta_available: e.target.value }))} /></Field><Field label="± Damaged"><input className="desk-input" type="number" value={form.delta_damaged} onChange={(e) => setForm((c) => ({ ...c, delta_damaged: e.target.value }))} /></Field><Field label="± Lost"><input className="desk-input" type="number" value={form.delta_lost} onChange={(e) => setForm((c) => ({ ...c, delta_lost: e.target.value }))} /></Field></div>
+      <div className="grid gap-2 @lg:grid-cols-3"><InventoryMetric label="Available" value={product.available_quantity} /><InventoryMetric label="Damaged" value={product.damaged_quantity} /><InventoryMetric label="Lost" value={product.lost_quantity} /></div>
+      <div className="grid gap-2 @lg:grid-cols-3"><Field label="± Available"><input className="desk-input" type="number" value={form.delta_available} onChange={(e) => setForm((c) => ({ ...c, delta_available: e.target.value }))} /></Field><Field label="± Damaged"><input className="desk-input" type="number" value={form.delta_damaged} onChange={(e) => setForm((c) => ({ ...c, delta_damaged: e.target.value }))} /></Field><Field label="± Lost"><input className="desk-input" type="number" value={form.delta_lost} onChange={(e) => setForm((c) => ({ ...c, delta_lost: e.target.value }))} /></Field></div>
       <Field label="Adjustment reason"><input className="desk-input" value={form.reason} onChange={(e) => setForm((c) => ({ ...c, reason: e.target.value }))} /></Field>
       {!form.reason.trim() ? <p className="text-sm text-muted">Add an adjustment reason to continue.</p> : null}
-      <div className="desk-actions flex justify-end"><button className="desk-button-primary" type="button" disabled={pending || !form.reason.trim()} onClick={onSubmit}>{pending ? "Applying…" : "Apply adjustment"}</button></div>
+      <div className="desk-actions flex justify-end"><button className="desk-button-primary w-full @md:w-auto" type="button" disabled={pending || !form.reason.trim()} onClick={onSubmit}>{pending ? "Applying…" : "Apply adjustment"}</button></div>
       {error ? <p className="text-sm text-danger">{error}</p> : null}
     </div>
   );
@@ -96,10 +96,10 @@ export function IndividualAssets({ productId, makerspaceId, refreshInventory }: 
   const selected = rows.find(asset => asset.id === editingAssetId);
   return <section className="mt-6 grid gap-4"><h3 className="title-section">Individual assets</h3>
     {assets.isLoading ? <Skeleton className="h-40" /> : assets.error ? <ErrorBlock error={assets.error} resource="assets" onRetry={() => { void assets.refetch(); }} /> : <DataTable data={rows} getRowId={asset => asset.id} emptyTitle="No asset records yet" columns={[
-      { key: "asset_tag", header: "Asset", render: asset => <div><strong>{asset.asset_tag}</strong><p className="text-xs text-muted">{asset.serial_number}</p></div> },
+      { key: "asset_tag", header: "Asset", render: asset => <div className="min-w-0 [overflow-wrap:anywhere]"><strong>{asset.asset_tag}</strong><p className="text-xs text-muted">{asset.serial_number}</p></div> },
       { key: "box_label", header: "Container" },
       { key: "status", header: "Status", render: asset => <StatusBadge status={asset.status} /> },
-      { key: "qr", header: "QR", render: asset => asset.qr_code_id ? <details><summary className="desk-button-ghost">Show QR</summary><QrImage qrId={asset.qr_code_id} label={asset.asset_tag} /><p className="break-all text-xs">{asset.qr_payload}</p></details> : "No QR linked" },
+      { key: "qr", header: "QR", render: asset => asset.qr_code_id ? <details><summary className="desk-button-ghost">Show QR</summary><div className="w-40 max-w-full"><QrImage qrId={asset.qr_code_id} label={asset.asset_tag} /></div><p className="break-all text-xs">{asset.qr_payload}</p></details> : "No QR linked" },
       { key: "actions", header: "", render: asset => <div className="flex flex-wrap items-center gap-2">
         <button className="desk-button-ghost" disabled={action.isPending || (asset.status !== "maintenance" && !["available", "damaged"].includes(asset.status))}
           onClick={() => action.mutate({ assetId: asset.id, action: asset.status === "maintenance" ? "repair" : "shelve" })}>{action.isPending && action.variables?.assetId === asset.id ? "Updating…" : asset.status === "maintenance" ? "Move back to inventory" : "To fix"}</button>
@@ -129,7 +129,7 @@ export function LendingHistory({ productId }: { productId: number }) {
 export function InventoryAvailability({ product }: { product: AdminProduct }) {
   const isLowStock = product.available_quantity <= Math.ceil(product.total_quantity * 0.2);
   const badge = product.available_quantity <= 0 ? <StatusBadge status="unavailable" label="Unavailable" /> : isLowStock ? <StatusBadge status="limited" label="Limited" /> : <StatusBadge status="available" label="Available" />;
-  return <span className="inline-flex items-center gap-2"><span className="inline-block w-8 font-medium tabular-nums text-ink">{product.available_quantity}</span>{badge}</span>;
+  return <span className="inline-flex flex-wrap items-center gap-2"><span className="inline-block min-w-8 font-medium tabular-nums text-ink">{product.available_quantity}</span>{badge}</span>;
 }
 
 export function InventoryMetric({ label, value }: { label: string; value: number }) {

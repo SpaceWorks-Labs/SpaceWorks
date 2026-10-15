@@ -7,6 +7,7 @@ import { ConfirmDialog, DataTable, Field, Modal, ErrorText } from "../../../comp
 import { useInventoryArchive } from "./useInventoryArchive";
 import { useQuickCreate } from "../quickCreate";
 import { inventoryColumns } from "./InventoryColumns";
+import { QuantityStepper } from "../QuantityStepper";
 import { downloadStaffFile, staffRequest } from "../../../lib/api";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { useUrlListState } from "../../../lib/useUrlListState";
@@ -231,7 +232,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
         <Modal open={Boolean(toBuyTarget)} onClose={() => setToBuyTarget(null)} title="Add to To buy" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={toBuy.isPending} onClick={() => setToBuyTarget(null)}>Cancel</button><button className="desk-button-primary" type="button" disabled={toBuy.isPending} onClick={() => toBuy.mutate()}>{toBuy.isPending ? "Adding…" : "Add"}</button></div>}>
           <div className="grid gap-3 text-sm">
             <p className="font-semibold text-ink">{toBuyTarget?.name}</p>
-            <Field label="Quantity"><input className="desk-input" type="number" min="1" value={toBuyQty} onChange={(e) => setToBuyQty(e.target.value)} /></Field>
+            <Field label="Quantity"><QuantityStepper label="quantity" min={1} value={toBuyQty} onValueChange={setToBuyQty} /></Field>
             {toBuy.error ? <p className="text-sm text-danger">{toBuy.error.message}</p> : null}
           </div>
         </Modal>
@@ -240,7 +241,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
         <div className="grid gap-3 text-sm">
           <p className="font-semibold text-ink">{fixTarget?.name}</p>
           <p className="text-muted">Move available units out of circulation for repair.</p>
-          <Field label={`Quantity (${fixTarget?.available_quantity ?? 0} available)`}><input className="desk-input" type="number" min="1" max={fixTarget?.available_quantity ?? 1} value={fixQty} onChange={(e) => setFixQty(e.target.value)} /></Field>
+          <Field label={`Quantity (${fixTarget?.available_quantity ?? 0} available)`}><QuantityStepper label="quantity" min={1} max={fixTarget?.available_quantity ?? 1} value={fixQty} onValueChange={setFixQty} /></Field>
           {moveToFix.error ? <p className="text-sm text-danger">{moveToFix.error.message}</p> : null}
         </div>
       </Modal>

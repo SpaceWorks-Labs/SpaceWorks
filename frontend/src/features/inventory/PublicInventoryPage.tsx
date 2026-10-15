@@ -5,7 +5,7 @@ import { publicPageChrome } from "./PublicPageChrome";
 import { PageMetadata } from "../../components/PageMetadata";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useParams } from "react-router-dom";
 
 import { Card, Field, Pagination } from "../../components/ui";
@@ -18,13 +18,16 @@ import {
   formatSlug,
   type View,
 } from "./PublicInventoryParts";
-import { PublicRequestPanel } from "./PublicRequestPanel";
+import { PublicRequestPanel, type ActiveTab } from "./PublicRequestPanel";
 import { useInventoryCart } from "./publicInventory/useInventoryCart";
 import { usePublicCategories, usePublicInventory, useTenantBootstrap } from "./usePublicInventory";
 
 const PAGE_SIZE = 24;
 
-export function PublicInventoryPage({ embedded = false }: { embedded?: boolean }) {
+/** A host that supplies its own chrome (the public desk) places the catalogue body and request panel itself. */
+export type EmbeddedCatalogue = (parts: { body: ReactNode; request: ReactNode }) => ReactNode;
+
+export function PublicInventoryPage({ embedded }: { embedded?: EmbeddedCatalogue }) {
   const { slug } = useParams();
   const tenant = useTenant();
   const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
@@ -35,6 +38,7 @@ export function PublicInventoryPage({ embedded = false }: { embedded?: boolean }
   const [view, setView] = useState<View>({ kind: "all" });
   const { cart, selectedItems, incrementItem, decrementItem, clearCart } = useInventoryCart();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [requestTab, setRequestTab] = useState<ActiveTab>("borrow");
   const categoryParam = view.kind === "category" ? view.slug : "";
   const sortParam = view.kind === "sort" ? view.sort : "name";
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
@@ -90,14 +94,16 @@ export function PublicInventoryPage({ embedded = false }: { embedded?: boolean }
     <Pagination page={page} totalPages={pageCount} count={inventoryQuery.data?.count} pageSize={PAGE_SIZE} onChange={setPage} disabled={inventoryQuery.isFetching} />
     </QueryContent>
   </div>;
-  const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access} />;
+  const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access}
+    activeTab={requestTab} onActiveTabChange={setRequestTab} />;
   const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
   return <div style={brandStyle}>
     {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
-    {embedded ? <>{body}{request}</>
+    {embedded ? embedded({ body, request })
       : <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} width="wide" state={{ status: "ready" }}
         header={{ title: `Borrow tools from ${displayName}`, subtitle: `${plural(inventoryQuery.data?.count ?? 0, "tool")} and kits`, primary: { label: "Member area", href: tenantPath("member") } }}
-        isEmpty={false} aside={{ title: "Your request", form: request, state: "open", mobileBar: { summary: plural(totalItems, "item"), label: "Review request" } }}>
+        isEmpty={false} aside={{ title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),
+          secondary: requestEnabled ? { label: "Scan a tool", onOpen: () => setRequestTab("scan") } : undefined } }}>
         {body}
       </PublicLayout>}
 

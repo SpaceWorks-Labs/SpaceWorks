@@ -69,9 +69,9 @@ function OwnBookings({ slug, recipient }: { slug: string; recipient: number | "s
     {moving ? <BookingReschedule key={moving.public_token} booking={moving} slug={slug} onClose={() => setMoving(null)} /> : null}
     {selected ? <div className="mt-3 rounded-lg border border-warn p-3" aria-label="Confirm cancellation">
       <p className="text-sm">Cancel your booking for {selected.space_name}? Any pending charge will be voided. Contact staff about a refund for a paid booking.</p>
-      <div className="mt-2 flex gap-2"><button type="button" className="desk-button-brand" disabled={cancel.isPending} onClick={() => cancel.mutate(selected.public_token)}>{cancel.isPending ? "Cancelling…" : "Confirm cancellation"}</button><button type="button" className="desk-button-ghost" disabled={cancel.isPending} onClick={() => setSelected(null)}>Keep booking</button></div>
+      <div className="mt-2 flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none"><button type="button" className="desk-button-brand" disabled={cancel.isPending} onClick={() => cancel.mutate(selected.public_token)}>{cancel.isPending ? "Cancelling…" : "Confirm cancellation"}</button><button type="button" className="desk-button-ghost" disabled={cancel.isPending} onClick={() => setSelected(null)}>Keep booking</button></div>
     </div> : null}
-    {bookings.data && (bookings.data.next || bookings.data.previous) ? <div className="mt-3 flex items-center gap-3">
+    {bookings.data && (bookings.data.next || bookings.data.previous) ? <div className="mt-3 flex flex-wrap items-center gap-3">
       <button type="button" className="desk-button-brand" disabled={!bookings.data.previous || bookings.isFetching} onClick={() => setPage((value) => value - 1)}>Previous</button>
       <span className="text-sm">Page {page}</span>
       <button type="button" className="desk-button-brand" disabled={!bookings.data.next || bookings.isFetching} onClick={() => setPage((value) => value + 1)}>Next</button>

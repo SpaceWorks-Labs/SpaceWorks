@@ -24,7 +24,7 @@ const NAME_SIZE: Record<NonNullable<MakerspaceBrandProps["size"]>, string> = {
 
 /**
  * Renders a makerspace's brand: its uploaded logo when present, otherwise the
- * makerspace NAME as a styled Clash Display wordmark (the design-system fallback,
+ * makerspace NAME as a styled Gilroy wordmark (the design-system fallback,
  * so every makerspace page is always branded even with no logo on file).
  */
 export function MakerspaceBrand({
@@ -45,7 +45,7 @@ export function MakerspaceBrand({
       ) : null}
       {!hideName || !logoUrl ? (
         <span
-          className={`font-display font-bold leading-tight break-words min-w-0 text-ink ${NAME_SIZE[size]}`}
+          className={`font-display font-extrabold leading-tight break-words min-w-0 text-ink ${NAME_SIZE[size]}`}
         >
           {name}
         </span>

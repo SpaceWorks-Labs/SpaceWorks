@@ -37,7 +37,7 @@ export function PrintingSection({ printing }: { printing: PublicStatsPrinting })
           value={`${formatNumber(printing.grams_all_time)} g`}
           tone="mint"
         />
-        <StatTile label="Completed jobs" value={printing.jobs.completed} tone="pink" />
+        <StatTile label="Completed jobs" value={printing.jobs.completed} tone="emphasis" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -59,7 +59,7 @@ export function PrintingSection({ printing }: { printing: PublicStatsPrinting })
                     {printing.busiest_printer.model}
                   </p>
                 ) : null}
-                <p className="font-mono text-muted">
+                <p className="tabular-nums text-muted">
                   {formatNumber(printing.busiest_printer.hours)} hours /{" "}
                   {printing.busiest_printer.completed} completed
                 </p>
@@ -143,11 +143,11 @@ export function PrintingSection({ printing }: { printing: PublicStatsPrinting })
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-ink">{row.jobs}</td>
-                    <td className="px-3 py-2 text-right font-mono text-ink">
+                    <td className="px-3 py-2 text-right tabular-nums text-ink">{row.jobs}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-ink">
                       {formatNumber(row.hours)}
                     </td>
-                    <td className="py-2 pl-3 text-right font-mono text-ink">
+                    <td className="py-2 pl-3 text-right tabular-nums text-ink">
                       {formatNumber(row.grams)}
                     </td>
                   </tr>

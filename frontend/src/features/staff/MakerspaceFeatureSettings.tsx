@@ -50,7 +50,7 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
   return (
     <section className="min-w-0 rounded-md border border-line bg-bg p-4">
       <div className="grid min-w-0 gap-2">
-        <h3 className="text-base font-semibold text-ink">Feature settings</h3>
+        <h3 className="text-base font-extrabold text-ink">Feature settings</h3>
         <p className="text-sm text-muted">
           Modules are set by the platform administrator. Enable the available sub-features for this makerspace.
         </p>

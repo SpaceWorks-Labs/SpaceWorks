@@ -11,7 +11,7 @@ export function MemberAccountExports({ makerspaceId }: { makerspaceId: number })
   const download = useMutation({ mutationFn: (id: string) => exportDownload(makerspaceId, id) });
   return <section className="desk-panel p-5"><h2 className="title-panel">Export your data</h2>
     <p className="mt-2 text-sm text-muted">Download your profile, membership, history and payment records held by this makerspace as JSON in a ZIP. Export requests are limited to one per day. Files expire automatically.</p>
-    <button className="desk-button-secondary mt-3" disabled={create.isPending} onClick={() => create.mutate()}>Request data export</button>
+    <button className="desk-button-brand mt-3" disabled={create.isPending} onClick={() => create.mutate()}>Request data export</button>
     {rows.isLoading ? <p role="status">Loading exports…</p> : null}
     {rows.error || create.error || download.error ? <p role="alert" className="text-danger">{(rows.error || create.error || download.error)?.message}</p> : null}
     {rows.data?.results.map((job) => <div key={job.id} className="border-t border-line py-3 mt-3"><p>Requested {new Date(job.created_at).toLocaleString()} · {job.status}</p>

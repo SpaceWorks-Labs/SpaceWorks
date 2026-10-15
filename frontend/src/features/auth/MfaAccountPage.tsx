@@ -24,7 +24,7 @@ export function MfaAccountPage() {
   if (challenge) return <main className="desk-shell p-6"><MfaFlow challenge={challenge} onCancel={() => { setChallenge(undefined); setReady(false); }}
     onComplete={(result) => { setAccessToken(result.access); setChallenge(undefined); setReady(true); void status.refetch(); }} /></main>;
   return <main className="desk-shell p-6"><section className="desk-panel mx-auto grid max-w-lg gap-4 p-6">
-    <h1 className="text-2xl font-bold">Two-step sign-in</h1>
+    <h1 className="text-2xl font-extrabold">Two-step sign-in</h1>
     {!ready ? <p>{notice || "Sign in to manage your authenticator."}</p> : <>
       <p>{status.data?.enabled ? "Your authenticator is enrolled." : "Add an authenticator to protect your account."}{status.data?.required ? " MFA is required for this account." : ""}</p>
       <label htmlFor="mfa-password">Confirm your current password</label>

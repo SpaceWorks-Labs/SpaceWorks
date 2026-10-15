@@ -56,7 +56,7 @@ export function DeliveryLogScreen({ makerspaceId }: { makerspaceId: number }) {
         <label className="grid gap-1 text-sm">Test target<select className="desk-input" value={testDestination} onChange={(e) => setTestDestination(e.target.value)}>
           <option value="">Email to my account</option>{destinations.data?.filter((row) => row.is_active).map((row) => <option key={row.id} value={row.id}>{row.label} ({row.channel})</option>)}
         </select></label>
-        <button className="desk-button-secondary" disabled={test.isPending} onClick={() => test.mutate()}>Send test</button>
+        <button className="desk-button-primary" disabled={test.isPending} onClick={() => test.mutate()}>Send test</button>
         {test.data ? <p className="text-sm text-muted" role="status">Test {test.data.kind} #{test.data.id}: {test.data.status}. Refresh the log to see its final result.</p> : null}
       </div>
       {error ? <p className="text-sm text-danger" role="alert">{error.message}</p> : null}
@@ -66,7 +66,7 @@ export function DeliveryLogScreen({ makerspaceId }: { makerspaceId: number }) {
         <p className="font-semibold text-ink">{row.channel} · {row.destination_label || "Personal devices"} · {row.status}</p>
         <p className="text-muted">{row.feature}.{row.event} · {new Date(row.created_at).toLocaleString()} · {row.attempts} attempt(s)</p>
         {row.error ? <p className="mt-1 break-words text-danger">{row.error}</p> : null}
-        {row.status === "failed" ? <button className="desk-button-secondary mt-2" disabled={retry.isPending} onClick={() => retry.mutate(row)}>Retry failed delivery</button> : null}
+        {row.status === "failed" ? <button className="desk-button mt-2" disabled={retry.isPending} onClick={() => retry.mutate(row)}>Retry failed delivery</button> : null}
       </li>)}</ul>
       <div className="mt-4 flex items-center gap-3">
         <button className="desk-button-ghost" disabled={!logs.data?.previous} onClick={() => setPage(page - 1)}>Previous</button>

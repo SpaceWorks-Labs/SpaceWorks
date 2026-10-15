@@ -35,11 +35,11 @@ export function TransferTable({
         <tbody className="divide-y divide-line bg-bg text-ink">
           {transfers.map((transfer) => (
             <tr key={transfer.id}>
-              <td className="whitespace-nowrap px-3 py-2 font-mono font-medium">#{transfer.id}</td>
+              <td className="whitespace-nowrap px-3 py-2 tabular-nums font-medium">#{transfer.id}</td>
               <td className="px-3 py-2"><span className="block max-w-56 break-words">{endpointLabel(transfer.source_makerspace ?? transfer.makerspace, transfer.source_container, makerspaceNames, sourceContainerNames)}</span></td>
               <td className="px-3 py-2"><span className="block max-w-56 break-words">{endpointLabel(transfer.destination_makerspace ?? transfer.makerspace, transfer.destination_container, makerspaceNames, destinationContainerNames)}</span></td>
               <td className="min-w-48 px-3 py-2 text-muted"><span className="block max-w-64 break-words">{transfer.reason}</span></td>
-              <td className="whitespace-nowrap px-3 py-2 font-mono text-muted">{formatDate(transfer.created_at)}</td>
+              <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted">{formatDate(transfer.created_at)}</td>
               <td className="whitespace-nowrap px-3 py-2">{transfer.lines.length}</td>
             </tr>
           ))}

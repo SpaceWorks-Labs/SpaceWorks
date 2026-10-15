@@ -23,7 +23,7 @@ export function KioskOnlineScanner({ token, lease }: { token: string; lease: Kio
 
   return <form className="grid gap-3" onSubmit={resolve}>
     <label className="eyebrow" htmlFor="kiosk-qr-payload">Scan or type a QR code</label>
-    <input id="kiosk-qr-payload" className="desk-input font-mono" autoComplete="off" required value={payload} onChange={(event) => setPayload(event.target.value)} />
+    <input id="kiosk-qr-payload" className="desk-input code-text" autoComplete="off" required value={payload} onChange={(event) => setPayload(event.target.value)} />
     <button className="desk-button-primary" type="submit" disabled={!lease.permitted_operations.includes("resolve_qr")}>Look up</button>
     {result ? <p className="text-sm" role="status">{result}</p> : null}
     {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}

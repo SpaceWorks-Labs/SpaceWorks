@@ -88,7 +88,7 @@ export function PlatformSocialAuthPanel() {
             <LabeledInput label="Key ID" value={form.apple_key_id} onChange={(value) => setForm({ ...form, apple_key_id: value })} />
           </div>
           <label className="block text-sm font-semibold text-ink">Apple private key (.p8)
-            <textarea className="desk-input mt-1 min-h-24 w-full font-mono text-xs" value={form.apple_private_key} onChange={(event) => setForm({ ...form, apple_private_key: event.target.value })} placeholder={settings.data?.apple_private_key_set ? "Private key set — leave blank to keep it" : "Paste the private key"} />
+            <textarea className="desk-input mt-1 min-h-24 w-full code-text text-xs" value={form.apple_private_key} onChange={(event) => setForm({ ...form, apple_private_key: event.target.value })} placeholder={settings.data?.apple_private_key_set ? "Private key set — leave blank to keep it" : "Paste the private key"} />
           </label>
         </fieldset>
         <button className="desk-button-primary w-full" disabled={disabled} onClick={() => save.mutate()}>

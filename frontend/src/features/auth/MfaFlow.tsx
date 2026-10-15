@@ -21,14 +21,14 @@ export function MfaFlow({ challenge, onComplete, onCancel }: {
     onSuccess: (result) => result.recovery_codes ? setCompleted(result) : onComplete(result),
   });
   if (completed) return <section className="desk-panel mx-auto grid max-w-lg gap-4 p-6">
-    <h1 className="text-2xl font-bold">Save your recovery codes</h1>
+    <h1 className="text-2xl font-extrabold">Save your recovery codes</h1>
     <p>Each code works once. Save these somewhere secure; they will not be shown again.</p>
     <ul className="grid grid-cols-2 gap-2">{completed.recovery_codes?.map((value) => <li key={value}><code>{value}</code></li>)}</ul>
     <button type="button" className="desk-button-primary" onClick={() => onComplete(completed)}>I saved my codes. Continue</button>
   </section>;
   const error = enroll.error ?? verify.error;
   return <section className="desk-panel mx-auto grid max-w-lg gap-4 p-6">
-    <h1 className="text-2xl font-bold">{challenge.enrollment_required ? "Set up two-step sign-in" : "Verify your sign-in"}</h1>
+    <h1 className="text-2xl font-extrabold">{challenge.enrollment_required ? "Set up two-step sign-in" : "Verify your sign-in"}</h1>
     <p>{challenge.enrollment_required ? "Add SpaceWorks to your authenticator app to secure this account." : "Enter the code from your authenticator app, or one of your recovery codes."}</p>
     {challenge.enrollment_required && !enrollment ? <button type="button" className="desk-button-primary" disabled={enroll.isPending} onClick={() => enroll.mutate()}>Show enrollment QR and key</button> : null}
     {enrollment ? <>

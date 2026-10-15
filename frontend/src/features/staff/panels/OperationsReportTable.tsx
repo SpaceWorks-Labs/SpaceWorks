@@ -30,7 +30,7 @@ export function ReportTable({ data }: { data?: ReportRows }) {
     <div className="mt-4 max-h-80 overflow-x-auto overflow-y-auto rounded-md border border-line">
       <table className="w-full divide-y divide-line text-left text-sm">
         <thead className="eyebrow sticky top-0 bg-surface"><tr>{headers.map((header) => <th scope="col" key={header} className="whitespace-nowrap px-3 py-2">{header.replace(/_/g, " ")}</th>)}</tr></thead>
-        <tbody className="divide-y divide-line bg-bg text-ink">{rows.map((row, rowIndex) => <tr key={rowIndex}>{headers.map((header, cellIndex) => <td key={`${header}-${cellIndex}`} className="whitespace-nowrap px-3 py-2 font-mono text-sm">{formatReportCell(row[cellIndex])}</td>)}</tr>)}</tbody>
+        <tbody className="divide-y divide-line bg-bg text-ink">{rows.map((row, rowIndex) => <tr key={rowIndex}>{headers.map((header, cellIndex) => <td key={`${header}-${cellIndex}`} className="whitespace-nowrap px-3 py-2 tabular-nums text-sm">{formatReportCell(row[cellIndex])}</td>)}</tr>)}</tbody>
       </table>
     </div>
   );

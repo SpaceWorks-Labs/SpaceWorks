@@ -51,7 +51,7 @@ export function EventCollaborators({
 
   return (
     <section aria-labelledby="collaborators-title" className="mt-5">
-      <h3 id="collaborators-title" className="mb-1 font-semibold text-ink">
+      <h3 id="collaborators-title" className="mb-1 font-extrabold text-ink">
         Partner makerspaces
       </h3>
       <p className="mb-3 text-sm text-muted">

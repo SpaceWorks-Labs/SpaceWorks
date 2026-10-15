@@ -6,7 +6,7 @@ import { PaymentReconcileActions, type PaymentSummary } from "./PaymentReconcile
 export type ReviewMembershipRequest = Omit<MembershipRequest, "state"> & AdmissionRequest;
 
 export function MembershipVouchers({ vouches }: { vouches?: AdmissionVouch[] }) {
-  return vouches?.length ? <div className="mt-3"><h4 className="text-sm font-semibold text-ink">Vouchers</h4><ul className="text-sm text-muted">{vouches.map((vouch) => <li key={`${vouch.voucher_id}:${vouch.created_at}`}>{vouch.voucher_name} · recorded {new Date(vouch.created_at).toLocaleDateString()} · expires {new Date(vouch.expires_at).toLocaleDateString()}</li>)}</ul></div> : null;
+  return vouches?.length ? <div className="mt-3"><h4 className="text-sm font-extrabold text-ink">Vouchers</h4><ul className="text-sm text-muted">{vouches.map((vouch) => <li key={`${vouch.voucher_id}:${vouch.created_at}`}>{vouch.voucher_name} · recorded {new Date(vouch.created_at).toLocaleDateString()} · expires {new Date(vouch.expires_at).toLocaleDateString()}</li>)}</ul></div> : null;
 }
 
 export function MembershipAdmissionReview({ row, makerspaceId, manageable, canViewFinance, canRecordPayment, canWaive, approvePending, declinePending, selectedRole, onApprove, onDecline }: {

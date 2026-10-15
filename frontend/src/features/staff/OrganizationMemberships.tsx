@@ -25,8 +25,8 @@ export function OrganizationMemberships({ organization }: { organization: Organi
               <tr className="border-t border-line" key={member.id}>
                 <td className="p-3"><span className="font-semibold text-ink">{member.display_name || member.username}</span><span className="block text-xs text-muted">{member.email}</span></td>
                 <td className="p-3"><StatusBadge status={member.status} /></td>
-                <td className="p-3 font-mono text-xs text-muted">{member.governance_actions.join(", ") || "—"}</td>
-                <td className="p-3 font-mono text-xs text-muted">{member.granted_actions.join(", ") || "—"}</td>
+                <td className="p-3 code-text text-xs text-muted">{member.governance_actions.join(", ") || "—"}</td>
+                <td className="p-3 code-text text-xs text-muted">{member.granted_actions.join(", ") || "—"}</td>
               </tr>
             ))}</tbody>
           </table>
@@ -35,7 +35,7 @@ export function OrganizationMemberships({ organization }: { organization: Organi
       {memberships.data ? (
         <div className="mt-3 flex items-center justify-between gap-3">
           <button className="desk-button" type="button" disabled={!memberships.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
-          <span className="font-mono text-xs text-muted">Page {page} · {memberships.data.count} members</span>
+          <span className="tabular-nums text-xs text-muted">Page {page} · {memberships.data.count} members</span>
           <button className="desk-button" type="button" disabled={!memberships.data.next} onClick={() => setPage((value) => value + 1)}>Next</button>
         </div>
       ) : null}

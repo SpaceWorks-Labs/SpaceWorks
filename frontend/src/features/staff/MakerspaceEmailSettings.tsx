@@ -133,7 +133,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
       <div className="rounded-md border border-line bg-bg p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
-            <h3 className="text-base font-semibold text-ink">Email (SMTP)</h3>
+            <h3 className="text-base font-extrabold text-ink">Email (SMTP)</h3>
             <p className="text-sm text-muted">
               Configure the sender used for staff lifecycle notifications.
             </p>
@@ -199,7 +199,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
       <div className="rounded-md border border-line bg-bg p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
-            <h3 className="text-base font-semibold text-ink">Notification recipients</h3>
+            <h3 className="text-base font-extrabold text-ink">Notification recipients</h3>
             <p className="text-sm text-muted">
               Unchecked managers will not receive hardware/printing lifecycle emails for this
               makerspace.

@@ -177,11 +177,11 @@ export function EmailTemplateEditor({
         <MergeFields detail={detail.data} onInsert={insertField} />
         <label className="eyebrow grid gap-2">
           <span>Plain text body</span>
-          <textarea ref={textRef} className="desk-input min-h-48 font-mono text-xs" value={draft.text_body} onFocus={() => setLastFocused("text_body")} onChange={(event) => setDraft({ ...draft, text_body: event.target.value })} />
+          <textarea ref={textRef} className="desk-input min-h-48 code-text text-xs" value={draft.text_body} onFocus={() => setLastFocused("text_body")} onChange={(event) => setDraft({ ...draft, text_body: event.target.value })} />
         </label>
         <label className="eyebrow grid gap-2">
           <span>HTML body</span>
-          <textarea ref={htmlRef} className="desk-input min-h-56 font-mono text-xs" value={draft.html_body} onFocus={() => setLastFocused("html_body")} onChange={(event) => setDraft({ ...draft, html_body: event.target.value })} />
+          <textarea ref={htmlRef} className="desk-input min-h-56 code-text text-xs" value={draft.html_body} onFocus={() => setLastFocused("html_body")} onChange={(event) => setDraft({ ...draft, html_body: event.target.value })} />
         </label>
         <div className="desk-actions flex flex-wrap items-center gap-2">
           <button className="desk-button-primary" type="submit" disabled={save.isPending}>{save.isPending ? "Saving..." : "Save"}</button>
@@ -234,7 +234,7 @@ function MergeFields({ detail, onInsert }: { detail: TemplateDetail; onInsert: (
       <h3 className="title-section">Merge fields</h3>
       <div className="flex flex-wrap gap-2">
         {detail.fields.map((field) => (
-          <button key={field.name} className="desk-button-ghost font-mono text-xs" title={field.description} type="button" onClick={() => onInsert(field.name)}>
+          <button key={field.name} className="desk-button-ghost code-text text-xs" title={field.description} type="button" onClick={() => onInsert(field.name)}>
             {field.name}
           </button>
         ))}

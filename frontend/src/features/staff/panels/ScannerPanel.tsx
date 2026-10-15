@@ -187,7 +187,7 @@ export function ScannerPanel({ makerspace, isSuperadmin, makerspaces }: {
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <input
           aria-label="QR payload"
-          className="desk-input w-full font-mono sm:flex-1"
+          className="desk-input w-full code-text sm:flex-1"
           placeholder="Paste QR payload (or scan)"
           value={payload}
           onChange={(event) => setPayload(event.target.value)}
@@ -209,7 +209,7 @@ export function ScannerPanel({ makerspace, isSuperadmin, makerspaces }: {
               : target.type === "product" ? `Product: ${target.name}`
               : `Asset: ${target.asset_tag} - ${target.product} (${target.status})`}
           </h3>
-          <p className="mt-1 font-mono text-xs text-muted">QR #{resolved.qr.id} - {resolved.qr.status}</p>
+          <p className="mt-1 tabular-nums text-xs text-muted">QR #{resolved.qr.id} - {resolved.qr.status}</p>
           <div className="desk-actions mt-3 flex flex-wrap gap-2 text-sm">
             {actions.includes("contents") && target.type === "box" ? (
               <button className="desk-button-ghost" type="button" disabled={loadContents.isPending} onClick={() => loadContents.mutate(target.id)}>View contents</button>

@@ -24,7 +24,7 @@ export function CollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
       aria-labelledby="collaboration-inbox-title"
       className="mb-5 rounded-xl border border-line bg-bg p-4"
     >
-      <h3 id="collaboration-inbox-title" className="mb-1 font-semibold text-ink">
+      <h3 id="collaboration-inbox-title" className="mb-1 font-extrabold text-ink">
         Invitations from other makerspaces
       </h3>
       <p className="mb-3 text-sm text-muted">

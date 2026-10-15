@@ -63,7 +63,7 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
       <div className="grid min-w-0 gap-4">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Request a subdomain</h3>
+            <h3 className="text-base font-extrabold text-ink">Request a subdomain</h3>
             {hasActiveSubdomain ? <Badge tone="success">Active</Badge> : null}
           </div>
           <p className="text-sm text-muted">

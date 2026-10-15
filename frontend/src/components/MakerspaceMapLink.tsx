@@ -14,7 +14,7 @@ export function MakerspaceMapLink({
   makerspace,
   className = "",
   locationClassName = "text-sm text-muted",
-  linkClassName = "font-mono text-xs font-semibold text-secondary-ink hover:underline",
+  linkClassName = "text-xs font-semibold text-brand-ink hover:underline",
 }: MakerspaceMapLinkProps) {
   const location = makerspace?.location?.trim() ?? "";
   const mapUrl = makerspace?.map_url?.trim() ?? "";

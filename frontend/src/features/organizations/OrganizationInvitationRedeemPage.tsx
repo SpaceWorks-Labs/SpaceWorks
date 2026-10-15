@@ -65,7 +65,7 @@ export function OrganizationInvitationRedeemPage() {
     <main className="desk-shell grid min-h-screen place-items-center px-5 py-10">
       <section className="desk-panel w-full max-w-lg p-6" aria-labelledby="invitation-heading">
         <SpaceWorksBadge className="mb-5" />
-        <p className="eyebrow text-secondary-ink">Organization invitation</p>
+        <p className="eyebrow text-brand-ink">Organization invitation</p>
         <h1 className="title-page mt-2" id="invitation-heading">Join an organization</h1>
         {restoring ? <Skeleton className="mt-5 h-32 w-full" /> : null}
         {!restoring && !user ? (
@@ -79,7 +79,7 @@ export function OrganizationInvitationRedeemPage() {
         ) : null}
         {user && redeem.isPending ? <p className="mt-5 text-sm text-muted">Redeeming invitation...</p> : null}
         {redeem.isSuccess ? (
-          <div className="mt-5 rounded-xl border border-success bg-success/15 p-4 text-success-ink" role="status">
+          <div className="mt-5 rounded-xl border border-success bg-success-soft p-4 text-success-ink" role="status">
             <h2 className="title-section">Invitation redeemed</h2>
             <p className="mt-2 text-sm">Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces.</p>
             <Link className="desk-button-primary mt-4" to="/admin/organizations">Open organizations</Link>

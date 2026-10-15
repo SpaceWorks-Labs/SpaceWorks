@@ -64,7 +64,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
 
   return (
     <section aria-labelledby="notification-channel-heading">
-      <h4 id="notification-channel-heading" className="text-sm font-semibold text-ink">
+      <h4 id="notification-channel-heading" className="text-sm font-extrabold text-ink">
         Notification channels
       </h4>
       <p className="mt-2 text-sm text-muted">
@@ -127,7 +127,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
       </div>
       {warnings.length ? (
         <div
-          className="mt-3 rounded-md border border-warn bg-warn/15 p-3 text-sm text-warn-ink"
+          className="mt-3 rounded-md border border-warn bg-warn-soft p-3 text-sm text-warn-ink"
           role="status"
           aria-live="polite"
         >

@@ -160,7 +160,7 @@ function RefundList({ refunds }: { refunds: PaymentRow["refunds"] }) {
       <ul className="mt-2 divide-y divide-line text-sm">
         {refunds.map((refund) => (
           <li key={refund.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-            <span className="font-mono font-semibold text-ink">{formatMoney(refund.amount, refund.currency)}</span>
+            <span className="tabular-nums font-semibold text-ink">{formatMoney(refund.amount, refund.currency)}</span>
             <Badge tone={refund.status === "succeeded" ? "success" : refund.status === "failed" ? "danger" : "warn"}>
               {refund.status}
             </Badge>

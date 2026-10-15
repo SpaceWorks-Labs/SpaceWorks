@@ -41,8 +41,8 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
         {items.map((entry) => (
           <div key={entry.id} className="rounded-md border border-line bg-bg p-2 text-sm">
             <div className="flex items-center justify-between gap-2">
-              <strong className="font-mono text-ink">{entry.hours} h</strong>
-              <span className="font-mono text-xs text-muted">{formatDate(entry.created_at)}</span>
+              <strong className="tabular-nums text-ink">{entry.hours} h</strong>
+              <span className="tabular-nums text-xs text-muted">{formatDate(entry.created_at)}</span>
             </div>
             {entry.note ? <p className="mt-1 break-words text-muted">{entry.note}</p> : null}
             <p className="mt-1 text-xs text-muted">

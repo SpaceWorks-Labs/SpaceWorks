@@ -58,7 +58,7 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
       <p className="mt-1 text-sm text-muted">
         Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window.
       </p>
-      <p className="mt-2 text-sm font-semibold text-warning" role="note">
+      <p className="mt-2 text-sm font-semibold text-warn-ink" role="note">
         Expiry is irreversible in live storage; older backups may still contain historical photos.
       </p>
       <form className="mt-3 flex flex-wrap items-end gap-3" onSubmit={submit}>

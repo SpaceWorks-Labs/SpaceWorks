@@ -34,7 +34,7 @@ const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
 
 function NotFoundPage() {
-  return <main className="grid min-h-screen place-items-center bg-bg px-6"><div className="text-center"><p className="eyebrow font-mono">404</p><h1 className="title-page mt-2">Page not found</h1></div></main>;
+  return <main className="grid min-h-screen place-items-center bg-bg px-6"><div className="text-center"><p className="eyebrow">404</p><h1 className="title-page mt-2">Page not found</h1></div></main>;
 }
 
 // Tenant capabilities choose the home independently of the deployment edition.

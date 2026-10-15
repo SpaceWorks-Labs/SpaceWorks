@@ -17,7 +17,7 @@ export function MemberVerifierPanel({ makerspaceId }: { makerspaceId: number }) 
     <div className="mt-3 flex gap-2"><button className="desk-button-primary" disabled={!valid || verify.isPending} onClick={() => verify.mutate(true)}>Verify member</button>
       <button className="desk-button" disabled={!valid || verify.isPending} onClick={() => verify.mutate(false)}>Remove verification</button></div>
     {verify.isPending ? <p role="status" className="text-sm text-muted">Updating verification…</p> : null}
-    {verify.isSuccess ? <p role="status" className="text-sm text-success">Verification {verify.variables ? "recorded" : "removed"} for {verify.data.display_name}.</p> : null}
+    {verify.isSuccess ? <p role="status" className="text-sm text-success-ink">Verification {verify.variables ? "recorded" : "removed"} for {verify.data.display_name}.</p> : null}
     {verify.isError ? <p role="alert" className="text-sm text-danger">{verify.error.message}</p> : null}
   </section>;
 }

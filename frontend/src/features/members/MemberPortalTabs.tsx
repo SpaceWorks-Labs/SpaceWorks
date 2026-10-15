@@ -44,7 +44,7 @@ export function MemberPortalTabs({ modules, active, children }: { modules: strin
     <div role="tablist" aria-label="Member portal" className="flex flex-wrap gap-2">
       {tabs.map((tab, index) => <Link key={tab} ref={(node) => { refs.current[index] = node; }}
         role="tab" id={`member-tab-${tab}`} aria-controls="main-content" aria-selected={active === tab}
-        tabIndex={active === tab ? 0 : -1} className={active === tab ? "desk-button-secondary" : "desk-button"}
+        tabIndex={active === tab ? 0 : -1} className={active === tab ? "desk-button-brand" : "desk-button"}
         to={path(tab)} onKeyDown={(event) => keyDown(event, index)}>{tab[0].toUpperCase() + tab.slice(1)}</Link>)}
     </div>
     <section role="tabpanel" id="main-content" aria-labelledby={`member-tab-${active}`} tabIndex={-1} className="space-y-5 focus-visible:outline-2 focus-visible:outline-focus">

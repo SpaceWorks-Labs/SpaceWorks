@@ -51,7 +51,7 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
 
   return (
     <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-semibold text-ink">General</h3>
+      <h3 className="text-base font-extrabold text-ink">General</h3>
       <div className="mt-4 grid min-w-0 gap-5 lg:grid-cols-2">
         <form
           className="grid min-w-0 gap-2"
@@ -90,7 +90,7 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
         </form>
         <div className="grid min-w-0 content-start gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-sm font-semibold text-ink">Public inventory</h4>
+            <h4 className="text-sm font-extrabold text-ink">Public inventory</h4>
             <Badge tone={publicInventoryEnabled ? "success" : "neutral"}>
               {publicInventoryEnabled ? "On" : "Off"}
             </Badge>

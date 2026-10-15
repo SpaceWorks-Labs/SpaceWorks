@@ -1,12 +1,5 @@
 const STAGES = ["Requested", "Approved", "Collected", "Returned"] as const;
 
-const STEP_TONE_CLASSES = [
-  "border-accent bg-accent text-on-accent",
-  "border-warn bg-warn text-on-warn",
-  "border-secondary bg-secondary text-on-secondary",
-  "border-success bg-success text-on-success",
-] as const;
-
 function statusStageIndex(status: string): number {
   switch (status) {
     case "accepted":
@@ -43,8 +36,10 @@ function StepBox({
 }) {
   const className = (rejected && step === 0) || state === "issue"
     ? "status-box status-box-danger"
-    : state === "completed" || state === "current"
-      ? `status-box ${STEP_TONE_CLASSES[step] ?? STEP_TONE_CLASSES[0]} shadow-soft`
+    : state === "completed"
+      ? "status-box status-box-done"
+      : state === "current"
+        ? "status-box status-box-accent"
       : "status-box";
 
   return (
@@ -52,7 +47,7 @@ function StepBox({
       className={`${className} w-full flex-col leading-tight`}
       aria-current={state === "current" ? "step" : undefined}
     >
-      <span className="font-bold opacity-70">{step + 1}</span>
+      <span className="font-bold">{step + 1}</span>
       <span className="min-w-0 break-words">{label}</span>
     </span>
   );

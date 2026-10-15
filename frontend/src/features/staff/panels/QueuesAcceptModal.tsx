@@ -83,7 +83,7 @@ export function AcceptRequestModal({
           ))}
         </div>
         {total === 0 ? <p className="text-xs text-warn-ink">Accept at least one unit, or reject the request instead.</p> : null}
-        {error ? <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p> : null}
+        {error ? <p className="rounded-md border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">{error}</p> : null}
       </form>
     </Modal>
   );

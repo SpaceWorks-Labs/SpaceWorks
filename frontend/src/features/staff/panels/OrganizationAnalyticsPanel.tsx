@@ -143,7 +143,7 @@ function AnalyticsRowsTable({
           {rows.map((row, rowIndex) => (
             <tr key={rowIndex}>
               {headers.map((header) => (
-                <td className="whitespace-nowrap px-3 py-2 font-mono text-sm" key={header}>
+                <td className="whitespace-nowrap px-3 py-2 tabular-nums text-sm" key={header}>
                   {formatCell(row[header])}
                 </td>
               ))}

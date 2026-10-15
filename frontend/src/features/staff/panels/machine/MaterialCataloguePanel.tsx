@@ -31,7 +31,7 @@ export function MaterialCataloguePanel({ makerspaceId, typeId, custom, materials
       <button className="desk-button" disabled={add.isPending}>Add material</button>
     </form> : null}
     {custom && intakeEnabled ? <form className="grid gap-2" onSubmit={event => { event.preventDefault(); try { const parsed: unknown = JSON.parse(schema); setSchemaError(""); saveSchema.mutate(parsed); } catch { setSchemaError("Enter valid JSON."); } }}>
-      <label className="grid gap-1 text-sm">Intake schema<textarea className="desk-input min-h-32 font-mono" value={schema} onChange={event => setSchema(event.target.value)} /></label>
+      <label className="grid gap-1 text-sm">Intake schema<textarea className="desk-input min-h-32 code-text" value={schema} onChange={event => setSchema(event.target.value)} /></label>
       <p className="text-xs text-muted">Use version 1 with a fields array. Each field has key, label, type (text, number, integer, choice or boolean) and optional required. Choice fields need choices. Numeric fields accept min/max. Empty object disables intake. Enable Structured machine intake in features to show it publicly.</p>
       <div className="flex gap-2"><button className="desk-button" disabled={saveSchema.isPending}>Save intake schema</button><button className="desk-button-ghost" type="button" disabled={!intake.data} onClick={() => setSchema(JSON.stringify(intake.data?.intake_schema ?? {}, null, 2))}>Load saved schema</button></div>
     </form> : null}

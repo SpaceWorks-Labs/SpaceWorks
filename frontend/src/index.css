@@ -1,27 +1,34 @@
 @import "tailwindcss";
 @import "./styles/chrome.css";
 @import "./styles/components.css";
+@import "./styles/buttons.css";
 @config "../tailwind.config.ts";
 
-/* Self-hosted fonts: Clash Display headings and JetBrains Mono labels. */
 @font-face {
-  font-family: "Clash Display";
-  src: url("/fonts/ClashDisplay-Semibold.woff2") format("woff2");
-  font-weight: 600;
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Clash Display";
-  src: url("/fonts/ClashDisplay-Bold.woff2") format("woff2");
-  font-weight: 700;
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Light.woff2") format("woff2");
+  font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "JetBrains Mono";
-  src: url("/fonts/JetBrainsMono-Variable.woff2") format("woff2");
+  font-family: "Outfit";
+  src: url("/fonts/Outfit-Variable.woff2") format("woff2");
   font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Unbounded";
+  src: url("/fonts/Unbounded-Variable.woff2") format("woff2");
+  font-weight: 500 600;
   font-style: normal;
   font-display: swap;
 }
@@ -29,103 +36,137 @@
 @layer base {
   :root {
     color-scheme: light;
-    --color-accent: 125 211 252;
-    --color-accent-ink: 0 55 74;
-    --color-accent-bright: 56 189 248;
-    --color-secondary: 249 168 212;
-    --color-secondary-ink: 90 22 51;
-    --brand-tint-10-alpha: 0.1;
-    --brand-tint-15-alpha: 0.15;
-    /* on-* = FIXED dark text for solid bright pastel fills (badges/status boxes);
-       the {name}-ink tokens above are for STANDALONE colored text + /15 tints and
-       go light in dark mode, so they must NOT be used on a solid pastel fill. */
-    --color-on-accent: 0 55 74;
-    --color-on-success: 0 50 27;
-    --color-on-warn: 61 52 0;
-    --color-on-info: 0 55 74;
-    --color-on-secondary: 90 22 51;
-    --color-ink: 31 46 53;
-    --color-bg: 250 249 244;
-    --color-surface: 239 238 233;
+    --color-bg: 255 244 232;
+    --color-surface: 246 236 224;
     --color-panel: 255 255 255;
-    /* Darkened from 107 119 128, which measured 4.35:1 on --color-bg and 3.95:1
-       on --color-surface — below the 4.5:1 AA floor for body text on the two
-       backgrounds it sits on most. This value clears 4.98:1 everywhere. */
-    --color-muted: 92 103 112;
-    --color-line: 227 225 216;
-    --color-outline: 196 193 182;
-    /* Focus indicator. Deliberately not the pastel accent: at the /40 alpha the
-       rings used to carry it, the indicator fell below the 3:1 that WCAG 2.2
-       SC 2.4.11 wants against adjacent colours. */
-    --color-focus: 12 74 110;
-    --color-success: 116 221 156;
-    --color-success-ink: 0 50 27;
-    --color-warn: 252 223 70;
-    --color-warn-ink: 61 52 0;
-    --color-info: 125 211 252;
-    --color-info-ink: 0 55 74;
-    --color-danger: 164 36 59;
-    --color-danger-ink: 90 22 32;
-    --shadow-color: 31 46 53;
+    --color-hover: 239 230 219;
+    --color-line: 213 208 198;
+    --color-outline: 130 138 131;
+    --color-ink: 20 44 42;
+    --color-muted: 91 104 99;
+    --color-focus: 0 110 99;
+    --color-accent: 0 110 99;
+    --color-accent-hover: 2 103 93;
+    --color-accent-active: 4 97 88;
+    --color-on-accent: 255 244 232;
+    --color-accent-soft: 224 238 236;
+    --color-accent-ink: 0 110 99;
+    --color-brand: 0 110 99;
+    --color-brand-hover: 2 103 93;
+    --color-brand-active: 4 97 88;
+    --color-on-brand: 255 244 232;
+    --color-brand-soft: 224 238 236;
+    --color-brand-ink: 0 110 99;
+    --color-brand-boundary: 0 110 99;
+    --color-emphasis: 255 116 71;
+    --color-emphasis-hover: 255 129 87;
+    --color-emphasis-active: 255 142 103;
+    --color-on-emphasis: 20 44 42;
+    --color-emphasis-soft: 255 238 233;
+    --color-success: 223 255 143;
+    --color-success-hover: 203 234 133;
+    --color-success-active: 182 213 123;
+    --color-on-success: 20 44 42;
+    --color-success-soft: 251 255 242;
+    --color-success-ink: 83 109 73;
+    --color-warn: 255 212 71;
+    --color-warn-hover: 232 195 68;
+    --color-warn-active: 208 178 65;
+    --color-on-warn: 20 44 42;
+    --color-warn-soft: 255 250 233;
+    --color-warn-ink: 105 104 52;
+    --color-info: 181 205 255;
+    --color-info-hover: 165 189 234;
+    --color-info-active: 149 173 212;
+    --color-on-info: 20 44 42;
+    --color-info-soft: 246 249 255;
+    --color-info-ink: 81 105 123;
+    --color-danger: 185 28 28;
+    --color-danger-hover: 153 27 27;
+    --color-danger-active: 133 30 29;
+    --color-on-danger: 255 244 232;
+    --color-danger-line: 252 165 165;
+    --color-sidebar: 223 255 143;
+    --color-sidebar-hover: 242 255 210;
+    --color-sidebar-active: 0 110 99;
+    --shadow-color: 20 44 42;
   }
-
   :root.dark {
     color-scheme: dark;
-    --color-accent: 125 211 252;
-    /* {name}-ink go LIGHT in dark mode - these style STANDALONE colored text (links,
-       eyebrows, /15-tinted badges) on the dark neutral bg. Solid pastel fills use the
-       fixed on-* tokens below instead. */
-    --color-accent-ink: 125 211 252;
-    --color-accent-bright: 56 189 248;
-    --color-secondary: 249 168 212;
-    --color-secondary-ink: 249 168 212;
-    --brand-tint-10-alpha: 0.07;
-    --brand-tint-15-alpha: 0.0705;
-    --color-on-accent: 0 55 74;
-    --color-on-success: 0 50 27;
-    --color-on-warn: 61 52 0;
-    --color-on-info: 0 55 74;
-    --color-on-secondary: 90 22 51;
-    --color-ink: 236 234 242;
-    --color-bg: 22 22 28;
-    --color-surface: 38 40 51;
-    --color-panel: 29 30 38;
-    /* Dark-mode muted already measured 5.58:1 at worst, so it is unchanged. */
-    --color-muted: 154 160 173;
-    --color-line: 51 52 63;
-    --color-outline: 71 73 86;
-    --color-focus: 186 230 253;
-    --color-success: 116 221 156;
-    --color-success-ink: 116 221 156;
-    --color-warn: 252 223 70;
-    --color-warn-ink: 252 223 70;
-    --color-info: 125 211 252;
-    --color-info-ink: 125 211 252;
-    --color-danger: 244 114 127;
-    --color-danger-ink: 90 22 32;
-    --shadow-color: 0 0 0;
+    --color-bg: 20 44 42;
+    --color-surface: 27 50 48;
+    --color-panel: 34 56 53;
+    --color-hover: 46 66 63;
+    --color-line: 55 74 71;
+    --color-outline: 119 128 122;
+    --color-ink: 255 244 232;
+    --color-muted: 192 190 181;
+    --color-focus: 163 196 184;
+    --color-accent: 87 156 144;
+    --color-accent-hover: 104 165 153;
+    --color-accent-active: 121 174 162;
+    --color-on-accent: 20 44 42;
+    --color-accent-soft: 40 68 64;
+    --color-accent-ink: 163 196 184;
+    --color-brand: 87 156 144;
+    --color-brand-hover: 104 165 153;
+    --color-brand-active: 121 174 162;
+    --color-on-brand: 20 44 42;
+    --color-brand-soft: 40 68 64;
+    --color-brand-ink: 163 196 184;
+    --color-brand-boundary: 163 196 184;
+    --color-emphasis: 255 116 71;
+    --color-emphasis-hover: 255 129 87;
+    --color-emphasis-active: 255 142 103;
+    --color-on-emphasis: 20 44 42;
+    --color-emphasis-soft: 61 63 55;
+    --color-success: 223 255 143;
+    --color-success-hover: 203 234 133;
+    --color-success-active: 182 213 123;
+    --color-on-success: 20 44 42;
+    --color-success-soft: 57 80 64;
+    --color-success-ink: 223 255 143;
+    --color-warn: 255 212 71;
+    --color-warn-hover: 232 195 68;
+    --color-warn-active: 208 178 65;
+    --color-on-warn: 20 44 42;
+    --color-warn-soft: 61 75 55;
+    --color-warn-ink: 255 212 71;
+    --color-info: 181 205 255;
+    --color-info-hover: 165 189 234;
+    --color-info-active: 149 173 212;
+    --color-on-info: 20 44 42;
+    --color-info-soft: 52 74 77;
+    --color-info-ink: 181 205 255;
+    --color-danger: 252 165 165;
+    --color-danger-hover: 253 185 182;
+    --color-danger-active: 253 201 195;
+    --color-on-danger: 20 44 42;
+    --color-danger-line: 124 98 97;
+    --color-sidebar: 20 44 42;
+    --color-sidebar-hover: 46 66 63;
+    --color-sidebar-active: 87 156 144;
+    --shadow-color: 20 44 42;
   }
 
   body {
     @apply bg-bg text-ink antialiased;
-    font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-      sans-serif;
-    background-image:
-      linear-gradient(to right, rgb(var(--color-ink) / 0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(var(--color-ink) / 0.045) 1px, transparent 1px);
-    background-size: 32px 32px;
+    font-family: "Outfit", sans-serif;
+    font-synthesis: none;
   }
-  :root.dark body {
-    background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
-  }
-
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Clash Display", ui-sans-serif, system-ui, sans-serif;
+    font-family: "Gilroy", "Outfit", sans-serif;
+    font-weight: 800;
+    line-height: 1.25;
     letter-spacing: -0.01em;
   }
+  code, kbd, samp, pre {
+    font-family: "Outfit", sans-serif;
+    font-variant-numeric: tabular-nums slashed-zero;
+    letter-spacing: 0.02em;
+    font-size: 1em;
+  }
+  pre { white-space: pre-wrap; }
 
   #root {
     min-height: 100vh;

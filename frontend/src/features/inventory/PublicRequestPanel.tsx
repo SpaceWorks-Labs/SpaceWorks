@@ -127,20 +127,20 @@ export function PublicRequestPanel({
   const tabTone: Record<ActiveTab, { active: string; idle: string }> = {
     borrow: {
       active:
-        "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
-      idle: "hover:border-secondary hover:bg-secondary/15 hover:text-secondary-ink",
+        "border-brand bg-brand text-on-brand dark:bg-brand-soft dark:text-brand-ink",
+      idle: "hover:border-brand hover:bg-brand-soft hover:text-brand-ink",
     },
     scan: {
       active:
-        "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
-      idle: "hover:border-secondary hover:bg-secondary/15 hover:text-secondary-ink",
+        "border-brand bg-brand text-on-brand dark:bg-brand-soft dark:text-brand-ink",
+      idle: "hover:border-brand hover:bg-brand-soft hover:text-brand-ink",
     },
   };
 
   function tabClass(tab: ActiveTab) {
     const tone = tabTone[tab];
     return activeTab === tab
-      ? `status-box min-h-11 w-full py-2 shadow-soft ${tone.active}`
+      ? `status-box min-h-11 w-full py-2  ${tone.active}`
       : `status-box min-h-11 w-full py-2 ${tone.idle}`;
   }
 
@@ -162,7 +162,7 @@ export function PublicRequestPanel({
     <aside className="space-y-4 lg:sticky lg:top-0 lg:max-h-[100dvh] lg:flex lg:flex-col lg:overflow-hidden">
       {disabled ? (
         <Card>
-          <p className="eyebrow text-secondary-ink">
+          <p className="eyebrow text-brand-ink">
             Requests
           </p>
           <h2 className="title-panel mt-2">Unavailable</h2>
@@ -173,7 +173,7 @@ export function PublicRequestPanel({
       ) : (
         <>
           <Card className="shrink-0" padding="sm">
-            <h2 className="title-panel text-secondary-ink">
+            <h2 className="title-panel text-brand-ink">
               {accountLess && activeTab === "borrow"
                 ? "Borrow something"
                 : "Member borrowing"}

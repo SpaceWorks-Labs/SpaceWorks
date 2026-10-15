@@ -115,7 +115,7 @@ export function MakerspaceLoanSettings({ makerspaceId }: { makerspaceId: number 
         submit();
       }}
     >
-      <h4 id="loan-settings-heading" className="font-semibold text-ink">Loans</h4>
+      <h4 id="loan-settings-heading" className="font-extrabold text-ink">Loans</h4>
       <p className="mt-1 text-sm text-muted">
         Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue.
       </p>

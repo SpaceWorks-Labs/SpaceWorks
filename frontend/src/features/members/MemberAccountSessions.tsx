@@ -19,7 +19,7 @@ export function MemberAccountSessions({ makerspaceId, onSignedOut }: { makerspac
       <p>{session.kind === "device" ? "Native device" : "Browser session"}{session.current ? " (this session)" : ""}</p>
       <p className="text-sm text-muted">Started {new Date(session.created_at).toLocaleString()}{session.last_used_at ? ` · Last used ${new Date(session.last_used_at).toLocaleString()}` : ""}</p>
       {session.id.startsWith("web-legacy:") ? <p className="text-sm text-muted">This older session loses refresh access immediately; its current access token lasts until its original expiry.</p> : null}
-      <button className="desk-button-secondary mt-2" disabled={revoke.isPending} onClick={() => revoke.mutate(session)}>Revoke {session.current ? "this session" : session.kind === "device" ? "device" : "session"}</button>
+      <button className="desk-button-brand mt-2" disabled={revoke.isPending} onClick={() => revoke.mutate(session)}>Revoke {session.current ? "this session" : session.kind === "device" ? "device" : "session"}</button>
     </div>)}
     <div className="flex gap-2 mt-3"><button className="desk-button" disabled={!rows.data?.previous} onClick={() => setPage(page - 1)}>Previous sessions</button><button className="desk-button" disabled={!rows.data?.next} onClick={() => setPage(page + 1)}>Next sessions</button></div>
   </section>;

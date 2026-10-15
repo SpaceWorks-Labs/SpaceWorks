@@ -30,7 +30,7 @@ function statusChip(availability: Availability): { text: string; cls: string } |
   if (label === "Limited") {
     return {
       text: count != null ? `Limited (${count})` : "Limited",
-      cls: "chip border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
+      cls: "chip border-warn bg-warn text-on-warn dark:bg-warn-soft dark:text-warn-ink",
     };
   }
   return {
@@ -52,7 +52,7 @@ export function ProductCard({
   const idLabel = `ID: ${String(product.id).padStart(4, "0")}`;
 
   return (
-    <article className="group flex h-full flex-col rounded-xl border border-line bg-panel shadow-soft transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-soft-lg">
+    <article className="group flex h-full flex-col rounded-xl border border-line bg-panel ">
       <button
         className="relative h-44 overflow-hidden rounded-t-xl border-b border-line bg-surface text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         type="button"
@@ -64,11 +64,11 @@ export function ProductCard({
             src={product.image_url}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="blueprint-bg grid h-full w-full place-items-center">
-            <span className="font-display text-4xl font-bold uppercase text-ink/15">
+          <div className="bg-surface grid h-full w-full place-items-center">
+            <span className="font-display text-4xl font-extrabold uppercase text-ink">
               {product.name.slice(0, 2)}
             </span>
           </div>
@@ -102,19 +102,19 @@ export function ProductCard({
           <div className="flex items-center rounded-lg border border-line bg-bg">
             <button
               aria-label={`Remove ${product.name}`}
-              className="h-11 w-11 font-mono text-lg font-semibold text-ink transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
+              className="h-11 w-11 tabular-nums text-lg font-semibold text-ink transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
               disabled={quantity === 0}
               type="button"
               onClick={onDecrement}
             >
               -
             </button>
-            <span className="grid h-11 min-w-11 place-items-center border-x border-line px-2 font-mono text-sm font-semibold text-ink">
+            <span className="grid h-11 min-w-11 place-items-center border-x border-line px-2 tabular-nums text-sm font-semibold text-ink">
               {quantity}
             </span>
             <button
               aria-label={`Add ${product.name}`}
-              className="h-11 w-11 font-mono text-lg font-semibold text-ink transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
+              className="h-11 w-11 tabular-nums text-lg font-semibold text-ink transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
               disabled={disabled}
               type="button"
               onClick={onIncrement}
@@ -123,7 +123,7 @@ export function ProductCard({
             </button>
           </div>
           <button
-            className="inline-flex min-h-11 min-w-0 items-center break-words font-mono text-xs font-semibold tracking-tight text-secondary-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            className="inline-flex min-h-11 min-w-0 items-center break-words text-xs font-semibold tracking-tight text-brand-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             type="button"
             onClick={onOpenDetails}
           >

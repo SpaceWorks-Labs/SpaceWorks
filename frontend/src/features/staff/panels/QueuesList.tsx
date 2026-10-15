@@ -35,7 +35,7 @@ export function RequestList({ rows, actions, canViewAudit = false }: { rows: Har
       {rows.map((row) => (
         <article key={row.id} className="min-w-0 border-b border-line bg-surface/50 p-3 last:border-b-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="title-section min-w-0 break-words"><span className="font-mono">#{row.id}</span> {row.requester_display || row.requester_username}</h3>
+            <h3 className="title-section min-w-0 break-words"><span className="tabular-nums">#{row.id}</span> {row.requester_display || row.requester_username}</h3>
             <span className={`status-box ${statusBadgeClassName(row.status)}`}>
               {statusStageLabel(row.status)}
             </span>

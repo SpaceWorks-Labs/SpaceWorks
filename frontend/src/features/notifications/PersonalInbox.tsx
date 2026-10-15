@@ -56,10 +56,10 @@ export function PersonalInbox({ makerspaceId, member = false }: { makerspaceId: 
     <ul className="space-y-3">{rows.data?.results.map((row) => <li key={row.id}
       className={`rounded-md border p-3 ${row.read_at ? "border-line" : "border-accent"}`}>
       <p className="text-xs text-muted">{row.feature.replace(/_/g, " ")} · {new Date(row.created_at).toLocaleString()}</p>
-      <h3 className="font-semibold text-ink">{row.title}</h3>
+      <h3 className="font-extrabold text-ink">{row.title}</h3>
       <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted">{row.summary}</p>
       <div className="mt-2 flex gap-3">{isInboxLink(row.link) ?
-        <a className="desk-button-secondary" href={row.link}>Open</a> : null}
+        <a className="desk-button" href={row.link}>Open</a> : null}
       {!row.read_at ? <button className="desk-button-success" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}</div>
     </li>)}</ul>
     <div className="mt-4 flex items-center gap-3">

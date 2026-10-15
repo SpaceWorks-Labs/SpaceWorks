@@ -130,9 +130,9 @@ export function MaintenanceSchedules({
                 </span>
               </div>
               <span className={schedule.overdue
-                ? "rounded-md bg-danger/15 px-2 py-1 text-xs font-semibold text-danger"
+                ? "rounded-md bg-panel px-2 py-1 text-xs font-semibold text-danger"
                 : schedule.is_active
-                  ? "rounded-md bg-accent/15 px-2 py-1 text-xs font-semibold text-ink"
+                  ? "rounded-md bg-accent-soft px-2 py-1 text-xs font-semibold text-ink"
                   : "rounded-md bg-surface px-2 py-1 text-xs font-semibold text-muted"}
               >
                 {schedule.overdue ? "Maintenance due" : schedule.is_active ? schedule.trigger === "usage" ? "Within usage threshold" : "Due as scheduled" : "Inactive"}

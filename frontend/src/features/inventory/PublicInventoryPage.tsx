@@ -105,7 +105,7 @@ export function PublicInventoryPage() {
                   onChange={(event) => setSearchInput(event.target.value)}
                 />
               </Field>
-              <button className="desk-button-secondary" type="submit">
+              <button className="desk-button-brand" type="submit">
                 Search
               </button>
               {query ? (
@@ -150,7 +150,7 @@ export function PublicInventoryPage() {
                 ))}
               </div>
               <div className="desk-panel flex flex-wrap items-center justify-between gap-3 p-3">
-                <p className="min-w-0 font-mono text-sm text-muted">
+                <p className="min-w-0 tabular-nums text-sm text-muted">
                   Page {page} of {pageCount}
                   {inventoryQuery.isFetching ? " loading..." : ""}
                 </p>

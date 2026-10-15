@@ -26,3 +26,6 @@ Full terms:
 This program is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+Self-hosted fonts: Gilroy (Radomir Tinkov Free Font EULA), Outfit and Unbounded
+(SIL OFL 1.1). See frontend/public/fonts/LICENSES/ for the licence texts.

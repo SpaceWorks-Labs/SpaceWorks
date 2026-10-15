@@ -152,7 +152,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
             {documents.map((document) => (
               <div key={document.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-2 py-1.5 text-xs">
                 <span className="min-w-0 flex-1 break-words text-ink">{document.original_filename}</span>
-                <span className="font-mono text-muted">{formatBytes(document.size_bytes)}</span>
+                <span className="tabular-nums text-muted">{formatBytes(document.size_bytes)}</span>
                 <button type="button" className="desk-button text-xs" onClick={() => openDocument(document.id)}>
                   View
                 </button>
@@ -188,7 +188,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
                   const files = Array.from(event.target.files ?? []);
                   if (files.length) upload.mutate(files);
                 }}
-                className="block w-full max-w-full min-w-0 text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:font-mono file:text-xs file:font-semibold file:text-on-accent"
+                className="block w-full max-w-full min-w-0 text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-on-accent"
               />
               {upload.isPending ? <p className="mt-1 text-xs text-muted">Uploading...</p> : null}
             </div>

@@ -41,7 +41,7 @@ export function EventSeriesCollaborationInbox({ makerspaceId }: { makerspaceId: 
   if (!rows.length) return null;
 
   return <section className="mb-5 rounded-xl border border-line bg-bg p-4" aria-labelledby="series-collaboration-inbox-title">
-    <h3 id="series-collaboration-inbox-title" className="mb-1 font-semibold text-ink">Recurring-series invitations</h3>
+    <h3 id="series-collaboration-inbox-title" className="mb-1 font-extrabold text-ink">Recurring-series invitations</h3>
     <p className="mb-3 text-sm text-muted">Accept once to make every current and future occurrence available to your members.</p>
     <ul className="space-y-3 text-sm">{rows.map((row) => <li key={row.id} className="flex flex-wrap items-center justify-between gap-2">
       <span><span className="font-medium text-ink">{row.series_title}</span><span className="block text-muted">Hosted by {row.host_name}{row.next_occurrence_at ? ` · Next ${new Date(row.next_occurrence_at).toLocaleString()}` : ""}</span></span>

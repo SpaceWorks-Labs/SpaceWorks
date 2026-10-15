@@ -61,7 +61,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
 
   return (
     <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-semibold text-ink">Branding</h3>
+      <h3 className="text-base font-extrabold text-ink">Branding</h3>
       <p className="mt-1 text-sm text-muted">
         Logo and cover image shown on this makerspace&apos;s public pages. When no logo is set,
         the makerspace name is shown as the wordmark.

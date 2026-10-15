@@ -104,7 +104,7 @@ export function TenantMigrationExports({
         </label>
         <label className="text-sm text-ink">
           Target age recipient
-          <input className="desk-input mt-1 w-full font-mono" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="age1…" />
+          <input className="desk-input mt-1 w-full code-text" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="age1…" />
         </label>
       </div>
       <button className="desk-button-primary mt-3" type="button" disabled={!selectedApproval || !recipient.trim() || createExport.isPending} onClick={() => createExport.mutate()}>
@@ -125,7 +125,7 @@ export function TenantMigrationExports({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-ink">Export {job.id}</p>
-                  <p className="mt-1 break-all font-mono text-xs text-muted">Archive digest: {job.archive_digest || "Pending"}</p>
+                  <p className="mt-1 break-all code-text text-xs text-muted">Archive digest: {job.archive_digest || "Pending"}</p>
                 </div>
                 <StatusPill tone={job.status === "failed" ? "danger" : job.status === "available" ? "success" : "warn"}>{(job.status ?? "pending").toUpperCase()}</StatusPill>
               </div>
@@ -146,10 +146,10 @@ export function TenantMigrationExports({
               ) : null}
               {pairing ? (
                 <div className="mt-3 rounded-md border border-line p-3">
-                  <p className="text-xs text-muted">Pinned pairing <span className="font-mono">{pairing.id}</span></p>
+                  <p className="text-xs text-muted">Pinned pairing <span className="tabular-nums">{pairing.id}</span></p>
                   <label className="mt-2 block text-sm text-ink">
                     Target ABORTED receipt (only for recovery after target abort)
-                    <textarea className="desk-input mt-1 min-h-24 w-full font-mono text-xs" value={abortReceiptText} onChange={(event) => setAbortReceipts((current) => ({ ...current, [pairing.id]: event.target.value }))} />
+                    <textarea className="desk-input mt-1 min-h-24 w-full code-text text-xs" value={abortReceiptText} onChange={(event) => setAbortReceipts((current) => ({ ...current, [pairing.id]: event.target.value }))} />
                   </label>
                   <button className="desk-button-danger mt-2" type="button" disabled={!abortReceipt || recover.isPending} onClick={() => {
                     if (abortReceipt && window.confirm(`Recover archived source ${tenantName}? Use only after the target is ABORTED.`)) recover.mutate({ pairingId: pairing.id, receipt: abortReceipt });

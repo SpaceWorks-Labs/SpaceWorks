@@ -53,7 +53,7 @@ export function PaymentReconcileActions({
   }).format(Number(payment.amount));
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-      <span className="font-mono font-semibold text-ink">Payment {amount}</span>
+      <span className="tabular-nums font-semibold text-ink">Payment {amount}</span>
       <StatusBadge status={payment.status} />
       {payment.status === "pending" ? (
         <>

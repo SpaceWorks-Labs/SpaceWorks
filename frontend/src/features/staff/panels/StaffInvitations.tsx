@@ -23,7 +23,7 @@ export function StaffInvitations({ msId, roles }: { msId: number; roles: StaffRo
     onSuccess: (data) => { setDelivery(data.accept_url ? data as Delivery : undefined); void client.invalidateQueries({ queryKey: key }); } });
   const staffRoles = roles.filter((role) => role.granted_actions.length > 0);
   return <section className="grid gap-4 rounded border border-line p-4">
-    <h2 className="text-lg font-bold">Staff invitations</h2>
+    <h2 className="text-lg font-extrabold">Staff invitations</h2>
     <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
       <label>Email<input className="desk-input block" type="email" value={email} required onChange={(event) => setEmail(event.target.value)} /></label>
       <label>Role<select className="desk-input block" value={roleId} required onChange={(event) => setRoleId(event.target.value)}>

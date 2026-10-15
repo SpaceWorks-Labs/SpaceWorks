@@ -71,7 +71,7 @@ export function OrganizedEventsPanel() {
                     <span className="mt-1 block max-w-56 break-words">{row.location || "No location"}</span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 align-top">
-                    <StatusBadge status={row.status} />
+                    <StatusBadge domain="event" status={row.status} />
                   </td>
                   <td className="px-3 py-2 align-top">
                     <RegistrationTotals event={row} />
@@ -82,7 +82,7 @@ export function OrganizedEventsPanel() {
                         {row.organizers.map((organizer) => (
                           <li key={organizer.slug}>
                             <span className="font-medium text-ink">{organizer.name}</span>{" "}
-                            <span className="font-mono text-xs text-muted">({organizer.slug})</span>
+                            <span className="code-text text-xs text-muted">({organizer.slug})</span>
                           </li>
                         ))}
                       </ul>
@@ -100,7 +100,7 @@ export function OrganizedEventsPanel() {
           <button className="desk-button-ghost" type="button" disabled={!events.data.previous} onClick={() => setPage((current) => Math.max(1, current - 1))}>
             Previous
           </button>
-          <span className="font-mono text-muted">Page {page} of {totalPages}</span>
+          <span className="tabular-nums text-muted">Page {page} of {totalPages}</span>
           <button className="desk-button-ghost" type="button" disabled={!events.data.next} onClick={() => setPage((current) => current + 1)}>
             Next
           </button>
@@ -128,7 +128,7 @@ function RegistrationTotals({ event }: { event: EventAdmin }) {
   const rejected = counts.rejected ?? 0;
   const total = counts.registered + counts.attended + counts.waitlisted + counts.cancelled + pending + rejected;
   return (
-    <div className="font-mono text-xs text-muted">
+    <div className="tabular-nums text-xs text-muted">
       <span className="block text-sm font-medium text-ink">{total} total</span>
       <span className="block">{counts.registered} registered · {counts.attended} attended</span>
       <span className="block">{counts.waitlisted} waitlisted · {counts.cancelled} cancelled</span>

@@ -118,7 +118,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
         <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div className="grid min-w-0 max-w-2xl gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-ink">Custom domain</h3>
+              <h3 className="text-base font-extrabold text-ink">Custom domain</h3>
               <Badge tone={isSelfHostActive ? "success" : domainStatusTone(status)}>
                 {isSelfHostActive ? "Active" : domainStatusLabel(status)}
               </Badge>
@@ -224,12 +224,12 @@ function DnsRecord({ record }: { record: DomainRecord }) {
     <div className="grid min-w-0 gap-2">
       <p className="font-semibold text-ink">DNS TXT record</p>
       <dl className="grid min-w-0 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
-        <dt className="font-mono text-xs uppercase text-muted">Host</dt>
-        <dd className="break-all font-mono text-xs text-ink">{record.host}</dd>
-        <dt className="font-mono text-xs uppercase text-muted">Type</dt>
-        <dd className="font-mono text-xs text-ink">{record.type}</dd>
-        <dt className="font-mono text-xs uppercase text-muted">Value</dt>
-        <dd className="break-all font-mono text-xs text-ink">{record.value}</dd>
+        <dt className="text-xs uppercase text-muted">Host</dt>
+        <dd className="break-all code-text text-xs text-ink">{record.host}</dd>
+        <dt className="text-xs uppercase text-muted">Type</dt>
+        <dd className="code-text text-xs text-ink">{record.type}</dd>
+        <dt className="text-xs uppercase text-muted">Value</dt>
+        <dd className="break-all code-text text-xs text-ink">{record.value}</dd>
       </dl>
     </div>
   );

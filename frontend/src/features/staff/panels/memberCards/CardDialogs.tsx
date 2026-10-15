@@ -35,7 +35,7 @@ export function ReissueCardDialog({
       }
     >
       <p className="text-sm text-muted">
-        Replaces <span className="font-mono">{card?.card_number}</span> for {card?.printed_name}. The
+        Replaces <span className="tabular-nums">{card?.card_number}</span> for {card?.printed_name}. The
         old card stops resolving as soon as the new one is issued.
       </p>
       <Field label="Reason" className="mt-3">
@@ -94,7 +94,7 @@ export function RevokeCardDialog({
       }
     >
       <p className="text-sm text-muted">
-        Revoke <span className="font-mono">{card?.card_number}</span> for {card?.printed_name}? It
+        Revoke <span className="tabular-nums">{card?.card_number}</span> for {card?.printed_name}? It
         will stop resolving at the door, and its photo is deleted.
       </p>
       <Field label="Reason (optional)" className="mt-3">

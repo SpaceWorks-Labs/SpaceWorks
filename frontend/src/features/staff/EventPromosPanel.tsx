@@ -21,7 +21,7 @@ export function EventPromosPanel({ eventId, disabled = false }: { eventId: numbe
       <label>Promo expiry<input className="desk-input" type="datetime-local" value={expiry} disabled={disabled} onChange={(e) => setExpiry(e.target.value)} /></label>
       <button className="desk-button" disabled={disabled || create.isPending}>Create promo code</button>
     </form>
-    {code ? <div role="status">Copy this code now. It is shown once: <output className="font-mono break-all">{code}</output><button className="desk-button" onClick={() => setCode("")}>Hide code</button></div> : null}
+    {code ? <div role="status">Copy this code now. It is shown once: <output className="code-text break-all">{code}</output><button className="desk-button" onClick={() => setCode("")}>Hide code</button></div> : null}
     {rows.error || create.error || revoke.error ? <p role="alert">{(rows.error || create.error || revoke.error)?.message}</p> : null}
     {rows.isLoading ? <p role="status">Loading promo codes...</p> : null}
     <ul>{rows.data?.results.map((row) => <li key={row.id}>Promo {row.id} ({row.percent_off ? `${row.percent_off}%` : row.amount_off} discount) · {row.uses}/{row.max_uses} uses {row.revoked_at ? "· Revoked" : <button className="desk-button-danger" disabled={disabled || revoke.isPending} onClick={() => revoke.mutate(row.id)}>Revoke promo {row.id}</button>}</li>)}</ul>

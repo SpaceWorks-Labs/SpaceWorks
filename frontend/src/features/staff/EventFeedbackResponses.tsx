@@ -13,7 +13,7 @@ export function EventFeedbackResponses({ eventId, makerspaceId, responseCount }:
   const [page, setPage] = useState(1);
   const responses = useEventFeedbackResponses(eventId, page, true);
   return <div className="mt-5">
-    <h4 className="title-section">Responses <span className="font-mono">({responses.data?.count ?? responseCount})</span></h4>
+    <h4 className="title-section">Responses <span className="tabular-nums">({responses.data?.count ?? responseCount})</span></h4>
     {responses.isLoading ? <Skeleton className="mt-2 h-24 w-full" /> : null}
     {responses.error ? <p className="mt-2 text-sm text-danger">{eventErrorText(responses.error)}</p> : null}
     {responses.data?.results.map((response) => <article key={response.id} className="mt-2 rounded-lg border border-line p-3 text-sm">

@@ -50,7 +50,7 @@ export function ApiClientListCard({
   if (canManageMakerspace) {
     return (
       <article className="rounded-md border border-line bg-surface p-3">
-        <h3 className="font-semibold text-ink">Existing clients</h3>
+        <h3 className="font-extrabold text-ink">Existing clients</h3>
         {clientsLoading ? <p className="mt-3 text-sm text-muted">Loading clients...</p> : null}
         <div className="mt-3 space-y-2">
           {clients?.map((client) => (
@@ -83,7 +83,7 @@ export function ApiClientListCard({
   return (
     <>
       <article className="rounded-md border border-line bg-surface p-3">
-        <h3 className="font-semibold text-ink">Your requests</h3>
+        <h3 className="font-extrabold text-ink">Your requests</h3>
         <div className="mt-3 space-y-2">
           {requests?.map((request) => (
             <div key={request.id} className="rounded-md border border-line bg-bg p-3">
@@ -141,12 +141,12 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, dele
   return (
     <div className="rounded-md border border-line bg-bg p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><p className="font-semibold text-ink">{client.label}</p><p className="mt-1 break-all font-mono text-xs text-muted">{client.client_id}</p></div>
-        <span className={`rounded-md px-2 py-1 text-xs font-semibold ${client.is_active ? "bg-success/15 text-success-ink" : "bg-warn/15 text-warn-ink"}`}>{client.is_active ? "Active" : "Inactive"}</span>
+        <div><p className="font-semibold text-ink">{client.label}</p><p className="mt-1 break-all code-text text-xs text-muted">{client.client_id}</p></div>
+        <span className={`rounded-md px-2 py-1 text-xs font-semibold ${client.is_active ? "bg-success-soft text-success-ink" : "bg-warn-soft text-warn-ink"}`}>{client.is_active ? "Active" : "Inactive"}</span>
       </div>
       <p className="mt-2 break-all text-xs text-muted">{client.allowed_origins.length ? `Origins: ${client.allowed_origins.join(", ")}` : "No browser origins configured."}</p>
       <p className="mt-2 text-xs text-muted">Scopes: {client.scopes.join(", ")}</p>
-      {hasLegacy ? <p className="mt-2 rounded-md border border-warn/40 bg-warn/10 p-2 text-xs text-warn-ink">Legacy v1 access preserves the frozen cutover capability. Select explicit replacement scopes and save; viewing this client never changes it.</p> : null}
+      {hasLegacy ? <p className="mt-2 rounded-md border border-warn/40 bg-warn-soft p-2 text-xs text-warn-ink">Legacy v1 access preserves the frozen cutover capability. Select explicit replacement scopes and save; viewing this client never changes it.</p> : null}
       {scopesLoading ? <p className="mt-2 text-xs text-muted">Loading scope choices...</p> : null}
       {!scopesLoading && clientScopeOptions.length ? <div className="mt-2"><ApiClientScopePicker options={clientScopeOptions} selected={selected} onChange={setSelected} disabled={updatePending} /></div> : null}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

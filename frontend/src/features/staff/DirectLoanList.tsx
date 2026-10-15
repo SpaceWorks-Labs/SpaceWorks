@@ -56,7 +56,7 @@ export function DirectLoanList({
           <article key={loan.id} className="rounded-md border border-line bg-surface p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-ink">{loan.target_label}</h3>
+                <h3 className="font-extrabold text-ink">{loan.target_label}</h3>
                 <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted">
                   <span className={`status-box ${directLoanStatusClassName(loan.status)}`}>
                     {directLoanStatusLabel(loan.status)}

@@ -149,14 +149,14 @@ export function Ledger({ makerspace, isSuperadmin }: { makerspace: Makerspace; i
                 {rows.map((row) => {
                   const overdue = isOverdue(row.due, now);
                   return (
-                    <tr key={`${row.source}-${row.reference_id}-${row.makerspace_id}-${row.item_name}`} className={overdue ? "bg-danger/10" : ""}>
+                    <tr key={`${row.source}-${row.reference_id}-${row.makerspace_id}-${row.item_name}`} className={overdue ? "bg-panel" : ""}>
                       <td className="px-3 py-2 align-top">
                         <div className="max-w-56 break-words font-medium text-ink">{row.item_name}</div>
                         {row.container ? <div className="mt-0.5 break-words text-xs text-muted">Box: {row.container}</div> : null}
                         <UnitLines row={row} />
                       </td>
                       <td className="px-3 py-2 align-top text-ink"><span className="block max-w-48 break-words">{row.holder}</span></td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-semibold text-ink">{row.quantity}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums font-semibold text-ink">{row.quantity}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-muted">{formatDate(row.since)}</td>
                       <td className={`whitespace-nowrap px-3 py-2 ${overdue ? "font-semibold text-danger" : "text-muted"}`}>
                         <span className="inline-flex items-center gap-2">
@@ -183,7 +183,7 @@ export function Ledger({ makerspace, isSuperadmin }: { makerspace: Makerspace; i
             <button className="desk-button-ghost" type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
               Previous
             </button>
-            <span className="font-mono">Page {page} of {totalPages}</span>
+            <span className="tabular-nums">Page {page} of {totalPages}</span>
             <button className="desk-button-ghost" type="button" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
               Next
             </button>

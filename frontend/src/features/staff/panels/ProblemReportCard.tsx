@@ -28,7 +28,7 @@ export function ProblemReportCard({ row, makerspace, onTriaged }: { row: Problem
     <div className="grid gap-3 rounded-md border border-line bg-surface p-3 text-sm">
       <div className="min-w-0">
         <p className="font-medium text-ink">{row.label || "(tool)"}</p>
-        <p className="font-mono text-xs text-muted">{row.requester_username} | {new Date(row.created_at).toLocaleString()}</p>
+        <p className="tabular-nums text-xs text-muted">{row.requester_username} | {new Date(row.created_at).toLocaleString()}</p>
         <p className="mt-1 break-words text-ink">{row.note}</p>
       </div>
       <div className="flex flex-wrap gap-2">

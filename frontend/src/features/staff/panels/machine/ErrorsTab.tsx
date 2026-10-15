@@ -36,7 +36,7 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
           <div key={entry.id} className="rounded-md border border-line bg-bg p-2 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <strong className="text-ink">{entry.severity}</strong>
-              <span className="font-mono text-xs text-muted">{formatDate(entry.created_at)}</span>
+              <span className="tabular-nums text-xs text-muted">{formatDate(entry.created_at)}</span>
             </div>
             <p className="mt-1 whitespace-pre-wrap break-words text-muted">{entry.message}</p>
             {entry.logged_by_username ? (

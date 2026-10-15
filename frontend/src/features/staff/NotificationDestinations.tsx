@@ -48,7 +48,7 @@ export function NotificationDestinations({
 
   return (
     <section aria-labelledby="notification-destinations-heading" className="mt-6">
-      <h4 id="notification-destinations-heading" className="text-sm font-semibold text-ink">
+      <h4 id="notification-destinations-heading" className="text-sm font-extrabold text-ink">
         Rooms
       </h4>
       <p className="mt-2 text-sm text-muted">

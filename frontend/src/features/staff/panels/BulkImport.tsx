@@ -123,7 +123,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
         </div>
         <details open={advancedOpen} onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}>
           <summary className="cursor-pointer text-sm font-semibold text-ink">Advanced JSON</summary>
-          <Field label="JSON rows"><textarea className="desk-input mt-2 h-32 w-full font-mono text-sm" value={rawJson} onChange={(e) => setRawJson(e.target.value)} /></Field>
+          <Field label="JSON rows"><textarea className="desk-input mt-2 h-32 w-full code-text text-sm" value={rawJson} onChange={(e) => setRawJson(e.target.value)} /></Field>
           <div className="desk-actions mt-2 flex flex-wrap gap-2">
             <button className="desk-button-ghost" type="button" disabled={pending} onClick={() => submitJson(false)}>Preview JSON</button>
             <button className="desk-button-primary" type="button" disabled={pending} onClick={() => submitJson(true)}>Apply JSON</button>

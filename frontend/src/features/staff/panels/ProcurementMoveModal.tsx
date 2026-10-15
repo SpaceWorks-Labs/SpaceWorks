@@ -78,7 +78,7 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
       footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button><button className="desk-button-primary" type="button" disabled={pending || !canSubmit} onClick={() => (isHardware ? moveHardware.mutate() : movePrinting.mutate())}>Move</button></div>}
     >
       <div className="grid gap-3 text-sm">
-        <div><p className="font-semibold text-ink">{item?.name}</p><p className="font-mono text-xs text-muted">Received quantity: {item?.quantity ?? 0}</p></div>
+        <div><p className="font-semibold text-ink">{item?.name}</p><p className="tabular-nums text-xs text-muted">Received quantity: {item?.quantity ?? 0}</p></div>
         {item?.kind === "hardware" ? (
           <HardwareMoveForm form={hardware} setForm={setHardware} products={products.data?.results ?? []} categories={categoryResults(categories.data)} containers={containers.data?.results ?? []} />
         ) : (

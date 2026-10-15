@@ -16,7 +16,7 @@ export function ApiClientsAccessSummary({
 }) {
   return (
     <article className="rounded-md border border-line bg-surface p-3">
-      <h3 className="font-semibold text-ink">Makerspace API access</h3>
+      <h3 className="font-extrabold text-ink">Makerspace API access</h3>
       <Config label="Makerspace code" value={settings?.public_code ?? makerspace.public_code} />
       <Config
         label="Allowed browser origins"
@@ -34,7 +34,7 @@ function Config({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-3">
       <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 break-all font-mono text-xs text-ink">{value}</p>
+      <p className="mt-1 break-all code-text text-xs text-ink">{value}</p>
     </div>
   );
 }

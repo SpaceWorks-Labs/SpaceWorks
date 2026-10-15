@@ -161,7 +161,7 @@ function MachinesWorkspace({
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           {onTypePage ? (
-            <Link className={`mb-1 inline-flex min-h-11 items-center gap-1 font-mono text-[11px] uppercase tracking-wide text-accent-ink hover:underline ${focusRing}`} to={indexHref}>
+            <Link className={`mb-1 inline-flex min-h-11 items-center gap-1 text-[11px] uppercase tracking-wide text-accent-ink hover:underline ${focusRing}`} to={indexHref}>
               ← All machine types
             </Link>
           ) : null}
@@ -171,11 +171,11 @@ function MachinesWorkspace({
               : "Manage shared equipment, operators, usage, documents, and operating status."}
           </p>
           {machines.data && !shownType ? (
-            <p className="mt-1 font-mono text-xs text-muted">{machines.data.count} machines total</p>
+            <p className="mt-1 tabular-nums text-xs text-muted">{machines.data.count} machines total</p>
           ) : null}
         </div>
         {shownType ? (
-          <label className="grid gap-1 font-mono text-[11px] uppercase tracking-wide text-muted sm:w-44">
+          <label className="grid gap-1 text-[11px] uppercase tracking-wide text-muted sm:w-44">
             Status
             <select className={`desk-input min-h-11 ${focusRing}`} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
               <option value="all">All statuses</option>

@@ -25,7 +25,7 @@ export function LoadingState() {
 
 export function EmptyState({ query }: { query: string }) {
   return (
-    <Card className="mx-auto max-w-lg border-secondary text-center">
+    <Card className="mx-auto max-w-lg border-brand text-center">
       <h2 className="title-panel">
         {query ? "No matching items." : "No public items yet."}
       </h2>
@@ -40,7 +40,7 @@ export function EmptyState({ query }: { query: string }) {
 
 export function ErrorState({ error }: { error: Error }) {
   return (
-    <Card className="mx-auto max-w-lg border-secondary text-center">
+    <Card className="mx-auto max-w-lg border-brand text-center">
       <h2 className="title-panel">{error.message}</h2>
       <p className="mt-2 text-sm leading-6 text-muted">
         This makerspace may not exist or its public inventory is disabled.
@@ -60,12 +60,12 @@ export function CatalogSidebar({
 }) {
   const itemClass = (active: boolean) =>
     active
-      ? "desk-nav-item desk-nav-item-active shrink-0 whitespace-nowrap border-secondary bg-secondary text-on-secondary hover:border-secondary hover:bg-secondary hover:text-on-secondary lg:shrink lg:whitespace-normal"
-      : "desk-nav-item shrink-0 whitespace-nowrap hover:border-secondary hover:bg-secondary/15 lg:shrink lg:whitespace-normal";
+      ? "desk-nav-item desk-nav-item-active shrink-0 whitespace-nowrap border-brand bg-brand text-on-brand hover:border-brand hover:bg-brand hover:text-on-brand lg:shrink lg:whitespace-normal"
+      : "desk-nav-item shrink-0 whitespace-nowrap hover:border-brand hover:bg-brand-soft lg:shrink lg:whitespace-normal";
   const countClass = (active: boolean) =>
     active
-      ? "ml-2 font-mono text-xs text-on-secondary/80"
-      : "ml-2 rounded-full bg-warn px-1.5 font-mono text-xs text-on-warn dark:bg-warn/15 dark:text-warn-ink";
+      ? "ml-2 tabular-nums text-xs text-on-brand"
+      : "ml-2 rounded-full bg-warn px-1.5 tabular-nums text-xs text-on-warn dark:bg-warn-soft dark:text-warn-ink";
 
   return (
     <Card

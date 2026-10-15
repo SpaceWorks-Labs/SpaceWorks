@@ -124,7 +124,7 @@ export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled
       ) : null}
       <Subsection title="Manual usage">
         <ManualUsageForm draft={draft} setDraft={setDraft} printers={machines} pools={manualPools} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />
-        <div className="mt-3 grid gap-2">{printerUsage.map((entry) => <p className="rounded-md border border-line p-2 font-mono text-sm" key={entry.id}>{entry.outcome} · {entry.consumed_grams}g · {entry.duration_minutes} min{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</p>)}</div>
+        <div className="mt-3 grid gap-2">{printerUsage.map((entry) => <p className="rounded-md border border-line p-2 tabular-nums text-sm" key={entry.id}>{entry.outcome} · {entry.consumed_grams}g · {entry.duration_minutes} min{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</p>)}</div>
       </Subsection>
       {printingEnabled && reportsEnabled ? (
         <Subsection title="Printer reports">

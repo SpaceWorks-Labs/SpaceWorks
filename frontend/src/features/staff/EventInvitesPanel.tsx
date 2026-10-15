@@ -17,7 +17,7 @@ export function EventInvitesPanel({ eventId, disabled = false }: { eventId: numb
       <label>Expires<input className="desk-input" type="datetime-local" value={expires} disabled={disabled} onChange={(e) => setExpires(e.target.value)} /></label>
       <button className="desk-button" disabled={disabled || create.isPending}>Create invitation</button>
     </form>
-    {code ? <div role="status"><p>Copy this code now. It is shown once.</p><output className="break-all font-mono">{code}</output><button className="desk-button" onClick={() => setCode("")}>Hide code</button></div> : null}
+    {code ? <div role="status"><p>Copy this code now. It is shown once.</p><output className="break-all code-text">{code}</output><button className="desk-button" onClick={() => setCode("")}>Hide code</button></div> : null}
     {error ? <p role="alert">{error.message}</p> : null}
     {rows.isLoading ? <p role="status">Loading invitations…</p> : null}
     <ul>{rows.data?.results.map((row) => <li key={row.id} className="flex items-center justify-between gap-2 py-2">Invitation {row.id} · {row.uses}/{row.max_uses} uses {row.revoked_at ? "· Revoked" : <button className="desk-button-danger" disabled={disabled || revoke.isPending} onClick={() => revoke.mutate(row.id)}>Revoke invitation {row.id}</button>}</li>)}</ul>

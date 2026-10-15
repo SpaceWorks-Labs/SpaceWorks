@@ -25,8 +25,8 @@ export function KioskReplayResolution({ row }: { row: RecoveryReplay }) {
   }
   return <div className="mt-3 grid gap-3">
     <div className="flex flex-wrap gap-2">
-      <button type="button" className="desk-button-secondary" disabled={mutation.isPending} onClick={() => setConfirm(true)}>Acknowledge — no change occurred</button>
-      <button type="button" className="desk-button-secondary" onClick={() => setCorrect(true)}>Correct online</button>
+      <button type="button" className="desk-button-brand" disabled={mutation.isPending} onClick={() => setConfirm(true)}>Acknowledge — no change occurred</button>
+      <button type="button" className="desk-button-brand" onClick={() => setCorrect(true)}>Correct online</button>
     </div>
     {confirm ? <section className="grid gap-2" aria-label="Confirm no physical change">
       <p className="text-sm">Confirm you verified that no physical change occurred. This records review only and does not alter inventory, the request or the failed evidence.</p>
@@ -36,7 +36,7 @@ export function KioskReplayResolution({ row }: { row: RecoveryReplay }) {
           onSuccess: () => setConfirm(false), onError: () => setError("Review was refused. Reload current permissions and failure details."),
         });
       }}>{mutation.isPending ? "Recording review…" : "Confirm acknowledgement"}</button>
-      <button type="button" className="desk-button-secondary" disabled={mutation.isPending} onClick={() => setConfirm(false)}>Cancel</button>
+      <button type="button" className="desk-button-brand" disabled={mutation.isPending} onClick={() => setConfirm(false)}>Cancel</button>
     </section> : null}
     {correct ? <section className="grid gap-2" aria-label="Correct this handover online">
       {!row.recovery_request_id && !row.recovery_loan_id ? <p className="text-sm">This attempt has no retained subject identity. Staff must inspect the physical handover; a successful replacement cannot be linked safely. Acknowledge only after verifying no change.</p> : <>

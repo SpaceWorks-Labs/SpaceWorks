@@ -70,7 +70,7 @@ function ContainerRow({ container, makerspaceId, canEditInventory, kitEnabled }:
       <div className="flex flex-wrap items-center gap-2">
         <strong className="min-w-0 break-words text-ink">{container.label}</strong>
         {container.location ? <span className="text-xs text-muted">{container.location}</span> : null}
-        {container.is_active === false ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-xs text-warn-ink">Inactive</span> : null}
+        {container.is_active === false ? <span className="rounded-md bg-warn-soft px-2 py-0.5 text-xs text-warn-ink">Inactive</span> : null}
         <div className="desk-actions ml-0 flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
           <button className="desk-button-ghost" type="button" onClick={() => setEditing((value) => !value)}>{editing ? "Cancel" : "Edit"}</button>
           <button className="desk-button-ghost" type="button" onClick={() => togglePanel("contents")}>{panel === "contents" ? "Hide contents" : "Contents"}</button>
@@ -112,7 +112,7 @@ function ContainerRow({ container, makerspaceId, canEditInventory, kitEnabled }:
           {history.isLoading ? <p className="text-xs text-muted">Loading...</p> : null}
           {history.error instanceof Error ? <p className="text-xs text-danger">{history.error.message}</p> : null}
           {!history.isLoading && !history.error && history.data?.scans.length ? history.data.scans.map((scan) => (
-            <p key={scan.id} className="font-mono text-xs text-muted">{new Date(scan.created_at).toLocaleString()} - {scan.context || "scan"} - {scan.source === "box_scan" ? "reviewed handover" : "QR scan"}</p>
+            <p key={scan.id} className="tabular-nums text-xs text-muted">{new Date(scan.created_at).toLocaleString()} - {scan.context || "scan"} - {scan.source === "box_scan" ? "reviewed handover" : "QR scan"}</p>
           )) : !history.isLoading && !history.error ? <p className="text-xs text-muted">No scan history.</p> : null}
         </div>
       ) : null}

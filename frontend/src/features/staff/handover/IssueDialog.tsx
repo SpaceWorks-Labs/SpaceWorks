@@ -56,7 +56,7 @@ export function IssueDialog({ row, makerspace, onClose }: DialogProps) {
             Assigned box: <span className="font-medium text-ink">{row.assigned_box_code}</span>
           </p>
         ) : (
-          <p className="rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-warn">
+          <p className="rounded-md border border-warn/40 bg-warn-soft px-3 py-2 text-warn-ink">
             No box is assigned to this request.
           </p>
         )}
@@ -76,7 +76,7 @@ export function IssueDialog({ row, makerspace, onClose }: DialogProps) {
         </label>
         {individualItems.length ? (
           <div className="grid gap-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Asset QR codes</h3>
+            <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted">Asset QR codes</h3>
             {assetFields.map((field) => (
               <label className="grid gap-1" key={field.key}>
                 <span className="font-medium text-ink">{field.label}</span>

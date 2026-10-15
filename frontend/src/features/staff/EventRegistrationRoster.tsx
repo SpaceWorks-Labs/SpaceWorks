@@ -49,7 +49,7 @@ export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEna
   const checkable = event.status === "published" || event.status === "completed";
 
   return <section aria-labelledby="registrations-title">
-    <h3 id="registrations-title" className="title-section mb-2">Registrations <span className="font-mono">({rows.data?.count ?? fallbackCount})</span></h3>
+    <h3 id="registrations-title" className="title-section mb-2">Registrations <span className="tabular-nums">({rows.data?.count ?? fallbackCount})</span></h3>
     {rows.isLoading ? <Skeleton className="h-32 w-full" /> : null}
     {rows.error ? <p className="text-sm text-danger">{eventErrorText(rows.error)}</p> : null}
     {rows.data && !rows.data.results.length ? <p className="text-sm text-muted">No registrations yet.</p> : null}
@@ -78,6 +78,6 @@ export function EventRegistrationRoster({ event, makerspaceId, offlineCheckInEna
         </tr>;
       })}
     </tbody></table></div> : null}
-    <div className="mt-3 flex items-center justify-between gap-2"><span className="font-mono text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!rows.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!rows.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div>
+    <div className="mt-3 flex items-center justify-between gap-2"><span className="tabular-nums text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!rows.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!rows.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div>
   </section>;
 }

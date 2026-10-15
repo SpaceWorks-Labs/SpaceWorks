@@ -28,7 +28,7 @@ export function AbandonedUploadCleanupSection({ policy, preview, pending, onChan
 
   return (
     <div className="mt-4 border-t border-line pt-4" aria-labelledby="abandoned-upload-title">
-      <h4 id="abandoned-upload-title" className="text-sm font-semibold text-ink">Abandoned upload cleanup</h4>
+      <h4 id="abandoned-upload-title" className="text-sm font-extrabold text-ink">Abandoned upload cleanup</h4>
       <p className="mt-1 text-sm text-muted">
         Removes only old upload slots that were never used by any handover. Attached evidence rows
         are immutable and are never deleted, and photos recorded before this feature (legacy) are

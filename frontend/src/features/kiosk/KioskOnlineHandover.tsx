@@ -64,14 +64,14 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
 
   return <div className="grid gap-4">
     <form className="flex flex-wrap items-end gap-3" onSubmit={submitLoad}>
-      <label className="grid gap-1 text-sm">Request number<input className="desk-input font-mono" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
-      <button className="desk-button-secondary" type="submit" disabled={!requestId}>Load request</button>
+      <label className="grid gap-1 text-sm">Request number<input className="desk-input tabular-nums" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
+      <button className="desk-button-brand" type="submit" disabled={!requestId}>Load request</button>
     </form>
     {work ? <section className="grid gap-3" aria-label={work.display_label}>
       <p className="text-sm"><strong>{work.display_label}</strong> · {work.person_display || "Requester"} · {work.status}{work.box ? ` · box ${work.box}` : ""}</p>
       <ul className="text-sm">{work.lines.map((line) => <li key={line.item_id}>{line.label} × {line.quantity} (returned {line.returned})</li>)}</ul>
       {work.status === "accepted" && !work.box && allowed.has("assign_box") ? <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); void run("assign_box", { box_code: boxCode.trim() }, "Box assigned."); }}>
-        <label className="grid gap-1 text-sm">Box code<input className="desk-input font-mono" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label>
+        <label className="grid gap-1 text-sm">Box code<input className="desk-input tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label>
         <button className="desk-button-primary" type="submit">Assign box</button>
       </form> : null}
       {canIssue || canReturn ? <form className="grid gap-3" onSubmit={(event) => {
@@ -81,7 +81,7 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
         else void run("reviewed_return", { evidence_id: evidenceId, remark, box_code: boxCode.trim(), resolutions, kit_checklist: kits.counts }, "Returned.");
       }}>
         <EvidenceUpload makerspaceId={makerspaceId} evidenceType={canIssue ? "issue" : "return"} label={canIssue ? "Issue photo" : "Return photo"} presign={presign} onUploaded={setEvidenceId} />
-        {canReturn ? <label className="grid gap-1 text-sm">Scan the box<input className="desk-input font-mono" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label> : null}
+        {canReturn ? <label className="grid gap-1 text-sm">Scan the box<input className="desk-input tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label> : null}
         <label className="grid gap-1 text-sm">Remark<input className="desk-input" required={canReturn} value={remark} onChange={(event) => setRemark(event.target.value)} /></label>
         <KitChecklistCapture checklist={kits} />
         <button className="desk-button-primary" type="submit" disabled={evidenceId === null || !kits.ready}>{canIssue ? "Issue items" : "Return all items"}</button>

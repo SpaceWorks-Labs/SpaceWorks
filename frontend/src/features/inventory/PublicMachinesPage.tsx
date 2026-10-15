@@ -92,7 +92,7 @@ export function PublicMachinesPage() {
     <SkipLink />
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4">
-        <div><p className="eyebrow text-secondary-ink">Our Machines</p>
+        <div><p className="eyebrow text-brand-ink">Our Machines</p>
           <MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} size="lg" />
         </div>
         <div className="flex flex-wrap items-center gap-2"><SpaceWorksBadge /><Link className="desk-button" to={tenantPath()}>Inventory</Link><ThemeToggle /></div>
@@ -105,7 +105,7 @@ export function PublicMachinesPage() {
         <p className="mt-2 text-sm text-muted">{throttled ? "Too many requests were made. Wait a moment and retry." : apiError?.detail ?? machines.error.message}</p>
         {!missing && !unavailable ? <button className="desk-button mt-4" type="button" onClick={() => machines.refetch()}>Retry</button> : null}
       </Card> : null}
-      {machines.data && !groups.length ? <div className="[&>div]:border-secondary"><EmptyState title="No machines listed" description="This makerspace has not published any machines yet." /></div> : null}
+      {machines.data && !groups.length ? <div className="[&>div]:border-brand"><EmptyState title="No machines listed" description="This makerspace has not published any machines yet." /></div> : null}
       {groups.length ? <div className="grid gap-4">{groups.map((group) => (
         <CollapsibleSection key={group.name} title={group.name} icon={group.icon || null}
           count={group.machines.length} open={!collapsed.has(group.name)}

@@ -7,7 +7,7 @@ function formatStatus(status: string) {
 
 export function ResultCard({ result }: { result: PublicToolLoanResult }) {
   return (
-    <div className="rounded-xl border border-success bg-success px-3 py-3 text-on-success dark:bg-success/15 dark:text-success-ink">
+    <div className="rounded-xl border border-success bg-success px-3 py-3 text-on-success dark:bg-success-soft dark:text-success-ink">
       <p className="eyebrow text-on-success dark:text-success-ink">
         {formatStatus(result.status)}
       </p>
@@ -21,7 +21,7 @@ export function ResultCard({ result }: { result: PublicToolLoanResult }) {
             key={item.product_name}
           >
             <span>{item.product_name}</span>
-            <span className="font-mono font-semibold">x{item.quantity}</span>
+            <span className="tabular-nums font-semibold">x{item.quantity}</span>
           </div>
         ))}
       </div>

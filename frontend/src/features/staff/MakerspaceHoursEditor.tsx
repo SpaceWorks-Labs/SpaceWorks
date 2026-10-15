@@ -31,7 +31,7 @@ export function MakerspaceHoursEditor({ value, onChange }: { value: HoursDraft; 
       <IntervalsEditor label={dayLabels[index]} intervals={value.weekly[day]}
         onChange={intervals => onChange({ ...value, weekly: { ...value.weekly, [day]: intervals } })} />
     </fieldset>) : null}
-    <h4 className="font-semibold">Dated exceptions and holidays</h4>
+    <h4 className="font-extrabold">Dated exceptions and holidays</h4>
     <p className="text-sm text-muted">An exception replaces that date&apos;s regular hours. Leave it empty for a holiday closure.</p>
     {value.exceptions.map((row, index) => {
       const update = (patch: Partial<typeof row>) => onChange({ ...value, exceptions: value.exceptions.map((item, i) => i === index ? { ...item, ...patch } : item) });

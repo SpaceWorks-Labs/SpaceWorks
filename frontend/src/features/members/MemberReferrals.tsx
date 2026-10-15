@@ -60,11 +60,11 @@ export function MemberReferrals({
         <label className="sr-only" htmlFor="member-referral-email">Invite email</label>
         <input id="member-referral-email" className="desk-input flex-1" type="email" required value={email}
           onChange={(event) => setEmail(event.target.value)} placeholder="friend@example.com" />
-        <button className="desk-button-secondary" disabled={isReferring} type="submit">
+        <button className="desk-button-brand" disabled={isReferring} type="submit">
           {isReferring ? "Sending…" : "Send referral"}
         </button>
       </form>
-      {referralSuccess ? <p className="mt-3 text-sm text-success" role="status">{referralSuccess}</p> : null}
+      {referralSuccess ? <p className="mt-3 text-sm text-success-ink" role="status">{referralSuccess}</p> : null}
       {referralError ? <p className="mt-3 text-sm text-danger" role="alert">{referralError.message}</p> : null}
     </section> : null}
 
@@ -77,7 +77,7 @@ export function MemberReferrals({
       {emailVerified !== false && invitations.length ? <ul className="mt-3 space-y-3">
         {invitations.map((invitation) => <InvitationApplication key={invitation.id} invitation={invitation} schema={invitation.is_staff ? null : applicationSchema ?? null} admissionMode={admissionMode} pending={claimingId === invitation.id} onClaim={onClaim} />)}
       </ul> : null}
-      {claimSuccess ? <p className="mt-3 text-sm text-success" role="status">{claimSuccess}</p> : null}
+      {claimSuccess ? <p className="mt-3 text-sm text-success-ink" role="status">{claimSuccess}</p> : null}
       {claimError ? <p className="mt-3 text-sm text-danger" role="alert">{claimError.message}</p> : null}
     </section>
   </div>;
@@ -99,7 +99,7 @@ function InvitationApplication({ invitation, schema, admissionMode, pending, onC
       if (!Object.keys(next).length) schema?.length ? onClaim(invitation.id, answers) : onClaim(invitation.id);
     }}>
       <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} errors={errors} disabled={pending} />
-      <button type="submit" className="desk-button-secondary w-fit" disabled={pending}>{pending ? "Claiming…" : "Claim invitation"}</button>
+      <button type="submit" className="desk-button-brand w-fit" disabled={pending}>{pending ? "Claiming…" : "Claim invitation"}</button>
     </form>}
   </li>;
 }

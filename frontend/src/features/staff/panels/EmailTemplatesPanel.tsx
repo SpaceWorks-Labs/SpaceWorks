@@ -101,7 +101,7 @@ function TemplateList({
           </h3>
           {stream.audiences.map((audience) => (
             <div key={audience.audience} className="grid gap-1">
-              <p className="font-mono text-xs uppercase text-muted">
+              <p className="text-xs uppercase text-muted">
                 {formatLabel(audience.audience)}
               </p>
               {audience.templates.map((template) => (

@@ -24,13 +24,13 @@ export function SuppressionAdmin({ makerspaceId }: { makerspaceId: number }) {
     <form className="my-3 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
       <label className="grid gap-1 text-sm">Email address<input className="desk-input" type="email" maxLength={254} required value={address} onChange={(e) => setAddress(e.target.value)} /></label>
       <label className="grid gap-1 text-sm">Reason<select className="desk-input" value={reason} onChange={(e) => setReason(e.target.value)}><option value="bounce">Hard bounce</option><option value="complaint">Spam complaint</option></select></label>
-      <button className="desk-button-secondary" disabled={add.isPending}>Suppress email</button>
+      <button className="desk-button-primary" disabled={add.isPending}>Suppress email</button>
     </form>
     {rows.isLoading ? <p className="text-sm text-muted">Loading suppressions...</p> : null}
     {error ? <p className="text-sm text-danger" role="alert">{error.message}</p> : null}
     <ul className="space-y-2">{rows.data?.results.map((row) => <li className="rounded-md border border-line p-3 text-sm" key={row.id}>
       <p>{row.reason} · {new Date(row.created_at).toLocaleDateString()}</p>
-      <p className="break-all font-mono text-xs text-muted">{row.address_hash}</p>
+      <p className="break-all code-text text-xs text-muted">{row.address_hash}</p>
       <button className="desk-button-ghost mt-2" disabled={remove.isPending} onClick={() => remove.mutate(row.id)}>Remove suppression</button>
     </li>)}</ul>
     <div className="mt-3 flex gap-3">

@@ -42,7 +42,7 @@ function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { dom
   const label = domain === "event" ? "Event" : "Booking";
   return (
     <form onSubmit={save} className="grid gap-3 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-semibold text-ink">{label} reminders</h3>
+      <h3 className="text-base font-extrabold text-ink">{label} reminders</h3>
       <p className="text-sm text-muted">
         Email members before confirmed {domain === "event" ? "events" : "bookings"}, using the makerspace timezone.
         The notification matrix email setting and member opt-out still apply.

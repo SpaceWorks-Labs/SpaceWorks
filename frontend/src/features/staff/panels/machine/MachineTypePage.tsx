@@ -67,7 +67,7 @@ export function MachineTypePage({
   return (
     <div className="grid gap-4">
       <section aria-label={`${machineType.name} machines`} className="rounded-xl border border-line bg-panel">
-        <div className="hidden grid-cols-[minmax(0,2fr)_auto_auto] gap-3 border-b border-line px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted sm:grid">
+        <div className="hidden grid-cols-[minmax(0,2fr)_auto_auto] gap-3 border-b border-line px-3 py-2 text-[11px] uppercase tracking-wide text-muted sm:grid">
           <span>Name</span><span>Status</span><span className="text-right">Usage</span>
         </div>
         {canManage && machineType.can_create_machine === true ? (
@@ -108,7 +108,7 @@ export function MachineTypePage({
               </span>
             </span>
             <span><StatusBadge status={machine.status} /></span>
-            <span className="font-mono text-sm text-muted sm:text-right">{machine.usage_hours} h</span>
+            <span className="tabular-nums text-sm text-muted sm:text-right">{machine.usage_hours} h</span>
           </button>
         ))}
       </section>

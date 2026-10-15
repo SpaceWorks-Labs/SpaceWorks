@@ -103,7 +103,7 @@ export function PublicEventsPage() {
     <SkipLink />
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4">
-        <div><p className="eyebrow text-secondary-ink">Public Events</p>
+        <div><p className="eyebrow text-brand-ink">Public Events</p>
           <MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} size="lg" />
         </div>
         <div className="flex flex-wrap items-center gap-2"><SpaceWorksBadge /><Link className="desk-button" to={tenantPath()}>Inventory</Link><ThemeToggle /></div>
@@ -120,10 +120,10 @@ export function PublicEventsPage() {
         <p className="mt-2 text-sm text-muted">{throttled ? "Too many requests were made. Wait a moment and retry." : apiError?.detail ?? events.error.message}</p>
         {!missing && !unavailable ? <button className="desk-button mt-4" type="button" onClick={() => events.refetch()}>Retry</button> : null}
       </Card> : null}
-      {events.data && !events.data.length ? <div className="[&>div]:border-secondary"><EmptyState title="No upcoming events" description="New public events will appear here when they are published." /></div> : null}
+      {events.data && !events.data.length ? <div className="[&>div]:border-brand"><EmptyState title="No upcoming events" description="New public events will appear here when they are published." /></div> : null}
       {!events.error && events.data?.length && !visibleEvents.length ? <EmptyState title="No matching events" description="Try another search, filter or month." /> : null}
       {groupedEvents.length ? <div className="grid gap-7">{groupedEvents.map((group) => <section key={group.key} aria-label={group.title ?? undefined}>
-        {group.title ? <div className="mb-3"><p className="eyebrow text-secondary-ink">Recurring series</p><h2 className="title-panel">{group.title}</h2></div> : null}
+        {group.title ? <div className="mb-3"><p className="eyebrow text-brand-ink">Recurring series</p><h2 className="title-panel">{group.title}</h2></div> : null}
         <div className="grid gap-5">{group.items.map((item) => {
         const unlimited = item.capacity === 0 || item.capacity === null;
         const waitlist = item.availability === "Full";
@@ -134,11 +134,11 @@ export function PublicEventsPage() {
               rather than a duplicate announcement for screen-reader users. */}
           {item.image_url ? <img src={item.image_url} alt="" loading="lazy" className="h-48 w-full object-cover sm:h-56" /> : null}
           <div className="p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="title-panel"><Link to={tenantPath(`events/${item.public_token}`)}>{item.title}</Link></h3><p className="eyebrow mt-1"><time dateTime={item.starts_at}>{eventTime(item, discovery.timeZone)}</time></p>{item.location ? <p className="eyebrow mt-1">{item.location}</p> : null}</div><StatusBadge status={item.status} /></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="title-panel"><Link to={tenantPath(`events/${item.public_token}`)}>{item.title}</Link></h3><p className="eyebrow mt-1"><time dateTime={item.starts_at}>{eventTime(item, discovery.timeZone)}</time></p>{item.location ? <p className="eyebrow mt-1">{item.location}</p> : null}</div><StatusBadge domain="event" status={item.status} /></div>
           {item.description ? <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-ink">{item.description}</p> : null}
-          <dl className="mt-4 flex flex-wrap gap-4 text-sm"><EventPrice amount={item.payment_amount} currency={item.currency} tickets={item.ticket_types} ticketRequired={item.ticket_selection_required} /><div><dt className="eyebrow">Capacity</dt><dd className="font-mono font-semibold text-ink">{unlimited ? "Unlimited" : item.capacity}</dd></div><div><dt className="eyebrow">Availability</dt><dd className="font-mono font-semibold text-ink">{item.availability}</dd></div></dl>
+          <dl className="mt-4 flex flex-wrap gap-4 text-sm"><EventPrice amount={item.payment_amount} currency={item.currency} tickets={item.ticket_types} ticketRequired={item.ticket_selection_required} /><div><dt className="eyebrow">Capacity</dt><dd className="tabular-nums font-semibold text-ink">{unlimited ? "Unlimited" : item.capacity}</dd></div><div><dt className="eyebrow">Availability</dt><dd className="tabular-nums font-semibold text-ink">{item.availability}</dd></div></dl>
           {!item.registration_open ? <p className="mt-4 text-sm font-semibold text-muted">Registration closed{item.effective_registration_cutoff_at ? ` · ${new Date(item.effective_registration_cutoff_at).toLocaleString()}` : ""}</p> : null}
-          <div className="mt-4 flex flex-wrap gap-2"><button className="desk-button-secondary" type="button" disabled={!item.registration_open} aria-expanded={open} onClick={() => setActiveToken(open ? null : item.public_token)}>{open ? "Close form" : actionLabel}</button>
+          <div className="mt-4 flex flex-wrap gap-2"><button className="desk-button-brand" type="button" disabled={!item.registration_open} aria-expanded={open} onClick={() => setActiveToken(open ? null : item.public_token)}>{open ? "Close form" : actionLabel}</button>
           <button className="desk-button" type="button" disabled={calendarToken === item.public_token} onClick={() => downloadCalendar(item)}>{calendarToken === item.public_token ? "Preparing…" : "Add to calendar"}</button></div>
           {calendarError?.token === item.public_token ? <p className="mt-2 text-sm text-danger" role="alert">{calendarError.message}</p> : null}
           {open && item.registration_open ? <div className="mt-4"><EventRegistrationForm key={item.public_token} makerspaceSlug={makerspaceSlug} publicToken={item.public_token} waitlist={waitlist} approvalRequired={item.registration_requires_approval} customForm={item.custom_form} audience={item.registration_audience} tickets={item.ticket_types} ticketRequired={item.ticket_selection_required} promoEnabled={item.promo_codes_enabled} currency={item.currency} /></div> : null}

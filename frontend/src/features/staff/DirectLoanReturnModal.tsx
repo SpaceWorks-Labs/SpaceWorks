@@ -218,7 +218,7 @@ export function DirectLoanReturnModal({
           <span className="font-medium text-ink">Return QR scan{scanRequired ? "" : " (optional)"}</span>
           <div className="flex flex-col gap-2 md:flex-row">
             <input
-              className="desk-input w-full font-mono text-sm"
+              className="desk-input w-full code-text text-sm"
               value={qrPayload}
               disabled={pending}
               onChange={(event) => onQrPayloadChange(event.target.value)}
@@ -237,7 +237,7 @@ export function DirectLoanReturnModal({
             onChange={(event) => onNotesChange(event.target.value)}
           />
         </label>
-        {error ? <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p> : null}
+        {error ? <p className="rounded-md border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">{error}</p> : null}
         {showScanner ? (
           <QrScanner
             onScan={(payload) => {

@@ -43,7 +43,7 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
       <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Public stats page</h3>
+            <h3 className="text-base font-extrabold text-ink">Public stats page</h3>
             <Badge tone={publicStatsEnabled ? "success" : "neutral"}>
               {publicStatsEnabled ? "On" : "Off"}
             </Badge>
@@ -71,7 +71,7 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
       <div className="grid min-w-0 gap-3 border-t border-line pt-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Public borrower names</h3>
+            <h3 className="text-base font-extrabold text-ink">Public borrower names</h3>
             <Badge tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? "On" : "Off"}</Badge>
           </div>
           <p className="text-sm text-muted">

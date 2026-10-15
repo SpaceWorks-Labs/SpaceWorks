@@ -59,10 +59,10 @@ export function NeedsFixShelf({ makerspace }: { makerspace: Makerspace }) {
           <div key={item.id} className="rounded-md border border-line bg-surface px-3 py-2">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="font-medium text-ink">{item.name}</span>
-              <span className="rounded-md bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn-ink">
+              <span className="rounded-md bg-warn-soft px-2 py-0.5 text-xs font-semibold text-warn-ink">
                 {item.needs_fix_quantity} to fix
               </span>
-              <span className="font-mono text-muted">{item.available_quantity} available · {item.total_quantity} total</span>
+              <span className="tabular-nums text-muted">{item.available_quantity} available · {item.total_quantity} total</span>
             </div>
             <div className="desk-actions mt-2 flex flex-wrap items-end gap-2">
               <label className="eyebrow grid gap-1">

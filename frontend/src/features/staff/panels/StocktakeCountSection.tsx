@@ -184,9 +184,9 @@ export function CountSection({ makerspace, stocktakeId }: { makerspace: Makerspa
                   <tr key={line.id} className="border-t border-line">
                     <td className="py-1"><span className="block max-w-48 break-words">{line.asset ? assetName(line.asset) : productName(line.product)}</span></td>
                     <td>{containerName(line.container)}</td>
-                    <td className="font-mono">{line.expected_quantity ?? "Hidden"}</td>
-                    <td className="font-mono">{line.counted_quantity}</td>
-                    <td className={line.variance_quantity === 0 ? "font-mono text-muted" : "font-mono text-danger"}>{line.variance_quantity ?? "Hidden"}</td>
+                    <td className="tabular-nums">{line.expected_quantity ?? "Hidden"}</td>
+                    <td className="tabular-nums">{line.counted_quantity}</td>
+                    <td className={line.variance_quantity === 0 ? "tabular-nums text-muted" : "tabular-nums text-danger"}>{line.variance_quantity ?? "Hidden"}</td>
                     <td>{line.condition}</td>
                     <td><span className="block max-w-56 break-words">{line.notes || "-"}</span></td>
                   </tr>

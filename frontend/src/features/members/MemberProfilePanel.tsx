@@ -191,7 +191,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
       </Field>
       {draft.github_contributions !== null ? (
         <p className="mt-1 text-sm text-muted">
-          <span className="font-mono">{draft.github_contributions}</span> contributions in the last year.
+          <span className="tabular-nums">{draft.github_contributions}</span> contributions in the last year.
         </p>
       ) : null}
 
@@ -233,7 +233,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
         </p>
       ) : null}
       <button
-        className="desk-button-secondary mt-4"
+        className="desk-button-brand mt-4"
         type="button"
         disabled={save.isPending}
         onClick={() => save.mutate()}

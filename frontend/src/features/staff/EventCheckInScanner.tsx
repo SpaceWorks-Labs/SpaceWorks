@@ -102,7 +102,7 @@ export default function EventCheckInScanner({
       aria-labelledby="event-checkin-title"
     >
       <div className="flex items-start justify-between gap-3">
-        <h4 id="event-checkin-title" className="font-semibold text-ink">
+        <h4 id="event-checkin-title" className="font-extrabold text-ink">
           Check in by QR
         </h4>
         <button type="button" className={`desk-button ${FOCUS}`} onClick={onClose}>

@@ -61,7 +61,7 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
         className="min-w-0 border-t border-line pt-5"
         aria-labelledby="advanced-email-mutes-heading"
       >
-        <h4 id="advanced-email-mutes-heading" className="text-sm font-semibold text-ink">
+        <h4 id="advanced-email-mutes-heading" className="text-sm font-extrabold text-ink">
           Advanced email recipient/event mutes
         </h4>
         <p className="mt-2 text-sm text-muted">
@@ -78,7 +78,7 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
                 key={`${entry.stream}:${entry.audience}`}
                 className="min-w-0 rounded-md border border-line bg-surface p-3"
               >
-                <h5 className="text-sm font-semibold text-ink">
+                <h5 className="text-sm font-extrabold text-ink">
                   {streamLabel(entry.stream)} &middot; {audienceLabel(entry.audience)}
                 </h5>
                 {!emailEnabled ? (

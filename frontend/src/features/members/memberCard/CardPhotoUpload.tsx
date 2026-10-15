@@ -89,7 +89,7 @@ export function CardPhotoUpload({
 
       <div className="desk-actions mt-3 flex flex-wrap gap-2">
         <button
-          className="desk-button-secondary"
+          className="desk-button-brand"
           type="button"
           disabled={status === "uploading"}
           onClick={() => void upload()}

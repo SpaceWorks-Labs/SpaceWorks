@@ -60,7 +60,7 @@ export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false
       <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} disabled={create.isPending} errors={{ ...errors, ...customAnswerErrors(create.error instanceof StructuredApiError ? create.error.body.custom_answers : undefined) }} />
       {members.error || create.error ? <p className="text-sm text-danger" role="alert">{(create.error ?? members.error)?.message}</p> : null}
       <button className="desk-button-primary w-fit" type="submit" disabled={!memberId || create.isPending}>{create.isPending ? "Booking…" : "Create booking"}</button>
-      {create.data && "occurrences" in create.data ? <ul className="grid gap-2 text-sm" aria-label="Recurring booking results">{create.data.occurrences.map((row) => <li key={row.occurrence}>{row.occurrence}: {new Date(row.starts_at).toLocaleString()} — {row.booking_id ? row.status : `Conflict: ${row.detail}`}</li>)}</ul> : create.isSuccess ? <p className="text-sm text-success" role="status">Booking created.</p> : null}
+      {create.data && "occurrences" in create.data ? <ul className="grid gap-2 text-sm" aria-label="Recurring booking results">{create.data.occurrences.map((row) => <li key={row.occurrence}>{row.occurrence}: {new Date(row.starts_at).toLocaleString()} — {row.booking_id ? row.status : `Conflict: ${row.detail}`}</li>)}</ul> : create.isSuccess ? <p className="text-sm text-success-ink" role="status">Booking created.</p> : null}
     </form>
   );
 }

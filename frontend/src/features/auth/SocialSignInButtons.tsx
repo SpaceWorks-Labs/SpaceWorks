@@ -103,7 +103,7 @@ export function SocialSignInButtons({
         {showGoogle ? <div ref={googleHost} className="min-h-10 w-full text-center" /> : null}
         {showApple ? (
           <button
-            className="desk-button-secondary w-full max-w-[360px]"
+            className="desk-button-brand w-full max-w-[360px]"
             type="button"
             disabled={applePending}
             onClick={async () => {
@@ -126,7 +126,7 @@ export function SocialSignInButtons({
           return (
             <button
               key={key}
-              className="desk-button-secondary w-full max-w-[360px]"
+              className="desk-button-brand w-full max-w-[360px]"
               type="button"
               disabled={Boolean(oidcPending)}
               onClick={async () => {

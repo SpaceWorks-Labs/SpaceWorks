@@ -52,10 +52,10 @@ export function AuditLog({ makerspaceId }: { makerspaceId?: number }) {
         {logs.data?.results?.map((log) => (
           <div key={log.id} className="rounded-md border border-line bg-surface p-2">
             <span className="font-semibold">{log.action_label}</span>
-            <span className="ml-2 font-mono text-xs text-muted">{log.action}</span>
+            <span className="ml-2 code-text text-xs text-muted">{log.action}</span>
             {log.actor_display ? <span className="ml-2 text-muted">by {log.actor_display}</span> : null}
             <span className="ml-2 text-muted">{log.target_type}:{log.target_id}</span>
-            <span className="ml-2 font-mono text-muted">{formatLocalDateTime(log.created_at)}</span>
+            <span className="ml-2 tabular-nums text-muted">{formatLocalDateTime(log.created_at)}</span>
             <MetaLine meta={log.meta} redacted={log.meta_redacted} />
           </div>
         ))}

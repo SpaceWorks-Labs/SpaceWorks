@@ -63,21 +63,21 @@ export function LandingPage() {
           </SpaceWorksHomeLink>
           <div className="flex flex-wrap items-center gap-2">
             <ThemeToggle />
-            <Link className="desk-button-secondary" to="/admin">Staff login</Link>
+            <Link className="desk-button-brand" to="/admin">Staff login</Link>
           </div>
         </div>
       </header>
 
       <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-5 py-8 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="desk-panel h-fit p-5">
-          <p className="eyebrow text-secondary-ink">Inventory Directory</p>
+          <p className="eyebrow text-brand-ink">Inventory Directory</p>
           <h1 className="title-page mt-3">Makerspaces</h1>
           <p className="mt-3 text-sm leading-6 text-muted">
             Browse public catalogs across connected workshops, labs, and community spaces.
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-md border border-line bg-surface p-3">
-              <p className="font-mono text-2xl font-bold text-ink">
+              <p className="tabular-nums text-2xl font-bold text-ink">
                 {makerspacesQuery.isLoading ? "-" : totalMakerspaces}
               </p>
               <p className="eyebrow">Public spaces</p>
@@ -111,7 +111,7 @@ export function LandingPage() {
                 onChange={(event) => setSearchInput(event.target.value)}
               />
               {searchInput ? <button className="desk-button shrink-0" type="button" onClick={() => setSearchInput("")}>Clear</button> : null}
-              <span className="shrink-0 rounded-lg border border-line bg-surface px-3 py-2 font-mono text-xs text-muted" aria-live="polite">
+              <span className="shrink-0 rounded-lg border border-line bg-surface px-3 py-2 tabular-nums text-xs text-muted" aria-live="polite">
                 {searchQuery ? `${filteredMakerspaces.length}/${totalMakerspaces}` : totalMakerspaces} shown
               </span>
             </form>
@@ -140,20 +140,20 @@ export function LandingPage() {
           {filteredMakerspaces.length ? (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {filteredMakerspaces.map((makerspace) => (
-                <article key={makerspace.slug} className="group relative flex flex-col rounded-xl border border-line bg-panel shadow-soft transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-soft-lg">
+                <article key={makerspace.slug} className="group relative flex flex-col rounded-xl border border-line bg-panel">
                   <div className="relative h-40 overflow-hidden rounded-t-xl border-b border-line bg-surface">
                     {makerspace.cover_image_url ? (
                       <img src={makerspace.cover_image_url} alt={`${makerspace.name} cover`} loading="lazy" className="h-full w-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0" />
-                    ) : <div className="blueprint-bg h-full w-full" />}
+                    ) : <div className="bg-surface h-full w-full" />}
                     <span className="absolute left-3 top-3 chip chip-available"><span className="h-2 w-2 rounded-full bg-bg" /> Public</span>
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col p-card-padding p-5">
                     <MakerspaceBrand name={makerspace.name} logoUrl={makerspace.logo_url} size="md" />
-                    <MakerspaceMapLink makerspace={makerspace} className="relative z-10 mt-2" locationClassName="break-words font-mono text-xs text-muted" />
+                    <MakerspaceMapLink makerspace={makerspace} className="relative z-10 mt-2" locationClassName="break-words tabular-nums text-xs text-muted" />
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-5">
-                      <span className="min-w-0 truncate font-mono text-xs text-muted">{makerspace.public_code}</span>
+                      <span className="min-w-0 truncate tabular-nums text-xs text-muted">{makerspace.public_code}</span>
                       <Link
-                        className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-tight text-secondary-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus after:absolute after:inset-0 after:content-['']"
+                        className="inline-flex items-center gap-2 text-xs font-semibold tracking-tight text-brand-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus after:absolute after:inset-0 after:content-['']"
                         to={`/m/${makerspace.slug}`}
                         aria-label={`Open ${makerspace.name} catalog`}
                       >

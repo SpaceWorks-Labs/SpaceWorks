@@ -72,7 +72,7 @@ export function KioskStationPage() {
         <h1 id="kiosk-title" className="title-page">{activeSession ? activeSession.station.name : "Kiosk station"}</h1>
         {!activeSession && !offline.online ? <p className="mt-5 text-sm" role="status">Reconnect to unlock and load this handover</p> : !activeSession ? <form className="mt-5 grid gap-3" onSubmit={unlock}>
           <label className="eyebrow" htmlFor="kiosk-station-pin">Station PIN</label>
-          <input id="kiosk-station-pin" className="desk-input font-mono text-xl tracking-widest" inputMode="numeric" autoComplete="off" pattern="[0-9]{8}" maxLength={8} required value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))} />
+          <input id="kiosk-station-pin" className="desk-input tabular-nums text-xl tracking-widest" inputMode="numeric" autoComplete="off" pattern="[0-9]{8}" maxLength={8} required value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))} />
           <button className="desk-button-primary" type="submit" disabled={pending || pin.length !== 8}>{pending ? "Unlocking…" : "Unlock station"}</button>
         </form> : <div className="mt-5 grid gap-4">
           <p className="text-sm text-muted">{activeSession.makerspace.name} · {activeSession.station.kind} station</p>
@@ -84,10 +84,10 @@ export function KioskStationPage() {
             {activeSession.station.kind === "handover" && offline.online && !hasCommands ? <KioskOnlineHandover token={stationToken} lease={activeLease} makerspaceId={activeSession.makerspace.id}
               onWorkLoaded={(work) => offline.save(activeSession, activeLease, work)} /> : null}
             {!offline.online ? <p className="text-sm" role="status">Reconnect to unlock and load this handover</p> : null}
-            {offline.queue ? <button type="button" className="desk-button-secondary" onClick={() => setContinuing(true)}>Continue with encrypted queue</button> : null}
+            {offline.queue ? <button type="button" className="desk-button-brand" onClick={() => setContinuing(true)}>Continue with encrypted queue</button> : null}
           </>}
           <div className="flex flex-wrap gap-3">
-            <button className="desk-button-secondary" type="button" onClick={() => { void enterKioskMode(); }}>Full screen</button>
+            <button className="desk-button-brand" type="button" onClick={() => { void enterKioskMode(); }}>Full screen</button>
             <button className="desk-button-danger" type="button" onClick={() => {
               if (hasCommands) setResetRequested(true);
               else void lock().catch(() => setError("Local reset failed."));
@@ -99,7 +99,7 @@ export function KioskStationPage() {
         {resetRequested ? <section className="mt-4 grid gap-2" aria-label="Confirm local reset">
           <p className="text-sm text-danger">Locking clears this Station's encrypted work and photos, including pending or failed commands.</p>
           <button className="desk-button-danger" type="button" onClick={() => { void lock().catch(() => setError("Local reset failed.")); }}>Discard local work and lock</button>
-          <button className="desk-button-secondary" type="button" onClick={() => setResetRequested(false)}>Keep working</button>
+          <button className="desk-button-brand" type="button" onClick={() => setResetRequested(false)}>Keep working</button>
         </section> : null}
       </section>
     </div>

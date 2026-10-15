@@ -49,7 +49,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
         />
         <SpaceWorksBadge className="mb-5" />
         <p className="text-xs font-semibold tracking-wide text-accent-ink">Security</p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">Set a new password</h1>
+        <h1 className="mt-2 text-2xl font-extrabold text-ink">Set a new password</h1>
         <p className="mt-2 text-sm text-muted">
           The account <span className="font-semibold text-ink">{username}</span> is using a default
           password and must set a new one before continuing.

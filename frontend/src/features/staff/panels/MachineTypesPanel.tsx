@@ -97,7 +97,7 @@ function PricingEditor({ makerspaceId, machineType, currency, canConfigure }: {
     <button className="desk-button-primary" type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending}>{mutation.isPending ? "Saving..." : "Save pricing"}</button>
     {pricing.isLoading ? <p className="text-xs text-muted md:col-span-4">Loading pricing...</p> : null}
     {pricing.error instanceof Error ? <p className="text-xs text-danger md:col-span-4">{pricing.error.message}</p> : null}
-    {mutation.isSuccess ? <p className="text-xs text-success md:col-span-4">Pricing saved.</p> : null}
+    {mutation.isSuccess ? <p className="text-xs text-success-ink md:col-span-4">Pricing saved.</p> : null}
     {mutation.error instanceof Error ? <p className="text-xs text-danger md:col-span-4">{mutation.error.message}</p> : null}
   </div>;
 }

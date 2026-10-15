@@ -87,10 +87,10 @@ function PaymentTable({ rows }: { rows: PaymentReportRow[] }) {
             <td className="px-3 py-2">{label(row.subject_type)}</td>
             <td className="px-3 py-2">{label(row.status)}</td>
             <td className="px-3 py-2">{row.settlement_method ? label(row.settlement_method) : "—"}</td>
-            <td className="px-3 py-2 font-mono">{row.payment_count}</td>
-            <td className="px-3 py-2 font-mono">{money(row.amount_total, row.currency)}</td>
-            <td className="px-3 py-2 font-mono font-semibold">{money(row.outstanding_amount, row.currency)}</td>
-            <td className="px-3 py-2 font-mono">{money(row.refunded_amount, row.currency)}</td>
+            <td className="px-3 py-2 tabular-nums">{row.payment_count}</td>
+            <td className="px-3 py-2 tabular-nums">{money(row.amount_total, row.currency)}</td>
+            <td className="px-3 py-2 tabular-nums font-semibold">{money(row.outstanding_amount, row.currency)}</td>
+            <td className="px-3 py-2 tabular-nums">{money(row.refunded_amount, row.currency)}</td>
           </tr>
         ))}</tbody>
       </table>

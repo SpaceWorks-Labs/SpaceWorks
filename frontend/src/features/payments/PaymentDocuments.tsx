@@ -35,21 +35,21 @@ export function PaymentDocuments({ makerspaceId, audience }: { makerspaceId: num
     },
   });
   return <section className="mt-4 border-t border-line pt-4" aria-label="Receipt documents">
-    <h3 className="font-semibold text-ink">Receipts and credit notes</h3>
-    <button className="desk-button-secondary" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide documents" : "Show documents"}</button>
+    <h3 className="font-extrabold text-ink">Receipts and credit notes</h3>
+    <button className="desk-button" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide documents" : "Show documents"}</button>
     {expanded ? <>
     {documents.isLoading ? <p className="text-sm text-muted">Loading documents...</p> : null}
     {documents.error || download.error ? <p role="alert" className="text-sm text-danger">{(documents.error || download.error)?.message}</p> : null}
     {documents.data?.count === 0 ? <p className="text-sm text-muted">No issued documents.</p> : null}
     <ul className="space-y-2">{documents.data?.results.map((document) => <li key={document.id} className="flex flex-wrap items-center gap-2 text-sm">
       <span>{document.kind === "receipt" ? "Receipt" : "Credit note"} {document.number}</span>
-      <span className="font-mono">{document.currency.toUpperCase()} {document.amount}</span>
-      <button className="desk-button-secondary" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>Download PDF</button>
+      <span className="tabular-nums">{document.currency.toUpperCase()} {document.amount}</span>
+      <button className="desk-button" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>Download PDF</button>
     </li>)}</ul>
     {documents.data && documents.data.count > 24 ? <div className="mt-2 flex items-center gap-2">
-      <button className="desk-button-secondary" type="button" disabled={!documents.data.previous} onClick={() => setPage(page - 1)}>Previous</button>
+      <button className="desk-button" type="button" disabled={!documents.data.previous} onClick={() => setPage(page - 1)}>Previous</button>
       <span>Page {page}</span>
-      <button className="desk-button-secondary" type="button" disabled={!documents.data.next} onClick={() => setPage(page + 1)}>Next</button>
+      <button className="desk-button" type="button" disabled={!documents.data.next} onClick={() => setPage(page + 1)}>Next</button>
     </div> : null}
     </> : null}
   </section>;

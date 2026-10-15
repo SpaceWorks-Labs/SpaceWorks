@@ -144,7 +144,7 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
                 className="flex flex-wrap items-center justify-between gap-2 border-t border-line py-2"
               >
                 <span>
-                  <span className="font-mono text-sm text-ink">{app.app_label}</span>
+                  <span className="code-text text-sm text-ink">{app.app_label}</span>
                   {app.note ? <span className="block text-xs text-muted">{app.note}</span> : null}
                 </span>
                 <Badge tone={app.shipped ? "success" : "neutral"}>

@@ -56,7 +56,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
   if (booking.data) {
     const pending = booking.data.status === "pending";
     return (
-      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn/15" : "border-success bg-success/15"} p-4 outline-none`} role="status" tabIndex={-1}>
+      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn-soft" : "border-success bg-success-soft"} p-4 outline-none`} role="status" tabIndex={-1}>
         <h3 className="title-section">{pending ? "Booking request received" : "Space booked"}</h3>
         <p className="mt-1 text-sm text-muted">
           {pending ? "Staff must approve this request before the slot is confirmed." : "Your selected slot is confirmed and booked."}
@@ -90,7 +90,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
   return (
     <div className="grid gap-4">
       <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} />
-      <form className="grid gap-4 rounded-lg border border-secondary bg-bg p-4" onSubmit={submit} noValidate>
+      <form className="grid gap-4 rounded-lg border border-brand bg-bg p-4" onSubmit={submit} noValidate>
         <div>
           <h3 className="title-section">Request this space</h3>
           <p className="eyebrow mt-1">Times are shown in your device timezone.</p>
@@ -104,7 +104,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
           <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
         </label>
         {booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
-        <button className="desk-button-secondary" type="submit" disabled={booking.isPending}>
+        <button className="desk-button-brand" type="submit" disabled={booking.isPending}>
           {booking.isPending ? "Submitting..." : space.approval_mode === "approve" ? "Submit booking request" : "Book this slot"}
         </button>
       </form>

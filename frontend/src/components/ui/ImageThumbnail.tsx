@@ -10,7 +10,7 @@ export function ImageThumbnail({ src, alt, className = "h-12 w-12" }: ImageThumb
       {src ? (
         <img src={src} alt={alt} className="h-full w-full object-cover" />
       ) : (
-        <div className="blueprint-bg h-full w-full" aria-hidden="true" />
+        <div className="bg-surface h-full w-full" aria-hidden="true" />
       )}
     </div>
   );

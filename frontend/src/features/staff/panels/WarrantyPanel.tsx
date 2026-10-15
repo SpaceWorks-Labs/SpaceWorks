@@ -68,7 +68,7 @@ export function WarrantyPanel({
       <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm text-muted">Warranty coverage for {scopeLabel} in {makerspace.name}.</p>
-          {warranties.data ? <p className="mt-1 font-mono text-xs text-muted">{warranties.data.count} hosts total</p> : null}
+          {warranties.data ? <p className="mt-1 tabular-nums text-xs text-muted">{warranties.data.count} hosts total</p> : null}
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="eyebrow grid gap-1 sm:w-48">
@@ -166,7 +166,7 @@ export function WarrantyPanel({
         <button className="desk-button-ghost" type="button" disabled={!warranties.data?.previous} onClick={() => setPage((current) => Math.max(1, current - 1))}>
           Previous
         </button>
-        <span className="font-mono text-muted">Page {page} of {totalPages}</span>
+        <span className="tabular-nums text-muted">Page {page} of {totalPages}</span>
         <button className="desk-button-ghost" type="button" disabled={!warranties.data?.next} onClick={() => setPage((current) => current + 1)}>
           Next
         </button>

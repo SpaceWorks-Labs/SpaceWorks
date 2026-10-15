@@ -131,7 +131,7 @@ export function OfflineCheckInOperator({
 
   return <section className="mt-3 rounded-lg border border-line bg-panel p-3" aria-labelledby={`${scope}-offline-title`}>
     <div className="flex flex-wrap items-start justify-between gap-2">
-      <div><h4 id={`${scope}-offline-title`} className="font-semibold text-ink">Offline-ready check-in</h4><p className="text-xs text-muted">{online ? "Online" : "Offline"} · attendee names are encrypted on this device.</p></div>
+      <div><h4 id={`${scope}-offline-title`} className="font-extrabold text-ink">Offline-ready check-in</h4><p className="text-xs text-muted">{online ? "Online" : "Offline"} · attendee names are encrypted on this device.</p></div>
       <button type="button" className={`desk-button ${FOCUS}`} disabled={busy} onClick={downloadNow}>{state ? "Refresh roster" : "Download roster"}</button>
     </div>
     {state ? <div className="mt-3 grid gap-2 text-sm">
@@ -143,7 +143,7 @@ export function OfflineCheckInOperator({
         <button type="button" className={`desk-button-danger ${FOCUS}`} onClick={wipe}>Wipe attendee data</button>
       </div>
       <p aria-live="polite" className="sr-only">{state.operations.length} queued check-ins. {state.conflicts.length} conflicts.</p>
-      {state.conflicts.length ? <div role="alert" className="rounded-md border border-warning bg-warning-soft p-2 text-warning-ink"><strong>{state.conflicts.length} synchronization conflicts</strong><ul className="mt-1 list-disc pl-5">{state.conflicts.map((item) => <li key={item.operation_id}>{item.outcome.replace(/_/g, " ")}</li>)}</ul></div> : null}
+      {state.conflicts.length ? <div role="alert" className="rounded-md border border-warn bg-warn-soft p-2 text-warn-ink"><strong>{state.conflicts.length} synchronization conflicts</strong><ul className="mt-1 list-disc pl-5">{state.conflicts.map((item) => <li key={item.operation_id}>{item.outcome.replace(/_/g, " ")}</li>)}</ul></div> : null}
     </div> : <p className="mt-3 text-sm text-muted">No attendee data is stored on this device.</p>}
     {resolved ? <div className="mt-3 rounded-md border border-line p-3"><p className="font-medium text-ink">{resolved.name}</p><p className="text-sm text-muted">Waiver: {resolved.host_waiver_state.replace(/_/g, " ")}</p><div className="mt-2 flex gap-2"><button className={`desk-button-primary ${FOCUS}`} type="button" onClick={confirm}>Confirm attendance</button><button className={`desk-button ${FOCUS}`} type="button" onClick={() => setResolved(null)}>Cancel</button></div></div> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}

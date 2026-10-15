@@ -169,7 +169,7 @@ export function DirectLoanItemLines({
               </select>
               <input aria-label="Quantity" className="desk-input" min={1} inputMode="numeric" type="number" value={line.quantity} disabled={selectedIndividual} onChange={(e) => onUpdate(line.key, { quantity: e.target.value })} />
               <button className="desk-button" type="button" onClick={() => onRemove(line.key)}>Remove</button>
-              {selectedLineProduct ? <p className="font-mono text-xs uppercase text-muted md:col-span-3">{selectedLineProduct.tracking_mode}{selectedIndividual ? " | scan unit QR" : ""}</p> : null}
+              {selectedLineProduct ? <p className="text-xs uppercase text-muted md:col-span-3">{selectedLineProduct.tracking_mode}{selectedIndividual ? " | scan unit QR" : ""}</p> : null}
             </div>
           );
         })}
@@ -211,7 +211,7 @@ export function DirectLoanQrSection({
       </div>
       <textarea
         aria-label="QR payloads"
-        className="desk-input mt-3 h-24 w-full font-mono text-sm"
+        className="desk-input mt-3 h-24 w-full code-text text-sm"
         placeholder="Optional QR payloads, one per line"
         value={qrPayloads}
         onChange={(e) => onQrPayloadsChange(e.target.value)}

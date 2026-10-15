@@ -41,7 +41,7 @@ export function PublicStatsPage() {
       <SkipLink />
       <header className="border-b border-line bg-panel">
         <div className="mx-auto flex max-w-screen-2xl flex-col gap-4 px-5 py-6 sm:px-8">
-          <p className="eyebrow text-secondary-ink">
+          <p className="eyebrow text-brand-ink">
             Public Stats
           </p>
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -102,7 +102,7 @@ function LoadingState() {
 
 function ErrorState() {
   return (
-    <Card className="mx-auto max-w-lg border-secondary text-center">
+    <Card className="mx-auto max-w-lg border-brand text-center">
       <h2 className="title-panel">Stats not available</h2>
       <p className="mt-2 text-sm leading-6 text-muted">
         This makerspace has its public stats page turned off, or it may not exist.
@@ -113,7 +113,7 @@ function ErrorState() {
 
 function EmptyState() {
   return (
-    <Card className="mx-auto max-w-lg border-secondary text-center">
+    <Card className="mx-auto max-w-lg border-brand text-center">
       <h2 className="title-panel">
         No public activity yet.
       </h2>

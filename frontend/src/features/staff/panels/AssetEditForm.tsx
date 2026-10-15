@@ -97,7 +97,7 @@ export function AssetEditForm({
       <div className="desk-actions flex flex-wrap justify-end gap-2">
         <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={onCancel}>Cancel</button>
         <button className="desk-button-primary" type="submit" disabled={save.isPending || !assetTag.trim()}>
-          {save.isPending ? "Saving..." : "Save"}
+          {save.isPending ? "Saving…" : "Save"}
         </button>
       </div>
     </form>

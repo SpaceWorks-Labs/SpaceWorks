@@ -65,7 +65,7 @@ export function ScannerRebindForm({
       />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={!selectedProductId || pending}>
-          {pending ? "Saving..." : "Save"}
+          {pending ? "Saving…" : "Save"}
         </button>
         <button className="desk-button-ghost" type="button" onClick={onCancel}>Cancel</button>
       </div>
@@ -153,7 +153,7 @@ export function ScannerMoveAssetForm({
       />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={!destMakerspaceId || pending}>
-          {pending ? "Moving..." : "Move"}
+          {pending ? "Moving…" : "Move"}
         </button>
         <button className="desk-button-ghost" type="button" onClick={onCancel}>Cancel</button>
       </div>

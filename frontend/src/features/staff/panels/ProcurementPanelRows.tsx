@@ -1,6 +1,7 @@
+import { DetailLayout } from "../../../components/layouts";
 import { useEffect, useState } from "react";
 
-import { Badge } from "../../../components/ui";
+import { Badge, ConfirmDialog, ErrorText, Field, ListRow, OverflowMenu, RelativeTime, SettingsActions, StatusPill } from "../../../components/ui";
 import { ProcurementReceipts, type ToBuyReceipt } from "./ProcurementReceipts";
 
 export type Kind = "hardware" | "printing";
@@ -60,7 +61,7 @@ export function groupProcurementRows(rows: ToBuyItem[]): ProcurementGroup[] {
   });
 }
 
-export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePending, onSave, onDelete, onMove, onReceiptsChanged }: {
+export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePending, onSave, onDelete, onMove, onReceiptsChanged, updateError, deleteError }: {
   item: ToBuyItem;
   makerspaceSlug: string;
   updatePending: boolean;
@@ -69,39 +70,40 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
   onDelete: () => void;
   onMove: () => void;
   onReceiptsChanged: () => void;
+  updateError?: string;
+  deleteError?: string;
 }) {
   const [draft, setDraft] = useState<RowDraft>(() => draftFromItem(item));
 
   useEffect(() => setDraft(draftFromItem(item)), [item]);
 
-  return (
-    <tr>
-      <td className="px-3 py-2 text-xs uppercase text-muted">{item.kind}</td>
-      <td className="px-3 py-2"><span className="block max-w-56 break-words">{item.name}</span>{item.source_pool ? <span className="mt-1 block"><Badge tone="warn">Auto - low stock</Badge></span> : null}</td>
-      <td className="px-3 py-2 tabular-nums">{item.quantity}</td>
-      <td className="px-3 py-2"><ItemLink link={item.link} /></td>
-      <td className="px-3 py-2 tabular-nums">{item.estimated_unit_cost ?? "-"}</td>
-      <td className="px-3 py-2"><input className="desk-input w-36" aria-label={`Vendor for ${item.name}`} value={draft.vendor_name} onChange={(event) => setDraft({ ...draft, vendor_name: event.target.value })} /></td>
-      <td className="px-3 py-2"><input className="desk-input w-28" aria-label={`Actual unit cost for ${item.name}`} type="number" min={0} step="0.01" value={draft.actual_unit_cost} onChange={(event) => setDraft({ ...draft, actual_unit_cost: event.target.value })} /></td>
-      <td className="px-3 py-2 text-muted"><span className="block max-w-36 break-words">{item.purchaser_username ?? "-"}</span></td>
-      <td className="px-3 py-2 tabular-nums text-xs text-muted">{formatDateTime(item.ordered_at)}</td>
-      <td className="px-3 py-2 tabular-nums text-xs text-muted">{formatDateTime(item.received_at)}</td>
-      <td className="px-3 py-2"><ProcurementReceipts itemId={item.id} receipts={item.receipts ?? []} onChanged={onReceiptsChanged} /></td>
-      <td className="px-3 py-2">
-        <select className="desk-input w-32" aria-label={`Status for ${item.name}`} value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ToBuyStatus })}>
-          {statusOptions.map((status) => <option key={status} value={status}>{labelStatus(status)}</option>)}
-        </select>
-      </td>
-      <td className="px-3 py-2 text-xs text-muted"><MoveState item={item} makerspaceSlug={makerspaceSlug} /></td>
-      <td className="px-3 py-2 text-right">
-        <div className="flex flex-col gap-2">
-          {item.status === "received" && !item.moved_to_inventory_at ? <button type="button" className="desk-button-success" onClick={onMove}>Move</button> : null}
-          <button type="button" className="desk-button-primary" disabled={updatePending || !isDraftChanged(item, draft)} onClick={() => onSave(draft)}>Save</button>
-          <button type="button" className="desk-button-danger" disabled={deletePending} onClick={onDelete}>Delete</button>
-        </div>
-      </td>
-    </tr>
-  );
+  const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const next = ({ requested: "approved", approved: "ordered", ordered: "received" } as Partial<Record<ToBuyStatus, ToBuyStatus>>)[item.status];
+  const nextLabel = ({ requested: "Approve", approved: "Mark ordered", ordered: "Mark received" } as Partial<Record<ToBuyStatus, string>>)[item.status];
+  return <>
+    <ListRow title={`${item.name} ×${item.quantity}`} onClick={() => setOpen(true)} identity={{ kind: "icon", icon: "Circle", tone: "accent" }}
+      meta={<>{item.vendor_name || "No vendor yet"} · Est. {item.estimated_unit_cost ?? "—"} each · {item.purchaser_username || "Unassigned purchaser"}{item.source_pool ? <Badge tone="warn">Auto · low stock</Badge> : null}</>}
+      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={labelStatus(item.status)} tone={item.status === "received" ? "success" : "neutral"} />
+        {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={() => onSave({ ...draftFromItem(item), status: next })}>{updatePending ? "Saving…" : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>Move to inventory</button> : null}
+        <OverflowMenu label={`Actions for ${item.name}`} actions={[{ label: "Edit", onClick: () => setOpen(true) }, { label: "Delete", confirms: true, tone: "danger", disabled: deletePending, onClick: () => setConfirmDelete(true) }]} />
+      </div>} />
+    <DetailLayout presentation="drawer" open={open} onClose={() => setOpen(false)} title={item.name} status={<StatusPill label={labelStatus(item.status)} />} state={{ status: "ready" }}
+      meta={[`${item.quantity} units · ${item.kind}`, item.machine_type_name ?? "Unassigned"]}
+      main={<div className="grid gap-4"><ItemLink link={item.link} />
+        <p className="text-sm text-muted">Estimated unit cost: {item.estimated_unit_cost ?? "—"} · Purchaser: {item.purchaser_username ?? "Unassigned"}</p>
+        {item.ordered_at ? <p>Ordered <RelativeTime date={item.ordered_at} /></p> : null}{item.received_at ? <p>Received <RelativeTime date={item.received_at} /></p> : null}
+        <Field label={`Vendor for ${item.name}`}><input className="desk-input" value={draft.vendor_name} onChange={event => setDraft({ ...draft, vendor_name: event.target.value })} /></Field>
+        <Field label={`Actual unit cost for ${item.name}`}><input className="desk-input" type="number" min={0} step="0.01" value={draft.actual_unit_cost} onChange={event => setDraft({ ...draft, actual_unit_cost: event.target.value })} /></Field>
+        <Field label={`Status for ${item.name}`}><select className="desk-input" value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as ToBuyStatus })}>{statusOptions.map(status => <option key={status} value={status}>{labelStatus(status)}</option>)}</select></Field>
+        <MoveState item={item} makerspaceSlug={makerspaceSlug} />
+        <ProcurementReceipts itemId={item.id} receipts={item.receipts ?? []} onChanged={onReceiptsChanged} />
+        <ErrorText message={updateError} />
+        {isDraftChanged(item, draft) ? <SettingsActions onDiscard={() => setDraft(draftFromItem(item))} onSave={() => onSave(draft)} pending={updatePending} /> : null}
+      </div>} />
+    <ConfirmDialog open={confirmDelete} onCancel={() => setConfirmDelete(false)} onConfirm={onDelete} title={`Delete ${item.name}?`} message="This removes the item and its receipts from the shopping list." confirmLabel="Delete" tone="danger" pending={deletePending} />
+    <ErrorText message={deleteError || (!open ? updateError : undefined)} />
+  </>;
 }
 
 function MoveState({ item, makerspaceSlug }: { item: ToBuyItem; makerspaceSlug: string }) {
@@ -116,7 +118,7 @@ function MoveState({ item, makerspaceSlug }: { item: ToBuyItem; makerspaceSlug: 
 
 function ItemLink({ link }: { link: string }) {
   const href = safeHref(link);
-  if (href) return <a className="text-accent-ink underline" href={href} target="_blank" rel="noreferrer">link</a>;
+  if (href) return <a className="text-accent-ink underline" href={href} target="_blank" rel="noreferrer">Open supplier link ↗</a>;
   if (link) return <span className="block max-w-56 break-all text-muted" title={link}>{link}</span>;
   return <>-</>;
 }
@@ -145,9 +147,4 @@ export function itemTotal(item: ToBuyItem, mode: "estimated" | "actual") {
 
 export function labelStatus(status: ToBuyStatus) {
   return status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }

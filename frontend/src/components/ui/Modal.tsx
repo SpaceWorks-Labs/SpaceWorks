@@ -10,6 +10,7 @@ import {
   trapDialogFocus,
 } from "./dialogFocus";
 import { revealFieldAboveKeyboard } from "./keyboardSafe";
+import { OverlayPortal } from "./OverlayPortal";
 import { X } from "lucide-react";
 
 export type ModalProps = {
@@ -89,6 +90,7 @@ export function Modal({
   if (!open) return null;
 
   return (
+    <OverlayPortal>
     <div
       ref={layerRef}
       inert={!amTop}
@@ -121,5 +123,6 @@ export function Modal({
           className="desk-button-ghost absolute top-2.5 right-2.5 min-h-11 min-w-11 px-2 sm:hidden"><X aria-hidden="true" size={20} /></button>
       </div>
     </div>
+    </OverlayPortal>
   );
 }

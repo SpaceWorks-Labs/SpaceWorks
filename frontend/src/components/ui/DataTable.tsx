@@ -92,7 +92,7 @@ export function DataTable<T>({
       <div className="overflow-x-auto overscroll-x-contain rounded-xl">
       <table role="table" className="block w-full text-left text-sm md:table md:min-w-[640px]" aria-busy={loading}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
-        <thead role="rowgroup" className={`${phoneHeader ? "block" : "hidden"} bg-surface dark:bg-hover text-xs text-muted md:table-header-group`}>
+        <thead role="rowgroup" className={`${phoneHeader ? "block" : "max-md:sr-only"} bg-surface dark:bg-hover text-xs text-muted md:table-header-group`}>
           <tr role="row" className="flex flex-wrap items-center border-b border-line md:table-row">
             {selectionEnabled ? (
               <th role="columnheader" className="block w-16 px-3 py-2 md:table-cell" scope="col">
@@ -102,7 +102,7 @@ export function DataTable<T>({
             {visibleColumns.map((column) => (
               <th role="columnheader"
                 key={column.key}
-                className={`${column.sortable ? "block" : "hidden"} px-3 py-2 font-semibold md:table-cell ${column.className ?? ""}`}
+                className={`${column.sortable ? "block" : "max-md:sr-only"} px-3 py-2 font-semibold md:table-cell ${column.className ?? ""}`}
                 aria-sort={sort?.key === column.key ? ariaSort(sort.direction) : undefined}
                 scope="col"
               >

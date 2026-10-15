@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { useLayoutMedia } from "./useLayoutMedia";
 
+/** Section jump: a link rail from tablet up, one native select on phones (no sideways-scrolling row). */
 export function SettingsNav({ sections }: { sections: { id: string; title?: string }[] }) {
   const [active, setActive] = useState(sections[0]?.id);
+  const phone = useLayoutMedia("(max-width: 767px)");
   useEffect(() => {
     if (!window.IntersectionObserver) return;
     const observer = new IntersectionObserver(entries => {
@@ -11,6 +14,19 @@ export function SettingsNav({ sections }: { sections: { id: string; title?: stri
     sections.forEach(section => { const element = document.getElementById(section.id); if (element) observer.observe(element); });
     return () => observer.disconnect();
   }, [sections]);
+  if (phone) return <nav aria-label="Settings sections" className="sw-settings-nav min-w-0">
+    <label className="grid gap-2"><span className="text-sm font-semibold text-ink">Jump to section</span>
+      <select className="desk-input w-full" value={active} onChange={event => {
+        const id = event.target.value;
+        setActive(id);
+        const target = document.getElementById(id);
+        target?.scrollIntoView?.({ block: "start" });
+        target?.focus({ preventScroll: true });
+      }}>
+        {sections.map(section => <option key={section.id} value={section.id}>{section.title ?? section.id}</option>)}
+      </select>
+    </label>
+  </nav>;
   return <nav aria-label="Settings sections" className="sw-settings-nav flex min-w-0 gap-2 overflow-x-auto pb-2 xl:flex-col">
     {sections.map(section => <a key={section.id} href={`#${section.id}`} onClick={() => setActive(section.id)}
       aria-current={active === section.id ? "location" : undefined}

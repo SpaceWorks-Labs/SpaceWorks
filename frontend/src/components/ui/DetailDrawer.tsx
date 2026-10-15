@@ -10,6 +10,7 @@ import {
   trapDialogFocus,
 } from "./dialogFocus";
 import { revealFieldAboveKeyboard } from "./keyboardSafe";
+import { OverlayPortal } from "./OverlayPortal";
 
 export type DetailDrawerProps = {
   open: boolean;
@@ -72,6 +73,7 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
   if (!open) return null;
 
   return (
+    <OverlayPortal>
     <div ref={layerRef} inert={!amTop} className="sw-overlay-layer fixed inset-0 z-50">
       <button
         type="button"
@@ -107,5 +109,6 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
           onFocus={revealFieldAboveKeyboard}>{children}</div>
       </aside>
     </div>
+    </OverlayPortal>
   );
 }

@@ -94,3 +94,6 @@
 
 /* A kiosk fills the device: its frame clears the notch, status bar and home indicator. */
 .sw-kiosk > .sw-layout { padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+
+/* asideSide="start": the aside leads when the columns stack, matching its desktop position. */
+.sw-detail-start > aside { order: -1; }

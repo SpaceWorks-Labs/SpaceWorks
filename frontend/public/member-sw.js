@@ -19,11 +19,11 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || request.headers.has("Authorization")) return;
   if (url.pathname === `${memberPath}/manifest.webmanifest`) {
-    const name = (url.searchParams.get("name") || "SpaceWorks member").slice(0, 100);
+    const name = (url.searchParams.get("name") || "Space Works member").slice(0, 100);
     event.respondWith(Promise.resolve(new Response(JSON.stringify({
       id: memberPath, name, short_name: name.slice(0, 24), start_url: memberPath, scope: memberPath,
-      display: "standalone", background_color: "#1e333f", theme_color: "#1e333f",
-      icons: [192, 512].map(size => ({ src: `/member-pwa/icon-${size}.png`, sizes: `${size}x${size}`, type: "image/png", purpose: "any" })),
+      display: "standalone", background_color: "#FFF4E8", theme_color: "#FFF4E8",
+      icons: [192, 512].map(size => ({ src: `/member-pwa/icon-${size}.png`, sizes: `${size}x${size}`, type: "image/png", purpose: "any maskable" })),
     }), { headers: { "Content-Type": "application/manifest+json", "Cache-Control": "no-store" } })));
     return;
   }

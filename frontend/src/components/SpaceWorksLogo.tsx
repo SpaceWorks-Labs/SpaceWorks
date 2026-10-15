@@ -1,83 +1,72 @@
-import type { ReactNode } from "react";
+import { useId, useSyncExternalStore, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { currentTheme, subscribeTheme, type Theme } from "../lib/theme";
+import { logoMasters } from "./spaceWorksLogoPaths";
 
-type SpaceWorksLogoProps = {
-  size?: number;
-  withWordmark?: boolean;
+export type SymbolSize = 48 | 52 | 64 | 72 | 96 | 128 | 192 | 256 | 512;
+export type LockupSize = 180 | 240 | 288 | 320 | 480 | 600;
+type SharedProps = {
+  ground?: Theme;
+  oneColour?: boolean;
+  decorative?: boolean;
+  /** Compatibility only: classes apply to the outside spacing wrapper, never SVG paths. */
   className?: string;
 };
+export type SpaceWorksLogoProps = SharedProps & (
+  | { variant: "symbol"; size?: SymbolSize; withWordmark?: never }
+  | { variant: "stacked" | "horizontal"; size?: LockupSize; withWordmark?: never }
+  // Legacy callers used arbitrary symbol heights. Clamp these at the boundary.
+  | { variant?: never; size?: number; withWordmark?: boolean }
+);
 
-function SpaceWorksMark({ size, className }: { size: number; className?: string }) {
+export function SpaceWorksLogo({
+  variant, ground, oneColour = false, decorative = false,
+  size, withWordmark = false, className,
+}: SpaceWorksLogoProps) {
+  const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => "light");
+  const titleId = useId();
+  const surface = ground ?? theme;
+  const requested = variant ?? (withWordmark && (size ?? 0) >= 48 ? "stacked" : "symbol");
+  // There is no reversed or one-colour horizontal master. Use the stacked drawing.
+  const shape = requested === "horizontal" && (surface === "dark" || oneColour)
+    ? "stacked" : requested;
+  const master = shape === "symbol" ? "symbol" : `lockup-${shape}` as const;
+  const key = surface === "dark" ? `${master}-reversed` as const
+    : oneColour ? `${master}-one-colour-ink` as const : master;
+  // Narrow the keys after resolving the horizontal fallback above.
+  const artwork = logoMasters[key as keyof typeof logoMasters];
+  const [, , viewWidth, viewHeight] = artwork.viewBox.split(" ").map(Number);
+  const ratio = viewWidth / viewHeight;
+  const floor = shape === "symbol" ? 48 : Math.max(180, 48 * ratio);
+  const requestedSize = size !== undefined && Number.isFinite(size) ? size : floor;
+  const dimension = Math.max(floor, requestedSize);
+  const width = shape === "symbol" ? dimension * ratio : dimension;
+  const height = shape === "symbol" ? dimension : dimension / ratio;
+
   return (
-    <svg
-      aria-label="Space Works"
-      className={className}
-      fill="none"
-      height={size}
-      role="img"
-      viewBox="0 0 64 64"
-      width={size}
-    >
-      <polygon
-        points="8,22 2,10 28,10 32,22"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="3"
-      />
-      <polygon
-        points="32,22 36,10 62,10 56,22"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="3"
-      />
-      <rect
-        height="34"
-        rx="5"
-        stroke="currentColor"
-        strokeWidth="3"
-        width="48"
-        x="8"
-        y="22"
-      />
-      <rect fill="#7dd3fc" height="11" rx="2.5" width="18" x="12" y="27" />
-      <rect fill="#fcdf46" height="11" rx="2.5" width="18" x="34" y="27" />
-      <rect fill="#74dd9c" height="11" rx="2.5" width="18" x="12" y="42" />
-      <rect fill="#f9a8d4" height="11" rx="2.5" width="18" x="34" y="42" />
-    </svg>
+    <span className={className} style={{ display: "inline-flex", flexShrink: 0 }}>
+      <span data-logo={key} style={{ display: "inline-flex", padding: height / 4, flexShrink: 0 }}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox={artwork.viewBox}
+          width={width}
+          height={height}
+          style={{ display: "block", width, height, minWidth: width, minHeight: height, maxWidth: "none" }}
+          role={decorative ? undefined : "img"}
+          aria-label={decorative ? undefined : "Space Works"}
+          aria-labelledby={decorative ? undefined : titleId}
+          aria-hidden={decorative || undefined}
+          focusable="false"
+        >
+          {!decorative && <title id={titleId}>Space Works</title>}
+          {artwork.paths.map((path, index) => <path key={index} {...path} />)}
+        </svg>
+      </span>
+    </span>
   );
 }
 
-export function SpaceWorksLogo({
-  size = 28,
-  withWordmark = false,
-  className,
-}: SpaceWorksLogoProps) {
-  if (withWordmark) {
-    return (
-      <span
-        className={[
-          "inline-flex items-center gap-2",
-          className,
-        ].filter(Boolean).join(" ")}
-      >
-        <SpaceWorksMark className="shrink-0" size={size} />
-        <span className="font-semibold tracking-wide">Space Works</span>
-      </span>
-    );
-  }
-
-  return <SpaceWorksMark className={className} size={size} />;
-}
-
-export function SpaceWorksHomeLink({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function SpaceWorksHomeLink({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <Link
       aria-label="Open makerspace listing"
@@ -94,13 +83,10 @@ export function SpaceWorksHomeLink({
 
 export function SpaceWorksBadge({ className }: { className?: string }) {
   return (
-    <SpaceWorksHomeLink
-      className={[
-        "text-muted",
-        className,
-      ].filter(Boolean).join(" ")}
-    >
-      <SpaceWorksLogo size={22} withWordmark />
+    <SpaceWorksHomeLink className={className}>
+      <SpaceWorksLogo variant="symbol" size={48} decorative />
     </SpaceWorksHomeLink>
   );
 }
+
+export default SpaceWorksLogo;

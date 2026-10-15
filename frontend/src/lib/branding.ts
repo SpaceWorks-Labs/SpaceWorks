@@ -3,17 +3,23 @@ import type { TenantBootstrap } from "./api";
 // Public/member colour overrides are page-scoped; keep the branding import surface stable.
 export { readBrandTokens, tenantColourStyle } from "./brandColours";
 
-const DEFAULT_FAVICON =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-size='48'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E";
+const DEFAULT_FAVICON = "/brand/favicon.svg";
 
 function setFavicon(url: string) {
-  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  let link = document.querySelector<HTMLLinkElement>('link[data-spaceworks-favicon]')
+    ?? document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (!link) {
     link = document.createElement("link");
     link.rel = "icon";
     document.head.appendChild(link);
   }
   link.href = url;
+  link.dataset.spaceworksFavicon = "";
+  // A tenant logo may be any supported image format. Keep it after PNG fallbacks
+  // so they cannot take precedence over the page's chosen favicon.
+  link.removeAttribute("type");
+  link.removeAttribute("sizes");
+  document.head.appendChild(link);
 }
 
 export function applyTenantBranding(bootstrap: TenantBootstrap) {

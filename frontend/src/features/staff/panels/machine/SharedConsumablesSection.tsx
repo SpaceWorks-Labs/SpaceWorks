@@ -105,7 +105,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
               </div>
               <div className="grid gap-3 p-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0 break-words">
                     <strong className="text-sm text-ink">{label}</strong>
                     <div className="mt-1 flex flex-wrap gap-2">
                       <Badge tone={pool.machine_id !== null ? "emphasis" : pool.machine_type_id !== null ? "accent" : "neutral"}>

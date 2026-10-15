@@ -158,12 +158,12 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
           <textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
-        <label className="eyebrow flex items-center gap-2 sm:col-span-2">
+        <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
           Set machine status to idle
         </label>
-        <div className="flex gap-2 sm:col-span-2">
+        <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button className="desk-button-primary" type="submit"
             disabled={complete.isPending || !summary.trim()}>
             {complete.isPending ? "Completing..." : "Complete maintenance"}
@@ -238,7 +238,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
           <textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
-        <label className="eyebrow flex items-center gap-2 sm:col-span-2">
+        <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
           Set machine status to idle

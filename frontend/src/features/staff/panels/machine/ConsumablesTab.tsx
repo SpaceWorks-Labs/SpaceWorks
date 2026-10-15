@@ -148,7 +148,7 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
   return (
     <div className="grid gap-3">
       <ListRow title={item.product_name ?? item.label} meta={<>{item.measurement === "count" ? `${item.available ?? 0} available` : `${item.remaining ?? "0.00"} g remaining`}{item.note ? <span className="block">{item.note}</span> : null}</>}
-        right={<div className="flex gap-2">{isLow ? <StatusPill label="Low" tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: "Unlink", tone: "danger", disabled: removing, disabledReason: "Wait for the current change to finish.", onClick: onRemove }]} /> : null}</div>} />
+        right={<div className="flex flex-wrap gap-2">{isLow ? <StatusPill label="Low" tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: "Unlink", tone: "danger", disabled: removing, disabledReason: "Wait for the current change to finish.", onClick: onRemove }]} /> : null}</div>} />
       {canOperate ? (
         <form className="mt-2 flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); log.mutate(); }}>
           <label className="eyebrow grid gap-1">Use ({item.measurement})

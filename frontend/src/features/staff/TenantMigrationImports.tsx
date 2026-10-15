@@ -47,9 +47,9 @@ export function TenantMigrationImports({ pairings, active = true, phase = "impor
         {create.isPending ? "Uploading encrypted archive…" : "Create target import"}
       </button>
       <ErrorText error={create.error} field="source_archive_digest" />
-      {imports.isLoading ? <p className="mt-4 text-sm text-muted">Loading import jobs…</p> : null}
-      <ErrorText error={imports.error} />
       </section> : null}
+      {active && imports.isLoading ? <p className="mt-4 text-sm text-muted">Loading import jobs…</p> : null}
+      {active ? <ErrorText error={imports.error} /> : null}
       <div className="grid gap-4">
         {(imports.data ?? []).map((job) => (
           <ImportJobCard job={job} key={job.id} pairing={pairings.find((item) => item.migration_id === job.id)} active={active} phase={phase} />
@@ -141,22 +141,6 @@ function ImportJobCard({ job: listedJob, pairing, active, phase }: { job: Import
         <div className="mt-2"><p className="text-xs font-semibold text-ink">Archived source deployment identity</p><pre className="mt-1 overflow-auto rounded border border-line bg-bg p-2 text-xs text-muted">{JSON.stringify(job.source_deployment_identity, null, 2)}</pre></div>
       ) : null}
 
-      {phase === "verify" && job.status === "ready" ? (
-        <div className="mt-3 rounded-md border border-line bg-bg p-3">
-          <h4 className="title-section">Materialize target</h4>
-          <div className="mt-2 grid gap-3 md:grid-cols-2">
-            <label className="text-sm text-ink">Target tenant name (optional)<input className="desk-input mt-1 w-full" value={targetName} onChange={(event) => setTargetName(event.target.value)} /></label>
-            <label className="text-sm text-ink">Target tenant slug (optional)<input className="desk-input mt-1 w-full" value={targetSlug} onChange={(event) => setTargetSlug(event.target.value)} /></label>
-          </div>
-          <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
-            <input className="h-5 w-5 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" checked={reviewedIdentities} onChange={(event) => setReviewedIdentities(event.target.checked)} />
-            I reviewed every per-person identity decision shown above or in its prior review record.
-          </label>
-          <button className="desk-button-primary mt-3" type="button" disabled={!reviewedIdentities || run.isPending} onClick={() => run.mutate()}>{run.isPending ? "Starting materialization…" : "Run reviewed import"}</button>
-          <ErrorText error={run.error} field="target_identity" />
-        </div>
-      ) : null}
-
       {phase !== "import" && job.status === "completed" ? (
         <VerificationReportView report={verification.data} loading={verification.isLoading} error={verification.error} />
       ) : null}
@@ -178,7 +162,23 @@ function ImportJobCard({ job: listedJob, pairing, active, phase }: { job: Import
       {confirmation}
       <ReceiptOutput label="Target abort receipt — transfer to source" receipt={abort.data?.receipt} />
     </article> : null}
-    <TenantMigrationIdentityDecisions job={job} active={active && phase === "import" && (job.status === "awaiting_identity" || job.status === "ready")} />
+    {/* Materialising attests to these decisions, so the verify step shows them right above it. */}
+    <TenantMigrationIdentityDecisions job={job} active={active && phase !== "cutover" && (job.status === "awaiting_identity" || job.status === "ready")} />
+    {active && phase === "verify" && job.status === "ready" ? (
+      <div className="mt-3 rounded-md border border-line bg-bg p-3">
+        <h4 className="title-section">Materialize target</h4>
+        <div className="mt-2 grid gap-3 md:grid-cols-2">
+          <label className="text-sm text-ink">Target tenant name (optional)<input className="desk-input mt-1 w-full" value={targetName} onChange={(event) => setTargetName(event.target.value)} /></label>
+          <label className="text-sm text-ink">Target tenant slug (optional)<input className="desk-input mt-1 w-full" value={targetSlug} onChange={(event) => setTargetSlug(event.target.value)} /></label>
+        </div>
+        <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
+          <input className="h-5 w-5 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" checked={reviewedIdentities} onChange={(event) => setReviewedIdentities(event.target.checked)} />
+          I reviewed every per-person identity decision shown above or in its prior review record.
+        </label>
+        <button className="desk-button-primary mt-3" type="button" disabled={!reviewedIdentities || run.isPending} onClick={() => run.mutate()}>{run.isPending ? "Starting materialization…" : "Run reviewed import"}</button>
+        <ErrorText error={run.error} field="target_identity" />
+      </div>
+    ) : null}
     </>
   );
 }

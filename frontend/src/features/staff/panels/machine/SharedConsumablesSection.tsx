@@ -28,7 +28,7 @@ export function poolStockState(pool: PrinterPool): StockState {
     ? null
     : Number(pool.low_threshold_grams);
   if (remaining <= 0) {
-    return { label: "Empty", band: "bg-danger text-bg", fill: "bg-danger" };
+    return { label: "Empty", band: "bg-danger text-on-danger", fill: "bg-danger" };
   }
   if (threshold !== null && remaining <= threshold) {
     return { label: "Low stock", band: "bg-warn text-on-warn", fill: "bg-warn" };
@@ -90,7 +90,7 @@ export function ConsumablePoolList({ makerspaceId, pools }: { makerspaceId: numb
           const validAdjustment = quantityDelta.trim() !== "" && Number.isFinite(Number(quantityDelta)) && Number(quantityDelta) !== 0;
           return (
             <article className="overflow-hidden rounded-xl border border-line bg-bg" key={pool.id}>
-              <div className={`flex items-center justify-between gap-2 px-3 py-1.5 font-mono text-xs font-semibold ${state.band}`}>
+              <div className={`flex items-center justify-between gap-2 px-3 py-1.5 tabular-nums text-xs font-semibold ${state.band}`}>
                 <span>{state.label}</span>
                 <span>{Math.round(percent)}% remaining</span>
               </div>
@@ -99,7 +99,7 @@ export function ConsumablePoolList({ makerspaceId, pools }: { makerspaceId: numb
                   <div>
                     <strong className="text-sm text-ink">{label}</strong>
                     <div className="mt-1 flex flex-wrap gap-2">
-                      <Badge tone={pool.machine_id !== null ? "secondary" : pool.machine_type_id !== null ? "accent" : "neutral"}>
+                      <Badge tone={pool.machine_id !== null ? "emphasis" : pool.machine_type_id !== null ? "accent" : "neutral"}>
                         {pool.machine_id !== null ? "Machine-specific" : pool.machine_type_id !== null ? "Type-wide" : "Space-wide"}
                       </Badge>
                       <span className="chip">
@@ -138,7 +138,7 @@ export function ConsumablePoolList({ makerspaceId, pools }: { makerspaceId: numb
                   >
                     <div className={`h-full rounded-full ${state.fill}`} style={{ width: `${percent}%` }} />
                   </div>
-                  <p className="mt-1 font-mono text-sm text-muted">
+                  <p className="mt-1 tabular-nums text-sm text-muted">
                     <strong className="text-ink">{pool.remaining_grams}</strong> / {pool.initial_grams} {unit}
                   </p>
                 </div>
@@ -165,7 +165,7 @@ export function ConsumablePoolList({ makerspaceId, pools }: { makerspaceId: numb
                     </button>
                   </form>
                 ) : (
-                  <button className="desk-button-secondary justify-self-start" type="button" onClick={() => { setAdjustingId(pool.id); setQuantityDelta(""); adjustPool.reset(); }}>
+                  <button className="desk-button justify-self-start" type="button" onClick={() => { setAdjustingId(pool.id); setQuantityDelta(""); adjustPool.reset(); }}>
                     Adjust stock
                   </button>
                 )}

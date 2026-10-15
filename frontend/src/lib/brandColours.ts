@@ -68,7 +68,7 @@ export function deriveBrandPalette(theme: Record<string, string>, mode: "light" 
     { name: `${names[i]}/10 tint`, color: blend(surface, fill, tintAlphas[0], false) },
     { name: `${names[i]}/15 tint`, color: blend(surface, fill, tintAlphas[1], false) },
   ]);
-  // Identity-coloured member cards contain secondary links too. Their neutral
+  // Identity-coloured member cards contain brand links too. Their neutral
   // panel base prevents tint stacking; their fixed pastel tints still need AA.
   const linkBackgrounds = [...backgrounds, ...surfaces.flatMap((surface, i) => FIXED_FILLS.map((color, j) => ({
     name: `${names[i]} with ${["accent", "success", "warn"][j]}/15 tint`, color: blend(surface, color, .15, false),
@@ -85,15 +85,15 @@ export function deriveBrandPalette(theme: Record<string, string>, mode: "light" 
   }
   const pairs: ContrastPair[] = [];
   const add = (pair: string, a: RGB, b: RGB, minimum = 4.5) => pairs.push({ mode, pair, ratio: contrast(a, b), minimum });
-  for (const [name, background] of [["secondary", fill], ["secondary-hover", hover], ["secondary-active", active]] as const) {
-    add(`on-secondary on ${name}`, foreground, background);
+  for (const [name, background] of [["brand", fill], ["brand-hover", hover], ["brand-active", active]] as const) {
+    add(`on-brand on ${name}`, foreground, background);
     const counter = foreground.map((c, i) => c * .8 + background[i] * .2) as RGB;
-    add(`on-secondary/80 on ${name}`, counter, background);
+    add(`on-brand/80 on ${name}`, counter, background);
   }
-  linkBackgrounds.forEach(({ name, color }) => add(`secondary-ink on ${name}`, ink, color));
+  linkBackgrounds.forEach(({ name, color }) => add(`brand-ink on ${name}`, ink, color));
   BODY_TEXT[mode].forEach((text, i) => backgrounds.forEach(({ name, color }) => add(`${i === 0 ? "ink" : "muted"} on ${name}`, text, color)));
   FIXED_INKS[mode].forEach((text, i) => backgrounds.forEach(({ name, color }) => add(`${["accent-ink", "success-ink", "warn-ink", "danger"][i]} on ${name}`, text, color)));
-  surfaces.forEach((color, i) => add(`secondary boundary on ${names[i]}`, ink, color, 3));
+  surfaces.forEach((color, i) => add(`brand boundary on ${names[i]}`, ink, color, 3));
   return { fill, foreground, hover, active, ink, tintAlphas, pairs };
 }
 
@@ -121,12 +121,12 @@ export function tenantColourStyle(value: unknown, tokens: BrandTokens, mode?: "l
 
 export function brandPaletteStyle(palette: ReturnType<typeof deriveBrandPalette>): CSSProperties {
   return {
-    "--color-secondary": palette.fill.join(" "),
-    "--color-on-secondary": palette.foreground.join(" "),
-    "--color-secondary-ink": palette.ink.join(" "),
-    "--color-secondary-hover": palette.hover.join(" "),
-    "--color-secondary-active": palette.active.join(" "),
-    "--color-secondary-boundary": palette.ink.join(" "),
+    "--color-brand": palette.fill.join(" "),
+    "--color-on-brand": palette.foreground.join(" "),
+    "--color-brand-ink": palette.ink.join(" "),
+    "--color-brand-hover": palette.hover.join(" "),
+    "--color-brand-active": palette.active.join(" "),
+    "--color-brand-boundary": palette.ink.join(" "),
     "--brand-tint-10-alpha": String(palette.tintAlphas[0]),
     "--brand-tint-15-alpha": String(palette.tintAlphas[1]),
   } as CSSProperties;
@@ -138,7 +138,7 @@ export function readBrandTokens(): BrandTokens | null {
     const channels = css.getPropertyValue(`--color-${name}`).trim().split(/\s+/).map(Number);
     return channels.length === 3 && channels.every((value) => Number.isFinite(value) && value >= 0 && value <= 255) ? channels as RGB : null;
   }
-  const fillText = token("on-secondary"), defaultFill = token("secondary");
+  const fillText = token("on-brand"), defaultFill = token("brand");
   const surfaces = [token("bg"), token("surface"), token("panel")];
   if (!fillText || !defaultFill || surfaces.some((value) => value === null)) return null;
   return { fillText, defaultFill, surfaces: surfaces as RGB[] };

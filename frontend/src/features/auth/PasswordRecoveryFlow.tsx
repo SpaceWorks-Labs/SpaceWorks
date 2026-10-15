@@ -105,7 +105,7 @@ export function PasswordRecoveryFlow() {
               onChange={(event) => setEmail(event.target.value)}
             />
             {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-            <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={pending}>
+            <button className="desk-button-brand mt-5 w-full" type="submit" disabled={pending}>
               {pending ? "Requesting..." : "Request recovery code"}
             </button>
             <Link className="desk-button-ghost mt-3 w-full" to="/admin">Back to sign in</Link>
@@ -141,7 +141,7 @@ export function PasswordRecoveryFlow() {
               onConfirmPasswordChange={setConfirmPassword}
             />
             {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-            <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={!canConfirm}>
+            <button className="desk-button-brand mt-5 w-full" type="submit" disabled={!canConfirm}>
               {pending ? "Updating..." : "Update password"}
             </button>
             <button
@@ -159,7 +159,7 @@ export function PasswordRecoveryFlow() {
           <>
             <h1 className="mt-2 text-2xl font-bold text-ink">Password updated</h1>
             <p className="mt-4 text-sm text-muted">Your password has been updated. You can now sign in.</p>
-            <Link className="desk-button-secondary mt-5 w-full" to="/admin">Go to sign in</Link>
+            <Link className="desk-button-brand mt-5 w-full" to="/admin">Go to sign in</Link>
           </>
         ) : null}
       </section>

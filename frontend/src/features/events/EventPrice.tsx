@@ -6,7 +6,7 @@ export function EventPrice({ amount, currency, tickets = [], ticketRequired = fa
   const lowest = prices.length ? Math.min(...prices) : Number(amount);
   const prefix = prices.length && Math.max(...prices) !== lowest ? "From " : "";
   const label = lowest === 0 ? "Free" : `${lowest.toFixed(2)} ${currency.toUpperCase()}`;
-  return <div><dt className="eyebrow">Price</dt><dd className="font-mono font-semibold text-ink">
+  return <div><dt className="eyebrow">Price</dt><dd className="tabular-nums font-semibold text-ink">
     {ticketRequired && !tickets.length ? "No tickets available" : `${prefix}${label}`}
   </dd></div>;
 }

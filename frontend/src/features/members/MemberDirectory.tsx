@@ -15,7 +15,7 @@ type Directory = { members: DirectoryEntry[]; hidden_count: number };
 
 const IDENTITY_TONES = [
   { border: "border-accent", surface: "bg-accent/15", ink: "text-accent-ink" },
-  { border: "border-secondary", surface: "bg-secondary/15", ink: "text-secondary-ink" },
+  { border: "border-brand", surface: "bg-brand/15", ink: "text-brand-ink" },
   { border: "border-success", surface: "bg-success/15", ink: "text-success-ink" },
   { border: "border-warn", surface: "bg-warn/15", ink: "text-warn-ink" },
 ] as const;
@@ -69,7 +69,7 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
         <ul className="mt-3 space-y-2">
           {entries.map((entry) => {
             const tone = identityTone(entry.membership_id);
-            return <li className={`border-l-2 ${openId === entry.membership_id ? "border-secondary" : tone.border} pl-2`} key={entry.membership_id}>
+            return <li className={`border-l-2 ${openId === entry.membership_id ? "border-brand" : tone.border} pl-2`} key={entry.membership_id}>
               <button
                 className="desk-button-ghost w-full justify-start text-left"
                 type="button"
@@ -110,7 +110,7 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
 
 function ProfileDetail({ profile }: { profile: MemberProfile }) {
   return (
-    <div className="desk-panel mt-2 border-secondary p-3">
+    <div className="desk-panel mt-2 border-brand p-3">
       {profile.institution ? (
         <p className="text-sm text-muted">{profile.institution}</p>
       ) : null}
@@ -129,12 +129,12 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
       ) : null}
       {profile.github_contributions !== null ? (
         <p className="mt-3 text-sm text-muted">
-          <span className="font-mono">{profile.github_contributions}</span> GitHub contributions in the last year.
+          <span className="tabular-nums">{profile.github_contributions}</span> GitHub contributions in the last year.
         </p>
       ) : null}
       {typeof profile.activity?.events_attended === "number" ? (
         <p className="mt-1 text-sm text-muted">
-          <span className="font-mono">{profile.activity.events_attended}</span> events attended here.
+          <span className="tabular-nums">{profile.activity.events_attended}</span> events attended here.
         </p>
       ) : null}
       {profile.activity?.recent_attended_events?.length ? (
@@ -147,7 +147,7 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
             {profile.activity.recent_attended_events.map((event) => (
               <li key={event.id}>
                 {event.title} ·{" "}
-                <span className="font-mono">{new Date(event.starts_at).toLocaleDateString(undefined, {
+                <span className="tabular-nums">{new Date(event.starts_at).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "short",
                   day: "numeric",

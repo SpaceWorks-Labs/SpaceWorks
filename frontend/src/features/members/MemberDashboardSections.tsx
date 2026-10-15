@@ -54,7 +54,7 @@ export function MemberDues({ dues }: { dues: MemberActivity["membership_dues"] }
     <section className="desk-panel p-5">
       <h2 className="title-panel">Membership fee</h2>
       <p className="mt-2 text-sm text-muted">
-        Dues <span className="font-mono text-ink">{dues.dues_amount}</span>
+        Dues <span className="tabular-nums text-ink">{dues.dues_amount}</span>
       </p>
       {unavailable ? (
         <p className="mt-1 text-sm text-muted">
@@ -64,7 +64,7 @@ export function MemberDues({ dues }: { dues: MemberActivity["membership_dues"] }
         <p className="mt-1 text-sm text-muted">
           Outstanding{" "}
           {outstanding.map(([currency, amount]) => (
-            <span className="font-mono text-ink" key={currency}>
+            <span className="tabular-nums text-ink" key={currency}>
               {amount} {currency.toUpperCase()}{" "}
             </span>
           ))}

@@ -13,7 +13,7 @@ const TONE_CLASS: Record<Tone, string> = {
   success:
     "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
   warn: "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
-  danger: "border-danger bg-danger text-bg",
+  danger: "border-danger bg-danger text-on-danger",
   neutral: "border-outline bg-surface text-muted",
 };
 
@@ -60,7 +60,7 @@ export function AvailabilityBadge({ availability }: AvailabilityBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-xs font-semibold tracking-tight ${TONE_CLASS[toneForAvailability(availability.label)]}`}
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold tracking-tight ${TONE_CLASS[toneForAvailability(availability.label)]}`}
     >
       {textForAvailability(availability)}
     </span>

@@ -32,8 +32,10 @@
     --color-accent: 125 211 252;
     --color-accent-ink: 0 55 74;
     --color-accent-bright: 56 189 248;
-    --color-secondary: 249 168 212;
-    --color-secondary-ink: 90 22 51;
+    --color-brand: 249 168 212;
+    --color-emphasis: 249 168 212;
+    --color-on-emphasis: 90 22 51;
+    --color-brand-ink: 90 22 51;
     --brand-tint-10-alpha: 0.1;
     --brand-tint-15-alpha: 0.15;
     /* on-* = FIXED dark text for solid bright pastel fills (badges/status boxes);
@@ -43,9 +45,10 @@
     --color-on-success: 0 50 27;
     --color-on-warn: 61 52 0;
     --color-on-info: 0 55 74;
-    --color-on-secondary: 90 22 51;
+    --color-on-brand: 90 22 51;
     --color-ink: 31 46 53;
     --color-bg: 250 249 244;
+    --color-on-danger: 250 249 244;
     --color-surface: 239 238 233;
     --color-panel: 255 255 255;
     /* Darkened from 107 119 128, which measured 4.35:1 on --color-bg and 3.95:1
@@ -77,17 +80,20 @@
        fixed on-* tokens below instead. */
     --color-accent-ink: 125 211 252;
     --color-accent-bright: 56 189 248;
-    --color-secondary: 249 168 212;
-    --color-secondary-ink: 249 168 212;
+    --color-brand: 249 168 212;
+    --color-emphasis: 249 168 212;
+    --color-on-emphasis: 90 22 51;
+    --color-brand-ink: 249 168 212;
     --brand-tint-10-alpha: 0.07;
     --brand-tint-15-alpha: 0.0705;
     --color-on-accent: 0 55 74;
     --color-on-success: 0 50 27;
     --color-on-warn: 61 52 0;
     --color-on-info: 0 55 74;
-    --color-on-secondary: 90 22 51;
+    --color-on-brand: 90 22 51;
     --color-ink: 236 234 242;
     --color-bg: 22 22 28;
+    --color-on-danger: 22 22 28;
     --color-surface: 38 40 51;
     --color-panel: 29 30 38;
     /* Dark-mode muted already measured 5.58:1 at worst, so it is unchanged. */
@@ -125,6 +131,12 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: "Clash Display", ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.01em;
+  }
+
+  code, kbd, samp, pre {
+    font-family: inherit;
+    font-variant-numeric: tabular-nums slashed-zero;
+    letter-spacing: 0.02em;
   }
 
   #root {

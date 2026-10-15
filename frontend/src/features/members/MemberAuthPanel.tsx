@@ -152,7 +152,7 @@ export function MemberAuthPanel({
           />
           {notice ? <p className="mt-3 text-sm text-success-ink">{notice}</p> : null}
           {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-          <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={pending}>
+          <button className="desk-button-brand mt-5 w-full" type="submit" disabled={pending}>
             {pending ? "Please wait…" : "Verify email"}
           </button>
           <button
@@ -211,7 +211,7 @@ export function MemberAuthPanel({
         {notice ? <p className="mt-3 text-sm text-success-ink">{notice}</p> : null}
         {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
         {passwordLogin || mode === "signup" ? (
-          <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={pending}>
+          <button className="desk-button-brand mt-5 w-full" type="submit" disabled={pending}>
             {pending ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
           </button>
         ) : null}

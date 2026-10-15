@@ -87,9 +87,9 @@ export function MaintenanceTab({
             <summary className="cursor-pointer list-none text-sm marker:hidden">
               <span className="flex flex-wrap items-start justify-between gap-2">
                 <strong className="min-w-0 flex-1 text-ink">{log.summary}</strong>
-                <span className="font-mono text-xs text-muted">{formatDateTime(log.performed_at)}</span>
+                <span className="tabular-nums text-xs text-muted">{formatDateTime(log.performed_at)}</span>
               </span>
-              {log.cost ? <span className="mt-1 block font-mono text-xs text-muted">Cost: {log.cost}</span> : null}
+              {log.cost ? <span className="mt-1 block tabular-nums text-xs text-muted">Cost: {log.cost}</span> : null}
             </summary>
             <div className="mt-3 border-t border-line pt-3 text-sm text-muted">
               {log.parts_note ? (

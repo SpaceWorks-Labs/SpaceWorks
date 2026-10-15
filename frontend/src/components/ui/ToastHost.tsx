@@ -25,7 +25,7 @@ export function ToastHost() {
       {rows.map(row => <div key={row.id} className="desk-panel p-4">
         <p className={`text-sm ${row.tone === "error" ? "text-danger" : "text-ink"}`}>{row.message}</p>
         <div className="mt-2 flex gap-2">
-          {row.undo ? <button className="desk-button-secondary" type="button" disabled={row.busy} onClick={() => void undoToast(row.id)}>{row.busy ? "Undoing…" : "Undo"}</button> : null}
+          {row.undo ? <button className="desk-button" type="button" disabled={row.busy} onClick={() => void undoToast(row.id)}>{row.busy ? "Undoing…" : "Undo"}</button> : null}
           <button className="desk-button-ghost" type="button" disabled={row.busy} onClick={() => dismissToast(row.id)}>Dismiss</button>
         </div>
       </div>)}

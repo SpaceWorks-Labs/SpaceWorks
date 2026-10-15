@@ -18,12 +18,12 @@ function LoanResult({ loan }: { loan: PublicToolLoan }) {
       <h3 className="title-section capitalize text-on-success dark:text-success-ink">
         {loan.status.replace(/_/g, " ")}: {loan.items.map((item) => item.product_name).join(", ") || "Tool loan"}
       </h3>
-      <p className="mt-1 break-all font-mono text-xs">{loan.public_token}</p>
+      <p className="mt-1 break-all code-text text-xs">{loan.public_token}</p>
       <div className="mt-2 space-y-1">
         {loan.items.map((item) => (
           <div className="flex justify-between gap-3 text-xs" key={item.product_name}>
             <span>{item.product_name}</span>
-            <span className="font-mono">x{item.quantity}</span>
+            <span className="tabular-nums">x{item.quantity}</span>
           </div>
         ))}
       </div>
@@ -85,7 +85,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
 
   return (
     <Card>
-      <p className="eyebrow text-secondary-ink">
+      <p className="eyebrow text-brand-ink">
         QR Tool Checkout
       </p>
       <h2 className="title-panel mt-2">Scan public tool</h2>
@@ -124,7 +124,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
             />
           </div>
           <button
-            className="desk-button-secondary mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
+            className="desk-button-brand mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
             disabled={checkoutDisabled || checkout.isPending}
             type="button"
             onClick={() => checkout.mutate()}

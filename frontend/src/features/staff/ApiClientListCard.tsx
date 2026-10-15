@@ -141,7 +141,7 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, dele
   return (
     <div className="rounded-md border border-line bg-bg p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><p className="font-semibold text-ink">{client.label}</p><p className="mt-1 break-all font-mono text-xs text-muted">{client.client_id}</p></div>
+        <div><p className="font-semibold text-ink">{client.label}</p><p className="mt-1 break-all code-text text-xs text-muted">{client.client_id}</p></div>
         <span className={`rounded-md px-2 py-1 text-xs font-semibold ${client.is_active ? "bg-success/15 text-success-ink" : "bg-warn/15 text-warn-ink"}`}>{client.is_active ? "Active" : "Inactive"}</span>
       </div>
       <p className="mt-2 break-all text-xs text-muted">{client.allowed_origins.length ? `Origins: ${client.allowed_origins.join(", ")}` : "No browser origins configured."}</p>

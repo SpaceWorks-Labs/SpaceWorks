@@ -173,7 +173,7 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
               </option>
             ))}
           </select></Field>
-          {selectedProduct ? <p className="mt-2 font-mono text-xs uppercase text-muted">{selectedProduct.tracking_mode}</p> : null}
+          {selectedProduct ? <p className="mt-2 text-xs uppercase text-muted">{selectedProduct.tracking_mode}</p> : null}
           {selectedIsIndividual && !assetUnitsEnabled ? (
             <p className="mt-2 text-sm text-muted">
               Unit QR generation needs the Asset units module.

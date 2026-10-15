@@ -37,7 +37,7 @@ export function StatusPill({ children, tone = "neutral" }: {
     danger: "border-danger/40 bg-danger/10 text-danger",
     warn: "border-warn/40 bg-warn/10 text-warn-ink",
   }[tone];
-  return <span className={`inline-flex rounded-full border px-2 py-1 font-mono text-xs font-semibold ${classes}`}>{children}</span>;
+  return <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${classes}`}>{children}</span>;
 }
 
 export function parseReceipt(value: string): ReceiptEnvelope | null {
@@ -60,7 +60,7 @@ export function ReceiptOutput({ label, receipt }: { label: string; receipt?: Rec
       <label className="text-sm font-semibold text-ink" htmlFor={`${label.replace(/\W+/g, "-")}-receipt`}>{label}</label>
       <textarea
         id={`${label.replace(/\W+/g, "-")}-receipt`}
-        className="desk-input mt-1 min-h-32 w-full font-mono text-xs"
+        className="desk-input mt-1 min-h-32 w-full code-text text-xs"
         readOnly
         value={JSON.stringify(receipt, null, 2)}
       />

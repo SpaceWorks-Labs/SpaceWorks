@@ -24,10 +24,10 @@ export function PlatformDashboardPanel() {
         <div className="my-4 grid gap-4 md:grid-cols-2">
           <div><h3 className="font-semibold">Backup and offsite</h3><p>Last backup result: {data.backup.status}</p><p>Last success: {monitoringDate(data.backup.last_success_at)}</p><p>Automatic backups: {data.backup.automatic_enabled ? "On" : "Off"}</p>
             {data.offsite.length ? data.offsite.map((row) => <p key={row.name}>{row.name}: {row.state.replace(/_/g, " ")} {row.has_error ? "· Needs attention" : ""} · {monitoringDate(row.verified_at)}</p>) : <p>No offsite destinations configured.</p>}
-            <Link className="text-brand underline" to="/admin/backup-restore">Backup settings</Link>
+            <Link className="text-accent-ink underline" to="/admin/backup-restore">Backup settings</Link>
           </div>
           <div><h3 className="font-semibold">Delivery</h3><p>Failed emails: {data.failed_deliveries.email}</p><p>Failed notifications: {data.failed_deliveries.notifications}</p>
-            <Link className="text-brand underline" to="/admin/platform">Platform settings</Link>
+            <Link className="text-accent-ink underline" to="/admin/platform">Platform settings</Link>
           </div>
         </div>
         <details><summary className="cursor-pointer font-semibold">Usage totals</summary><dl className="mt-3 grid gap-2 sm:grid-cols-3">{Object.entries(data.usage_totals).map(([key, value]) => <div key={key}><dt className="capitalize text-muted">{key.replace(/_/g, " ")}</dt><dd>{usageAmount(value, key === "storage" ? "bytes" : "count")}</dd></div>)}</dl></details>
@@ -41,13 +41,13 @@ export function PlatformDashboardPanel() {
         <ul className="space-y-2">{problems.data.results.map((row, index) => <li key={`${row.key}:${row.makerspace_id}:${index}`} className="flex flex-wrap items-center gap-2 rounded-md border border-line p-3">
           <Badge tone={row.status === "error" ? "danger" : row.status === "warn" ? "warn" : "success"}>{row.status}</Badge>
           <span className="min-w-0 flex-1">{row.message}</span>
-          {row.fix_url.startsWith("/control/") ? <a className="text-brand underline" href={row.fix_url}>Inspect</a> : <Link className="text-brand underline" to={row.fix_url}>Inspect</Link>}
+          {row.fix_url.startsWith("/control/") ? <a className="text-accent-ink underline" href={row.fix_url}>Inspect</a> : <Link className="text-accent-ink underline" to={row.fix_url}>Inspect</Link>}
         </li>)}</ul>
       </> : null}
     </Panel>
     {data ? <>
       <section id="scheduler"><Panel title="Scheduler freshness"><p className="mb-3 text-sm text-muted">For missing executions, check the host's beat and worker services, or its scheduled cron runner. For failed executions, inspect worker logs. Freshness records show beat completions and cron attempts.</p><div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Periodic task freshness</caption><thead><tr><th scope="col" className="p-2">Task</th><th scope="col" className="p-2">Cadence</th><th scope="col" className="p-2">Last execution</th><th scope="col" className="p-2">Status</th></tr></thead><tbody>{data.scheduler.map((task) => <tr key={task.name} className="border-t border-line"><th scope="row" className="p-2 font-medium">{task.name}</th><td className="p-2">{task.cadence_minutes} minutes</td><td className="p-2">{monitoringDate(task.last_run_at)}</td><td className="p-2">{task.status}</td></tr>)}</tbody></table></div></Panel></section>
-      <Panel title="Tenant usage">{data.tenants.map((tenant) => <details key={tenant.id} className="mb-3 rounded-md border border-line p-3"><summary className="cursor-pointer font-semibold">{tenant.name}</summary><Link className="my-2 inline-block text-brand underline" to={`/m/${tenant.slug}/admin/usage`}>Open usage page</Link><UsageTable data={tenant.usage} /></details>)}</Panel>
+      <Panel title="Tenant usage">{data.tenants.map((tenant) => <details key={tenant.id} className="mb-3 rounded-md border border-line p-3"><summary className="cursor-pointer font-semibold">{tenant.name}</summary><Link className="my-2 inline-block text-accent-ink underline" to={`/m/${tenant.slug}/admin/usage`}>Open usage page</Link><UsageTable data={tenant.usage} /></details>)}</Panel>
     </> : null}
   </div>;
 }

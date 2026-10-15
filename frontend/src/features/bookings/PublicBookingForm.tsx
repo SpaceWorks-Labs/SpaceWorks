@@ -90,7 +90,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
   return (
     <div className="grid gap-4">
       <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} />
-      <form className="grid gap-4 rounded-lg border border-secondary bg-bg p-4" onSubmit={submit} noValidate>
+      <form className="grid gap-4 rounded-lg border border-brand bg-bg p-4" onSubmit={submit} noValidate>
         <div>
           <h3 className="title-section">Request this space</h3>
           <p className="eyebrow mt-1">Times are shown in your device timezone.</p>
@@ -104,7 +104,7 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
           <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
         </label>
         {booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
-        <button className="desk-button-secondary" type="submit" disabled={booking.isPending}>
+        <button className="desk-button-brand" type="submit" disabled={booking.isPending}>
           {booking.isPending ? "Submitting..." : space.approval_mode === "approve" ? "Submit booking request" : "Book this slot"}
         </button>
       </form>

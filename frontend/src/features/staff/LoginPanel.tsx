@@ -97,7 +97,7 @@ export function LoginPanel({
         {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
         {passwordLogin ? (
           <button
-            className="desk-button-secondary mt-5 w-full"
+            className="desk-button-primary mt-5 w-full"
             type="submit"
             disabled={isPending}
           >

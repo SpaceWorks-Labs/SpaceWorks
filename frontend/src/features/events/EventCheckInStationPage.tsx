@@ -40,7 +40,7 @@ export function EventCheckInStationPage() {
         {!active ? <form className="mt-5 grid gap-3" onSubmit={submit}>
           <p className="text-sm text-muted">Enter the eight-digit PIN provided by the event organizer.</p>
           <label className="eyebrow" htmlFor="event-station-pin">Station PIN</label>
-          <input id="event-station-pin" className="desk-input font-mono text-xl tracking-widest" inputMode="numeric" autoComplete="off" pattern="[0-9]{8}" maxLength={8} required value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))} />
+          <input id="event-station-pin" className="desk-input tabular-nums text-xl tracking-widest" inputMode="numeric" autoComplete="off" pattern="[0-9]{8}" maxLength={8} required value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))} />
           <button className="desk-button-primary" type="submit" disabled={pending || pin.length !== 8}>{pending ? "Unlocking…" : "Unlock station"}</button>
         </form> : <>
           <OfflineCheckInOperator scope={scope} autoDownload download={() => downloadStationRoster(stationToken)} synchronize={(roster, operations) => syncStationRoster(stationToken, roster, operations)} />

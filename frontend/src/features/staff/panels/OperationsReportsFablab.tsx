@@ -66,7 +66,7 @@ function HealthState({ label, enabled, available }: { label: string; enabled: bo
   const state = !enabled ? "Module disabled" : available ? "Available" : "Data unavailable";
   const tones: Record<string, string> = {
     Events: "border-accent bg-accent/15",
-    Bookings: "border-secondary bg-secondary/15",
+    Bookings: "border-line bg-accent-soft",
     Machines: "border-success bg-success/15",
     Maintenance: "border-warn bg-warn/15",
   };

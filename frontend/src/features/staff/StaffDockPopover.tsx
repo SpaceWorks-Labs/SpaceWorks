@@ -102,7 +102,7 @@ export function StaffDockPopover({
             >
               <span className="min-w-0 truncate">{TAB_LABELS[item] ?? item}</span>
               {item === "notifications" && unreadCount > 0 ? (
-                <span className="ml-auto shrink-0 rounded-full bg-danger px-1.5 font-mono text-xs font-semibold text-bg">
+                <span className="ml-auto shrink-0 rounded-full bg-emphasis px-1.5 tabular-nums text-xs font-semibold text-on-emphasis">
                   {unreadLabel(unreadCount)}
                 </span>
               ) : null}

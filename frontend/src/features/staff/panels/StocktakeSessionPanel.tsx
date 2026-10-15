@@ -79,7 +79,7 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
         {stocktakes.results.map((row) => (
           <div key={row.id} className="rounded-md border border-line bg-surface p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
-              <strong className="font-mono">#{row.id}</strong>
+              <strong className="tabular-nums">#{row.id}</strong>
               <span className="rounded-md border border-line bg-bg px-2 py-0.5 text-xs text-muted">{row.status}</span>
               {canCount(row.status) ? (
                 <button className="desk-button-ghost" type="button" onClick={() => setOpenId((id) => (id === row.id ? null : row.id))}>{openId === row.id ? "Hide counts" : "Count items"}</button>

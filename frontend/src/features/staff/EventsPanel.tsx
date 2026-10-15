@@ -92,16 +92,16 @@ export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
       <table className="w-full text-left text-sm"><caption className="sr-only">Events in chronological order</caption>
         <thead className="bg-surface"><tr><th className="eyebrow p-3">Event</th><th className="eyebrow p-3">Status</th><th className="eyebrow p-3">Capacity</th><th className="eyebrow p-3">Registrations</th></tr></thead>
         <tbody>{events.data.results.map((item) => <tr key={item.id} className="border-t border-line">
-          <td className="p-3"><button className="desk-button-ghost h-auto justify-start px-0 text-left" type="button" onClick={() => setSelectedId(item.id)}>{item.title}</button><span className="mt-1 block font-mono text-xs text-muted">{dateRange(item)}{item.location ? ` · ${item.location}` : ""}</span></td>
+          <td className="p-3"><button className="desk-button-ghost h-auto justify-start px-0 text-left" type="button" onClick={() => setSelectedId(item.id)}>{item.title}</button><span className="mt-1 block tabular-nums text-xs text-muted">{dateRange(item)}{item.location ? ` · ${item.location}` : ""}</span></td>
           <td className="p-3"><StatusBadge status={item.status} /></td>
-          <td className="p-3 font-mono">{item.capacity === 0 ? "Unlimited" : item.capacity}</td>
-          <td className="p-3 font-mono">{item.registration_counts.registered + item.registration_counts.attended} confirmed · {item.registration_counts.pending_approval} pending</td>
+          <td className="p-3 tabular-nums">{item.capacity === 0 ? "Unlimited" : item.capacity}</td>
+          <td className="p-3 tabular-nums">{item.registration_counts.registered + item.registration_counts.attended} confirmed · {item.registration_counts.pending_approval} pending</td>
         </tr>)}</tbody>
       </table>
     </div> : null}
     {events.data ? <div className="mt-3 flex items-center justify-between gap-3 text-sm">
       <button className="desk-button" type="button" disabled={!events.data.previous} onClick={() => setPage((current) => Math.max(1, current - 1))}>Previous</button>
-      <span className="font-mono text-muted">Page {page}{" - "}{events.data.count} total</span>
+      <span className="tabular-nums text-muted">Page {page}{" - "}{events.data.count} total</span>
       <button className="desk-button" type="button" disabled={!events.data.next} onClick={() => setPage((current) => current + 1)}>Next</button>
     </div> : null}
     {selectedId !== null ? <EventDrawer key={selectedId} eventId={selectedId} makerspaceId={makerspaceId} onClose={closeSelection} /> : null}

@@ -69,7 +69,7 @@ export function InvitationRequestForm({ slug }: { slug: string }) {
               <input name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(event) => set("website", event.target.value)} />
             </label>
           </div>
-          <button className="desk-button-secondary w-fit" type="submit" disabled={!canSubmit}>
+          <button className="desk-button-brand w-fit" type="submit" disabled={!canSubmit}>
             {submit.isPending ? "Sending…" : "Send request"}
           </button>
           {submit.error ? (

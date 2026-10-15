@@ -127,9 +127,9 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
                 {data.repeat_offenders.map((row) => (
                   <tr key={row.requester_id} className="border-t border-line">
                     <td className="p-2 font-medium text-ink">{row.username}</td>
-                    <td className="p-2 font-mono">{row.damaged}</td>
-                    <td className="p-2 font-mono">{row.missing}</td>
-                    <td className="p-2 font-mono">{row.total_issues} ({row.total_quantity} units)</td>
+                    <td className="p-2 tabular-nums">{row.damaged}</td>
+                    <td className="p-2 tabular-nums">{row.missing}</td>
+                    <td className="p-2 tabular-nums">{row.total_issues} ({row.total_quantity} units)</td>
                     <td className="p-2 capitalize">{row.access_status}</td>
                     {isSuperadmin ? (
                       <td className="p-2">
@@ -188,7 +188,7 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
         title="Restrict requester?"
         footer={(
           <div className="desk-actions flex flex-wrap justify-end gap-2">
-            <button className="desk-button-secondary" type="button" onClick={closeRestrictionDialog}>Cancel</button>
+            <button className="desk-button" type="button" onClick={closeRestrictionDialog}>Cancel</button>
             {/* Submit no-ops on a blank reason, so leaving it enabled renders a dead button that
                 reports nothing. Disabling states the requirement instead of failing silently. */}
             <button className="desk-button-danger" type="submit" form={restrictionFormId} disabled={!restrictionReason.trim() || restrict.isPending}>

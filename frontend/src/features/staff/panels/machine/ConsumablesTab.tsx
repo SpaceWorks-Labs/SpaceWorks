@@ -150,7 +150,7 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
     <div className="rounded-md border border-line bg-bg p-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <strong className="text-ink">{item.product_name ?? item.label}</strong>
-        <span className="font-mono text-muted">{item.measurement === "count" ? `${item.available ?? 0} available` : `${item.remaining ?? "0.00"} g remaining`}</span>
+        <span className="tabular-nums text-muted">{item.measurement === "count" ? `${item.available ?? 0} available` : `${item.remaining ?? "0.00"} g remaining`}</span>
         {isLow ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-xs font-medium text-warn-ink">Low</span> : null}
         {canEdit ? <button className="desk-button-danger ml-auto" type="button" disabled={removing} onClick={onRemove}>Unlink</button> : null}
       </div>

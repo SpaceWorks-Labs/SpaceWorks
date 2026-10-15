@@ -56,14 +56,14 @@ export function BorrowRequestCard({
     <Card>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="eyebrow text-secondary-ink">
+          <p className="eyebrow text-brand-ink">
             Borrow Request
           </p>
           <h2 className="title-panel mt-2">
             Selected equipment
           </h2>
         </div>
-        <span className="rounded-lg border border-secondary bg-secondary/15 px-3 py-1 font-mono text-sm font-semibold text-secondary-ink">
+        <span className="rounded-lg border border-brand bg-brand/15 px-3 py-1 text-sm font-semibold text-brand-ink">
           {totalItems}
         </span>
       </div>
@@ -83,7 +83,7 @@ export function BorrowRequestCard({
                 key={item.productId}
               >
                 <span className="text-sm font-medium text-ink">{item.name}</span>
-                <span className="font-mono text-sm text-muted">x{item.quantity}</span>
+                <span className="tabular-nums text-sm text-muted">x{item.quantity}</span>
               </div>
             ))}
           </div>
@@ -159,7 +159,7 @@ export function BorrowRequestCard({
           />
         </label>
         <button
-          className="desk-button-secondary w-full disabled:cursor-not-allowed disabled:opacity-50"
+          className="desk-button-brand w-full disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!canSubmit}
           type="button"
           onClick={onSubmit}
@@ -177,7 +177,7 @@ export function BorrowRequestCard({
                   to, and staff will ask for it.
                 </p>
                 {publicToken ? (
-                  <p className="mt-2 break-all rounded-lg bg-surface px-2 py-1 font-mono text-xs text-ink">
+                  <p className="mt-2 break-all rounded-lg bg-surface px-2 py-1 code-text text-xs text-ink">
                     {publicToken}
                   </p>
                 ) : null}

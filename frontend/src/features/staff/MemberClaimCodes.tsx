@@ -110,7 +110,7 @@ export function MemberClaimCodes({
         <div className="mt-4 grid gap-4 rounded-lg border border-line bg-surface p-4 md:grid-cols-[1fr_180px]">
           <div>
             <p className="text-sm font-semibold text-ink">Hand this to {issued.member_display_name}</p>
-            <p className="mt-2 break-all font-mono text-lg font-semibold text-ink">{issued.code}</p>
+            <p className="mt-2 break-all code-text text-lg font-semibold text-ink">{issued.code}</p>
             <p className="mt-2 text-xs text-muted">
               Expires {new Date(issued.expires_at).toLocaleString()}. This code will not be shown again after you leave this view.
             </p>

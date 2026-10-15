@@ -33,11 +33,11 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
   const availability = usePublicAvailability(makerspaceSlug, publicToken, window.startsAt, window.endsAt);
 
   return (
-    <section className="rounded-lg border border-secondary bg-secondary/10 p-4" aria-labelledby={"availability-" + publicToken}>
+    <section className="rounded-lg border border-brand bg-brand/10 p-4" aria-labelledby={"availability-" + publicToken}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 id={"availability-" + publicToken} className="title-section">Published availability</h3>
-          <p className="eyebrow mt-1 font-mono">{rangeLabel(window.startsAt, window.endsAt)}</p>
+          <p className="eyebrow mt-1">{rangeLabel(window.startsAt, window.endsAt)}</p>
         </div>
         <div className="flex gap-2">
           <button className="desk-button-ghost" type="button" disabled={offset === 0} onClick={() => setOffset((value) => Math.max(0, value - 1))}>Previous 14 days</button>
@@ -65,7 +65,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
         <ul className="mt-3 grid gap-2">
           {availability.data.availability.map((interval) => (
             <li className="rounded-lg border border-success bg-success/15 px-3 py-2 text-sm text-ink" key={interval.starts_at + interval.ends_at}>
-              <time className="font-mono" dateTime={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</time>
+              <time className="tabular-nums" dateTime={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</time>
               {interval.booker_name !== null ? <span className="ml-2 font-semibold">{interval.booker_name}</span> : null}
             </li>
           ))}

@@ -32,7 +32,7 @@ export function ProductQuickViewModal({
       backdrop="blur"
       footer={(
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <button className="desk-button-secondary" type="button" onClick={onClose}>
+          <button className="desk-button-brand" type="button" onClick={onClose}>
             Close
           </button>
         </div>
@@ -60,7 +60,7 @@ export function ProductQuickViewModal({
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-4">
             <div className="min-w-0">
-              <p className="eyebrow text-secondary-ink">
+              <p className="eyebrow text-brand-ink">
                 ID: {String(product.id).padStart(4, "0")}
               </p>
               <h2 className="title-page mt-2 break-words leading-tight">
@@ -71,7 +71,7 @@ export function ProductQuickViewModal({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="chip chip-active border-secondary bg-secondary text-on-secondary">
+            <span className="chip chip-active border-brand bg-brand text-on-brand">
               {trackingLabel(product)}
             </span>
             {product.category_name ? (

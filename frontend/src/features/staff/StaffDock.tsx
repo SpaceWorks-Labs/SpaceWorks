@@ -21,16 +21,15 @@ function badgeLabel(count: number) {
   return count > 99 ? "99+" : count;
 }
 
-// The four-colour language, carried over from the sidebar this dock replaced: `accent` (sky),
-// `secondary` (pink), `success` (green), `warn` (yellow), cycled across the eight groups so a
-// section is recognisable by colour as well as by name.
+// Staff groups use `accent`, `success` and `warn` so tenant branding does not
+// change their navigation cues.
 const GROUP_TONE_CLASSES: Record<string, string> = {
   Operate: "border-accent/40 text-accent-ink hover:bg-accent/15",
-  Inventory: "border-secondary/40 text-secondary-ink hover:bg-secondary/15",
+  Inventory: "border-accent/40 text-accent-ink hover:bg-accent/15",
   Machines: "border-success/40 text-success-ink hover:bg-success/15",
   Events: "border-warn/40 text-warn-ink hover:bg-warn/15",
   Bookings: "border-accent/40 text-accent-ink hover:bg-accent/15",
-  Members: "border-secondary/40 text-secondary-ink hover:bg-secondary/15",
+  Members: "border-accent/40 text-accent-ink hover:bg-accent/15",
   Insights: "border-success/40 text-success-ink hover:bg-success/15",
   Admin: "border-warn/40 text-warn-ink hover:bg-warn/15",
 };
@@ -206,7 +205,7 @@ export function StaffDock({
                 {group.label}
               </span>
               {ownsNotifications && unreadCount > 0 ? (
-                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-danger px-1 font-mono text-[10px] font-semibold leading-5 text-bg" aria-hidden>
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-emphasis px-1 tabular-nums text-[10px] font-semibold leading-5 text-on-emphasis" aria-hidden>
                   {badgeLabel(unreadCount)}
                 </span>
               ) : null}

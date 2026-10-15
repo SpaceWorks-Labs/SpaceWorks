@@ -61,7 +61,7 @@ export function ResetPasswordModal({
           <p className="text-muted">Share this with the user securely. It won't be shown again.</p>
           <div className="rounded-md border border-accent/40 bg-accent/10 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <code className="break-all font-mono text-base font-semibold text-ink">
+              <code className="break-all code-text text-base font-semibold text-ink">
                 {result.temporary_password}
               </code>
               <button

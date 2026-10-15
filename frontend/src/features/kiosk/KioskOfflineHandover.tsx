@@ -67,11 +67,11 @@ export function KioskOfflineHandover({ queue, onChange, retry, acknowledge }: {
       <label className="grid gap-1 text-sm">Operation<select className="desk-input" value={operation} disabled={busy} onChange={(event) => { setKind(event.target.value as ReplayEnvelope["kind"]); setPhoto(null); }}>
         {choices.map((choice) => <option key={choice} disabled={!allowed.includes(choice)} value={choice}>{choice.replace(/_/g, " ")}</option>)}
       </select></label>
-      {operation === "assign_box" || returning ? <label className="grid gap-1 text-sm">Scan box or return QR<input className="desk-input font-mono" required value={box} disabled={busy} onChange={(event) => setBox(event.target.value)} /></label> : null}
+      {operation === "assign_box" || returning ? <label className="grid gap-1 text-sm">Scan box or return QR<input className="desk-input code-text" required value={box} disabled={busy} onChange={(event) => setBox(event.target.value)} /></label> : null}
       {operation !== "assign_box" ? <>
-        {operation === "reviewed_issue" ? <label className="grid gap-1 text-sm">Asset QRs (one per line)<textarea className="desk-input font-mono" disabled={busy} value={assetQrs} onChange={(event) => setAssetQrs(event.target.value)} /></label> : null}
+        {operation === "reviewed_issue" ? <label className="grid gap-1 text-sm">Asset QRs (one per line)<textarea className="desk-input code-text" disabled={busy} value={assetQrs} onChange={(event) => setAssetQrs(event.target.value)} /></label> : null}
         <label className="grid gap-1 text-sm">Evidence photo<input key={`${selected}/${operation}/${photo ? "selected" : "empty"}`} type="file" accept="image/*" capture="environment" disabled={busy} onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} /></label>
-        {Boolean(navigator.mediaDevices) ? <button type="button" className="desk-button-secondary" disabled={busy} onClick={() => setCamera(true)}>Take evidence photo</button> : null}
+        {Boolean(navigator.mediaDevices) ? <button type="button" className="desk-button-brand" disabled={busy} onClick={() => setCamera(true)}>Take evidence photo</button> : null}
         {photo ? <p className="text-sm" role="status">Photo selected; it will be normalized and encrypted with the command.</p> : null}
         <label className="grid gap-1 text-sm">Remark<input className="desk-input" required={returning} disabled={busy} value={remark} onChange={(event) => setRemark(event.target.value)} /></label>
         <KitChecklistCapture checklist={kits} />

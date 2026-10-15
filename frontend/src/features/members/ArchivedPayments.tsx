@@ -6,7 +6,7 @@ import { StructuredApiError, staffRequest } from "../../lib/api";
 import { MemberAuthPanel } from "./MemberAuthPanel";
 import { MemberPaymentRows, type MemberPayment } from "./MemberPayments";
 
-const MAKERSPACE_TONES = ["border-accent", "border-secondary", "border-success", "border-warn"] as const;
+const MAKERSPACE_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unable to load archived payments.";
@@ -43,7 +43,7 @@ function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSumma
             This makerspace is closed. Outstanding charges can still be settled and receipts remain readable here.
           </p>
         </div>
-        <span className="chip font-mono">
+        <span className="chip">
           {summary.pending_count} pending · {summary.total_count} total
         </span>
       </div>
@@ -92,7 +92,7 @@ export function ArchivedPayments() {
     return (
       <main className="desk-shell grid min-h-[60vh] place-items-center px-5">
         <div className="desk-panel w-full max-w-md p-6 text-center">
-          <p className="eyebrow text-secondary-ink">
+          <p className="eyebrow text-brand-ink">
             Space Works
           </p>
           <h1 className="title-page mt-2">Page not found</h1>
@@ -119,7 +119,7 @@ export function ArchivedPayments() {
   return (
     <main className="desk-shell mx-auto max-w-3xl space-y-5 px-5 py-8">
       <header>
-        <p className="eyebrow text-secondary-ink">
+        <p className="eyebrow text-brand-ink">
           Archived makerspaces
         </p>
         <h1 className="title-page mt-2">Payments and receipts</h1>

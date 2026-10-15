@@ -11,7 +11,7 @@ import { CustomFormFields } from "../forms/CustomFormFields";
 import type { CustomAnswers, CustomFormSchema } from "../forms/customFormTypes";
 import { staffRequest } from "../../lib/api";
 
-const EVENT_TONES = ["border-accent", "border-secondary", "border-success", "border-warn"] as const;
+const EVENT_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 type CollaborativeEventWithPolicy = CollaborativeEvent & {
   registration_audience?: "members" | "accounts" | "invite";
   ticket_types?: EventTicket[]; ticket_selection_required?: boolean; promo_codes_enabled?: boolean;
@@ -121,7 +121,7 @@ export function PartnerEvents({
       </p>
       <div className="mt-3 space-y-5 text-sm">
         {groups.map((group) => <section key={group.key} aria-label={group.title ?? undefined}>
-          {group.title ? <div className="mb-2"><p className="eyebrow text-secondary-ink">Recurring series</p><h3 className="title-section">{group.title}</h3></div> : null}
+          {group.title ? <div className="mb-2"><p className="eyebrow text-brand-ink">Recurring series</p><h3 className="title-section">{group.title}</h3></div> : null}
           <ul className="space-y-3">{group.events.map((event) => {
           // A host may attach a custom form, and the backend validates required answers.
           // Without rendering those fields the button would post `{}` and such an event
@@ -149,12 +149,12 @@ export function PartnerEvents({
                 <div>
                   {group.title ? <h4 className="title-section">{event.title}</h4> : <h3 className="title-section">{event.title}</h3>}
                   <p className="eyebrow mt-1">
-                    Hosted by {event.host_name} · <span className="font-mono">{new Date(event.starts_at).toLocaleString()}</span>
+                    Hosted by {event.host_name} · <span className="tabular-nums">{new Date(event.starts_at).toLocaleString()}</span>
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="desk-button-secondary"
+                  className="desk-button-brand"
                   disabled={!event.registration_open || register.isPending || (open && (blocked || (tickets.length > 0 && ticketId === null) || (event.ticket_selection_required && !tickets.length) || (event.registration_audience === "invite" && !inviteCode.trim())))}
                   onClick={() => {
                     if (mustExpand && !open) {

@@ -38,7 +38,7 @@ export function TenantMigrationImports({ pairings }: { pairings: Pairing[] }) {
       <p className="mt-2 text-sm text-ink">Upload the age-encrypted archive and bind it to the digest shown on the source export. Materialization creates an IMPORTING tenant; it is not live until separately activated.</p>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <label className="text-sm text-ink">Encrypted archive<input className="desk-input mt-1 w-full" type="file" onChange={(event) => setArchive(event.target.files?.[0] ?? null)} /></label>
-        <label className="text-sm text-ink">Source archive digest<input className="desk-input mt-1 w-full font-mono" value={digest} onChange={(event) => setDigest(event.target.value)} /></label>
+        <label className="text-sm text-ink">Source archive digest<input className="desk-input mt-1 w-full code-text" value={digest} onChange={(event) => setDigest(event.target.value)} /></label>
       </div>
       <button className="desk-button-primary mt-3" type="button" disabled={!archive || !digest.trim() || create.isPending} onClick={() => create.mutate()}>
         {create.isPending ? "Uploading encrypted archive…" : "Create target import"}
@@ -121,7 +121,7 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-semibold text-ink">{job.source_makerspace_name || "Pending archive inspection"}</p>
-          <p className="mt-1 font-mono text-xs text-muted">Import {job.id}</p>
+          <p className="mt-1 tabular-nums text-xs text-muted">Import {job.id}</p>
         </div>
         <StatusPill tone={tone}>{lifecycle}</StatusPill>
       </div>
@@ -159,7 +159,7 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
         <div className="mt-3 rounded-md border border-danger/40 bg-danger/5 p-3">
           <h4 className="title-section">One-way target cutover</h4>
           <p className="mt-1 text-sm text-ink">Activation and abort are mutually exclusive. Activation cannot be undone from this screen.</p>
-          <label className="mt-2 block text-sm text-ink">Source cutover receipt<textarea className="desk-input mt-1 min-h-28 w-full font-mono text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
+          <label className="mt-2 block text-sm text-ink">Source cutover receipt<textarea className="desk-input mt-1 min-h-28 w-full code-text text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
           <div className="mt-3 flex flex-wrap gap-2">
             <button className="desk-button-danger" type="button" disabled={!sourceReceipt || !verification.data || cutoverPending} onClick={() => {
               if (sourceReceipt && window.confirm(`Activate ${tenantName}? This target cutover cannot be undone from this screen.`)) activate.mutate(sourceReceipt);

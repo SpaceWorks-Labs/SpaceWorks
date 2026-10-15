@@ -21,7 +21,7 @@ export function ResultCard({ result }: { result: PublicToolLoanResult }) {
             key={item.product_name}
           >
             <span>{item.product_name}</span>
-            <span className="font-mono font-semibold">x{item.quantity}</span>
+            <span className="tabular-nums font-semibold">x{item.quantity}</span>
           </div>
         ))}
       </div>

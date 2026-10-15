@@ -43,7 +43,7 @@ export function CapabilityPresetListEditor({ label, singularLabel, values, disab
             onChange={(event) => { setDraft(event.target.value); setError(""); }}
           />
         </label>
-        <button className="desk-button-secondary min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="button" onClick={addValue}>
+        <button className="desk-button min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="button" onClick={addValue}>
           Add {singularLabel.toLocaleLowerCase()}
         </button>
       </div>

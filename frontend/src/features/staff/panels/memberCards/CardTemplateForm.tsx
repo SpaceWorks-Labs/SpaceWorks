@@ -150,7 +150,7 @@ export function CardTemplateForm({ makerspaceId }: { makerspaceId: number }) {
               </p>
             ) : null}
             <button
-              className="desk-button-secondary mt-4"
+              className="desk-button-primary mt-4"
               type="button"
               disabled={save.isPending}
               onClick={() => save.mutate(draft, { onSuccess: () => setDirty(false) })}

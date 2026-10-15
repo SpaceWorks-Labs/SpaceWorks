@@ -196,7 +196,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Prop
               <WarrantyField label="Vendor contact" value={warrantyForm.vendor_contact} maxLength={200}
                 onChange={(value) => updateWarranty("vendor_contact", value)} />
             </div>
-            <button className={`desk-button-secondary min-h-11 justify-self-start ${focusRing}`} type="submit"
+            <button className={`desk-button min-h-11 justify-self-start ${focusRing}`} type="submit"
               disabled={warranty.isPending || !hasWarrantyDetails}>
               {warranty.isPending ? "Saving warranty..." : "Save warranty"}
             </button>

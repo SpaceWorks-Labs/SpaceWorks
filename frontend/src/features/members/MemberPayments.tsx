@@ -40,7 +40,7 @@ export function MemberPaymentRows({
           {payment.amount ? (
             <>
               {" · "}
-              <span className="font-mono">
+              <span className="tabular-nums">
                 {payment.amount} {(payment.currency ?? "").toUpperCase()}
               </span>
             </>
@@ -48,7 +48,7 @@ export function MemberPaymentRows({
           {payment.checkout_url ? (
             <>
               {" · "}
-              <a className="desk-button-secondary ml-1" href={payment.checkout_url}>
+              <a className="desk-button-brand ml-1" href={payment.checkout_url}>
                 Pay now
               </a>
             </>
@@ -85,7 +85,7 @@ export function MemberPaymentRows({
             <span key={index} className="text-muted">
               {" · "}
               {refund.status === "succeeded" ? "Refunded" : "Refund pending"}{" "}
-              <span className="font-mono">
+              <span className="tabular-nums">
                 {refund.amount} {(refund.currency ?? "").toUpperCase()}
               </span>
               {refund.reason ? ` (${refund.reason})` : null}

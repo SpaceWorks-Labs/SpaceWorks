@@ -90,7 +90,7 @@ export function ApiClientCreateCard({
         {oneTimeSecret ? (
           <div className="mt-3 rounded-md border border-accent/40 bg-accent/10 p-3">
             <p className="text-sm font-semibold text-ink">Copy this secret now &mdash; it will not be shown again.</p>
-            <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 font-mono text-xs text-ink">
+            <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 code-text text-xs text-ink">
               {oneTimeSecret.client_secret}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">

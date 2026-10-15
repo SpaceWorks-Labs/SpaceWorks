@@ -30,6 +30,6 @@
     scroll-behavior: auto !important;
   }
   .brutal-hover:hover { transform: none; }
-  .desk-button-primary:hover, .desk-button-secondary:hover, .desk-button-success:hover,
+  .desk-button-primary:hover, .desk-button-brand:hover, .desk-button-success:hover,
   .desk-button-warn:hover, .desk-button-danger:hover { transform: none; }
 }

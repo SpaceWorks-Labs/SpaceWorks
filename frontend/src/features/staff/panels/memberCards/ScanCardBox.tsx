@@ -38,7 +38,7 @@ export function ScanCardBox({ makerspaceId }: { makerspaceId: number }) {
         </label>
         <input
           id="member-card-payload"
-          className="desk-input w-full font-mono sm:flex-1"
+          className="desk-input w-full code-text sm:flex-1"
           placeholder="Paste card payload (or scan)"
           value={payload}
           onChange={(event) => setPayload(event.target.value)}
@@ -78,7 +78,7 @@ export function ScanCardBox({ makerspaceId }: { makerspaceId: number }) {
       {result?.outcome === "ok" && !resolve.isPending ? (
         <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-3">
           <dt className="text-muted">Card</dt>
-          <dd className="font-mono text-xs text-ink">{result.card_number}</dd>
+          <dd className="tabular-nums text-xs text-ink">{result.card_number}</dd>
           <dt className="text-muted">Name</dt>
           <dd className="text-ink">{result.printed_name}</dd>
           <dt className="text-muted">Membership</dt>

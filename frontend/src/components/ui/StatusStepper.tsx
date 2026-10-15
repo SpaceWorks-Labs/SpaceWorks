@@ -3,7 +3,7 @@ const STAGES = ["Requested", "Approved", "Collected", "Returned"] as const;
 const STEP_TONE_CLASSES = [
   "border-accent bg-accent text-on-accent",
   "border-warn bg-warn text-on-warn",
-  "border-secondary bg-secondary text-on-secondary",
+  "border-emphasis bg-emphasis text-on-emphasis",
   "border-success bg-success text-on-success",
 ] as const;
 

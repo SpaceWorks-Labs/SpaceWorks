@@ -66,14 +66,14 @@ export function TenantMigrationDisclosure({ makerspaceId }: { makerspaceId: numb
       {voidApprovals.map((approval) => (
         <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3" key={approval.id} role="status">
           <p className="font-semibold text-danger">VOID — disclosure closure changed after approval</p>
-          <p className="mt-1 text-xs text-muted">Previously approved digest: <span className="font-mono break-all">{approval.closure_digest}</span></p>
+          <p className="mt-1 text-xs text-muted">Previously approved digest: <span className="code-text break-all">{approval.closure_digest}</span></p>
         </div>
       ))}
 
       {closure.data ? (
         <>
           <p className="mt-3 text-xs text-muted">Exact closure digest</p>
-          <p className="break-all font-mono text-xs text-ink" data-testid="closure-digest">{closure.data.digest}</p>
+          <p className="break-all code-text text-xs text-ink" data-testid="closure-digest">{closure.data.digest}</p>
           <div className="mt-3 grid gap-2">
             {closure.data.identities.length === 0 ? <p className="text-sm text-muted">This closure contains no identities.</p> : null}
             {closure.data.identities.map((identity) => (

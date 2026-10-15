@@ -37,7 +37,7 @@ export function LegacyPasswordResetForm({ uid, token }: { uid: string; token: st
           <>
             <h1 className="mt-2 text-2xl font-bold text-ink">Password updated</h1>
             <p className="mt-4 text-sm text-muted">Your password has been updated. You can now sign in.</p>
-            <Link className="desk-button-secondary mt-5 w-full" to="/admin">Go to sign in</Link>
+            <Link className="desk-button-brand mt-5 w-full" to="/admin">Go to sign in</Link>
           </>
         ) : (
           <form onSubmit={(event) => { event.preventDefault(); if (canSubmit) void submit(); }}>
@@ -50,7 +50,7 @@ export function LegacyPasswordResetForm({ uid, token }: { uid: string; token: st
               onConfirmPasswordChange={setConfirmPassword}
             />
             {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-            <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={!canSubmit}>
+            <button className="desk-button-brand mt-5 w-full" type="submit" disabled={!canSubmit}>
               {pending ? "Updating..." : "Update password"}
             </button>
           </form>

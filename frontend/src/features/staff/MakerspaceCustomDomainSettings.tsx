@@ -224,12 +224,12 @@ function DnsRecord({ record }: { record: DomainRecord }) {
     <div className="grid min-w-0 gap-2">
       <p className="font-semibold text-ink">DNS TXT record</p>
       <dl className="grid min-w-0 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
-        <dt className="font-mono text-xs uppercase text-muted">Host</dt>
-        <dd className="break-all font-mono text-xs text-ink">{record.host}</dd>
-        <dt className="font-mono text-xs uppercase text-muted">Type</dt>
-        <dd className="font-mono text-xs text-ink">{record.type}</dd>
-        <dt className="font-mono text-xs uppercase text-muted">Value</dt>
-        <dd className="break-all font-mono text-xs text-ink">{record.value}</dd>
+        <dt className="text-xs uppercase text-muted">Host</dt>
+        <dd className="break-all code-text text-xs text-ink">{record.host}</dd>
+        <dt className="text-xs uppercase text-muted">Type</dt>
+        <dd className="code-text text-xs text-ink">{record.type}</dd>
+        <dt className="text-xs uppercase text-muted">Value</dt>
+        <dd className="break-all code-text text-xs text-ink">{record.value}</dd>
       </dl>
     </div>
   );

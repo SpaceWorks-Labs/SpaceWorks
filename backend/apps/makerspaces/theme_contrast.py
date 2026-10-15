@@ -1,4 +1,4 @@
-"""WCAG sRGB maths and the public/member secondary-colour contract.
+"""WCAG sRGB maths and the public/member brand-colour contract.
 
 Keep in sync with frontend/src/lib/brandColours.ts. The stored fill is preserved;
 foreground and interaction variants are derived, and link ink adapts to each mode.
@@ -86,18 +86,18 @@ def derive_palette(theme, mode):
             ink = candidate
             break
     pairs = []
-    for name, background in (("secondary", fill), ("secondary-hover", hover), ("secondary-active", active)):
-        pairs.append((f"on-secondary on {name}", contrast(foreground, background), 4.5))
-        # Existing catalogue counters use text-on-secondary/80.
+    for name, background in (("brand", fill), ("brand-hover", hover), ("brand-active", active)):
+        pairs.append((f"on-brand on {name}", contrast(foreground, background), 4.5))
+        # Existing catalogue counters use text-on-brand/80.
         counter = tuple(text * .8 + channel * .2 for text, channel in zip(foreground, background))
-        pairs.append((f"on-secondary/80 on {name}", contrast(counter, background), 4.5))
-    pairs.extend((f"secondary-ink on {name}", contrast(ink, background), 4.5) for name, background in link_backgrounds)
+        pairs.append((f"on-brand/80 on {name}", contrast(counter, background), 4.5))
+    pairs.extend((f"brand-ink on {name}", contrast(ink, background), 4.5) for name, background in link_backgrounds)
     pairs.extend((f"{label} on {name}", contrast(text, background), 4.5)
                  for label, text in zip(("ink", "muted"), BODY_TEXT[mode]) for name, background in backgrounds)
     pairs.extend((f"{label} on {name}", contrast(text, background), 4.5)
                  for label, text in zip(("accent-ink", "success-ink", "warn-ink", "danger"), FIXED_INKS[mode])
                  for name, background in backgrounds)
-    pairs.extend((f"secondary boundary on {name}", contrast(ink, surface), 3) for name, surface in zip(("bg", "surface", "panel"), surfaces))
+    pairs.extend((f"brand boundary on {name}", contrast(ink, surface), 3) for name, surface in zip(("bg", "surface", "panel"), surfaces))
     return {"fill": fill, "foreground": foreground, "hover": hover, "active": active, "ink": ink, "tint_alphas": tint_alphas, "pairs": pairs}
 
 

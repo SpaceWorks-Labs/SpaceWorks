@@ -48,17 +48,17 @@ export function OrganizationInvitations({ organization }: { organization: Organi
         <button className="desk-button-primary w-fit" type="submit" disabled={create.isPending}>{create.isPending ? "Creating..." : "Create invitation"}</button>
         {create.error ? <p className="text-sm text-danger" role="alert">{create.error.message}</p> : null}
       </form>
-      {redeemUrl ? <div className="mt-4 rounded-xl border border-success bg-success/15 p-4 text-success-ink"><p className="font-semibold">Copy this link now</p><p className="mt-1 break-all font-mono text-xs">{redeemUrl}</p><button className="desk-button mt-3" type="button" onClick={() => navigator.clipboard.writeText(redeemUrl)}>Copy link</button></div> : null}
+      {redeemUrl ? <div className="mt-4 rounded-xl border border-success bg-success/15 p-4 text-success-ink"><p className="font-semibold">Copy this link now</p><p className="mt-1 break-all code-text text-xs">{redeemUrl}</p><button className="desk-button mt-3" type="button" onClick={() => navigator.clipboard.writeText(redeemUrl)}>Copy link</button></div> : null}
 
       {invitations.isLoading ? <Skeleton className="mt-5 h-24 w-full" /> : null}
       {invitations.data && !invitations.data.results.length ? <EmptyState title="No invitations yet" /> : null}
       {invitations.data?.results.length ? <ul className="mt-5 divide-y divide-line rounded-lg border border-line bg-surface">{invitations.data.results.map((invitation) => (
         <li className="flex flex-wrap items-center justify-between gap-3 p-3" key={invitation.id}>
-          <div><StatusBadge status={invitation.state} /><p className="mt-1 font-mono text-xs text-muted">Expires {new Date(invitation.expires_at).toLocaleString()}</p></div>
+          <div><StatusBadge status={invitation.state} /><p className="mt-1 tabular-nums text-xs text-muted">Expires {new Date(invitation.expires_at).toLocaleString()}</p></div>
           {invitation.state === "active" ? <button className="desk-button-danger" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(invitation.id)}>Revoke</button> : null}
         </li>
       ))}</ul> : null}
-      {invitations.data ? <div className="mt-3 flex items-center justify-between gap-3"><button className="desk-button" type="button" disabled={!invitations.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><span className="font-mono text-xs text-muted">Page {page}</span><button className="desk-button" type="button" disabled={!invitations.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div> : null}
+      {invitations.data ? <div className="mt-3 flex items-center justify-between gap-3"><button className="desk-button" type="button" disabled={!invitations.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><span className="tabular-nums text-xs text-muted">Page {page}</span><button className="desk-button" type="button" disabled={!invitations.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div> : null}
     </section>
   );
 }

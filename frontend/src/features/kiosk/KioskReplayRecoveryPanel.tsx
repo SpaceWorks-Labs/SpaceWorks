@@ -22,10 +22,10 @@ function RecoveryPanel({ makerspaceId }: { makerspaceId: number }) {
       }}><option value="unresolved">Unresolved</option><option value="resolved">Resolved</option><option value="all">All failures</option></select></label>
       {list.isPending ? <p role="status">Loading failed handovers…</p> : list.isError ? <div>
         <p role="alert">Failed handovers could not be loaded.</p>
-        <button type="button" className="desk-button-secondary" onClick={() => { void list.refetch(); }}>Reload recovery</button>
+        <button type="button" className="desk-button-brand" onClick={() => { void list.refetch(); }}>Reload recovery</button>
       </div> : !list.data?.results.length ? <p>No retained failures in this view.</p> : <ul className="grid gap-2">
         {list.data.results.map((row) => <li key={row.id} className="rounded border border-line p-3">
-          <button type="button" className="desk-button-secondary" aria-expanded={selected === row.id} onClick={() => setSelected(selected === row.id ? null : row.id)}>
+          <button type="button" className="desk-button-brand" aria-expanded={selected === row.id} onClick={() => setSelected(selected === row.id ? null : row.id)}>
             {row.operation_kind.replace(/_/g, " ")} · {row.station_name} · {row.failure_code}
           </button>
           {selected === row.id ? detail.isPending ? <p role="status">Loading failure details…</p> : detail.isError ? <p role="alert">This failure is unavailable under your current permissions.</p> : detail.data ? <div className="mt-3">
@@ -35,9 +35,9 @@ function RecoveryPanel({ makerspaceId }: { makerspaceId: number }) {
         </li>)}
       </ul>}
       {list.data ? <nav className="flex gap-3 text-sm" aria-label="Recovery pages">
-        <button type="button" className="desk-button-secondary" disabled={!list.data.previous || list.isFetching} onClick={() => { setPage(page - 1); setSelected(null); }}>Previous failures</button>
+        <button type="button" className="desk-button-brand" disabled={!list.data.previous || list.isFetching} onClick={() => { setPage(page - 1); setSelected(null); }}>Previous failures</button>
         <span>Page {page} · {list.data.count} failures</span>
-        <button type="button" className="desk-button-secondary" disabled={!list.data.next || list.isFetching} onClick={() => { setPage(page + 1); setSelected(null); }}>Next failures</button>
+        <button type="button" className="desk-button-brand" disabled={!list.data.next || list.isFetching} onClick={() => { setPage(page + 1); setSelected(null); }}>Next failures</button>
       </nav> : null}
     </div>
   </Panel>;

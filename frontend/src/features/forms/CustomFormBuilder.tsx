@@ -13,7 +13,7 @@ import {
 
 const QUESTION_TONES = [
   "border-accent bg-accent/15",
-  "border-secondary bg-secondary/15",
+  "border-line bg-accent-soft",
   "border-success bg-success/15",
   "border-warn bg-warn/15",
 ] as const;
@@ -122,7 +122,7 @@ function QuestionEditor({ question, index, count, allowedTypes, locked, onChange
   return (
     <div className={`rounded-xl border ${questionTone(question.id)} p-3`}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="eyebrow">Question <span className="font-mono">{index + 1}</span></span>
+        <span className="eyebrow">Question <span className="tabular-nums">{index + 1}</span></span>
         <div className="ml-auto flex gap-2">
           <button className="desk-button-ghost" type="button" disabled={index === 0} onClick={() => onMove(-1)} aria-label={"Move question " + (index + 1) + " up"}>Up</button>
           <button className="desk-button-ghost" type="button" disabled={index === count - 1} onClick={() => onMove(1)} aria-label={"Move question " + (index + 1) + " down"}>Down</button>

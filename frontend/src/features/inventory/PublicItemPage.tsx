@@ -57,7 +57,7 @@ export function PublicItemPage() {
           {bootstrap?.features.includes("inventory.notify_when_back") ? <NotifyWhenBack slug={spaceSlug} productId={product.id} /> : null}
           {product.category_name ? <p className="eyebrow mt-3">{product.category_name}</p> : null}
           <p className="mt-5 whitespace-pre-wrap break-words text-sm leading-6">{product.description || "No description provided."}</p>
-          {modules.has("request_workflow") ? <Link className="desk-button-secondary mt-5 inline-flex" to={tenantPath()}>Request from the catalogue</Link> : null}
+          {modules.has("request_workflow") ? <Link className="desk-button-brand mt-5 inline-flex" to={tenantPath()}>Request from the catalogue</Link> : null}
         </div>
       </article> : null}
     </section><SiteFooter branding={bootstrap?.branding} />

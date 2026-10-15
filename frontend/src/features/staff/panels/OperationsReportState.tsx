@@ -65,13 +65,13 @@ export function StatCards({ stats }: { stats: [string, number | undefined][] }) 
     "border-accent bg-accent text-on-accent dark:bg-accent/15 dark:text-accent-ink",
     "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
     "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
-    "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
+    "border-emphasis bg-emphasis text-on-emphasis dark:bg-emphasis/15 dark:text-emphasis",
   ];
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map(([label, value], index) => (
         <div key={label} className={`rounded-md border p-3 ${tones[index % tones.length]}`}>
-          <p className="font-mono text-2xl font-bold">{formatNumber(value ?? 0)}</p><p className="eyebrow opacity-70">{label}</p>
+          <p className="tabular-nums text-2xl font-bold">{formatNumber(value ?? 0)}</p><p className="eyebrow opacity-70">{label}</p>
         </div>
       ))}
     </div>

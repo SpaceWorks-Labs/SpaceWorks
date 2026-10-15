@@ -26,7 +26,7 @@ const KIND_LABELS: Record<PublicBookableSpace["kind"], string> = {
   other: "Other",
 };
 
-const SPACE_TONES = ["border-accent", "border-secondary", "border-success", "border-warn"] as const;
+const SPACE_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 
 function spaceTone(publicToken: string) {
   const total = [...publicToken].reduce((sum, character) => sum + character.codePointAt(0)!, 0);
@@ -63,7 +63,7 @@ export function PublicBookingsPage() {
       <header className="border-b border-line bg-panel">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4">
           <div>
-            <p className="eyebrow text-secondary-ink">Space bookings</p>
+            <p className="eyebrow text-brand-ink">Space bookings</p>
             <MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} size="lg" />
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -109,12 +109,12 @@ export function PublicBookingsPage() {
                     </div>
                     {space.description ? <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-ink">{space.description}</p> : null}
                     <dl className="mt-4 flex flex-wrap gap-6 text-sm">
-                      <div><dt className="eyebrow">Capacity</dt><dd className="font-mono font-semibold text-ink">{space.capacity === 0 ? "Not specified" : space.capacity}</dd></div>
+                      <div><dt className="eyebrow">Capacity</dt><dd className="tabular-nums font-semibold text-ink">{space.capacity === 0 ? "Not specified" : space.capacity}</dd></div>
                       <div><dt className="eyebrow">Confirmation</dt><dd className="font-semibold text-ink">{space.approval_mode === "approve" ? "Staff approval required" : "Instant when available"}</dd></div>
                     </dl>
                     <p className="mt-3 text-sm text-muted">{space.approval_mode === "approve" ? "Your request stays pending until makerspace staff review it." : "A non-overlapping slot is confirmed immediately."}</p>
                     {discovery.view === "calendar" && discovery.month ? <SpaceDiscoveryCalendar slug={makerspaceSlug} space={space} month={discovery.month} timeZone={discovery.timeZone} /> : null}
-                    <button className="desk-button-secondary mt-4" type="button" aria-expanded={open} onClick={() => setActiveToken(open ? null : space.public_token)}>{open ? "Close booking form" : "Choose a time"}</button>
+                    <button className="desk-button-brand mt-4" type="button" aria-expanded={open} onClick={() => setActiveToken(open ? null : space.public_token)}>{open ? "Close booking form" : "Choose a time"}</button>
                     {open ? <div className="mt-5"><PublicBookingForm key={space.public_token} makerspaceSlug={makerspaceSlug} space={space} /></div> : null}
                   </div>
                 </article>

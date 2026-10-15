@@ -61,7 +61,7 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
           <p className="font-semibold">{mode === "light" ? "Light" : "Dark"} preview</p>
           {!report.valid ? <p className="text-xs">Product palette fallback shown; ratios below describe the entered colours.</p> : null}
           <p className="my-2 text-sm" style={{ color: `rgb(${preview.ink.join(" ")})` }}>Derived link colour: rgb({preview.ink.join(", ")})</p>
-          <button className="desk-button-secondary" type="button">Example action</button>
+          <button className="desk-button-brand" type="button">Example action</button>
           <p className="mt-2 text-xs">Text minimum {worstText.toFixed(2)}:1 (AA 4.5:1); component minimum {worstUI.toFixed(2)}:1 (AA 3:1).</p>
         </div>;
       })}

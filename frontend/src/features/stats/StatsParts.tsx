@@ -2,7 +2,7 @@ import type React from "react";
 
 type ChartRow = { label: string; value: number };
 
-export type StatTone = "blue" | "yellow" | "mint" | "pink";
+export type StatTone = "blue" | "yellow" | "mint" | "emphasis";
 
 // Pastel fill + matching ink, with the dark-mode deep-tint companion used
 // across the reskin. Each stat box picks one so the grid reads as a colourful
@@ -14,8 +14,8 @@ export const STAT_TONE_CLASS: Record<StatTone, string> = {
     "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
   mint:
     "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
-  pink:
-    "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
+  emphasis:
+    "border-emphasis bg-emphasis text-on-emphasis dark:bg-emphasis/15 dark:text-emphasis",
 };
 
 export function StatTile({
@@ -29,7 +29,7 @@ export function StatTile({
 }) {
   return (
     <div className={`rounded-md border p-3 ${STAT_TONE_CLASS[tone]}`}>
-      <p className="font-mono text-2xl font-bold">{value}</p>
+      <p className="tabular-nums text-2xl font-bold">{value}</p>
       <p className="eyebrow mt-1 text-current opacity-70">{label}</p>
     </div>
   );
@@ -102,7 +102,7 @@ export function BarChart({
               {row.label}
             </span>
             <div className="h-3 overflow-hidden rounded bg-bg">
-              <div className="h-full rounded bg-secondary" style={{ width }} />
+              <div className="h-full rounded bg-emphasis" style={{ width }} />
             </div>
             <span className="eyebrow min-w-14 text-right">
               {formatNumber(row.value)} {valueLabel}

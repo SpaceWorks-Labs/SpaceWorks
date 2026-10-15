@@ -56,7 +56,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
     <section className="desk-panel p-5">
       <h2 className="title-panel">Your member card</h2>
       <p className="eyebrow mt-2">
-        <span className="font-mono">{row.card_number}</span> ·{" "}
+        <span className="tabular-nums">{row.card_number}</span> ·{" "}
         {row.is_active ? "active" : "revoked"} · printed {row.print_count}{" "}
         {row.print_count === 1 ? "time" : "times"}
       </p>
@@ -75,7 +75,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
       />
       <div className="desk-actions mt-3 flex flex-wrap gap-2">
         <button
-          className="desk-button-secondary"
+          className="desk-button-brand"
           type="button"
           disabled={rename.isPending || !printedName.trim()}
           onClick={() =>

@@ -102,7 +102,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     {clientErrors.ticket || clientErrors.invite ? <p role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
     <CustomFormFields schema={customForm} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...clientErrors }} />
     {registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
-    <button className="desk-button-secondary" type="submit" disabled={registration.isPending}>
+    <button className="desk-button-brand" type="submit" disabled={registration.isPending}>
       {registration.isPending ? "Submitting..." : approvalRequired ? "Apply" : waitlist ? "Join waitlist" : "Register"}
     </button>
   </form>;

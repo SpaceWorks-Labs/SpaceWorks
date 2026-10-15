@@ -26,7 +26,7 @@ export function AboutPage() {
       </header>
 
       <section className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
-        <p className="eyebrow text-secondary-ink">About</p>
+        <p className="eyebrow text-brand-ink">About</p>
         <h1 className="title-page mt-3">
           Open Source Makerspace Manager
         </h1>
@@ -56,11 +56,11 @@ export function AboutPage() {
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <Link className="desk-panel p-4 transition hover:border-secondary" to="/">
+          <Link className="desk-panel p-4 transition hover:border-brand" to="/">
             <h2 className="title-section">Browse makerspaces &rarr;</h2>
             <p className="eyebrow mt-1 normal-case">View public equipment catalogs.</p>
           </Link>
-          <Link className="desk-panel p-4 transition hover:border-secondary" to="/admin">
+          <Link className="desk-panel p-4 transition hover:border-brand" to="/admin">
             <h2 className="title-section">Staff login &rarr;</h2>
             <p className="eyebrow mt-1 normal-case">Manage your makerspace.</p>
           </Link>

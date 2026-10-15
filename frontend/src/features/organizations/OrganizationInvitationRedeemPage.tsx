@@ -65,7 +65,7 @@ export function OrganizationInvitationRedeemPage() {
     <main className="desk-shell grid min-h-screen place-items-center px-5 py-10">
       <section className="desk-panel w-full max-w-lg p-6" aria-labelledby="invitation-heading">
         <SpaceWorksBadge className="mb-5" />
-        <p className="eyebrow text-secondary-ink">Organization invitation</p>
+        <p className="eyebrow text-brand-ink">Organization invitation</p>
         <h1 className="title-page mt-2" id="invitation-heading">Join an organization</h1>
         {restoring ? <Skeleton className="mt-5 h-32 w-full" /> : null}
         {!restoring && !user ? (

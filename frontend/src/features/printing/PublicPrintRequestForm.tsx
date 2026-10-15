@@ -86,7 +86,7 @@ export function PrintDetailsForm({
   const noAvailablePools = poolsQuery.isSuccess && (poolsQuery.data?.length ?? 0) === 0;
   return (
     <Card>
-      <h2 className="title-panel text-secondary-ink">
+      <h2 className="title-panel text-brand-ink">
         Print Details
       </h2>
       <form className="mt-4 space-y-4" onSubmit={onSubmit}>
@@ -170,7 +170,7 @@ export function PrintDetailsForm({
                 Quantity
               </span>
               <input
-                className="desk-input w-full font-mono"
+                className="desk-input w-full tabular-nums"
                 min={1}
                 type="number"
                 value={form.quantity}
@@ -184,7 +184,7 @@ export function PrintDetailsForm({
                 Estimated filament (g) &mdash; optional
               </span>
               <input
-                className="desk-input w-full font-mono"
+                className="desk-input w-full tabular-nums"
                 min={0}
                 step="0.01"
                 type="number"
@@ -222,7 +222,7 @@ export function PrintDetailsForm({
           </p>
         ) : null}
         <button
-          className="desk-button-secondary w-full disabled:cursor-not-allowed disabled:opacity-50"
+          className="desk-button-brand w-full disabled:cursor-not-allowed disabled:opacity-50"
           disabled={
             !form.title.trim() ||
             submitPending

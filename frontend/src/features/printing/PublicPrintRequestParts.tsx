@@ -23,7 +23,7 @@ const steps = [
 const STEP_TONE_CLASSES = [
   "border-accent bg-accent text-on-accent dark:bg-accent/15 dark:text-accent-ink",
   "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
-  "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
+  "border-brand bg-brand text-on-brand dark:bg-brand/15 dark:text-brand-ink",
   "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
   "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
 ] as const;
@@ -207,7 +207,7 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
           aria-live="polite"
           className="rounded-xl border border-line bg-panel px-3 py-2 text-center shadow-soft"
         >
-          <p className="font-mono text-sm font-semibold text-ink">
+          <p className="tabular-nums text-sm font-semibold text-ink">
             #{status.queue_position} in the queue
           </p>
           <p className="eyebrow mt-1">
@@ -216,13 +216,13 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
         </div>
       ) : null}
       {timeLeft ? (
-        <p className="rounded-lg border border-accent bg-accent px-3 py-2 text-center font-mono text-sm font-semibold text-on-accent dark:bg-accent/15 dark:text-accent-ink">
+        <p className="rounded-lg border border-accent bg-accent px-3 py-2 text-center tabular-nums text-sm font-semibold text-on-accent dark:bg-accent/15 dark:text-accent-ink">
           {timeLeft}
         </p>
       ) : null}
       <p className="text-sm text-muted">
         Current status:{" "}
-        <span className="font-mono font-semibold capitalize text-ink">
+        <span className="tabular-nums font-semibold capitalize text-ink">
           {status.status.replace("_", " ")}
         </span>
       </p>

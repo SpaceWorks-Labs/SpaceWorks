@@ -2,7 +2,7 @@ import type { CustomAnswerSnapshot, CustomAnswerValue } from "./customFormTypes"
 
 const ANSWER_TONES = [
   "border-accent bg-accent/15",
-  "border-secondary bg-secondary/15",
+  "border-line bg-accent-soft",
   "border-success bg-success/15",
   "border-warn bg-warn/15",
 ] as const;

@@ -24,7 +24,7 @@ export function MemberAdmission({ makerspaceId, request }: { makerspaceId: numbe
     {request.application_answers?.answers.length ? <details className="mt-3"><summary className="cursor-pointer text-sm font-semibold text-ink">Your application answers</summary><div className="mt-3"><CustomAnswersView snapshot={request.application_answers} /></div></details> : null}
     <div className="mt-4 flex flex-wrap gap-3">
       {pending ? <button type="button" className="desk-button-danger" disabled={cancel.isPending} onClick={() => cancel.mutate()}>Cancel application</button> : null}
-      <button type="button" className="desk-button-secondary" disabled={download.isPending} onClick={() => download.mutate()}>Download application data</button>
+      <button type="button" className="desk-button-brand" disabled={download.isPending} onClick={() => download.mutate()}>Download application data</button>
     </div>
     {cancel.error || download.error ? <p className="mt-3 text-sm text-danger" role="alert">{(cancel.error ?? download.error)?.message}</p> : null}
   </section>;
@@ -39,7 +39,7 @@ export function MemberVouch({ makerspaceId }: { makerspaceId: number }) {
     <p className="mt-1 text-sm text-muted">Ask the applicant for their application number. Your vouch is recorded permanently with your identity. Eligibility, tenure and pending-applicant limits apply.</p>
     <form className="mt-3 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); vouch.mutate(); }}>
       <label className="grid gap-1 text-sm text-ink">Application number<input className="desk-input" type="number" required min="1" step="1" value={requestId} onChange={(event) => { setRequestId(event.target.value); vouch.reset(); }} /></label>
-      <button className="desk-button-secondary" type="submit" disabled={vouch.isPending || !requestId}>Record my vouch</button>
+      <button className="desk-button-brand" type="submit" disabled={vouch.isPending || !requestId}>Record my vouch</button>
     </form>
     {vouch.isSuccess ? <p className="mt-3 text-sm text-success" role="status">Your vouch is recorded.</p> : null}
     {vouch.error ? <p className="mt-3 text-sm text-danger" role="alert">{vouch.error.message}</p> : null}

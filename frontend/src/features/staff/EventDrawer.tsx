@@ -58,8 +58,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
       {eventQuery.isLoading ? <Skeleton className="h-64 w-full" /> : null}
       {eventQuery.error ? <EmptyState title="Unable to load event" description={eventErrorText(eventQuery.error)} /> : null}
       {event ? <div className="grid gap-5">
-        <div className="flex flex-wrap items-center gap-2"><StatusBadge status={event.status} />{event.series_summary ? <span className="rounded-full border border-secondary px-2 py-1 text-xs font-semibold text-secondary-ink">Recurring · {event.series_summary.title}</span> : null}<span className="text-sm text-muted">{event.capacity === 0 ? "Unlimited capacity" : `${event.capacity} places`} · Registration {event.registration_open ? "open" : "closed"}</span></div>
-        {event.effective_registration_cutoff_at ? <p className="text-sm text-muted">Effective cutoff: <span className="font-mono">{new Date(event.effective_registration_cutoff_at).toLocaleString()}</span></p> : null}
+        <div className="flex flex-wrap items-center gap-2"><StatusBadge status={event.status} />{event.series_summary ? <span className="rounded-full border border-accent px-2 py-1 text-xs font-semibold text-accent-ink">Recurring · {event.series_summary.title}</span> : null}<span className="text-sm text-muted">{event.capacity === 0 ? "Unlimited capacity" : `${event.capacity} places`} · Registration {event.registration_open ? "open" : "closed"}</span></div>
+        {event.effective_registration_cutoff_at ? <p className="text-sm text-muted">Effective cutoff: <span className="tabular-nums">{new Date(event.effective_registration_cutoff_at).toLocaleString()}</span></p> : null}
         <ImageUploader endpoint={`/admin/events/${eventId}/image`} currentUrl={event.image_url} label="Event photo (shown publicly)" shape="wide" disabled={readOnly} onChanged={invalidateEvent} />
         <form onSubmit={(e) => { e.preventDefault(); saveOccurrence(); }}>
           {event.series_summary ? <h3 className="title-section mb-3">Edit this occurrence</h3> : null}

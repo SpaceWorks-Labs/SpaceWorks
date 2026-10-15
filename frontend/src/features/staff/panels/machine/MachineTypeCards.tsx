@@ -21,7 +21,7 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-
 const HIGHLIGHT: { status: MachineStatus; label: string; tone: string }[] = [
   { status: "running", label: "running", tone: "bg-success text-on-success" },
   { status: "maintenance", label: "in maintenance", tone: "bg-warn text-on-warn" },
-  { status: "offline", label: "offline", tone: "bg-danger text-bg" },
+  { status: "offline", label: "offline", tone: "bg-danger text-on-danger" },
 ];
 
 /** The machines index: one card per reachable machine type.
@@ -87,9 +87,9 @@ export function MachineTypeCards({
               {/* A count is stated as fact, so it must not be stated while the fleet is
                   still loading or after the request failed. */}
               {machinesLoading ? (
-                <span className="font-mono text-xs text-muted">counting…</span>
+                <span className="tabular-nums text-xs text-muted">counting…</span>
               ) : machinesFailed ? (
-                <span className="font-mono text-xs text-muted">count unavailable</span>
+                <span className="tabular-nums text-xs text-muted">count unavailable</span>
               ) : (
                 <span className="chip">{owned.length} {owned.length === 1 ? "machine" : "machines"}</span>
               )}

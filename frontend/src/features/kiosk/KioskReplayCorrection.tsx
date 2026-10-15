@@ -86,7 +86,7 @@ export function KioskReplayCorrection({ id, token, session, online, onQueueChang
           <button className="desk-button-primary" type="submit" disabled={busy}>Capture fresh correction</button>
         </form> : <div className="grid gap-2 text-sm">
           <p role="status">Correction {command.status}. {command.lastFailure ? replayGuidance(command.lastFailure) : ""}</p>
-          <button type="button" className="desk-button-secondary" disabled={busy} onClick={() => { void run(() => replayAndReview(queue.scope)); }}>Check corrective replay</button>
+          <button type="button" className="desk-button-brand" disabled={busy} onClick={() => { void run(() => replayAndReview(queue.scope)); }}>Check corrective replay</button>
           {linkReady || command.result?.state === "succeeded" ? <button type="button" className="desk-button-primary" disabled={busy} onClick={() => { void run(async () => {
             setRow(await staffRequest<RecoveryReplay>(`${recoveryPath(id)}resolve/`, { method: "POST",
               body: JSON.stringify({ resolution_code: "replaced_online", replacement_command_id: command.result?.replay_id }) }));
@@ -103,6 +103,6 @@ function Acknowledge({ onConfirm, disabled }: { onConfirm: () => void; disabled:
   return confirm ? <div className="grid gap-2">
     <p>Confirm you inspected the failed handover and verified no physical change occurred.</p>
     <button type="button" className="desk-button-primary" disabled={disabled} onClick={onConfirm}>Record no-change review</button>
-    <button type="button" className="desk-button-secondary" disabled={disabled} onClick={() => setConfirm(false)}>Cancel review</button>
-  </div> : <button type="button" className="desk-button-secondary" onClick={() => setConfirm(true)}>Acknowledge — no change occurred</button>;
+    <button type="button" className="desk-button-brand" disabled={disabled} onClick={() => setConfirm(false)}>Cancel review</button>
+  </div> : <button type="button" className="desk-button-brand" onClick={() => setConfirm(true)}>Acknowledge — no change occurred</button>;
 }

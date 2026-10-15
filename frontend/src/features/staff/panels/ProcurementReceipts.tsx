@@ -62,7 +62,7 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
       <div className="grid gap-1">
         {receipts.length ? receipts.map((receipt) => (
           <div key={receipt.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-2 py-1 text-xs">
-            <span className="min-w-0 flex-1 font-mono text-muted">{formatDateTime(receipt.created_at)}</span>
+            <span className="min-w-0 flex-1 tabular-nums text-muted">{formatDateTime(receipt.created_at)}</span>
             <button type="button" className="desk-button-ghost text-xs" onClick={() => openReceipt(receipt.id)}>View</button>
             <button type="button" className="desk-button-danger text-xs" disabled={remove.isPending} onClick={() => remove.mutate(receipt.id)}>Delete</button>
           </div>
@@ -80,7 +80,7 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
           const files = Array.from(event.target.files ?? []);
           if (files.length) upload.mutate(files);
         }}
-        className="block w-full max-w-full min-w-0 text-xs text-muted file:mr-2 file:rounded-lg file:border file:border-line file:bg-accent file:px-2 file:py-1 file:font-mono file:text-xs file:font-semibold file:text-on-accent"
+        className="block w-full max-w-full min-w-0 text-xs text-muted file:mr-2 file:rounded-lg file:border file:border-line file:bg-accent file:px-2 file:py-1 file:text-xs file:font-semibold file:text-on-accent"
       />
       {upload.isPending ? <p className="text-xs text-muted">Uploading...</p> : null}
       {error ? <p className="text-xs text-danger">{error}</p> : null}

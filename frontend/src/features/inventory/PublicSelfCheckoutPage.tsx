@@ -105,7 +105,7 @@ export function PublicSelfCheckoutPage() {
     <main style={brandStyle} className="desk-shell">
       <header className="border-b border-line bg-panel">
         <div className="mx-auto flex max-w-screen-xl flex-col gap-4 px-5 py-6 sm:px-8">
-          <p className="eyebrow text-secondary-ink">
+          <p className="eyebrow text-brand-ink">
             Public Tool Checkout
           </p>
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -145,7 +145,7 @@ export function PublicSelfCheckoutPage() {
         ) : null}
         {!bootstrapQuery.isLoading && !bootstrapQuery.isError && !enabled ? (
           <Card>
-            <p className="eyebrow text-secondary-ink">
+            <p className="eyebrow text-brand-ink">
               Self-checkout
             </p>
             <h2 className="title-panel mt-2">
@@ -167,8 +167,8 @@ export function PublicSelfCheckoutPage() {
                 aria-pressed={mode === "checkout"}
                 className={
                   mode === "checkout"
-                    ? "desk-tab desk-tab-active border-secondary bg-secondary text-on-secondary hover:bg-secondary hover:text-on-secondary"
-                    : "desk-tab hover:text-secondary-ink"
+                    ? "desk-tab desk-tab-active border-brand bg-brand text-on-brand hover:bg-brand hover:text-on-brand"
+                    : "desk-tab hover:text-brand-ink"
                 }
                 type="button"
                 onClick={() => { setMode("checkout"); setScannedPayload(""); }}
@@ -179,8 +179,8 @@ export function PublicSelfCheckoutPage() {
                 aria-pressed={mode === "return"}
                 className={
                   mode === "return"
-                    ? "desk-tab desk-tab-active border-secondary bg-secondary text-on-secondary hover:bg-secondary hover:text-on-secondary"
-                    : "desk-tab hover:text-secondary-ink"
+                    ? "desk-tab desk-tab-active border-brand bg-brand text-on-brand hover:bg-brand hover:text-on-brand"
+                    : "desk-tab hover:text-brand-ink"
                 }
                 type="button"
                 onClick={() => { setMode("return"); setScannedPayload(""); }}
@@ -223,7 +223,7 @@ export function PublicSelfCheckoutPage() {
             </div>
 
             <button
-              className="desk-button-secondary mt-4 w-full disabled:cursor-not-allowed disabled:opacity-50"
+              className="desk-button-brand mt-4 w-full disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!canScan || loanMutation.isPending}
               type="button"
               onClick={() => setScannerOpen(true)}

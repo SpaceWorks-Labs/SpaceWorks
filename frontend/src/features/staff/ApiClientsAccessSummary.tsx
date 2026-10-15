@@ -34,7 +34,7 @@ function Config({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-3">
       <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 break-all font-mono text-xs text-ink">{value}</p>
+      <p className="mt-1 break-all code-text text-xs text-ink">{value}</p>
     </div>
   );
 }

@@ -35,7 +35,7 @@ export function CardsTable({
       key: "card_number",
       header: "Card number",
       sortable: true,
-      render: (card) => <span className="font-mono text-xs">{card.card_number}</span>,
+      render: (card) => <span className="tabular-nums text-xs">{card.card_number}</span>,
     },
     { key: "printed_name", header: "Name", sortable: true },
     {
@@ -59,7 +59,7 @@ export function CardsTable({
       sortable: true,
       render: (card) => (
         <span className="text-xs text-muted">
-          <span className="font-mono text-ink">{card.print_count}</span> · last{" "}
+          <span className="tabular-nums text-ink">{card.print_count}</span> · last{" "}
           {shortDate(card.last_printed_at)}
         </span>
       ),

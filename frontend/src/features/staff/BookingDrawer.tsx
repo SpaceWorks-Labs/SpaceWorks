@@ -88,7 +88,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
             <section aria-labelledby="space-bookings-title">
               {space.is_active ? <StaffBookingForm recurringEnabled={recurringEnabled} makerspaceId={makerspaceId} space={space} /> : null}
               <div className="mb-3">
-                <h3 id="space-bookings-title" className="title-section">Bookings <span className="font-mono">({bookings.data?.count ?? 0})</span></h3>
+                <h3 id="space-bookings-title" className="title-section">Bookings <span className="tabular-nums">({bookings.data?.count ?? 0})</span></h3>
                 <p className="mt-1 text-xs text-muted">Contact details and custom answers are staff-only.</p>
               </div>
               <label className="text-xs text-muted">Sort<select className="desk-input" value={list.values.ordering} onChange={(event) => list.setFilter("ordering", event.target.value)}><option value="starts_at">Starts first</option><option value="-starts_at">Starts last</option><option value="created_at">Created first</option></select></label>
@@ -119,7 +119,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
                   {bookings.data.results.map((booking) => (
                     <article className="rounded-xl border border-line bg-bg p-3" key={booking.id}>
                       <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div><h4 className="title-section">{booking.name}</h4><p className="mt-1 font-mono text-xs text-muted">{bookingTime(booking)}</p></div>
+                        <div><h4 className="title-section">{booking.name}</h4><p className="mt-1 tabular-nums text-xs text-muted">{bookingTime(booking)}</p></div>
                         <StatusBadge status={booking.status} />
                       </div>
                       <div className="mt-2 text-sm"><a className="block break-all hover:underline" href={"mailto:" + booking.email}>{booking.email}</a><a className="block text-muted hover:underline" href={"tel:" + booking.phone}>{booking.phone}</a></div>
@@ -140,7 +140,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
                   ))}
                 </div>
               ) : null}
-              {bookings.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="font-mono text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!bookings.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!bookings.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
+              {bookings.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="tabular-nums text-xs text-muted">Page {page}</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!bookings.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!bookings.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
             </section>
             {actionError ? <p className="text-sm text-danger" role="alert">{errorText(actionError)}</p> : null}
           </div>

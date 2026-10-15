@@ -122,7 +122,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
       <Subsection title="Manual usage">
         <ManualUsageForm draft={draft} setDraft={setDraft} machines={machines} pools={manualPools} unitLabel={unitLabel} hasPool={!!poolUnit} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />
         <div className="mt-3 grid gap-2">
-          {manualUsage.data?.map((entry) => <p className="rounded-md border border-line p-2 font-mono text-sm" key={entry.id}>{entry.outcome} · {entry.consumed_quantity} {unitLabel} · {entry.duration_minutes} min</p>)}
+          {manualUsage.data?.map((entry) => <p className="rounded-md border border-line p-2 tabular-nums text-sm" key={entry.id}>{entry.outcome} · {entry.consumed_quantity} {unitLabel} · {entry.duration_minutes} min</p>)}
         </div>
       </Subsection>
       <ErrorBlock error={[requests.error, manualUsage.error, submitManual.error, runAction.error].find((item) => item instanceof Error)} />

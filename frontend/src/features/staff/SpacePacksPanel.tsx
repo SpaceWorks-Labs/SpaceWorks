@@ -40,7 +40,7 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
     <p className="text-sm text-muted">Copy configuration between spaces. Packs contain policies, roles, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack.</p>
     <button type="button" className="desk-button justify-self-start" disabled={pending} onClick={() => exportPack.mutate()}>Export configuration</button>
     <Field label="Space pack JSON">
-      <textarea className="desk-input min-h-48 w-full font-mono text-xs" value={source} disabled={pending}
+      <textarea className="desk-input min-h-48 w-full code-text text-xs" value={source} disabled={pending}
         onChange={(event) => setPack(event.target.value)} />
     </Field>
     <div className="flex flex-wrap gap-2">

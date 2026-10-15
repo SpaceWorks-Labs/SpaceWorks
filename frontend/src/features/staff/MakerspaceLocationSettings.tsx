@@ -101,7 +101,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
 
         {savedMapUrl ? (
           <a
-            className="w-fit font-mono text-xs font-semibold uppercase text-secondary-ink hover:underline"
+            className="w-fit text-xs font-semibold uppercase text-accent-ink hover:underline"
             href={savedMapUrl}
             target="_blank"
             rel="noopener noreferrer"

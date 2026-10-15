@@ -189,7 +189,7 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
             {appendColour.error instanceof Error ? <p className="text-sm text-danger" role="alert">{appendColour.error.message}</p> : null}
           </fieldset>
         ) : (
-          <button className="desk-button-secondary justify-self-start" type="button" onClick={() => setAddingCustom(true)}>
+          <button className="desk-button justify-self-start" type="button" onClick={() => setAddingCustom(true)}>
             Add a custom colour
           </button>
         )

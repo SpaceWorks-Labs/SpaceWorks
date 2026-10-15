@@ -218,7 +218,7 @@ export function DirectLoanReturnModal({
           <span className="font-medium text-ink">Return QR scan{scanRequired ? "" : " (optional)"}</span>
           <div className="flex flex-col gap-2 md:flex-row">
             <input
-              className="desk-input w-full font-mono text-sm"
+              className="desk-input w-full code-text text-sm"
               value={qrPayload}
               disabled={pending}
               onChange={(event) => onQrPayloadChange(event.target.value)}

@@ -28,10 +28,10 @@ type DashboardCounts = {
 // of reading as a wall of neutral boxes with one alarming red one. The tone is chosen by what
 // the number MEANS -- it is varied, not arbitrary: `danger` is reserved for things that are
 // actually wrong, `warn` for a queue somebody has to work through, `accent` for work in
-// flight, `success` for something finished and waiting to be handed over, and `secondary` for
+// flight, `success` for something finished and waiting to be handed over, and `emphasis` for
 // money. Assigning tones at random would make the colour meaningless and would clash with the
 // semantic status colours used everywhere else in the console.
-type Tone = "accent" | "secondary" | "success" | "warn" | "danger";
+type Tone = "accent" | "emphasis" | "success" | "warn" | "danger";
 
 type Tile = {
   key: Exclude<keyof DashboardCounts, "scope_mode">;
@@ -57,7 +57,7 @@ const TILES: Tile[] = [
   { key: "stocktakes_awaiting_approval", label: "Stocktakes awaiting approval", actionNeeded: true, tone: "warn" },
   { key: "warranty_expiring", label: "Warranties expiring", actionNeeded: true, tone: "warn" },
   { key: "maintenance_overdue", label: "Maintenance overdue", actionNeeded: true, tone: "danger" },
-  { key: "pending_payments", label: "Pending payments", actionNeeded: true, tone: "secondary" },
+  { key: "pending_payments", label: "Pending payments", actionNeeded: true, tone: "emphasis" },
 ];
 
 // Two states per tone, and the INK is the whole point.
@@ -75,20 +75,19 @@ const TILES: Tile[] = [
 // the contrast guard holds at AA against `bg`/`surface`/`panel`.
 const TONE_STYLES: Record<Tone, { fill: string; label: string; rest: string }> = {
   accent: { fill: "border-accent bg-accent", label: "text-on-accent/75", rest: "text-accent-ink" },
-  secondary: { fill: "border-secondary bg-secondary", label: "text-on-secondary/75", rest: "text-secondary-ink" },
+  emphasis: { fill: "border-emphasis bg-emphasis", label: "text-on-emphasis/75", rest: "text-on-emphasis dark:text-emphasis" },
   success: { fill: "border-success bg-success", label: "text-on-success/75", rest: "text-success-ink" },
   warn: { fill: "border-warn bg-warn", label: "text-on-warn/75", rest: "text-warn-ink" },
-  // `danger` is the one non-pastel, so it takes the light-on-dark treatment instead of an
-  // `on-*` token -- 164 36 59 against `--color-bg` is a wide margin in both themes.
-  danger: { fill: "border-danger bg-danger", label: "text-bg/80", rest: "text-danger" },
+  // The on-danger label preserves the existing per-mode canvas colour.
+  danger: { fill: "border-danger bg-danger", label: "text-on-danger/80", rest: "text-danger" },
 };
 
 const FILL_INK: Record<Tone, string> = {
   accent: "text-on-accent",
-  secondary: "text-on-secondary",
+  emphasis: "text-on-emphasis",
   success: "text-on-success",
   warn: "text-on-warn",
-  danger: "text-bg",
+  danger: "text-on-danger",
 };
 
 const MACHINE_TILE_KEYS = new Set<Tile["key"]>([
@@ -131,7 +130,7 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, s
                 needsAttention ? tone.fill : "border-line bg-panel"
               }`}
             >
-              <span className={`font-mono text-3xl font-semibold ${needsAttention ? FILL_INK[tile.tone] : tone.rest}`}>
+              <span className={`tabular-nums text-3xl font-semibold ${needsAttention ? FILL_INK[tile.tone] : tone.rest}`}>
                 {value}
               </span>
               <span className={`eyebrow ${needsAttention ? tone.label : ""}`}>{tile.label}</span>

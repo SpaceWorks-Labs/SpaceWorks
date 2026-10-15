@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+refuse_single_box_layer() {
+  [[ "$1" == single ]] || return 0
+  cat >&2 <<'MESSAGE'
+The single-box install shape (one all-in-one container) was removed and its image
+is no longer published. Switch this install to standard containers using the
+CURRENTLY INSTALLED scripts, then retry:
+
+  bash scripts/spaceworks-compose.sh bundled stop app
+  bash scripts/spaceworks-compose.sh bundled rm -f app
+  printf 'none\n' > .spaceworks-layer
+  bash scripts/spaceworks-compose.sh bundled up -d
+
+Then re-run the update. Data in the database and storage volumes is unchanged.
+See docs/update-recovery.md.
+MESSAGE
+  return 64
+}
+
 # Read only non-secret topology selectors; never source dotenv as shell code.
 deployment_value() {
   local value
@@ -35,17 +53,13 @@ deployment_services() {
   if [[ -z "$layer" && -f "$ROOT/.spaceworks-layer" ]]; then
     layer="$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")"
   fi
+  refuse_single_box_layer "$layer" || return $?
   APP_SERVICE=backend
   WORKER_SERVICES=(worker beat live)
   IMAGE_SERVICES=(orchestration-init migrate orchestration-ready backend live worker beat)
   ROLLBACK_SERVICES=(backend live worker beat)
   RUN_ONCE_SERVICES=(orchestration-init migrate orchestration-ready)
-  if [[ "$layer" == single ]]; then
-    APP_SERVICE=app
-    WORKER_SERVICES=()
-    IMAGE_SERVICES=(orchestration-init migrate orchestration-ready app)
-    ROLLBACK_SERVICES=(app)
-  elif [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
+  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
     IMAGE_SERVICES+=(api-edge)
     ROLLBACK_SERVICES+=(api-edge)
   else

@@ -49,12 +49,13 @@ Telegram group, QR namespace, and audit scope — fully isolated from the others
 - **Live staff console and one search box** — queues, loans and check-ins update the moment a change
   commits (Server-Sent Events over the deployment's Redis; falls back to polling without it), and every
   inventory, machine and event list answers `?q=` with full-text search that tolerates typos.
-- **Editions and a single box** — an events-only or bookings-only installation hides the loan spine it
-  does not use (`SPACEWORKS_EDITION`), and the whole application can run as one container beside
-  Postgres and Silo object storage when a makerspace has one small server and nobody to operate a stack.
+- **Editions** — an events-only or bookings-only installation hides the loan spine it
+  does not use (`SPACEWORKS_EDITION`).
 - **Operable in production** — every request carries an `X-Request-ID` through JSON logs and Celery,
-  a token-protected Prometheus endpoint reports queue depth, delivery failures and storage, and CI runs
-  the whole suite before an image is published.
+  and a token-protected Prometheus endpoint reports queue depth, delivery failures and storage.
+  Tests run locally before pushing (`./scripts/dev.sh test`, `./scripts/dev.sh e2e`). Actions builds
+  and publishes backend/frontend images, creates the GitHub Release, promotes rolling tags and optionally
+  deploys through a self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.
 - **Action-based staff console** — editable per-makerspace roles over a fixed action set, four seeded
   defaults, and a superadmin-only Django control plane.
 - **Reports & ledger** — what's out, who has it, overdue tracking, CSV/XLSX export, plus accessible
@@ -122,15 +123,13 @@ All deployment decisions come first, in this order:
 2. **Website here?** Yes (default), or API only with HTTPS site URL(s), such as a Netlify site.
 3. **HTTPS:** plain HTTP for LAN/trial (default), automatic Caddy (domain and certificate email), or an
    existing reverse proxy. A hosted platform always uses automatic HTTPS; API-only requires HTTPS.
-4. **Containers:** standard (default) or single box. Single box supports a local website over HTTP;
-   choose standard containers for HTTPS, API-only, hosted platforms or a source build.
-5. **Storage:** bundled Silo (default), or external S3 endpoint, region, separate private/public buckets,
+4. **Storage:** bundled Silo (default), or external S3 endpoint, region, separate private/public buckets,
    access/secret keys, public image base URL and PUT/POST presigning.
-6. **Instance:** web address if not already known, makerspace name, platform subdomain if applicable,
+5. **Instance:** web address if not already known, makerspace name, platform subdomain if applicable,
    edition, initial module profile, and who may submit borrow requests.
-7. **Admin:** username, your email, and password (blank generates one).
-8. **Optional integrations:** Google Web client ID, Stripe secret/webhook keys and currency.
-9. **GitHub repository to follow** (`SpaceWorks-HQ/SpaceWorks`, or your fork) and
+6. **Admin:** username, your email, and password (blank generates one).
+7. **Optional integrations:** Google Web client ID, Stripe secret/webhook keys and currency.
+8. **GitHub repository to follow** (`SpaceWorks-HQ/SpaceWorks`, or your fork) and
    **Install a GitHub Actions runner on this server for automatic deploys? [y/N]** No by default.
    Automatic deploys require Linux with systemd and the GitHub settings below.
    The curl installer asks the repository before downloading its questionnaire.

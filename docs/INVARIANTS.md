@@ -1428,7 +1428,7 @@ buffering off; it answers 503 when the deployment has no Redis and browsers keep
 `/api/v1/metrics/` nor `/api/v1/live/` belongs in the API-client scope registry.
 
 **Browser and accessibility gates (forward plan phase 2, 2026-09-03).** The Hard Rules are pinned by
-`frontend/e2e/` against a real stack (`scripts/dev.sh e2e`, CI job `e2e`): a request is accepted,
+`frontend/e2e/` against a real stack (`./scripts/dev.sh e2e` locally before pushing): a request is accepted,
 issued with a container code and a real presigned photo upload, and returned with container code, photo
 and remark, and the API's 400s for a missing photo, box or remark are asserted directly. The public
 catalogue spec asserts the seeded storage location, box label and box code never appear in the DOM. The
@@ -1450,7 +1450,7 @@ loopback ranges) at save time and are re-resolved and pinned at send time; a del
 the URL. Both secrets are `ALWAYS_OMITTED` from export and DERIVED-omitted from tenant migration. The
 superadmin "Re-queue failed deliveries" admin action is the dead-letter path and audits each row.
 
-**Editions and the single box (forward plan phase 4, 2026-09-03).** `SPACEWORKS_EDITION` is a
+**Editions (forward plan phase 4, 2026-09-03).** `SPACEWORKS_EDITION` is a
 **deployment**-level setting (`apps/makerspaces/editions.py`), never per makerspace, exactly like
 `member_accounts` is read deployment-wide. An edition hides a fixed set of module keys:
 `platform.available_modules()` (and therefore every bootstrap `modules` list and staff `enabled_modules`
@@ -1464,10 +1464,10 @@ bookings). Prefer `guards.require_module_for_servable`, which does the edition c
 the module check together. It does **not** change `core_module_keys()`, `module_enabled()` or any
 `require_module` gate: staff endpoints, workflows, migrations, purge plans and backups behave identically in
 every edition, so a hidden surface is recoverable and nothing that was recorded becomes unreachable to
-staff. `Event.makerspace` remains the tenancy anchor in all editions. The single-box image
-(`Dockerfile.allinone`) launches every Django process through `scripts/spaceworks_entrypoint.py` with its
-own `--role`, runs unprivileged, keeps `/control/` unproxied, and dies as a unit when any process dies
-(`docker/allinone/run.sh`); the install shape persists in `.spaceworks-layer`.
+staff. `Event.makerspace` remains the tenancy anchor in all editions.
+The single-box shape and `spaceworks-allinone` image were removed on 2026-10-15;
+`.spaceworks-layer=single` is refused by setup, update and the Compose wrapper with
+[switch steps](update-recovery.md#moving-off-a-single-box-install).
 
 **Member ID cards (forward plan phase 5, 2026-09-03).** `makerspaces.MemberCard` is `membership`-module
 behaviour with no module key: its QR is a core `boxes.QrCode` with `target_type=member_card`, so

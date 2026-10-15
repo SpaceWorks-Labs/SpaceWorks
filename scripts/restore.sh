@@ -126,12 +126,7 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   [[ -s "$PRE_DB" ]] \
     || die "Interrupted destructive restore lacks its pre-restore database dump."
   say "Interrupted destructive restore detected; restoring the pre-restore database and objects."
-  if [[ "$APP_SERVICE" == app ]]; then
-    # The single container includes SSE, workers and the scheduler.
-    "${COMPOSE[@]}" stop app >/dev/null
-  else
-    "${COMPOSE[@]}" stop backend worker beat live >/dev/null
-  fi
+  "${COMPOSE[@]}" stop backend worker beat live >/dev/null
   backend_stopped=1
   workers_stopped=1
   ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
@@ -205,12 +200,7 @@ claimed=1
 
 drain_seconds="$(control quiesce "$RESTORE_ID" | tail -n 1)"
 [[ "$drain_seconds" =~ ^[0-9]+$ ]] || die "The app returned an invalid presign drain window."
-if [[ "$APP_SERVICE" == app ]]; then
-  "${COMPOSE[@]}" stop app >/dev/null
-  backend_stopped=1
-else
-  "${COMPOSE[@]}" stop worker beat live >/dev/null
-fi
+"${COMPOSE[@]}" stop worker beat live >/dev/null
 workers_stopped=1
 say "Writers are excluded; draining presigned uploads for ${drain_seconds}s."
 sleep "$drain_seconds"

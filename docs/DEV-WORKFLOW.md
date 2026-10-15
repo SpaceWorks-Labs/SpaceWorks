@@ -187,7 +187,7 @@ eager, broker-less local flow) makes the endpoint answer 503 and the console kee
 
 `frontend/e2e/` drives a REAL stack — never mocks — and pins the Hard Rules through a browser and a real
 presigned upload to object storage. `./scripts/dev.sh up --build`, then `./scripts/dev.sh e2e`
-is the recipe for a laptop and CI. Install host frontend dependencies with `cd frontend && npm ci`
+is the local recipe before pushing. Install host frontend dependencies with `cd frontend && npm ci`
 and Chromium with `npx playwright install --with-deps chromium` first. The script polls the running
 Django :8000 health endpoint and Vite :5000 for up to 60 seconds, runs `seed_e2e --write-json` in
 backend, copies the seed JSON to `frontend/e2e/.seed.json`, and passes its native host path to
@@ -196,9 +196,13 @@ from one IP. Seeding refuses unless `DEBUG` or `E2E_SEED_ALLOWED=1`.
 
 Each seed run creates a fresh random `e2e-<token>` tenant with users and immutable workflow records;
 those tenants accumulate in the persistent dev database, isolated from other data. `dev.sh down -v`
-wipes that database when wanted; CI starts fresh on each runner. Seed identifiers are loaded by
+wipes that database when wanted. Seed identifiers are loaded by
 `frontend/e2e/helpers.ts` from the output of
 `backend/apps/operations/management/commands/seed_e2e.py`.
 
 Unit-level accessibility checks use `frontend/src/test/axe.ts` (jsdom cannot compute
 colour contrast; `e2e/a11y.spec.ts` covers that in Chromium).
+
+Tests run locally only, before pushing: `./scripts/dev.sh test` and `./scripts/dev.sh e2e`.
+Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
+and optionally deploys through the self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.

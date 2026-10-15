@@ -65,7 +65,6 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | Hosting model | one space, several `/m/<slug>` spaces, or a subdomain platform |
 | Website here? | yes, or API only (enter your external HTTPS website origins) |
 | HTTPS | LAN HTTP, automatic Caddy (domain/email), or your existing proxy |
-| How it runs | standard containers; single box is available for a local website over HTTP |
 | File storage | bundled Silo, or your S3 buckets/credentials/public image URL |
 | Edition and initial modules | choose the purpose and a module profile before confirmation |
 | Web address people will type | `localhost` to start (you can change it later) |

@@ -9,12 +9,12 @@ install_staged_host_bundle() {
   local files=(
     setup.sh install.sh setup.ps1
     docker-compose.prod.yml docker-compose.cloud.yml
-    docker/compose.build.yml docker/compose.single.yml docker/compose.tls.yml docker/compose.saas.yml
+    docker/compose.build.yml docker/compose.tls.yml docker/compose.saas.yml
     docker/compose.api-only.yml docker/compose.api-only-edge.yml docker/compose.external-storage.yml
     deploy/Caddyfile deploy/Caddyfile.saas deploy/Caddyfile.saas-install frontend/nginx.conf
     deploy/nginx.api-only.conf deploy/storage.caddy deploy/storage-disabled.caddy
     scripts/compose-deployment.sh scripts/setup-question-input.sh scripts/setup-questions.sh
-    scripts/setup-write-environment.sh scripts/update-rollback.sh
+    scripts/setup-write-environment.sh scripts/setup-proxy-config.sh scripts/update-rollback.sh
     scripts/bundled-database-url.py scripts/cleanup-run-once.sh scripts/configure-compose-wrapper.py
     scripts/host-capability.py scripts/import-backup.sh
     scripts/init-host-orchestration.sh scripts/install-runner.sh scripts/runner-release.py scripts/install-host-bundle.sh
@@ -38,7 +38,7 @@ install_staged_host_bundle() {
     mv -f -- "$temporary" "$destination"
   done
   for relative in scripts/install-auto-update.sh scripts/install-auto-update.ps1 \
-    scripts/update-rollback-host.sh scripts/filter-main-releases.py; do
+    scripts/update-rollback-host.sh scripts/filter-main-releases.py docker/compose.single.yml; do
     if [[ -f "$ROOT/$relative" ]]; then
       mkdir -p "$(dirname "$backup/$relative")"
       mv -- "$ROOT/$relative" "$backup/$relative"

@@ -16,7 +16,7 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "inventory", label: "Inventory", tabs: ["inventory", "needsfix", "stocktake", "transfers", "tobuy"], more: ["categories", "containers", "ledger", "warranty", "qr", "scanner", "bulk"] },
   { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
   { key: "community", label: "Community", tabs: ["members", "events", "bookings"], more: ["cards"] },
-  { key: "insights", label: "Insights", tabs: ["reports", "audit"], more: ["accountability"] },
+  { key: "insights", label: "Insights", tabs: ["reports", "audit", "accountability"] },
   { key: "organizations", label: "Organizations", caption: "Across venues", tabs: ["organizations", "organized", "organization-analytics"] },
   { key: "settings", tabs: ["settings", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
   { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },

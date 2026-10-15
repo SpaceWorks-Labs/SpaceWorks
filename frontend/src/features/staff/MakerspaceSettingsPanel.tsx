@@ -117,7 +117,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
   const disabled = settings.isLoading || updateAccess.isPending || reEnableBlocked;
   const notificationsDisabled = settings.isLoading || updateStaffNotifications.isPending;
   const shared = { makerspace, settings: settings.data, loading: settings.isLoading };
-  const privacy = <SettingsRow label="Superadmin access" helper="Hide this makerspace from platform reports, dashboards, audit and admin lists. Only the makerspace admin can restore access.">
+  const privacy = <SettingsRow label="Superadmin access" helper="Hide this makerspace from platform reports, dashboards, audit and admin lists. Only the makerspace admin can restore access. It does not revoke the superadmin's platform or database access.">
     <div className="grid gap-3">
       <StatusPill label={superadminAccessEnabled ? "On" : "Off"} tone={superadminAccessEnabled ? "success" : "warn"} />
       {reEnableBlocked ? <p className="text-sm text-muted">Re-enable is controlled by the makerspace admin.</p> : null}
@@ -136,7 +136,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     {updateStaffNotifications.error ? <p role="alert" className="text-sm text-danger">{updateStaffNotifications.error.message}</p> : null}
   </SettingsRow>;
   const printRecovery = <SettingsRow label="Public print status recovery" helper="Choose how people recover a public print request when they lose their status link.">
-    <div className="grid gap-3"><StatusPill label={statusLookupLabel(publicPrintStatusLookupPolicy)} />
+    <div className="grid gap-3"><StatusPill label={statusLookupLabel(publicPrintStatusLookupPolicy)} tone={publicPrintStatusLookupPolicy === "token_only" ? "neutral" : "success"} />
       <Field label="Public print status lookup policy"><select className="desk-input w-full" value={publicPrintStatusLookupPolicy}
         disabled={settings.isLoading || updatePrintStatusLookupPolicy.isPending}
         onChange={event => updatePrintStatusLookupPolicy.mutate(event.target.value as Makerspace["public_print_status_lookup_policy"])}>

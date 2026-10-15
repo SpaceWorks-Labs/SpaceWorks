@@ -32,6 +32,7 @@ export function ModuleSettingsRow({ module, pending, onChange }: {
       {module.workflows.length ? <p className="text-sm text-muted">Turns on: {module.workflows.join(", ")}</p> : null}
       {!module.installed && module.pulls_in.length ? <p className="text-sm text-muted">Also installs: {module.pulls_in.join(", ")}</p> : null}
       {reason ? <p id={`module-${module.key}-reason`} className="text-sm text-muted">{reason}</p> : null}
+      {!module.installed && module.required_by.length ? <p className="text-sm text-muted">Required by {module.required_by.join(", ")}</p> : null}
     </div>
   </SettingsRow>;
 }

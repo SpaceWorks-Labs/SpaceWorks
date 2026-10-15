@@ -21,7 +21,8 @@ export function OrganizationMemberships({ organization }: { organization: Organi
         <div className="mt-3 grid gap-3">{memberships.data.results.map(member => <ListRow key={member.id}
           title={member.display_name || member.username}
           identity={{ kind: "avatar", name: member.display_name || member.username, seed: String(member.user_id) }}
-          meta={<>{member.email} · Joined <RelativeTime date={member.created_at} /><br />{[...member.governance_actions, ...member.granted_actions].map(action => action.replace(/_/g, " ")).join(", ") || "No delegated actions"}</>}
+          meta={<>{member.email} · Joined <RelativeTime date={member.created_at} /><br />Governance: {member.governance_actions.map(action => action.replace(/_/g, " ")).join(", ") || "none"}
+            <br />Makerspace actions: {member.granted_actions.map(action => action.replace(/_/g, " ")).join(", ") || "none"}</>}
           right={<StatusPill label={member.status} tone={member.status === "active" ? "success" : "warn"} />} />)}</div>
       ) : null}
       {memberships.data ? (

@@ -29,11 +29,12 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
     }
   }, [organizations.data, selectedId]);
 
+  const canManageMembers = Boolean(detail.data?.governance_actions.includes("manage_organization_members"));
   if (creating) return <OrganizationCreate onClose={() => setCreating(false)} onCreated={id => { setCreating(false); select(id); }} />;
   if (selectedId !== null) return <SettingsLayout
     header={{ title: detail.data?.name ?? "Organization", subtitle: "Your public profile, people and connected spaces.",
       secondary: detail.data?.public_profile_enabled ? { label: "View public page ↗", href: `/o/${detail.data.slug}`, external: true } : undefined,
-      primary: detail.data?.governance_actions.includes("manage_organization_members") ? { label: "Invite someone", onClick: () => document.getElementById("org-invitations")?.scrollIntoView({ behavior: "smooth" }) } : undefined,
+      primary: canManageMembers ? { label: "Invite someone", onClick: () => document.getElementById("org-invitations")?.scrollIntoView({ behavior: "smooth" }) } : undefined,
       overflow: [
         ...(organizations.data && organizations.data.count > 1 ? [{ label: "All organizations", onClick: () => select(null) }] : []),
         ...(isSuperadmin ? [{ label: "Create organization", onClick: () => setCreating(true) }] : []),
@@ -41,14 +42,15 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
     state={{ status: detail.isLoading ? "loading" : detail.isError ? "error" : "ready", error: "Couldn't load organization. Try again.", onRetry: () => { void detail.refetch(); } }}
     tabs={[
       { key: "profile", label: "Profile", href: `?org=${selectedId}&section=profile#org-profile` },
-      { key: "people", label: "People", href: `?org=${selectedId}&section=people#org-people` },
-      { key: "invitations", label: "Invitations", href: `?org=${selectedId}&section=invitations#org-invitations` },
+      ...(canManageMembers ? [{ key: "people", label: "People", href: `?org=${selectedId}&section=people#org-people` },
+        { key: "invitations", label: "Invitations", href: `?org=${selectedId}&section=invitations#org-invitations` }] : []),
       ...(isSuperadmin ? [{ key: "spaces", label: "Spaces", href: `?org=${selectedId}&section=spaces#org-spaces` }] : []),
     ]} activeTab={new URLSearchParams(window.location.search).get("section") ?? "profile"}
     sections={detail.data ? [
       { id: "org-profile", title: "Profile", rows: <OrganizationProfileForm organization={detail.data} /> },
-      { id: "org-people", title: "People", rows: <OrganizationMemberships organization={detail.data} /> },
-      { id: "org-invitations", title: "Invitations", rows: <OrganizationInvitations organization={detail.data} /> },
+      // Without member rights both components render nothing, so their tabs and headings go too.
+      ...(canManageMembers ? [{ id: "org-people", title: "People", rows: <OrganizationMemberships organization={detail.data} /> },
+        { id: "org-invitations", title: "Invitations", rows: <OrganizationInvitations organization={detail.data} /> }] : []),
       ...(isSuperadmin ? [{ id: "org-spaces", title: "Spaces", rows: <OrganizationLinks key={detail.data.id} id={detail.data.id} makerspaces={makerspaces} /> }] : []),
     ] : []} />;
   return <DashboardLayout header={{ eyebrow: "Space Works", title: "Organizations", subtitle: "Your teams, people and connected makerspaces.", primary: isSuperadmin ? { label: "Create organization", onClick: () => setCreating(true) } : undefined }}

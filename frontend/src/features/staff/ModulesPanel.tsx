@@ -52,7 +52,7 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
     state={adminQueryState(modules, "modules")} isEmpty={groups.length === 0}
     empty={{ message: "No modules are available yet. Check the deployment configuration." }}
     sections={[
-      ...groups.map(group => ({ id: `modules-${group.key}`, title: `${group.label} · ${group.installed_count} of ${group.module_count}`,
+      ...groups.map(group => ({ id: `modules-${group.key}`, title: `${group.label} · ${group.always_on ? "Always on" : `${group.installed_count} of ${group.module_count}`}`,
         description: group.description,
         rows: <>{group.modules.map(module => <div key={module.key} className="border-t border-line first:border-0">
           <ModuleSettingsRow module={module} pending={pendingModules.has(module.key)}

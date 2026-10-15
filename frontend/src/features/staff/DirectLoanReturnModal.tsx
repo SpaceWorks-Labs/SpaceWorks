@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { FlowLayout } from "../../components/layouts";
 import QrScanner from "../../components/ui/QrScanner";
 import { EvidenceUpload } from "./panels/EvidenceUpload";
+import { QuantityStepper } from "./QuantityStepper";
 import type { DirectLoan, DirectLoanReturnItem } from "./DirectLoanList";
 import { KitChecklistCapture, useKitChecklist, type KitCount } from "../inventory/KitChecklist";
 
@@ -134,7 +135,7 @@ export function DirectLoanReturnModal({
       next: step < 2 ? { label: "Next", disabled: pending || (step === 0 ? !fullyResolved || !kits.ready : evidenceId === null || (scanRequired && !qrPayload.trim())), onClick: () => setStep(step + 1) }
         : { label: "Submit return", disabled: !canSubmit, pending, pendingLabel: "Returning…", onClick: () => { if (canSubmit) onSubmit(buildResolutions(), kits.counts); } } }}
     error={error ? { size: "inline", tone: "danger", lead: error } : undefined}
-    work={<div className="grid gap-4">
+    work={<div className="@container grid gap-4">
       <div hidden={step !== 1}>
         <div className="grid gap-1 text-sm">
 
@@ -160,9 +161,9 @@ export function DirectLoanReturnModal({
                     {item.assets.map((asset) => (
                       <label
                         key={asset.asset_id}
-                        className="grid gap-1 text-xs text-muted sm:grid-cols-[1fr_auto] sm:items-center"
+                        className="grid min-w-0 gap-1 text-xs text-muted @md:grid-cols-[minmax(0,1fr)_auto] @md:items-center"
                       >
-                        <span className="font-medium text-ink">{asset.asset_tag}</span>
+                        <span className="font-medium text-ink [overflow-wrap:anywhere]">{asset.asset_tag}</span>
                         <select
                           className="desk-input"
                           value={(assetState[item.item_id] ?? {})[asset.asset_id] ?? "returned"}
@@ -182,18 +183,16 @@ export function DirectLoanReturnModal({
                   <p className="text-sm font-medium text-ink">
                     {item.product_name} <span className="text-xs text-muted">({item.remaining_quantity} out)</span>
                   </p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  <div className="mt-2 grid gap-3 @xl:grid-cols-3">
                     {(["returned", "damaged", "missing"] as const).map((key) => (
-                      <label key={key} className="grid gap-1 text-xs text-muted">
+                      <label key={key} className="grid min-w-0 gap-1 text-xs text-muted">
                         <span>{key[0].toUpperCase() + key.slice(1)}</span>
-                        <input
-                          className="desk-input min-w-0"
-                          type="number"
-                          min="0"
+                        <QuantityStepper
+                          label={key}
                           max={item.remaining_quantity}
                           value={(qtyState[item.item_id] ?? { returned: 0, damaged: 0, missing: 0 })[key]}
                           disabled={pending}
-                          onChange={(event) => updateQty(item.item_id, key, event.target.value)}
+                          onValueChange={(value) => updateQty(item.item_id, key, value)}
                         />
                       </label>
                     ))}
@@ -210,9 +209,10 @@ export function DirectLoanReturnModal({
       <div hidden={step !== 1}>
         <label className="grid gap-1 text-sm">
           <span className="font-medium text-ink">Return QR scan{scanRequired ? "" : " (optional)"}</span>
-          <div className="flex flex-col gap-2 md:flex-row">
+          <div className="flex flex-col gap-2 @lg:flex-row">
             <input
-              className="desk-input w-full text-sm"
+              className="desk-input w-full min-w-0"
+              autoComplete="off"
               aria-label="Return QR scan"
               value={qrPayload}
               disabled={pending}

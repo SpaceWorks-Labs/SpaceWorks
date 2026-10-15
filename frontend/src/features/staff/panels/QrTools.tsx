@@ -93,11 +93,12 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
           {batch.isLoading ? <p className="mt-3 text-sm text-muted">Loading batch…</p> : null}
           {batch.isError ? <ErrorText message={batch.error.message} /> : null}
           {!batch.isLoading && !batchItems.length ? <EmptyState message="This batch is empty. Add an item or units to start." /> : null}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Fill by label size, not breakpoint: two labels across a phone, more on wide screens, never one giant QR. */}
+          <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(9rem,100%),1fr))] gap-3">
             {batchItems.map((item) => (
               <article key={item.id} className="rounded-md border border-line bg-bg p-3 text-center">
                 <QrImage qrId={item.qr_code.id} label={item.label_text} />
-                <p className="mt-2 text-sm font-semibold text-ink">{item.label_text}</p>
+                <p className="mt-2 text-sm font-semibold text-ink [overflow-wrap:anywhere]">{item.label_text}</p>
                 <p className="text-xs text-muted">{item.target_type} #{item.target_id}</p>
               </article>
             ))}

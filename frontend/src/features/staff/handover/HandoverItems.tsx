@@ -1,5 +1,6 @@
 import type { HardwareRequest } from "../panels/Queues";
 import type { ReturnRequestValues, AssetReturnOutcome } from "../panels/QueuesModalTypes";
+import { QuantityStepper } from "../QuantityStepper";
 
 export type Resolutions = ReturnRequestValues["resolutions"];
 export const remaining = (item: HardwareRequest["items"][number]) => item.issued_quantity - item.returned_quantity - item.damaged_quantity - item.missing_quantity;
@@ -27,11 +28,16 @@ export function HandoverItems({ row, mode, resolutions, onChange }: { row: Hardw
       return { ...value, assets, returned: assets.filter(asset => asset.outcome === "returned").length, damaged: assets.filter(asset => asset.outcome === "damaged").length, missing: assets.filter(asset => asset.outcome === "missing").length };
     }));
   }
-  return <div className="grid gap-3">{row.items.map(item => <fieldset key={item.id} className="grid gap-2 rounded border border-line p-3">
-    <legend className="px-1 font-semibold">{item.product_name}</legend>
-    {mode === "issue" ? <p>Accepted quantity: {item.accepted_quantity}</p> : item.requires_asset_qr ? (item.issued_assets ?? []).map(asset => <label key={asset.asset_id} className="grid gap-1">{asset.asset_tag}
+  // The list is a size container so the three counts sit side by side only when the work
+  // column (not the viewport) has room for three thumb-sized steppers.
+  return <div className="@container grid gap-3">{row.items.map(item => <fieldset key={item.id} className="grid min-w-0 gap-2 rounded border border-line p-3">
+    <legend className="break-words px-1 font-semibold">{item.product_name}</legend>
+    {mode === "issue" ? <p>Accepted quantity: {item.accepted_quantity}</p> : item.requires_asset_qr ? (item.issued_assets ?? []).map(asset => <label key={asset.asset_id} className="grid min-w-0 gap-1 break-words">{asset.asset_tag}
       <select className="desk-input" value={resolutions.find(value => value.item_id === item.id)?.assets?.find(value => value.asset_id === asset.asset_id)?.outcome ?? "pending"} onChange={event => assetOutcome(item.id, asset.asset_id, event.target.value as AssetReturnOutcome | "pending")}>
         <option value="returned">Returned</option><option value="damaged">Damaged</option><option value="missing">Missing</option><option value="pending">Not returned now</option>
-      </select></label>) : <><p className="text-sm text-muted">Remaining: {remaining(item)}</p>{(["returned", "damaged", "missing"] as const).map(key => <label key={key} className="grid gap-1 capitalize">{key}<input className="desk-input" type="number" min="0" max={remaining(item)} step="1" value={Number.isNaN(resolutions.find(value => value.item_id === item.id)?.[key]) ? "" : resolutions.find(value => value.item_id === item.id)?.[key] ?? 0} onChange={event => quantity(item.id, key, event.target.value)} /></label>)}</>}
+      </select></label>) : <><p className="text-sm text-muted">Remaining: {remaining(item)}</p><div className="grid gap-3 @lg:grid-cols-3">{(["returned", "damaged", "missing"] as const).map(key => {
+        const current = resolutions.find(value => value.item_id === item.id)?.[key];
+        return <label key={key} className="grid min-w-0 gap-1 capitalize">{key}<QuantityStepper label={key} max={remaining(item)} value={Number.isNaN(current) ? "" : current ?? 0} onValueChange={value => quantity(item.id, key, value)} /></label>;
+      })}</div></>}
   </fieldset>)}</div>;
 }

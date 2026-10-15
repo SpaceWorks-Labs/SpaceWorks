@@ -104,10 +104,10 @@ function AssetQrRow({ asset, canEditInventory }: { asset: { id: number; asset_ta
   return (
     <div className="min-w-0 rounded-md border border-line bg-surface p-2">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-        <span className="min-w-0 break-words">{asset.asset_tag}</span><StatusPill label={asset.status.replace(/_/g, " ")} />
+        <span className="min-w-0 [overflow-wrap:anywhere]">{asset.asset_tag}</span><StatusPill label={asset.status.replace(/_/g, " ")} />
         <button type="button" className="desk-button-ghost" disabled={show.isPending} onClick={() => show.mutate()}>{qrId ? "QR shown" : "Show QR"}</button>
         <OverflowMenu label={`Actions for ${asset.asset_tag}`} actions={[{ label: showWarranty ? "Hide warranty" : "Warranty", onClick: () => setShowWarranty(value => !value) }]} />
-        {qrId ? <QrImage qrId={qrId} label={asset.asset_tag} /> : null}
+        {qrId ? <div className="basis-full"><div className="w-40 max-w-full"><QrImage qrId={qrId} label={asset.asset_tag} /></div></div> : null}
         {show.error instanceof Error ? <span className="text-danger">{show.error.message}</span> : null}
       </div>
       {showWarranty ? <div className="mt-2"><WarrantySection hostKind="asset" hostId={asset.id} disabled={!canEditInventory} /></div> : null}

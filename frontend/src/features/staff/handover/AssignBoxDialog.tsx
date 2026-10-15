@@ -39,11 +39,11 @@ export function AssignBoxDialog({ row, onClose }: DialogProps) {
           />
         </label>
         <DialogError error={mutation.error} />
-        <div className="desk-actions flex flex-wrap justify-end gap-2">
+        <div className="desk-actions sticky bottom-0 -mx-5 -mb-5 flex flex-wrap justify-end gap-2 border-t border-line bg-panel px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button className="desk-button" type="button" onClick={onClose}>
             Cancel
           </button>
-          <button className="desk-button" type="submit" disabled={!boxCode.trim() || mutation.isPending}>
+          <button className="desk-button-primary" type="submit" disabled={!boxCode.trim() || mutation.isPending}>
             Assign box
           </button>
         </div>

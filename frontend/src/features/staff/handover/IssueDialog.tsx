@@ -96,11 +96,11 @@ export function IssueDialog({ row, makerspace, onClose }: DialogProps) {
         ) : null}
         <DialogError error={mutation.error} />
         <KitChecklistCapture checklist={kits} />
-        <div className="desk-actions flex flex-wrap justify-end gap-2">
+        <div className="desk-actions sticky bottom-0 -mx-5 -mb-5 flex flex-wrap justify-end gap-2 border-t border-line bg-panel px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button className="desk-button" type="button" onClick={onClose}>
             Cancel
           </button>
-          <button className="desk-button" type="submit" disabled={!canSubmit || mutation.isPending}>
+          <button className="desk-button-primary" type="submit" disabled={!canSubmit || mutation.isPending}>
             Issue
           </button>
         </div>

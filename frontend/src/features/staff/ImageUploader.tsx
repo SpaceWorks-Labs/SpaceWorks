@@ -203,7 +203,7 @@ export function ImageUploader({
           )}
         </div>
         <div className="min-w-0 max-w-full space-y-1">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <input
               id={inputId}
               ref={inputRef}
@@ -226,7 +226,7 @@ export function ImageUploader({
           {preview ? (
             <button
               type="button"
-              className="desk-button-ghost px-0 text-xs uppercase text-danger"
+              className="desk-button-ghost px-2 text-xs uppercase text-danger"
               disabled={disabled || status === "uploading"}
               onClick={clearImage}
             >

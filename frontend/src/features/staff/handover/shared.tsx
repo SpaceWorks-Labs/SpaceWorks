@@ -1,6 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 
 import { issueErrorMessage } from "../issueErrors";
+import { QuantityStepper } from "../QuantityStepper";
 import type { HandoverRequest, HandoverRequestItem, ReturnField, ReturnValues } from "./types";
 
 export function submit(event: FormEvent<HTMLFormElement>, action: () => void) {
@@ -24,16 +25,9 @@ export function QuantityInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-1">
+    <label className="grid min-w-0 gap-1">
       <span className="text-xs font-medium text-muted">{label}</span>
-      <input
-        className="desk-input"
-        type="number"
-        min="0"
-        step="1"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      <QuantityStepper label={label.toLowerCase()} value={value} onValueChange={onChange} />
     </label>
   );
 }

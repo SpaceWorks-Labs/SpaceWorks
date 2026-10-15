@@ -3,6 +3,7 @@ import { Callout, ErrorText, Field, OverflowMenu } from "../../../components/ui"
 import { inventoryQueryState } from "./inventoryPresentation";
 import { useStockTransfer, labelForContainer } from "./useStockTransfer";
 import { TransferTable } from "./StockTransferTable";
+import { QuantityStepper } from "../QuantityStepper";
 import type { Makerspace } from "./shared";
 export type { Transfer } from "./useStockTransfer";
 export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canEditInventory = false }: {
@@ -32,8 +33,8 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
       leaveGuard={reason.trim() || lineRows.some(line => line.productId) ? "Leave this transfer? Your draft will stay here until you start another transfer." : undefined}
       footer={{ back: step === "lines" ? { label: "Back", onClick: () => setStep("from") } : undefined,
         next: step === "from" ? { label: "Next", onClick: () => setStep("lines") } : { label: "Move stock", pending: create.isPending, pendingLabel: "Moving…", onClick: submit } }}
-      work={<div className="grid gap-4">{step === "from" ? <>
-            <div className="grid gap-3 lg:grid-cols-2">
+      work={<div className="@container grid gap-4">{step === "from" ? <>
+            <div className="grid gap-3 @xl:grid-cols-2">
               {isSuperadmin ? (
                 <>
                   <Field label="Source makerspace">
@@ -71,18 +72,18 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
       </> : <>
 
             <div className="mt-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                 <h3 className="title-section">Transfer lines</h3>
                 <button className="desk-button-ghost" type="button" onClick={addLine}>Add line</button>
               </div>
               <div className="grid gap-2">
                 {lineRows.map((line, index) => (
-                  <div key={line.key} className="grid gap-2 md:grid-cols-[1fr_120px_auto]">
+                  <div key={line.key} className="grid gap-2 @xl:grid-cols-[minmax(0,1fr)_auto_auto] @xl:items-end">
                     <Field label={`Product for transfer line ${index + 1}`}><select className="desk-input" value={line.productId} disabled={products.isLoading} onChange={(event) => updateLine(line.key, { productId: event.target.value })}>
                       <option value="">Product</option>
                       {products.data?.results?.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.available_quantity} available)</option>)}
                     </select></Field>
-                    <Field label={`Quantity for transfer line ${index + 1}`}><input className="desk-input" min={1} inputMode="numeric" type="number" value={line.quantity} onChange={(event) => updateLine(line.key, { quantity: event.target.value })} /></Field>
+                    <Field label={`Quantity for transfer line ${index + 1}`}><QuantityStepper label="quantity" min={1} value={line.quantity} onValueChange={(value) => updateLine(line.key, { quantity: value })} /></Field>
                     <OverflowMenu label={`Actions for line ${index + 1}`} actions={[{ label: "Remove line", onClick: () => removeLine(line.key) }]} />
                   </div>
                 ))}

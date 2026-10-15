@@ -64,10 +64,12 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
             <Field label="Category"><select className="desk-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="">Uncategorized</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
             <Field label="Container"><select className="desk-input" value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })}><option value="">No container</option>{containers.map((container) => <option key={container.id} value={container.id}>{container.label}</option>)}</select></Field>
           </div>
-          <div className="grid gap-2 sm:grid-cols-4">
+          <div className="flex flex-wrap gap-x-6">
             <Check label="Public" checked={form.isPublic} onChange={(value) => setForm({ ...form, isPublic: value })} />
             <Check label="Show count" checked={form.showPublicCount} onChange={(value) => setForm({ ...form, showPublicCount: value })} />
             <Check label="Self checkout" checked={form.publicSelfCheckoutEnabled} onChange={(value) => setForm({ ...form, publicSelfCheckoutEnabled: value })} />
+          </div>
+          <div className="grid gap-2">
             <Field label="Visibility"><select className="desk-input" value={form.publicAvailabilityMode} onChange={(e) => setForm({ ...form, publicAvailabilityMode: e.target.value as HardwareForm["publicAvailabilityMode"] })}><option value="status_only">Status only</option><option value="exact_count">Exact count</option><option value="hidden">Hidden</option></select></Field>
           </div>
         </>

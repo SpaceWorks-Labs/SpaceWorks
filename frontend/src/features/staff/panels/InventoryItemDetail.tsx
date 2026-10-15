@@ -33,7 +33,7 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
         {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
         <ImageUploader endpoint={`/admin/inventory/${product.id}/image`} currentUrl={product.image_url} label="Item photo" onChanged={invalidate} />
       </InventoryItemFields>{dirty ? <SettingsActions onDiscard={() => setForm(original)} onSave={onSave} pending={pending} disabled={!form.name.trim()} /> : null}</> : null}
-      {active === "stock" ? <div className="grid gap-6"><div className="grid gap-3 sm:grid-cols-2">{[
+      {active === "stock" ? <div className="@container grid gap-6"><div className="grid grid-cols-2 gap-3 @xl:grid-cols-3">{[
         ["Total", product.total_quantity], ["Available", product.available_quantity], ["Issued", product.issued_quantity], ["Damaged", product.damaged_quantity], ["Lost", product.lost_quantity],
       ].map(([label, value]) => <StatCard key={label} label={String(label)} value={value} />)}</div>
         <QuantityAdjust product={product} form={adjustForm} setForm={setAdjustForm} pending={adjustPending} error={adjustError} onSubmit={onAdjust} />

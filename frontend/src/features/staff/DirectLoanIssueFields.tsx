@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { EvidenceUpload } from "./panels/EvidenceUpload";
+import { QuantityStepper } from "./QuantityStepper";
 import { WalkInMemberForm } from "./WalkInMemberForm";
 import type {
   ContainerOption,
@@ -143,8 +144,8 @@ export function DirectLoanItemLines({
   onRemove: (key: number) => void;
 }) {
   return (
-    <div className="mt-4">
-      <div className="mb-2 flex items-center justify-between gap-3">
+    <div className="@container mt-4">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h3 className="title-section">Items</h3>
         <button className="desk-button" type="button" onClick={onAdd}>Add item</button>
       </div>
@@ -153,7 +154,7 @@ export function DirectLoanItemLines({
           const selectedLineProduct = productById.get(Number(line.productId));
           const selectedIndividual = selectedLineProduct?.tracking_mode === "individual";
           return (
-            <div key={line.key} className="grid gap-2 md:grid-cols-[1fr_120px_auto]">
+            <div key={line.key} className="grid gap-2 @xl:grid-cols-[minmax(0,1fr)_auto_auto] @xl:items-center">
               <select aria-label="Product" className="desk-input" value={line.productId} disabled={productsLoading} onChange={(e) => onUpdate(line.key, { productId: e.target.value })}>
                 <option value="">Inventory item</option>
                 {activeProducts.map((product) => (
@@ -163,9 +164,9 @@ export function DirectLoanItemLines({
                   </option>
                 ))}
               </select>
-              <input aria-label="Quantity" className="desk-input" min={1} inputMode="numeric" type="number" value={line.quantity} disabled={selectedIndividual} onChange={(e) => onUpdate(line.key, { quantity: e.target.value })} />
+              <QuantityStepper aria-label="Quantity" label="quantity" min={1} value={line.quantity} disabled={selectedIndividual} onValueChange={(value) => onUpdate(line.key, { quantity: value })} />
               <button className="desk-button" type="button" onClick={() => onRemove(line.key)}>Remove</button>
-              {selectedLineProduct ? <p className="text-xs text-muted md:col-span-3">{selectedLineProduct.tracking_mode}{selectedIndividual ? " | scan unit QR" : ""}</p> : null}
+              {selectedLineProduct ? <p className="text-xs text-muted @xl:col-span-3">{selectedLineProduct.tracking_mode}{selectedIndividual ? " | scan unit QR" : ""}</p> : null}
             </div>
           );
         })}
@@ -190,14 +191,14 @@ export function DirectLoanQrSection({
   return (
     <>
       <div className="mt-4">
-        <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
           <h3 className="title-section">QR payloads</h3>
           <button className="desk-button" type="button" onClick={onOpenScanner}>Scan QR</button>
         </div>
         {scanned.length ? (
           <div className="mb-3 flex flex-wrap gap-2">
             {scanned.map((item) => (
-              <span key={item.payload} className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1 text-sm text-ink">
+              <span key={item.payload} className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-md border border-line bg-surface px-3 py-1 text-sm text-ink [overflow-wrap:anywhere]">
                 {item.label}
                 <button className="desk-button-ghost px-2 text-danger" type="button" onClick={() => onRemoveScanned(item.payload)}>Remove</button>
               </span>
@@ -207,7 +208,7 @@ export function DirectLoanQrSection({
       </div>
       <textarea
         aria-label="QR payloads"
-        className="desk-input mt-3 h-24 w-full text-sm"
+        className="desk-input mt-3 h-24 w-full"
         placeholder="Optional QR payloads, one per line"
         value={qrPayloads}
         onChange={(e) => onQrPayloadsChange(e.target.value)}
@@ -232,7 +233,7 @@ export function DirectLoanIssueEvidence({
   onRemarkChange: (value: string) => void;
 }) {
   return (
-    <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr]">
+    <div className="@container mt-4"><div className="grid gap-3 @2xl:grid-cols-2">
       <EvidenceUpload
         key={uploadKey}
         makerspaceId={makerspaceId}
@@ -250,6 +251,6 @@ export function DirectLoanIssueEvidence({
           onChange={(event) => onRemarkChange(event.target.value)}
         />
       </label>
-    </div>
+    </div></div>
   );
 }

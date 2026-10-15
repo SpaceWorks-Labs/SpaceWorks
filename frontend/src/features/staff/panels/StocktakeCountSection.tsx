@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import { DataTable, EmptyState, ErrorBlock, ScanWorkbench, Skeleton, StatRow, StatusPill } from "../../../components/ui";
 import { type Makerspace, useStaffGet } from "./shared";
+import { QuantityStepper } from "../QuantityStepper";
 
 type StocktakeRow = { id: number; status: string; notes: string; container: number | null };
 type StocktakeLine = {
@@ -109,8 +110,9 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
     <div className="mt-3 rounded-md border border-line bg-bg p-3">
       {detail.isLoading ? <Skeleton className="h-32" /> : detail.error ? <ErrorBlock error={detail.error} resource="the count" onRetry={() => { void detail.refetch(); }} /> : null}
       {editable ? <ScanWorkbench searchLabel="QR payload" onFind={handleScan} onScan={handleScan}
-        controls={<div className="grid gap-3">
-      <div className="grid gap-2 md:grid-cols-[120px_1fr_1fr_120px_140px] md:items-end">
+        controls={<div className="@container grid gap-3">
+      {/* Sized by the workbench column, not the viewport: beside the camera at xl the column is half width. */}
+      <div className="grid gap-3 @lg:grid-cols-2 @4xl:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1fr)_12rem_9rem] @lg:items-end">
         <label className="eyebrow grid gap-1">
           <span>Count type</span>
           <select className="desk-input" value={mode} onChange={(event) => { setMode(event.target.value as "product" | "asset"); setAssetId(""); }}>
@@ -144,7 +146,7 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
         )}
         <label className="eyebrow grid gap-1">
           <span>Counted</span>
-          <input className="desk-input" type="number" min="0" value={counted} onChange={(event) => setCounted(event.target.value)} />
+          <QuantityStepper label="counted" value={counted} onValueChange={setCounted} />
         </label>
         <label className="eyebrow grid gap-1">
           <span>Condition</span>
@@ -166,8 +168,8 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
         <span>Line notes</span>
         <input className="desk-input" value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
-      <div className="desk-actions mt-2 flex justify-between gap-2">
-        <button className="desk-button-primary" disabled={!canSave || record.isPending || readOnly} onClick={() => record.mutate()}>{record.isPending ? "Saving…" : "Record count"}</button>
+      <div className="desk-actions mt-2 flex flex-wrap gap-2">
+        <button className="desk-button-primary w-full @md:w-auto" disabled={!canSave || record.isPending || readOnly} onClick={() => record.mutate()}>{record.isPending ? "Saving…" : "Record count"}</button>
       </div>
         </div>} /> : null}
       {scanNote ? <p className={`mt-2 text-sm ${scanNote.startsWith("Scanned ") ? "text-muted" : "text-danger"}`}>{scanNote}</p> : null}

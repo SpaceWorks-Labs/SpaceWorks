@@ -71920,7 +71920,49 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PublicBookingResponse"
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "confirmed"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "confirmed"
+                          ]
+                        },
+                        "public_token": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "confirmation_available": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "public_token",
+                        "confirmation_available"
+                      ]
+                    }
+                  ]
                 }
               }
             },
@@ -72865,6 +72907,899 @@
               }
             },
             "description": "Makerspace was not found."
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/confirmation/": {
+      "get": {
+        "operationId": "public_my_bookings_confirmation_get",
+        "tags": [
+          "Member bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "makerspace_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "public_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private, no-store; Referrer-Policy no-referrer. Owner only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingConfirmation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active owner or resource check_in authority required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature disabled, booking unavailable, or malformed/unknown/foreign credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/confirmation.png": {
+      "get": {
+        "operationId": "public_my_bookings_confirmation_png_get",
+        "tags": [
+          "Member bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "makerspace_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "public_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private, no-store; Referrer-Policy no-referrer. Owner only.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active owner or resource check_in authority required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature disabled, booking unavailable, or malformed/unknown/foreign credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/calendar.ics": {
+      "get": {
+        "operationId": "public_my_bookings_calendar_ics_get",
+        "tags": [
+          "Member bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "makerspace_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "public_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private, no-store; Referrer-Policy no-referrer. Owner only.",
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active owner or resource check_in authority required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature disabled, booking unavailable, or malformed/unknown/foreign credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/rotate-checkin/": {
+      "post": {
+        "operationId": "public_my_bookings_rotate_checkin_post",
+        "tags": [
+          "Member bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "makerspace_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "public_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private, no-store; Referrer-Policy no-referrer. Owner only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingConfirmation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active owner or resource check_in authority required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature disabled, booking unavailable, or malformed/unknown/foreign credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/arrival/resolve/": {
+      "post": {
+        "operationId": "admin_spaces_arrival_resolve_",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCredential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Answer-free private scanner projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingArrival"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active owner or resource check_in authority required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature disabled, booking unavailable, or malformed/unknown/foreign credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/arrival/confirm/": {
+      "post": {
+        "operationId": "admin_spaces_arrival_confirm_",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCredential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Answer-free private scanner projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingArrival"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active owner or resource check_in authority required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature disabled, booking unavailable, or malformed/unknown/foreign credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/spaces/{id}/arrival/{booking_id}/reverse/": {
+      "post": {
+        "operationId": "admin_spaces_arrival_booking_id_reverse_",
+        "tags": [
+          "Admin bookings"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Answer-free private scanner projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingArrival"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active owner or resource check_in authority required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature disabled, booking unavailable, or malformed/unknown/foreign credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lifecycle, arrival or time-window conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Tenant frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Write gate unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -75997,6 +76932,10 @@
               "type": "string"
             },
             "readOnly": true
+          },
+          "checkin_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -76008,6 +76947,7 @@
           "can_manage_grants",
           "cancellation_cutoff_hours",
           "capacity",
+          "checkin_enabled",
           "clone_enabled",
           "created_at",
           "created_by_id",
@@ -76175,16 +77115,37 @@
       "BookingAdmin": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "readOnly": true
-          },
-          "public_token": {
+          "arrived_at": {
             "type": "string",
-            "format": "uuid",
+            "format": "date-time",
+            "readOnly": true,
+            "nullable": true
+          },
+          "cancelled_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
             "readOnly": true
           },
-          "space_id": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "custom_answers": {
+            "readOnly": true,
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "readOnly": true
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "id": {
             "type": "integer",
             "readOnly": true
           },
@@ -76192,20 +77153,39 @@
             "type": "string",
             "readOnly": true
           },
-          "email": {
+          "note": {
             "type": "string",
+            "readOnly": true
+          },
+          "payment": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffPaymentSummary"
+              }
+            ],
+            "nullable": true,
             "readOnly": true
           },
           "phone": {
             "type": "string",
             "readOnly": true
           },
-          "starts_at": {
+          "public_token": {
             "type": "string",
-            "format": "date-time",
+            "format": "uuid",
             "readOnly": true
           },
-          "ends_at": {
+          "restore_until": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "space_id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "starts_at": {
             "type": "string",
             "format": "date-time",
             "readOnly": true
@@ -76218,46 +77198,13 @@
             ],
             "readOnly": true
           },
-          "note": {
-            "type": "string",
-            "readOnly": true
-          },
-          "custom_answers": {
-            "readOnly": true,
-            "nullable": true
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "readOnly": true
-          },
-          "payment": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffPaymentSummary"
-              }
-            ],
-            "nullable": true,
-            "readOnly": true
-          },
-          "cancelled_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "readOnly": true
-          },
           "status_before_cancel": {
             "type": "string",
-            "readOnly": true
-          },
-          "restore_until": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
             "readOnly": true
           }
         },
         "required": [
+          "arrived_at",
           "cancelled_at",
           "created_at",
           "custom_answers",
@@ -76276,6 +77223,138 @@
           "status_before_cancel"
         ]
       },
+      "BookingAnswerReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "report_key": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BookingReportMeta"
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingAnswerReportRow"
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "report_key",
+          "rows",
+          "typed_rows"
+        ]
+      },
+      "BookingAnswerReportRow": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "integer"
+          },
+          "space_id": {
+            "type": "integer"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "string",
+            "description": "JSON of the stored custom-answer snapshot; null when absent."
+          }
+        },
+        "required": [
+          "answers",
+          "booking_id",
+          "ends_at",
+          "space_id",
+          "starts_at",
+          "status"
+        ]
+      },
+      "BookingArrival": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "integer"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "space_name": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "rejected",
+              "cancelled",
+              "completed",
+              "no_show"
+            ]
+          },
+          "arrived_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "can_arrive": {
+            "type": "boolean"
+          },
+          "can_reverse": {
+            "type": "boolean"
+          },
+          "waiver_state": {
+            "type": "string",
+            "enum": [
+              "not_required",
+              "current",
+              "missing"
+            ]
+          }
+        },
+        "required": [
+          "arrived_at",
+          "booking_id",
+          "can_arrive",
+          "can_reverse",
+          "display_name",
+          "ends_at",
+          "space_name",
+          "starts_at",
+          "status",
+          "timezone",
+          "waiver_state"
+        ]
+      },
       "BookingCloneInput": {
         "type": "object",
         "properties": {
@@ -76284,6 +77363,95 @@
             "default": false
           }
         }
+      },
+      "BookingConfirmation": {
+        "type": "object",
+        "properties": {
+          "public_token": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "space_name": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "rejected",
+              "cancelled",
+              "completed",
+              "no_show"
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "arrived_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "can_cancel": {
+            "type": "boolean"
+          },
+          "cancellation_cutoff_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "qr_value": {
+            "type": "string",
+            "nullable": true
+          },
+          "google_calendar_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "arrived_at",
+          "can_cancel",
+          "cancellation_cutoff_at",
+          "description",
+          "ends_at",
+          "google_calendar_url",
+          "location",
+          "public_token",
+          "qr_value",
+          "space_name",
+          "starts_at",
+          "status",
+          "timezone"
+        ]
+      },
+      "BookingCredential": {
+        "type": "object",
+        "properties": {
+          "credential": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "credential"
+        ],
+        "additionalProperties": false
       },
       "BookingEligibleMember": {
         "type": "object",
@@ -76403,6 +77571,29 @@
           "results"
         ]
       },
+      "BookingReportMeta": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "grain": {
+            "type": "string"
+          },
+          "rollup_through": {
+            "type": "string",
+            "nullable": true
+          },
+          "arrival_counts_available": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "grain",
+          "rollup_through",
+          "source"
+        ]
+      },
       "BookingReschedule": {
         "type": "object",
         "properties": {
@@ -76418,6 +77609,203 @@
         "required": [
           "ends_at",
           "starts_at"
+        ]
+      },
+      "BookingReservationReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "report_key": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BookingReportMeta"
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingReservationReportRow"
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "report_key",
+          "rows",
+          "typed_rows"
+        ]
+      },
+      "BookingReservationReportRow": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "integer"
+          },
+          "space_id": {
+            "type": "integer"
+          },
+          "space_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "booking_id",
+          "created_at",
+          "email",
+          "ends_at",
+          "name",
+          "phone",
+          "space_id",
+          "space_name",
+          "starts_at",
+          "status"
+        ]
+      },
+      "BookingResourceUtilizationReport": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "report_key": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BookingReportMeta"
+          },
+          "typed_rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingResourceUtilizationRow"
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "report_key",
+          "rows",
+          "typed_rows"
+        ]
+      },
+      "BookingResourceUtilizationRow": {
+        "type": "object",
+        "properties": {
+          "makerspace_id": {
+            "type": "integer"
+          },
+          "space_id": {
+            "type": "integer"
+          },
+          "space_name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "booked": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "no_show": {
+            "type": "integer"
+          },
+          "cancelled": {
+            "type": "integer"
+          },
+          "upcoming": {
+            "type": "integer"
+          },
+          "reserved_hours": {
+            "type": "string",
+            "format": "decimal",
+            "pattern": "^-?\\d{0,18}(?:\\.\\d{0,2})?$"
+          },
+          "completed_hours": {
+            "type": "string",
+            "format": "decimal",
+            "pattern": "^-?\\d{0,18}(?:\\.\\d{0,2})?$"
+          },
+          "window_hours": {
+            "type": "string",
+            "format": "decimal",
+            "pattern": "^-?\\d{0,18}(?:\\.\\d{0,2})?$",
+            "nullable": true
+          },
+          "reservation_utilization_percent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "no_show_rate_percent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "arrived_reservations": {
+            "type": "integer",
+            "description": "Reservations with a current, unreversed arrival."
+          },
+          "confirmed_without_recorded_arrival": {
+            "type": "integer",
+            "description": "Confirmed reservations with no current arrival; not a no-show count."
+          }
+        },
+        "required": [
+          "arrived_reservations",
+          "booked",
+          "cancelled",
+          "completed",
+          "completed_hours",
+          "confirmed_without_recorded_arrival",
+          "is_active",
+          "kind",
+          "no_show",
+          "no_show_rate_percent",
+          "reservation_utilization_percent",
+          "reserved_hours",
+          "space_id",
+          "space_name",
+          "upcoming",
+          "window_hours"
         ]
       },
       "BookingStaffGrant": {
@@ -90681,11 +92069,16 @@
           "can_cancel": {
             "type": "boolean",
             "readOnly": true
+          },
+          "confirmation_available": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
           "can_cancel",
           "cancellation_cutoff_at",
+          "confirmation_available",
           "ends_at",
           "public_token",
           "space_name",
@@ -102694,10 +104087,20 @@
               }
             ],
             "readOnly": true
+          },
+          "public_token": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "confirmation_available": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
-          "status"
+          "status",
+          "confirmation_available"
         ]
       },
       "PublicBookingResponseStatusEnum": {
@@ -113217,203 +114620,6 @@
           "id",
           "kind",
           "name"
-        ]
-      },
-      "BookingReservationReportRow": {
-        "type": "object",
-        "properties": {
-          "booking_id": {
-            "type": "integer"
-          },
-          "space_id": {
-            "type": "integer"
-          },
-          "space_name": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "starts_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "ends_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "booking_id",
-          "created_at",
-          "email",
-          "ends_at",
-          "name",
-          "phone",
-          "space_id",
-          "space_name",
-          "starts_at",
-          "status"
-        ]
-      },
-      "BookingAnswerReportRow": {
-        "type": "object",
-        "properties": {
-          "booking_id": {
-            "type": "integer"
-          },
-          "space_id": {
-            "type": "integer"
-          },
-          "starts_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "ends_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "string"
-          },
-          "answers": {
-            "type": "string",
-            "description": "JSON of the stored custom-answer snapshot; null when absent."
-          }
-        },
-        "required": [
-          "answers",
-          "booking_id",
-          "ends_at",
-          "space_id",
-          "starts_at",
-          "status"
-        ]
-      },
-      "BookingReportMeta": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "type": "string"
-          },
-          "grain": {
-            "type": "string"
-          },
-          "rollup_through": {
-            "type": "string",
-            "nullable": true
-          },
-          "arrival_counts_available": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "grain",
-          "rollup_through",
-          "source"
-        ]
-      },
-      "BookingResourceUtilizationReport": {
-        "type": "object",
-        "properties": {
-          "rows": {
-            "type": "array",
-            "items": {
-              "type": "array",
-              "items": {}
-            }
-          },
-          "report_key": {
-            "type": "string"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/BookingReportMeta"
-          },
-          "typed_rows": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BookingUtilizationRow"
-            }
-          }
-        },
-        "required": [
-          "meta",
-          "report_key",
-          "rows",
-          "typed_rows"
-        ]
-      },
-      "BookingReservationReport": {
-        "type": "object",
-        "properties": {
-          "rows": {
-            "type": "array",
-            "items": {
-              "type": "array",
-              "items": {}
-            }
-          },
-          "report_key": {
-            "type": "string"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/BookingReportMeta"
-          },
-          "typed_rows": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BookingReservationReportRow"
-            }
-          }
-        },
-        "required": [
-          "meta",
-          "report_key",
-          "rows",
-          "typed_rows"
-        ]
-      },
-      "BookingAnswerReport": {
-        "type": "object",
-        "properties": {
-          "rows": {
-            "type": "array",
-            "items": {
-              "type": "array",
-              "items": {}
-            }
-          },
-          "report_key": {
-            "type": "string"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/BookingReportMeta"
-          },
-          "typed_rows": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BookingAnswerReportRow"
-            }
-          }
-        },
-        "required": [
-          "meta",
-          "report_key",
-          "rows",
-          "typed_rows"
         ]
       }
     },

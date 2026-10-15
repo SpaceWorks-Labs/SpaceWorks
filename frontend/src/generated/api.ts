@@ -535,6 +535,9 @@ export const openApiPaths = [
   "/api/v1/admin/search",
   "/api/v1/admin/space-pack-profiles",
   "/api/v1/admin/spaces/{id}/",
+  "/api/v1/admin/spaces/{id}/arrival/confirm/",
+  "/api/v1/admin/spaces/{id}/arrival/resolve/",
+  "/api/v1/admin/spaces/{id}/arrival/{booking_id}/reverse/",
   "/api/v1/admin/spaces/{id}/booking-rules/",
   "/api/v1/admin/spaces/{id}/bookings/",
   "/api/v1/admin/spaces/{id}/clone/",
@@ -746,8 +749,12 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/membership-requests",
   "/api/v1/public/{makerspace_slug}/my-bookings/",
   "/api/v1/public/{makerspace_slug}/my-bookings/calendar/",
+  "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/calendar.ics",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/cancel/",
+  "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/confirmation.png",
+  "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/confirmation/",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/reschedule/",
+  "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/rotate-checkin/",
   "/api/v1/public/{makerspace_slug}/presence-sessions",
   "/api/v1/public/{makerspace_slug}/presence-sessions/current",
   "/api/v1/public/{makerspace_slug}/presence-sessions/current/end",
@@ -1496,6 +1503,7 @@ export type BookableSpaceAdmin = {
   "staff_tools_enabled": boolean;
   "can_copy_booking_rules": boolean;
   "report_features": Array<string>;
+  "checkin_enabled": boolean;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1532,22 +1540,23 @@ export type BookableSpaceWrite = {
 };
 
 export type BookingAdmin = {
-  "id": number;
-  "public_token": string;
-  "space_id": number;
-  "name": string;
-  "email": string;
-  "phone": string;
-  "starts_at": string;
-  "ends_at": string;
-  "status": Status2caEnum;
-  "note": string;
-  "custom_answers": unknown | null;
-  "created_at": string;
-  "payment": StaffPaymentSummary | null;
+  "arrived_at": string | null;
   "cancelled_at": string | null;
-  "status_before_cancel": string;
+  "created_at": string;
+  "custom_answers": unknown | null;
+  "email": string;
+  "ends_at": string;
+  "id": number;
+  "name": string;
+  "note": string;
+  "payment": StaffPaymentSummary | null;
+  "phone": string;
+  "public_token": string;
   "restore_until": string | null;
+  "space_id": number;
+  "starts_at": string;
+  "status": Status2caEnum;
+  "status_before_cancel": string;
 };
 
 export type BookingAnswerReport = {
@@ -1566,8 +1575,42 @@ export type BookingAnswerReportRow = {
   "answers": string;
 };
 
+export type BookingArrival = {
+  "booking_id": number;
+  "display_name": string;
+  "space_name": string;
+  "timezone": string;
+  "starts_at": string;
+  "ends_at": string;
+  "status": "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
+  "arrived_at": string | null;
+  "can_arrive": boolean;
+  "can_reverse": boolean;
+  "waiver_state": "not_required" | "current" | "missing";
+};
+
 export type BookingCloneInput = {
   "copy_booking_rules"?: boolean;
+};
+
+export type BookingConfirmation = {
+  "public_token": string;
+  "space_name": string;
+  "timezone": string;
+  "starts_at": string;
+  "ends_at": string;
+  "status": "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
+  "location": string;
+  "description": string;
+  "arrived_at": string | null;
+  "can_cancel": boolean;
+  "cancellation_cutoff_at": string;
+  "qr_value": string | null;
+  "google_calendar_url": string;
+};
+
+export type BookingCredential = {
+  "credential": string;
 };
 
 export type BookingEligibleMember = {
@@ -1637,7 +1680,27 @@ export type BookingResourceUtilizationReport = {
   "rows": Array<Array<unknown>>;
   "report_key": string;
   "meta": BookingReportMeta;
-  "typed_rows": Array<BookingUtilizationRow>;
+  "typed_rows": Array<BookingResourceUtilizationRow>;
+};
+
+export type BookingResourceUtilizationRow = {
+  "makerspace_id"?: number;
+  "space_id": number;
+  "space_name": string;
+  "kind": string;
+  "is_active": boolean;
+  "booked": number;
+  "completed": number;
+  "no_show": number;
+  "cancelled": number;
+  "upcoming": number;
+  "reserved_hours": string;
+  "completed_hours": string;
+  "window_hours": string | null;
+  "reservation_utilization_percent": number | null;
+  "no_show_rate_percent": number | null;
+  "arrived_reservations": number;
+  "confirmed_without_recorded_arrival": number;
 };
 
 export type BookingStaffGrant = {
@@ -4954,6 +5017,7 @@ export type MemberBooking = {
   "status": Status2caEnum;
   "cancellation_cutoff_at": string;
   "can_cancel": boolean;
+  "confirmation_available": boolean;
 };
 
 export type MemberBookingList = {
@@ -7921,6 +7985,8 @@ export type PublicBookingInput = {
 
 export type PublicBookingResponse = {
   "status": PublicBookingResponseStatusEnum;
+  "public_token"?: string;
+  "confirmation_available": boolean;
 };
 
 export type PublicBookingResponseStatusEnum = "pending" | "confirmed";

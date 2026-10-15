@@ -6,8 +6,12 @@ import { customAnswerErrors, validateCustomAnswers, type CustomAnswers } from ".
 import { StructuredApiError } from "../../lib/api";
 
 export function canMoveBooking(booking: Booking, cutoffHours = 0, now = Date.now()) {
-  return ["pending", "confirmed"].includes(booking.status)
+  return canEditBooking(booking)
     && new Date(booking.starts_at).getTime() - cutoffHours * 3600000 > now;
+}
+
+function canEditBooking(booking: Booking) {
+  return ["pending", "confirmed"].includes(booking.status) && !booking.arrived_at;
 }
 
 export function BookingReservationEditor({ space, booking }: { space: BookableSpace; booking: Booking }) {
@@ -27,6 +31,7 @@ export function BookingReservationEditor({ space, booking }: { space: BookableSp
   const [errors, setErrors] = useState<Record<string, string>>({});
   const edit = useEditBooking(space.makerspace_id, space.id, booking.id);
   const changeMode = (mode: "details" | "time") => { setOpen(mode); setErrors({}); edit.reset(); };
+  if (!canEditBooking(booking)) return null;
   return <div className="mt-3 grid gap-2">
     <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" onClick={() => changeMode("details")}>Edit note and answers</button>
       {canMoveBooking(booking, space.cancellation_cutoff_hours) ? <button className="desk-button" type="button" onClick={() => changeMode("time")}>Edit booking time</button> : null}</div>

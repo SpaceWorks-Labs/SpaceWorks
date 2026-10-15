@@ -43,6 +43,7 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
             'starts_at',
             'ends_at',
             'status',
+            'arrived_at',
             'note',
             'custom_answers',
             'cancelled_at', 'status_before_cancel', 'restore_until',
@@ -50,5 +51,4 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
             'payment',
         )
         read_only_fields = fields
-
 

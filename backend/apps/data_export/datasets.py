@@ -24,6 +24,7 @@ DATASET_SPECS = {
         P(("makerspace",)),
     ),
     "bookings.BookableSpace": ("bookings/spaces.csv", P(("makerspace",))),
+    "bookings.BookingCheckInEvent": ("bookings/arrival_history.csv", P(("booking__space__makerspace",))),
     "bookings.Booking": ("bookings/bookings.csv", P(("space__makerspace",))),
     "boxes.Box": ("inventory/containers_and_boxes.csv", P(("makerspace",))),
     "boxes.BoxScan": ("lending/box_scans.csv", P(("makerspace",), ("box__makerspace",))),

@@ -52,12 +52,15 @@ def bookings_delete(makerspace, cursor):
     invites, invite_labels = _delete(BookingSpaceStaffGrantInvite.objects.filter(makerspace=makerspace))
     feeds, feed_labels = _delete(rbac.scope_notification_policy(BookingCalendarFeed.objects.all(), makerspace_id=makerspace.pk))
 
+    from apps.bookings.models_arrival import BookingCheckInEvent
+    arrivals, arrival_labels = _delete(BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace))
     bookings, booking_labels = _delete(
         rbac.scope_notification_policy(Booking.objects.all(), makerspace_id=makerspace.pk, field='space__makerspace_id')
     )
     spaces, space_labels = _delete(rbac.scope_notification_policy(BookableSpace.objects.all(), makerspace_id=makerspace.pk))
     return _counts(
-        model_labels=booking_labels | space_labels | feed_labels | grant_labels | invite_labels,
+        model_labels=booking_labels | space_labels | feed_labels | grant_labels | invite_labels | arrival_labels,
+        arrivals=arrivals,
         staff_grants=grants, staff_invites=invites,
         calendar_feeds=feeds,
         bookings=bookings,

@@ -139,10 +139,7 @@ class PublicBookingFeedView(APIView):
         require_active_account(row.user, space)
         if rbac.personal_notification_membership_refused(row.user, space.pk):
             raise NotFound()
-        from icalendar import Calendar, Event
-        calendar = Calendar()
-        calendar.add('prodid', '-//SpaceWorks//Bookings//EN')
-        calendar.add('version', '2.0')
+        from .calendar_render import booking_calendar
         rows = rbac.scope_personal_bookings(row.user, Booking.objects.select_related('space').filter(
             member=row.user, space__makerspace=space,
         ), makerspace_id=space.pk)
@@ -153,19 +150,7 @@ class PublicBookingFeedView(APIView):
             history=Case(When(ends_at__lt=now, then=Value(1)), default=Value(0), output_field=IntegerField()),
             upcoming_start=Case(When(ends_at__gte=now, then=F('starts_at')), output_field=DateTimeField()),
         ).order_by('history', 'upcoming_start', '-starts_at', 'pk')
-        for booking in rows[:1000]:
-            event = Event()
-            event.add('uid', f'booking-{booking.public_token}@spaceworks')
-            event.add('dtstamp', booking.calendar_updated_at)
-            event.add('last-modified', booking.calendar_updated_at)
-            event.add('sequence', booking.calendar_sequence)
-            event.add('dtstart', booking.starts_at)
-            event.add('dtend', booking.ends_at)
-            event.add('summary', booking.space.name)
-            event.add('status', 'CANCELLED' if booking.status in (Booking.Status.CANCELLED, Booking.Status.REJECTED) else
-                      'TENTATIVE' if booking.status == Booking.Status.PENDING else 'CONFIRMED')
-            calendar.add_component(event)
-        response = HttpResponse(calendar.to_ical(), content_type='text/calendar; charset=utf-8')
+        response = HttpResponse(booking_calendar(rows[:1000]), content_type='text/calendar; charset=utf-8')
         response['Cache-Control'] = 'private, no-store'
         response['Referrer-Policy'] = 'no-referrer'
         return response

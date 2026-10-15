@@ -15,6 +15,7 @@ export type BookableSpace = {
   report_features?: string[];
   recurring_enabled?: boolean;
   staff_grants_enabled?: boolean;
+  checkin_enabled?: boolean;
   staff_permissions?: string[];
   can_manage_grants?: boolean;
   public_token: string;
@@ -56,6 +57,7 @@ export type Booking = {
   starts_at: string;
   ends_at: string;
   status: BookingStatus;
+  arrived_at?: string | null;
   note: string;
   custom_answers: CustomAnswerSnapshot | null;
   payment: PaymentSummary | null;

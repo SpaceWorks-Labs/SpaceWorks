@@ -51,6 +51,7 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         FRESH,
         ("bookings.BookableSpace", "public_token"),
         ("bookings.Booking", "public_token"),
+        ("bookings.Booking", "checkin_token"),
         ("events.Event", "public_token"),
         ("events.EventSeries", "public_token"),
         # Deliberately invalidate source event check-in QR codes at the trust boundary.

@@ -10,11 +10,11 @@ from apps.bookings.exceptions import BookingInvalidTransition
 def reschedule_booking(booking, *, actor, starts_at, ends_at):
     from apps.bookings.services_bookings import _locked_booking
     from apps.makerspaces.guards import require_module_locked
-    from apps.presence.guard import require_active_account
+    from .access import require_booking_account
 
     space, locked = _locked_booking(booking)
     require_module_locked(space.makerspace, 'bookings')
-    require_active_account(actor, space.makerspace)
+    require_booking_account(actor, space.makerspace)
     from apps.accounts import rbac
     if rbac.personal_notification_membership_refused(actor, space.makerspace_id):
         raise BookingInvalidTransition('Revoked members may not reschedule bookings.')

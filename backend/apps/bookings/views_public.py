@@ -131,6 +131,9 @@ class PublicSpaceAvailabilityView(APIView):
         return Response(PublicSpaceAvailabilitySerializer(payload).data)
 
 
+from .serializers_confirmation_result import BOOKING_SUBMISSION_RESPONSE
+
+
 class PublicBookingSubmissionView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [ClientTierRateThrottle]
@@ -140,7 +143,7 @@ class PublicBookingSubmissionView(APIView):
         tags=['Public bookings'],
         request=PublicBookingInputSerializer,
         responses={
-            201: PublicBookingResponseSerializer,
+            201: BOOKING_SUBMISSION_RESPONSE,
             **PUBLIC_BOOKING_SUBMISSION_ERRORS,
         },
     )
@@ -178,4 +181,5 @@ class PublicBookingSubmissionView(APIView):
         return Response(
             PublicBookingResponseSerializer(booking).data,
             status=status.HTTP_201_CREATED,
+            headers={"Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer"},
         )

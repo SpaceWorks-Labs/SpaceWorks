@@ -8,6 +8,27 @@
 
 ## Current source map (real paths)
 
+BK-C booking arrival is isolated in `bookings/models_arrival.py` (abstract credential /
+projection fields and append-only history), `services_arrival.py` (resolve/confirm/reverse),
+`services_arrival_policy.py` (locked lifecycle/time-edit matrix) and `arrival_projection.py`
+(minimal scanner DTO and BK-E aggregate query). The existing Booking save boundary invokes
+the guard so BK-B's ordinary service saves consume it without duplicating BK-B tools.
+`confirmation_access.py`, `confirmation_render.py`, `serializers_arrival.py`,
+`views_confirmation.py`/`urls_confirmation.py` and `views_arrival.py`/`urls_arrival.py`
+own private confirmations and scanner endpoints. `calendar_render.py` is the shared booking
+feed/single-ICS serializer; PNG/calendar formatting reuses always-present
+`makerspaces/confirmation_render.py`. `makerspaces/confirmation_secrets.py` supplies neutral
+QR log redaction; `confirmation_privacy.py` applies private headers through the existing
+request-ID middleware and handlers, including errors before view dispatch. `tenant_migration/catalog_booking_arrival.py` declares portable arrival
+facts; credential omission/fresh reconstruction, User closure, datasets and purge are wired
+in their existing registries. No stored asset is introduced.
+Frontend `bookings/BookingConfirmation.tsx` + `bookingConfirmationApi.ts` provide private
+QR/download/rotation controls; `staff/BookingArrivalScanner.tsx` uses the shared camera
+scanner plus manual entry and explicit resolve/confirm/reverse controls. The drawer combines the BK-B tab shell and staff tools with the BK-C scanner.
+Roster `arrived_at` hides unavailable edits/cancellation/no-show actions; completion remains
+independent of arrival. MyBookings, public submission and the
+public bookings page link to owned confirmations without carrying a QR in navigation URLs.
+
 Lane D shared communications live in `integrations/broadcasts_models.py` (abstract schema),
 `broadcasts_registry.py` (typed adapters), `broadcasts_worker.py` (200-account batches and
 recovery) and `broadcasts_delivery.py` (execution checks/status reconciliation).
@@ -23,17 +44,22 @@ definitions/builders/typed contracts are `report_definitions_events.py`,
 Booking resource reports (BK-E): `bookings/report_subject.py` registers the typed
 `bookable_space` policy; `report_features.py` projects request-local UI capabilities.
 `operations/report_definitions_bookings.py` registers four tenant-only reports;
-`reports_booking_resources.py` reuses `reports_bookings.py` and owns the explicit
-`extend_with_booking_arrival_counts` BK-C extension point. `reports_booking_exports.py`
+`reports_booking_resources.py` reuses `reports_bookings.py` and wires
+`extend_with_booking_arrival_counts` to BK-C `arrival_projection.arrival_metrics`,
+using the same tenant/resource/overlap window. Resource rows and exports include separately
+labelled current arrival counts; legacy tenant reservation utilisation is unchanged. `reports_booking_exports.py`
 reads allow-listed reservation/contact and answer snapshots through model accessors;
-`serializers_reports_bookings.py` defines the typed response contracts.
+`serializers_reports_bookings.py` defines the typed response contracts, including the
+resource-only arrival-count row.
 `reports_booking_pdf.py` supplies reservation semantics to the shared renderer;
 `report_pdf_fonts.py` selects the embedded Unicode font (backend image: DejaVu Sans).
 `BookingResourceAnalytics.tsx`, `BookingResourceTabs.tsx` and `bookingReportsApi.ts`
 provide resource/date query keys, accessible drawer tabs and audited download actions;
 `OperationsReportsBookings.tsx` exports the summary shared with the existing tenant report.
 Regression tests live under `backend/tests/operations/test_booking_*reports.py`,
-`test_booking_report_exports.py` and the resource analytics Vitest file (gitignored).
+`test_booking_report_exports.py` and `test_booking_arrival_reports.py`; staff/arrival matrix regressions live in
+`backend/tests/bookings/test_arrival_staff_tools_integration.py`. The resource analytics
+Vitest file covers separately labelled arrival counts.
 
 Event adapters live in `events/broadcasts.py`, `models_broadcasts.py`,
 `services_broadcasts.py`, `views_broadcasts.py`, `serializers_broadcasts.py` and

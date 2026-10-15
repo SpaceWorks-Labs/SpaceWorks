@@ -31,6 +31,7 @@ def restore_booking(booking, *, actor):
     booking_authority.require(actor, space, "manage_reservations")
     require_feature(space, "bookings.staff_tools")
     now = timezone.now()
+    locked._arrival_clock = now
     admitted = admission_status(space)
     previous = require_restorable(
         locked, now=now, cancelled_status=Booking.Status.CANCELLED, allowed_statuses=RESTORABLE,

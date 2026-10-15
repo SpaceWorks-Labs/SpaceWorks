@@ -23,6 +23,13 @@ def definitions(FeatureDefinition):
         "Preview and export tenant-local reservation contacts and custom answers with management and audit authority.",
         requires_modules=("bookings", "reports"),
     ), FeatureDefinition(
+        "bookings.confirmations", "bookings", "Private booking confirmations",
+        "Owner-only booking details, QR PNG and calendar downloads.", requires_modules=("bookings",),
+    ), FeatureDefinition(
+        "bookings.checkin", "bookings", "Booking QR arrival",
+        "Staff record and reverse arrivals separately from reservation completion.",
+        requires_modules=("bookings",), requires_features=("bookings.confirmations",),
+    ), FeatureDefinition(
         "bookings.staff_grants", "bookings", "Resource staff grants",
         "Delegate descriptive editing, reservations, arrival or page release for one resource.",
         requires_modules=("bookings",),

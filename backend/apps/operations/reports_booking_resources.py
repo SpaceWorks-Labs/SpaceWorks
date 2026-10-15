@@ -7,12 +7,25 @@ from .reports_bookings import build_booking_utilization
 
 
 def extend_with_booking_arrival_counts(result, *, makerspace_id, space_id, date_range):
-    """BK-C extension point: append separately labelled arrival counts when available.
+    """Count current arrival facts over the same reservation-overlap window.
 
-    Absence of the arrival model is not a zero count. Never derive arrival from
-    completed/no-show status or reinterpret reserved hours as physical use.
+    Reversed arrivals do not count. Completion alone never implies arrival, and
+    these counts leave all calendar reservation durations unchanged.
     """
-    return replace(result, meta={**result.meta, "arrival_counts_available": False})
+    from apps.bookings.arrival_projection import arrival_metrics
+    from apps.bookings.models import Booking
+    from .report_definitions_bookings import ARRIVAL_FIELDS
+
+    bookings = Booking.objects.filter(space__makerspace_id=makerspace_id, space_id=space_id)
+    start, end = date_range or (None, None)
+    if start is not None:
+        bookings = bookings.filter(ends_at__gt=start)
+    if end is not None:
+        bookings = bookings.filter(starts_at__lt=end)
+    counts = arrival_metrics(bookings)
+    return replace(result, field_order=(*result.field_order, *ARRIVAL_FIELDS),
+                   records=[{**row, **counts} for row in result.records],
+                   meta={**result.meta, "arrival_counts_available": True})
 
 
 def build_resource_utilization(makerspace_id, *, subject_kind, subject_id, limit=None, date_range=None):

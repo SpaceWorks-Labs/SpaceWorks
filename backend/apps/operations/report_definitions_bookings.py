@@ -4,6 +4,8 @@ from .report_definitions_existing import EXISTING_REPORT_DEFINITIONS
 from .report_types import ReportDefinition
 
 UTILIZATION_FIELDS = next(d.fields for d in EXISTING_REPORT_DEFINITIONS if d.key == "booking-utilization")
+ARRIVAL_FIELDS = ("arrived_reservations", "confirmed_without_recorded_arrival")
+RESOURCE_UTILIZATION_FIELDS = (*UTILIZATION_FIELDS, *ARRIVAL_FIELDS)
 RESERVATION_FIELDS = (
     "booking_id", "space_id", "space_name", "name", "email", "phone",
     "starts_at", "ends_at", "status", "created_at",
@@ -21,9 +23,9 @@ def _definition(key, builder, fields, title, feature, **kwargs):
 
 BOOKING_REPORT_DEFINITIONS = (
     _definition("booking-resource-utilization", "reports_booking_resources.build_resource_utilization",
-                UTILIZATION_FIELDS, "Resource reservation utilization", "analytics"),
+                RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "analytics", version=2),
     _definition("booking-resource-utilization-pdf", "reports_booking_resources.build_resource_utilization_pdf",
-                UTILIZATION_FIELDS, "Resource reservation utilization", "utilization_pdf",
+                RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "utilization_pdf", version=2,
                 allowed_formats=("pdf",), pdf_renderer_path="apps.operations.reports_booking_pdf.render_pdf"),
     _definition("booking-reservations", "reports_booking_exports.build_reservations",
                 RESERVATION_FIELDS, "Resource reservation export", "exports"),

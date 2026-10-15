@@ -17,6 +17,7 @@ import {
 } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
 import { BookingDetailsEditor } from "./BookingDetailsEditor";
+import { BookingArrivalScanner } from "./BookingArrivalScanner";
 import { BookingStaffAccess } from "./BookingStaffAccess";
 import { bookingAccess } from "./bookingStaffPermissions";
 import { BookingResourceTabs } from "./BookingResourceTabs";
@@ -111,6 +112,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
             {access.manager && space.clone_enabled ? <BookingCloneControl space={space} /> : null}
             {access.manager && space.staff_grants_enabled ? <BookingStaffAccess target={{ id: spaceId }} /> : null}
             {access.manager && space.is_active ? <button className="desk-button-danger w-fit" type="button" onClick={() => setConfirmDeactivate(true)}>Deactivate space</button> : !space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
+            {space.checkin_enabled && (access.manager || space.staff_permissions?.includes("check_in")) ? <BookingArrivalScanner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> : null}
             {access.reservations ? <section aria-labelledby="space-bookings-title">
               {space.is_active ? <StaffBookingForm recurringEnabled={recurringEnabled || space.recurring_enabled} makerspaceId={makerspaceId} space={space} /> : null}
               <div className="mb-3">
@@ -196,8 +198,8 @@ function BookingActions({ booking, onAction, undoEnabled }: { undoEnabled?: bool
     <div className="mt-3 flex flex-wrap gap-2">
       {undoEnabled && booking.restore_until && new Date(booking.restore_until) > new Date() ? <button className="desk-button" type="button" onClick={() => onAction("restore")}>Undo cancellation</button> : null}
       {booking.status === "pending" ? <><button className="desk-button-success" type="button" onClick={() => onAction("approve")}>Approve</button><button className="desk-button-danger" type="button" onClick={() => onAction("reject")}>Reject</button></> : null}
-      {["pending", "confirmed"].includes(booking.status) ? <button className="desk-button-danger" type="button" onClick={() => onAction("cancel")}>Cancel</button> : null}
-      {booking.status === "confirmed" && ended ? <><button className="desk-button-success" type="button" onClick={() => onAction("complete")}>Complete</button><button className="desk-button-warn" type="button" onClick={() => onAction("no-show")}>No-show</button></> : null}
+      {["pending", "confirmed"].includes(booking.status) && !booking.arrived_at ? <button className="desk-button-danger" type="button" onClick={() => onAction("cancel")}>Cancel</button> : null}
+      {booking.status === "confirmed" && ended ? <><button className="desk-button-success" type="button" onClick={() => onAction("complete")}>Complete</button>{!booking.arrived_at ? <button className="desk-button-warn" type="button" onClick={() => onAction("no-show")}>No-show</button> : null}</> : null}
     </div>
   );
 }

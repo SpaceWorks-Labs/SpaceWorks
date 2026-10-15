@@ -13,6 +13,7 @@ from .admission import require_feature, validate_admission
 from .exceptions import BookingInvalidTransition
 from .services_bookings import _audit, _locked_booking, _refresh
 from .services_schedule import member_can_cancel
+from .services_arrival_policy import require_no_arrival
 
 
 @transaction.atomic
@@ -20,6 +21,9 @@ def edit_booking_details(booking, *, actor, **changes):
     space, locked = _locked_booking(booking)
     booking_authority.require(actor, space, "manage_reservations")
     require_feature(space, "bookings.staff_tools")
+    if locked.status not in ("pending", "confirmed"):
+        raise BookingInvalidTransition("Only pending or confirmed bookings can be edited.")
+    require_no_arrival(locked)
     unknown = set(changes) - {"note", "custom_answers"}
     if unknown or not changes:
         raise ValidationError({key: "This field cannot be edited." for key in sorted(unknown)}
@@ -39,10 +43,12 @@ def edit_booking_details(booking, *, actor, **changes):
 def move_locked_booking(space, locked, *, actor, starts_at, ends_at, now):
     """Used by staff and owner moves, with one clock for both cutoff comparisons.
 
-    BK-C adds arrival/credential checks at this locked boundary when those fields
-    exist; this lane introduces no arrival projection or credential of its own.
+    Arrival checks and credential rotation share the resource/booking lock and
+    the admission clock, so staff and owner moves enforce the same policy.
     """
     locked.space = space
+    locked._arrival_clock = now
+    require_no_arrival(locked)
     if not member_can_cancel(locked, now=now):
         raise BookingInvalidTransition("The booking reschedule cutoff has passed.")
     if locked.member_id is None:

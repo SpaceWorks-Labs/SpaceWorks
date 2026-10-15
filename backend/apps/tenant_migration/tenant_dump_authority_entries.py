@@ -292,3 +292,6 @@ AUTHORITY_ENTRIES = (
         "Rewritten rows cannot retain source signing or row-MAC claims.",
     ),
 )
+
+from .catalog_booking_arrival import authority_entries as booking_arrival_authority
+AUTHORITY_ENTRIES += booking_arrival_authority(authority, D)

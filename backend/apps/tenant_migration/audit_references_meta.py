@@ -40,6 +40,7 @@ AUDIT_META_REFERENCES = {
     **_reference(R, "events.EventCertificateTemplateRevision",
                  ("event.certificate_template_previewed", "revision_id"),
                  ("event.certificate_created", "template_revision_id")),
+    **_reference(R, "bookings.Booking", ("booking.arrival_confirmed", "booking_id"), ("booking.arrival_reversed", "booking_id")),
     **{edge: AuditReference(R, model) for edge, model in EVENT_AUDIT_EDGES.items()},
     **_reference(R, "makerspaces.MakerspaceLoanPolicy",
                  ("makerspace.return_policy_updated", "policy_id")),

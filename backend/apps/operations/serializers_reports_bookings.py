@@ -16,8 +16,14 @@ class BookingReportResponseSerializer(ReportRowsFieldMixin):
     meta = BookingReportMetaSerializer()
 
 
+class BookingResourceUtilizationRowSerializer(BookingUtilizationRowSerializer):
+    arrived_reservations = serializers.IntegerField(help_text="Reservations with a current, unreversed arrival.")
+    confirmed_without_recorded_arrival = serializers.IntegerField(
+        help_text="Confirmed reservations with no current arrival; not a no-show count.")
+
+
 class BookingResourceUtilizationReportSerializer(BookingReportResponseSerializer):
-    typed_rows = BookingUtilizationRowSerializer(many=True)
+    typed_rows = BookingResourceUtilizationRowSerializer(many=True)
 
 
 class BookingReservationReportRowSerializer(serializers.Serializer):

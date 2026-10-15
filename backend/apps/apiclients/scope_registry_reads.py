@@ -6,16 +6,18 @@ ATTENDANCE_READ = "participants:attendance:read"
 
 
 def read_scope_vocabulary():
+    from .scope_registry_booking_reads import booking_read_scopes
     from apps.separability.tombstones import tombstoned_app_labels
     if "events" in tombstoned_app_labels():
-        return frozenset()
-    return frozenset({EVENT_READ, PARTICIPANT_READ, ATTENDANCE_READ})
+        return booking_read_scopes()
+    return frozenset({EVENT_READ, PARTICIPANT_READ, ATTENDANCE_READ}) | booking_read_scopes()
 
 
 def read_route_entries():
+    from .scope_registry_booking_reads import booking_read_routes
     from .scope_registry_routes import ScopeRegistryEntry, TARGET_CLIENT_SUBJECT
     if EVENT_READ not in read_scope_vocabulary():
-        return {}
+        return booking_read_routes()
     basic = ScopeRegistryEntry(
         frozenset({EVENT_READ}), TARGET_CLIENT_SUBJECT,
         server_only=True, tenant_bound=True,
@@ -25,7 +27,7 @@ def read_route_entries():
         server_only=True, tenant_bound=True,
         required_scopes=frozenset({EVENT_READ, PARTICIPANT_READ}),
     )
-    return {(name, method): entry for name, entry in (
+    return booking_read_routes() | {(name, method): entry for name, entry in (
         ("integration-event-list", basic), ("integration-event-detail", basic),
         ("integration-event-participants", participants),
     ) for method in ("GET", "HEAD")}

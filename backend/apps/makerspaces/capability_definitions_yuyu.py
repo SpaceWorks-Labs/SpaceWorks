@@ -3,6 +3,10 @@
 
 def definitions(FeatureDefinition):
     features = (FeatureDefinition(
+        "bookings.api_read", "bookings", "Signed booking integration reads",
+        "Privileged tenant-bound server clients can read minimal resources, reservations and separately scoped arrivals.",
+        requires_modules=("bookings",),
+    ), FeatureDefinition(
         "bookings.passes", "bookings", "Printable booking passes",
         "Design and download answer-free PDF passes; scanner printing requires an active arrival.",
         requires_modules=("bookings",), requires_features=("bookings.confirmations",),

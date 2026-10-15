@@ -48,12 +48,15 @@ _CATALOG = (
 )
 
 from .scope_registry_reads import read_scope_vocabulary
+from .scope_registry_booking_reads import ARRIVAL_READ, BOOKING_READ, booking_read_catalog
 _CATALOG += tuple(ScopeGrantOption(value, label, description, "Staff integration (operator-only)")
     for value, label, description in (
         ("events:read", "Event read", "Read minimal events through tenant-bound signed server routes."),
         ("participants:read", "Participants read", "Read participant IDs, display names and registration dates; requires events:read."),
         ("participants:attendance:read", "Attendance read", "Include attendance dates; requires events:read and participants:read."),
     ) if value in read_scope_vocabulary())
+_CATALOG += tuple(ScopeGrantOption(value, label, description, "Staff integration (operator-only)")
+                  for value, label, description in booking_read_catalog())
 
 
 def validate_grantable_scopes(scopes, *, privileged):
@@ -69,6 +72,7 @@ def validate_grantable_scopes(scopes, *, privileged):
     if unknown:
         raise ValueError(f"Unknown API-client scope(s): {', '.join(unknown)}.")
     requirements = {
+        ARRIVAL_READ: {BOOKING_READ},
         "participants:read": {"events:read"},
         "participants:attendance:read": {"events:read", "participants:read"},
     }

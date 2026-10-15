@@ -122,6 +122,7 @@ urlpatterns = [
     *separable("events", "api/v1/public/", "apps.events.urls_public"),
     *separable("events", "api/v1/events/", "apps.events.urls_integration"),
     *separable("bookings", "api/v1/public/", "apps.bookings.urls_public"),
+    *separable("bookings", "api/v1/booking-integration/", "apps.bookings.urls_integration"),
     *separable("presence", "api/v1/public/", "apps.presence.urls"),
     # The LEDGER is unconditional: money owed, its receipts and its reconciliation
     # outlive any decision about shipping a provider integration.

@@ -76636,6 +76636,1427 @@
         "summary": "Read tenant events or minimal participants using a signed server client",
         "description": "events.api_read and events:read required. Participants additionally require participants:read; attendance dates additionally require participants:attendance:read. Explicit field allow-list; no contacts, answers, bearer credentials or payment data. Private/no-store."
       }
+    },
+    "/api/v1/booking-integration/resources/": {
+      "get": {
+        "operationId": "api_v1_booking_integration_resources_get",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read tenant resources (server HMAC; booking_resources:read)",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationBookingResourcePage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "api_v1_booking_integration_resources_get_head",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read tenant resources (server HMAC; booking_resources:read)",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        }
+      }
+    },
+    "/api/v1/booking-integration/resources/{id}/": {
+      "get": {
+        "operationId": "api_v1_booking_integration_resources_id_get",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Read one tenant resource (server HMAC; booking_resources:read)",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationBookingResource"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "api_v1_booking_integration_resources_id_get_head",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Read one tenant resource (server HMAC; booking_resources:read)",
+        "description": "bookings.api_read and booking_resources:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        }
+      }
+    },
+    "/api/v1/booking-integration/resources/{id}/bookings/": {
+      "get": {
+        "operationId": "api_v1_booking_integration_resources_id_bookings_get",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read reservations for one resource (server HMAC; bookings:read)",
+        "description": "bookings.api_read and bookings:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store. bookings:attendance:read adds current unreversed arrived_at, including completed arrivals. GET and HEAD audit disclosure under the tenant source fence.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationBookingPage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "api_v1_booking_integration_resources_id_bookings_get_head",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read reservations for one resource (server HMAC; bookings:read)",
+        "description": "bookings.api_read and bookings:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store. bookings:attendance:read adds current unreversed arrived_at, including completed arrivals. GET and HEAD audit disclosure under the tenant source fence.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        }
+      }
+    },
+    "/api/v1/booking-integration/bookings/": {
+      "get": {
+        "operationId": "api_v1_booking_integration_bookings_get",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read minimal tenant reservations (server HMAC; bookings:read)",
+        "description": "bookings.api_read and bookings:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store. bookings:attendance:read adds current unreversed arrived_at, including completed arrivals. GET and HEAD audit disclosure under the tenant source fence.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationBookingPage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "api_v1_booking_integration_bookings_get_head",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read minimal tenant reservations (server HMAC; bookings:read)",
+        "description": "bookings.api_read and bookings:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store. bookings:attendance:read adds current unreversed arrived_at, including completed arrivals. GET and HEAD audit disclosure under the tenant source fence.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        }
+      }
+    },
+    "/api/v1/booking-integration/bookings/{id}/": {
+      "get": {
+        "operationId": "api_v1_booking_integration_bookings_id_get",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Read one tenant reservation (server HMAC; bookings:read)",
+        "description": "bookings.api_read and bookings:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store. bookings:attendance:read adds current unreversed arrived_at, including completed arrivals. GET and HEAD audit disclosure under the tenant source fence.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationBooking"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "api_v1_booking_integration_bookings_id_get_head",
+        "tags": [
+          "Server bookings"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Read one tenant reservation (server HMAC; bookings:read)",
+        "description": "bookings.api_read and bookings:read required. Tenant-bound server clients only. Explicit field allow-list; no contacts, answers, notes, credentials or payment data. Private/no-store. bookings:attendance:read adds current unreversed arrived_at, including completed arrivals. GET and HEAD audit disclosure under the tenant source fence.",
+        "responses": {
+          "400": {
+            "description": "Invalid cursor or page size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid HMAC signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Server type, tenant binding or required scopes missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant/subject/module/feature unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read rate exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Source tenant is frozen; audited reads cannot append history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source gate could not be proven available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -118154,6 +119575,121 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/IntegrationParticipant"
+            }
+          }
+        },
+        "required": [
+          "next_cursor",
+          "results"
+        ]
+      },
+      "IntegrationBookingResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "integer"
+          },
+          "location": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "is_public": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "capacity",
+          "description",
+          "id",
+          "is_active",
+          "is_public",
+          "kind",
+          "location",
+          "name"
+        ]
+      },
+      "IntegrationBooking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "resource_id": {
+            "type": "integer"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "arrived_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "display_name",
+          "ends_at",
+          "id",
+          "resource_id",
+          "starts_at",
+          "status"
+        ]
+      },
+      "IntegrationBookingResourcePage": {
+        "type": "object",
+        "properties": {
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationBookingResource"
+            }
+          }
+        },
+        "required": [
+          "next_cursor",
+          "results"
+        ]
+      },
+      "IntegrationBookingPage": {
+        "type": "object",
+        "properties": {
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationBooking"
             }
           }
         },

@@ -255,3 +255,42 @@ and feature revocations apply on the next request.
 typed `ReadTarget` adapters. Add explicit GET/HEAD registry entries, dedicated
 server-only scopes and a mandatory prefix for a new domain; never import Events
 to reuse authentication, target resolution, throttles or signed keyset pagination.
+
+## Signed booking reads (BK-H)
+
+These GET/HEAD routes require Bookings and opt-in `bookings.api_read`, with the
+same mandatory HMAC, tenant-bound server principal, operator-only grants, signed
+keyset pagination, nonce policy, throttling and private/no-store responses above.
+No browser, global, user session, public wildcard or legacy client is upgraded.
+
+| Route under `/api/v1/booking-integration/` | Required scope |
+| --- | --- |
+| `resources/` | `booking_resources:read` |
+| `resources/<id>/` | `booking_resources:read` |
+| `bookings/` | `bookings:read` |
+| `bookings/<id>/` | `bookings:read` |
+| `resources/<id>/bookings/` | `bookings:read` |
+
+Resource reads contain only integer ID, name, kind, description, capacity,
+location, active and public flags. Signed staff integrations may read private or
+inactive resources; these scopes never confer public website visibility.
+Reservation reads contain only integer ID, resource ID, window, status and display
+name. Resource and reservation read scopes are independent; reading reservations
+does not require resource-read authority. `bookings:attendance:read` additionally
+requires `bookings:read` at grant time and never authorizes a route alone. It adds
+only current unreversed `arrived_at` (nullable), including arrivals retained after
+completion. Reversed arrivals return null. No contact, note, answer, credential,
+machine link, form, grant, booking rule or payment field appears.
+
+Reservation GET and HEAD append `api_client.bookings_read` with an opaque client
+fingerprint, row count and attendance projection, through the source write fence;
+frozen sources refuse that audited read. Foreign/missing targets fail closed before
+the view. Cursors bind the client, tenant, resource/list subject and attendance
+projection; changing scopes cannot reuse an earlier projection's cursor. Lists
+are live ID-ordered reads, not snapshots. Scopes/features/revocation are rechecked
+on each request, without consulting user RBAC or resource staff grants.
+
+Website sections/assets from parallel BK-F are not part of this initial projection.
+After its merge, extend only approved public page fields through its release/visibility
+adapter, never through unrestricted model serialization. See the BK-H lane report
+for the remaining public route, schema and analytics integration checks.

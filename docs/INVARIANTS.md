@@ -3827,6 +3827,41 @@ tenant-owned field or object key.
 
 ## API client scopes and the protected-route registry
 
+### Signed booking integration reads (BK-H)
+
+`bookings.api_read` is an opt-in Bookings child without Events, Membership,
+Reports or rail dependencies. `/api/v1/booking-integration/` always requires verified
+HMAC, including when operator prefixes are overridden or public auth is optional.
+Only tenant-bound active server clients qualify. `booking_resources:read` and
+`bookings:read` independently authorize resource and reservation reads;
+`bookings:attendance:read` requires reservation scope and adds only current
+unreversed `arrived_at`, including retained completed arrivals. Read grant policy
+is operator-only, outside browser and frozen legacy vocabulary. Resource grants
+and user authority never authorize integration reads.
+
+Core `apiclients/scope_registry_booking_reads.py` holds metadata without importing
+Bookings. Live Bookings startup registers typed resource and reservation targets
+in the existing read contract; cross-tenant/unresolved/hidden/unservable targets
+deny. Tombstoning either domain removes only its own scopes, routes, prefixes and
+features. All ten concrete GET/HEAD entries exclude legacy-v1. Explicit serializer
+allow-lists omit contacts, answers, notes, credentials, forms, rules and money.
+Names use scoped PII attributes with tenant relations loaded. Private resources
+are readable by signed resource authority without making them publicly visible.
+
+Reservation reads audit opaque principal/count/projection under the source fence;
+failed audit cannot disclose data. Shared signed cursors bind client, tenant,
+subject and attendance projection; responses are private/no-store. Booking grant
+mutations retain the existing session-bound recent-reauth mixin; no second proof
+system or user scope is introduced. Booking analytics routes are explicitly
+allow-listed in `bookingAnalyticsRoutes.ts`, send route templates and empty
+referrers, and exclude confirmation queries, private routes and credentials.
+
+No model, field, User edge, object key, stored export or new PII storage is added.
+Existing audit retention, target references and tenant purge apply; classification,
+encryption, portability and the model-graph catalog pin remain unchanged. BK-F
+website data requires its public release/visibility adapter after owner integration;
+this initial resource projection contains only the existing descriptive fields.
+
 ### Signed integration reads (Lane F)
 
 `apiclients/read_contract.py` owns signature-marker permissions, typed tenant target

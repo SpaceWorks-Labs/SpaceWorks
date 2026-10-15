@@ -83,6 +83,7 @@ export const openApiTags = [
   "QR print batches",
   "Reauthentication",
   "Reports",
+  "Server bookings",
   "Server events",
   "Social auth",
   "Staff invitations",
@@ -620,6 +621,11 @@ export const openApiPaths = [
   "/api/v1/auth/social/providers/{provider}",
   "/api/v1/auth/staff-invitations/accept",
   "/api/v1/backups/download/{archive_id}/{token}",
+  "/api/v1/booking-integration/bookings/",
+  "/api/v1/booking-integration/bookings/{id}/",
+  "/api/v1/booking-integration/resources/",
+  "/api/v1/booking-integration/resources/{id}/",
+  "/api/v1/booking-integration/resources/{id}/bookings/",
   "/api/v1/bootstrap",
   "/api/v1/config",
   "/api/v1/data-exports/download/{job_id}/{token}",
@@ -3672,6 +3678,37 @@ export type InheritFieldsEnum = "cancellation_cutoff_hours" | "capacity" | "cust
 
 export type Intake = {
   "intake_schema": unknown;
+};
+
+export type IntegrationBooking = {
+  "id": number;
+  "resource_id": number;
+  "starts_at": string;
+  "ends_at": string;
+  "status": string;
+  "display_name": string;
+  "arrived_at"?: string | null;
+};
+
+export type IntegrationBookingPage = {
+  "next_cursor": string | null;
+  "results": Array<IntegrationBooking>;
+};
+
+export type IntegrationBookingResource = {
+  "id": number;
+  "name": string;
+  "kind": string;
+  "description": string;
+  "capacity": number;
+  "location": string;
+  "is_active": boolean;
+  "is_public": boolean;
+};
+
+export type IntegrationBookingResourcePage = {
+  "next_cursor": string | null;
+  "results": Array<IntegrationBookingResource>;
 };
 
 export type IntegrationConfiguredHealth = {

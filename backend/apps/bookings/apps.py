@@ -12,6 +12,8 @@ class BookingsConfig(AppConfig):
 
         from apps.separability.tombstones import app_is_tombstoned
         if not app_is_tombstoned("bookings"):
+            from .integration_targets import register_targets
+            register_targets()
             from .report_subject import register_subject
             register_subject()
             from .broadcasts import register_broadcasts

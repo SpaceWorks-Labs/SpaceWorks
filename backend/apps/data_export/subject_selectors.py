@@ -15,6 +15,7 @@ from .datasets import DATASET_SPECS
 SUBJECT_PATHS = {
     "operations.SavedView": ("owner",),
     "apiclients.ApiKeyRequest": ("requester",),
+    "bookings.BookingCheckInEvent": ("booking__member",),
     "bookings.Booking": ("member",),
     "devices.PrinterJob": ("service_request__member",),
     "devices.PrinterJobConsumption": ("job__service_request__member",),

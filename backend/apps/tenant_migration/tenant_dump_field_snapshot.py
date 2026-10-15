@@ -257,6 +257,10 @@ FIRST_PARTY_FIELD_NAMES.update(WP3_FIELD_NAMES)
 for _label, _names in WP3_EXTRA_FIELDS.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
 
+from .catalog_booking_arrival import FIELD_NAMES as BOOKING_ARRIVAL_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(BOOKING_ARRIVAL_FIELDS)
+FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= {"checkin_token", "arrived_at"}
+
 AUTO_CREATED_FIELD_NAMES = {
     'auth.Group_permissions': frozenset('group id permission'.split()),
     'accounts.User_groups': frozenset('group id user'.split()),

@@ -16,18 +16,22 @@ def reschedule_booking(booking, *, actor, starts_at, ends_at):
     from apps.bookings.services_bookings import _audit, _locked_booking, _refresh, _validate, _require_certification
     from apps.bookings.services_rules import enforce_booking_rules
     from apps.makerspaces.guards import require_module_locked
-    from apps.presence.guard import require_active_account
+    from .access import require_booking_account
 
     space, locked = _locked_booking(booking)
     require_module_locked(space.makerspace, 'bookings')
-    require_active_account(actor, space.makerspace)
+    require_booking_account(actor, space.makerspace)
     from apps.accounts import rbac
     if rbac.personal_notification_membership_refused(actor, space.makerspace_id):
         raise BookingInvalidTransition('Revoked members may not reschedule bookings.')
     locked.space = space
     if locked.member_id != actor.pk:
         raise BookingInvalidTransition('Only the booking owner may reschedule it.')
-    if not member_can_cancel(locked, now=timezone.now()):
+    now = timezone.now()
+    locked._arrival_clock = now
+    from .services_arrival_policy import require_no_arrival
+    require_no_arrival(locked)
+    if not member_can_cancel(locked, now=now):
         raise BookingInvalidTransition('The booking reschedule cutoff has passed.')
     if not space.is_active:
         raise BookingInvalidTransition('Inactive spaces cannot accept bookings.')
@@ -35,7 +39,6 @@ def reschedule_booking(booking, *, actor, starts_at, ends_at):
     old_start, old_end = locked.starts_at, locked.ends_at
     locked.starts_at, locked.ends_at = starts_at, ends_at
     _validate(locked)
-    now = timezone.now()
     enforce_booking_rules(space, starts_at, ends_at, now)
     if starts_at <= now or starts_at <= now + timedelta(hours=space.cancellation_cutoff_hours):
         raise ValidationError({'starts_at': 'New time must be after the reschedule cutoff.'})

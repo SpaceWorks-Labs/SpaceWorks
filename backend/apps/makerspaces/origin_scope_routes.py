@@ -5,7 +5,7 @@ from apps.makerspaces.origin_scope_model_lookups import (
     TARGET_SET_LOOKUPS,
 )
 
-PUBLIC_SLUG_ROUTES = {"public-event-organization-eligibility"}
+PUBLIC_SLUG_ROUTES = {"member-booking-confirmation", "member-booking-confirmation-png", "member-booking-calendar", "member-booking-rotate-checkin", "public-event-organization-eligibility"}
 
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 

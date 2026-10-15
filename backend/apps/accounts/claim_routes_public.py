@@ -20,6 +20,17 @@ def _anonymous(name):
 
 
 PUBLIC_CLAIM_ROUTES = {
+    **{(name, method): Refused("claim sessions cannot read or rotate account arrival credentials")
+       for name, methods in (
+           ("member-booking-confirmation", ("GET", "HEAD")),
+           ("member-booking-confirmation-png", ("GET", "HEAD")),
+           ("member-booking-calendar", ("GET", "HEAD")),
+           ("member-booking-rotate-checkin", ("POST",)),
+       ) for method in methods},
+    **{(name, "OPTIONS"): AnonymousRead() for name in (
+        "member-booking-confirmation", "member-booking-confirmation-png",
+        "member-booking-calendar", "member-booking-rotate-checkin",
+    )},
     ('member-booking-reschedule', 'POST'): Allowed(tenant=SLUG, audited=True),
     ('member-booking-reschedule', 'OPTIONS'): AnonymousRead(),
     **{('member-booking-feed-settings', method): Refused(

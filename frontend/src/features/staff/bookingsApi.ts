@@ -10,6 +10,7 @@ export type BookableSpace = {
   id: number;
   recurring_enabled?: boolean;
   staff_grants_enabled?: boolean;
+  checkin_enabled?: boolean;
   staff_permissions?: string[];
   can_manage_grants?: boolean;
   public_token: string;

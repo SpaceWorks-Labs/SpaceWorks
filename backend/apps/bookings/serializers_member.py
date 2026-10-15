@@ -13,11 +13,17 @@ class MemberBookingSerializer(serializers.ModelSerializer):
     timezone = serializers.CharField(source='space.makerspace.timezone', read_only=True)
     cancellation_cutoff_at = serializers.SerializerMethodField()
     can_cancel = serializers.SerializerMethodField()
+    confirmation_available = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_confirmation_available(self, booking):
+        from apps.makerspaces.platform import feature_enabled
+        return feature_enabled(booking.space.makerspace, "bookings.confirmations")
 
     class Meta:
         model = Booking
         fields = ('public_token', 'space_name', 'timezone', 'starts_at', 'ends_at',
-                  'status', 'cancellation_cutoff_at', 'can_cancel')
+                  'status', 'cancellation_cutoff_at', 'can_cancel', 'confirmation_available')
         read_only_fields = fields
 
     @extend_schema_field(serializers.DateTimeField())
@@ -26,7 +32,7 @@ class MemberBookingSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.BooleanField())
     def get_can_cancel(self, booking):
-        return member_can_cancel(booking, now=self.context.get('now') or timezone.now())
+        return booking.arrived_at is None and member_can_cancel(booking, now=self.context.get('now') or timezone.now())
 
 
 class MemberBookingListSerializer(serializers.Serializer):

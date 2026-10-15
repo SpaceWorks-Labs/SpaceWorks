@@ -38,7 +38,9 @@ from apps.bookings.views_admin_spaces import (
 
 from .views_recurrence import StaffRecurringBookingView
 
-urlpatterns = [*staff_grant_patterns,
+from .urls_arrival import urlpatterns as arrival_patterns
+
+urlpatterns = [*staff_grant_patterns, *arrival_patterns,
     path('spaces/<int:pk>/recurring-bookings/', StaffRecurringBookingView.as_view(), name='admin-recurring-bookings'),
     path(
         'makerspaces/<int:makerspace_id>/booking-machine-types/',

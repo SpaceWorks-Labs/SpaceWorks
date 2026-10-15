@@ -130,6 +130,14 @@ class PublicBookingInputSerializer(serializers.Serializer):
 
 
 class PublicBookingResponseSerializer(serializers.Serializer):
+    public_token = serializers.UUIDField(read_only=True, required=False)
+    confirmation_available = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_confirmation_available(self, booking):
+        from apps.makerspaces.platform import feature_enabled
+        return feature_enabled(booking.space.makerspace, "bookings.confirmations")
+
     status = serializers.ChoiceField(
         choices=(Booking.Status.PENDING, Booking.Status.CONFIRMED),
         read_only=True,

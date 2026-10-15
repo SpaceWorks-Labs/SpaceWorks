@@ -277,4 +277,6 @@ def _delete_object_graph(makerspace):
         # Generic provenance has no FK to the source/anchor rows it describes, so
         # delete it explicitly rather than relying on the makerspace CASCADE.
         ExternalTenantReference.objects.filter(makerspace=makerspace).delete()
+        from apps.bookings.models_arrival import BookingCheckInEvent
+        BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace).delete()
         makerspace.delete()

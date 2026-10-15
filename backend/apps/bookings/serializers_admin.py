@@ -75,6 +75,12 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     effective_requester_notifications_enabled = serializers.SerializerMethodField()
 
+    checkin_enabled = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_checkin_enabled(self, obj):
+        return self._features(obj)["checkin_enabled"]
+
     recurring_enabled = serializers.SerializerMethodField()
     staff_grants_enabled = serializers.SerializerMethodField()
     staff_permissions = serializers.SerializerMethodField()
@@ -116,7 +122,7 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = BookableSpace
         fields = (
-            "recurring_enabled", "staff_grants_enabled", "staff_permissions", "can_manage_grants",
+            "checkin_enabled", "recurring_enabled", "staff_grants_enabled", "staff_permissions", "can_manage_grants",
             'id',
             'public_token',
             'makerspace_id',

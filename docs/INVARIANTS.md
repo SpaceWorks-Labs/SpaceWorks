@@ -2354,6 +2354,60 @@ credential tables in that tenant; whole-tenant purge cascades them. Retention re
 survives tombstoning; runtime discovery/routes/features do not. Source migration gates
 apply before grant mutations. The catalog pin includes both concrete model graphs.
 
+### Booking confirmations and QR arrival (BK-C)
+
+`bookings.confirmations` and `bookings.checkin` are opt-in Bookings-parented features;
+check-in additionally requires confirmations. Owned detail, QR PNG, rotation and one-booking
+ICS use the existing account-owned booking predicate without requiring membership, events,
+presence or the payment rail. Existing revoked-member and account restrictions still apply.
+Submission returns the noncredential booking UUID and confirmation availability; the
+honeypot response remains status-only and creates nothing. Account-less claim sessions
+are explicitly refused on these durable credential/download routes. Every private success/error is
+no-store/no-referrer. PNG/ICS downloads and credential rotation audit without private content.
+`calendar_render.booking_calendar` serializes both feed and single downloads with stable UID,
+calendar revision, and CANCELLED/TENTATIVE/CONFIRMED state. Calendar links contain only public
+resource title/location and selected times. PNGs contain resource/window/status and the QR,
+never contacts, notes or custom answers. No PNG is persisted or reused as a printable pass.
+
+Booking QR credentials are independent random UUIDs prefixed `spaceworks-booking:`; neither
+public booking identity nor calendar tokens are accepted. Scanner requests carry credentials
+only in POST bodies. `check_in` authority is checked on the selected resource for read-only
+resolve and again under resource -> booking locks for arrival/reversal. Malformed, unknown and
+foreign-resource credentials have uniform 404 responses. Scanner projections are answer-free:
+display name, resource, window/status, current arrival and advisory waiver state. Scanner-only
+users cannot open the roster, contacts, answers, notes or payment summary. Camera capture and
+manual entry require explicit resolve and confirmation; no station/offline/door path exists.
+
+Only confirmed reservations on active resources may arrive, inclusively from 30 minutes
+before start through end. Duplicate arrival is idempotent only while still eligible. Arrival
+never changes occupancy, completion, payment, presence or physical access. Cancellation,
+member/staff time edits and no-show require an explicit reversal first; no-show additionally
+requires confirmed and ended. Completion after end is valid with or without QR arrival and
+retains an existing arrival. Authorized reversal after completion clears only arrival, never
+reopens the booking. Pending and all terminal states refuse new/reinstated arrival.
+`services_arrival_policy.prepare_booking_save` protects ordinary service saves, including
+BK-B staff edits and exact undo, under their existing locks: terminal/started/old-cutoff and
+new-cutoff time edits refuse; moving/cancelling/restoring atomically rotates the old QR.
+Member rescheduling uses one clock snapshot for old/new cutoff checks and current account /
+optional-membership waiver eligibility. BK-B retains ownership of full staff-edit admission,
+cancellation provenance and restore notification policy; it can set `_arrival_clock` to its
+already-captured server time before saving. Queryset updates are not workflow entry points.
+
+`BookingCheckInEvent` is append-only at ORM and PostgreSQL boundaries; corrections append
+`reversed` facts and change only `Booking.arrived_at`. Every mutation audits IDs/actions,
+never credentials. Shared log redaction removes prefixed QR payloads. History is an explicitly
+tenant-filtered portable dataset, its actor joins the reviewed User closure, and subject export
+follows the booking owner. The credential is omitted at both fidelities and regenerated on
+import; arrival/history remain historical facts. No new free-text PII, encrypted column or
+stored object is introduced; the existing booking name accessor and encryption fence apply.
+Bookings/module and whole-tenant purge explicitly remove immutable history before its
+PROTECTed booking, using their existing authorized immutable-delete context. Retention
+registries remain present when bookings is tombstoned. BK-E calls
+`bookings.arrival_projection.arrival_metrics(queryset)` with its already-authorized tenant,
+resource and date predicate. It returns `arrived_reservations` and
+`confirmed_without_recorded_arrival`; these counts never imply measured-use duration or
+replace calendar reservation utilisation.
+
 ### Event-scoped staff grants
 
 `events/event_authority.py` is the staff event authority API: tenant `MANAGE_EVENTS`,

@@ -12,6 +12,7 @@ def features_for_page(rows):
     # deduplicate by tenant ID before invoking the recovery-aware feature policy.
     makerspaces = {row.makerspace_id: row.makerspace for row in rows}
     return {pk: {
+        "checkin_enabled": feature_enabled(makerspace, "bookings.checkin"),
         "recurring_enabled": feature_enabled(makerspace, "bookings.recurring"),
         "staff_grants_enabled": feature_enabled(makerspace, "bookings.staff_grants"),
     } for pk, makerspace in makerspaces.items()}

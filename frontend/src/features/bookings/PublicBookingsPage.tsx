@@ -15,6 +15,7 @@ import { StructuredApiError } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
+import { BookingConfirmation } from "./BookingConfirmation";
 import { PublicBookingForm } from "./PublicBookingForm";
 import { usePublicSpaces, type PublicBookableSpace } from "./publicBookingsApi";
 import { SkipLink } from "../../components/SkipLink";
@@ -80,6 +81,7 @@ export function PublicBookingsPage() {
           <h1 className="title-page">Book a makerspace</h1>
           <p className="mt-2 text-sm text-muted">Choose a public space, check published bookings, and request a time.</p>
         </div>
+        {new URLSearchParams(location.search).get("confirmation") ? <BookingConfirmation slug={makerspaceSlug} token={new URLSearchParams(location.search).get("confirmation")!} /> : null}
         <DiscoveryControls state={discovery} searchLabel="Search spaces" filters={Object.entries(KIND_LABELS).map(([value, label]) => ({ value, label }))} />
         {spaces.data && !spaces.error ? <p role="status" className="mb-4 text-sm text-muted">{visibleSpaces.length} matching space(s)</p> : null}
         {spaces.isLoading ? <div className="grid gap-4" aria-label="Loading spaces">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-64 w-full" />)}</div> : null}

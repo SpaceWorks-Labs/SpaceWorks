@@ -230,7 +230,7 @@ _EXCLUDED_USER_EDGE_REASONS = {
     ("tenant_migration.TenantDumpCapture", "requested_by"): "Source capture coordination must not contribute to a tenant archive's user closure.",
 }
 
-RELATIONAL_USER_FIELDS |= frozenset({("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
+RELATIONAL_USER_FIELDS |= frozenset({("bookings.BookingCheckInEvent", "actor"), ("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
 _EXCLUDED_USER_EDGE_REASONS[("bookings.BookingCalendarFeed", "user")] = "Source-bound calendar authority is excluded from portable closure."
 
 # WP4 policies, schedules and materials have no User FKs. Personal watches and

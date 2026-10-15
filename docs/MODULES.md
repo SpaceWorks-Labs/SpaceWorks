@@ -25,7 +25,7 @@ certification gating. Staff MFA is a separate question.
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
-| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `charges.bookings`; `payments.bookings` with Online payments |
+| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.confirmations`, `bookings.checkin`, `charges.bookings`; `payments.bookings` with Online payments |
 | Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
@@ -227,6 +227,17 @@ Bookings accepts authenticated active accounts without installing `membership`. 
 memberships retain their waiver requirement; booking in advance never requires presence.
 
 [Read the bookings module reference](MODULES-WORKSHOPS.md#bookings).
+
+`bookings.confirmations` (off by default) adds owner-only confirmation details, a private QR
+PNG, Google Calendar link and single-booking ICS download. `bookings.checkin` (also off,
+requires confirmations) lets authorized staff resolve that resource's QR and separately
+confirm or reverse arrival. It requires no events, membership, presence or online-payment
+module. Arrival is recorded from 30 minutes before start through end and remains independent
+of completion and charges. Active arrival must be reversed before cancellation, rescheduling
+or no-show; completion retains it and a later correction never reopens the booking.
+Switching these features off hides their routes without deleting history. Bookings purge
+removes arrival history before reservations; portable archives retain historical facts and
+regenerate QR credentials. These are arrival counts, never measured-use duration.
 
 `bookings.staff_grants` (off by default) delegates selected operations for one resource.
 Its four permissions cover descriptive editing, reservation management, check-in and page

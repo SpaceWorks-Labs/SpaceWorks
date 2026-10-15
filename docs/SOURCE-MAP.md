@@ -8,6 +8,26 @@
 
 ## Current source map (real paths)
 
+BK-C booking arrival is isolated in `bookings/models_arrival.py` (abstract credential /
+projection fields and append-only history), `services_arrival.py` (resolve/confirm/reverse),
+`services_arrival_policy.py` (locked lifecycle/time-edit matrix) and `arrival_projection.py`
+(minimal scanner DTO and BK-E aggregate query). The existing Booking save boundary invokes
+the guard so BK-B's ordinary service saves consume it without duplicating BK-B tools.
+`confirmation_access.py`, `confirmation_render.py`, `serializers_arrival.py`,
+`views_confirmation.py`/`urls_confirmation.py` and `views_arrival.py`/`urls_arrival.py`
+own private confirmations and scanner endpoints. `calendar_render.py` is the shared booking
+feed/single-ICS serializer; PNG/calendar formatting reuses always-present
+`makerspaces/confirmation_render.py`. `makerspaces/confirmation_secrets.py` supplies neutral
+QR log redaction; `confirmation_privacy.py` applies private headers through the existing
+request-ID middleware and handlers, including errors before view dispatch. `tenant_migration/catalog_booking_arrival.py` declares portable arrival
+facts; credential omission/fresh reconstruction, User closure, datasets and purge are wired
+in their existing registries. No stored asset is introduced.
+Frontend `bookings/BookingConfirmation.tsx` + `bookingConfirmationApi.ts` provide private
+QR/download/rotation controls; `staff/BookingArrivalScanner.tsx` uses the shared camera
+scanner plus manual entry and explicit resolve/confirm/reverse controls. The drawer has one
+additive component slot for BK-B's later tab shell. MyBookings, public submission and the
+public bookings page link to owned confirmations without carrying a QR in navigation URLs.
+
 Lane D shared communications live in `integrations/broadcasts_models.py` (abstract schema),
 `broadcasts_registry.py` (typed adapters), `broadcasts_worker.py` (200-account batches and
 recovery) and `broadcasts_delivery.py` (execution checks/status reconciliation).

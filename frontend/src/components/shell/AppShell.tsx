@@ -40,7 +40,8 @@ export function AppShell(props: AppShellProps) {
   });
   const shellProps = { ...props, search: props.search ? { ...props.search, onOpen: openSearch } : undefined };
   const items = nav.flatMap(section => [...section.items, ...section.more ?? []]);
-  const unread = items.find(item => item.badgeLabel === "unread")?.badge ?? 0;
+  // The phone menu button carries the old dock's attention count: every sidebar badge (inbox unread, pending/ready requests).
+  const unread = items.reduce((total, item) => total + (item.badge ?? 0), 0);
   const openNavigation = () => setDrawer(true);
   // Phone and tablet: top bar + drawer (+ bottom tabs for the member portal). Desktop: fixed sidebar.
   // Content is capped so 1920/2560 monitors keep readable line lengths; the safe-area insets

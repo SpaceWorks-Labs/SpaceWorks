@@ -125,6 +125,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
         canManageMakerspace={canManageMakerspace}
         canViewFinance={canViewFinance}
         canRecordPayment={canRecordPayment}
+        error={(() => { const failed = changeRole.error ?? capabilities.error ?? verify.error; return failed ? membershipErrorText(failed) : undefined; })()}
         changingRole={changeRole.isPending}
         changingCapabilities={capabilities.isPending}
         changingVerification={verify.isPending}

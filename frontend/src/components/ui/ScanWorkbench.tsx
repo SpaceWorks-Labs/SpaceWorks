@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ActionControl } from "./ActionControl";
 import { Card } from "./Card";
 import { EmptyState } from "./EmptyState";
@@ -31,6 +31,11 @@ export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a Q
   const [cameraOpen, setCameraOpen] = useState(false);
   const [value, setValue] = useState("");
   const blocked = findPending || state.status !== "ready";
+  // Keyboard-wedge scanners type a code then Enter, back to back: clear after each find and hand focus back
+  // once the lookup settles, so the next scan never appends to the last one.
+  const input = useRef<HTMLInputElement>(null);
+  const refocus = useRef(false);
+  useEffect(() => { if (!blocked && refocus.current) { refocus.current = false; input.current?.focus(); } }, [blocked]);
   return <section aria-label="Scan workbench" className="grid min-w-0 gap-6">
     <div className="grid min-w-0 gap-6 xl:grid-cols-2">
       <div className="grid min-w-0 content-start gap-3">
@@ -44,8 +49,9 @@ export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a Q
       </div>
       {/* Phones: a result (and its Confirm) comes before the camera card instead of below the fold. */}
       <div className={`grid min-w-0 content-start gap-4 ${result ? "max-md:order-first" : ""}`}>
-        <form className="flex min-w-0 flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); if (value.trim() && !blocked) onFind(value.trim()); }}>
-          <Field label={searchLabel} hint={helper} className="min-w-0 flex-1 basis-48"><input className="desk-input w-full" type="search"
+        <form className="flex min-w-0 flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); if (!value.trim() || blocked) return;
+          onFind(value.trim()); setValue(""); refocus.current = true; if (!findPending) input.current?.focus(); }}>
+          <Field label={searchLabel} hint={helper} className="min-w-0 flex-1 basis-48"><input ref={input} className="desk-input w-full" type="search"
             value={value} onChange={event => setValue(event.target.value)} disabled={blocked} /></Field>
           <button type="submit" className="desk-button" disabled={blocked || !value.trim()} aria-busy={findPending || undefined}>{findPending ? "Finding…" : "Find"}</button>
         </form>

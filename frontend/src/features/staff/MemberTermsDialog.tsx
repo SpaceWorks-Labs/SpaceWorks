@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Field, Modal } from "../../components/ui";
+import { Field, StatusPill } from "../../components/ui";
+import { DetailLayout } from "../../components/layouts/DetailLayout";
 import {
   cancelTerm,
   listPlans,
@@ -45,16 +46,12 @@ export function MemberTermsDialog({
   const error = start.error ?? cancel.error;
 
   return (
-    <Modal
+    <DetailLayout presentation="drawer"
       open
       onClose={onClose}
       title={`Membership terms for ${memberName}`}
-      footer={(
-        <div className="desk-actions flex justify-end">
-          <button className="desk-button" type="button" onClick={onClose}>Close</button>
-        </div>
-      )}
-    >
+      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: "Couldn't load terms. Try again.", onRetry: () => { void terms.refetch(); } }}
+      footer={{ secondary: [{ label: "Close", onClick: onClose }] }} main={<>
       <form
         className="flex flex-wrap items-end gap-2"
         onSubmit={(event) => {
@@ -94,9 +91,7 @@ export function MemberTermsDialog({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge tone={term.status === "active" ? "success" : term.status === "expired" ? "neutral" : "warn"}>
-                  {term.status}
-                </Badge>
+                <StatusPill tone={term.status === "active" ? "success" : term.status === "expired" ? "neutral" : "warn"} label={term.status} />
                 {term.status === "active" ? (
                   <button className="desk-button" type="button" disabled={cancel.isPending} onClick={() => cancel.mutate(term.id)}>
                     Cancel term
@@ -109,6 +104,6 @@ export function MemberTermsDialog({
       ) : null}
       {terms.isError ? <p className="mt-3 text-sm text-danger" role="alert">{planErrorText(terms.error, "Could not load terms.")}</p> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{planErrorText(error, "Could not update the term.")}</p> : null}
-    </Modal>
+    </>} />
   );
 }

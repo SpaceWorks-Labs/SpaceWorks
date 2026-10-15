@@ -1,3 +1,7 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { ErrorBlock } from "../../components/ui";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -55,10 +59,10 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Mak
   const activeSpaces = spaces.data?.results.filter((space) => space.is_active) ?? [];
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-extrabold text-ink">Booking rules per space</h3>
-      <p className="mt-1 text-xs text-muted">Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts.</p>
-      {spaces.isLoading ? <p className="mt-3 text-sm text-muted">Loading bookable spaces...</p> : null}
+    <SettingsQueryState query={spaces} resource="booking rules"><SettingsRow label="Booking rules per space" helper="Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts."><div className="grid min-w-0 gap-4">
+
+
+      {spaces.isLoading ? <p className="mt-3 text-sm text-muted">Loading bookable spaces…</p> : null}
       {!spaces.isLoading && activeSpaces.length === 0 ? (
         <p className="mt-3 text-sm text-muted">No active bookable spaces.</p>
       ) : null}
@@ -69,8 +73,8 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Mak
           ))}
         </div>
       ) : null}
-      {spaces.error ? <p className="mt-3 text-sm text-danger">{spaces.error.message}</p> : null}
-    </div>
+      {spaces.error ? <ErrorBlock error={new Error("Couldn't load booking rules. Try again.")} onRetry={() => { void spaces.refetch(); }} /> : null}
+    </div></SettingsRow></SettingsQueryState>
   );
 }
 
@@ -134,7 +138,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
       }}
     >
       <h4 className="text-sm font-extrabold text-ink">{space.name}</h4>
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2 ">
         {NUMBER_FIELDS.map(({ key, label, min }) => (
           <label className="grid min-w-0 content-start gap-1 text-sm text-ink" key={key}>
             <span className="font-semibold">{label}</span>
@@ -171,13 +175,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
         </label>
       </div>
       <div>
-        <button
-          className="desk-button-primary w-full max-w-full sm:w-auto"
-          type="submit"
-          disabled={updateRules.isPending}
-        >
-          {updateRules.isPending ? "Saving..." : "Save rules"}
-        </button>
+        <SettingsEditorActions dirty={JSON.stringify(draft) !== JSON.stringify(draftFromSpace(space))} onDiscard={() => { setDraft(draftFromSpace(space)); setFieldErrors({}); setRowError(""); }} pending={updateRules.isPending} disabled={updateRules.isPending} />
       </div>
       {rowError ? <p className="text-sm text-danger">{rowError}</p> : null}
     </form>

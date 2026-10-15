@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { Field } from "../../components/ui";
+import { SettingsRow, StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
-import { Panel, useStaffGet } from "./StaffPanels";
-
+import { PlatformConfigurationSection } from "./PlatformConfigurationSection";
+import { useStaffGet } from "./StaffPanels";
 type PlatformEmailSettings = {
   id: number;
   smtp_host: string;
@@ -16,7 +15,6 @@ type PlatformEmailSettings = {
   from_email: string;
   updated_at: string;
 };
-
 type PlatformEmailForm = {
   smtp_host: string;
   smtp_port: string;
@@ -27,7 +25,7 @@ type PlatformEmailForm = {
   from_email: string;
 };
 
-export function PlatformEmailPanel() {
+export function PlatformEmailPanel({ embedded = false }: { embedded?: boolean }) {
   const queryClient = useQueryClient();
   const settings = useStaffGet<PlatformEmailSettings>(
     ["platform-email"],
@@ -42,10 +40,10 @@ export function PlatformEmailPanel() {
     smtp_use_ssl: false,
     from_email: "",
   });
-
+  const [savedForm, setSavedForm] = useState(form);
   useEffect(() => {
     if (!settings.data) return;
-    setForm({
+    const next = {
       smtp_host: settings.data.smtp_host ?? "",
       smtp_port: String(settings.data.smtp_port ?? 587),
       smtp_username: settings.data.smtp_username ?? "",
@@ -53,9 +51,9 @@ export function PlatformEmailPanel() {
       smtp_use_tls: settings.data.smtp_use_tls,
       smtp_use_ssl: settings.data.smtp_use_ssl,
       from_email: settings.data.from_email ?? "",
-    });
+    };
+    setForm(next); setSavedForm(next);
   }, [settings.data]);
-
   const save = useMutation({
     mutationFn: () =>
       staffRequest<PlatformEmailSettings>("/admin/platform/email-settings", {
@@ -67,28 +65,20 @@ export function PlatformEmailPanel() {
       queryClient.invalidateQueries({ queryKey: ["platform-email"] });
     },
   });
-
   const formDisabled = settings.isLoading || save.isPending;
-
-  return (
-    <Panel title="Platform email">
-      <p className="text-sm text-muted">
-        Instance-wide SMTP for password resets and makerspace notifications when a makerspace has no SMTP configured.
-      </p>
-      {settings.data ? <p className="mt-2 text-sm text-muted">
-        {settings.data.smtp_host.trim() ? "SMTP host configured" : "Not configured"}
-      </p> : null}
-
-      <div className="mt-4 rounded-md border border-line bg-surface p-3">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="SMTP host"><input className="desk-input" disabled={formDisabled} value={form.smtp_host} onChange={(event) => setForm({ ...form, smtp_host: event.target.value })} /></Field>
-          <Field label="SMTP port"><input className="desk-input" disabled={formDisabled} inputMode="numeric" value={form.smtp_port} onChange={(event) => setForm({ ...form, smtp_port: event.target.value })} /></Field>
-          <Field label="SMTP username"><input className="desk-input" disabled={formDisabled} value={form.smtp_username} onChange={(event) => setForm({ ...form, smtp_username: event.target.value })} /></Field>
-          <Field label="SMTP password"><input className="desk-input" disabled={formDisabled} placeholder={settings.data?.smtp_password_set ? "SMTP password set" : undefined} type="password" value={form.smtp_password} onChange={(event) => setForm({ ...form, smtp_password: event.target.value })} /></Field>
-          <Field className="sm:col-span-2" label="From email"><input className="desk-input sm:col-span-2" disabled={formDisabled} value={form.from_email} onChange={(event) => setForm({ ...form, from_email: event.target.value })} /></Field>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-sm text-muted">
+  return <PlatformConfigurationSection title="Platform email" subtitle="Instance-wide SMTP for password resets and spaces without their own email settings." embedded={embedded}
+    state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready", error: "Couldn't load platform email. Try again.", onRetry: () => { void settings.refetch(); } }}
+    save={{ dirty: JSON.stringify(form) !== JSON.stringify(savedForm), pending: save.isPending, error: save.error?.message,
+      onDiscard: () => { setForm(savedForm); save.reset(); }, onSave: () => save.mutate() }}>
+    <StatusPill label={settings.data?.smtp_host.trim() ? "SMTP host configured" : "Not configured"} tone={settings.data?.smtp_host.trim() ? "success" : "neutral"} />
+    <div className="divide-y divide-line">
+          <SettingsRow label="SMTP host"><input aria-label="SMTP host" className="desk-input" disabled={formDisabled} value={form.smtp_host} onChange={(event) => setForm({ ...form, smtp_host: event.target.value })} /></SettingsRow>
+          <SettingsRow label="SMTP port"><input aria-label="SMTP port" className="desk-input" disabled={formDisabled} inputMode="numeric" value={form.smtp_port} onChange={(event) => setForm({ ...form, smtp_port: event.target.value })} /></SettingsRow>
+          <SettingsRow label="SMTP username"><input aria-label="SMTP username" className="desk-input" disabled={formDisabled} value={form.smtp_username} onChange={(event) => setForm({ ...form, smtp_username: event.target.value })} /></SettingsRow>
+          <SettingsRow label="SMTP password"><input aria-label="SMTP password" className="desk-input" disabled={formDisabled} placeholder={settings.data?.smtp_password_set ? "SMTP password set" : undefined} type="password" value={form.smtp_password} onChange={(event) => setForm({ ...form, smtp_password: event.target.value })} /></SettingsRow>
+          <SettingsRow label="From email"><input aria-label="From email" className="desk-input sm:col-span-2" disabled={formDisabled} value={form.from_email} onChange={(event) => setForm({ ...form, from_email: event.target.value })} /></SettingsRow>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
             <input
               type="checkbox"
               disabled={formDisabled}
@@ -97,7 +87,7 @@ export function PlatformEmailPanel() {
             />
             Use STARTTLS (587)
           </label>
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
             <input
               type="checkbox"
               disabled={formDisabled}
@@ -107,18 +97,8 @@ export function PlatformEmailPanel() {
             Use implicit SSL (465)
           </label>
         </div>
-        <button
-          className="desk-button-primary mt-3 w-full"
-          disabled={formDisabled}
-          onClick={() => save.mutate()}
-        >
-          {settings.isLoading ? "Loading..." : save.isPending ? "Saving..." : "Save platform email settings"}
-        </button>
-        {save.error ? <p className="mt-2 text-sm text-danger">{save.error.message}</p> : null}
-        {settings.error ? <p className="mt-2 text-sm text-danger">{settings.error.message}</p> : null}
-      </div>
-    </Panel>
-  );
+    </div>
+  </PlatformConfigurationSection>;
 }
 
 function platformEmailPayload(form: PlatformEmailForm) {

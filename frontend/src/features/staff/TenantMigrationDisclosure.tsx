@@ -10,7 +10,7 @@ import {
 } from "./tenantMigrationApi";
 import { ErrorText, StatusPill } from "./tenantMigrationUi";
 
-export function TenantMigrationDisclosure({ makerspaceId }: { makerspaceId: number }) {
+export function TenantMigrationDisclosure({ makerspaceId, active = true }: { makerspaceId: number; active?: boolean }) {
   const client = useQueryClient();
   const [review, setReview] = useState<{ digest: string; decisions: Record<number, boolean>; acknowledged: boolean }>({
     digest: "", decisions: {}, acknowledged: false,
@@ -47,8 +47,9 @@ export function TenantMigrationDisclosure({ makerspaceId }: { makerspaceId: numb
   const decisions = reviewMatches ? review.decisions : {};
   const acknowledged = reviewMatches && review.acknowledged;
 
+  if (!active) return null;
   return (
-    <section aria-labelledby="migration-disclosure-title" className="rounded-md border border-line bg-bg p-4">
+    <section aria-labelledby="migration-disclosure-title" className="min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="eyebrow">Safety gate</p>
@@ -64,7 +65,7 @@ export function TenantMigrationDisclosure({ makerspaceId }: { makerspaceId: numb
       {closure.isLoading || approvals.isLoading ? <p className="mt-3 text-sm text-muted">Computing the exact identity closure…</p> : null}
       <ErrorText error={closure.error ?? approvals.error} />
       {voidApprovals.map((approval) => (
-        <div className="mt-3 rounded-md border border-danger/40 bg-panel p-3" key={approval.id} role="status">
+        <div className="mt-3 rounded-md border border-danger-line bg-panel p-3" key={approval.id} role="status">
           <p className="font-semibold text-danger">VOID — disclosure closure changed after approval</p>
           <p className="mt-1 text-xs text-muted">Previously approved digest: <span className="code-text break-all">{approval.closure_digest}</span></p>
         </div>

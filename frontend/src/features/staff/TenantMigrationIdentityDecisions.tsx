@@ -18,7 +18,7 @@ const defaultDecision: DraftDecision = {
   target_user_id: null,
 };
 
-export function TenantMigrationIdentityDecisions({ job }: { job: ImportJob }) {
+export function TenantMigrationIdentityDecisions({ job, active = true }: { job: ImportJob; active?: boolean }) {
   const client = useQueryClient();
   const [drafts, setDrafts] = useState<Record<string, DraftDecision>>({});
   const identities = useQuery({
@@ -45,6 +45,7 @@ export function TenantMigrationIdentityDecisions({ job }: { job: ImportJob }) {
     [String(id)]: { ...decisionFor(id), ...patch },
   }));
 
+  if (!active) return null;
   return (
     <section className="mt-3 rounded-md border border-line bg-bg p-3" aria-labelledby={`identity-title-${job.id}`}>
       <h4 className="title-section" id={`identity-title-${job.id}`}>Per-person identity decisions</h4>

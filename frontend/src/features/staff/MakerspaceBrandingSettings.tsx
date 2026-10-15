@@ -1,3 +1,5 @@
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -59,31 +61,22 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
   const displayNameChanged = trimmedDisplayName !== currentDisplayName.trim();
   const displayNameSaveDisabled = loading || updateDisplayName.isPending || !displayNameChanged;
 
-  return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-extrabold text-ink">Branding</h3>
-      <p className="mt-1 text-sm text-muted">
-        Logo and cover image shown on this makerspace&apos;s public pages. When no logo is set,
-        the makerspace name is shown as the wordmark.
-      </p>
-      <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
-        <ImageUploader
+  return <>
+    <SettingsRow label="Logo" helper="Use your makerspace logo on public pages. Without one, the makerspace name becomes the wordmark."><ImageUploader
           endpoint={`/admin/makerspace/${makerspace.id}/logo`}
           currentUrl={settings?.logo_url}
           label="Logo"
           fit="contain"
           onChanged={refreshBranding}
-        />
-        <ImageUploader
+        /></SettingsRow>
+    <SettingsRow label="Cover image" helper="Welcome visitors with a wide banner on your public site."><ImageUploader
           endpoint={`/admin/makerspace/${makerspace.id}/cover`}
           currentUrl={settings?.cover_image_url}
           label="Cover image (wide banner)"
           shape="wide"
           onChanged={refreshBranding}
-        />
-      </div>
-      <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
-        <form
+        /></SettingsRow>
+    <SettingsRow label="Registered name" helper="The official name used across Space Works."><form
           className="grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
@@ -107,19 +100,13 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
             when no logo or public display name is set.
           </p>
           <div>
-            <button
-              className="desk-button-primary w-full max-w-full sm:w-auto"
-              type="submit"
-              disabled={registeredNameSaveDisabled}
-            >
-              {updateRegisteredName.isPending ? "Saving..." : "Save registered name"}
-            </button>
+            <SettingsEditorActions dirty={registeredNameChanged} onDiscard={() => setRegisteredNameInput(currentRegisteredName)} pending={updateRegisteredName.isPending} disabled={registeredNameSaveDisabled} />
           </div>
           {updateRegisteredName.error ? (
             <p className="text-sm text-danger">{updateRegisteredName.error.message}</p>
           ) : null}
-        </form>
-        <form
+        </form></SettingsRow>
+    <SettingsRow label="Public display name" helper="Leave blank to use the registered name."><form
           className="grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
@@ -144,20 +131,12 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
           <span className="font-semibold text-ink">{makerspace.name}</span>).
         </p>
         <div>
-          <button
-            className="desk-button-primary w-full max-w-full sm:w-auto"
-            type="submit"
-            disabled={displayNameSaveDisabled}
-          >
-            {updateDisplayName.isPending ? "Saving..." : "Save display name"}
-          </button>
+          <SettingsEditorActions dirty={displayNameChanged} onDiscard={() => setDisplayNameInput(currentDisplayName)} pending={updateDisplayName.isPending} disabled={displayNameSaveDisabled} />
         </div>
         {updateDisplayName.error ? (
           <p className="text-sm text-danger">{updateDisplayName.error.message}</p>
         ) : null}
-        </form>
-      </div>
-      <MakerspaceThemeSettings makerspace={makerspace} settings={settings} loading={loading} />
-    </div>
-  );
+        </form></SettingsRow>
+    <MakerspaceThemeSettings makerspace={makerspace} settings={settings} loading={loading} />
+  </>;
 }

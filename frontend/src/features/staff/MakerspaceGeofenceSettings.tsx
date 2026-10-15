@@ -1,7 +1,9 @@
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
 
@@ -37,9 +39,9 @@ export function MakerspaceGeofenceSettings({ makerspace, settings, loading }: Pr
   });
   const changed = enabled !== (current.geofence_enabled ?? false) || latitude !== String(current.geofence_latitude ?? "") || longitude !== String(current.geofence_longitude ?? "") || radius !== String(current.geofence_radius_m ?? 25);
 
-  return <div className="min-w-0 rounded-md border border-line bg-bg p-4"><form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (changed) save.mutate(); }}>
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><h3 className="text-base font-extrabold text-ink">Presence geofence</h3><Badge tone={enabled ? "success" : "neutral"}>{enabled ? "On" : "Off"}</Badge></div><p className="mt-1 max-w-2xl text-sm text-muted">Require member location only when a presence session starts. Browsers require HTTPS or localhost for location access.</p></div><label className="flex items-center gap-2 text-sm font-semibold text-ink"><input type="checkbox" checked={enabled} disabled={loading || save.isPending} onChange={(event) => setEnabled(event.target.checked)} /> Enable geofence</label></div>
+  return <SettingsRow label="Presence geofence" helper="Require member location only when a presence session starts. Browsers require HTTPS or localhost for location access."><div className="grid min-w-0 gap-4"><form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (changed) save.mutate(); }}>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Badge label="" tone={enabled ? "success" : "neutral"}>{enabled ? "On" : "Off"}</Badge></div></div><label className="min-h-11 flex items-center gap-2 text-sm font-semibold text-ink"><input type="checkbox" checked={enabled} disabled={loading || save.isPending} onChange={(event) => setEnabled(event.target.checked)} /> Enable geofence</label></div>
     <div className="grid gap-3 md:grid-cols-3"><label className="grid gap-1 text-sm font-semibold text-ink">Latitude<input className="desk-input" inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="12.971599" /></label><label className="grid gap-1 text-sm font-semibold text-ink">Longitude<input className="desk-input" inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="77.594566" /></label><label className="grid gap-1 text-sm font-semibold text-ink">Radius (metres)<input className="desk-input" type="number" min="1" value={radius} onChange={(event) => setRadius(event.target.value)} /></label></div>
-    {save.error ? <p className="text-sm text-danger" role="alert">{save.error.message}</p> : null}<button className="desk-button-primary w-fit" type="submit" disabled={loading || save.isPending || !changed}>{save.isPending ? "Saving..." : "Save geofence"}</button>
-  </form></div>;
+    {save.error ? <p className="text-sm text-danger" role="alert">{save.error.message}</p> : null}<SettingsEditorActions dirty={changed} onDiscard={() => { setEnabled(current.geofence_enabled ?? false); setLatitude(String(current.geofence_latitude ?? "")); setLongitude(String(current.geofence_longitude ?? "")); setRadius(String(current.geofence_radius_m ?? 25)); }} pending={save.isPending} disabled={loading || save.isPending || !changed} />
+  </form></div></SettingsRow>;
 }

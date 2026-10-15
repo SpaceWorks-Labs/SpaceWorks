@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { DangerZone } from "../../components/ui";
+import { useMigrationConfirmation } from "./MigrationConfirmation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -18,7 +20,7 @@ import {
 import { TenantMigrationIdentityDecisions } from "./TenantMigrationIdentityDecisions";
 import { ErrorText, parseReceipt, ReceiptOutput, StatusPill } from "./tenantMigrationUi";
 
-export function TenantMigrationImports({ pairings }: { pairings: Pairing[] }) {
+export function TenantMigrationImports({ pairings, active = true, phase = "import" }: { pairings: Pairing[]; active?: boolean; phase?: "import" | "verify" | "cutover" }) {
   const client = useQueryClient();
   const [archive, setArchive] = useState<File | null>(null);
   const [digest, setDigest] = useState("");
@@ -32,7 +34,8 @@ export function TenantMigrationImports({ pairings }: { pairings: Pairing[] }) {
   });
 
   return (
-    <section aria-labelledby="migration-import-title" className="rounded-md border border-line bg-bg p-4">
+    <>
+      {active && phase === "import" ? <section aria-labelledby="migration-import-title" className="min-w-0">
       <p className="eyebrow">Target deployment</p>
       <h3 className="title-section" id="migration-import-title">Import and verify target</h3>
       <p className="mt-2 text-sm text-ink">Upload the age-encrypted archive and bind it to the digest shown on the source export. Materialization creates an IMPORTING tenant; it is not live until separately activated.</p>
@@ -46,17 +49,19 @@ export function TenantMigrationImports({ pairings }: { pairings: Pairing[] }) {
       <ErrorText error={create.error} field="source_archive_digest" />
       {imports.isLoading ? <p className="mt-4 text-sm text-muted">Loading import jobs…</p> : null}
       <ErrorText error={imports.error} />
-      <div className="mt-4 grid gap-4">
+      </section> : null}
+      <div className="grid gap-4">
         {(imports.data ?? []).map((job) => (
-          <ImportJobCard job={job} key={job.id} pairing={pairings.find((item) => item.migration_id === job.id)} />
+          <ImportJobCard job={job} key={job.id} pairing={pairings.find((item) => item.migration_id === job.id)} active={active} phase={phase} />
         ))}
       </div>
-    </section>
+    </>
   );
 }
 
-function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: Pairing }) {
+function ImportJobCard({ job: listedJob, pairing, active, phase }: { job: ImportJob; pairing?: Pairing; active: boolean; phase: "import" | "verify" | "cutover" }) {
   const client = useQueryClient();
+  const [confirmCutover, confirmation] = useMigrationConfirmation();
   const [targetName, setTargetName] = useState("");
   const [targetSlug, setTargetSlug] = useState("");
   const [reviewedIdentities, setReviewedIdentities] = useState(false);
@@ -117,7 +122,8 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
   const tone: "success" | "danger" | "warn" = lifecycle === "ACTIVE" ? "success" : lifecycle === "ABORTED" || job.status === "failed" ? "danger" : "warn";
 
   return (
-    <article className="rounded-md border border-line bg-surface p-3">
+    <>
+    {active ? <article className="rounded-md border border-line bg-surface p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-semibold text-ink">{job.source_makerspace_name || "Pending archive inspection"}</p>
@@ -135,8 +141,7 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
         <div className="mt-2"><p className="text-xs font-semibold text-ink">Archived source deployment identity</p><pre className="mt-1 overflow-auto rounded border border-line bg-bg p-2 text-xs text-muted">{JSON.stringify(job.source_deployment_identity, null, 2)}</pre></div>
       ) : null}
 
-      {job.status === "awaiting_identity" || job.status === "ready" ? <TenantMigrationIdentityDecisions job={job} /> : null}
-      {job.status === "ready" ? (
+      {phase === "verify" && job.status === "ready" ? (
         <div className="mt-3 rounded-md border border-line bg-bg p-3">
           <h4 className="title-section">Materialize target</h4>
           <div className="mt-2 grid gap-3 md:grid-cols-2">
@@ -152,34 +157,35 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
         </div>
       ) : null}
 
-      {job.status === "completed" ? (
+      {phase !== "import" && job.status === "completed" ? (
         <VerificationReportView report={verification.data} loading={verification.isLoading} error={verification.error} />
       ) : null}
-      {job.status === "completed" && pairing && lifecycle === "IMPORTING" ? (
-        <div className="mt-3 rounded-md border border-danger/40 bg-panel p-3">
+      {phase === "cutover" && job.status === "completed" && pairing && lifecycle === "IMPORTING" ? (
+        <div className="mt-3 rounded-md border border-danger-line bg-panel p-3">
           <h4 className="title-section">One-way target cutover</h4>
           <p className="mt-1 text-sm text-ink">Activation and abort are mutually exclusive. Activation cannot be undone from this screen.</p>
           <label className="mt-2 block text-sm text-ink">Source cutover receipt<textarea className="desk-input mt-1 min-h-28 w-full code-text text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button className="desk-button-danger" type="button" disabled={!sourceReceipt || !verification.data || cutoverPending} onClick={() => {
-              if (sourceReceipt && window.confirm(`Activate ${tenantName}? This target cutover cannot be undone from this screen.`)) activate.mutate(sourceReceipt);
-            }}>Activate target {tenantName}</button>
-            <button className="desk-button-danger" type="button" disabled={cutoverPending} onClick={() => {
-              if (window.confirm(`Abort ${tenantName}? Imported target objects will be rolled back.`)) abort.mutate();
-            }}>Abort target {tenantName}</button>
-          </div>
+          <DangerZone title={`Activate target ${tenantName}`} consequence="Activation consumes the source cutover receipt and cannot be undone from this screen."
+            action={{ label: `Activate target ${tenantName}`, disabled: !sourceReceipt || !verification.data || cutoverPending, disabledReason: "Add a valid source receipt and wait for verification before activating.", pending: activate.isPending, pendingLabel: "Activating target…",
+              onClick: () => { if (sourceReceipt) confirmCutover({ title: `Activate target ${tenantName}`, name: tenantName, consequence: "This target cutover cannot be undone from this screen.", onConfirm: () => activate.mutate(sourceReceipt) }); } }} />
+          <DangerZone title={`Abort target ${tenantName}`} consequence="Imported target objects will be rolled back. Transfer the signed abort receipt to recover the source."
+            action={{ label: `Abort target ${tenantName}`, disabled: cutoverPending, disabledReason: "Wait for the current cutover action.", pending: abort.isPending, pendingLabel: "Aborting target…",
+              onClick: () => confirmCutover({ title: `Abort target ${tenantName}`, name: tenantName, consequence: "Imported target objects will be rolled back.", onConfirm: () => abort.mutate() }) }} />
         </div>
       ) : null}
       {job.status === "completed" && !pairing ? <p className="mt-3 text-sm text-warn-ink">Pin the matching deployment pairing before cutover actions become available.</p> : null}
       <ErrorText error={activate.error ?? abort.error} field="receipt" />
+      {confirmation}
       <ReceiptOutput label="Target abort receipt — transfer to source" receipt={abort.data?.receipt} />
-    </article>
+    </article> : null}
+    <TenantMigrationIdentityDecisions job={job} active={active && phase === "import" && (job.status === "awaiting_identity" || job.status === "ready")} />
+    </>
   );
 }
 
 function VerificationReportView({ report, loading, error }: { report?: VerificationReport; loading: boolean; error: unknown }) {
   return (
-    <section className="mt-3 rounded-md border border-accent/40 bg-accent-soft p-3" aria-label="Import verification report">
+    <section className="mt-3 rounded-md border border-line bg-accent-soft p-3" aria-label="Import verification report">
       <h4 className="title-section">Verification report</h4>
       {loading ? <p className="mt-2 text-sm text-muted">Loading the persisted verification report…</p> : null}
       <ErrorText error={error} />

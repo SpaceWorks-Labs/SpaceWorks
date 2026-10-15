@@ -1,3 +1,5 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { DataTable } from "../../components/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -71,60 +73,19 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
         Checked = enabled for that feature and channel. The Staff email notifications switch and
         per-member recipient toggles affect staff email only, not Telegram, Slack, or Mattermost.
       </p>
-      <div className="mt-3 max-w-full overflow-x-auto rounded-md border border-line bg-bg">
-        <table className="w-max min-w-full border-collapse text-sm">
-          <caption className="sr-only">
-            Checked boxes enable each notification channel for a feature.
-          </caption>
-          <thead className="bg-surface text-xs uppercase text-muted">
-            <tr className="border-b border-line">
-              <th className="px-3 py-2 text-left font-semibold" scope="col">
-                Feature
-              </th>
-              {rules.channels.map((channel) => (
-                <th
-                  key={channel.key}
-                  className="min-w-28 px-3 py-2 text-center font-semibold"
-                  scope="col"
-                >
-                  {channel.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rules.features.map((feature) => (
-              <tr key={feature.key} className="border-b border-line last:border-b-0">
-                <th className="whitespace-nowrap px-3 py-2 text-left font-semibold text-ink" scope="row">
-                  {feature.label}
-                </th>
-                {rules.channels.map((channel) => {
-                  const cell = preferenceCell(rules.preferences, feature.key, channel.key);
-                  const checked = cell?.enabled ?? false;
-                  return (
-                    <td key={channel.key} className="px-3 py-2 text-center">
-                      <input
-                        aria-label={`${checked ? "Disable" : "Enable"} ${channel.label} for ${feature.label}`}
-                        className="h-4 w-4"
-                        type="checkbox"
-                        checked={checked}
-                        disabled={updatePreference.isPending}
-                        onChange={(event) =>
-                          updatePreference.mutate({
-                            feature: feature.key,
-                            channel: channel.key,
-                            enabled: event.target.checked,
-                          })
-                        }
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <SettingsQueryState query={settings} resource="channel setup" />
+      <DataTable data={rules.features} getRowId={feature => feature.key} columns={[
+        { key: "feature", header: "Feature", render: feature => feature.label },
+        ...rules.channels.map(channel => ({ key: channel.key, header: channel.label,
+          render: (feature: NotificationRulesResponse["features"][number]) => {
+            const checked = preferenceCell(rules.preferences, feature.key, channel.key)?.enabled ?? false;
+            return <label className="inline-flex min-h-11 min-w-11 items-center justify-center">
+              <input aria-label={`${checked ? "Disable" : "Enable"} ${channel.label} for ${feature.label}`}
+                type="checkbox" checked={checked} disabled={updatePreference.isPending}
+                onChange={event => updatePreference.mutate({ feature: feature.key, channel: channel.key, enabled: event.target.checked })} />
+            </label>;
+          } })),
+      ]} emptyTitle="No notification channels yet." />
       {warnings.length ? (
         <div
           className="mt-3 rounded-md border border-warn bg-warn-soft p-3 text-sm text-warn-ink"
@@ -139,9 +100,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
           </ul>
         </div>
       ) : null}
-      {settings.error ? (
-        <p className="mt-3 text-sm text-danger">Unable to check channel setup: {settings.error.message}</p>
-      ) : null}
+
       {updatePreference.error ? (
         <p className="mt-3 text-sm text-danger" role="alert" aria-live="assertive">
           {updatePreference.error.message}

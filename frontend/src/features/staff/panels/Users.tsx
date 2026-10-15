@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { ConfirmDialog } from "../../../components/ui";
+import { ConfirmDialog, Tabs } from "../../../components/ui";
 import { staffRequest, type StaffAuthUser } from "../../../lib/api";
-import { Panel, useStaffGet, type Makerspace } from "./shared";
+import { useStaffGet, type Makerspace } from "./shared";
+import { ListLayout } from "../../../components/layouts/ListLayout";
 import { RoleManager } from "./RoleManager";
 import { StaffInvitations } from "./StaffInvitations";
 import { UsersTable } from "./UsersTable";
@@ -42,6 +43,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
   const queryClient = useQueryClient();
   const [msId, setMsId] = useState<number>(makerspaces[0]?.id ?? 0);
   const [roleFilter, setRoleFilter] = useState("all");
+  const [tab, setTab] = useState("staff");
   const [addOpen, setAddOpen] = useState(false);
   const [makerspaceOpen, setMakerspaceOpen] = useState(false);
   const [staffForm, setStaffForm] = useState<StaffForm>(emptyStaffForm);
@@ -162,13 +164,23 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
   };
 
   if (!makerspaces.length) {
-    return <Panel title="Users"><p className="text-sm text-muted">No makerspaces available for this account.</p></Panel>;
+    return <ListLayout header={{ title: "Staff & roles" }} state={{ status: "ready" }} isEmpty empty={{ message: "No makerspaces available for this account. Choose another account to continue." }} body={{ kind: "rows", rows: null }} />;
   }
 
+  const sectionTabs = (<Tabs activeKey={tab} onChange={setTab} tabs={[
+        { key: "staff", label: "Staff", href: "#staff", count: memberships.data?.length ?? 0 },
+        ...(canManageRoles ? [{ key: "roles", label: "Roles", href: "#roles", count: rolesList.data?.length ?? 0 }] : []),
+        ...(canManageRoles && makerspaces.find(space => space.id === msId)?.enabled_features?.includes("staff.invitations") ? [{ key: "invitations", label: "Invitations", href: "#invitations" }] : []),
+      ]} />);
+  const activeQuery = tab === "roles" ? rolesList : memberships;
   const panelError = memberships.error?.message ?? rolesList.error?.message ?? restore.error?.message;
 
   return (
-    <Panel title="Users">
+    <ListLayout header={{ meta: sectionTabs, title: "Staff & roles", subtitle: "Give your team the access they need to run this space.", primary: { label: "Add staff", onClick: openAdd, disabled: !assignableRoles.length, disabledReason: "A role you can assign is needed first." }, secondary: isSuperadmin ? { label: "Create makerspace", onClick: () => setMakerspaceOpen(true) } : undefined }}
+      state={{ status: tab === "invitations" ? "ready" : activeQuery.isLoading ? "loading" : activeQuery.isError ? "error" : "ready", error: "Couldn't load staff and roles. Try again.", onRetry: () => { void activeQuery.refetch(); } }}
+      empty={{ message: "No staff yet. Add someone to your team." }}
+      stats={[{ label: "Staff", value: memberships.data?.length ?? 0 }, { label: "Roles", value: rolesList.data?.length ?? 0 }]}
+      body={{ kind: "rows", rows: <>
       <div className="grid gap-4">
         {creationInvite ? <div role="status" className="rounded border border-line p-3"><p>First staff invitation delivery: {creationInvite.delivery_status}. Share this link privately if needed.</p><input className="desk-input w-full" aria-label="First staff invitation link" value={creationInvite.accept_url} readOnly onFocus={event => event.currentTarget.select()} /><button className="desk-button-ghost" onClick={() => setCreationInvite(null)}>Dismiss invitation link</button></div> : null}
         <div className="flex flex-wrap items-center gap-3">
@@ -187,14 +199,11 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
               {roleFilterOptions.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>
           </label>
-          <div className="desk-actions ml-auto flex flex-wrap gap-2">
-            <button className="desk-button-primary" type="button" onClick={openAdd} disabled={!assignableRoles.length}>Add staff</button>
-            {isSuperadmin ? <button className="desk-button" type="button" onClick={() => setMakerspaceOpen(true)}>Create makerspace</button> : null}
-          </div>
+
         </div>
 
         {panelError ? <p className="text-sm text-danger">{panelError}</p> : null}
-        <UsersTable
+        {tab === "staff" ? <UsersTable
           rows={rows}
           makerspaceNames={makerspaceNames}
           loading={memberships.isLoading}
@@ -204,13 +213,14 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
           onResetPassword={openResetPassword}
           onRevoke={setRevokeTarget}
           onChangeRole={(membership, roleId) => changeRole.mutateAsync({ membership, roleId })}
-        />
-        {canManageRoles && makerspaces.find((space) => space.id === msId)?.enabled_features?.includes("staff.invitations") ? <StaffInvitations key={msId} msId={msId} roles={assignableRoles} /> : null}
-        {canManageRoles ? (
+        /> : null}
+        {tab === "invitations" && canManageRoles && makerspaces.find((space) => space.id === msId)?.enabled_features?.includes("staff.invitations") ? <StaffInvitations key={msId} msId={msId} roles={assignableRoles} /> : null}
+        {canManageRoles && tab === "roles" ? (
           <RoleManager msId={msId} actorActions={actorActions} isSuperadmin={isSuperadmin} onRolesChanged={afterStaffChange} />
         ) : null}
       </div>
 
+    </> }} detail={<>
       <AddStaffModal
         open={addOpen}
         form={staffForm}
@@ -274,6 +284,6 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
         onCancel={() => setRevokeTarget(null)}
         onConfirm={() => { if (revokeTarget) revoke.mutate(revokeTarget); }}
       />
-    </Panel>
+    </>} />
   );
 }

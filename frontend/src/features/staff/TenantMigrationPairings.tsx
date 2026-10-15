@@ -10,7 +10,7 @@ import {
 } from "./tenantMigrationApi";
 import { ErrorText } from "./tenantMigrationUi";
 
-export function TenantMigrationPairings({ pairings }: { pairings: Pairing[] }) {
+export function TenantMigrationPairings({ pairings, active = true }: { pairings: Pairing[]; active?: boolean }) {
   const client = useQueryClient();
   const [migrationId, setMigrationId] = useState("");
   const [sourceTenantId, setSourceTenantId] = useState("");
@@ -46,8 +46,9 @@ export function TenantMigrationPairings({ pairings }: { pairings: Pairing[] }) {
     }
   };
 
+  if (!active) return null;
   return (
-    <section aria-labelledby="migration-pairing-title" className="rounded-md border border-line bg-bg p-4">
+    <section aria-labelledby="migration-pairing-title" className="min-w-0">
       <p className="eyebrow">Two-deployment protocol</p>
       <h3 className="title-section" id="migration-pairing-title">Pin source and target identities</h3>
       <p className="mt-2 text-sm text-ink">
@@ -55,7 +56,7 @@ export function TenantMigrationPairings({ pairings }: { pairings: Pairing[] }) {
         a receipt from an identity outside this pinned pair is refused.
       </p>
       {identity.data ? (
-        <div className="mt-3 rounded-md border border-accent/40 bg-accent-soft p-3 text-sm">
+        <div className="mt-3 rounded-md border border-line bg-accent-soft p-3 text-sm">
           <p className="font-semibold text-accent-ink">This deployment: {identity.data.deployment_id}</p>
           <p className="mt-1 break-all code-text text-xs text-muted">Fingerprint: {identity.data.fingerprint}</p>
           <p className="mt-1 break-all code-text text-xs text-muted">Age recipient: {identity.data.age_recipient}</p>

@@ -1,8 +1,7 @@
-import { Field } from "../../components/ui";
+import { Callout, ErrorBlock, Field, Skeleton } from "../../components/ui";
 import { ApiClientScopePicker } from "./ApiClientScopePicker";
 import type { ApiClientCreateResponse, ApiClientScopeOption } from "./apiClientsApi";
 import { splitOrigins } from "./apiClientsApi";
-
 type Props = {
   canManageMakerspace: boolean;
   label: string;
@@ -16,6 +15,7 @@ type Props = {
   scopes: string[];
   scopesLoading: boolean;
   scopesError: Error | null;
+  onRetryScopes?: () => void;
   onLabelChange: (value: string) => void;
   onReasonChange: (value: string) => void;
   onOriginsChange: (value: string) => void;
@@ -37,6 +37,7 @@ export function ApiClientCreateCard({
   scopes,
   scopesLoading,
   scopesError,
+  onRetryScopes,
   onLabelChange,
   onReasonChange,
   onOriginsChange,
@@ -46,8 +47,7 @@ export function ApiClientCreateCard({
 }: Props) {
   if (canManageMakerspace) {
     return (
-      <article className="rounded-md border border-line bg-surface p-3">
-        <h3 className="font-extrabold text-ink">API clients</h3>
+      <article className="grid gap-3">
         <div className="mt-3 grid gap-2">
           <Field label="Client label">
             <input
@@ -65,9 +65,9 @@ export function ApiClientCreateCard({
             />
           </Field>
           <div className="grid gap-2">
-            <span className="eyebrow">Scopes</span>
+            <span className="font-semibold text-ink">What can it do?</span>
             <p className="text-xs text-muted">Choose the exact public API access this client needs.</p>
-            {scopesLoading ? <p className="text-sm text-muted">Loading scope choices...</p> : null}
+            {scopesLoading ? <Skeleton className="h-32 w-full" /> : null}
             {!scopesLoading && scopeOptions.length ? (
               <ApiClientScopePicker
                 options={scopeOptions}
@@ -76,7 +76,7 @@ export function ApiClientCreateCard({
                 disabled={isPending}
               />
             ) : null}
-            {scopesError ? <p className="text-sm text-danger">{scopesError.message}</p> : null}
+            {scopesError ? <ErrorBlock error={scopesError} resource="API scopes" onRetry={onRetryScopes} /> : null}
           </div>
         </div>
         <button
@@ -84,12 +84,12 @@ export function ApiClientCreateCard({
           disabled={!label.trim() || !splitOrigins(origins).length || !scopes.length || scopesLoading || !!scopesError || isPending}
           onClick={onSubmit}
         >
-          {isPending ? "Creating..." : "Create API client"}
+          {isPending ? "Creating…" : "Create API client"}
         </button>
         {error ? <p className="mt-2 text-sm text-danger">{error.message}</p> : null}
         {oneTimeSecret ? (
-          <div className="mt-3 rounded-md border border-accent/40 bg-accent-soft p-3">
-            <p className="text-sm font-semibold text-ink">Copy this secret now &mdash; it will not be shown again.</p>
+          <div className="mt-3 rounded-md border border-line bg-warn-soft p-3">
+            <Callout size="inline" tone="warn" lead="Copy the secret now." body="It’s shown once." />
             <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 code-text text-xs text-ink">
               {oneTimeSecret.client_secret}
             </p>
@@ -110,10 +110,8 @@ export function ApiClientCreateCard({
       </article>
     );
   }
-
   return (
-    <article className="rounded-md border border-line bg-surface p-3">
-      <h3 className="font-extrabold text-ink">Request API access</h3>
+    <article className="grid gap-3">
       <div className="mt-3 grid gap-2">
         <Field label="Request label">
           <input
@@ -143,7 +141,7 @@ export function ApiClientCreateCard({
         disabled={!label.trim() || !reason.trim() || !splitOrigins(origins).length || isPending}
         onClick={onSubmit}
       >
-        {isPending ? "Submitting..." : "Submit API access request"}
+        {isPending ? "Submitting…" : "Submit API access request"}
       </button>
       {submitted ? (
         <p className="mt-2 text-sm text-muted">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Badge, EmptyState, Modal } from "../../../components/ui";
+import { EmptyState, ListRow, Modal, OverflowMenu, StatusPill } from "../../../components/ui";
 import type { StaffMembershipRow, StaffRole } from "./rolesApi";
 
 export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, onRestrict, onRestore, onResetPassword, onRevoke, onChangeRole }: {
@@ -36,25 +36,18 @@ export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, on
   if (!rows.length) return <EmptyState title="No staff" description="No memberships match this filter." />;
   return (
     <>
-      <div className="overflow-x-auto rounded-md border border-line bg-bg">
-        <table className="w-full min-w-[860px] text-left text-sm">
-          <thead className="eyebrow bg-surface"><tr className="border-b border-line">{["Username", "Email", "Role", "Makerspace", "Access", ""].map((header) => <th scope={header ? "col" : undefined} key={header} className="px-3 py-2">{header}</th>)}</tr></thead>
-          <tbody>{rows.map((membership) => <tr key={membership.id} className="border-b border-line last:border-b-0">
-            <td className="px-3 py-2 font-semibold text-ink"><span className="block max-w-40 break-words">{membership.user.username}</span></td>
-            <td className="px-3 py-2 text-muted"><span className="block max-w-56 break-all">{membership.user.email || "-"}</span></td>
-            <td className="px-3 py-2 text-ink">{roleLabel(membership)}</td>
-            <td className="px-3 py-2 text-ink">{makerspaceNames.get(membership.makerspace_id) ?? membership.makerspace_slug}</td>
-            <td className="px-3 py-2"><AccessBadge status={membership.user.access_status} /></td>
-            <td className="px-3 py-2"><div className="desk-actions flex flex-wrap justify-end gap-2">
-              <button className="desk-button-ghost" type="button" disabled={!assignableRoles.length} onClick={() => openChange(membership)}>Change role</button>
-              <button className="desk-button-danger" type="button" onClick={() => onRestrict(membership)}>Restrict</button>
-              <button className="desk-button-warn" type="button" onClick={() => onResetPassword(membership)}>Reset password</button>
-              <button className="desk-button-success" type="button" disabled={membership.user.access_status === "active"} onClick={() => onRestore(membership)}>Restore</button>
-              <button className="desk-button-danger" type="button" onClick={() => onRevoke(membership)}>Revoke</button>
-            </div></td>
-          </tr>)}</tbody>
-        </table>
-      </div>
+      <div className="grid gap-3">{rows.map(membership => <ListRow key={membership.id}
+        title={membership.user.username} identity={{ kind: "avatar", name: membership.user.username, seed: String(membership.user.id) }}
+        meta={<>{membership.user.email || "No email"} · {roleLabel(membership)} · {makerspaceNames.get(membership.makerspace_id) ?? membership.makerspace_slug}</>}
+        right={<div className="flex flex-wrap items-center gap-3"><AccessBadge status={membership.user.access_status} />
+          <button className="desk-button" type="button" disabled={!assignableRoles.length} onClick={() => openChange(membership)}>Change role</button>
+          <OverflowMenu label={`Actions for ${membership.user.username}`} actions={[
+            { label: "Restrict", tone: "danger", onClick: () => onRestrict(membership) },
+            { label: "Reset password", onClick: () => onResetPassword(membership) },
+            { label: "Restore", disabled: membership.user.access_status === "active", disabledReason: "Access is already active.", onClick: () => onRestore(membership) },
+            { label: "Revoke", tone: "danger", onClick: () => onRevoke(membership) },
+          ]} />
+        </div>} />)}</div>
       <ChangeRoleModal target={changeTarget} roleId={roleId} roles={assignableRoles} pending={assignPending} error={assignError} onClose={() => setChangeTarget(null)} onChange={setRoleId} onSubmit={submitChange} />
     </>
   );
@@ -76,7 +69,7 @@ function ChangeRoleModal({ target, roleId, roles, pending, error, onClose, onCha
 
 function AccessBadge({ status }: { status: string }) {
   const tone = status === "active" ? "success" : status === "restricted" ? "warn" : "danger";
-  return <Badge tone={tone}>{status.replace(/_/g, " ")}</Badge>;
+  return <StatusPill tone={tone} label={status.replace(/_/g, " ")} />;
 }
 
 function roleLabel(membership: StaffMembershipRow) {

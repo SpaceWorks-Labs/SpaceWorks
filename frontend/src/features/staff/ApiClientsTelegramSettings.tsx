@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { Field } from "../../components/ui";
+import { ConfirmDialog, DangerZone, ErrorBlock, Skeleton, SettingsActions, SettingsRow, StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
-
 type ApiSettings = {
   telegram_group_chat_id: string;
   telegram_bot_token_set: boolean;
 };
-
 type TelegramSettingsForm = {
   telegram_group_chat_id: string;
   telegram_bot_token: string;
@@ -17,16 +14,15 @@ type TelegramSettingsForm = {
 
 export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makerspace }) {
   const queryClient = useQueryClient();
+  const [confirmClear, setConfirmClear] = useState(false);
   const [settingsForm, setSettingsForm] = useState<TelegramSettingsForm>({
     telegram_group_chat_id: "",
     telegram_bot_token: "",
   });
-
   const settings = useStaffGet<ApiSettings>(
     ["api-settings", makerspace.id],
     `/admin/makerspace/${makerspace.id}/api-settings`,
   );
-
   useEffect(() => {
     if (!settings.data) return;
     setSettingsForm({
@@ -34,7 +30,6 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
       telegram_bot_token: "",
     });
   }, [settings.data]);
-
   const saveSettings = useMutation({
     mutationFn: () =>
       staffRequest<ApiSettings>(`/admin/makerspace/${makerspace.id}/api-settings`, {
@@ -49,7 +44,6 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
       queryClient.invalidateQueries({ queryKey: ["api-settings", makerspace.id] });
     },
   });
-
   const clearTelegramToken = useMutation({
     mutationFn: () =>
       staffRequest<ApiSettings>(`/admin/makerspace/${makerspace.id}/api-settings`, {
@@ -71,23 +65,23 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
         }),
       }),
   });
-
   return (
     <div className="rounded-md border border-line bg-surface p-3">
-      <h3 className="font-extrabold text-ink">Integration settings</h3>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <Field label="Telegram group chat ID">
+      <h3 className="title-section">Telegram</h3>
+      <StatusPill label={settings.data?.telegram_bot_token_set ? "Token saved" : "No token saved"} />
+      <div className="mt-3 divide-y divide-line">
+        <SettingsRow label="Telegram group chat ID" htmlFor="telegram-group">
           <input
-            className="desk-input"
+            id="telegram-group" className="desk-input"
             value={settingsForm.telegram_group_chat_id}
             onChange={(event) =>
               setSettingsForm({ ...settingsForm, telegram_group_chat_id: event.target.value })
             }
           />
-        </Field>
-        <Field label="Telegram bot token">
+        </SettingsRow>
+        <SettingsRow label="Telegram bot token" htmlFor="telegram-token">
           <input
-            className="desk-input"
+            id="telegram-token" className="desk-input"
             placeholder={settings.data?.telegram_bot_token_set ? "Telegram bot token set" : undefined}
             type="password"
             value={settingsForm.telegram_bot_token}
@@ -95,34 +89,20 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
               setSettingsForm({ ...settingsForm, telegram_bot_token: event.target.value })
             }
           />
-        </Field>
+        </SettingsRow>
       </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <button
-          className="desk-button-primary w-full"
-          disabled={!settings.isSuccess || saveSettings.isPending}
-          onClick={() => saveSettings.mutate()}
-        >
-          {saveSettings.isPending ? "Saving..." : "Save integration settings"}
-        </button>
-        <button
-          className="desk-button w-full"
-          type="button"
-          disabled={!settings.data?.telegram_bot_token_set || clearTelegramToken.isPending}
-          onClick={() => clearTelegramToken.mutate()}
-        >
-          {clearTelegramToken.isPending ? "Clearing..." : "Clear Telegram token"}
-        </button>
-      </div>
+      {settingsForm.telegram_bot_token || settingsForm.telegram_group_chat_id !== (settings.data?.telegram_group_chat_id ?? "") || saveSettings.error ?
+        <SettingsActions pending={saveSettings.isPending} disabled={!settings.isSuccess} onSave={() => saveSettings.mutate()}
+          onDiscard={() => setSettingsForm({ telegram_group_chat_id: settings.data?.telegram_group_chat_id ?? "", telegram_bot_token: "" })} /> : null}
       <button
         className="desk-button mt-2 w-full"
         disabled={!settings.isSuccess || testTelegram.isPending}
         onClick={() => testTelegram.mutate()}
       >
-        {testTelegram.isPending ? "Sending..." : "Send Telegram test alert"}
+        {testTelegram.isPending ? "Sending…" : "Send Telegram test alert"}
       </button>
-      {settings.isLoading ? <p className="mt-2 text-sm text-muted">Loading integration settings...</p> : null}
-      {settings.error ? <p className="mt-2 text-sm text-danger">{settings.error.message}</p> : null}
+      {settings.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
+      {settings.error ? <ErrorBlock error={new Error("Couldn't load Telegram settings. Try again.")} onRetry={() => { void settings.refetch(); }} /> : null}
       {saveSettings.error ? <p className="mt-2 text-sm text-danger">{saveSettings.error.message}</p> : null}
       {clearTelegramToken.error ? <p className="mt-2 text-sm text-danger">{clearTelegramToken.error.message}</p> : null}
       {testTelegram.data ? (
@@ -132,6 +112,10 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
         </p>
       ) : null}
       {testTelegram.error ? <p className="mt-2 text-sm text-danger">{testTelegram.error.message}</p> : null}
+      <DangerZone title="Clear Telegram token" consequence="Stops Telegram alerts for this makerspace until a new token is saved."
+        action={{ label: "Clear Telegram token", disabled: !settings.data?.telegram_bot_token_set || clearTelegramToken.isPending, onClick: () => setConfirmClear(true) }} />
+      <ConfirmDialog open={confirmClear} title="Clear Telegram token?" message="Telegram alerts will stop until a new token is saved." confirmLabel="Clear token" tone="danger"
+        pending={clearTelegramToken.isPending} onCancel={() => setConfirmClear(false)} onConfirm={() => { clearTelegramToken.mutate(); setConfirmClear(false); }} />
     </div>
   );
 }

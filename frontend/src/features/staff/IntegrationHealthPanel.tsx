@@ -1,9 +1,12 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { ErrorBlock } from "../../components/ui";
+import { SettingsRow } from "../../components/ui";
 import type React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import type { ApiPath } from "../../generated/api";
-import { Badge, Metric } from "../../components/ui";
+import { StatusPill as Badge, Metric } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { type ChatDestinationsHealth, IntegrationHealthRooms } from "./IntegrationHealthRooms";
 import type { Makerspace } from "./StaffPanels";
@@ -70,19 +73,19 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
   const data = health.data;
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
+    <SettingsQueryState query={health} resource="integration health"><SettingsRow label="Integration health" helper="Check connected services and delivery before sending alerts."><div className="grid min-w-0 gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-extrabold text-ink">Integration health</h3>
-            <Badge tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
+
+            <Badge label="" tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
           </div>
-          {health.isLoading ? <p className="mt-2 text-sm text-muted">Loading integration health...</p> : null}
-          {health.error ? <p className="mt-2 text-sm text-danger">{health.error.message}</p> : null}
+          {health.isLoading ? <p role="status" className="text-sm text-muted">Loading integration health…</p> : null}
+          {health.error ? <ErrorBlock error={new Error("Couldn't load integration health. Try again.")} onRetry={() => { void health.refetch(); }} /> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="desk-button" to={staffTabPath("email-logs", false, makerspace.slug)}>Email log</Link>
-          <Link className="desk-button" to={staffTabPath("api", false, makerspace.slug)}>Telegram test</Link>
+          <Link className="desk-button" to={staffTabPath("settings", false, makerspace.slug) + "#integrations"}>Telegram test</Link>
         </div>
       </div>
 
@@ -161,7 +164,7 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
           </HealthBlock>
         </div>
       ) : null}
-    </div>
+    </div></SettingsRow></SettingsQueryState>
   );
 }
 
@@ -182,7 +185,7 @@ function HealthBlock({
     <section className={`min-w-0 rounded-md border border-line bg-bg p-3 ${wide ? "xl:col-span-2" : ""}`}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-extrabold text-ink">{title}</h4>
-        <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
+        <Badge label="" tone={statusTone(status)}>{statusLabel(status)}</Badge>
       </div>
       {detail ? <p className="mb-3 break-words text-sm text-danger">{detail}</p> : null}
       {children}
@@ -221,7 +224,7 @@ function StreamDelivery({ label, value }: { label: string; value?: string | null
 }
 
 function ConfiguredBadge({ configured }: { configured?: boolean }) {
-  return <Badge tone={configured ? "success" : "neutral"}>{configured ? "Configured" : "Not configured"}</Badge>;
+  return <Badge label="" tone={configured ? "success" : "neutral"}>{configured ? "Configured" : "Not configured"}</Badge>;
 }
 
 function statusTone(status?: HealthStatus) {

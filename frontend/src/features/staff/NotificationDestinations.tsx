@@ -1,3 +1,5 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -47,19 +49,15 @@ export function NotificationDestinations({
   const usable = CHANNELS.filter((channel) => availableChannels.includes(channel.key));
 
   return (
-    <section aria-labelledby="notification-destinations-heading" className="mt-6">
-      <h4 id="notification-destinations-heading" className="text-sm font-extrabold text-ink">
-        Rooms
-      </h4>
+    <SettingsRow label="Rooms"><section className="mt-6">
+
       <p className="mt-2 text-sm text-muted">
         Each room is one chat destination. A room with no machines or categories selected
         receives everything; narrow it to send laser faults to the laser team and printer
         faults to the print room. Webhook URLs are stored encrypted and never shown again.
       </p>
 
-      {destinations.isLoading ? (
-        <p className="mt-3 text-sm text-muted">Loading rooms…</p>
-      ) : null}
+      <SettingsQueryState query={destinations} resource="notification rooms" />
 
       <ul className="mt-3 grid gap-2">
         {(destinations.data ?? []).map((destination) => (
@@ -105,6 +103,6 @@ export function NotificationDestinations({
           No chat modules are installed for this makerspace.
         </p>
       ) : null}
-    </section>
+    </section></SettingsRow>
   );
 }

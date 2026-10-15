@@ -1,6 +1,8 @@
+import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
+import { SettingsRow } from "../../components/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
 
@@ -27,7 +29,18 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
         method: "PATCH",
         body: JSON.stringify({ public_stats_enabled: next }),
       }),
-    onSuccess: invalidateSettings,
+    onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updatePublicStats`),
+    onSuccess: async (_data, next) => {
+      await (invalidateSettings)();
+      toast(`Public stats turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updatePublicStats`, undo: async () => {
+        await ((next: boolean) =>
+      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ public_stats_enabled: next }),
+      }))(!next);
+        await (invalidateSettings)();
+      } });
+    },
   });
   const updateHolderNames = useMutation({
     mutationFn: (next: boolean) =>
@@ -35,64 +48,35 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
         method: "PATCH",
         body: JSON.stringify({ public_stats_show_holder_names: next }),
       }),
-    onSuccess: invalidateSettings,
+    onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updateHolderNames`),
+    onSuccess: async (_data, next) => {
+      await (invalidateSettings)();
+      toast(`Public borrower names turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updateHolderNames`, undo: async () => {
+        await ((next: boolean) =>
+      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ public_stats_show_holder_names: next }),
+      }))(!next);
+        await (invalidateSettings)();
+      } });
+    },
   });
 
-  return (
-    <div className="grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4">
-      <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-        <div className="grid min-w-0 max-w-2xl gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-extrabold text-ink">Public stats page</h3>
-            <Badge tone={publicStatsEnabled ? "success" : "neutral"}>
-              {publicStatsEnabled ? "On" : "Off"}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted">
-            Publish a public activity page with print hours, popular hardware, and current loans at{" "}
-            <code>/m/{makerspace.slug}/stats</code>. Borrower names are controlled separately below. When
-            off, the page and its API return 404 and the link is hidden.
-          </p>
-          {updatePublicStats.error ? (
-            <p className="text-sm text-danger">{updatePublicStats.error.message}</p>
-          ) : null}
-        </div>
-        <label className="flex min-w-0 items-start gap-3 text-sm text-ink sm:justify-self-start md:justify-self-end">
-          <input
-            className="mt-1 h-4 w-4"
-            type="checkbox"
-            checked={publicStatsEnabled}
-            disabled={loading || updatePublicStats.isPending}
-            onChange={(event) => updatePublicStats.mutate(event.target.checked)}
-          />
-          <span className="font-semibold">Publish public stats</span>
-        </label>
+  return <>
+    <SettingsRow label="Public stats page" helper="Publish activity, popular hardware and current loans. Borrower names have their own privacy setting below.">
+      <div className="grid gap-3"><Badge label="" tone={publicStatsEnabled ? "success" : "neutral"}>{publicStatsEnabled ? "On" : "Off"}</Badge>
+        <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={publicStatsEnabled}
+          disabled={loading || updatePublicStats.isPending} onChange={event => updatePublicStats.mutate(event.target.checked)} />Publish public stats</label>
+        <p className="text-sm text-muted">The stats page at /m/{makerspace.slug}/stats returns 404 when disabled.</p>
+        {updatePublicStats.error ? <p role="alert" className="text-sm text-danger">{updatePublicStats.error.message}</p> : null}
       </div>
-      <div className="grid min-w-0 gap-3 border-t border-line pt-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-        <div className="grid min-w-0 max-w-2xl gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-extrabold text-ink">Public borrower names</h3>
-            <Badge tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? "On" : "Off"}</Badge>
-          </div>
-          <p className="text-sm text-muted">
-            When on, each current loan publishes the borrower&apos;s name on the unauthenticated public
-            stats page. When off, every borrower is shown as &quot;Member&quot;.
-          </p>
-          {updateHolderNames.error ? (
-            <p className="text-sm text-danger">{updateHolderNames.error.message}</p>
-          ) : null}
-        </div>
-        <label className="flex min-w-0 items-start gap-3 text-sm text-ink sm:justify-self-start md:justify-self-end">
-          <input
-            className="mt-1 h-4 w-4"
-            type="checkbox"
-            checked={showHolderNames}
-            disabled={loading || updateHolderNames.isPending}
-            onChange={(event) => updateHolderNames.mutate(event.target.checked)}
-          />
-          <span className="font-semibold">Publish borrower names publicly</span>
-        </label>
+    </SettingsRow>
+    <SettingsRow label="Public borrower names" helper="When on, current loans publish the borrower’s name on the public stats page. When off, every borrower is shown as Member.">
+      <div className="grid gap-3"><Badge label="" tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? "On" : "Off"}</Badge>
+        <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={showHolderNames}
+          disabled={loading || updateHolderNames.isPending} onChange={event => updateHolderNames.mutate(event.target.checked)} />Publish borrower names publicly</label>
+        {updateHolderNames.error ? <p role="alert" className="text-sm text-danger">{updateHolderNames.error.message}</p> : null}
       </div>
-    </div>
-  );
+    </SettingsRow>
+  </>;
 }

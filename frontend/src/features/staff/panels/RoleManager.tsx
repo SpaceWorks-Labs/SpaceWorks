@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { ConfirmDialog, EmptyState } from "../../../components/ui";
+import { ConfirmDialog, EmptyState, ErrorText, ListRow, OverflowMenu, Skeleton, StatusPill } from "../../../components/ui";
 import { deleteRole, type Capability, type StaffRole } from "./rolesApi";
 import { RoleEditor } from "./RoleEditor";
 import { useStaffGet } from "./shared";
@@ -30,33 +30,33 @@ export function RoleManager({ msId, actorActions, isSuperadmin, onRolesChanged }
   });
 
   return (
-    <details className="rounded-md border border-line bg-bg">
-      <summary className="cursor-pointer px-3 py-2 font-semibold text-ink">Roles</summary>
+    <section aria-labelledby="roles-heading" className="rounded-xl border border-line bg-panel">
+      <h2 id="roles-heading" className="title-panel px-4 py-3">Roles</h2>
       <div className="grid gap-3 border-t border-line p-3">
         <div className="flex justify-end">
           <button className="desk-button-primary" type="button" onClick={() => { setDeleteError(""); setEditing(null); }}>
             New role
           </button>
         </div>
-        {roles.error ? <p className="text-sm text-danger">{roles.error.message}</p> : null}
-        {deleteError ? <p className="text-sm text-danger">{deleteError}</p> : null}
-        {roles.isLoading ? <p className="text-sm text-muted">Loading roles...</p> : null}
-        {!roles.isLoading && !roles.data?.length ? <EmptyState title="No roles" description="Create a role to assign staff." /> : null}
+        {roles.error ? <ErrorText resource="roles" onRetry={() => { void roles.refetch(); }} /> : null}
+        {capabilities.error ? <ErrorText resource="role capabilities" onRetry={() => { void capabilities.refetch(); }} /> : null}
+        {deleteError ? <ErrorText message={deleteError} /> : null}
+        {roles.isLoading ? <div role="status" aria-label="Loading roles"><Skeleton className="h-24 w-full" /></div> : null}
+        {!roles.isLoading && !roles.error && !roles.data?.length ? <EmptyState message="No roles yet. Create a role to share the work." /> : null}
         <div className="grid gap-2">
           {roles.data?.map((role) => (
-            <div key={role.id} className="flex flex-wrap items-center gap-2 rounded-md border border-line p-3 text-sm">
-              <span className="font-semibold text-ink">{role.name}</span>
-              <span className="rounded bg-surface px-2 py-0.5 text-xs text-muted">{role.is_default ? "Default" : "Custom"}</span>
-              {role.is_protected ? <span className="rounded bg-surface px-2 py-0.5 text-xs text-muted">Protected</span> : null}
-              <span className="text-muted">{role.member_count} members</span>
-              <span className="min-w-48 flex-1 text-xs text-muted">{role.granted_actions.map((action) => labels.get(action) ?? action).join(", ") || "No capabilities"}</span>
-              <button className="desk-button-ghost" type="button" onClick={() => { setDeleteError(""); setEditing(role); }}>Edit</button>
-              <button className="desk-button-danger" type="button" disabled={role.is_protected || role.member_count > 0 || remove.isPending} onClick={() => setPendingDelete(role)}>Delete</button>
-            </div>
+            <ListRow key={role.id} title={role.name} identity={{ kind: "icon", icon: "User", tone: "accent" }}
+              meta={<><span>{role.granted_actions.length} actions · {role.member_count} staff</span><br />{role.granted_actions.map(action => labels.get(action) ?? action).join(", ") || "No capabilities"}</>}
+              onClick={() => { setDeleteError(""); setEditing(role); }}
+              right={<div className="flex items-center gap-3"><StatusPill label={role.is_default ? "Default" : "Custom"} />{role.is_protected ? <StatusPill label="Protected" /> : null}
+                <OverflowMenu label={`Actions for ${role.name}`} actions={[{ label: "Edit", onClick: () => { setDeleteError(""); setEditing(role); } },
+                  { label: "Delete", tone: "danger", disabled: role.is_protected || role.member_count > 0 || remove.isPending, disabledReason: role.is_protected ? "Default roles are protected." : role.member_count > 0 ? "Reassign all staff before deleting this role." : remove.isPending ? "Wait for the current role deletion." : undefined, onClick: () => setPendingDelete(role) }]} /></div>} />
           ))}
         </div>
       </div>
-      {editing !== undefined ? <RoleEditor msId={msId} role={editing} capabilities={capabilities.data ?? []} actorActions={actorActions} isSuperadmin={isSuperadmin} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); refresh(); }} /> : null}
+      {editing !== undefined ? <RoleEditor msId={msId} role={editing} capabilities={capabilities.data ?? []}
+        catalogState={{ status: capabilities.isLoading ? "loading" : capabilities.isError ? "error" : "ready", error: "Couldn't load role capabilities. Try again.", onRetry: () => { void capabilities.refetch(); } }}
+        actorActions={actorActions} isSuperadmin={isSuperadmin} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); refresh(); }} onDelete={editing ? () => { setPendingDelete(editing); setEditing(undefined); } : undefined} /> : null}
       <ConfirmDialog
         open={pendingDelete !== null}
         title="Delete role?"
@@ -69,6 +69,6 @@ export function RoleManager({ msId, actorActions, isSuperadmin, onRolesChanged }
         }}
         onCancel={() => setPendingDelete(null)}
       />
-    </details>
+    </section>
   );
 }

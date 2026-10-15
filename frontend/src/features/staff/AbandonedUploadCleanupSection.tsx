@@ -1,3 +1,5 @@
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState, type FormEvent } from "react";
 
 import type {
@@ -17,9 +19,11 @@ type Props = {
 // deletes only old presign rows that no workflow ever consumed.
 export function AbandonedUploadCleanupSection({ policy, preview, pending, onChange }: Props) {
   const [days, setDays] = useState("");
+  const [daysTouched, setDaysTouched] = useState(false);
   useEffect(() => {
     setDays(String(policy.abandoned_upload_effective_days));
-  }, [policy.abandoned_upload_effective_days]);
+    setDaysTouched(false);
+  }, [policy.abandoned_upload_effective_days, policy.abandoned_upload_override_days]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -27,14 +31,10 @@ export function AbandonedUploadCleanupSection({ policy, preview, pending, onChan
   };
 
   return (
-    <div className="mt-4 border-t border-line pt-4" aria-labelledby="abandoned-upload-title">
-      <h4 id="abandoned-upload-title" className="text-sm font-extrabold text-ink">Abandoned upload cleanup</h4>
-      <p className="mt-1 text-sm text-muted">
-        Removes only old upload slots that were never used by any handover. Attached evidence rows
-        are immutable and are never deleted, and photos recorded before this feature (legacy) are
-        never eligible.
-      </p>
-      <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-ink">
+    <SettingsRow label="Abandoned upload cleanup" helper="Removes only old upload slots that were never used by any handover. Attached evidence rows are immutable and are never deleted, and photos recorded before this feature (legacy) are never eligible."><div className="grid min-w-0 gap-4">
+
+
+      <label className="min-h-11 mt-3 flex items-center gap-2 text-sm font-semibold text-ink">
         <input
           type="checkbox"
           checked={policy.abandoned_upload_cleanup_enabled}
@@ -52,11 +52,11 @@ export function AbandonedUploadCleanupSection({ policy, preview, pending, onChan
             min="1"
             max="3650"
             value={days}
-            onChange={(event) => setDays(event.target.value)}
+            onChange={(event) => { setDays(event.target.value); setDaysTouched(true); }}
             required
           />
         </label>
-        <button className="desk-button" type="submit" disabled={pending}>Save age</button>
+        <SettingsEditorActions dirty={days !== String(policy.abandoned_upload_effective_days) || (daysTouched && policy.abandoned_upload_override_days === null)} onDiscard={() => { setDays(String(policy.abandoned_upload_effective_days)); setDaysTouched(false); }} pending={pending} disabled={pending} />
         <button
           className="desk-button"
           type="button"
@@ -80,6 +80,6 @@ export function AbandonedUploadCleanupSection({ policy, preview, pending, onChan
           {` Late-write receipts: ${preview.late_write_receipts} (${preview.late_write_receipts_due} due).`}
         </p>
       ) : null}
-    </div>
+    </div></SettingsRow>
   );
 }

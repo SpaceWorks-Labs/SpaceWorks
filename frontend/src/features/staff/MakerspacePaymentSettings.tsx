@@ -1,7 +1,11 @@
+import { SettingsResetAction } from "./SettingsResetAction";
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Field } from "../../components/ui";
+import { StatusPill as Badge, Field } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { featureEnabled } from "../../lib/features";
 import { MakerspaceLoanSettings } from "./MakerspaceLoanSettings";
@@ -78,15 +82,13 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
   const busy = settings.isLoading || save.isPending || clear.isPending || onboard.isPending;
 
   return (
-    <section className="rounded-md border border-line bg-bg p-4">
+    <SettingsQueryState query={settings} resource="payment"><><SettingsRow label="Stripe payments" helper="Secret credentials are encrypted; saved keys are never displayed again."><div className="grid min-w-0 gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-extrabold text-ink">Stripe payments</h3>
-          <p className="mt-1 text-sm text-muted">
-            Secret credentials are encrypted; saved keys are never displayed again.
-          </p>
+
+
         </div>
-        <Badge tone={settings.data?.effective_mode === "unavailable" ? "neutral" : "success"}>
+        <Badge label="" tone={settings.data?.effective_mode === "unavailable" ? "neutral" : "success"}>
           {modeLabel(settings.data?.effective_mode)}
         </Badge>
       </div>
@@ -130,23 +132,8 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
         />
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button className="desk-button-primary" disabled={busy} onClick={() => save.mutate()}>
-          {save.isPending ? "Saving..." : "Save payment settings"}
-        </button>
-        <button
-          className="desk-button"
-          disabled={
-            busy
-            || !(
-              settings.data?.stripe_publishable_key_set
-              || settings.data?.stripe_secret_key_set
-              || settings.data?.stripe_webhook_secret_set
-            )
-          }
-          onClick={() => clear.mutate()}
-        >
-          Clear raw configuration
-        </button>
+        <SettingsEditorActions dirty={Boolean(publishableKey || secretKey || webhookSecret || currency !== (settings.data?.default_currency ?? "usd"))} onDiscard={() => { setPublishableKey(""); setSecretKey(""); setWebhookSecret(""); setCurrency(settings.data?.default_currency ?? "usd"); }} pending={save.isPending} disabled={busy} onSave={() => save.mutate()} />
+
       </div>
       {makerspace.platform_hosting ? (
         <div className="mt-4 rounded-md border border-line bg-surface p-3">
@@ -173,10 +160,13 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
           the payments module is uninstalled, so gating on it hid deposit amounts, caps
           and the blocking switch from exactly the cash-only spaces that now raise those
           charges -- they could not configure what the feature promised. */}
-      {featureEnabled(makerspace.enabled_features ?? [], "charges.loans") ? (
-        <MakerspaceLoanSettings makerspaceId={makerspace.id} />
-      ) : null}
-    </section>
+
+    </div><SettingsResetAction label={"Clear raw configuration"} consequence="Remove the saved Stripe credentials. Online checkout will use an available Connect account, or stop until credentials are configured." pending={clear.isPending} disabled={busy
+            || !(
+              settings.data?.stripe_publishable_key_set
+              || settings.data?.stripe_secret_key_set
+              || settings.data?.stripe_webhook_secret_set
+            )} onConfirm={() => clear.mutateAsync()} /></SettingsRow>{featureEnabled(makerspace.enabled_features ?? [], "charges.loans") ? <MakerspaceLoanSettings makerspaceId={makerspace.id} /> : null}</></SettingsQueryState>
   );
 }
 

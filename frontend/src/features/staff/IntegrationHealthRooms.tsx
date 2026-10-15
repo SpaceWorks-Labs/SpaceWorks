@@ -1,4 +1,4 @@
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 
 // The backend has reported per-room delivery health since the destinations work
 // (`integrations/health.py` -> `chat_destinations`); the console never rendered it, so the
@@ -95,13 +95,13 @@ function RoomRow({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 break-words font-semibold text-ink">{title}</p>
         {!configured ? (
-          <Badge tone="neutral">Not configured</Badge>
+          <Badge label="" tone="neutral">Not configured</Badge>
         ) : inactive ? (
-          <Badge tone="neutral">Inactive</Badge>
+          <Badge label="" tone="neutral">Inactive</Badge>
         ) : health.failed > 0 ? (
-          <Badge tone="danger">{`${health.failed} failed`}</Badge>
+          <Badge label="" tone="danger">{`${health.failed} failed`}</Badge>
         ) : (
-          <Badge tone="success">Healthy</Badge>
+          <Badge label="" tone="success">Healthy</Badge>
         )}
       </div>
       <p className="mt-1 text-xs text-muted">

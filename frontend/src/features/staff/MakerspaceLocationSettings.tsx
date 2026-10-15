@@ -1,7 +1,9 @@
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
 
@@ -50,7 +52,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
   const savedMapUrl = currentMapUrl.trim();
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
+    <SettingsRow label="Location" helper="Public location label and optional Google Maps link shown on public pages."><div className="grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {
@@ -63,18 +65,14 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
         <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
           <div className="grid min-w-0 max-w-2xl gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-extrabold text-ink">Location</h3>
-              <Badge tone={savedMapUrl ? "success" : "neutral"}>
+
+              <Badge label="" tone={savedMapUrl ? "success" : "neutral"}>
                 {savedMapUrl ? "Maps link set" : "Text only"}
               </Badge>
             </div>
-            <p className="text-sm text-muted">
-              Public location label and optional Google Maps link shown on public pages.
-            </p>
+
           </div>
-          <button className="desk-button-primary w-full max-w-full justify-self-start sm:w-auto sm:justify-self-end" type="submit" disabled={saveDisabled}>
-            {updateLocation.isPending ? "Saving..." : "Save location"}
-          </button>
+          <SettingsEditorActions dirty={changed} onDiscard={() => { setLocationInput(currentLocation); setMapUrlInput(currentMapUrl); }} pending={updateLocation.isPending} disabled={saveDisabled} />
         </div>
 
         <div className="grid min-w-0 gap-3 xl:grid-cols-2">
@@ -95,7 +93,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
               onChange={(event) => setMapUrlInput(event.target.value)}
               placeholder="https://maps.app.goo.gl/..."
             />
-            <span className="text-xs font-normal text-muted">Open Google Maps - Share - Copy link - paste here</span>
+            <span className="text-xs font-normal text-muted">Open Google Maps → Share → Copy link → paste here</span>
           </label>
         </div>
 
@@ -106,13 +104,13 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
             target="_blank"
             rel="noopener noreferrer"
           >
-            Open in Maps -&gt;
+            Open in Maps ↗
           </a>
         ) : null}
         {updateLocation.error ? (
           <p className="text-sm text-danger">{updateLocation.error.message}</p>
         ) : null}
       </form>
-    </div>
+    </div></SettingsRow>
   );
 }

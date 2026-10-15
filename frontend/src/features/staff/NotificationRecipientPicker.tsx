@@ -1,3 +1,5 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -37,9 +39,9 @@ export function NotificationRecipientPicker({
   const broadOptions = useScopeOptions(makerspaceId, !delegated);
   const options = delegated && data.data
     ? {
-        machineTypes: data.data.scope_options.machine_types,
-        machines: data.data.scope_options.machines,
-        categories: data.data.scope_options.categories,
+        machineTypes: data.data.scope_options?.machine_types ?? [],
+        machines: data.data.scope_options?.machines ?? [],
+        categories: data.data.scope_options?.categories ?? [],
       }
     : broadOptions;
   const features = data.data?.features ?? [];
@@ -49,10 +51,9 @@ export function NotificationRecipientPicker({
   const events = features.find((item) => item.key === current?.feature)?.events ?? [];
 
   return (
-    <section aria-labelledby="notification-recipients-heading" className="mt-6">
-      <h4 id="notification-recipients-heading" className="title-section">
-        Who gets notified
-      </h4>
+    <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">Who gets notified</h3>
+    <SettingsQueryState query={data} resource="recipient"><SettingsRow label="Recipients"><div>
+
       <p className="mt-2 text-sm text-muted">
         {delegated
           ? "Pick recipients for maintenance alerts within your machine scope. Every rule must name at least one reachable machine or machine type."
@@ -116,6 +117,6 @@ export function NotificationRecipientPicker({
           ) : null}
         </>
       ) : null}
-    </section>
+    </div></SettingsRow></SettingsQueryState></section>
   );
 }

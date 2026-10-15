@@ -160,7 +160,7 @@ export function DestinationForm({
             <option value={1}>v1 legacy envelope</option><option value={2}>v2 structured domain IDs</option>
           </select>
       </label> : null}
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex min-h-11 items-center gap-2 text-sm">
         <input
           checked={isActive}
           onChange={(event) => setIsActive(event.target.checked)}

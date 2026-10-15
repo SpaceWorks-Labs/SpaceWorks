@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Modal } from "../../../../components/ui";
+import { FlowLayout } from "../../../../components/layouts/FlowLayout";
 import { hoursDraft, validateHours } from "../../makerspaceProfileForm";
 import { CreationWizardSteps } from "./CreationWizardSteps";
 import type { MakerspaceForm } from "./types";
@@ -25,11 +25,12 @@ export function CreateMakerspaceModal({ open, form, pending, error, onChange, on
     if (form.first_staff_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.first_staff_email.trim())) return "Enter a valid staff email.";
     return null;
   };
-  return <Modal open={open} onClose={() => { if (!pending) onClose(); }} title="Create makerspace" footer={<div className="desk-actions flex flex-wrap gap-2">
-    <button type="button" className="desk-button-ghost" disabled={pending} onClick={onClose}>Cancel</button>
-    {step > 0 ? <button type="button" className="desk-button" disabled={pending} onClick={() => { setStep(step - 1); setInvalid(null); }}>Back</button> : null}
-    <button type="submit" form="makerspace-creation-wizard" className="desk-button-primary" disabled={pending}>{pending ? "Creating…" : step === 4 ? "Create makerspace" : "Next"}</button>
-  </div>}>
+  return <FlowLayout presentation="dialog" open={open} title="Create makerspace" state={{ status: "ready" }}
+    steps={steps.map((label, index) => ({ key: String(index), label, state: index < step ? "done" : index === step ? "current" : "todo" }))} current={String(step)}
+    onCancel={() => { if (!pending) onClose(); }}
+    footer={{ back: step > 0 ? { label: "Back", disabled: pending, disabledReason: "Wait while your space is created.", onClick: () => { setStep(step - 1); setInvalid(null); } } : undefined,
+      next: { label: step === 4 ? "Create makerspace" : "Next", pending, pendingLabel: "Creating…", onClick: () => (document.getElementById("makerspace-creation-wizard") as HTMLFormElement)?.requestSubmit() } }}
+    work={<>
     <p role="status" className="mb-3 text-sm">Step {step + 1} of {steps.length}: {steps[step]}</p>
     <form id="makerspace-creation-wizard" className="grid gap-3" onSubmit={event => {
       event.preventDefault(); if (pending) return;
@@ -37,7 +38,8 @@ export function CreateMakerspaceModal({ open, form, pending, error, onChange, on
       if (step < 4) setStep(step + 1); else onSubmit();
     }}>
       <fieldset className="grid gap-3" disabled={pending}><legend className="sr-only">{steps[step]}</legend><CreationWizardSteps step={step} form={form} onChange={onChange} pending={pending} /></fieldset>
+      <aside aria-label="Makerspace preview" className="rounded-xl border border-dashed border-line bg-surface p-4"><p className="eyebrow">Makerspace preview</p><h2 className="title-panel mt-2">{form.name || "Your makerspace"}</h2><p className="mt-2 text-sm text-muted">/m/{form.slug || "your-space"} · {form.public_code || "Public code"}</p><p className="mt-3 text-sm text-muted">Your catalogue will appear here.</p></aside>
       {invalid || error ? <p role="alert" className="text-sm text-danger">{invalid ?? (error instanceof Error ? error.message : "Creation failed. Check the fields and retry.")}</p> : null}
     </form>
-  </Modal>;
+  </>} />;
 }

@@ -1,3 +1,5 @@
+import { PublicEventWebsite } from "../events/PublicEventWebsite";
+import { PublicWebsiteImage } from "../../components/PublicWebsiteImage";
 import { OrganizationEventAdmission } from "../events/OrganizationEventAdmission";
 import { useState } from "react";
 import { downloadEventCalendar } from "../events/eventCalendar";
@@ -23,6 +25,8 @@ export function PublicEventDetailPage() {
   const eventQuery = useQuery({
     queryKey: ["public-event", makerspaceSlug, publicToken],
     staleTime: 0, gcTime: 0, refetchOnMount: "always",
+    // Keep live programme delays current while the page is open.
+    refetchInterval: 30_000, refetchIntervalInBackground: false, refetchOnWindowFocus: true,
     queryFn: () => tenantPublicRequest<PublicEventDetail>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken ?? "")}/`),
     enabled: Boolean(makerspaceSlug && publicToken),
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
@@ -45,6 +49,7 @@ export function PublicEventDetailPage() {
         {event.show_registration_count !== false && event.registration_count != null ? <p className="text-sm text-muted">{event.registration_count} registered</p> : null}
         {event.audience_label ? <p className="text-sm font-semibold">{event.audience_label}</p> : null}
         <p className="whitespace-pre-wrap">{event.description}</p>
+        {event.website ? <PublicEventWebsite website={event.website} links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }} image={(url, alt) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> : null}
         <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
         <button className="desk-button w-fit" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate(event)}>Add to calendar</button>
         {calendar.error ? <p role="alert">Could not download this calendar.</p> : null}

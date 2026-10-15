@@ -13,6 +13,8 @@ class EventsConfig(AppConfig):
         from apps.separability.tombstones import app_is_tombstoned
 
         if not app_is_tombstoned("events"):
+            from .website_adapter import register_website
+            register_website()
             from .broadcasts import register_broadcasts
             from .services_bulk_invites import register_invitations
             from .report_subject import register_subject

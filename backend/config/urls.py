@@ -69,6 +69,7 @@ def docs_root(_request):
 from apps.accounts.control_mfa import control_mfa
 
 urlpatterns = [
+    path("", include("apps.makerspaces.website_urls")),
     path("mfa/control/", control_mfa, name="control-mfa"),
     path(
         "api/v1/backups/download/<uuid:archive_id>/<str:token>",

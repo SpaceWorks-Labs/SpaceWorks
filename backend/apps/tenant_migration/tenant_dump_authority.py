@@ -20,6 +20,11 @@ def _build(entries):
 
 AUTHORITY_FIELD_OVERRIDES = _build((
     *AUTHORITY_ENTRIES,
+    (("events.EventPage", "released"), authority(D.RESET, "Target staff authorize website release.")),
+    (("events.EventPage", "section_enabled"), authority(D.PRESERVE, "Curated presentation travels behind reset page release.")),
+    (("makerspaces.Makerspace", "website_embed_origins"), authority(D.RESET, "Target staff establish framing trust.")),
+    (("events.EventPageSection", "visibility"), authority(D.PRESERVE, "Curated section intent travels behind the reset page release.")),
+    (("events.EventSession", "visibility"), authority(D.PRESERVE, "Curated schedule intent travels behind the reset page release.")),
     *EVENT_AUTHORITY_ENTRIES,
     *MODULE_AUTHORITY_ENTRIES,
     *wp3_authority(authority, D).items(),

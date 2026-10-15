@@ -17,6 +17,8 @@ def _default(reason, *, allow_superadmin_override=False):
 from .target_projection_w7_events import EVENT_FIELD_PROJECTION
 
 TARGET_FIELD_PROJECTION = {
+    ("events.EventPage", "released"): TargetField(False, reason="Target staff explicitly release imported website content."),
+    ("makerspaces.Makerspace", "website_embed_origins"): TargetField([], reason="Target staff establish framing trust."),
     **EVENT_FIELD_PROJECTION,
     ("makerspaces.MembershipPlan", "auto_renew"): TargetField(False, reason="Target staff enable automatic renewal."),
     ("makerspaces.MembershipPlan", "reminder_days_before"): TargetField([], reason="Target staff choose mail offsets."),

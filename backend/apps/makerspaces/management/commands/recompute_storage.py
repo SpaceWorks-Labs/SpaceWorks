@@ -4,7 +4,7 @@ from django.db.models import Q
 from apps.bookings.models import BookableSpace
 from apps.data_export import storage as export_storage
 from apps.data_export.models import DataExportJob
-from apps.events.models import Event, EventAttendanceCertificate, EventSeries
+from apps.events.models import Event, EventAttendanceCertificate, EventSeries, EventPageAsset
 from apps.evidence import storage as evidence_storage
 from apps.evidence.models import EvidenceObjectRetentionState, EvidencePhoto
 from apps.inventory import public_image_storage
@@ -81,6 +81,7 @@ class Command(BaseCommand):
                     # collected by purge, but absent here until 2026-10-09 -- the same
                     # silent under-count as the maintenance documents above.
                     "member_card_photos": self._sum(MemberCard.objects.filter(makerspace=makerspace).values_list("photo_object_key", "photo_size_bytes"), evidence_storage.object_size, True),
+                    "event_website_assets": self._sum(EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                     "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(registration__event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                     "data_exports": self._sum(
                         DataExportJob.objects.filter(

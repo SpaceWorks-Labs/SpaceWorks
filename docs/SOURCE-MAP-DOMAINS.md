@@ -129,3 +129,38 @@ Frontend `StaffTabLoaders.tsx` holds lazy imports; `StaffPlatformTabContent.tsx`
 panels. `panels/DevicesPanel.tsx`, `DeviceIdentitySection.tsx` and `DeviceEnrollmentModal.tsx` render
 7a identity/status/enrollment controls through `devicesApi.ts` and `deviceQueryKeys.ts`.
 Printer adapter and label-command controls require the sibling 7b/7c lanes and are not present here.
+
+## Event website and reusable public serving (Lane C)
+
+- `events/models_website.py` owns `EventPage`, private assets, typed sections, sessions and
+  session-speaker links. `services_website.py` owns locked editor/release/delay writes;
+  `services_website_assets.py` owns asset row mutations. `website_copy.py` extends Lane B's
+  clone adapter and provides occurrence copy-on-write. `website_validation.py` protects
+  owner-window changes; migrations 0031/0032 enforce cross-row ownership and windows.
+- `events/website_visibility.py` owns the core and enhanced event gates;
+  `website_projection.py` owns the allow-list schedule/section projection and delays.
+  `website_adapter.py` registers the concrete event adapter. `serializers_website*.py`,
+  `views_website_admin.py`, `views_website_public.py` and `urls_website.py` own its REST surface.
+- Shared always-present `makerspaces/website_assets.py` owns bounded private WebP staging,
+  quota and cleanup; `website_uploads.py` bounds multipart ingress before spooling.
+  `website_visibility.py` is the adapter registry;
+  `website_directory.py` owns directory/origin/canonical URL policy;
+  `website_origins.py` validates framing trust. `website_serving.py`, `website_views.py`,
+  `website_settings_views.py` and `website_urls.py` own embed/share/discover/sitemap/robots
+  serving and tenant framing settings. These modules never import either separable domain.
+- `tenant_migration/catalog_website.py` and `unique_values_website.py` declare website
+  retention and uniqueness; existing export, projection, backup, storage and purge registries
+  bind the concrete models. Portable import clears release/framing authority, retaining
+  object-journal ownership proof for imported bytes.
+- `features/staff/EventWebsiteEditor.tsx`, `EventWebsiteSections.tsx`,
+  `EventWebsiteSchedule.tsx`, `EventWebsitePublication.tsx` and `eventWebsiteApi.ts` own
+  the event/series drawer controls, component drafts and TanStack Query invalidation.
+  `WebsiteEmbedOrigins.tsx` sits in public-site settings. `features/events/PublicEventWebsite.tsx`
+  and `EventDiscoverPage.tsx` render released content and deployment discovery.
+  `components/RestrictedMarkdown.tsx` is the safe text vocabulary;
+  `PublicWebsiteImage.tsx` and `staff/PrivateWebsiteImage.tsx` own the authorized blob transports.
+
+Lane C content completion: `events/website_content.py` owns the canonical group/tier vocabulary;
+`serializers_website_content.py` owns typed venue, URL, coordinate and layout validation.
+The existing `services_website.py`, `website_projection.py` and `website_copy.py` persist,
+filter and copy that content through the same authority and private asset pipeline.

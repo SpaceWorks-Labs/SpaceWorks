@@ -10606,6 +10606,15 @@
             },
             "description": "Event state or capacity conflict."
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventWebsitePublishInput"
+              }
+            }
+          }
         }
       }
     },
@@ -70672,6 +70681,2359 @@
         },
         "description": "Requires manage_invitations and events.invites. Up to 200 email-bound invites; emails contain only event navigation, never admission codes. Verified account email is required for code-free admission."
       }
+    },
+    "/api/v1/admin/events/{id}/website/": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_put",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteContentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/release/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_release_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteReleaseInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/sessions/{slug}/delay/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_sessions_slug_delay_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDelayInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/assets/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_assets_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes. Bounded JPEG/PNG/WebP upload; bytes sniffed, re-encoded and stored privately, no object keys accepted or returned.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteAsset"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteAssetInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/website/assets/{asset_id}": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_assets_asset_id_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Authorized private WebP preview; no-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Authorized private WebP preview; no-store.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lane_c_api_v1_admin_events_id_website_assets_asset_id_delete",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Removed."
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_put",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteContentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/release/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_release_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteReleaseInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/sessions/{slug}/delay/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_sessions_slug_delay_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDelayInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/assets/": {
+      "post": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_assets_post",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes. Bounded JPEG/PNG/WebP upload; bytes sniffed, re-encoded and stored privately, no object keys accepted or returned.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteAsset"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteAssetInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/event-series/{id}/website/assets/{asset_id}": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_assets_asset_id_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Authorized private WebP preview; no-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Authorized private WebP preview; no-store.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "lane_c_api_v1_admin_event_series_id_website_assets_asset_id_delete",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Live event/series edit_details for sections/assets; publish_schedule for programme, delays and release. Feature events.website is required. Draft pages are private; series inheritance uses copy-on-write with independent private assets. Revisions refuse stale editor writes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Removed."
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Published, public, unexpired, servable event plus enabled events.website and released effective page. Only explicitly published items; uniform 404 otherwise. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/sections/{slug}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_sections_slug_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Published, public, unexpired, servable event plus enabled events.website and released effective page. Only explicitly published items; uniform 404 otherwise. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/sessions/{slug}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_sessions_slug_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Published, public, unexpired, servable event plus enabled events.website and released effective page. Only explicitly published items; uniform 404 otherwise. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSession"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/assets/{asset_id}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_assets_asset_id_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated, released, referenced private WebP image. Unreleased, draft-only, foreign and missing images are uniform 404; no-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Live-gated, released, referenced private WebP image. Unreleased, draft-only, foreign and missing images are uniform 404; no-store.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/embed/{makerspace_slug}/{kind}/{public_token}/": {
+      "get": {
+        "operationId": "lane_c_embed_makerspace_slug_kind_public_token_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Backend card for a released website. Exact HTTPS tenant framing origins, events.embed and events.website required. Empty origin list fails closed. No-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Backend card for a released website. Exact HTTPS tenant framing origins, events.embed and events.website required. Empty origin list fails closed. No-store.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/share/{kind}/{public_token}/": {
+      "get": {
+        "operationId": "lane_c_share_kind_public_token_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Noindex OG/Twitter HTML using public cover only. Checks current visibility before every cache read; server content cache 600s, browser revalidation required.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Noindex OG/Twitter HTML using public cover only. Checks current visibility before every cache read; server content cache 600s, browser revalidation required.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discover/{kind}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_discover_kind_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Deployment-local directory-consenting public subjects, 24 per page. Domain adapter owns lifecycle rules; event counts follow show_registration_count.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sitemap.xml": {
+      "get": {
+        "operationId": "lane_c_sitemap_xml_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated, edition-aware canonical public URLs for this verified tenant origin or the central directory; no-store.",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Live-gated, edition-aware canonical public URLs for this verified tenant origin or the central directory; no-store.",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/robots.txt": {
+      "get": {
+        "operationId": "lane_c_robots_txt_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Known-origin crawler rules and sitemap URL.",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Known-origin crawler rules and sitemap URL.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/makerspaces/{makerspace_id}/website-embed-origins/": {
+      "get": {
+        "operationId": "lane_c_api_v1_admin_makerspaces_makerspace_id_website_embed_origins_get",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Tenant MANAGE_MAKERSPACE required. Separate framing trust; at most twenty canonical exact HTTPS origins, no credentials, paths, wildcards or default ports. Empty disables embedding. Audited.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteOrigins"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "lane_c_api_v1_admin_makerspaces_makerspace_id_website_embed_origins_put",
+        "tags": [
+          "Event website"
+        ],
+        "description": "Tenant MANAGE_MAKERSPACE required. Separate framing trust; at most twenty canonical exact HTTPS origins, no credentials, paths, wildcards or default ports. Empty disables embedding. Audited.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteOrigins"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteOrigins"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/schedule/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_schedule_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated released programme; published sessions and visible relations only.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteSession"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{makerspace_slug}/events/{public_token}/website/speakers/{slug}/": {
+      "get": {
+        "operationId": "lane_c_api_v1_public_makerspace_slug_events_public_token_website_speakers_slug_get",
+        "tags": [
+          "Public websites"
+        ],
+        "description": "Live-gated released speaker; draft or non-speaker slugs are uniform 404.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "makerspace_slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "public_token",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSection"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -79313,6 +81675,10 @@
           "organization_audience_enabled": {
             "type": "boolean",
             "readOnly": true
+          },
+          "website_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -79340,7 +81706,8 @@
           "staff_permissions",
           "status",
           "title",
-          "updated_at"
+          "updated_at",
+          "website_enabled"
         ]
       },
       "EventSeriesListResponse": {
@@ -99478,6 +101845,15 @@
             "type": "string",
             "nullable": true,
             "readOnly": true
+          },
+          "website": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Website"
+              }
+            ],
+            "nullable": true,
+            "readOnly": true
           }
         },
         "required": [
@@ -99509,7 +101885,8 @@
           "tags",
           "ticket_selection_required",
           "ticket_types",
-          "title"
+          "title",
+          "website"
         ]
       },
       "PublicEventRegistrationInput": {
@@ -110260,6 +112637,767 @@
           "previous",
           "results"
         ]
+      },
+      "WebsiteSectionInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "intro",
+              "logo",
+              "speaker",
+              "track",
+              "room",
+              "sponsor",
+              "faq",
+              "resource",
+              "highlight"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "default": ""
+          },
+          "asset_id": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "default": null
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          },
+          "headline": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "organization": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "website_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "linkedin_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "x_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "sponsor_tier": {
+            "type": "string",
+            "enum": [
+              "platinum",
+              "gold",
+              "silver",
+              "partner",
+              "community_partner"
+            ]
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title"
+        ]
+      },
+      "WebsiteSessionInput": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "track": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "room": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "speakers": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 80,
+              "pattern": "^[-a-zA-Z0-9_]+$"
+            },
+            "default": []
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "starts_at",
+          "ends_at"
+        ]
+      },
+      "WebsiteContentInput": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sections": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSectionInput"
+            },
+            "description": "At most 30 room sections. Omitted profile/tier/icon fields preserve the same-slug section values; new rows default to blank profile/icon and community_partner. Speaker photos and sponsor logos use page-owned private asset IDs."
+          },
+          "sessions": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSessionInput"
+            }
+          },
+          "tagline": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "accent_color": {
+            "type": "string",
+            "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+          },
+          "section_order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "HERO",
+                "ABOUT",
+                "HIGHLIGHTS",
+                "SCHEDULE",
+                "SPEAKERS",
+                "SPONSORS",
+                "VENUE",
+                "FAQ",
+                "RESOURCES"
+              ]
+            },
+            "minItems": 9,
+            "maxItems": 9,
+            "description": "Each canonical page group exactly once, in display order."
+          },
+          "section_enabled": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Canonical page groups only; omitted groups are enabled. Public projection, direct pages and image serving honor disabled groups."
+          },
+          "venue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebsiteVenue"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "revision",
+          "sections",
+          "sessions"
+        ]
+      },
+      "WebsiteReleaseInput": {
+        "type": "object",
+        "properties": {
+          "released": {
+            "type": "boolean"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "released",
+          "revision"
+        ]
+      },
+      "WebsiteDelayInput": {
+        "type": "object",
+        "properties": {
+          "delay_minutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1440
+          }
+        },
+        "required": [
+          "delay_minutes"
+        ]
+      },
+      "WebsiteAssetInput": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          },
+          "alt_text": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "replace_id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "file",
+          "alt_text"
+        ]
+      },
+      "WebsiteAsset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "alt_text": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "alt_text",
+          "id",
+          "size_bytes"
+        ]
+      },
+      "WebsiteSection": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "intro",
+              "logo",
+              "speaker",
+              "track",
+              "room",
+              "sponsor",
+              "faq",
+              "resource",
+              "highlight"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "default": ""
+          },
+          "asset_id": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "default": null
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          },
+          "headline": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "organization": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "website_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "linkedin_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "x_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "sponsor_tier": {
+            "type": "string",
+            "enum": [
+              "platinum",
+              "gold",
+              "silver",
+              "partner",
+              "community_partner"
+            ]
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "image_alt_text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title",
+          "image_url",
+          "image_alt_text"
+        ]
+      },
+      "WebsiteSession": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "track": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "room": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[-a-zA-Z0-9_]+$",
+            "nullable": true,
+            "default": null
+          },
+          "speakers": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 80,
+              "pattern": "^[-a-zA-Z0-9_]+$"
+            },
+            "default": []
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "delay_minutes": {
+            "type": "integer"
+          },
+          "effective_starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effective_ends_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "starts_at",
+          "ends_at",
+          "delay_minutes",
+          "effective_starts_at",
+          "effective_ends_at"
+        ]
+      },
+      "Website": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer"
+          },
+          "released": {
+            "type": "boolean"
+          },
+          "inherited": {
+            "type": "boolean"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSection"
+            }
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteSession"
+            }
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteAsset"
+            }
+          },
+          "tagline": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "accent_color": {
+            "type": "string",
+            "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+          },
+          "section_order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "HERO",
+                "ABOUT",
+                "HIGHLIGHTS",
+                "SCHEDULE",
+                "SPEAKERS",
+                "SPONSORS",
+                "VENUE",
+                "FAQ",
+                "RESOURCES"
+              ]
+            },
+            "minItems": 9,
+            "maxItems": 9,
+            "description": "Each canonical page group exactly once, in display order."
+          },
+          "section_enabled": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Canonical page groups only; omitted groups are enabled. Public projection, direct pages and image serving honor disabled groups."
+          },
+          "venue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebsiteVenue"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "revision",
+          "released",
+          "inherited",
+          "sections",
+          "sessions"
+        ]
+      },
+      "WebsiteOrigins": {
+        "type": "object",
+        "properties": {
+          "origins": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
+        },
+        "required": [
+          "origins"
+        ]
+      },
+      "EventWebsitePublishInput": {
+        "type": "object",
+        "properties": {
+          "publish_website": {
+            "type": "boolean",
+            "default": false
+          },
+          "website_revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": []
+      },
+      "DiscoveryCard": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "availability": {
+            "type": "string"
+          },
+          "audience_label": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "makerspace_name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "registration_count": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "audience_label",
+          "availability",
+          "date",
+          "description",
+          "image_url",
+          "location",
+          "makerspace_name",
+          "registration_count",
+          "revision",
+          "title",
+          "url"
+        ]
+      },
+      "Discovery": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "previous": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryCard"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "next",
+          "previous",
+          "results"
+        ]
+      },
+      "WebsiteVenue": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 500,
+            "default": ""
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "directions": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "parking": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "public_transport": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "accessibility_notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -90,
+            "maximum": 90,
+            "nullable": true,
+            "default": null
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -180,
+            "maximum": 180,
+            "nullable": true,
+            "default": null
+          },
+          "map_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "default": ""
+          }
+        },
+        "required": []
       }
     },
     "securitySchemes": {

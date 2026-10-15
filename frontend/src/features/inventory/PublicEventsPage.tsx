@@ -103,6 +103,7 @@ export function PublicEventsPage() {
   return <main style={brandStyle} className="desk-shell flex min-h-screen flex-col">
     <PageMetadata title={`Events · ${displayName}`} description={`Upcoming public workshops, meetups and community events at ${displayName}.`} path={canonicalPath} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <SkipLink />
+    {tenant.mode === "central" ? <Link className="desk-button m-3 w-fit" to="/discover">Discover across makerspaces</Link> : null}
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div><p className="eyebrow text-secondary-ink">Public Events</p>

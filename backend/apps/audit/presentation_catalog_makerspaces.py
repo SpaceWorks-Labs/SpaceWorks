@@ -61,6 +61,7 @@ ENTRIES = (
     P("makerspace.updated", "Makerspace updated"),
     P("makerspace.waiver_deactivated", "Makerspace waiver deactivated"),
     P("makerspace.waiver_published", "Makerspace waiver published", ("version",)),
+    P("makerspace.website_origins_updated", "Website embed origins updated", ("count",)),
     P("membership.adopted_from_import", "Membership adopted from import"),
     P("membership.approved", "Membership approved"),
     P("membership.invitation_claimed", "Membership invitation claimed"),

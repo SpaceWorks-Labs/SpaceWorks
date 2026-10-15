@@ -90,7 +90,10 @@ class TenantDumpCatalogError(AssertionError):
 # reproduced the preceding pin before adding these four fields.
 # Lane D: two concrete history models and durable outbox source identity. The
 # standalone graph check reproduced the preceding pin before adding these fields.
-CATALOG_SCHEMA_SHA256 = "a89f46e967310654f6ce99652d980033cc5b17e8bc463ba5886d2a130efdf321"
+# Lane C: five typed editorial/asset models plus the separate framing-origin field.
+# Literal graph reconstruction reproduced HEAD before pinning this reviewed graph;
+# Django's runtime catalog guard remains the integration verification.
+CATALOG_SCHEMA_SHA256 = "fcef32dcde2603c893f876105c048f5bdb4a61337238f217912d6e8493e93f96"
 
 
 def catalog_models(apps_registry=apps):

@@ -125,7 +125,7 @@ function OptionList({ title, options, selected, onToggle, describe }: {
         {options.map((option) => {
           const note = describe(option);
           return (
-            <label key={option.id} className="flex items-center gap-2 text-sm">
+            <label key={option.id} className="flex min-h-11 items-center gap-3 rounded-xl border border-line p-3 text-sm has-checked:border-accent has-checked:bg-accent-soft">
               <input
                 className="h-4 w-4 accent-accent"
                 type="checkbox"

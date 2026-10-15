@@ -1,3 +1,5 @@
+import { SettingsRow } from "../../components/ui";
+import { SettingsEditorActions } from "./SettingsEditorActions";
 import { useEffect, useState, type CSSProperties } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
@@ -35,11 +37,11 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
     },
   });
   useEffect(() => { save.reset(); }, [makerspace.id]);
-  return <form className="mt-6 space-y-3" onSubmit={(event) => {
+  return <SettingsRow label="Public and member colours"><form className="mt-6 space-y-3" onSubmit={(event) => {
     event.preventDefault();
     if (settings && report.valid && changed && !loading && !save.isPending) save.mutate({ id: makerspace.id, slug: makerspace.slug, theme });
   }}>
-    <h4 className="title-section">Public and member colours</h4>
+
     <p className="text-sm text-muted">Leave blank to use Maker Teal. Staff screens always use the Space Works palette.</p>
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="grid gap-1 text-sm" htmlFor="theme-primary">Primary fill
@@ -62,12 +64,12 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
         const worstText = Math.min(...palette.pairs.filter((pair) => pair.minimum === 4.5).map((pair) => pair.ratio));
         const worstUI = Math.min(...palette.pairs.filter((pair) => pair.minimum === 3).map((pair) => pair.ratio));
         const surface = BRAND_SURFACES[mode][0].join(" ");
-        return <div key={mode} data-testid={`theme-preview-${mode}`} style={{ ...style, backgroundColor: `rgb(${surface})`, color: `rgb(${BODY_TEXT[mode][0].join(" ")})` }} className="rounded-lg border border-line p-3">
+        return <div key={mode} data-testid={`theme-preview-${mode}`} style={{ ...style, backgroundColor: `rgb(${surface})`, color: `rgb(${BODY_TEXT[mode][0].join(" ")})` }} className="">
           <p className="font-semibold">{mode === "light" ? "Light" : "Dark"} preview</p>
           {!report.valid ? <p className="text-xs">Product palette fallback shown; ratios below describe the entered colours.</p> : null}
           <a href="#theme-primary" className="my-2 block text-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" style={{ color: `rgb(${preview.ink.join(" ")})` }}>Example link</a>
           <button className="desk-button-brand" type="button">Example action</button>
-          <div className="mt-2 flex gap-2 text-sm">
+          <div className="min-h-11 mt-2 flex gap-2 text-sm">
             {(["hover", "active"] as const).map((state) => <span key={state} className="rounded-control px-3 py-2" style={{ backgroundColor: `rgb(${preview[state].join(" ")})`, color: `rgb(${preview.foreground.join(" ")})` }}>{state === "hover" ? "Hover" : "Active"}</span>)}
           </div>
           <div className="mt-2 rounded-xl p-3" style={{ backgroundColor: `rgb(${preview.soft.join(" ")})`, color: `rgb(${BODY_TEXT[mode][1].join(" ")})` }}>Brand soft with muted text</div>
@@ -82,6 +84,6 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
       {save.error ? <p className="text-sm text-danger">{save.error.message}</p> : null}
       {save.isSuccess && !changed ? <p className="text-sm text-success-ink">Colours saved.</p> : null}
     </div>
-    <button type="submit" className="desk-button-primary" disabled={!settings || loading || save.isPending || !changed || !report.valid}>{save.isPending ? "Saving..." : "Save colours"}</button>
-  </form>;
+    <SettingsEditorActions dirty={changed} onDiscard={() => { setPrimary(savedPrimary); setAccent(savedAccent); }} pending={save.isPending} disabled={!settings || loading || save.isPending || !changed || !report.valid} />
+  </form></SettingsRow>;
 }

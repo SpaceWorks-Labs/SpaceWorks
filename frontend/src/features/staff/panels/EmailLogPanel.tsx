@@ -1,11 +1,10 @@
+import { ListLayout } from "../../../components/layouts";
+import { ErrorBlock, ListRow, RelativeTime, StatusPill } from "../../../components/ui";
 import { useUrlListState } from "../../../lib/useUrlListState";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { Panel, useStaffGet, type Makerspace } from "./shared";
+import { useStaffGet, type Makerspace } from "./shared";
 import { staffRequest } from "../../../lib/api";
-
 type EmailLogStatus = "" | "sent" | "failed" | "pending" | "sending" | "skipped";
-
 type EmailLogEntry = {
   id: number;
   to_email: string;
@@ -19,7 +18,6 @@ type EmailLogEntry = {
   created_at: string;
   sent_at: string | null;
 };
-
 type EmailLogResponse = {
   count: number;
   next: string | null;
@@ -51,121 +49,26 @@ export function EmailLogPanel({ makerspace }: { makerspace: Makerspace }) {
       queryClient.invalidateQueries({ queryKey: ["email-logs", makerspace.id] });
     },
   });
-
   const updateStatus = (value: EmailLogStatus) => {
     list.setFilter("status", value);
   };
-
-  return (
-    <Panel title="Email log">
-      {list.values.recent_days ? <button className="desk-button-ghost mb-3" type="button" onClick={() => list.setFilter("recent_days", "")}>Show all dates (currently last {list.values.recent_days} days)</button> : null}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <select
-          aria-label="Email log status"
-          className="desk-input w-full sm:w-48"
-          value={status}
-          onChange={(event) => updateStatus(event.target.value as EmailLogStatus)}
-        >
-          <option value="">All</option>
-          <option value="sent">Sent</option>
-          <option value="failed">Failed</option>
-          <option value="pending">Pending</option>
-          <option value="sending">Sending</option>
-          <option value="skipped">Skipped</option>
-        </select>
-      </div>
-      {logs.isLoading ? <p className="mb-3 text-sm text-muted">Loading email logs...</p> : null}
-      {logs.error ? <p className="mb-3 text-sm text-danger">{logs.error.message}</p> : null}
-      {retry.error ? <p className="mb-3 text-sm text-danger">{retry.error.message}</p> : null}
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="eyebrow border-b border-line">
-            <tr>
-              <th scope="col" className="px-2 py-2">Created</th>
-              <th scope="col" className="px-2 py-2">To</th>
-              <th scope="col" className="px-2 py-2">Event</th>
-              <th scope="col" className="px-2 py-2">Status</th>
-              <th scope="col" className="px-2 py-2">Error</th>
-              <th scope="col" className="px-2 py-2">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.data?.results.map((log) => (
-              <tr key={log.id} className="border-b border-line/70 align-top">
-                <td className="whitespace-nowrap px-2 py-2 text-muted">
-                  {formatLocalDateTime(log.created_at)}
-                </td>
-                <td className="max-w-56 break-words px-2 py-2">{log.to_email}</td>
-                <td className="px-2 py-2">
-                  <span className="font-semibold">{log.event || "email"}</span>
-                  <span className="ml-2 text-muted">{log.stream || "general"}</span>
-                </td>
-                <td className="px-2 py-2">
-                  <span className={`status-box ${statusClassName(log.status)}`}>
-                    {log.status}
-                  </span>
-                </td>
-                <td className="max-w-72 break-words px-2 py-2 text-muted">
-                  {log.status === "failed" || log.status === "skipped" ? truncate(log.error) : ""}
-                </td>
-                <td className="whitespace-nowrap px-2 py-2">
-                  {log.status === "failed" || log.status === "sending" ? (
-                    <button
-                      className="desk-button-primary"
-                      disabled={retry.isPending}
-                      onClick={() => retry.mutate(log.id)}
-                    >
-                      Retry
-                    </button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {logs.data && logs.data.results.length === 0 ? (
-          <p className="py-4 text-sm text-muted">No email logs.</p>
-        ) : null}
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-        <button
-          className="desk-button-ghost"
-          disabled={!logs.data?.previous}
-          onClick={() => setPage((current) => Math.max(1, current - 1))}
-        >
-          Previous
-        </button>
-        <span className="text-muted">
-          Page {page}{" - "}{logs.data?.count ?? 0} total
-        </span>
-        <button
-          className="desk-button-ghost"
-          disabled={!logs.data?.next}
-          onClick={() => setPage((current) => current + 1)}
-        >
-          Next
-        </button>
-      </div>
-    </Panel>
-  );
+  return <ListLayout header={{ title: "Email log", subtitle: "See what reached people and retry deliveries that need attention." }}
+    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: "Couldn't load email logs. Try again.", onRetry: () => { void logs.refetch(); } }}
+    isEmpty={logs.data?.results.length === 0} filtered={Boolean(status || list.values.recent_days)}
+    empty={{ message: "No email logs yet. Sent emails will appear here." }}
+    filteredEmpty={{ message: "No email logs match. Try another status or date range." }}
+    filters={{ controls: <div className="flex flex-wrap gap-3">
+      {list.values.recent_days ? <button className="desk-button" onClick={() => list.setFilter("recent_days", "")}>Show all dates (currently last {list.values.recent_days} days)</button> : null}
+      <select aria-label="Email log status" className="desk-input" value={status} onChange={event => updateStatus(event.target.value as EmailLogStatus)}>
+        <option value="">All</option>{["sent", "failed", "pending", "sending", "skipped"].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}
+      </select></div> }}
+    body={{ kind: "rows", rows: <>{retry.error ? <ErrorBlock error={retry.error} /> : null}{logs.data?.results.map(log => <ListRow key={log.id}
+      title={log.subject || log.event || "Email"} identity={{ kind: "date", date: log.created_at }}
+      meta={<span className="grid gap-1"><span>{log.to_email} · {log.event || "email"} · {log.stream || "general"}</span>
+        <RelativeTime date={log.created_at} />{log.status === "failed" || log.status === "skipped" ? <span>{truncate(log.error)}</span> : null}</span>}
+      right={<div className="flex gap-3"><StatusPill label={log.status} tone={log.status === "failed" ? "danger" : log.status === "sent" ? "success" : "neutral"} />
+        {log.status === "failed" || log.status === "sending" ? <button className="desk-button" disabled={retry.isPending} onClick={() => retry.mutate(log.id)}>Retry</button> : null}</div>} />)}</> }}
+    pagination={{ page, pageSize: 24, count: logs.data?.count ?? 0, onChange: setPage }} />;
 }
 
-function statusClassName(status: EmailLogEntry["status"]) {
-  if (status === "sent") return "status-box-done";
-  if (status === "failed") return "status-box-danger";
-  return "status-box-pending";
-}
-
-function truncate(value: string) {
-  return value.length > 140 ? `${value.slice(0, 137)}...` : value;
-}
-
-function formatLocalDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+function truncate(value: string) { return value.length > 140 ? `${value.slice(0, 137)}…` : value; }

@@ -1,3 +1,8 @@
+import { SettingsResetAction } from "./SettingsResetAction";
+import { SettingsQueryState } from "./SettingsQueryState";
+import { ErrorBlock } from "../../components/ui";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -130,31 +135,15 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
 
   return (
     <>
-      <div className="rounded-md border border-line bg-bg p-4">
+      <SettingsQueryState query={settings} resource="email settings"><SettingsRow label="Email (SMTP)" helper="Configure the sender used for staff lifecycle notifications."><div className="grid min-w-0 gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
-            <h3 className="text-base font-extrabold text-ink">Email (SMTP)</h3>
-            <p className="text-sm text-muted">
-              Configure the sender used for staff lifecycle notifications.
-            </p>
+
+
           </div>
           <div className="desk-actions flex flex-wrap gap-2">
-            <button
-              className="desk-button-primary"
-              type="button"
-              disabled={!settings.isSuccess || saveSmtpSettings.isPending}
-              onClick={() => saveSmtpSettings.mutate()}
-            >
-              {saveSmtpSettings.isPending ? "Saving..." : "Save email settings"}
-            </button>
-            <button
-              className="desk-button"
-              type="button"
-              disabled={!settings.data?.smtp_password_set || clearSmtpPassword.isPending}
-              onClick={() => clearSmtpPassword.mutate()}
-            >
-              {clearSmtpPassword.isPending ? "Clearing..." : "Clear SMTP password"}
-            </button>
+            <SettingsEditorActions dirty={Boolean(settings.data && (smtpForm.smtp_password || Object.entries(smtpForm).some(([key, value]) => key !== "smtp_password" && String(value) !== String(settings.data?.[key as keyof ApiSettings] ?? ""))))} onDiscard={() => { if (settings.data) setSmtpForm({ smtp_host: settings.data.smtp_host ?? "", smtp_port: String(settings.data.smtp_port ?? 587), smtp_username: settings.data.smtp_username ?? "", smtp_password: "", smtp_use_tls: settings.data.smtp_use_tls, smtp_use_ssl: settings.data.smtp_use_ssl, smtp_from_email: settings.data.smtp_from_email ?? "" }); }} pending={saveSmtpSettings.isPending} disabled={!settings.isSuccess || saveSmtpSettings.isPending} onSave={() => saveSmtpSettings.mutate()} />
+
           </div>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -165,7 +154,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
           <Field className="sm:col-span-2" label="SMTP from email"><input className="desk-input sm:col-span-2" value={smtpForm.smtp_from_email} onChange={(event) => setSmtpForm({ ...smtpForm, smtp_from_email: event.target.value })} /></Field>
         </div>
         <div className="mt-3 flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="min-h-11 flex items-center gap-2 text-sm text-muted">
             <input
               type="checkbox"
               checked={smtpForm.smtp_use_tls}
@@ -175,7 +164,7 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
             />
             Use STARTTLS (587)
           </label>
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="min-h-11 flex items-center gap-2 text-sm text-muted">
             <input
               type="checkbox"
               checked={smtpForm.smtp_use_ssl}
@@ -186,40 +175,30 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
             Use implicit SSL (465)
           </label>
         </div>
-        {settings.isLoading ? <p className="mt-2 text-sm text-muted">Loading email settings...</p> : null}
-        {settings.error ? <p className="mt-2 text-sm text-danger">{settings.error.message}</p> : null}
+        {settings.isLoading ? <p className="mt-2 text-sm text-muted">Loading email settings…</p> : null}
+        {settings.error ? <ErrorBlock error={new Error("Couldn't load email. Try again.")} onRetry={() => { void settings.refetch(); }} /> : null}
         {saveSmtpSettings.error ? (
           <p className="mt-2 text-sm text-danger">{saveSmtpSettings.error.message}</p>
         ) : null}
         {clearSmtpPassword.error ? (
           <p className="mt-2 text-sm text-danger">{clearSmtpPassword.error.message}</p>
         ) : null}
-      </div>
+      </div><SettingsResetAction label={"Clear SMTP password"} consequence="Remove the saved SMTP password. Staff email delivery may stop until a replacement is saved." pending={clearSmtpPassword.isPending} disabled={!settings.data?.smtp_password_set || clearSmtpPassword.isPending} onConfirm={() => clearSmtpPassword.mutateAsync()} /></SettingsRow></SettingsQueryState>
 
-      <div className="rounded-md border border-line bg-bg p-4">
+      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label="Notification recipients" helper="Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace."><div className="grid min-w-0 gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
-            <h3 className="text-base font-extrabold text-ink">Notification recipients</h3>
-            <p className="text-sm text-muted">
-              Unchecked managers will not receive hardware/printing lifecycle emails for this
-              makerspace.
-            </p>
+
+
           </div>
-          <button
-            className="desk-button-primary"
-            type="button"
-            disabled={!recipients.isSuccess || !recipientsDirty || saveRecipients.isPending || !recipients.data?.length}
-            onClick={() => saveRecipients.mutate()}
-          >
-            {saveRecipients.isPending ? "Saving..." : "Save recipients"}
-          </button>
+          <SettingsEditorActions dirty={recipientsDirty} onDiscard={() => { setRecipientChecks(Object.fromEntries((recipients.data ?? []).map(recipient => [recipient.id, recipient.receives_notifications]))); setRecipientsDirty(false); }} pending={saveRecipients.isPending} disabled={!recipients.isSuccess || !recipientsDirty || saveRecipients.isPending || !recipients.data?.length} onSave={() => saveRecipients.mutate()} />
         </div>
-        {recipients.isLoading ? <p className="mt-3 text-sm text-muted">Loading recipients...</p> : null}
+        {recipients.isLoading ? <p className="mt-3 text-sm text-muted">Loading recipients…</p> : null}
         <div className="mt-4 grid gap-2">
           {recipients.data?.map((recipient) => (
             <label
               key={recipient.id}
-              className="flex items-start gap-3 rounded-md border border-line bg-surface p-3 text-sm text-ink"
+              className="min-h-11 flex items-start gap-3 rounded-md border border-line bg-surface p-3 text-sm text-ink"
             >
               <input
                 className="mt-1 h-4 w-4"
@@ -245,11 +224,11 @@ export function MakerspaceEmailSettings({ makerspace }: { makerspace: Makerspace
         {!recipients.isLoading && recipients.data?.length === 0 ? (
           <p className="mt-3 text-sm text-muted">No managers to notify yet.</p>
         ) : null}
-        {recipients.error ? <p className="mt-3 text-sm text-danger">{recipients.error.message}</p> : null}
+        {recipients.error ? <ErrorBlock error={new Error("Couldn't load email. Try again.")} onRetry={() => { void recipients.refetch(); }} /> : null}
         {saveRecipients.error ? (
           <p className="mt-3 text-sm text-danger">{saveRecipients.error.message}</p>
         ) : null}
-      </div>
+      </div></SettingsRow></SettingsQueryState>
     </>
   );
 }

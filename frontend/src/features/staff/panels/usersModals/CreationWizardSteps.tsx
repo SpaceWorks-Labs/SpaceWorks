@@ -10,8 +10,8 @@ const modules = [["events", "Events"], ["bookings", "Bookings"], ["machines", "M
 export function CreationWizardSteps({ step, form, onChange, pending }: { step: number; form: MakerspaceForm; onChange: (form: MakerspaceForm) => void; pending: boolean }) {
   const profile = { ...defaultCreationProfile, ...form.profile };
   if (step === 0) return <>
-    {(["name", "public_code", "slug", "location"] as const).map(key => <Field key={key} label={{ name: "Name", public_code: "Public code", slug: "Slug", location: "Location" }[key]}>
-      <input className="desk-input w-full" required={key !== "location"} maxLength={key === "public_code" ? 4 : key === "slug" ? 50 : 200} value={form[key]} onChange={event => onChange({ ...form, [key]: key === "public_code" ? event.target.value.toUpperCase() : event.target.value })} />
+    {(["name", "public_code", "slug", "location"] as const).map(key => <Field key={key} label={{ name: "Name", public_code: "Public code", slug: "Slug", location: "Location" }[key]} hint={key === "public_code" ? "Four letters or numbers, shown on labels and receipts." : key === "slug" ? "Your public address: …/m/" : undefined}>
+      <input className="desk-input w-full" required={key !== "location"} pattern={key === "public_code" ? "[A-Z0-9]{4}" : key === "slug" ? "[-a-zA-Z0-9_]+" : undefined} title={key === "public_code" ? "Use four uppercase letters or numbers." : key === "slug" ? "Use letters, numbers, hyphens or underscores." : undefined} maxLength={key === "public_code" ? 4 : key === "slug" ? 50 : 200} value={form[key]} onChange={event => onChange({ ...form, [key]: key === "public_code" ? event.target.value.toUpperCase() : event.target.value })} />
     </Field>)}
     <p className="text-xs text-muted">Create with platform access enabled. Hidden spaces require two verified archive recipients before access can be disabled.</p>
   </>;
@@ -26,7 +26,7 @@ export function CreationWizardSteps({ step, form, onChange, pending }: { step: n
     <SpacePackProfilePicker value={form.install_profile_id ?? ""} disabled={pending} onChange={pack => onChange({ ...form, install_profile_id: pack?.id ?? "" })} />
     <p className="text-sm text-muted">Core modules remain installed. The server adds dependencies and refuses modules this deployment does not ship.</p>
     <label className="flex min-h-11 gap-2"><input type="checkbox" checked={form.modules !== undefined} onChange={event => onChange({ ...form, modules: event.target.checked ? [] : undefined })} />Choose module families instead of the deployment or saved pack defaults</label>
-    {form.modules ? modules.map(([key, label]) => <label key={key} className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={form.modules!.includes(key)} onChange={event => onChange({ ...form, modules: event.target.checked ? [...form.modules!, key] : form.modules!.filter(value => value !== key) })} />{label}</label>) : null}
+    {form.modules ? <div className="grid gap-3 sm:grid-cols-2">{modules.map(([key, label]) => <label key={key} className="flex min-h-11 items-center gap-3 rounded-xl border border-line p-4 has-checked:border-accent has-checked:bg-accent-soft"><input type="checkbox" checked={form.modules!.includes(key)} onChange={event => onChange({ ...form, modules: event.target.checked ? [...form.modules!, key] : form.modules!.filter(value => value !== key) })} />{label}</label>)}</div> : null}
   </>;
   if (step === 3) return <>
     <p className="text-sm text-muted">Optional: send the first staff invitation after the makerspace is created. Delivery failures provide a private link.</p>

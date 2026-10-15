@@ -14,7 +14,7 @@ export function MakerspacePublicSiteSettings({ makerspace, loading }: { makerspa
     },
   });
   return <div className="mt-5 space-y-3">
-    <label className="flex gap-3 text-sm font-semibold"><input type="checkbox"
+    <label className="min-h-11 flex gap-3 text-sm font-semibold"><input type="checkbox"
       checked={makerspace.public_site_enabled ?? true} disabled={loading || update.isPending}
       onChange={(event) => update.mutate({ public_site_enabled: event.target.checked })} />Publish public site</label>
     <p className="text-xs text-muted">Controls directory visibility, browser embed keys and public machine pages. The inventory catalogue has its own switch.</p>

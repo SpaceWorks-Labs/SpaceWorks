@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -6,11 +7,14 @@ import {
   requestDataExport,
   type DataExportJob,
 } from "./dataExportsApi";
-import { Panel } from "./panels/shared";
+import { ListLayout } from "../../components/layouts";
+import { ErrorText, ListRow, RelativeTime, StatusPill } from "../../components/ui";
+import { adminQueryState } from "./adminPresentation";
 import { getJobSession, trackJob } from "../../components/ui/jobStore";
 
 export function DataExportsPanel({ makerspaceId }: { makerspaceId: number }) {
   const queryClient = useQueryClient();
+  const [disclosureOpen, setDisclosureOpen] = useState(false);
   const queryKey = ["data-exports", makerspaceId];
   const jobs = useQuery({
     queryKey,
@@ -36,10 +40,23 @@ export function DataExportsPanel({ makerspaceId }: { makerspaceId: number }) {
   });
   const rows = jobs.data ?? [];
 
-  return (
-    <Panel title="Makerspace data export">
-      <div className="grid gap-4">
-        <div className="rounded-md border border-warn/40 bg-warn-soft p-4 text-sm text-ink">
+  return <ListLayout header={{ title: "Data export", subtitle: "A readable copy of your space's records. Not a backup.",
+    primary: { label: "Request export", pending: requestExport.isPending, pendingLabel: "Requesting…", disabled: jobs.isLoading || jobs.isError || rows.some(isRunning),
+      disabledReason: jobs.isLoading ? "Loading the export history." : jobs.isError ? "Retry loading the export history first." : rows.some(isRunning) ? "An export is already being built." : undefined,
+      onClick: () => requestExport.mutate() } }}
+    state={adminQueryState(jobs, "exports")} isEmpty={!rows.length}
+    empty={{ message: "No exports yet. Request one when you need a copy of your records." }}
+    callout={{ size: "banner", tone: "warn", lead: "Exports include member names, emails and phone numbers.", body: "Handle the file like any personal data.",
+      action: { label: disclosureOpen ? "Hide what's included" : "Read what's included", onClick: () => setDisclosureOpen(!disclosureOpen) } }}
+    body={{ kind: "rows", rows: rows.map(job => <ListRow key={job.id} title="Export" identity={{ kind: "date", date: job.created_at }}
+      meta={<><RelativeTime date={job.created_at} /> · <StatusPill label={statusLabel(job)} tone={job.status === "failed" ? "danger" : job.status === "available" ? "success" : "warn"} />
+        {typeof job.manifest.total_rows === "number" ? ` · ${job.manifest.total_rows} rows` : ""}
+        {job.status === "failed" ? <span className="mt-2 block text-danger" role="alert">{job.failure_code === "deadline_exceeded" ? "This export took too long. Try again at a quieter time." : job.failure_detail || "The export failed. Request a new export to try again."}</span> : null}
+      </>} right={job.status === "available" ? <button className="desk-button" type="button" disabled={download.isPending && download.variables === job.id} onClick={() => download.mutate(job.id)}>
+        {download.isPending && download.variables === job.id ? "Preparing link…" : "Download"}
+      </button> : undefined} />) }}
+    detail={<div className="mt-6 grid gap-3">
+      {disclosureOpen ? <div className="rounded-xl border border-line bg-surface p-5 text-sm text-ink">
           <p className="font-semibold">Read this disclosure before requesting an export</p>
           <p className="mt-2">
             The readable archive includes makerspace-owned records, but omits credentials,
@@ -58,74 +75,10 @@ export function DataExportsPanel({ makerspaceId }: { makerspaceId: number }) {
             only a numeric actor id and the current console omits the actor. Usernames are
             identifying and can correlate a person across exports.
           </p>
-        </div>
-
-        <div>
-          <button
-            className="desk-button-primary"
-            type="button"
-            disabled={requestExport.isPending || rows.some(isRunning)}
-            onClick={() => requestExport.mutate()}
-          >
-            {requestExport.isPending ? "Requesting…" : "Request redacted export"}
-          </button>
-          {requestExport.error ? <p className="mt-2 text-sm text-danger" role="alert">{requestExport.error.message}</p> : null}
-        </div>
-
-        {jobs.isLoading ? <p className="text-sm text-muted">Loading export jobs…</p> : null}
-        {jobs.error ? <p className="text-sm text-danger" role="alert">{jobs.error.message}</p> : null}
-        {!jobs.isLoading && rows.length === 0 ? (
-          <p className="text-sm text-muted">No exports have been requested.</p>
-        ) : null}
-        <div className="grid gap-3">
-          {rows.map((job) => (
-            <ExportJobRow
-              key={job.id}
-              job={job}
-              downloading={download.isPending && download.variables === job.id}
-              onDownload={() => download.mutate(job.id)}
-            />
-          ))}
-        </div>
-        {download.error ? <p className="text-sm text-danger" role="alert">{download.error.message}</p> : null}
-      </div>
-    </Panel>
-  );
-}
-
-function ExportJobRow({
-  job,
-  downloading,
-  onDownload,
-}: {
-  job: DataExportJob;
-  downloading: boolean;
-  onDownload: () => void;
-}) {
-  const total = job.manifest.total_rows;
-  return (
-    <article className="rounded-md border border-line bg-bg p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="font-medium text-ink">Redacted export</p>
-          <p className="text-xs text-muted">
-            {new Date(job.created_at).toLocaleString()} · {statusLabel(job)}
-            {typeof total === "number" ? ` · ${total} rows` : ""}
-          </p>
-        </div>
-        {job.status === "available" ? (
-          <button className="desk-button" type="button" disabled={downloading} onClick={onDownload}>
-            {downloading ? "Preparing link…" : "Download archive"}
-          </button>
-        ) : null}
-      </div>
-      {job.status === "failed" ? (
-        <p className="mt-2 text-sm text-danger" role="alert">
-          {job.failure_detail || "The export failed."}
-        </p>
-      ) : null}
-    </article>
-  );
+        </div> : null}
+      {requestExport.error ? <ErrorText message={requestExport.error.message} /> : null}
+      {download.error ? <ErrorText message={download.error.message} /> : null}
+    </div>} />;
 }
 
 function isRunning(job: DataExportJob) {
@@ -133,7 +86,7 @@ function isRunning(job: DataExportJob) {
 }
 
 function statusLabel(job: DataExportJob) {
-  if (job.status === "available") return "Ready to download";
+  if (job.status === "available") return "Ready";
   if (job.status === "failed") return job.failure_code === "deadline_exceeded" ? "Deadline exceeded" : "Failed";
   return job.status === "pending" ? "Queued" : "Building snapshot";
 }

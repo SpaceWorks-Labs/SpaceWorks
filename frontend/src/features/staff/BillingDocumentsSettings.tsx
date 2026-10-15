@@ -1,3 +1,6 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
@@ -24,21 +27,21 @@ export function BillingDocumentsSettings({ makerspaceId }: { makerspaceId: numbe
     },
     onSuccess: (data) => { client.setQueryData(key, data); void client.invalidateQueries({ queryKey: ["operations-report", "accounting-journal"] }); },
   });
-  return <section className="rounded-md border border-line p-4" aria-label="Billing documents settings">
-    <h3 className="title-section">Receipts and accounting</h3>
-    <p className="text-sm text-muted">Gross-only acknowledgements. Settings apply to new documents. Existing receipt numbers and snapshots remain unchanged.</p>
+  return <SettingsRow label="Receipts and accounting" helper="Gross-only acknowledgements. Settings apply to new documents. Existing receipt numbers and snapshots remain unchanged."><div className="grid min-w-0 gap-4">
+
+
     <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>Configure documents</button>
-    {expanded ? <>
-      {policy.isLoading ? <p>Loading billing settings...</p> : null}
+    {expanded ? <SettingsQueryState query={policy} resource="receipt settings"><>
+      {policy.isLoading ? <p>Loading billing settings…</p> : null}
       {policy.error || save.error ? <p role="alert" className="text-danger">{(policy.error || save.error)?.message}</p> : null}
       {draft ? <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
         {([ ["number_prefix", "Number prefix", 32], ["legal_name", "Issuer name", 150], ["address", "Issuer address", 1000], ["tax_id", "Issuer identifier (no tax calculation)", 64], ["footer", "Footer", 1000] ] as const).map(([name, label, length]) =>
           <Field key={name} label={label}><input className="desk-input" maxLength={length} value={draft[name]} onChange={(event) => setDraft({ ...draft, [name]: event.target.value })} /></Field>)}
         <Field label="Accounting account codes (JSON)"><textarea className="desk-input code-text" rows={6} value={codes} onChange={(event) => setCodes(event.target.value)} /></Field>
         <p className="text-xs text-muted">Defaults: income 4000, cash 1000, online 1010, loan-deposit liability 2100. Override individual payment subject types as needed.</p>
-        <button className="desk-button" type="submit" disabled={save.isPending}>Save receipt settings</button>
+        <SettingsEditorActions dirty={Boolean(draft && policy.data && (JSON.stringify(draft) !== JSON.stringify(policy.data) || codes !== JSON.stringify(policy.data.account_codes, null, 2)))} onDiscard={() => { setDraft(policy.data ?? null); setCodes(JSON.stringify(policy.data?.account_codes ?? {}, null, 2)); }} pending={save.isPending} disabled={save.isPending} />
         {save.isSuccess ? <p role="status">Receipt settings saved.</p> : null}
       </form> : null}
-    </> : null}
-  </section>;
+    </></SettingsQueryState> : null}
+  </div></SettingsRow>;
 }

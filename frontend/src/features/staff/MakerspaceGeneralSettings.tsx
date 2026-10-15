@@ -1,7 +1,10 @@
+import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { MakerspaceLoanPolicySettings } from "./MakerspaceLoanPolicySettings";
 import { MakerspacePublicSiteSettings } from "./MakerspacePublicSiteSettings";
@@ -46,14 +49,22 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
         method: "PATCH",
         body: JSON.stringify({ public_inventory_enabled: next }),
       }),
-    onSuccess: refreshSettings,
+    onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updatePublicInventory`),
+    onSuccess: async (_data, next) => {
+      await (refreshSettings)();
+      toast(`Public inventory turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updatePublicInventory`, undo: async () => {
+        await ((next: boolean) =>
+      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ public_inventory_enabled: next }),
+      }))(!next);
+        await (refreshSettings)();
+      } });
+    },
   });
 
-  return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-extrabold text-ink">General</h3>
-      <div className="mt-4 grid min-w-0 gap-5 lg:grid-cols-2">
-        <form
+  return <>
+    <SettingsRow label="Default loan days" helper="Set the default return window applied when a hardware request is issued."><form
           className="grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
@@ -72,49 +83,22 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
             disabled={loading || updateDefaultLoanDays.isPending}
             onChange={(event) => setDefaultLoanDays(event.target.value)}
           />
-          <p className="text-xs text-muted">
-            Default return window applied when a hardware request is issued.
-          </p>
+
           <div>
-            <button
-              className="desk-button-primary w-full max-w-full sm:w-auto"
-              type="submit"
-              disabled={loading || updateDefaultLoanDays.isPending}
-            >
-              {updateDefaultLoanDays.isPending ? "Saving..." : "Save default days"}
-            </button>
+            <SettingsEditorActions dirty={defaultLoanDays !== String(currentDefaultLoanDays)} onDiscard={() => setDefaultLoanDays(String(currentDefaultLoanDays))} pending={updateDefaultLoanDays.isPending} disabled={loading || updateDefaultLoanDays.isPending} />
           </div>
           {updateDefaultLoanDays.error ? (
             <p className="text-sm text-danger">{updateDefaultLoanDays.error.message}</p>
           ) : null}
-        </form>
-        <div className="grid min-w-0 content-start gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-sm font-extrabold text-ink">Public inventory</h4>
-            <Badge tone={publicInventoryEnabled ? "success" : "neutral"}>
-              {publicInventoryEnabled ? "On" : "Off"}
-            </Badge>
-          </div>
-          <label className="flex min-w-0 items-start gap-3 text-sm text-ink">
-            <input
-              className="mt-1 h-4 w-4"
-              type="checkbox"
-              checked={publicInventoryEnabled}
-              disabled={loading || updatePublicInventory.isPending}
-              onChange={(event) => updatePublicInventory.mutate(event.target.checked)}
-            />
-            <span className="font-semibold">Show public inventory</span>
-          </label>
-          <p className="text-xs text-muted">
-            When off, the public inventory catalog is hidden. This does not delete any inventory data.
-          </p>
-          {updatePublicInventory.error ? (
-            <p className="text-sm text-danger">{updatePublicInventory.error.message}</p>
-          ) : null}
-        </div>
+        </form></SettingsRow>
+    <SettingsRow label="Public inventory" helper="Show the public catalogue. Turning this off keeps your inventory data.">
+      <div className="grid gap-3"><Badge label="" tone={publicInventoryEnabled ? "success" : "neutral"}>{publicInventoryEnabled ? "On" : "Off"}</Badge>
+        <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={publicInventoryEnabled}
+          disabled={loading || updatePublicInventory.isPending} onChange={event => updatePublicInventory.mutate(event.target.checked)} />Show public inventory</label>
+        {updatePublicInventory.error ? <p role="alert" className="text-sm text-danger">{updatePublicInventory.error.message}</p> : null}
       </div>
-      <MakerspacePublicSiteSettings makerspace={settings ?? makerspace} loading={loading} />
-      {makerspace.enabled_features?.includes("loans.enabled") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : null}
-    </div>
-  );
+    </SettingsRow>
+    <MakerspacePublicSiteSettings makerspace={settings ?? makerspace} loading={loading} />
+    {makerspace.enabled_features?.includes("loans.enabled") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : null}
+  </>;
 }

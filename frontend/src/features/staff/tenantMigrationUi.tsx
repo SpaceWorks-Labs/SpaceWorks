@@ -1,4 +1,5 @@
 import type React from "react";
+import { StatusPill as Pill } from "../../components/ui";
 
 import { StructuredApiError } from "../../lib/api";
 import type { ReceiptEnvelope } from "./tenantMigrationApi";
@@ -31,13 +32,8 @@ export function StatusPill({ children, tone = "neutral" }: {
   children: React.ReactNode;
   tone?: "neutral" | "success" | "danger" | "warn";
 }) {
-  const classes = {
-    neutral: "border-line bg-bg text-ink",
-    success: "border-success/40 bg-success-soft text-success-ink",
-    danger: "border-danger/40 bg-panel text-danger",
-    warn: "border-warn/40 bg-warn-soft text-warn-ink",
-  }[tone];
-  return <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${classes}`}>{children}</span>;
+  const text = typeof children === "string" ? children.replace(/_/g, " ").toLowerCase() : "migration status";
+  return <Pill tone={tone} label={text.charAt(0).toUpperCase() + text.slice(1)} />;
 }
 
 export function parseReceipt(value: string): ReceiptEnvelope | null {

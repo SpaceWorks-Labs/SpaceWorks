@@ -1,7 +1,10 @@
-import { Link } from "react-router-dom";
+import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
+import { useState } from "react";
+import { SettingsLayout } from "../../components/layouts";
+import { ApiClientsTelegramSettings } from "./ApiClientsTelegramSettings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Field } from "../../components/ui";
+import { StatusPill, Field, Modal, SettingsRow } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { MakerspaceBrandingSettings } from "./MakerspaceBrandingSettings";
 import { MakerspaceBookingRulesSettings } from "./MakerspaceBookingRulesSettings";
@@ -30,7 +33,7 @@ import { NotificationDestinations } from "./NotificationDestinations";
 import { EvidenceRetentionPanel } from "./EvidenceRetentionPanel";
 import { NotificationMuteMatrix } from "./NotificationMuteMatrix";
 import { NotificationRecipientPicker } from "./NotificationRecipientPicker";
-import { Panel, type Makerspace, useStaffGet } from "./StaffPanels";
+import { type Makerspace, useStaffGet } from "./StaffPanels";
 
 type Props = {
   makerspace: Makerspace;
@@ -39,6 +42,7 @@ type Props = {
 };
 
 export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMakerspace }: Props) {
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const queryClient = useQueryClient();
   const settings = useStaffGet<Makerspace>(
     ["makerspace-settings", makerspace.id],
@@ -59,11 +63,11 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
         method: "PATCH",
         body: JSON.stringify({ superadmin_access_enabled: next }),
       }),
-    onSuccess: () => {
+    onSuccess: async (_data, next) => { await (() => {
       queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
       queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
       queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-    },
+    })(); toast(`Superadmin access turned ${next ? "on" : "off"}.`); },
   });
 
   const updateStaffNotifications = useMutation({
@@ -72,10 +76,25 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
         method: "PATCH",
         body: JSON.stringify({ staff_notifications_enabled: next }),
       }),
-    onSuccess: () => {
+    onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updateStaffNotifications`),
+    onSuccess: async (_data, next) => {
+      await (() => {
       queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
       queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
       queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
+    })();
+      toast(`Staff emails turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updateStaffNotifications`, undo: async () => {
+        await ((next: boolean) =>
+      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ staff_notifications_enabled: next }),
+      }))(!next);
+        await (() => {
+      queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
+      queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
+    })();
+      } });
     },
   });
 
@@ -97,175 +116,93 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
   const nextValue = !superadminAccessEnabled;
   const disabled = settings.isLoading || updateAccess.isPending || reEnableBlocked;
   const notificationsDisabled = settings.isLoading || updateStaffNotifications.isPending;
-  return (
-    <Panel title="Makerspace settings">
-      <div className="grid min-w-0 gap-4">
-        <Link to="/mfa" className="desk-link">Manage my authenticator and recovery codes</Link>
-        <MakerspaceBrandingSettings
-          makerspace={makerspace}
-          settings={settings.data}
-          loading={settings.isLoading}
-        />
-        <MakerspaceGeneralSettings
-          makerspace={makerspace}
-          settings={settings.data}
-          loading={settings.isLoading}
-        />
-        <MakerspaceLocationSettings
-          makerspace={makerspace}
-          settings={settings.data}
-          loading={settings.isLoading}
-        />
-        <MakerspaceMembershipSettings makerspace={makerspace} settings={settings.data} loading={settings.isLoading} />
-        {canManageMakerspace ? <MakerspaceProfileSettings makerspaceId={makerspace.id} /> : null}
-        {canManageMakerspace ? <BillingDocumentsSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
-        <MakerspaceFeatureSettings
-          makerspace={makerspace}
-          settings={settings.data}
-          loading={settings.isLoading}
-        />
-        {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("packs.import")
-          ? <SpacePacksPanel key={makerspace.id} makerspaceId={makerspace.id} isSuperadmin={isSuperadmin} /> : null}
-        <MakerspacePaymentSettings makerspace={settings.data ?? makerspace} />
-        {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? (
-          <KioskStationSettings makerspace={makerspace} />
-        ) : null}
-        <MakerspaceGeofenceSettings makerspace={makerspace} settings={settings.data} loading={settings.isLoading} />
-        {canManageMakerspace && enabledModules.includes("notifications") ? <NotificationTimingSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
-        <IntegrationHealthPanel makerspace={makerspace} />
-        <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-          <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-            <div className="grid min-w-0 max-w-2xl gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-extrabold text-ink">Superadmin access</h3>
-                <Badge tone={superadminAccessEnabled ? "success" : "warn"}>
-                  {superadminAccessEnabled ? "On" : "Off"}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted">
-                When off, this makerspace is hidden from the superadmin's reports, dashboards, audit,
-                and admin lists. It does not revoke the superadmin's platform/database access. Only
-                the makerspace admin can turn it back on.
-              </p>
-              {reEnableBlocked ? (
-                <p className="text-sm text-muted">Re-enable is controlled by the makerspace admin.</p>
-              ) : null}
-              {updateAccess.error ? <p className="text-sm text-danger">{updateAccess.error.message}</p> : null}
-            </div>
-            <button
-              className={`${superadminAccessEnabled ? "desk-button" : "desk-button-primary"} w-full max-w-full justify-self-start sm:w-auto md:justify-self-end`}
-              type="button"
-              disabled={disabled}
-              onClick={() => updateAccess.mutate(nextValue)}
-            >
-              {updateAccess.isPending
-                ? "Saving..."
-                : superadminAccessEnabled
-                  ? "Turn off access"
-                  : "Turn on access"}
-            </button>
-          </div>
-        </div>
-        <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-          <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-            <div className="grid min-w-0 max-w-2xl gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-extrabold text-ink">Staff email notifications</h3>
-                <Badge tone={staffNotificationsEnabled ? "success" : "neutral"}>
-                  {staffNotificationsEnabled ? "On" : "Off"}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted">
-                Email this makerspace&apos;s managers when hardware and print request statuses change.
-              </p>
-              {updateStaffNotifications.error ? (
-                <p className="text-sm text-danger">{updateStaffNotifications.error.message}</p>
-              ) : null}
-            </div>
-            <label className="flex min-w-0 items-start gap-3 text-sm text-ink sm:justify-self-start md:justify-self-end">
-              <input
-                className="mt-1 h-4 w-4"
-                type="checkbox"
-                checked={staffNotificationsEnabled}
-                disabled={notificationsDisabled}
-                onChange={(event) => updateStaffNotifications.mutate(event.target.checked)}
-              />
-              <span className="font-semibold">Send staff emails</span>
-            </label>
-          </div>
-        </div>
-        <MakerspacePublicStatsSettings
-          makerspace={makerspace}
-          settings={settings.data}
-          loading={settings.isLoading}
-        />
-        <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-          <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] md:items-start">
-            <div className="grid min-w-0 max-w-2xl gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-extrabold text-ink">Public print status recovery</h3>
-                <Badge tone={publicPrintStatusLookupPolicy === "token_only" ? "neutral" : "success"}>
-                  {statusLookupLabel(publicPrintStatusLookupPolicy)}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted">
-                Controls whether public print requests can be recovered from an email address when the status link is lost.
-              </p>
-              {updatePrintStatusLookupPolicy.error ? (
-                <p className="text-sm text-danger">{updatePrintStatusLookupPolicy.error.message}</p>
-              ) : null}
-            </div>
-            <Field label="Public print status lookup policy">
-              <select
-                className="desk-input w-full"
-                value={publicPrintStatusLookupPolicy}
-                disabled={settings.isLoading || updatePrintStatusLookupPolicy.isPending}
-                onChange={(event) => updatePrintStatusLookupPolicy.mutate(event.target.value as Makerspace["public_print_status_lookup_policy"])}
-              >
-                <option value="token_only">Token only</option>
-                <option value="email_unverified">Email lookup</option>
-              </select>
-            </Field>
-          </div>
-        </div>
-        <MakerspaceBookingSettings makerspace={makerspace} settings={settings.data} loading={settings.isLoading} />
-        <MakerspaceReminderSettings makerspace={makerspace} settings={settings.data} loading={settings.isLoading} />
-        {enabledModules.includes("bookings") ? (
-          <MakerspaceBookingRulesSettings makerspace={makerspace} />
-        ) : null}
-        <MakerspaceFilamentSettings makerspace={makerspace} settings={settings.data} loading={settings.isLoading} />
-        <MakerspaceEmailSettings makerspace={makerspace} />
-        <MakerspaceWebhookSettings makerspace={makerspace} />
-        {settings.data?.platform_hosting === true ? (
-          <MakerspaceSubdomainSettings makerspace={makerspace} settings={settings.data} />
-        ) : null}
-        <MakerspaceCustomDomainSettings
-          makerspace={makerspace}
-          settings={settings.data}
-          loading={settings.isLoading}
-        />
-        {canManageMakerspace ? <EvidenceRetentionPanel makerspaceId={makerspace.id} /> : null}
-        <MakerspaceArchiveRequestPanel
-          makerspaceId={makerspace.id}
-          canManageMakerspace={canManageMakerspace}
-        />
-        <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-          <h3 className="text-base font-extrabold text-ink">Notification channels</h3>
-          <NotificationMuteMatrix makerspaceId={makerspace.id} />
-          <NotificationRecipientPicker makerspaceId={makerspace.id} />
-          <NotificationDestinations
-            availableChannels={enabledModules}
-            makerspaceId={makerspace.id}
-          />
-        </div>
-      </div>
-    </Panel>
-  );
+  const shared = { makerspace, settings: settings.data, loading: settings.isLoading };
+  const privacy = <SettingsRow label="Superadmin access" helper="Hide this makerspace from platform reports, dashboards, audit and admin lists. Only the makerspace admin can restore access.">
+    <div className="grid gap-3">
+      <StatusPill label={superadminAccessEnabled ? "On" : "Off"} tone={superadminAccessEnabled ? "success" : "warn"} />
+      {reEnableBlocked ? <p className="text-sm text-muted">Re-enable is controlled by the makerspace admin.</p> : null}
+      {updateAccess.error ? <p role="alert" className="text-sm text-danger">{updateAccess.error.message}</p> : null}
+      <button className="desk-button w-fit" type="button" disabled={disabled} onClick={() => updateAccess.mutate(nextValue)}>
+        {updateAccess.isPending ? "Saving…" : superadminAccessEnabled ? "Turn off access" : "Turn on access"}
+      </button>
+    </div>
+  </SettingsRow>;
+  const staffEmail = <SettingsRow label="Staff email notifications" helper="Email this makerspace’s managers when hardware and print request statuses change.">
+    <StatusPill label={staffNotificationsEnabled ? "On" : "Off"} tone={staffNotificationsEnabled ? "success" : "neutral"} />
+    <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
+      <input type="checkbox" checked={staffNotificationsEnabled} disabled={notificationsDisabled}
+        onChange={event => updateStaffNotifications.mutate(event.target.checked)} />Send staff emails
+    </label>
+    {updateStaffNotifications.error ? <p role="alert" className="text-sm text-danger">{updateStaffNotifications.error.message}</p> : null}
+  </SettingsRow>;
+  const printRecovery = <SettingsRow label="Public print status recovery" helper="Choose how people recover a public print request when they lose their status link.">
+    <div className="grid gap-3"><StatusPill label={statusLookupLabel(publicPrintStatusLookupPolicy)} />
+      <Field label="Public print status lookup policy"><select className="desk-input w-full" value={publicPrintStatusLookupPolicy}
+        disabled={settings.isLoading || updatePrintStatusLookupPolicy.isPending}
+        onChange={event => updatePrintStatusLookupPolicy.mutate(event.target.value as Makerspace["public_print_status_lookup_policy"])}>
+        <option value="token_only">Token only</option><option value="email_unverified">Email lookup</option>
+      </select></Field>
+      {updatePrintStatusLookupPolicy.error ? <p role="alert" className="text-sm text-danger">{updatePrintStatusLookupPolicy.error.message}</p> : null}
+    </div>
+  </SettingsRow>;
+  return <>
+    <SettingsLayout header={{ title: "Makerspace settings", subtitle: "Make this space work for your community.",
+      primary: { label: "View public site", href: `/m/${makerspace.slug}` } }}
+      state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready",
+        error: "Couldn't load makerspace settings. Try again.", onRetry: () => { void settings.refetch(); } }}
+      subnav="auto" sections={[
+        { id: "general", title: "General", rows: <>
+          <MakerspaceGeneralSettings {...shared} />
+          <MakerspaceLocationSettings {...shared} />
+          {canManageMakerspace ? <MakerspaceProfileSettings makerspaceId={makerspace.id} /> : null}
+        </> },
+        { id: "branding", title: "Branding & public site", rows: <>
+          <MakerspaceBrandingSettings {...shared} /><MakerspacePublicStatsSettings {...shared} />{printRecovery}
+          {settings.data?.platform_hosting === true ? <MakerspaceSubdomainSettings makerspace={makerspace} settings={settings.data} /> : null}
+          <MakerspaceCustomDomainSettings {...shared} />
+        </> },
+        { id: "features", title: "Features", rows: <>
+          <MakerspaceFeatureSettings {...shared} />
+          {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("packs.import")
+            ? <SpacePacksPanel key={makerspace.id} makerspaceId={makerspace.id} isSuperadmin={isSuperadmin} /> : null}
+        </> },
+        { id: "lending", title: "Lending", rows: <>
+          <MakerspaceReminderSettings {...shared} />
+          {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? <KioskStationSettings makerspace={makerspace} /> : null}
+        </> },
+        { id: "membership", title: "Membership", rows: <>
+          <MakerspaceMembershipSettings {...shared} /><MakerspaceGeofenceSettings {...shared} />
+        </> },
+        { id: "bookings", title: "Bookings", rows: <>
+          <MakerspaceBookingSettings {...shared} />
+          {enabledModules.includes("bookings") ? <MakerspaceBookingRulesSettings makerspace={makerspace} /> : null}
+        </> },
+        { id: "materials", title: "Machines & materials", rows: <MakerspaceFilamentSettings {...shared} /> },
+        { id: "money", title: "Money", rows: <>
+          <MakerspacePaymentSettings makerspace={settings.data ?? makerspace} />
+          {canManageMakerspace ? <BillingDocumentsSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
+        </> },
+        { id: "notifications", title: "Notifications", rows: <>{staffEmail}
+          {canManageMakerspace && enabledModules.includes("notifications") ? <NotificationTimingSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
+          <NotificationMuteMatrix makerspaceId={makerspace.id} /><NotificationRecipientPicker makerspaceId={makerspace.id} />
+          <NotificationDestinations availableChannels={enabledModules} makerspaceId={makerspace.id} />
+        </> },
+        { id: "integrations", title: "Email & integrations", rows: <>
+          <MakerspaceEmailSettings makerspace={makerspace} /><MakerspaceWebhookSettings makerspace={makerspace} />
+          {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
+          <IntegrationHealthPanel makerspace={makerspace} />
+        </> },
+        { id: "privacy", title: "Privacy & evidence", rows: <>{privacy}
+          {canManageMakerspace ? <EvidenceRetentionPanel makerspaceId={makerspace.id} /> : null}
+        </> },
+      ]} danger={canManageMakerspace ? [{ title: "Archive this makerspace",
+        consequence: "Request archival for this makerspace. A superadmin must confirm before staff access is removed.",
+        action: { label: "Request archival", onClick: () => setArchiveOpen(true) } }] : []} />
+    <Modal open={archiveOpen} onClose={() => setArchiveOpen(false)} title="Archive this makerspace" size="xl">
+      <MakerspaceArchiveRequestPanel makerspaceId={makerspace.id} canManageMakerspace={canManageMakerspace} />
+    </Modal>
+  </>;
 }
-
 function statusLookupLabel(policy: Makerspace["public_print_status_lookup_policy"]) {
-  return {
-    token_only: "Token only",
-    email_unverified: "Email lookup",
-  }[policy ?? "email_unverified"];
+  return { token_only: "Token only", email_unverified: "Email lookup" }[policy ?? "email_unverified"];
 }

@@ -33,7 +33,7 @@ export function ScopePicker({
             <p className="eyebrow">{group.label}</p>
             <div className="mt-1 grid max-h-40 gap-1 overflow-y-auto">
               {group.items.map((item) => (
-                <label className="flex items-center gap-2 text-sm" key={item.id}>
+                <label className="flex min-h-11 items-center gap-2 text-sm" key={item.id}>
                   <input
                     checked={scope[group.key].includes(item.id)}
                     onChange={(event) =>

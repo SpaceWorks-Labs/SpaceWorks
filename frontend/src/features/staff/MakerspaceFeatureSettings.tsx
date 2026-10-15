@@ -1,6 +1,8 @@
+import { toast } from "../../components/ui/toastStore";
+import { SettingsRow } from "../../components/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { FEATURE_DEFINITIONS } from "../../lib/features";
 import type { Makerspace } from "./panels/shared";
@@ -33,11 +35,19 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
         method: "PATCH",
         body: JSON.stringify({ enabled_features: next }),
       }),
-    onSuccess: () => {
+    onSuccess: async (_data, next) => { await (() => {
       queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
       queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
       queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-    },
+    })(); toast(next.length ? "Features updated." : "All features turned off.", { undo: async () => { await ((next: string[]) =>
+      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ enabled_features: next }),
+      }))(enabledFeatures); await (() => {
+      queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
+      queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
+    })(); } }); },
   });
 
   const toggleFeature = (key: string, checked: boolean) => {
@@ -48,14 +58,12 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
   };
 
   return (
-    <section className="min-w-0 rounded-md border border-line bg-bg p-4">
+    <SettingsRow label="Feature settings" helper="Modules are set by the platform administrator. Enable the available sub-features for this makerspace."><div className="grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-2">
-        <h3 className="text-base font-extrabold text-ink">Feature settings</h3>
-        <p className="text-sm text-muted">
-          Modules are set by the platform administrator. Enable the available sub-features for this makerspace.
-        </p>
+
+
         <div className="flex flex-wrap gap-2">
-          {enabledModules.map((module) => <Badge key={module} tone="neutral">{module}</Badge>)}
+          {enabledModules.map((module) => <Badge label="" key={module} tone="neutral">{module}</Badge>)}
         </div>
         {update.error ? <p className="text-sm text-danger" role="alert">{update.error.message}</p> : null}
       </div>
@@ -68,7 +76,7 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
               <legend className="px-1 text-sm font-semibold text-ink">{isGeneral ? "General" : module}</legend>
               {!moduleEnabled ? <p className="text-sm text-muted">Module disabled by the platform administrator.</p> : null}
               {features.map((feature) => (
-                <label key={feature.key} className="flex items-start gap-3 text-sm text-ink">
+                <label key={feature.key} className="min-h-11 flex items-start gap-3 text-sm text-ink">
                   <input
                     className="mt-1 h-4 w-4"
                     type="checkbox"
@@ -83,6 +91,6 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
           );
         })}
       </div>
-    </section>
+    </div></SettingsRow>
   );
 }

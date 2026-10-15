@@ -1,3 +1,4 @@
+import { SettingsEditorActions } from "./SettingsEditorActions";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -126,19 +127,8 @@ export function EventRecipients({
         >
           Add recipient
         </button>
-        <button
-          className="desk-button-primary"
-          disabled={save.isPending || drafts === null || hasUnscopedRule}
-          onClick={() => save.mutate(rules)}
-          type="button"
-        >
-          {save.isPending ? "Saving…" : "Save recipients"}
-        </button>
-        {drafts !== null ? (
-          <button className="desk-button-ghost" onClick={() => setDrafts(null)} type="button">
-            Discard changes
-          </button>
-        ) : null}
+        <SettingsEditorActions dirty={drafts !== null} onDiscard={() => { setDrafts(null); setError(""); }} pending={save.isPending} disabled={save.isPending || drafts === null || hasUnscopedRule} onSave={() => save.mutate(rules)} />
+
       </div>
     </div>
   );

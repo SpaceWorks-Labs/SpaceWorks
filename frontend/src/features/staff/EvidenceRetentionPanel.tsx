@@ -1,8 +1,10 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AbandonedUploadCleanupSection } from "./AbandonedUploadCleanupSection";
 
-import { EmptyState, Skeleton } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import {
   useEvidenceRetentionPolicy,
@@ -32,32 +34,25 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
     Boolean(policy.data),
   );
   const [days, setDays] = useState("");
+  const [daysTouched, setDaysTouched] = useState(false);
 
   useEffect(() => {
-    if (policy.data) setDays(String(policy.data.effective_days));
-  }, [policy.data?.effective_days]);
+    if (policy.data) { setDays(String(policy.data.effective_days)); setDaysTouched(false); }
+  }, [policy.data?.effective_days, policy.data?.override_days]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     update.mutate({ object_retention_days: Number(days) });
   };
 
-  if (policy.isLoading) return <Skeleton className="mb-5 h-40 w-full" />;
-  if (policy.error) return (
-    <EmptyState
-      title="Unable to load evidence retention"
-      description={errorText(policy.error)}
-      action={<button className="desk-button" type="button" onClick={() => policy.refetch()}>Retry</button>}
-    />
-  );
+  if (policy.isLoading) return <SettingsQueryState query={policy} resource="evidence retention" />;
+  if (policy.error) return <SettingsQueryState query={policy} resource="evidence retention" />;
   if (!policy.data) return null;
 
   return (
-    <section className="mb-5 rounded-xl border border-line bg-bg p-4" aria-labelledby="evidence-retention-title">
-      <h3 id="evidence-retention-title" className="title-section">Evidence photo retention</h3>
-      <p className="mt-1 text-sm text-muted">
-        Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window.
-      </p>
+    <><SettingsRow label="Evidence photo retention" helper="Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window."><div className="grid min-w-0 gap-4">
+
+
       <p className="mt-2 text-sm font-semibold text-warn-ink" role="note">
         Expiry is irreversible in live storage; older backups may still contain historical photos.
       </p>
@@ -70,11 +65,11 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
             min="30"
             max="3650"
             value={days}
-            onChange={(event) => setDays(event.target.value)}
+            onChange={(event) => { setDays(event.target.value); setDaysTouched(true); }}
             required
           />
         </label>
-        <button className="desk-button-primary" type="submit" disabled={update.isPending}>Save override</button>
+        <SettingsEditorActions dirty={days !== String(effectiveDays) || (daysTouched && policy.data.override_days === null)} onDiscard={() => { setDays(String(effectiveDays)); setDaysTouched(false); }} pending={update.isPending} disabled={update.isPending} />
         <button
           className="desk-button"
           type="button"
@@ -91,7 +86,7 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
         {` Automatic expiry is ${policy.data.object_expiry_enabled ? "enabled" : "disabled"}.`}
       </p>
       {update.error ? <p className="mt-2 text-sm text-danger" role="alert">{errorText(update.error)}</p> : null}
-      <div className="mt-3 rounded-lg border border-line bg-surface p-3 text-sm">
+      <SettingsQueryState query={preview} resource="retention preview"><div className="mt-3 rounded-lg border border-line bg-surface p-3 text-sm">
         {preview.isLoading ? <span className="text-muted">Calculating preview…</span> : null}
         {preview.error ? <span className="text-danger">{errorText(preview.error)}</span> : null}
         {preview.data ? (
@@ -100,13 +95,13 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
             {preview.data.has_more ? " The first sweep will continue in bounded batches." : ""}
           </p>
         ) : null}
-      </div>
-      <AbandonedUploadCleanupSection
+      </div></SettingsQueryState>
+
+    </div></SettingsRow><AbandonedUploadCleanupSection
         policy={policy.data}
         preview={preview.data}
         pending={update.isPending}
         onChange={(changes) => update.mutate(changes)}
-      />
-    </section>
+      /></>
   );
 }

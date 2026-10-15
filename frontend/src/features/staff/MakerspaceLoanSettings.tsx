@@ -1,3 +1,6 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -107,18 +110,16 @@ export function MakerspaceLoanSettings({ makerspaceId }: { makerspaceId: number 
   const depositOn = form.loan_deposit_mode !== "none";
 
   return (
-    <form
+    <SettingsQueryState query={settings} resource="loan"><SettingsRow label="Loans" helper="Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue."><form
       className="mt-4 rounded-md border border-line bg-surface p-3"
-      aria-labelledby="loan-settings-heading"
+
       onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}
     >
-      <h4 id="loan-settings-heading" className="font-extrabold text-ink">Loans</h4>
-      <p className="mt-1 text-sm text-muted">
-        Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue.
-      </p>
+
+
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <Field label="Deposit mode" error={problems.loan_deposit_mode}>
           <select
@@ -170,7 +171,7 @@ export function MakerspaceLoanSettings({ makerspaceId }: { makerspaceId: number 
             onChange={(event) => set("loan_grace_days", event.target.value)}
           />
         </Field>
-        <label className="flex items-start gap-3 self-end text-sm text-ink">
+        <label className="min-h-11 flex items-start gap-3 self-end text-sm text-ink">
           <input
             className="mt-1 h-4 w-4"
             type="checkbox"
@@ -185,14 +186,12 @@ export function MakerspaceLoanSettings({ makerspaceId }: { makerspaceId: number 
         </label>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button className="desk-button-primary" type="submit" disabled={busy}>
-          {save.isPending ? "Saving..." : "Save loan settings"}
-        </button>
+        <SettingsEditorActions dirty={JSON.stringify(form) !== JSON.stringify(settings.data ? toForm(settings.data) : EMPTY)} onDiscard={() => { setForm(settings.data ? toForm(settings.data) : EMPTY); setProblems({}); }} pending={save.isPending} disabled={busy} />
         {save.isSuccess && !save.isPending ? <span className="text-xs text-muted" role="status">Saved.</span> : null}
       </div>
       {settings.error || save.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">{(settings.error || save.error)?.message}</p>
       ) : null}
-    </form>
+    </form></SettingsRow></SettingsQueryState>
   );
 }

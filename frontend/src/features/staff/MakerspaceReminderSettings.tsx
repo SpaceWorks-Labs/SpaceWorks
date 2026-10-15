@@ -1,3 +1,5 @@
+import { SettingsRow } from "../../components/ui";
+import { SettingsEditorActions } from "./SettingsEditorActions";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -41,8 +43,8 @@ function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { dom
   }
   const label = domain === "event" ? "Event" : "Booking";
   return (
-    <form onSubmit={save} className="grid gap-3 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-extrabold text-ink">{label} reminders</h3>
+    <SettingsRow label={`${label} reminders`}><form onSubmit={save} className="grid gap-3 ">
+
       <p className="text-sm text-muted">
         Email members before confirmed {domain === "event" ? "events" : "bookings"}, using the makerspace timezone.
         The notification matrix email setting and member opt-out still apply.
@@ -55,11 +57,9 @@ function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { dom
       </label>
       <p id={`${domain}-reminder-help`} className="text-sm text-muted">For example: 24, 2. Leave blank to disable.</p>
       {error || update.error ? <p role="alert" className="text-sm text-danger">{error || update.error?.message}</p> : null}
-      <button className="desk-button justify-self-start" disabled={loading || update.isPending || !dirty}>
-        {update.isPending ? "Saving…" : `Save ${domain} reminders`}
-      </button>
+      <SettingsEditorActions dirty={dirty} onDiscard={() => { setDraft(current.join(", ")); setDirty(false); setError(""); }} pending={update.isPending} disabled={loading || update.isPending || !dirty} />
       {update.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">Reminder policy saved.</p> : null}
-    </form>
+    </form></SettingsRow>
   );
 }
 

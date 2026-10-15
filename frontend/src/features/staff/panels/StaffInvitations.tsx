@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { EmptyState, ListRow, OverflowMenu, RelativeTime, StatusPill } from "../../../components/ui";
 
 import { staffRequest } from "../../../lib/api";
 import type { StaffRole } from "./rolesApi";
@@ -33,16 +34,16 @@ export function StaffInvitations({ msId, roles }: { msId: number; roles: StaffRo
     </form>
     {delivery ? <div role="status"><p>Delivery: {delivery.delivery_status}. You can also share this link privately:</p>
       <input className="desk-input w-full" aria-label="Invitation link" readOnly value={delivery.accept_url} onFocus={(event) => event.currentTarget.select()} />
+      <button className="desk-button mt-3" type="button" onClick={() => void navigator.clipboard.writeText(delivery.accept_url)}>Copy link</button>
     </div> : null}
     {list.error || create.error || update.error ? <p role="alert" className="text-danger">{(list.error ?? create.error ?? update.error)?.message}</p> : null}
     {list.isLoading ? <p>Loading invitations…</p> : null}
-    <ul className="grid gap-3">{list.data?.results.map((row) => <li key={row.id} className="flex flex-wrap items-center gap-3">
-      <span>{row.email} · {row.role_name} · {row.accepted_at ? "Accepted" : row.revoked_at ? "Revoked" : `Expires ${new Date(row.expires_at).toLocaleDateString()}`}</span>
-      {!row.accepted_at && !row.revoked_at ? <>
-        <button className="desk-button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, action: "resend" })}>Resend</button>
-        <button className="desk-button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, action: "revoke" })}>Revoke</button>
-      </> : null}
-    </li>)}</ul>
+    {list.data && !list.data.results.length ? <EmptyState message="No staff invitations yet. Invite someone to share the work." /> : null}
+    <div className="grid gap-3">{list.data?.results.map(row => <ListRow key={row.id} title={row.email}
+      identity={{ kind: "avatar", name: row.email, seed: row.email }} meta={<>{row.role_name} · Expires <RelativeTime date={row.expires_at} /></>}
+      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={row.accepted_at ? "Accepted" : row.revoked_at ? "Revoked" : "Unused"} tone={row.accepted_at ? "success" : row.revoked_at ? "neutral" : "accent"} />
+      {!row.accepted_at && !row.revoked_at ? <><button className="desk-button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, action: "resend" })}>Resend</button>
+        <OverflowMenu label={`Actions for ${row.email}`} actions={[{ label: "Revoke", tone: "danger", disabled: update.isPending, disabledReason: update.isPending ? "Wait for the current invitation update." : undefined, onClick: () => update.mutate({ id: row.id, action: "revoke" }) }]} /></> : null}</div>} />)}</div>
     <div className="flex gap-3"><button className="desk-button" disabled={!list.data?.previous} onClick={() => setPage(page - 1)}>Previous</button><button className="desk-button" disabled={!list.data?.next} onClick={() => setPage(page + 1)}>Next</button></div>
   </section>;
 }

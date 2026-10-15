@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Field } from "../../components/ui";
+import { EmptyState, Field, ListRow, StatusPill } from "../../components/ui";
 import {
   PLAN_INTERVALS,
   createPlan,
@@ -115,21 +115,17 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
       </p>
       {plans.isLoading ? <p className="text-sm text-muted">Loading plans…</p> : null}
       {plans.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(plans.error, "Could not load plans.")}</p> : null}
-      {plans.data?.length === 0 ? <p className="text-sm text-muted">No plans yet.</p> : null}
+      {plans.data?.length === 0 ? <EmptyState message="No plans yet. Add your first membership plan below." /> : null}
       {plans.data?.map((plan) => (
-        <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-line py-3">
-          <div>
-            <p className="font-semibold text-ink">{plan.name}</p>
-            <p className="text-xs text-muted">{planIntervalLabel(plan)} · {formatMoney(plan.amount, plan.currency)}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={plan.is_active ? "success" : "neutral"}>{plan.is_active ? "Active" : "Inactive"}</Badge>
+        <ListRow key={plan.id} title={plan.name} identity={{ kind: "icon", icon: "Calendar", tone: "accent" }}
+          meta={<>{planIntervalLabel(plan)} · {formatMoney(plan.amount, plan.currency)}</>}
+          right={<div className="flex flex-wrap items-center gap-2">
+            <StatusPill tone={plan.is_active ? "success" : "neutral"} label={plan.is_active ? "Active" : "Inactive"} />
             <button className="desk-button" type="button" onClick={() => startEdit(plan)}>Edit</button>
             <button className="desk-button" type="button" disabled={toggleActive.isPending} onClick={() => toggleActive.mutate(plan)}>
               {plan.is_active ? "Deactivate" : "Activate"}
             </button>
-          </div>
-        </div>
+          </div>} />
       ))}
       <form
         className="mt-4 grid gap-2 border-t border-line pt-4 sm:grid-cols-3"

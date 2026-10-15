@@ -1,3 +1,6 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { NotificationMuteTable } from "./NotificationMuteTable";
+import { SettingsRow } from "../../components/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -45,30 +48,21 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
   });
 
   if (rules.isLoading) {
-    return <p className="mt-3 text-sm text-muted">Loading notification rules...</p>;
+    return <SettingsQueryState query={rules} resource="mute matrix" />;
   }
 
   if (rules.error) {
-    return <p className="mt-3 text-sm text-danger">{rules.error.message}</p>;
+    return <SettingsQueryState query={rules} resource="mute matrix" />;
   }
 
   if (!rules.data) return null;
 
   return (
-    <div className="mt-4 grid min-w-0 gap-6">
+    <SettingsQueryState query={rules} resource="mute matrix"><div className="mt-4 grid min-w-0 gap-6">
       <NotificationChannelPreferences makerspaceId={makerspaceId} rules={rules.data} />
-      <section
-        className="min-w-0 border-t border-line pt-5"
-        aria-labelledby="advanced-email-mutes-heading"
-      >
-        <h4 id="advanced-email-mutes-heading" className="text-sm font-extrabold text-ink">
-          Advanced email recipient/event mutes
-        </h4>
-        <p className="mt-2 text-sm text-muted">
-          Checked = muted for that individual email recipient and event. These mutes apply only
-          while the matching feature&apos;s Email channel above is enabled. Return reminders cannot
-          be individually muted.
-        </p>
+      <SettingsRow label="Advanced email recipient/event mutes" helper="Checked = muted for that individual email recipient and event. These mutes apply only while the matching feature's Email channel above is enabled. Return reminders cannot be individually muted."><div className="grid min-w-0 gap-4">
+
+
         <div className="mt-4 grid min-w-0 gap-4">
           {rules.data.catalog.map((entry) => {
             const emailEnabled = isEmailEnabled(entry, rules.data);
@@ -86,71 +80,8 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
                     Advanced mutes are read-only while this feature&apos;s Email channel is disabled.
                   </p>
                 ) : null}
-                <div className="mt-3 max-w-full overflow-x-auto rounded-md border border-line bg-bg">
-                  <table className="w-max min-w-full border-collapse text-sm">
-                    <caption className="sr-only">
-                      Checked boxes mute emails for {streamLabel(entry.stream)}{" "}
-                      {audienceLabel(entry.audience)}.
-                    </caption>
-                    <thead className="bg-surface text-xs uppercase text-muted">
-                      <tr className="border-b border-line">
-                        <th className="px-3 py-2 text-left font-semibold" scope="col">
-                          Target
-                        </th>
-                        {entry.events.map((eventName) => (
-                          <th
-                            key={eventName}
-                            className="min-w-32 max-w-40 whitespace-normal px-3 py-2 text-center font-semibold leading-snug"
-                            scope="col"
-                          >
-                            {humanize(eventName)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {entry.targets.map((target) => (
-                        <tr key={target} className="border-b border-line last:border-b-0">
-                          <th
-                            className="whitespace-nowrap px-3 py-2 text-left font-semibold text-ink"
-                            scope="row"
-                          >
-                            {targetLabel(target)}
-                          </th>
-                          {entry.events.map((eventName) => {
-                            const checked = isMuted(rules.data.mutes, {
-                              target,
-                              stream: entry.stream,
-                              event: eventName,
-                              audience: entry.audience,
-                            });
-                            return (
-                              <td key={eventName} className="px-3 py-2 text-center">
-                                <input
-                                  aria-describedby={!emailEnabled ? disabledMessageId : undefined}
-                                  aria-label={`${checked ? "Unmute" : "Mute"} ${targetLabel(target)} ${humanize(eventName)}`}
-                                  className="h-4 w-4"
-                                  type="checkbox"
-                                  checked={checked}
-                                  disabled={updateMute.isPending || !emailEnabled}
-                                  onChange={(event) =>
-                                    updateMute.mutate({
-                                      target,
-                                      stream: entry.stream,
-                                      event: eventName,
-                                      audience: entry.audience,
-                                      muted: event.target.checked,
-                                    })
-                                  }
-                                />
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <NotificationMuteTable entry={entry} mutes={rules.data.mutes} emailEnabled={emailEnabled}
+                  disabledMessageId={disabledMessageId} pending={updateMute.isPending} onChange={change => updateMute.mutate(change)} />
               </section>
             );
           })}
@@ -160,8 +91,8 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
             {updateMute.error.message}
           </p>
         ) : null}
-      </section>
-    </div>
+      </div></SettingsRow>
+    </div></SettingsQueryState>
   );
 }
 
@@ -197,10 +128,6 @@ function applyMuteChange(mutes: RuleMute[], change: MuteChange) {
   return change.muted ? [...withoutCurrent, change] : withoutCurrent;
 }
 
-function isMuted(mutes: RuleMute[], candidate: RuleMute) {
-  return mutes.some((mute) => matchesMute(mute, candidate));
-}
-
 function matchesMute(mute: RuleMute, candidate: RuleMute) {
   return (
     mute.target === candidate.target &&
@@ -218,17 +145,6 @@ function audienceLabel(audience: string) {
   if (audience === "requester") return "Requester emails";
   if (audience === "staff") return "Staff emails";
   return `${humanize(audience)} emails`;
-}
-
-function targetLabel(target: string) {
-  return (
-    {
-      requester: "Requesters",
-      space_manager: "Space managers",
-      inventory_manager: "Inventory managers",
-      machine_manager: "Machine managers",
-    }[target] ?? humanize(target)
-  );
 }
 
 function humanize(value: string) {

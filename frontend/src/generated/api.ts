@@ -541,6 +541,9 @@ export const openApiPaths = [
   "/api/v1/admin/spaces/{id}/arrival/{booking_id}/reverse/",
   "/api/v1/admin/spaces/{id}/booking-rules/",
   "/api/v1/admin/spaces/{id}/bookings/",
+  "/api/v1/admin/spaces/{id}/broadcasts/",
+  "/api/v1/admin/spaces/{id}/broadcasts/{campaign_id}/cancel/",
+  "/api/v1/admin/spaces/{id}/broadcasts/{campaign_id}/queue/",
   "/api/v1/admin/spaces/{id}/clone/",
   "/api/v1/admin/spaces/{id}/deactivate/",
   "/api/v1/admin/spaces/{id}/eligible-members/",
@@ -1509,6 +1512,7 @@ export type BookableSpaceAdmin = {
   "report_features": Array<string>;
   "checkin_enabled": boolean;
   "passes_enabled": boolean;
+  "broadcasts_enabled": boolean;
 };
 
 export type BookableSpaceBookingRules = {
@@ -1593,6 +1597,35 @@ export type BookingArrival = {
   "can_reverse": boolean;
   "waiver_state": "not_required" | "current" | "missing";
   "can_print_pass": boolean;
+};
+
+export type BookingBroadcast = {
+  "id": number;
+  "space": number;
+  "subject": string;
+  "body": string;
+  "window_start": string;
+  "window_end": string;
+  "statuses": Array<"pending" | "confirmed">;
+  "status": "draft" | "queued" | "sending" | "sent" | "cancelled" | "failed";
+  "created_at": string;
+  "queued_at": string | null;
+  "completed_at": string | null;
+};
+
+export type BookingBroadcastInput = {
+  "subject": string;
+  "body": string;
+  "window_start"?: string;
+  "window_end": string;
+  "statuses"?: Array<"pending" | "confirmed">;
+};
+
+export type BookingBroadcastList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<BookingBroadcast>;
 };
 
 export type BookingCloneInput = {

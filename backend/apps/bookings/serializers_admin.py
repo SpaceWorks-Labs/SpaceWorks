@@ -91,6 +91,7 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
 
     recurring_enabled = serializers.SerializerMethodField()
     staff_grants_enabled = serializers.SerializerMethodField()
+    broadcasts_enabled = serializers.SerializerMethodField()
     staff_permissions = serializers.SerializerMethodField()
     can_manage_grants = serializers.SerializerMethodField()
     report_features = serializers.SerializerMethodField()
@@ -118,6 +119,10 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
         if obj.makerspace_id not in cache:
             cache[obj.makerspace_id] = rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, obj.makerspace_id)
         return cache[obj.makerspace_id]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_broadcasts_enabled(self, obj):
+        return self._features(obj)["broadcasts_enabled"]
 
     @extend_schema_field(serializers.BooleanField())
     def get_recurring_enabled(self, obj):
@@ -156,7 +161,7 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
         model = BookableSpace
         fields = (
             "clone_enabled", "staff_tools_enabled", "can_copy_booking_rules",
-            "recurring_enabled", "staff_grants_enabled", "staff_permissions", "can_manage_grants",
+            "recurring_enabled", "staff_grants_enabled", "broadcasts_enabled", "staff_permissions", "can_manage_grants",
             "report_features",
             "checkin_enabled", "passes_enabled",
             'id',

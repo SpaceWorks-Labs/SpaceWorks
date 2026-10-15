@@ -121,7 +121,7 @@ PLANS = (
     ),
     ModulePurgePlan(
         "bookings", "Bookable spaces and their bookings.", bookings_delete,
-        pii_labels=("bookings.Booking",),
+        pii_labels=("bookings.Booking", "bookings.BookingBroadcast"),
         public_image_keys=bookings_public_images,
     ),
     ModulePurgePlan(

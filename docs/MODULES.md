@@ -25,7 +25,7 @@ certification gating. Staff MFA is a separate question.
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.certificate_designer`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
-| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `charges.bookings`; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
+| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
@@ -232,6 +232,21 @@ use an invitation without entering a code.
 
 ## Bookings
 
+Opt-in `bookings.broadcasts` requires Notifications and Email and defaults off. Resource
+reservation managers can compose, preview, queue and cancel email campaigns for pending
+and/or confirmed bookings starting in a bounded future window (maximum 366 days). Each
+account receives at most one campaign email, using its verified live address. Requester
+settings, membership consent where present, personal preferences, suppression, quotas and
+quiet hours apply. Campaigns never enter digests or staff chat. Import preserves history
+but cancels unfinished campaigns and removes source outbox authority.
+
+Booking reminders also reach eligible account-only bookers, with no Membership, Events,
+Presence or online-payment dependency. Old queued reminders are invalidated by cancellation
+or a changed booking window/revision, including entries in already-built daily digests.
+Unverified email and existing membership opt-out still suppress delivery. Bookings purge
+removes campaign/delivery history and booking-source outboxes; the core ledger remains.
+
+
 ### bookings
 
 Bookings accepts authenticated active accounts without installing `membership`. Existing
@@ -411,6 +426,7 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `bookings.exports` | `bookings` (needs `reports`) | | Tenant-local reservation contacts and custom-answer previews/CSV/XLSX, requiring resource management AND audit | New detail exports refuse; booking history stays |
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
 | `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
+| `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
 | `events.broadcasts` | `events` | `notifications`, `email` | Durable email campaigns with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
 | `reports.event_pdf` | `reports` | `events` | Post-event PDF from the report registry | PDF refuses; event analytics/history retained |
 | `reports.event_exports` | `reports` | `events` | Tenant-local registration/feedback previews and CSV/XLSX | Detail exports refuse; event history retained |

@@ -169,3 +169,13 @@ staff routes, re-exported by the existing barrels where appropriate.
 provide staff controls/cache invalidation. `BookingDrawerTabs.tsx` supplies the drawer
 extension slots for later lanes. Restored lifecycle catalog/defaults remain in the
 normal integrations template registry; no second notification dispatcher is created.
+
+## Booking communications (BK-D)
+
+- `bookings/models_broadcasts.py`: concrete resource campaigns and unique account deliveries.
+- `broadcasts.py`, `services_broadcasts.py`: typed shared-engine adapter and audited draft/queue/cancel policy.
+- `communication_recipients.py`: current verified account email, optional membership consent and notification policy.
+- `reminders.py`, `reminder_delivery.py`: account-only discovery, occurrence claims and live pre-send adapter.
+- `serializers_broadcasts.py`, `views_broadcasts.py`, `urls_broadcasts.py`: resource-authorized staff compose/history/actions.
+- `migrations/0016_booking_broadcasts.py`: history schema and persistent PII write-fence trigger, after the merged pass-template leaf 0015.
+- `integrations/delivery_sources.py` retains source requirements across tombstones; `broadcasts_delivery.py` skips render-time eligibility loss. Shared digest/worker implementations remain in Integrations; Bookings never imports Events.

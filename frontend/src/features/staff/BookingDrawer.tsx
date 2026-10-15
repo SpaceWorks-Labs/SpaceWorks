@@ -19,6 +19,7 @@ import { useUrlListState } from "../../lib/useUrlListState";
 import { BookingDetailsEditor } from "./BookingDetailsEditor";
 import { BookingPassDesigner } from "./BookingPassDesigner";
 import { BookingArrivalScanner } from "./BookingArrivalScanner";
+import { BookingBroadcastsPanel } from "./BookingBroadcastsPanel";
 import { BookingStaffAccess } from "./BookingStaffAccess";
 import { bookingAccess } from "./bookingStaffPermissions";
 import { BookingResourceTabs } from "./BookingResourceTabs";
@@ -119,6 +120,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
             {access.manager && space.staff_grants_enabled ? <BookingStaffAccess target={{ id: spaceId }} /> : null}
             {access.manager && space.is_active ? <button className="desk-button-danger w-fit" type="button" onClick={() => setConfirmDeactivate(true)}>Deactivate space</button> : !space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
             {space.checkin_enabled && (access.manager || space.staff_permissions?.includes("check_in")) ? <BookingArrivalScanner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> : null}
+            {access.reservations && space.broadcasts_enabled ? <BookingBroadcastsPanel makerspaceId={makerspaceId} spaceId={spaceId} /> : null}
             {access.reservations ? <section aria-labelledby="space-bookings-title">
               {space.is_active ? <StaffBookingForm recurringEnabled={recurringEnabled || space.recurring_enabled} makerspaceId={makerspaceId} space={space} /> : null}
               <div className="mb-3">

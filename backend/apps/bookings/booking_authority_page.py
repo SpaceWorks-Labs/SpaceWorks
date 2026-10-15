@@ -17,6 +17,7 @@ def features_for_page(rows):
         "passes_enabled": feature_enabled(makerspace, "bookings.passes"),
         "checkin_enabled": feature_enabled(makerspace, "bookings.checkin"),
         "recurring_enabled": feature_enabled(makerspace, "bookings.recurring"),
+        "broadcasts_enabled": feature_enabled(makerspace, "bookings.broadcasts"),
         "staff_grants_enabled": feature_enabled(makerspace, "bookings.staff_grants"),
     } for pk, makerspace in makerspaces.items()}
 

@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
-import { ListRow, StatusPill, RelativeTime, EmptyState } from "../../components/ui";
+import { CollapsibleSection, ListRow, StatusPill, RelativeTime, EmptyState } from "../../components/ui";
+import { publicErrorState } from "./publicErrorState";
 import type { ApiPath } from "../../generated/api";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
@@ -32,6 +33,9 @@ type PaginatedMachines = {
   previous: string | null;
   results: PublicMachine[];
 };
+
+// Maintenance and offline mean different things to a visitor (planned work vs. not available at all).
+const MACHINE_STATUS: Record<PublicMachine["status"], string> = { idle: "Available", running: "In use", reserved: "Reserved", maintenance: "Maintenance", offline: "Offline" };
 
 const PUBLIC_MACHINES_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/machines";
 
@@ -86,7 +90,7 @@ export function PublicMachinesPage() {
   return <div style={brandStyle}>
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
       header={{ title: "Machines", subtitle: `What you can use at ${displayName}`, primary: { label: "Member area", href: tenantPath("member") } }}
-      state={machines.isLoading ? { status: "loading" } : machines.error ? { status: "error", error: "Couldn't load machines. Try again.", onRetry: () => { void machines.refetch(); } } : { status: "ready" }}
+      state={machines.isLoading ? { status: "loading" } : machines.error ? publicErrorState(machines.error, { noun: "Machines" }, () => { void machines.refetch(); }) : { status: "ready" }}
       isEmpty={!groups.length} empty={{ message: "No machines listed yet. Check back soon." }}>
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filter machines">
         <button className={!kind ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={!kind} onClick={() => setKind("")}>All kinds</button>
@@ -94,17 +98,17 @@ export function PublicMachinesPage() {
         {detailEnabled ? <button className={trainingOnly ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={trainingOnly} onClick={() => setTrainingOnly(value => !value)}>Training required</button> : null}
       </div>
       {!visibleGroups.length ? <EmptyState message="No machines match these filters. Choose another kind or clear the filters." action={{ label: "Clear filters", onClick: () => { setKind(""); setTrainingOnly(false); } }} /> : null}
-      <div className="grid gap-6">{visibleGroups.map(group => <section key={group.name}>
-        <button type="button" className="desk-button mb-3" aria-expanded={!collapsed.has(group.name)} onClick={() => toggleGroup(group.name)}>{group.name} · {group.machines.length}</button>
-        {!collapsed.has(group.name) ? <div className="grid gap-3">{group.machines.map(machine => <div key={machine.name}>
+      <div className="grid gap-6">{visibleGroups.map(group => <CollapsibleSection key={group.name} title={group.name} icon={group.icon || null}
+        count={group.machines.length} open={!collapsed.has(group.name)} onToggle={() => toggleGroup(group.name)}>
+        <div className="grid gap-3 p-3">{group.machines.map(machine => <div key={machine.name}>
           <ListRow title={machine.name} identity={machine.image_url ? { kind: "image", src: machine.image_url } : { kind: "icon", icon: "Wrench", tone: "neutral" }}
             meta={<>{machine.usage_hours} h logged{machine.status_since ? <> · Status since <RelativeTime date={machine.status_since} /></> : null}
               {machine.training_required != null ? <span className="mt-1 block">{machine.training_required ? "Training required" : "No service training required"}</span> : null}
               {machine.queue ? <span className="mt-1 block">{machine.queue.length} queued jobs · {machine.queue.eta_minutes == null ? "Estimate unavailable" : `About ${Math.ceil(machine.queue.eta_minutes / 60)} processing hours`}</span> : null}</>}
-            right={<StatusPill label={machine.status === "idle" ? "Available" : machine.status === "running" ? "In use" : machine.status === "maintenance" || machine.status === "offline" ? "Down" : "Reserved"} tone={machine.status === "idle" ? "success" : machine.status === "maintenance" || machine.status === "offline" ? "warn" : "info"} />} />
+            right={<StatusPill label={MACHINE_STATUS[machine.status] ?? machine.status} tone={machine.status === "idle" ? "success" : machine.status === "maintenance" || machine.status === "offline" ? "warn" : "info"} />} />
           {bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} dialog /> : null}
-        </div>)}</div> : null}
-      </section>)}</div>
+        </div>)}</div>
+      </CollapsibleSection>)}</div>
       <Pagination page={page} onChange={setPage} totalPages={Math.max(1, Math.ceil((machines.data?.count ?? 0) / 24))} count={machines.data?.count} pageSize={24} disabled={machines.isFetching} />
     </PublicLayout>
   </div>;

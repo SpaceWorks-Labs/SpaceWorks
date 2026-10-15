@@ -8,6 +8,7 @@ import { EmptyState, FilterBar, StatusPill } from "../components/ui";
 import { plural } from "../lib/plural";
 import type { Makerspace } from "../types/inventory";
 import { usePublicMakerspaces } from "./inventory/usePublicInventory";
+import { LICENSE_URL } from "./inventory/PublicPageChrome";
 
 function normalizeSearch(value: string) { return value.trim().toLowerCase().replace(/\s+/g, " "); }
 function makerspaceSearchText(space: Makerspace) {
@@ -34,7 +35,7 @@ export function LandingPage() {
     state={makerspacesQuery.isLoading ? { status: "loading" } : makerspacesQuery.isError ? { status: "error", error: "Couldn't load spaces. Try again.", onRetry: () => { void makerspacesQuery.refetch(); } } : { status: "ready" }}
     header={{ title: "Less searching. More making.", subtitle: "Find shared tools and your next community workshop.", meta: searchToolbar }}
     isEmpty={!filtered.length} empty={{ message: searchQuery ? `No spaces match '${searchQuery}'. Try another name or place.` : "No public spaces yet. They appear here once a space turns on its catalogue.", action: searchQuery ? { label: "Clear search", onClick: () => setSearchInput("") } : undefined }}
-    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "About", href: "/about" }, { label: "Staff sign-in", href: "/admin" }] }}>
+    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "About", href: "/about" }, { label: "License", href: LICENSE_URL, external: true }, { label: "Staff sign-in", href: "/admin" }] }}>
     <LandingSpaces spaces={filtered} search={searchQuery} clear={() => setSearchInput("")} />
   </PublicLayout></div>;
 }

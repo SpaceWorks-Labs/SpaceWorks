@@ -47,15 +47,15 @@ function QuestionField({ question, inputId, value, error, yesNoAsCheckbox, onCha
     "aria-invalid": Boolean(error),
     "aria-describedby": error ? errorId : undefined,
   };
-  const label = <span className="eyebrow">{question.label}{question.required ? <span className="text-danger"> *</span> : null}</span>;
-  const message = error ? <span id={errorId} className="text-xs font-normal text-danger">{error}</span> : null;
+  const label = <span className="break-words text-sm font-semibold text-ink">{question.label}{question.required ? <span className="text-danger"> *</span> : null}</span>;
+  const message = error ? <span id={errorId} className="text-sm font-normal text-danger">{error}</span> : null;
 
   if (question.type === "yes_no" && yesNoAsCheckbox) {
-    return <label className="grid gap-1 text-ink"><span className="flex items-center gap-2 text-sm"><input id={inputId} type="checkbox" checked={value === true} required={question.required} aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} onChange={(event) => onChange(event.target.checked)} />{label}</span>{message}</label>;
+    return <label className="grid gap-1 text-ink"><span className="flex min-h-11 items-center gap-3 text-sm"><input className="h-5 w-5 shrink-0 accent-brand" id={inputId} type="checkbox" checked={value === true} required={question.required} aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} onChange={(event) => onChange(event.target.checked)} />{label}</span>{message}</label>;
   }
 
   if (question.type === "paragraph") {
-    return <label className="grid gap-1 text-ink">{label}<textarea {...inputProps} className="desk-input min-h-24" maxLength={5000} value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} />{message}</label>;
+    return <label className="grid gap-1 text-ink">{label}<textarea {...inputProps} className="desk-input min-h-24 resize-y" maxLength={5000} value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} />{message}</label>;
   }
   if (question.type === "dropdown") {
     return <label className="grid gap-1 text-ink">{label}<select {...inputProps} className="desk-input" value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)}><option value="">Select an option</option>{question.options.map((option) => <option key={option} value={option}>{option}</option>)}</select>{message}</label>;
@@ -67,8 +67,8 @@ function QuestionField({ question, inputId, value, error, yesNoAsCheckbox, onCha
     return (
       <fieldset className="grid gap-2" aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined}>
         <legend>{label}</legend>
-        <div className="flex flex-wrap gap-4">
-          {choices.map(([text, answer]) => <label className="flex items-center gap-2 text-sm text-ink" key={text}><input type="radio" name={inputId} value={text} checked={value === answer} required={question.required} onChange={() => onChange(answer)} />{text}</label>)}
+        <div className="flex flex-wrap gap-x-6 gap-y-1">
+          {choices.map(([text, answer]) => <label className="flex min-h-11 min-w-0 items-center gap-3 break-words text-sm text-ink" key={text}><input className="h-5 w-5 shrink-0 accent-brand" type="radio" name={inputId} value={text} checked={value === answer} required={question.required} onChange={() => onChange(answer)} />{text}</label>)}
         </div>
         {message}
       </fieldset>
@@ -79,8 +79,8 @@ function QuestionField({ question, inputId, value, error, yesNoAsCheckbox, onCha
     return (
       <fieldset className="grid gap-2" aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined}>
         <legend>{label}</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {question.options.map((option) => <label className="flex items-center gap-2 text-sm text-ink" key={option}><input type="checkbox" checked={selected.includes(option)} onChange={(event) => onChange(event.target.checked ? [...selected, option] : selected.filter((item) => item !== option))} />{option}</label>)}
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          {question.options.map((option) => <label className="flex min-h-11 min-w-0 items-center gap-3 break-words text-sm text-ink" key={option}><input className="h-5 w-5 shrink-0 accent-brand" type="checkbox" checked={selected.includes(option)} onChange={(event) => onChange(event.target.checked ? [...selected, option] : selected.filter((item) => item !== option))} />{option}</label>)}
         </div>
         {message}
       </fieldset>

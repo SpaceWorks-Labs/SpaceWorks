@@ -73,7 +73,7 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
 
   return <div className="grid gap-4">
     <form className="flex flex-wrap items-end gap-3" onSubmit={submitLoad}>
-      <label className="grid gap-1 text-sm">Request number<input className="desk-input tabular-nums" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
+      <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm">Request number<input className="desk-input w-full tabular-nums" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
       <button className="desk-button-brand" type="submit" disabled={!requestId || loadingWork || Boolean(running)}>{loadingWork ? "Loading…" : "Load request"}</button>
     </form>
     {work ? <section className="grid gap-3" aria-label={work.display_label}>
@@ -85,7 +85,7 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
         pending={loadingWork || Boolean(running)}
         onCancel={cancel} footer={{ next: { label: "Assign box", pending: Boolean(running), pendingLabel: "Assigning…",
           onClick: () => actionForm.current?.requestSubmit() } }} work={<form ref={actionForm} className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); void run("assign_box", { box_code: boxCode.trim() }, "Box assigned."); }}>
-        <label className="grid gap-1 text-sm">Box code<input className="desk-input tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label>
+        <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm">Box code<input className="desk-input w-full tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label>
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} disabled={Boolean(running)} />
       </form>} /> : null}
       {canIssue || canReturn ? <FlowLayout presentation="kiosk" state={{ status: "ready" }} title={canIssue ? "Issue items" : "Return items"}

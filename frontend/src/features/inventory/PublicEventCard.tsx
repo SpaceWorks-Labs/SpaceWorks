@@ -31,7 +31,7 @@ export function PublicEventCard({ event, href, time, calendarPending, calendarEr
           <DateChip date={event.starts_at} />
           <div className="min-w-0 flex-1">
             <h3 className="break-words"><RouteLink className="title-section hover:underline" href={href}>{event.title}</RouteLink></h3>
-            <p className="mt-1 text-sm text-muted"><time dateTime={event.starts_at}>{time}</time>{event.location ? ` · ${event.location}` : ""}</p>
+            <p className="mt-1 break-words text-sm text-muted"><time dateTime={event.starts_at}>{time}</time>{event.location ? ` · ${event.location}` : ""}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <StatusBadge status={event.status} domain="event" />

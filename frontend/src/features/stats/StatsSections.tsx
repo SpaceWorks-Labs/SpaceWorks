@@ -28,7 +28,7 @@ export function PrintingSection({ printing }: { printing: PublicStatsPrinting })
     <div><h3 className="title-section mb-4">Per printer</h3><DataTable data={printing.per_printer.map((row, rowId) => ({ ...row, rowId }))} getRowId={row => row.rowId}
       emptyTitle="No printer activity yet." emptyDescription="Printer totals appear as jobs are recorded."
       columns={[
-        { key: "name", header: "Printer", render: row => <div className="flex items-center gap-3"><ImageThumbnail src={row.image_url} alt={row.name} /><span>{row.name}{row.model ? <span className="block text-sm text-muted">{row.model}</span> : null}</span></div> },
+        { key: "name", header: "Printer", render: row => <div className="flex min-w-0 items-center gap-3"><ImageThumbnail src={row.image_url} alt={row.name} /><span className="min-w-0 break-words">{row.name}{row.model ? <span className="block text-sm text-muted">{row.model}</span> : null}</span></div> },
         { key: "jobs", header: "Completed jobs", className: "tabular-nums md:text-right" },
         { key: "hours", header: "Hours", className: "tabular-nums md:text-right", render: row => formatNumber(row.hours) },
         { key: "grams", header: "Filament (g)", className: "tabular-nums md:text-right", render: row => formatNumber(row.grams) },

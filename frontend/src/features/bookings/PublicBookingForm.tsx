@@ -91,14 +91,15 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
   return (
     <div className="grid gap-4">
       {showCalendar ? <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} /> : null}
-      <form className="grid gap-4 rounded-lg border border-brand bg-bg p-4" onSubmit={submit} noValidate>
+      <form className="@container grid min-w-0 gap-4 rounded-lg border border-brand bg-bg p-4" onSubmit={submit} noValidate>
         <div>
           <h3 className="title-section">Request this space</h3>
-          <p className="eyebrow mt-1">Times are shown in your device timezone.</p>
+          <p className="mt-1 text-sm text-muted">Times are shown in your device timezone.</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Starts" error={errorFor("starts_at")}><input className="desk-input" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></Field>
-          <Field label="Ends" error={errorFor("ends_at")}><input className="desk-input" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required /></Field>
+        {/* Side by side only when the form itself is wide; it also renders in a narrow action card. */}
+        <div className="grid gap-3 @md:grid-cols-2">
+          <Field label="Starts" error={errorFor("starts_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></Field>
+          <Field label="Ends" error={errorFor("ends_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required /></Field>
         </div>
         <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} errors={{ ...answerErrors, ...serverAnswerErrors }} disabled={booking.isPending} />
         <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">Website

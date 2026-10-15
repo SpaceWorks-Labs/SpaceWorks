@@ -17,7 +17,7 @@ export function RequestSummary({ request }: { request: PublicRequestStatus }) {
         </div>
       </div>
       {request.rejection_reason ? (
-        <p className="mt-2 text-sm text-danger">{request.rejection_reason}</p>
+        <p className="mt-2 break-words text-sm text-danger">{request.rejection_reason}</p>
       ) : null}
       {request.requested_for ? (
         <p className="mt-2 line-clamp-2 text-sm text-muted">
@@ -30,8 +30,8 @@ export function RequestSummary({ request }: { request: PublicRequestStatus }) {
             className="flex justify-between gap-3 text-sm text-muted"
             key={`${request.public_token ?? request.created_at}-${item.product_name}`}
           >
-            <span>{item.product_name}</span>
-            <span className="tabular-nums">x{item.requested_quantity}</span>
+            <span className="min-w-0 break-words">{item.product_name}</span>
+            <span className="shrink-0 tabular-nums">x{item.requested_quantity}</span>
           </div>
         ))}
       </div>

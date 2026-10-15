@@ -17,7 +17,7 @@ export function BarChart({ rows, valueLabel }: { rows: ChartRow[]; valueLabel: s
   const maximum = Math.max(...rows.map(row => row.value), 0);
   if (!rows.length || maximum <= 0) return <EmptyState message="No chart data yet. Activity will appear as jobs are recorded." />;
   return <div className="grid gap-4">{rows.map(row => <div key={row.label} className="grid gap-2">
-    <div className="flex justify-between gap-3 text-sm"><span>{row.label}</span><span className="tabular-nums text-muted">{formatNumber(row.value)} {valueLabel}</span></div>
+    <div className="flex justify-between gap-3 text-sm"><span className="min-w-0 break-words">{row.label}</span><span className="shrink-0 tabular-nums text-muted">{formatNumber(row.value)} {valueLabel}</span></div>
     <ProgressBar value={row.value / maximum} label={`${row.label}: ${formatNumber(row.value)} ${valueLabel}`} />
   </div>)}</div>;
 }

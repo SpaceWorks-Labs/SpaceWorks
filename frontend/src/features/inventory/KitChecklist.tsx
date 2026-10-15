@@ -58,7 +58,7 @@ export function KitChecklistCapture({ checklist }: { checklist: Pick<ReturnType<
     {checklist.error ? <p role="alert" className="text-sm text-danger">{checklist.error}</p> : null}
     {checklist.components.length ? <fieldset className="grid gap-4 rounded-xl border border-line bg-panel p-4">
       <legend className="text-sm font-medium text-ink">Kit component counts</legend>
-      <p className="text-xs text-muted">Count what is physically present. Enter 0 for a missing component.</p>
+      <p className="text-sm text-muted">Count what is physically present. Enter 0 for a missing component.</p>
       {checklist.components.map((row) => <Field key={row.key}
         label={`${row.owner_label}: ${row.label} (${row.quantity} expected${row.issue_present !== undefined ? `, ${row.issue_present} at issue` : ""})`}>
         <input className="desk-input" type="number" required min="0" max={row.quantity} step="1"

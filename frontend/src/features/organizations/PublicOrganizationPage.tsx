@@ -35,7 +35,7 @@ export function PublicOrganizationPage() {
       {events.error ? <ErrorBlock error={new Error("Couldn't load events. Try again.")} onRetry={() => { void events.refetch(); }} /> : null}
       {events.data && !events.data.results.length ? <EmptyState message="No upcoming events. Check back for the next gathering." /> : null}
       {events.data?.results.map(event => <ListRow key={event.public_token} title={event.title} identity={event.image_url ? { kind: "image", src: event.image_url } : { kind: "date", date: event.starts_at }}
-        meta={<><span>Hosted by {event.host.name} · <time dateTime={event.starts_at}>{dateRange(event)}</time>{event.location ? ` · ${event.location}` : ""}</span>{event.description ? <span className="mt-1 block line-clamp-2">{event.description}</span> : null}</>}
+        meta={<><span>Hosted by {event.host.name} · <time dateTime={event.starts_at}>{dateRange(event)}</time>{event.location ? ` · ${event.location}` : ""}</span>{event.description ? <span className="mt-1 block line-clamp-2 [overflow-wrap:anywhere]">{event.description}</span> : null}</>}
         right={<div className="flex flex-wrap items-center gap-3"><dl className="text-sm"><EventPrice amount={event.payment_amount} currency={event.currency} /></dl>
           <StatusPill label={event.availability} tone={event.availability === "Full" ? "warn" : "success"} />
           <RouteLink className="desk-button-brand" href={`/m/${event.host.slug}/events`}>Register at {event.host.name}</RouteLink></div>} />)}

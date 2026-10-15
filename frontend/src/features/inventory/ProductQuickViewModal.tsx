@@ -18,7 +18,8 @@ export function ProductQuickViewModal({ product, open, onClose }: ProductQuickVi
     meta={[`ID: ${String(product.id).padStart(4, "0")}`, trackingLabel(product)]}
     main={<div className="grid gap-6">
       {product.image_url ? <img src={product.image_url} alt={product.name} className="aspect-[16/10] w-full rounded-xl border border-line bg-surface object-contain" />
-        : <div aria-hidden="true" className="grid aspect-[16/10] place-items-center rounded-xl border border-line bg-surface font-display text-6xl text-ink">{product.name.slice(0, 2)}</div>}
+        : <div aria-hidden="true" className="flex h-24 items-center rounded-xl border border-line bg-surface px-4">
+          <span className="grid h-14 w-14 place-items-center rounded-control border border-line bg-panel font-display text-xl font-semibold uppercase text-muted">{product.name.slice(0, 2)}</span></div>}
       {product.category_name ? <div><StatusPill label={product.category_name} /></div> : null}
       <section aria-label="Description"><h2 className="title-panel">Description</h2>
         <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7">{product.description.trim() || "No description provided."}</p>

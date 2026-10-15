@@ -6,6 +6,14 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-15 — design revamp (`feature/design-revamp`).** Whole frontend rebuilt on Space Works brand
+  guidelines v1 (seven-colour palette with solver-derived inks and soft fills, Gilroy ExtraBold + Outfit +
+  Unbounded, open-box logo extracted verbatim from the guideline PDF, favicons/PWA/OG/Unfold assets) and
+  Yuyu-style UX: a sidebar `AppShell` with workspace switcher replaces the header + floating dock, and every
+  screen composes one of eleven reusable layouts (`components/layouts/`) from shared primitives. No feature
+  added or removed; gating, routing, evidence hard rules and tenant colours unchanged (tenant palettes are
+  never newly rejected). Built in parallel Codex lanes; plan and specs in `docs/design-revamp/`.
+
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which
   presign rows no workflow ever consumed; a default-off deployment switch plus tenant opt-in lets a

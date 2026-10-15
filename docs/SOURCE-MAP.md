@@ -14,7 +14,16 @@ The design revamp shell lives in `frontend/src/components/shell/` (barrel `index
 `JobTrayPill`. The logo/switcher/search and user chip frame one scrolling navigation
 region, including Settings and Platform. The shell uses the wave-1 brand tokens and
 `SpaceWorksLogo`; reusable UI primitives remain in `components/ui/` (`index.ts`).
-Page layouts L2?L10 belong in `components/layouts/`, owned separately from the shell.
+Every routed screen renders exactly one page layout from `components/layouts/` (barrel
+`index.ts`): `DashboardLayout`, `ListLayout`, `DetailLayout` (page or drawer), `SettingsLayout`,
+`FormPageLayout`, `FlowLayout` (page, dialog or kiosk), `AuthLayout`, `CenteredCardLayout`,
+`PublicLayout`, `PublicDetailLayout` and `KioskLayout`; layouts own geometry, landmarks, the
+single `h1` and loading/error/empty switching, and contain no gating. Shared primitives
+(`PageHeader`, `Tabs`, `StatCard`, `ListRow`, `DateChip`/`IdentityChip`, `StatusPill`, `Callout`,
+`SettingsRow`, `DangerZone`, `ActivityRail`, `TicketCard`, `ScanWorkbench`, …) are documented in
+`docs/design-revamp/DR-PRIMITIVES.md`. Design source of truth: `docs/brand/` (brand guidelines v1 +
+logo masters) and `docs/design-revamp/` (plan, UI/UX specs); the same assets ship in the
+`SpaceWorks-HQ/SpaceWorks-Design` repository for use as a submodule.
 
 `features/staff/sidebarSections.ts` owns the 42-key sidebar presentation map;
 `StaffShell.tsx` adapts the existing permission/module-filtered tabs, shared Inbox unread

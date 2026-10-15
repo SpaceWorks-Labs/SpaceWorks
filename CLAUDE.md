@@ -310,6 +310,11 @@ Stack (in use):
 - **Styling:** Tailwind CSS 4 (CSS-first; `src/index.css` uses `@import "tailwindcss"` + `@config
   "../tailwind.config.ts"`; PostCSS via `@tailwindcss/postcss`) with CSS-variable light/dark theme tokens.
   Light default; dark toggle persisted locally.
+- **Design system:** Space Works brand guidelines v1 (`docs/brand/`) for all colour, type, logo and icons;
+  UX patterns from the Yuyu reference boards. Fonts: Gilroy ExtraBold (display), Outfit (UI), Unbounded (one
+  accent per layout) — no other family. Icons: `lucide-react`. Every screen composes one layout from
+  `frontend/src/components/layouts/` inside the sidebar `AppShell` (`components/shell/`). Plan and specs:
+  `docs/design-revamp/`.
 - **API documentation:** drf-spectacular / OpenAPI (snapshot `frontend/openapi-schema.json` + generated
   `frontend/src/generated/api.ts`; regenerate both when routes/models change — spectacular needs
   `--format openapi-json`).

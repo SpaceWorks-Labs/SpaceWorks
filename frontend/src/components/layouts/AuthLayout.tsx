@@ -38,7 +38,7 @@ export function AuthLayout({ brand, eyebrow, title, modeSwitch, social, dividerL
         <QueryContent {...query}>
           <div className="grid gap-6">
             {modeSwitch ? <SegmentedControl {...modeSwitch} /> : null}
-            {social ? <><div className="grid gap-3">{social}</div><p className="flex items-center gap-3 text-center text-sm text-muted">
+            {social ? <><div className="grid gap-3 empty:hidden">{social}</div><p className="flex items-center gap-3 text-center text-sm text-muted [:empty+&]:hidden">
               <span className="h-px flex-1 bg-line" />{dividerLabel}<span className="h-px flex-1 bg-line" /></p></> : null}
             {form}
             {legal ? <div className="text-sm text-muted">{legal}</div> : null}

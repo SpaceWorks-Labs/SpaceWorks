@@ -37,7 +37,7 @@ export function DetailLayout(props: DetailLayoutProps) {
           {aside ? <aside aria-label="At a glance" className="min-w-0">{aside}</aside> : null}
         </div>
       </div>
-      {presentation === "drawer" && footer ? <div className="sticky bottom-0 mt-6 flex flex-wrap justify-end gap-2 border-t border-line bg-panel py-4">
+      {presentation === "drawer" && footer ? <div className="sw-sticky-footer mt-6 flex flex-wrap justify-end gap-2 border-t border-line bg-panel pt-4">
         {footer.secondary?.map(action => <ActionControl key={action.label} action={action} />)}
         {footer.primary ? <ActionControl action={footer.primary} primary /> : null}
       </div> : null}

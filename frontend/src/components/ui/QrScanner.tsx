@@ -215,8 +215,8 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   };
 
   return createPortal(
-    <div ref={layerRef} inert={!amTop} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
-      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="flex max-h-[90vh] w-full max-w-lg flex-col gap-3 overflow-y-auto rounded-lg border border-line bg-panel p-4 shadow-overlay outline-none">
+    <div ref={layerRef} inert={!amTop} className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="flex max-h-full w-full max-w-lg flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-overlay outline-none sm:max-h-[90dvh] sm:rounded-lg sm:pb-4">
         <h2 id={titleId} className="sr-only">QR scanner</h2>
         {error ? (
           <div className="grid gap-3">
@@ -230,7 +230,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
             <div className="relative">
               <video
                 ref={videoRef}
-                className="aspect-video max-h-[60vh] w-full rounded-md bg-black object-cover"
+                className="aspect-square max-h-[60dvh] w-full rounded-md bg-black object-cover sm:aspect-video"
                 autoPlay
                 muted
                 playsInline

@@ -104,7 +104,7 @@ export function Ledger({ makerspace, isSuperadmin }: { makerspace: Makerspace; i
       views: <button type="button" className={overdueOnly ? "desk-button-primary" : "desk-button"} aria-pressed={overdueOnly} onClick={() => setOverdueOnly(value => !value)}>Overdue only</button> }}
     body={{ kind: "rows", rows: rows.map((row, index) => <ListRow key={`${row.source}-${row.reference_id}-${index}`} title={`${row.item_name} ×${row.quantity}`}
       identity={{ kind: "avatar", name: row.holder, seed: row.holder }}
-      meta={<>{row.holder} · {row.container ? `Box: ${row.container} · ` : ""}{sourceLabels[row.source]} · Out since {row.since ? <RelativeTime date={row.since} /> : "unknown"}<UnitLines row={row} />{aggregate ? ` · Makerspace ${row.makerspace_id}` : null}</>}
+      meta={<>{row.holder} · {row.container ? `Box: ${row.container} · ` : ""}{sourceLabels[row.source]} · Out since {row.since ? <RelativeTime date={row.since} exact /> : "unknown"}<UnitLines row={row} />{aggregate ? ` · Makerspace ${row.makerspace_id}` : null}</>}
       right={<StatusPill tone={isOverdue(row.due, now) ? "danger" : "neutral"} label={isOverdue(row.due, now) ? `Overdue ${Math.max(1, Math.ceil((now - new Date(row.due!).getTime()) / 86400000))} days` : row.due ? `Due ${formatDate(row.due)}` : "No due date"} />} />) }}
     pagination={{ page, pageSize: LEDGER_PAGE_SIZE, count: totalRows, onChange: setPage }} detail={<ErrorText message={exportError} />} />;
 }

@@ -59,7 +59,7 @@ export function QrHistory({ title, queryKey, path, defaultOpen = false }: { titl
       {open && history.isLoading ? <Skeleton className="h-32" /> : null}
       {open && history.error ? <ErrorBlock error={history.error} resource="history" onRetry={() => { void history.refetch(); }} /> : null}
       {open && !history.isLoading && !rows.length ? <EmptyState message="No QR scans recorded. Future scans will appear here." /> : null}
-      {open && rows.length ? <div className="grid gap-3">{rows.map(scan => <ListRow key={scan.id} title={humanize(scan.context)} meta={<RelativeTime date={scan.created_at} />} right={scan.actor ? <span className="text-sm text-muted">User {scan.actor}</span> : null} />)}</div> : null}
+      {open && rows.length ? <div className="grid gap-3">{rows.map(scan => <ListRow key={scan.id} title={humanize(scan.context)} meta={<RelativeTime date={scan.created_at} exact />} right={scan.actor ? <span className="text-sm text-muted">User {scan.actor}</span> : null} />)}</div> : null}
 
     </div>
   );
@@ -121,8 +121,8 @@ export function LendingHistory({ productId }: { productId: number }) {
   const recent = history.data?.recent ?? [];
   return <section className="grid gap-4"><h3 className="title-section">Lending history</h3>
     {history.isLoading ? <Skeleton className="h-40" /> : history.error ? <ErrorBlock error={history.error} resource="lending history" onRetry={() => { void history.refetch(); }} /> : !recent.length ? <EmptyState message="No lending history yet. Handovers will appear here." /> : null}
-    {last ? <p className="text-sm">Last borrower: {last.username} · <RelativeTime date={last.issued_at} /><AttributionLine acceptedBy={last.accepted_by} issuedBy={last.issued_by} /></p> : null}
-    {recent.map(entry => <ListRow key={entry.id} title={entry.username} identity={{ kind: "avatar", name: entry.username, seed: entry.username }} meta={<><RelativeTime date={entry.issued_at} /><AttributionLine acceptedBy={entry.accepted_by} issuedBy={entry.issued_by} /></>} right={<span className="tabular-nums">{entry.quantity} units</span>} />)}
+    {last ? <p className="text-sm">Last borrower: {last.username} · <RelativeTime date={last.issued_at} exact /><AttributionLine acceptedBy={last.accepted_by} issuedBy={last.issued_by} /></p> : null}
+    {recent.map(entry => <ListRow key={entry.id} title={entry.username} identity={{ kind: "avatar", name: entry.username, seed: entry.username }} meta={<><RelativeTime date={entry.issued_at} exact /><AttributionLine acceptedBy={entry.accepted_by} issuedBy={entry.issued_by} /></>} right={<span className="tabular-nums">{entry.quantity} units</span>} />)}
   </section>;
 }
 

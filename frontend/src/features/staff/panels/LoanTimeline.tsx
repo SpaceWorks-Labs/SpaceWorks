@@ -102,7 +102,7 @@ function EventList({ events, truncated }: { events: TimelineEvent[]; truncated: 
   return (
     <ActivityRail title="History">
       {events.map((event, index) => (
-        <ActivityItem key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} actor={event.actor ? formatActor(event.actor) : "Space Works"} date={event.at}>
+        <ActivityItem exact key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} actor={event.actor ? formatActor(event.actor) : "Space Works"} date={event.at}>
           {/* Audit meta can carry long IDs, keys and URLs; let them break instead of widening the drawer. */}
           <span className="font-medium text-ink [overflow-wrap:anywhere]">
             {event.kind === "audit" ? String(event.detail.action_label ?? "Audit entry") : humanize(event.kind)}

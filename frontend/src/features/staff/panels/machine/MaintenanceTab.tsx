@@ -84,7 +84,7 @@ export function MaintenanceTab({
         {logRows.map((log) => (
           <details key={log.id} className="grid gap-3">
             <summary className="flex min-h-11 cursor-pointer list-none flex-col justify-center text-sm marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-              <ListRow title={log.summary} meta={log.cost ? `Cost: ${log.cost}` : undefined} right={<RelativeTime date={log.performed_at} />} />
+              <ListRow title={log.summary} meta={log.cost ? `Cost: ${log.cost}` : undefined} right={<RelativeTime date={log.performed_at} exact />} />
             </summary>
             <div className="mt-3 border-t border-line pt-3 text-sm text-muted">
               {log.parts_note ? (

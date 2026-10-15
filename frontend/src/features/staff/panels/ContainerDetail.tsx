@@ -85,7 +85,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
           {history.isLoading ? <p className="text-xs text-muted">Loading…</p> : null}
           {history.error instanceof Error ? <p className="text-xs text-danger">{history.error.message}</p> : null}
           {!history.isLoading && !history.error && history.data?.scans.length ? history.data.scans.map((scan) => (
-            <p key={scan.id} className="tabular-nums text-xs text-muted"><RelativeTime date={scan.created_at} /> · {scan.context || "Scan"} · {scan.source === "box_scan" ? "reviewed handover" : "QR scan"}</p>
+            <p key={scan.id} className="tabular-nums text-xs text-muted"><RelativeTime date={scan.created_at} exact /> · {scan.context || "Scan"} · {scan.source === "box_scan" ? "reviewed handover" : "QR scan"}</p>
           )) : !history.isLoading && !history.error ? <EmptyState message="No scans yet." /> : null}
         </div>
       ) : null}

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-export type RelativeTimeProps = { date: string | number | Date; now?: string | number | Date };
+export type RelativeTimeProps = { date: string | number | Date; now?: string | number | Date;
+  /** Also print the exact date and time: audit-grade records must not hide it behind a hover title, which touch screens never show. */
+  exact?: boolean };
 export function formatRelativeTime(date: Date, now: Date): string {
   const delta = date.getTime() - now.getTime();
   if (!Number.isFinite(delta)) return "Unknown time";
@@ -14,7 +16,7 @@ export function formatRelativeTime(date: Date, now: Date): string {
   const unit = minutes < 60 ? "min" : count === 1 ? "hour" : "hours";
   return delta > 0 ? `In ${count} ${unit}` : `${count} ${unit} ago`;
 }
-export function RelativeTime({ date, now }: RelativeTimeProps) {
+export function RelativeTime({ date, now, exact = false }: RelativeTimeProps) {
   const [clock, setClock] = useState(() => Date.now());
   useEffect(() => {
     if (now !== undefined) return;
@@ -25,5 +27,5 @@ export function RelativeTime({ date, now }: RelativeTimeProps) {
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return <span>Unknown time</span>;
   return <time dateTime={parsed.toISOString()} title={parsed.toLocaleString()}>
-    {formatRelativeTime(parsed, new Date(now ?? clock))}</time>;
+    {formatRelativeTime(parsed, new Date(now ?? clock))}{exact ? <span className="text-muted"> · {parsed.toLocaleString()}</span> : null}</time>;
 }

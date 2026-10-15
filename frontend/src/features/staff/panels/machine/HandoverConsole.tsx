@@ -44,7 +44,7 @@ export function HandoverConsole({ makerspaceId, enabled }: Props) {
       const payment = paymentInfo(row.payment);
       return <ListRow key={row.id} title={row.title}
         identity={{ kind: "avatar", name: requester(row), seed: String(row.requester?.id ?? requester(row)) }}
-        meta={<span className="grid gap-2"><span>{requester(row)}{row.machine?.name ? ` · ${row.machine.name}` : ""}{row.completed_at ? <> · finished <RelativeTime date={row.completed_at} /></> : null}</span>
+        meta={<span className="grid gap-2"><span>{requester(row)}{row.machine?.name ? ` · ${row.machine.name}` : ""}{row.completed_at ? <> · finished <RelativeTime date={row.completed_at} exact /></> : null}</span>
           {payment ? <StatusPill label={payment.label} tone={payment.paid ? "success" : "warn"} /> : null}</span>}
         right={<button type="button" className="desk-button" disabled={collect.isPending} onClick={() => collect.mutate(row.id)}>Hand over</button>} />;
     }) }}

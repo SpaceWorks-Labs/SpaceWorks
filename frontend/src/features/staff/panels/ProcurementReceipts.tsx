@@ -65,7 +65,7 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
       <div className="grid gap-1">
         {receipts.length ? receipts.map((receipt) => (
           <div key={receipt.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-2 py-1 text-xs">
-            <span className="min-w-0 flex-1 tabular-nums text-muted"><RelativeTime date={receipt.created_at} /></span>
+            <span className="min-w-0 flex-1 tabular-nums text-muted"><RelativeTime date={receipt.created_at} exact /></span>
             <button type="button" className="desk-button-ghost text-xs" onClick={() => openReceipt(receipt.id)}>View</button>
             <OverflowMenu label="Receipt actions" actions={[{ label: "Delete receipt", confirms: true, tone: "danger", disabled: remove.isPending, onClick: () => setDeleteId(receipt.id) }]} />
           </div>

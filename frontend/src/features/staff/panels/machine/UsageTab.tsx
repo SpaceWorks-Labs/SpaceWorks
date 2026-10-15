@@ -38,7 +38,7 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
       <div className="grid gap-2">
         {items.map((entry) => (
           <ListRow key={entry.id} title={`${entry.hours} h`} meta={<>{entry.note ? <span className="block break-words">{entry.note}</span> : null}{entry.source}{entry.logged_by_username ? ` · ${entry.logged_by_username}` : ""}</>}
-            right={<RelativeTime date={entry.created_at} />} />
+            right={<RelativeTime date={entry.created_at} exact />} />
         ))}
       </div>
       </MachineTabContent>

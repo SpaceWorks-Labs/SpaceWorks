@@ -32,7 +32,7 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
       <MachineTabContent query={logs} resource="error logs" empty={!items.length} message="No errors logged. Add a log when something needs attention.">
       <div className="grid gap-2">
         {items.map((entry) => (
-          <ListRow key={entry.id} title={entry.message} meta={<>{entry.logged_by_username ? `Logged by ${entry.logged_by_username} · ` : ""}<RelativeTime date={entry.created_at} /></>}
+          <ListRow key={entry.id} title={entry.message} meta={<>{entry.logged_by_username ? `Logged by ${entry.logged_by_username} · ` : ""}<RelativeTime date={entry.created_at} exact /></>}
             right={<StatusPill label={machineStatusLabel(entry.severity)} tone={entry.severity === "warning" ? "warn" : entry.severity === "info" ? "info" : "danger"} />} />
         ))}
       </div>

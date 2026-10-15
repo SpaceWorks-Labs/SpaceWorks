@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Modal } from "../../../components/ui/Modal";
+import { RequestFlowDialog } from "./RequestFlowDialog";
 import type { HardwareRequest } from "./Queues";
 
 type AcceptedQuantity = { item_id: number; quantity: number };
@@ -32,19 +32,8 @@ export function AcceptRequestModal({
   const canSubmit = total > 0 && !pending;
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={row ? `Accept request #${row.id}` : "Accept request"}
-      footer={
-        <div className="desk-actions flex flex-wrap justify-end gap-2">
-          <button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button>
-          <button className="desk-button-success" type="submit" form="accept-request-form" disabled={!canSubmit}>
-            {pending ? "Accepting..." : "Accept"}
-          </button>
-        </div>
-      }
-    >
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Accept request #${row.id}` : "Accept request"}
+      formId="accept-request-form" pending={pending} canSubmit={canSubmit} submitLabel="Accept">
       <form
         id="accept-request-form"
         className="grid gap-3"
@@ -83,8 +72,8 @@ export function AcceptRequestModal({
           ))}
         </div>
         {total === 0 ? <p className="text-xs text-warn-ink">Accept at least one unit, or reject the request instead.</p> : null}
-        {error ? <p className="rounded-md border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">{error}</p> : null}
+        {error ? <p className="rounded-md border border-danger-line bg-panel px-3 py-2 text-sm text-danger">{error}</p> : null}
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 }

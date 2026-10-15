@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { Card } from "../../components/ui";
 import { staffRequest, StructuredApiError } from "../../lib/api";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import { customAnswerErrors, validateCustomAnswers, type CustomAnswers } from "../forms/customFormTypes";
@@ -85,8 +86,8 @@ export function WalkInMemberForm({
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-line bg-surface p-3">
-      <p className="text-sm font-medium text-ink">Add a walk-in</p>
+    <Card className="mt-3">
+      <h3 className="title-section">Add a walk-in</h3>
       <p className="mt-1 text-xs text-muted">
         Creates a person record for the handover trail. It is not an account and cannot sign in.
       </p>
@@ -154,6 +155,6 @@ export function WalkInMemberForm({
           Cancel
         </button>
       </div>
-    </div>
+    </Card>
   );
 }

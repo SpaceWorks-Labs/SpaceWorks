@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
-import { Panel } from "./panels/shared";
+import { Card, EmptyState, ErrorBlock, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 
 export type ClaimableMember = {
   membership_id: number;
@@ -77,7 +77,8 @@ export function MemberClaimCodes({
   const error = issue.error ?? revoke.error;
 
   return (
-    <Panel title="Member claim code">
+    <Card>
+      <h2 className="title-section">Member claim code</h2>
       <p className="text-sm text-muted">
         Issue only while the walk-in is physically present. Hand over the code or QR;
         never email or text it.
@@ -110,13 +111,13 @@ export function MemberClaimCodes({
         <div className="mt-4 grid gap-4 rounded-lg border border-line bg-surface p-4 md:grid-cols-[1fr_180px]">
           <div>
             <p className="text-sm font-semibold text-ink">Hand this to {issued.member_display_name}</p>
-            <p className="mt-2 break-all code-text text-lg font-semibold text-ink">{issued.code}</p>
+            <p className="mt-2 break-all text-lg font-semibold text-ink">{issued.code}</p>
             <p className="mt-2 text-xs text-muted">
               Expires {new Date(issued.expires_at).toLocaleString()}. This code will not be shown again after you leave this view.
             </p>
           </div>
           <img
-            className="aspect-square w-full rounded-md border border-line bg-white p-2"
+            className="aspect-square w-full rounded-md border border-line bg-panel p-2"
             src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(issued.qr_svg)}`}
             alt={`Claim code QR for ${issued.member_display_name}`}
           />
@@ -124,21 +125,16 @@ export function MemberClaimCodes({
       ) : null}
       <div className="mt-4 grid gap-2">
         {active.data?.map((claim) => (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3" key={claim.id}>
-            <div>
-              <p className="text-sm font-medium text-ink">{claim.member_display_name}</p>
-              <p className="text-xs text-muted">Expires {new Date(claim.expires_at).toLocaleString()}</p>
-            </div>
-            <button className="desk-button" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(claim.id)}>
-              Revoke
-            </button>
-          </div>
+          <ListRow key={claim.id} title={claim.member_display_name}
+            identity={{ kind: "avatar", name: claim.member_display_name, seed: String(claim.membership_id) }}
+            meta={<span className="flex flex-wrap items-center gap-2"><StatusPill label="Active" tone="success" /><span>Expires <RelativeTime date={claim.expires_at} /></span></span>}
+            right={<button className="desk-button" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(claim.id)}>Revoke</button>} />
         ))}
         {active.isLoading ? <p className="text-sm text-muted">Loading active claim codes…</p> : null}
-        {active.isSuccess && !active.data?.length ? <p className="text-sm text-muted">No active claim codes.</p> : null}
+        {active.isSuccess && !active.data?.length ? <EmptyState message="No active claim codes." /> : null}
       </div>
-      {active.error ? <p className="mt-3 text-sm text-danger" role="alert">{active.error.message}</p> : null}
+      {active.error ? <ErrorBlock error={active.error} resource="claim codes" onRetry={() => void active.refetch()} /> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{error.message}</p> : null}
-    </Panel>
+    </Card>
   );
 }

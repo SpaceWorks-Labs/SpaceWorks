@@ -1,7 +1,8 @@
+import { RequestFlowDialog } from "./RequestFlowDialog";
 ﻿import { useEffect, useState } from "react";
 
-import { ErrorText, Modal } from "../../../components/ui";
-import { FormFooter, submitForm } from "./QueuesModalShared";
+import { ErrorText } from "../../../components/ui";
+import { submitForm } from "./QueuesModalShared";
 import type { FormModalProps, RejectRequestValues, ReturnDueValues } from "./QueuesModalTypes";
 
 export type {
@@ -30,12 +31,7 @@ export function ReturnDueModal({
   }, [defaultValue, open]);
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={row ? `Set due for request #${row.id}` : "Set due"}
-      footer={<FormFooter formId="return-due-form" pending={pending} submitLabel="Save due date" onCancel={onClose} />}
-    >
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Set due for request #${row.id}` : "Set due"} formId="return-due-form" pending={pending} submitLabel="Save due date">
       <form id="return-due-form" className="grid gap-3" onSubmit={(event) => submitForm(event, () => onSubmit({ returnDueAt }))}>
         <label className="grid gap-1 text-sm">
           <span className="font-medium text-ink">Return due date and time</span>
@@ -43,7 +39,7 @@ export function ReturnDueModal({
         </label>
         <ErrorText message={error} />
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 }
 
@@ -59,12 +55,7 @@ export function RejectRequestModal({ row, open, pending, error, onClose, onSubmi
   }, [open]);
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={row ? `Reject request #${row.id}` : "Reject request"}
-      footer={<FormFooter formId="reject-request-form" pending={pending} submitLabel="Reject request" onCancel={onClose} tone="danger" />}
-    >
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Reject request #${row.id}` : "Reject request"} formId="reject-request-form" pending={pending} submitLabel="Reject request" danger>
       <form id="reject-request-form" className="grid gap-3" onSubmit={(event) => submitForm(event, submitReject)}>
         <label className="grid gap-1 text-sm">
           <span className="font-medium text-ink">Reason</span>
@@ -72,7 +63,7 @@ export function RejectRequestModal({ row, open, pending, error, onClose, onSubmi
         </label>
         <ErrorText message={validationError || error} />
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 
   function submitReject() {

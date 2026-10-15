@@ -1,6 +1,8 @@
 import { useContext, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Modal } from "../../../components/ui";
+import { FlowLayout } from "../../../components/layouts";
+import { Callout, type Action } from "../../../components/ui";
+import type { ReactNode } from "react";
 import QrScanner from "../../../components/ui/QrScanner";
 import { staffRequest } from "../../../lib/api";
 import { featureEnabled } from "../../../lib/features";
@@ -11,7 +13,8 @@ import { EvidenceUpload } from "../panels/EvidenceUpload";
 import { useStaffGet, type Makerspace } from "../panels/shared";
 import type { DirectLoanMemberResponse, ProductOption, QrResolveResponse } from "../DirectLoansTypes";
 
-export function DirectHandoverWizard({ makerspace, onClose }: { makerspace: Makerspace; onClose: () => void }) {
+export function DirectHandoverWizard({ makerspace, onClose, compactWork, compactAction }: { makerspace: Makerspace; onClose: () => void; compactWork?: ReactNode; compactAction?: Action }) {
+  const [compact, setCompact] = useState(false);
   const client = useQueryClient();
   const authority = useContext(StaffListContext);
   const canScanCard = authority.isSuperadmin || authority.actions?.includes("scan_member_cards");
@@ -62,12 +65,20 @@ export function DirectHandoverWizard({ makerspace, onClose }: { makerspace: Make
       setPayloads(previous => previous.includes(value) ? previous : [...previous, value]); setScanError("");
     } catch (cause) { setScanError(cause instanceof Error ? cause.message : "Tool QR could not be checked."); }
   }
-  return <Modal open title="Guided direct handout" onClose={() => { if (!issue.isPending) onClose(); }} footer={<div className="sticky bottom-0 grid grid-cols-2 gap-2 bg-panel">
-    <button className="desk-button-ghost min-h-11" disabled={issue.isPending} onClick={onClose}>{receipt ? "Close receipt" : "Cancel"}</button>
-    {receipt ? <button className="desk-button" onClick={() => window.print()}>Print receipt</button> : step < 2 ? <button className="desk-button-primary min-h-11" disabled={step === 0 ? !borrower : !itemsReady} onClick={() => { setStep(step + 1); setScanError(""); }}>Next</button> : <button className="desk-button-success min-h-11" disabled={!ready || issue.isPending} onClick={() => issue.mutate()}>{issue.isPending ? "Saving…" : "Confirm handout"}</button>}
-  </div>}>
-    <p role="status" className="mb-3">Step {step + 1} of 4: {["Borrower card", "Scan or select tools", "Issue photo", "Receipt"][step]}</p>
-    {step > 0 && !receipt ? <button className="desk-button-ghost mb-3" disabled={issue.isPending} onClick={() => setStep(step - 1)}>Back</button> : null}
+  const stepKeys = ["borrower", "tools", "photo", "receipt"];
+  return <FlowLayout presentation="dialog" open standalone={false} title="Guided direct handout"
+    subject="Record who borrowed the tools and the evidence of handover."
+    state={{ status: members.isLoading || products.isLoading ? "loading" : members.error || products.error ? "error" : "ready", error: "Couldn't load handout details. Try again.", onRetry: () => { void members.refetch(); void products.refetch(); } }}
+    steps={["Borrower card", "Scan or select tools", "Issue photo", "Receipt"].map((label, index) => ({ key: stepKeys[index], label, state: index < step ? "done" : index === step ? "current" : "todo" }))}
+    current={stepKeys[step]} compact={compact}
+    onCancel={() => { if (!issue.isPending && !compactAction?.pending) onClose(); }}
+    footer={{ back: step > 0 && !compact ? { label: "Back", disabled: issue.isPending, onClick: () => setStep(step - 1) } : undefined,
+      next: compact && compactAction ? compactAction : step < 2 ? { label: "Next", disabled: step === 0 ? !borrower : !itemsReady, onClick: () => { setStep(step + 1); setScanError(""); } } : { label: "Confirm handout", disabled: !ready || issue.isPending, pending: issue.isPending, pendingLabel: "Saving…", onClick: () => issue.mutate() } }}
+    result={receipt ? { tone: "success", title: `Handout #${receipt.id} recorded`, summary: `${receipt.borrower} · ${receipt.at}`,
+      children: <><div>{receipt.labels.map((label, index) => <p key={index}>{label}</p>)}<p>{payloads.length} tool QR scans · Evidence photo #{evidence}</p>{remark ? <p>{remark}</p> : null}</div><button className="desk-button" onClick={() => window.print()}>Print receipt</button></>, next: { label: "Close receipt", onClick: onClose } } : undefined}
+    work={<>
+      {compactWork ? <button className="desk-button mb-4" onClick={() => setCompact(!compact)}>{compact ? "Guided view" : "Compact view"}</button> : null}
+      {compact ? compactWork : <>
     <fieldset className="grid gap-3" disabled={issue.isPending}><legend className="sr-only">Handout details</legend>
       {step === 0 ? <>
         {canScanCard ? <><button className="desk-button" onClick={() => setScanning("card")}>Scan member card</button><label>Card payload<input className="desk-input block" value={cardPayload} onChange={event => setCardPayload(event.target.value)} /></label><button className="desk-button" disabled={!cardPayload.trim() || card.isPending} onClick={() => void scanCard(cardPayload)}>Check card</button></> : null}
@@ -79,9 +90,10 @@ export function DirectHandoverWizard({ makerspace, onClose }: { makerspace: Make
         {productRows.filter(row => row.tracking_mode !== "individual").map(row => <label key={row.id} className="grid gap-1">{row.name}<input className="desk-input" type="number" min="0" step="1" max={row.available_quantity} value={selected[row.id] ?? ""} onChange={event => setSelected({ ...selected, [row.id]: event.target.value })} /></label>)}
       </> : null}
       {step === 2 ? <><EvidenceUpload makerspaceId={makerspace.id} evidenceType="issue" onUploaded={setEvidence} />{evidence ? <p>Uploaded photo #{evidence}</p> : null}<label className="grid gap-1">Issue remark<textarea className="desk-input" value={remark} onChange={event => setRemark(event.target.value)} /></label><KitChecklistCapture checklist={kits} /></> : null}
-      {receipt ? <div role="status"><h3 className="title-section">Handout #{receipt.id} recorded</h3><p>{receipt.borrower} · {receipt.at}</p>{receipt.labels.map((label, index) => <p key={index}>{label}</p>)}<p>{payloads.length} tool QR scans · Evidence photo #{evidence}</p>{remark ? <p>{remark}</p> : null}</div> : null}
     </fieldset>
-    {members.error || products.error || issue.error || scanError ? <p role="alert" className="mt-3 text-danger">{scanError || (issue.error ?? members.error ?? products.error)?.message}</p> : null}
+      </>}
+      {issue.error || scanError ? <div role="alert"><Callout size="inline" tone="danger" lead={scanError || issue.error?.message || "Couldn't issue handout. Try again."} /></div> : null}
     {scanning ? <QrScanner feedback={<><p role="status">{scanning === "items" ? `${payloads.length} tools scanned` : "Check borrower card"}</p>{scanError ? <p role="alert">{scanError}</p> : null}</>} onScan={payload => { if (scanning === "card") { if (!card.isPending) void scanCard(payload); } else void scanItem(payload); }} onClose={() => setScanning(null)} /> : null}
-  </Modal>;
+    </>}
+  />;
 }

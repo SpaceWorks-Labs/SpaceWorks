@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FlowLayout } from "../../components/layouts";
 
 import { SETTLEMENT_METHODS, type Settlement } from "./paymentsApi";
 
@@ -15,11 +16,13 @@ export function SettlementDialog({
   onCancel,
   onConfirm,
   title,
+  error,
 }: {
   count: number;
   pending: boolean;
   /** Overrides the heading, e.g. when correcting an existing receipt. */
   title?: string;
+  error?: string;
   onCancel: () => void;
   onConfirm: (settlement: Settlement) => void;
 }) {
@@ -33,10 +36,12 @@ export function SettlementDialog({
   const receivedValid = !Number.isNaN(new Date(receivedAt).getTime());
 
   return (
-    <div className="desk-panel mt-3 p-4" role="group" aria-label="Record how the money was received">
-      <h3 className="title-panel">
-        {title ?? `Record payment${count > 1 ? ` for ${count} charges` : ""}`}
-      </h3>
+    <FlowLayout presentation="dialog" open state={{ status: "ready" }} onCancel={() => { if (!pending) onCancel(); }}
+      title={title ?? `Record payment${count > 1 ? ` for ${count} charges` : ""}`}
+      steps={[{ key: "receipt", label: "Payment receipt", state: "current" }]} current="receipt"
+      footer={{ next: { label: title ? "Save correction" : "Save receipt", pending,
+        disabled: !receivedValid, onClick: () => onConfirm({ method, reference, received_at: new Date(receivedAt).toISOString() }) } }}
+      work={<>
       <p className="mt-1 text-sm text-muted">
         How and when the money arrived. This is kept as a permanent receipt.
       </p>
@@ -78,26 +83,9 @@ export function SettlementDialog({
           Enter the date and time the money was received.
         </p>
       )}
-      <div className="mt-4 flex gap-2">
-        <button
-          className="desk-button"
-          disabled={pending || !receivedValid}
-          onClick={() =>
-            onConfirm({
-              method,
-              reference,
-              received_at: new Date(receivedAt).toISOString(),
-            })
-          }
-          type="button"
-        >
-          Confirm payment
-        </button>
-        <button className="desk-button-ghost" disabled={pending} onClick={onCancel} type="button">
-          Cancel
-        </button>
-      </div>
-    </div>
+      {error ? <p role="alert" className="mt-3 text-sm text-danger">{error}</p> : null}
+      </>}
+    />
   );
 }
 

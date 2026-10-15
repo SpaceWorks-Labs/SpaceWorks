@@ -326,8 +326,12 @@ SOURCE-MAP in dr-shell · 10 asset/font inventory, font-mono, System theme → d
 
 ## 11. Queued after wave 4 (owner request 2026-10-15) — separate plan + Stage-1 gate
 
-1. Merge `dev` into `feature/design-revamp` after all revamp phases (owner instruction) and revamp the new
-   events pages it brings with the same layouts/brand, so no screen stays in the old style.
+1. **Last phase (owner decision 2026-10-15):** the new events/bookings pages live on `feature/yuyu-parity`
+   (25 commits, 626 files, not yet in `dev`; `dev` == `d3e5ed29`). The revamp continues on `dev` now; after
+   waves 2b–4, merge `dev` once yuyu-parity has landed there (or `feature/yuyu-parity` directly if the owner
+   says so), re-run the wave-1 mechanical migrations (secondary→brand, font-mono, alpha tints) over its new
+   files, resolve conflicts in the shell/staff files in favour of the revamp shell while keeping every
+   yuyu-parity capability, and revamp its new pages with the same layouts/brand.
 2. Two new protected default roles, **"Events Manager"** and **"Bookings Manager"** (owner update
    2026-10-15), seeded per makerspace like Space Manager / Inventory Manager / Machine Manager / Member, each
    holding everything to run its area so no custom role is needed. **One person can hold both** at the same

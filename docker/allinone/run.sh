@@ -13,6 +13,12 @@ export LIVE_REDIS_URL="${LIVE_REDIS_URL:-$CELERY_BROKER_URL}"
 
 # Runtime config for the SPA (TENANT_API_URL / TENANT_TOKEN), same script as the nginx image.
 TENANT_CONFIG_PATH=/srv/www/config.js /app/allinone/write-config.sh
+TENANT_CONFIG_PATH=/srv/www/config.js WEB_ANALYTICS_HEADERS_PATH=/var/lib/spaceworks/nginx/analytics-headers.conf /app/allinone/web-analytics.sh
+
+# One shared directory for both masters, cleaned once by the container supervisor.
+export PROMETHEUS_MULTIPROC_DIR=/var/lib/spaceworks/metrics
+mkdir -p /var/lib/spaceworks/metrics
+rm -f /var/lib/spaceworks/metrics/*.db
 
 mkdir -p /var/lib/spaceworks/nginx/body /var/lib/spaceworks/nginx/proxy \
   /var/lib/spaceworks/nginx/fastcgi /var/lib/spaceworks/nginx/uwsgi /var/lib/spaceworks/nginx/scgi
@@ -35,11 +41,11 @@ until redis-cli -h 127.0.0.1 ping >/dev/null 2>&1; do sleep 0.5; done
 # Static files once, then the API, the SSE process, the worker and the scheduler loop.
 $ENTRYPOINT --role management python manage.py collectstatic --noinput >/dev/null
 
-launch backend $ENTRYPOINT --role backend gunicorn config.wsgi:application \
+launch backend $ENTRYPOINT --role backend gunicorn --config python:config.gunicorn_metrics_shared config.wsgi:application \
   --bind 127.0.0.1:8000 --workers "${GUNICORN_WORKERS:-3}" --timeout "${GUNICORN_TIMEOUT:-60}" \
   --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 \
   --access-logfile - --error-logfile -
-launch live $ENTRYPOINT --role backend gunicorn config.wsgi:application \
+launch live $ENTRYPOINT --role backend gunicorn --config python:config.gunicorn_metrics_shared config.wsgi:application \
   --bind 127.0.0.1:8001 -k gthread --threads "${LIVE_THREADS:-32}" --timeout 0 \
   --access-logfile - --error-logfile -
 launch worker $ENTRYPOINT --role worker celery -A config worker -l info \

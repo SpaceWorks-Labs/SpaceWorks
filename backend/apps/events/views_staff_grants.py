@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import PermissionDenied
@@ -34,7 +35,7 @@ class StaffGrantRedeemThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": request.user.pk}
 
 
-class EventStaffGrantListView(APIView):
+class EventStaffGrantListView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
     series = False
 
@@ -82,7 +83,7 @@ def _manageable_row(actor, model, pk):
     return row
 
 
-class EventStaffGrantDetailView(APIView):
+class EventStaffGrantDetailView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], request=StaffGrantPermissionsSerializer,
@@ -96,7 +97,7 @@ class EventStaffGrantDetailView(APIView):
         )).data)
 
 
-class EventStaffGrantRevokeView(APIView):
+class EventStaffGrantRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], request=EmptyActionSerializer,
@@ -107,7 +108,7 @@ class EventStaffGrantRevokeView(APIView):
         return Response(StaffGrantSerializer(services.revoke_grant(row, actor=request.user)).data)
 
 
-class EventStaffInviteRevokeView(APIView):
+class EventStaffInviteRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], request=EmptyActionSerializer,
@@ -118,7 +119,7 @@ class EventStaffInviteRevokeView(APIView):
         return Response(StaffGrantInviteSerializer(services.revoke_invite(row, actor=request.user)).data)
 
 
-class EventStaffInviteRedeemView(APIView):
+class EventStaffInviteRedeemView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [StaffGrantRedeemThrottle]
 

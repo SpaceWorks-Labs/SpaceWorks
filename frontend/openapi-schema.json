@@ -1270,14 +1270,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -1289,7 +1289,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       },
       "delete": {
         "operationId": "api_v1_admin_api_clients_destroy",
@@ -1327,14 +1328,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -1346,7 +1347,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/api-clients/{id}/rotate-secret": {
@@ -1393,14 +1395,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -1412,7 +1414,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/api-key-requests": {
@@ -7879,14 +7882,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -7968,7 +7971,8 @@
             }
           },
           "required": true
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/event-staff-grants/{id}/": {
@@ -13401,14 +13405,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -13490,7 +13494,8 @@
             }
           },
           "required": true
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/events/{id}/ticket-types/": {
@@ -22357,14 +22362,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -22376,7 +22381,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/makerspace/{makerspace_id}/api-settings": {
@@ -40679,14 +40685,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -40708,7 +40714,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/makerspaces/{makerspace_id}/roles/capabilities": {
@@ -40970,14 +40977,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -40999,7 +41006,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       },
       "delete": {
         "operationId": "api_v1_admin_makerspaces_roles_destroy",
@@ -41054,14 +41062,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -41083,7 +41091,8 @@
             },
             "description": ""
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/makerspaces/{makerspace_id}/roles/{role_id}/machine-scope": {
@@ -41181,7 +41190,7 @@
       },
       "put": {
         "operationId": "api_v1_admin_makerspaces_roles_machine_scope_update",
-        "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything â€” the capability would exist only in `/control/` and the shell.",
+        "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything — the capability would exist only in `/control/` and the shell. Requires recent session-bound reauthentication (10 minutes); refresh does not renew it.",
         "parameters": [
           {
             "in": "path",
@@ -41260,14 +41269,14 @@
             "description": ""
           },
           "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HardwareRequestError"
                 }
               }
-            },
-            "description": ""
+            }
           },
           "404": {
             "content": {
@@ -42683,7 +42692,14 @@
             "description": "Not signed in."
           },
           "403": {
-            "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
           },
           "404": {
             "description": "Not found, not visible to this actor, or the surface is not enabled here."
@@ -42697,7 +42713,8 @@
           "503": {
             "description": "A required dependency is unavailable."
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/resend": {
@@ -42747,7 +42764,14 @@
             "description": "Not signed in."
           },
           "403": {
-            "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
           },
           "404": {
             "description": "Not found, not visible to this actor, or the surface is not enabled here."
@@ -42761,7 +42785,8 @@
           "503": {
             "description": "A required dependency is unavailable."
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/revoke": {
@@ -42811,7 +42836,14 @@
             "description": "Not signed in."
           },
           "403": {
-            "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
           },
           "404": {
             "description": "Not found, not visible to this actor, or the surface is not enabled here."
@@ -42825,7 +42857,8 @@
           "503": {
             "description": "A required dependency is unavailable."
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/makerspaces/{makerspace_id}/uploads/evidence-url": {
@@ -45601,6 +45634,82 @@
             "description": "Organization state conflict."
           }
         }
+      },
+      "delete": {
+        "operationId": "api_v1_admin_organizations_id_delete",
+        "tags": [
+          "Admin organizations"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict, quota or last-governor/deletion protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Deleted."
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
       }
     },
     "/api/v1/admin/organizations/{id}/invitations/": {
@@ -53455,7 +53564,7 @@
                 }
               }
             },
-            "description": ""
+            "description": "Authority denied, or recent_reauth_required for a protected mutation."
           },
           "404": {
             "content": {
@@ -53538,7 +53647,7 @@
           },
           "required": true
         },
-        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once. Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE."
+        "description": "Requires current tenant MANAGE_BOOKINGS (local custom roles and organization actions count); resource grants cannot delegate. bookings.staff_grants must be enabled. Invites expire after seven days; redemption checks current sender authority, verified email binding, tenant origin, revocation and single use under resource and invite locks. Tokens are shown once. Booking staff authority is checked live through booking_authority. Roster, eligible-member selection, ordinary staff creation, recurrence and lifecycle actions require manage_reservations or tenant MANAGE_BOOKINGS. Descriptive fields and images require edit_details or tenant management. Resource grants never confer pricing, rule, machine, privacy/activation or finance authority. Rules retain MANAGE_MAKERSPACE. Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/admin/stock-transfers/{id}": {
@@ -55572,17 +55681,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MFAPassword"
+                "$ref": "#/components/schemas/MFAEnrollmentStart"
               }
             },
             "application/x-www-form-urlencoded": {
               "schema": {
-                "$ref": "#/components/schemas/MFAPassword"
+                "$ref": "#/components/schemas/MFAEnrollmentStart"
               }
             },
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/MFAPassword"
+                "$ref": "#/components/schemas/MFAEnrollmentStart"
               }
             }
           },
@@ -56952,7 +57061,14 @@
             "description": "Not signed in."
           },
           "403": {
-            "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
           },
           "429": {
             "description": "Rate limit exceeded; retry after the interval in Retry-After."
@@ -56963,7 +57079,8 @@
           "503": {
             "description": "A required dependency is unavailable."
           }
-        }
+        },
+        "description": " Requires recent session-bound reauthentication (10 minutes); refresh does not renew it."
       }
     },
     "/api/v1/backups/download/{archive_id}/{token}": {
@@ -74957,6 +75074,1568 @@
         },
         "description": "Requires live resource manage_reservations authority, bookings.broadcasts, notifications and email. Ten campaigns per hour per tenant; cancellation stops unclaimed sends."
       }
+    },
+    "/api/v1/auth/reauth": {
+      "get": {
+        "operationId": "api_v1_auth_reauth_get",
+        "tags": [
+          "Reauthentication"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReauthenticationStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": []
+      },
+      "post": {
+        "operationId": "api_v1_auth_reauth_post",
+        "tags": [
+          "Reauthentication"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReauthenticationResult"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reauthentication"
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/v1/auth/reauth/social/start": {
+      "post": {
+        "operationId": "api_v1_auth_reauth_social_start_post",
+        "tags": [
+          "Reauthentication"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReauthenticationSocialStarted"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReauthenticationSocialStart"
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/v1/auth/reauth/social/complete": {
+      "post": {
+        "operationId": "api_v1_auth_reauth_social_complete_post",
+        "tags": [
+          "Reauthentication"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReauthenticationResult"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReauthenticationSocialComplete"
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/v1/auth/reauth/enrollment/email": {
+      "post": {
+        "operationId": "api_v1_auth_reauth_enrollment_email_post",
+        "tags": [
+          "Reauthentication"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReauthenticationEmailSent"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/v1/auth/reauth/enrollment/confirm": {
+      "post": {
+        "operationId": "api_v1_auth_reauth_enrollment_confirm_post",
+        "tags": [
+          "Reauthentication"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReauthenticationEmailConfirmed"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReauthenticationEmailConfirm"
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/v1/auth/organizations/self-service/": {
+      "get": {
+        "operationId": "api_v1_auth_organizations_self-service_get",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationCreationPolicy"
+                }
+              }
+            }
+          }
+        },
+        "parameters": []
+      },
+      "post": {
+        "operationId": "api_v1_auth_organizations_self-service_post",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict, quota or last-governor/deletion protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDetail"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationSelfCreate"
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/v1/admin/organizations/{id}/memberships/{membership_id}/": {
+      "patch": {
+        "operationId": "api_v1_admin_organizations_id_memberships_membership_id_patch",
+        "tags": [
+          "Admin organizations"
+        ],
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict, quota or last-governor/deletion protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationMembership"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationMembershipUpdate"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "membership_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/events/": {
+      "get": {
+        "operationId": "api_v1_events_get",
+        "tags": [
+          "Server events"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Audited read refused while the source tenant is frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationEventPage"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read tenant events or minimal participants using a signed server client",
+        "description": "events.api_read and events:read required. Participants additionally require participants:read; attendance dates additionally require participants:attendance:read. Explicit field allow-list; no contacts, answers, bearer credentials or payment data. Private/no-store."
+      },
+      "head": {
+        "operationId": "api_v1_events_get_head",
+        "tags": [
+          "Server events"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Audited read refused while the source tenant is frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read tenant events or minimal participants using a signed server client",
+        "description": "events.api_read and events:read required. Participants additionally require participants:read; attendance dates additionally require participants:attendance:read. Explicit field allow-list; no contacts, answers, bearer credentials or payment data. Private/no-store."
+      }
+    },
+    "/api/v1/events/{id}/": {
+      "get": {
+        "operationId": "api_v1_events_id_get",
+        "tags": [
+          "Server events"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Audited read refused while the source tenant is frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationEvent"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Read tenant events or minimal participants using a signed server client",
+        "description": "events.api_read and events:read required. Participants additionally require participants:read; attendance dates additionally require participants:attendance:read. Explicit field allow-list; no contacts, answers, bearer credentials or payment data. Private/no-store."
+      },
+      "head": {
+        "operationId": "api_v1_events_id_get_head",
+        "tags": [
+          "Server events"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Audited read refused while the source tenant is frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Read tenant events or minimal participants using a signed server client",
+        "description": "events.api_read and events:read required. Participants additionally require participants:read; attendance dates additionally require participants:attendance:read. Explicit field allow-list; no contacts, answers, bearer credentials or payment data. Private/no-store."
+      }
+    },
+    "/api/v1/events/{id}/participants/": {
+      "get": {
+        "operationId": "api_v1_events_id_participants_get",
+        "tags": [
+          "Server events"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Audited read refused while the source tenant is frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationParticipantPage"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read tenant events or minimal participants using a signed server client",
+        "description": "events.api_read and events:read required. Participants additionally require participants:read; attendance dates additionally require participants:attendance:read. Explicit field allow-list; no contacts, answers, bearer credentials or payment data. Private/no-store."
+      },
+      "head": {
+        "operationId": "api_v1_events_id_participants_get_head",
+        "tags": [
+          "Server events"
+        ],
+        "security": [
+          {
+            "ServerHMAC": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid input or cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or HMAC signature is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authority denied, or recent_reauth_required for a protected mutation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable or foreign target/module/feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Audited read refused while the source tenant is frozen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Required identity/delivery/source-gate dependency unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareRequestError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Same authorization and headers as GET; empty body."
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Client-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "summary": "Read tenant events or minimal participants using a signed server client",
+        "description": "events.api_read and events:read required. Participants additionally require participants:read; attendance dates additionally require participants:attendance:read. Explicit field allow-list; no contacts, answers, bearer credentials or payment data. Private/no-store."
+      }
     }
   },
   "components": {
@@ -89897,6 +91576,9 @@
             "type": "boolean"
           },
           "required": {
+            "type": "boolean"
+          },
+          "password_available": {
             "type": "boolean"
           }
         },
@@ -116112,6 +117794,373 @@
           "previous",
           "results"
         ]
+      },
+      "Reauthentication": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 1024,
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 6,
+            "default": ""
+          }
+        },
+        "required": []
+      },
+      "ReauthenticationResult": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean"
+          },
+          "expires_in": {
+            "type": "integer"
+          },
+          "mfa_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "verified",
+          "expires_in"
+        ]
+      },
+      "ReauthenticationStatus": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean"
+          },
+          "password_available": {
+            "type": "boolean"
+          },
+          "mfa_enabled": {
+            "type": "boolean"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "verified",
+          "password_available",
+          "mfa_enabled",
+          "providers"
+        ]
+      },
+      "ReauthenticationSocialStart": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "provider",
+          "redirect_uri"
+        ]
+      },
+      "ReauthenticationSocialStarted": {
+        "type": "object",
+        "properties": {
+          "authorization_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "state": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "expires_in": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "authorization_url",
+          "state",
+          "nonce",
+          "expires_in"
+        ]
+      },
+      "ReauthenticationSocialComplete": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 200
+          },
+          "nonce": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 200
+          },
+          "id_token": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 16384,
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 2048,
+            "default": ""
+          },
+          "totp": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 6,
+            "default": ""
+          }
+        },
+        "required": [
+          "state",
+          "nonce"
+        ]
+      },
+      "ReauthenticationEmailConfirm": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ReauthenticationEmailSent": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "sent"
+        ]
+      },
+      "ReauthenticationEmailConfirmed": {
+        "type": "object",
+        "properties": {
+          "confirmed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirmed"
+        ]
+      },
+      "Empty": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "MFAEnrollmentStart": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "default": "",
+            "writeOnly": true
+          }
+        },
+        "required": []
+      },
+      "OrganizationSelfCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "description": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ]
+      },
+      "OrganizationCreationPolicy": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "max_owned": {
+            "type": "integer"
+          },
+          "max_per_day": {
+            "type": "integer"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "eligible",
+          "enabled",
+          "max_owned",
+          "max_per_day",
+          "reason"
+        ]
+      },
+      "OrganizationMembershipUpdate": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended"
+            ]
+          },
+          "governance_actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "granted_actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": []
+      },
+      "IntegrationEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ends_at",
+          "id",
+          "location",
+          "starts_at",
+          "status",
+          "title"
+        ]
+      },
+      "IntegrationParticipant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "registered_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attended_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "registered_at"
+        ]
+      },
+      "IntegrationEventPage": {
+        "type": "object",
+        "properties": {
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationEvent"
+            }
+          }
+        },
+        "required": [
+          "next_cursor",
+          "results"
+        ]
+      },
+      "IntegrationParticipantPage": {
+        "type": "object",
+        "properties": {
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationParticipant"
+            }
+          }
+        },
+        "required": [
+          "next_cursor",
+          "results"
+        ]
       }
     },
     "securitySchemes": {
@@ -116137,6 +118186,12 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "ServerHMAC": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Signature",
+        "description": "Tenant-bound server HMAC; X-Client-Id and X-Timestamp required. Sign full path including query, timestamp, optional nonce and body."
       }
     }
   },

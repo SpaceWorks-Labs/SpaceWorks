@@ -42,6 +42,10 @@ def definitions(FeatureDefinition):
         "Delegate descriptive editing, reservations, arrival or page release for one resource.",
         requires_modules=("bookings",),
     ), FeatureDefinition(
+        "events.api_read", "events", "Signed event integration reads",
+        "Privileged tenant-bound server clients can read minimal events and participants with HMAC signatures.",
+        requires_modules=("events",),
+    ), FeatureDefinition(
         "events.certificate_designer", "events", "Certificate designer",
         "Design private certificate artwork and immutable issuance-time layouts.",
         requires_modules=("events",),

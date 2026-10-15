@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { EmptyState, Skeleton } from "../../../components/ui";
+import { OrganizationSelfCreation } from "../../organizations/OrganizationSelfCreation";
+import { OrganizationDelete } from "../OrganizationDelete";
 import { OrganizationInvitations } from "../OrganizationInvitations";
 import { OrganizationMemberships } from "../OrganizationMemberships";
 import { OrganizationProfileForm } from "../OrganizationProfileForm";
@@ -23,7 +25,7 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
 
   return (
     <Panel title="Organizations">
-      {isSuperadmin ? <OrganizationCreate onCreated={setSelectedId} /> : null}
+      {isSuperadmin ? <OrganizationCreate onCreated={setSelectedId} /> : <OrganizationSelfCreation onCreated={setSelectedId} />}
       <p className="mb-4 text-sm text-muted">Manage public organization presentation, delegated governance, and single-use invitations.</p>
       {organizations.isLoading ? <Skeleton className="h-24 w-full" /> : null}
       {organizations.error ? <EmptyState title="Unable to load organizations" description={organizations.error.message} action={<button className="desk-button" type="button" onClick={() => organizations.refetch()}>Retry</button>} /> : null}
@@ -41,7 +43,7 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
       ) : null}
       {detail.isLoading ? <Skeleton className="h-56 w-full" /> : null}
       {detail.error ? <EmptyState title="Unable to load organization" description={detail.error.message} /> : null}
-      {detail.data ? <div className="grid gap-5"><OrganizationProfileForm organization={detail.data} />{isSuperadmin ? <OrganizationLinks key={detail.data.id} id={detail.data.id} makerspaces={makerspaces} /> : null}<OrganizationMemberships organization={detail.data} /><OrganizationInvitations organization={detail.data} /></div> : null}
+      {detail.data ? <div className="grid gap-5"><OrganizationProfileForm organization={detail.data} />{isSuperadmin ? <OrganizationLinks key={detail.data.id} id={detail.data.id} makerspaces={makerspaces} /> : null}<OrganizationMemberships organization={detail.data} /><OrganizationInvitations organization={detail.data} /><OrganizationDelete organization={detail.data} onDeleted={() => { setSelectedId(null); setPage(1); }} /></div> : null}
     </Panel>
   );
 }

@@ -773,6 +773,11 @@ HMAC_PROTECTED_PATH_PREFIXES = env.list(
     "HMAC_PROTECTED_PATH_PREFIXES",
     default=["/api/public/", "/api/v1/public/"],
 )
+from apps.apiclients.read_prefixes import mandatory_hmac_prefixes
+HMAC_PROTECTED_PATH_PREFIXES = list(dict.fromkeys([
+    *HMAC_PROTECTED_PATH_PREFIXES, *mandatory_hmac_prefixes(),
+]))
+
 # Fernet key for encrypting ApiClient secrets at rest. Generate with:
 #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 # default="" (review fix #5) so settings import never fails when encryption isn't used;
@@ -1070,7 +1075,7 @@ SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS > 0
 # Always-on, transport-independent headers.
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
-SECURE_REFERRER_POLICY = "same-origin"
+SECURE_REFERRER_POLICY = "strict-origin"
 
 # Permissive enough for the current admin and API docs; tighten per deployment later.
 # drf-spectacular's Swagger UI / Redoc load their JS+CSS from the jsDelivr CDN, so the
@@ -1273,3 +1278,26 @@ if not 60 <= MFA_CHALLENGE_TTL_SECONDS <= 600:
     raise ImproperlyConfigured("MFA_CHALLENGE_TTL_SECONDS must be between 60 and 600.")
 if not 1 <= MFA_MAX_ATTEMPTS <= 10:
     raise ImproperlyConfigured("MFA_MAX_ATTEMPTS must be between 1 and 10.")
+
+# Lane F infrastructure is always present, independent of separable domain apps.
+from config.web_analytics import analytics_settings
+WEB_ANALYTICS_SCRIPT_URL, WEB_ANALYTICS_COLLECT_URL, WEB_ANALYTICS_DOMAIN = analytics_settings(
+    env, CONTENT_SECURITY_POLICY,
+)
+ROUTE_METRICS_ENABLED = env.bool("ROUTE_METRICS_ENABLED", default=False)
+PROMETHEUS_MULTIPROC_DIR = env("PROMETHEUS_MULTIPROC_DIR", default="")
+MIDDLEWARE.insert(3, "apps.operations.route_metrics.RouteMetricsMiddleware")
+ORGANIZATION_SELF_CREATION_ENABLED = env.bool("ORGANIZATION_SELF_CREATION_ENABLED", default=False)
+ORGANIZATION_SELF_CREATION_MAX_OWNED = env.int("ORGANIZATION_SELF_CREATION_MAX_OWNED", default=3)
+ORGANIZATION_SELF_CREATION_MAX_PER_DAY = env.int("ORGANIZATION_SELF_CREATION_MAX_PER_DAY", default=1)
+if not all(1 <= limit <= 100 for limit in (
+    ORGANIZATION_SELF_CREATION_MAX_OWNED, ORGANIZATION_SELF_CREATION_MAX_PER_DAY,
+)):
+    raise ImproperlyConfigured("Organization creation limits must be between 1 and 100.")
+
+SPECTACULAR_SETTINGS.setdefault("APPEND_COMPONENTS", {}).setdefault("securitySchemes", {})["ServerHMAC"] = {
+    "type": "apiKey", "in": "header", "name": "X-Signature",
+    "description": "Tenant-bound server HMAC over METHOD, full path, timestamp, nonce "
+                   "(when present), body. X-Client-Id and X-Timestamp also required; "
+                   "see API client protocol.",
+}

@@ -14,6 +14,42 @@ beyond any single module. Read the subsection covering what you are touching.
 
 ## Cross-cutting invariants (from shipped batches)
 
+**Recent reauthentication (Lane F).** `accounts.ReauthenticationSession` holds
+server-only browser proof bound to the stable browser session ID, user, surface,
+deployment generation, password/email/linked-identity fingerprint and MFA version.
+Refresh never changes auth_time; proofs expire after ten minutes. Native sessions
+cannot acquire this browser proof. Password verification also requires TOTP when MFA is enrolled;
+passwordless MFA holders may use replay-protected TOTP alone. Social intents are
+single-use, session/origin/version bound and five-minute limited: verified linked
+subject and provider auth_time within 60 seconds are required, followed by enrolled
+MFA. A provider unable to prove freshness cannot stamp proof. Passwordless MFA
+enrollment instead accepts fresh social proof or a single-use, verified-email,
+session-bound fifteen-minute confirmation; emailed proof never authorizes sensitive
+actions by itself. Existing password checks for other MFA management remain.
+
+Role/grant changes, API-client management and organization governance/deletion use
+the shared boundary. Control has its own CSRF-protected reauthentication form and
+preserves the existing control MFA gate; its proof never authorizes the SPA. Global
+proof/intent mutation is source-gate exempt, while protected tenant operations still
+use their ordinary fences. Proofs are global, omitted from tenant artifacts, have an
+explicit excluded User edge/unique-key disposition, no scoped PII or object ownership,
+CASCADE on account deletion and existing thirty-day auth-state cleanup. The complete
+model graph is pinned; deployment restore generation invalidates old proof.
+
+**Monitoring and analytics (Lane F).** `/control/storage/` is read-only and inherits
+superadmin/active-account/control-MFA boundaries; hidden tenant names/counters are
+excluded, deployment database/table totals remain global. Optional route metrics use
+bounded compiled route/method/status labels and Prometheus multi-process files,
+never raw paths/queries/credentials. Per-master directories are cleared at master
+start; all-in-one clears shared files once before its two masters. Prometheus owns
+retention. The existing metrics token gate is unchanged. Optional analytics supports
+only trusted Plausible manual scripts, route-template URLs and empty referrers.
+Unknown/private/bearer routes never inject; credential-boundary navigation removes
+script/queue, cancels collection and reloads the document. Disabled analytics installs
+no navigation guard. Strict-origin applies site-wide and configured origins alone
+extend CSP. See `docs/monitoring-and-analytics.md` and `docs/helm.md`; Helm retains H1
+admission and requires externally prepared state, never inventing recovery authority.
+
 **Makerspace local days** go through `makerspaces.local_time`; never derive a tenant's day from deployment UTC or the browser zone. Opening hours are advisory (empty = always open; dated exceptions replace a day), and public bootstrap exposes timezone/hours only. Country remains staff-only. The profile currency is `MakerspacePaymentSettings.default_currency`; existing charge currencies never change with it.
 
 **Self-host vs managed SaaS (all managed features dormant by default).** `PLATFORM_DOMAIN_SUFFIX`
@@ -3676,6 +3712,22 @@ encoder always emits canonical output, so stored envelopes are unaffected.
 
 ## Organization accounts and organization-derived authority
 
+### Organization self-service and governance (Lane F)
+
+Self-creation is a global platform switch, default OFF, never a makerspace module.
+Active verified unrestricted accounts create bounded private organizations under
+an account-row lock. Immutable creation audits enforce the rolling daily limit
+even after deletion. Initial membership grants global governance only, never
+tenant actions, identity, links or ownership. Link governance remains superadmin-only.
+Governance mutations require recent reauthentication, preserve the last active
+member governor and recheck non-escalation on suspended-member reactivation.
+Deletion refuses tenant links, retained domain references and artwork; disposable
+memberships/invitations are removed only with an otherwise deletable organization.
+Tenant/module purge never deletes shared organizations or foreign organizers.
+Existing global retention and portability exclusions remain; this adds no org model,
+tenant-owned field or object key.
+
+
 - **Admission membership is not authority.** The always-present `organizations/audience.py`
   checks active direct memberships and active memberships in OWNER-linked servable, non-hidden
   makerspaces against explicit organization IDs. It ignores action grants and profile-publication
@@ -3774,6 +3826,25 @@ encoder always emits canonical output, so stored envelopes are unaffected.
   `makerspace_id`, routing, PII custody and quotas remain untouched.
 
 ## API client scopes and the protected-route registry
+
+### Signed integration reads (Lane F)
+
+`apiclients/read_contract.py` owns signature-marker permissions, typed tenant target
+resolution, per-client throttling and signed keyset cursors. Live domain startup
+registers adapters without queries; core imports no separable Events policy.
+`read_prefixes.py` is safe during settings construction and makes signed reads
+mandatory independently of optional public-client rollout. Only verified HMAC
+receives the marker; user sessions, publishable keys and browser clients cannot.
+Read scopes are operator-only, absent from browser and legacy-v1 authority. Targets
+require exactly one live non-hidden tenant and a subject belonging to it.
+Participant scope requires event scope; attendance additionally requires participant
+scope. Serializers use allow-lists and the scoped-PII model accessor for names,
+never raw encrypted values, contacts, answers, credentials or money. Attendance
+uses current status and immutable check-in history. Participant-read audit contains
+opaque principal/count/projection only. Responses are private/no-store and cursors
+bind client, tenant, subject and projection with 24h expiry. No new tenant model,
+object key or purge ownership is introduced by these adapters.
+
 
 - **`apps/apiclients/scope_registry*.py` is the single source of truth for what an `ApiClient` may
   reach**, and it is keyed on the **fully qualified versioned `view_name`** — never the bare name.

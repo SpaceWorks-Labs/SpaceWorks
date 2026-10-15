@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter, PolymorphicProxySerializer
 from apps.admin_api.list_options import LIST_PARAMETERS, ORDER_PAGE_PARAMETERS, choice_filter, identity_filter, order_list
@@ -124,7 +125,7 @@ class AdminMembershipRequestListView(APIView):
         return pager.get_paginated_response(MembershipRequestSerializer(page, many=True, context=_admission_context(request.user, page)).data)
 
 
-class AdminInvitationView(APIView):
+class AdminInvitationView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=InvitationSerializer, responses={201: MembershipRequestSerializer, **ERRORS})
@@ -136,7 +137,7 @@ class AdminInvitationView(APIView):
         return Response(MembershipRequestSerializer(item, context=_admission_context(request.user, [item])).data, status=status.HTTP_201_CREATED)
 
 
-class AdminRequestApproveView(APIView):
+class AdminRequestApproveView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members. Returns an admission request when payment is due, otherwise the activated membership.", tags=["Admin memberships"], request=ApproveRequestSerializer, responses={200: PolymorphicProxySerializer(component_name="MembershipApprovalOutcome", serializers=[AdminMembershipSerializer, MembershipRequestSerializer], resource_type_field_name=None), **ERRORS})
@@ -166,7 +167,7 @@ class AdminRequestApproveView(APIView):
         )
 
 
-class AdminRequestRevokeView(APIView):
+class AdminRequestRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=RevokeSerializer, responses={200: MembershipRequestSerializer, **ERRORS})
@@ -178,7 +179,7 @@ class AdminRequestRevokeView(APIView):
         return Response(MembershipRequestSerializer(item, context=_admission_context(request.user, [item])).data)
 
 
-class AdminMembershipRevokeM2View(APIView):
+class AdminMembershipRevokeM2View(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=RevokeSerializer, responses={200: AdminMembershipSerializer, **ERRORS})
@@ -198,7 +199,7 @@ class AdminMembershipRevokeM2View(APIView):
         )
 
 
-class AdminMembershipRoleM2View(APIView):
+class AdminMembershipRoleM2View(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=RoleIdSerializer, responses={200: AdminMembershipSerializer, **ERRORS})

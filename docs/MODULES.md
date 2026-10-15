@@ -230,6 +230,15 @@ campaigns are cancelled and cannot resume. Bulk email-bound invitations reuse Ev
 invites and email only an event link; the signed-in participant verifies their email to
 use an invitation without entering a code.
 
+`events.api_read` is off by default. Only a platform superadmin can grant
+`events:read`, `participants:read` and `participants:attendance:read` to a server
+client bound to one makerspace. Read routes always require a valid HMAC signature,
+even when public-API enforcement is optional. Participants require event and
+participant scopes; attendance needs the extra scope. Contacts, custom answers,
+payment data and bearer credentials are excluded. Without the feature reads are
+refused. Uninstall retains history; purge uses the existing Events retention graph.
+Bookings reuses the core target/signature/keyset mechanisms through typed adapters.
+
 ## Bookings
 
 Opt-in `bookings.broadcasts` requires Notifications and Email and defaults off. Resource

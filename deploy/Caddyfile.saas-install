@@ -6,6 +6,7 @@
 }
 import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
 (application) {
+    header Referrer-Policy strict-origin
     handle /api/v1/internal/* {
         respond 403
     }

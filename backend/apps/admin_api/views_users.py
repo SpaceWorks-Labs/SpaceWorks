@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.db import transaction
 from django.http import Http404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -44,7 +45,7 @@ _SM_DELEGABLE_ROLES = (
 
 
 @extend_schema(tags=["Admin users"], summary="List or create staff memberships")
-class StaffListCreateView(generics.ListCreateAPIView):
+class StaffListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIView):
     serializer_class = StaffMembershipSerializer
     permission_classes = [IsActiveStaff]
 
@@ -134,7 +135,7 @@ def _can_create_staff_role(user, target_role, makerspace_id):
     summary="Revoke a staff membership",
     responses={204: None},
 )
-class MembershipRevokeView(APIView):
+class MembershipRevokeView(RecentReauthenticationMixin, APIView):
     """Remove a single makerspace membership (un-assign a delegable role).
 
     Scope contract (mirrors the create path's non-escalation model): a Space Manager may

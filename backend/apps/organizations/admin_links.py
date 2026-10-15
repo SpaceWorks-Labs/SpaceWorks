@@ -6,6 +6,7 @@ from django.db import transaction
 from rest_framework.exceptions import APIException
 from unfold.admin import ModelAdmin
 
+from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
 from apps.makerspaces.models import Makerspace
 from apps.tenant_migration.gate_runtime import assert_write_allowed
 from config.admin_access import SuperuserOnlyModelAdmin
@@ -27,7 +28,7 @@ class OrganizationLinkForm(forms.ModelForm):
 
 
 @admin.register(OrganizationMakerspace)
-class OrganizationMakerspaceAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class OrganizationMakerspaceAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
     form = OrganizationLinkForm
     list_display = ("organization", "makerspace", "relationship", "created_by", "created_at")
     list_filter = ("relationship", "makerspace")

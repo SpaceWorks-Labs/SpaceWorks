@@ -26,6 +26,10 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.bookings.throttles_feed.BookingFeedIpThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAChallengeThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAUserThrottle": {"get_cache_key"},
+    "apps.accounts.views_reauthentication.ReauthenticationThrottle": {"get_cache_key"},
+    "apps.organizations.views_self_service.OrganizationCreationThrottle": {"get_cache_key"},
+    "apps.organizations.views_self_service.OrganizationCreationIpThrottle": {"get_cache_key"},
+    "apps.admin_api.permissions.IsActiveStaff": {"has_permission", "has_object_permission"},
     # `_authenticate_claim` is the sanctioned claim-session path added in D5. It is listed
     # deliberately: this guard exists so that a NEW method on a configured policy class is a
     # decision rather than an accident, and the claim authenticator is exactly such a decision.

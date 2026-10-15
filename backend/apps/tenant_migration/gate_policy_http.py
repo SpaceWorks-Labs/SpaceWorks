@@ -4,6 +4,13 @@ from .gate_policy_replay import REPLAY_HTTP_PARTICIPANTS
 
 
 HTTP_EXEMPTIONS = {
+    "auth-reauth": "Global browser session proof has no tenant-owned authority.",
+    "auth-reauth-social-start": "Global session-bound credential intent.",
+    "auth-reauth-social-complete": "Global credential verification and browser proof.",
+    "auth-reauth-enrollment-email": "Global session-bound MFA enrollment confirmation.",
+    "auth-reauth-enrollment-confirm": "Global enrollment-only proof, never a tenant grant.",
+    "control-reauthentication": "Global control session proof; existing control MFA gate remains.",
+    "auth-organizations-self-service": "Global organization governance; creation confers no tenant authority.",
     "admin-space-pack-profiles": (
         "Platform configuration snapshots have no tenant rows; applying one uses the target tenant gate."
     ),

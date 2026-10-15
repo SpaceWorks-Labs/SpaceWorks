@@ -1,0 +1,47 @@
+# One release per namespace: frontend upstreams use backend/live service names.
+backendImage: ghcr.io/spaceworks-hq/spaceworks-backend
+frontendImage: ghcr.io/spaceworks-hq/spaceworks-frontend
+# Pin a released image tag; no floating default.
+imageTag: ""
+imagePullPolicy: IfNotPresent
+replicas: 1
+workers: 3
+# Existing secret: Django keys, Redis/S3 and remaining deployment settings; no DATABASE_URL.
+runtimeSecret: ""
+# Immutable versioned secrets each contain DATABASE_URL + SPACEWORKS_DB_POINTER_GENERATION.
+# Migration URL uses the maintenance role; runtime URL uses least-privilege app role.
+databasePointerSecret: ""
+migrationPointerSecret: ""
+hostGate:
+  # Preprovisioned root-owned marker and verification key, shared read-only by all writers.
+  existingClaim: ""
+# Bump only after an operator-coordinated, generation-consistent rollout.
+rolloutGeneration: ""
+routeMetricsEnabled: false
+frontendEnv:
+  TENANT_API_URL: /api
+  WEB_ANALYTICS_SCRIPT_URL: ""
+  WEB_ANALYTICS_COLLECT_URL: ""
+  WEB_ANALYTICS_DOMAIN: ""
+  WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ""
+service:
+  type: ClusterIP
+  port: 80
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  tls: []
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+worker:
+  enabled: true
+beat:
+  enabled: true
+  # Operator-prepared persistent schedule volume owned by uid 10001.
+  existingClaim: ""

@@ -150,6 +150,13 @@ def _authoritative_route_targets(request, view=None):
     kwargs.update(getattr(view, 'kwargs', {}) or {})
     targets = set()
     invalid = False
+    # Domain adapters register targets without widening any user RBAC scope.
+    # This resolver is advisory for origin/source-gate scoping; HMAC authorization
+    # independently verifies the signature, server client and required scopes.
+    from apps.apiclients.read_contract import read_target_registered, resolve_read_target
+    if match is not None and read_target_registered(match.view_name):
+        target, resolved = resolve_read_target(request, match)
+        return url_name, {target.pk} if resolved else set(), not resolved, True
     registered = MAKERSPACE_KWARG_ROUTES.get(url_name)
     route_recognized = bool(
         registered or 'makerspace_id' in kwargs

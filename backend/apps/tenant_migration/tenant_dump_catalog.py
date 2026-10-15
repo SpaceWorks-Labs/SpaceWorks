@@ -96,6 +96,7 @@ class TenantDumpCatalogError(AssertionError):
 CATALOG_SCHEMA_SHA256 = "0154ba8ca1e81ac7b2ec3f379fd4ca75c63cdb225f1c0641d45b40cae1e20acb"
 # BK-D adds typed booking campaign/delivery history. Literal reconstruction
 # reproduced HEAD's complete graph before computing the new digest.
+# Lane F: platform-only, nonportable session reauthentication proof.
 
 
 def catalog_models(apps_registry=apps):

@@ -40,6 +40,7 @@ export function useStaffSession(guestOnly: boolean) {
   const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge>();
   const [selected, setSelectedState] = useState<number | null>(() => readStoredMakerspace());
   const [restoring, setRestoring] = useState(true);
+  const [staffSignInRequested] = useState(() => new URLSearchParams(location.search).get("sign-in") === "staff");
   const [oidcCallback] = useState(() => {
     const query = new URLSearchParams(window.location.search);
     return ["code", "state", "error"].some((key) => query.has(key));
@@ -75,6 +76,13 @@ export function useStaffSession(guestOnly: boolean) {
     setSelected(superadmin ? saved : staffSaved ?? nextUser.makerspaces[0]?.id ?? null);
   }, [setSelected, tenant.makerspaceId, tenant.mode]);
 
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    if (!user || !staffSignInRequested || query.get("sign-in") !== "staff") return;
+    query.delete("sign-in");
+    navigate({ search: query.toString() }, { replace: true });
+  }, [location.search, navigate, staffSignInRequested, user]);
+
   // Refetch /auth/me and re-hydrate after a role edit/assignment may have changed the
   // current actor's own effective actions, so tabs/capabilities recompute immediately.
   const refreshAuthUser = useCallback(() => {
@@ -96,6 +104,9 @@ export function useStaffSession(guestOnly: boolean) {
 
     // Finish the pending provider login before consulting any previous cookie.
     if (oidcCallback) { setRestoring(false); return; }
+    // Member cookies retain their surface on refresh. This explicit handoff must
+    // mint a staff session through the normal password/social/MFA login flow.
+    if (staffSignInRequested) { clearAccessToken(); setRestoring(false); return; }
 
     async function restoreSession() {
       const refreshed = await refreshAccessToken();
@@ -121,7 +132,7 @@ export function useStaffSession(guestOnly: boolean) {
     return () => {
       active = false;
     };
-  }, [hydrateUser, oidcCallback]);
+  }, [hydrateUser, oidcCallback, staffSignInRequested]);
 
   const login = useMutation({
     mutationFn: (payload: { username: string; password: string }) =>

@@ -29,6 +29,7 @@ def verify_oidc_token(raw_token, *, nonce, provider_row):
     if not token_nonce or not hmac.compare_digest(token_nonce, nonce) or not subject:
         raise SocialTokenError("Invalid social identity token.")
     return {
+        "auth_time": claims.get("auth_time"),
         "sub": subject,
         "email": str(claims.get("email") or "").strip().lower(),
         # Only a literal true counts. Some IdPs omit the claim entirely, and a missing

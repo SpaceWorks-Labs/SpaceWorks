@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 import secrets
 from datetime import timedelta
 
@@ -20,6 +21,10 @@ from apps.admin_api.api_key_request_views import (
 )
 from apps.admin_api.permissions import IsActiveStaff
 from apps.apiclients.models import ApiClient
+from apps.apiclients.scope_grants import (
+    TENANT_GRANTABLE_SCOPES,
+    actor_may_grant_privileged_scopes,
+)
 from apps.apiclients.services import sync_makerspace_origins
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -62,7 +67,7 @@ def _related_makerspace(makerspace_id):
     post=extend_schema(responses={201: ApiClientCreateResponseSerializer, **ERRORS}),
 )
 @extend_schema(tags=["API clients"], summary="List or create makerspace API clients")
-class ApiClientListCreateView(generics.ListCreateAPIView):
+class ApiClientListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
 
@@ -125,7 +130,7 @@ class ApiClientListCreateView(generics.ListCreateAPIView):
     delete=extend_schema(responses={204: None, **ERRORS}),
 )
 @extend_schema(tags=["API clients"], summary="Retrieve, update, or delete API client")
-class ApiClientDetailView(generics.RetrieveUpdateDestroyAPIView):
+class ApiClientDetailView(RecentReauthenticationMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
     http_method_names = ["get", "patch", "delete", "head", "options"]
@@ -206,7 +211,7 @@ class ApiClientDetailView(generics.RetrieveUpdateDestroyAPIView):
     request=None,
     responses={200: ApiClientCreateResponseSerializer, **ERRORS},
 )
-class ApiClientRotateSecretView(generics.GenericAPIView):
+class ApiClientRotateSecretView(RecentReauthenticationMixin, generics.GenericAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
 
@@ -227,6 +232,15 @@ class ApiClientRotateSecretView(generics.GenericAPIView):
                 raise PermissionDenied()
             client.makerspace = _related_makerspace(client.makerspace_id)
             self.check_object_permissions(request, client)
+            # Replacing a credential grants access to its existing scopes. Check
+            # the locked row so a concurrent scope update cannot widen that access.
+            if (
+                set(client.scopes) - TENANT_GRANTABLE_SCOPES
+                and not actor_may_grant_privileged_scopes(request.user, client.makerspace_id)
+            ):
+                raise PermissionDenied(
+                    "Only a global superadmin may rotate a client with privileged scopes."
+                )
             current_secret = client.get_secret()
             raw_secret = secrets.token_urlsafe(32)
             while secrets.compare_digest(raw_secret, current_secret):

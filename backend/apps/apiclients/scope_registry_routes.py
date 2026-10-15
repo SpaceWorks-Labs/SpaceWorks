@@ -9,7 +9,9 @@ PUBLIC_ALL = "public:*"
 TARGET_GLOBAL = "global"
 TARGET_TENANT_SLUG = "tenant_slug"
 TARGET_TENANT_TOKEN = "tenant_token"
-TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN})
+TARGET_CLIENT_SUBJECT = "client_subject"
+TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN,
+                          TARGET_CLIENT_SUBJECT})
 
 PUBLIC_READ_SCOPES = frozenset({PUBLIC_READ, PUBLIC_ALL})
 PUBLIC_WRITE_SCOPES = frozenset({PUBLIC_WRITE, PUBLIC_ALL})
@@ -21,6 +23,9 @@ class ScopeRegistryEntry:
     target_mode: str
     tenant_apps_admitted: bool = False
     legacy_v1: bool = False
+    server_only: bool = False
+    tenant_bound: bool = False
+    required_scopes: frozenset[str] = frozenset()
 
 
 _READ = ("GET", "HEAD")
@@ -124,6 +129,11 @@ def _build_registry():
             if key in registry:
                 raise ValueError(f"Duplicate API-client scope registry key: {key}")
             registry[key] = entry
+    from .scope_registry_reads import read_route_entries
+    for key, entry in read_route_entries().items():
+        if key in registry:
+            raise ValueError(f"Duplicate API-client scope registry key: {key}")
+        registry[key] = entry
     return MappingProxyType(registry)
 
 

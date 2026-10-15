@@ -81,7 +81,9 @@ export const openApiTags = [
   "Public requests",
   "QR assets",
   "QR print batches",
+  "Reauthentication",
   "Reports",
+  "Server events",
   "Social auth",
   "Staff invitations",
   "Staff lists",
@@ -478,6 +480,7 @@ export const openApiPaths = [
   "/api/v1/admin/organizations/{id}/makerspaces/",
   "/api/v1/admin/organizations/{id}/makerspaces/{makerspace_id}/",
   "/api/v1/admin/organizations/{id}/memberships/",
+  "/api/v1/admin/organizations/{id}/memberships/{membership_id}/",
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}",
   "/api/v1/admin/organized-events/",
   "/api/v1/admin/platform/backup-destinations",
@@ -594,11 +597,17 @@ export const openApiPaths = [
   "/api/v1/auth/mfa/recovery",
   "/api/v1/auth/mfa/verify",
   "/api/v1/auth/organization-invitations/redeem/",
+  "/api/v1/auth/organizations/self-service/",
   "/api/v1/auth/phone",
   "/api/v1/auth/phone/link/confirm",
   "/api/v1/auth/phone/link/start",
   "/api/v1/auth/phone/login/confirm",
   "/api/v1/auth/phone/login/start",
+  "/api/v1/auth/reauth",
+  "/api/v1/auth/reauth/enrollment/confirm",
+  "/api/v1/auth/reauth/enrollment/email",
+  "/api/v1/auth/reauth/social/complete",
+  "/api/v1/auth/reauth/social/start",
   "/api/v1/auth/refresh",
   "/api/v1/auth/reset-password",
   "/api/v1/auth/social/apple",
@@ -626,6 +635,9 @@ export const openApiPaths = [
   "/api/v1/event-checkin-stations/{public_token}/roster/",
   "/api/v1/event-checkin-stations/{public_token}/session/",
   "/api/v1/event-checkin-stations/{public_token}/sync/",
+  "/api/v1/events/",
+  "/api/v1/events/{id}/",
+  "/api/v1/events/{id}/participants/",
   "/api/v1/guest-admin/makerspace/{makerspace_id}/active-loans",
   "/api/v1/guest-admin/requests/{id}/return",
   "/api/v1/health/",
@@ -2881,6 +2893,8 @@ export type EmailVerificationConfirm = {
   "code": string;
 };
 
+export type Empty = Record<string, unknown>;
+
 export type EndReasonEnum = "superseded" | "membership_revoked" | "claim_revoked" | "user_ended";
 
 export type EnrollmentGrant = {
@@ -3684,6 +3698,20 @@ export type IntegrationEmailHealth = {
   "last_failure"?: IntegrationLastFailure | null;
 };
 
+export type IntegrationEvent = {
+  "id": number;
+  "title": string;
+  "status": string;
+  "starts_at": string;
+  "ends_at": string;
+  "location": string;
+};
+
+export type IntegrationEventPage = {
+  "next_cursor": string | null;
+  "results": Array<IntegrationEvent>;
+};
+
 export type IntegrationHealth = {
   "status": Status00eEnum;
   "email": IntegrationEmailHealth;
@@ -3705,6 +3733,18 @@ export type IntegrationLastFailure = {
   "subject": string;
   "error": string;
   "stream": string;
+};
+
+export type IntegrationParticipant = {
+  "id": number;
+  "display_name": string;
+  "registered_at": string;
+  "attended_at"?: string | null;
+};
+
+export type IntegrationParticipantPage = {
+  "next_cursor": string | null;
+  "results": Array<IntegrationParticipant>;
 };
 
 export type IntegrationWorkerHealth = {
@@ -5634,6 +5674,10 @@ export type MFAEnrollment = {
   "qr_data_url": string;
 };
 
+export type MFAEnrollmentStart = {
+  "password"?: string;
+};
+
 export type MFAPassword = {
   "password": string;
 };
@@ -5645,6 +5689,7 @@ export type MFARecovery = {
 export type MFAStatus = {
   "enabled": boolean;
   "required": boolean;
+  "password_available"?: boolean;
 };
 
 export type MFAVerify = {
@@ -6007,6 +6052,14 @@ export type OrganizationCreate = {
   "public_profile_enabled"?: boolean;
 };
 
+export type OrganizationCreationPolicy = {
+  "enabled": boolean;
+  "eligible": boolean;
+  "max_owned": number;
+  "max_per_day": number;
+  "reason": string;
+};
+
 export type OrganizationDetail = {
   "id": number;
   "slug": string;
@@ -6130,6 +6183,12 @@ export type OrganizationMembershipList = {
 
 export type OrganizationMembershipStatusEnum = "active" | "suspended";
 
+export type OrganizationMembershipUpdate = {
+  "status"?: "active" | "suspended";
+  "governance_actions"?: Array<string>;
+  "granted_actions"?: Array<string>;
+};
+
 export type OrganizationReportBreakdown = {
   "rows": Array<{
   [key: string]: unknown;
@@ -6148,6 +6207,13 @@ export type OrganizationReportRows = {
   "rows": Array<{
   [key: string]: unknown;
 }>;
+};
+
+export type OrganizationSelfCreate = {
+  "name": string;
+  "slug": string;
+  "description"?: string;
+  "website"?: string;
 };
 
 export type OrganizationSummary = {
@@ -8716,6 +8782,56 @@ export type Readiness = {
 };
 
 export type Reason870Enum = "bounce" | "complaint";
+
+export type Reauthentication = {
+  "password"?: string;
+  "code"?: string;
+};
+
+export type ReauthenticationEmailConfirm = {
+  "token": string;
+};
+
+export type ReauthenticationEmailConfirmed = {
+  "confirmed": boolean;
+};
+
+export type ReauthenticationEmailSent = {
+  "sent": boolean;
+};
+
+export type ReauthenticationResult = {
+  "verified": boolean;
+  "expires_in": number;
+  "mfa_required"?: boolean;
+};
+
+export type ReauthenticationSocialComplete = {
+  "state": string;
+  "nonce": string;
+  "id_token"?: string;
+  "code"?: string;
+  "totp"?: string;
+};
+
+export type ReauthenticationSocialStart = {
+  "provider": string;
+  "redirect_uri": string;
+};
+
+export type ReauthenticationSocialStarted = {
+  "authorization_url": string;
+  "state": string;
+  "nonce": string;
+  "expires_in": number;
+};
+
+export type ReauthenticationStatus = {
+  "verified": boolean;
+  "password_available": boolean;
+  "mfa_enabled": boolean;
+  "providers": Array<string>;
+};
 
 export type ReceiptEnvelope = {
   "payload": {

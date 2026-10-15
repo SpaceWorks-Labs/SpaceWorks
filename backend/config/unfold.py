@@ -129,6 +129,7 @@ UNFOLD = {
                 "title": _("Operations"),
                 "separator": True,
                 "items": [
+                    _item("Storage", "storage", "control-storage"),
                     _item("Stock transfers", "swap_horiz", "admin:operations_stocktransfer_changelist"),
                     _item("Stocktakes", "fact_check", "admin:operations_stocktakesession_changelist"),
                     _item("QR print batches", "print", "admin:operations_qrprintbatch_changelist"),

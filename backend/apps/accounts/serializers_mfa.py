@@ -36,7 +36,12 @@ class MFAPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=1024, write_only=True, trim_whitespace=False)
 
 
+class MFAEnrollmentStartSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=1024, required=False, default="", allow_blank=True, write_only=True, trim_whitespace=False)
+
+
 class MFAStatusSerializer(serializers.Serializer):
+    password_available = serializers.BooleanField(required=False)
     enabled = serializers.BooleanField()
     required = serializers.BooleanField()
 

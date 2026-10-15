@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { bootstrapTenant, refreshAccessToken } from "../../lib/api";
 import { hasClaimSession } from "./MemberClaimSession";
 import { MemberAuthPanel } from "./MemberAuthPanel";
+import { OrganizationSelfCreation } from "../organizations/OrganizationSelfCreation";
 import { MemberAccountProfile } from "./MemberAccountProfile";
 import { MemberAccountSessions } from "./MemberAccountSessions";
 import { MemberAccountMembership } from "./MemberAccountMembership";
@@ -41,6 +42,7 @@ export function MemberAccountPage() {
   return <main className="mx-auto max-w-3xl space-y-5 px-5 py-8"><Link className="desk-button" to={home}>Back to membership</Link><h1 className="title-page">Your account</h1>
     {restoring || bootstrap.isLoading ? <p role="status">Loading account…</p> : null}
     {bootstrap.error ? <p className="text-danger" role="alert">{bootstrap.error.message}</p> : null}
+    {!restoring && !hasClaimSession() ? <OrganizationSelfCreation /> : null}
     {left ? <p role="status">You have left this makerspace. Your account remains available.</p> : null}
     {!restoring && hasClaimSession() ? <p>Sign in with a full account to manage profile, sessions or exports.</p> : null}
     {!restoring && data && !hasClaimSession() && !left ? <>

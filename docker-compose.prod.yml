@@ -89,6 +89,15 @@ services:
     logging: *default-logging
     environment: &backend-env
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+      WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+      WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      ROUTE_METRICS_ENABLED: ${ROUTE_METRICS_ENABLED:-False}
+      PROMETHEUS_MULTIPROC_DIR: ${PROMETHEUS_MULTIPROC_DIR:-/tmp/spaceworks-prometheus}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      ORGANIZATION_SELF_CREATION_ENABLED: ${ORGANIZATION_SELF_CREATION_ENABLED:-False}
+      ORGANIZATION_SELF_CREATION_MAX_OWNED: ${ORGANIZATION_SELF_CREATION_MAX_OWNED:-3}
+      ORGANIZATION_SELF_CREATION_MAX_PER_DAY: ${ORGANIZATION_SELF_CREATION_MAX_PER_DAY:-1}
       DEBUG: "False"
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
       DATABASE_URL: ${DATABASE_URL:?use scripts/spaceworks-compose.sh}
@@ -158,7 +167,7 @@ services:
       SPACEWORKS_HOST_MARKER_PATH: /run/spaceworks-host/restore-marker.json
       BACKUP_PRODUCER_CAPABILITY_MARKER_PATH: /run/spaceworks-host/producer-capability.json
       BACKUP_PRODUCER_PRIVILEGED_SCRIPTS_DIR: /run/spaceworks-privileged-scripts
-    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-60} --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile -"]
+    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn --config python:config.gunicorn_metrics config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-60} --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile -"]
     healthcheck: {test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/readiness/', timeout=3).read()\""], interval: 10s, timeout: 5s, retries: 6, start_period: 45s}
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, createbuckets: {condition: service_completed_successfully}, orchestration-ready: {condition: service_completed_successfully}}
     volumes:
@@ -170,7 +179,7 @@ services:
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: unless-stopped
     environment: *backend-env
-    command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "${LIVE_THREADS:-32}", "--timeout", "0", "--access-logfile", "-", "--error-logfile", "-"]
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "${LIVE_THREADS:-32}", "--timeout", "0", "--access-logfile", "-", "--error-logfile", "-"]
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, orchestration-ready: {condition: service_completed_successfully}}
     volumes:
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
@@ -182,6 +191,7 @@ services:
       <<: *backend-env
       TENANT_API_URL: ${TENANT_API_URL:-/api}
       TENANT_TOKEN: ${TENANT_TOKEN:-}
+      WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
     ports:
       - "${HTTP_PORT_BIND:-0.0.0.0}:${HTTP_PORT:-80}:8080"
     healthcheck:
@@ -248,7 +258,7 @@ services:
     profiles: [host-recovery]
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     environment: *backend-env
-    command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
     healthcheck: {test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/readiness/', timeout=3).read()\""], interval: 10s, timeout: 5s, retries: 6}
     volumes:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
@@ -258,6 +268,11 @@ services:
   frontend:
     image: ${MAKERSPACE_FRONTEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-frontend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
+    environment:
+      WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+      WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+      WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
     logging: *default-logging
     ports:
       - "${HTTP_PORT_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"

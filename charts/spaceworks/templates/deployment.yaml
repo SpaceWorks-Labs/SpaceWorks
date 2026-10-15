@@ -1,0 +1,86 @@
+{{- $root := . -}}
+{{- $jobs := list
+  (dict "name" "backend" "role" "backend" "enabled" true "args" (list "sh" "-c" (printf "python manage.py collectstatic --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers %v --config python:config.gunicorn_metrics" .Values.workers)))
+  (dict "name" "live" "role" "backend" "enabled" true "args" (list "gunicorn" "config.wsgi:application" "--bind" "0.0.0.0:8000" "--worker-class" "gthread" "--threads" "20" "--timeout" "0" "--config" "python:config.gunicorn_metrics"))
+  (dict "name" "worker" "role" "worker" "enabled" .Values.worker.enabled "args" (list "celery" "-A" "config" "worker" "--loglevel=info"))
+  (dict "name" "beat" "role" "beat" "enabled" .Values.beat.enabled "args" (list "celery" "-A" "config" "beat" "--loglevel=info" "--schedule" "/var/lib/celery/celerybeat-schedule")) -}}
+{{- range $jobs }}
+{{- if .enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spaceworks.name" $root }}-{{ .name }}
+spec:
+  replicas: {{ if eq .name "beat" }}1{{ else }}{{ $root.Values.replicas }}{{ end }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app: {{ include "spaceworks.name" $root }}-{{ .name }}}
+  template:
+    metadata:
+      labels: {app: {{ include "spaceworks.name" $root }}-{{ .name }}}
+      annotations:
+        spaceworks/pointer-generation: {{ required "rolloutGeneration is required" $root.Values.rolloutGeneration | quote }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "spaceworks.podSecurity" $root | nindent 8 }}
+      containers:
+        - name: {{ .name }}
+          image: {{ include "spaceworks.backendImage" $root | quote }}
+          imagePullPolicy: {{ $root.Values.imagePullPolicy }}
+          # Preserve the image ENTRYPOINT: the H1 marker is checked before exec.
+          args: {{ concat (list "--role" .role) .args | toJson }}
+          envFrom:
+            - secretRef:
+                name: {{ required "runtimeSecret is required" $root.Values.runtimeSecret | quote }}
+          env:
+            {{- include "spaceworks.env" $root | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          {{- if or (eq .name "backend") (eq .name "live") }}
+          ports: [{name: http, containerPort: 8000}]
+          readinessProbe:
+            httpGet: {path: /api/v1/health/readiness/, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          {{- end }}
+          resources:
+            {{- toYaml $root.Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "spaceworks.mounts" $root | nindent 12 }}
+      volumes:
+        {{- if eq .name "beat" }}
+        {{- include "spaceworks.beatVolumes" $root | nindent 8 }}
+        {{- else }}
+        {{- include "spaceworks.volumes" $root | nindent 8 }}
+        {{- end }}
+{{- end }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spaceworks.name" . }}-frontend
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: {app: {{ include "spaceworks.name" . }}-frontend}
+  template:
+    metadata:
+      labels: {app: {{ include "spaceworks.name" . }}-frontend}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: frontend
+          image: {{ printf "%s:%s" .Values.frontendImage .Values.imageTag | quote }}
+          ports: [{name: http, containerPort: 80}]
+          env:
+            {{- range $name, $value := .Values.frontendEnv }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

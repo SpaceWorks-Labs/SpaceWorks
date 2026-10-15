@@ -119,6 +119,9 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   and request lookup is scoped to that verified identity — it never matches free-text contact fields (no
   enumeration by known email/phone). Since the Check-In retirement (`73a480c`) this is enforced by member
   auth rather than an external verify call.
+- Sensitive browser changes (custom roles/staff grants, API-client management and organization
+  governance/deletion) require recent, server-owned session reauthentication. Refresh never renews
+  that proof; `/control/` keeps its separate MFA and reauthentication surface.
 - Inventory Managers can run the full hardware lifecycle but **cannot** manage printing, staff, or
   makerspace settings.
 - Evidence endpoints require per-makerspace `UPLOAD_EVIDENCE` plus active status; QR management also checks

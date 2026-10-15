@@ -1,0 +1,325 @@
+{
+  "spec": "docs/design-revamp/research/welcome-and-dark-spec.md §6.2",
+  "tokens": {
+    "bg": [
+      20,
+      44,
+      42
+    ],
+    "surface": [
+      25,
+      57,
+      53
+    ],
+    "panel": [
+      31,
+      67,
+      63
+    ],
+    "hover": [
+      37,
+      77,
+      72
+    ],
+    "line": [
+      77,
+      109,
+      103
+    ],
+    "outline": [
+      147,
+      161,
+      152
+    ],
+    "ink": [
+      255,
+      244,
+      232
+    ],
+    "muted": [
+      199,
+      196,
+      186
+    ],
+    "focus": [
+      223,
+      255,
+      143
+    ],
+    "accent": [
+      0,
+      110,
+      99
+    ],
+    "accent-hover": [
+      2,
+      103,
+      93
+    ],
+    "accent-active": [
+      4,
+      97,
+      88
+    ],
+    "on-accent": [
+      255,
+      244,
+      232
+    ],
+    "accent-soft": [
+      26,
+      74,
+      69
+    ],
+    "accent-ink": [
+      171,
+      200,
+      188
+    ],
+    "brand": [
+      0,
+      110,
+      99
+    ],
+    "brand-hover": [
+      2,
+      103,
+      93
+    ],
+    "brand-active": [
+      4,
+      97,
+      88
+    ],
+    "on-brand": [
+      255,
+      244,
+      232
+    ],
+    "brand-soft": [
+      26,
+      74,
+      69
+    ],
+    "brand-ink": [
+      171,
+      200,
+      188
+    ],
+    "brand-boundary": [
+      171,
+      200,
+      188
+    ],
+    "emphasis": [
+      255,
+      116,
+      71
+    ],
+    "emphasis-hover": [
+      255,
+      129,
+      87
+    ],
+    "emphasis-active": [
+      255,
+      142,
+      103
+    ],
+    "on-emphasis": [
+      20,
+      44,
+      42
+    ],
+    "emphasis-soft": [
+      47,
+      70,
+      64
+    ],
+    "success": [
+      223,
+      255,
+      143
+    ],
+    "success-hover": [
+      203,
+      234,
+      133
+    ],
+    "success-active": [
+      182,
+      213,
+      123
+    ],
+    "on-success": [
+      20,
+      44,
+      42
+    ],
+    "success-soft": [
+      44,
+      80,
+      69
+    ],
+    "success-ink": [
+      223,
+      255,
+      143
+    ],
+    "warn": [
+      255,
+      212,
+      71
+    ],
+    "warn-hover": [
+      232,
+      195,
+      68
+    ],
+    "warn-active": [
+      208,
+      178,
+      65
+    ],
+    "on-warn": [
+      20,
+      44,
+      42
+    ],
+    "warn-soft": [
+      47,
+      77,
+      64
+    ],
+    "warn-ink": [
+      255,
+      212,
+      71
+    ],
+    "info": [
+      181,
+      205,
+      255
+    ],
+    "info-hover": [
+      165,
+      189,
+      234
+    ],
+    "info-active": [
+      149,
+      173,
+      212
+    ],
+    "on-info": [
+      20,
+      44,
+      42
+    ],
+    "info-soft": [
+      42,
+      77,
+      76
+    ],
+    "info-ink": [
+      181,
+      205,
+      255
+    ],
+    "danger": [
+      252,
+      165,
+      165
+    ],
+    "danger-hover": [
+      253,
+      185,
+      182
+    ],
+    "danger-active": [
+      253,
+      201,
+      195
+    ],
+    "on-danger": [
+      20,
+      44,
+      42
+    ],
+    "danger-line": [
+      124,
+      98,
+      97
+    ],
+    "sidebar": [
+      17,
+      53,
+      50
+    ],
+    "sidebar-hover": [
+      37,
+      77,
+      72
+    ],
+    "sidebar-active": [
+      0,
+      110,
+      99
+    ]
+  },
+  "sources": {
+    "bg": "brand Deep Ink (reversed ground)",
+    "surface": "brand-mix: Deep Ink + 10% Maker Teal + 3% Warm Cream",
+    "panel": "brand-mix: Deep Ink + 16% Maker Teal + 6% Warm Cream",
+    "hover": "brand-mix: Deep Ink + 22% Maker Teal + 9% Warm Cream",
+    "line": "brand-mix: Deep Ink + 20% Maker Teal + 26% Warm Cream",
+    "outline": "brand-mix: Deep Ink + 10% Maker Teal + 55% Warm Cream",
+    "ink": "brand (reversed text)",
+    "muted": "brand-mix: Warm Cream + 24% Deep Ink",
+    "focus": "brand Citron",
+    "accent": "brand Maker Teal; boundary supplied by accent-ink",
+    "accent-hover": "brand-mix: accent + 10% Ink",
+    "accent-active": "brand-mix: accent + 20% Ink",
+    "on-accent": "brand Warm Cream",
+    "accent-soft": "brand-mix: panel + 16% Maker Teal",
+    "accent-ink": "brand-mix: Maker Teal + 67% Warm Cream",
+    "brand": "= accent (tenant-overridable)",
+    "brand-hover": "= accent-hover (tenant-overridable)",
+    "brand-active": "= accent-active (tenant-overridable)",
+    "on-brand": "= on-accent",
+    "brand-soft": "= accent-soft",
+    "brand-ink": "= accent-ink",
+    "brand-boundary": "= accent-ink",
+    "emphasis": "brand",
+    "emphasis-hover": "brand-mix: emphasis + 10% Cream",
+    "emphasis-active": "brand-mix: emphasis + 20% Cream",
+    "on-emphasis": "brand (tested pair)",
+    "emphasis-soft": "brand-mix: panel + 7% Workshop Orange",
+    "success": "brand",
+    "success-hover": "brand-mix: success + 10% Ink",
+    "success-active": "brand-mix: success + 20% Ink",
+    "on-success": "brand (tested pair)",
+    "success-soft": "brand-mix: panel + 7% Citron",
+    "success-ink": "brand",
+    "warn": "brand",
+    "warn-hover": "brand-mix: warn + 10% Ink",
+    "warn-active": "brand-mix: warn + 20% Ink",
+    "on-warn": "brand (tested pair)",
+    "warn-soft": "brand-mix: panel + 7% Warm Yellow",
+    "warn-ink": "brand",
+    "info": "brand",
+    "info-hover": "brand-mix: info + 10% Ink",
+    "info-active": "brand-mix: info + 20% Ink",
+    "on-info": "brand (tested pair)",
+    "info-soft": "brand-mix: panel + 7% Sky Blue",
+    "info-ink": "brand",
+    "danger": "Yuyu (sampled #FCA5A5)",
+    "danger-hover": "Yuyu-mix: #FCA5A5 + 25% Cream",
+    "danger-active": "Yuyu-mix: #FCA5A5 + 45% Cream",
+    "on-danger": "brand",
+    "danger-line": "Yuyu-mix: Ink + 45% #FCA5A5",
+    "sidebar": "brand-mix: Deep Ink + 14% Maker Teal",
+    "sidebar-hover": "= hover",
+    "sidebar-active": "= accent"
+  }
+}

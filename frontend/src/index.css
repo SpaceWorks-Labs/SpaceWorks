@@ -99,60 +99,63 @@
     --color-sidebar-active: 0 110 99;
     --shadow-color: 20 44 42;
   }
-  :root.dark {
+  /* Dark: Deep Ink + Maker Teal (+ Cream) brand-mixes; welcome-and-dark-spec.md §6.2.
+     .sw-island-dark applies the same set to one subtree (the light-mode sign-in brand panel). */
+  :root.dark,
+  .sw-island-dark {
     color-scheme: dark;
     --color-bg: 20 44 42;
-    --color-surface: 34 56 53;
-    --color-panel: 48 68 65;
-    --color-hover: 60 78 74;
-    --color-line: 86 100 95;
-    --color-outline: 149 154 147;
+    --color-surface: 25 57 53;
+    --color-panel: 31 67 63;
+    --color-hover: 37 77 72;
+    --color-line: 77 109 103;
+    --color-outline: 147 161 152;
     --color-ink: 255 244 232;
-    --color-muted: 189 188 179;
-    --color-focus: 163 196 184;
+    --color-muted: 199 196 186;
+    --color-focus: 223 255 143;
     --color-accent: 0 110 99;
     --color-accent-hover: 2 103 93;
     --color-accent-active: 4 97 88;
     --color-on-accent: 255 244 232;
-    --color-accent-soft: 45 71 67;
-    --color-accent-ink: 163 196 184;
+    --color-accent-soft: 26 74 69;
+    --color-accent-ink: 171 200 188;
     --color-brand: 0 110 99;
     --color-brand-hover: 2 103 93;
     --color-brand-active: 4 97 88;
     --color-on-brand: 255 244 232;
-    --color-brand-soft: 45 71 67;
-    --color-brand-ink: 163 196 184;
-    --color-brand-boundary: 163 196 184;
+    --color-brand-soft: 26 74 69;
+    --color-brand-ink: 171 200 188;
+    --color-brand-boundary: 171 200 188;
     --color-emphasis: 255 116 71;
     --color-emphasis-hover: 255 129 87;
     --color-emphasis-active: 255 142 103;
     --color-on-emphasis: 20 44 42;
-    --color-emphasis-soft: 60 71 65;
+    --color-emphasis-soft: 47 70 64;
     --color-success: 223 255 143;
     --color-success-hover: 203 234 133;
     --color-success-active: 182 213 123;
     --color-on-success: 20 44 42;
-    --color-success-soft: 59 79 70;
+    --color-success-soft: 44 80 69;
     --color-success-ink: 223 255 143;
     --color-warn: 255 212 71;
     --color-warn-hover: 232 195 68;
     --color-warn-active: 208 178 65;
     --color-on-warn: 20 44 42;
-    --color-warn-soft: 60 77 65;
+    --color-warn-soft: 47 77 64;
     --color-warn-ink: 255 212 71;
     --color-info: 181 205 255;
     --color-info-hover: 165 189 234;
     --color-info-active: 149 173 212;
     --color-on-info: 20 44 42;
-    --color-info-soft: 56 76 76;
+    --color-info-soft: 42 77 76;
     --color-info-ink: 181 205 255;
     --color-danger: 252 165 165;
     --color-danger-hover: 253 185 182;
     --color-danger-active: 253 201 195;
     --color-on-danger: 20 44 42;
     --color-danger-line: 124 98 97;
-    --color-sidebar: 27 50 48;
-    --color-sidebar-hover: 60 78 74;
+    --color-sidebar: 17 53 50;
+    --color-sidebar-hover: 37 77 72;
     --color-sidebar-active: 0 110 99;
     --shadow-color: 20 44 42;
   }

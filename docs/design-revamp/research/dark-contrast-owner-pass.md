@@ -1,3 +1,5 @@
+> **Superseded 2026-10-16** by `welcome-and-dark-spec.md` §6 and `dark-tokens-v3.json`: the owner approved the Deep Ink + Maker Teal ("teal-lit ink") dark surfaces, a Citron focus ring and solid status marks. Accent stays saturated Maker Teal. This page is kept as history.
+
 # Owner dark-mode contrast pass
 
 The owner retained the Deep Ink base and asked for stronger separation and saturated teal actions. Light tokens remain unchanged. All mixes use the original `brand_tokens_v2.py` sRGB-channel rounding and WCAG functions; the adapted copy and full console report are in `scratchpad/brand_tokens_owner_pass.py` and `scratchpad/dark-contrast-owner-pass.txt`. The companion JSON records every resulting token and its source.

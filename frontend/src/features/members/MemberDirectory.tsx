@@ -63,7 +63,7 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
   return (
     <section className="desk-panel p-5">
       <h2 className="title-panel">Members</h2>
-      <label className="mt-3 grid gap-1 text-sm">Search members<input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
+      <label className="mt-3 grid gap-1 text-sm sm:max-w-sm">Search members<input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
       {detail.isLoading ? <p className="text-sm text-muted">Loading profile…</p> : null}
       {detail.isError ? <p role="alert" className="text-sm text-danger">{detail.error instanceof Error ? detail.error.message : "Unable to load this profile."}</p> : null}
       {entries.length === 0 ? (
@@ -158,7 +158,7 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
                       {/* External and member-authored: noopener/noreferrer keeps the
                           destination from reaching back through window.opener. */}
                       <a
-                        className={`${linkTone.ink} underline`}
+                        className={`${linkTone.ink} inline-flex min-h-11 items-center break-all underline`}
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"

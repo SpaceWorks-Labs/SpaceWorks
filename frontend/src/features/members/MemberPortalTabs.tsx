@@ -37,6 +37,10 @@ export function MemberPortalTabs({ modules, active, children, workspace, user }:
   return <AppShell variant="member" compactNav="bottom-tabs" workspace={workspace} activeKey={active}
     nav={[{ key: "member", items }]} footerLinks={workspace ? [{ label: "View public page ↗", href: base.startsWith("/m/") ? base.replace(/\/member$/, "") : "/" }] : []}
     user={user}>
-    <div className="space-y-5">{children}</div>
+    {/* Below lg the shell pins a bottom tab bar. Sticky save bars sit above it, and a field
+        scrolled into view for the on-screen keyboard keeps clear of it. A list row's text keeps
+        at least 12rem, so on a phone its status/amount/actions drop under the title instead of
+        squeezing it to a few characters per line. */}
+    <div className="min-w-0 space-y-5 [&_:is(input,select,textarea)]:scroll-mb-28 [&_.sticky.bottom-0]:bottom-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom,0px))] lg:[&_.sticky.bottom-0]:bottom-0 [&_.rounded-2xl.flex-wrap>:first-child]:basis-48">{children}</div>
   </AppShell>;
 }

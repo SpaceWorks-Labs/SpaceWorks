@@ -38,8 +38,8 @@ function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSumma
   return (
     <section className={`desk-panel ${MAKERSPACE_TONES[summary.makerspace.id % MAKERSPACE_TONES.length]} p-5`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="title-panel">{summary.makerspace.name}</h2>
+        <div className="min-w-0 max-w-prose">
+          <h2 className="title-panel break-words">{summary.makerspace.name}</h2>
           <p className="mt-1 text-sm text-muted">
             This makerspace is closed. Outstanding charges can still be settled and receipts remain readable here.
           </p>

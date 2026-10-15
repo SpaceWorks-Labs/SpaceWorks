@@ -114,7 +114,8 @@ function CheckInQr({ makerspaceId, registrationId, title, startsAt, organisation
     </button>
     {/* Unmounted rather than hidden, so the blob is released and keyboard users cannot tab
         into an image that is not on screen. */}
-    {open ? <Modal open title="Your event ticket" onClose={() => setOpen(false)}>
+    {open ? <Modal open title="Your event ticket" onClose={() => setOpen(false)}
+      footer={<button type="button" className="desk-button w-full" onClick={() => setOpen(false)}>Done</button>}>
       {src ? <TicketCard organisation={organisation} title={title} fields={[{ label: "When", value: new Date(startsAt).toLocaleString() }, { label: "Registration", value: registrationId }]} qr={<img src={src} alt="Your check-in QR code" />} caption="Show this code at event check-in." /> : <p role="status">Loading your ticket…</p>}
     </Modal> : null}
     {open && error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}

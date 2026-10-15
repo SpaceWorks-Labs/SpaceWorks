@@ -121,7 +121,7 @@ export function PublicSelfCheckoutPage() {
       error={loanMutation.isError ? { size: "panel", tone: "danger", lead: "Couldn't complete this handover.", body: loanMutation.error.message } : undefined}
       result={loanMutation.isSuccess ? { tone: "success", title: mode === "checkout" ? "You've got it." : "Returned. Thanks!", summary: <ResultCard result={loanMutation.data} />,
         next: { label: mode === "checkout" ? "Borrow another" : "Return another", onClick: () => loanMutation.reset() } } : undefined}
-      work={<div className="grid gap-5"><MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} />
+      work={<div className="grid gap-5"><MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} fallback="logo" />
         <SegmentedControl label="Checkout mode" value={mode} options={[{ value: "checkout", label: "Borrow" }, { value: "return", label: "Return" }]} onChange={value => { setMode(value as Mode); setScannedPayload(""); }} />
         <p className="text-sm text-muted">{mode === "checkout" ? "Take a photo of the tool, then scan its QR label." : "Take a return photo and describe its condition, then scan its QR label."}</p>
         {mode === "checkout" ? <PublicEvidenceUpload key={`issue-${uploadKey}`} slug={makerspaceSlug} evidenceType="issue" disabled={loanMutation.isPending} onUploaded={setIssueEvidenceId} />

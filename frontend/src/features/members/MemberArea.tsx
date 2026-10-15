@@ -143,7 +143,7 @@ export function MemberArea() {
 
   if (restoring) return <CenteredCardLayout title="Your makerspace access" body="Restoring session..." primary={{ label: "Browse catalogue", href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} name={spaceName} logoUrl={spaceLogo} /></div>;
-  if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: bootstrap.data.branding?.display_name || bootstrap.data.makerspace.name, logo: bootstrap.data.branding?.logo_url || undefined } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
+  if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
   return <div style={brandStyle}>
     <MemberPortalTabs modules={bootstrap.data?.modules ?? []} active={activeTab}

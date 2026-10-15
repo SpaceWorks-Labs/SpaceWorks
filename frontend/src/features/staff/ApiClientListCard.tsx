@@ -114,6 +114,7 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, upda
         <span>Created <RelativeTime date={client.created_at} /> · {client.last_seen_at ? <>Last used <RelativeTime date={client.last_seen_at} /></> : "Never used"}</span></span>}
       right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={client.is_active ? "Active" : "Inactive"} tone={client.is_active ? "success" : "neutral"} />
         <StatusPill label={`${client.scopes.length} scopes`} />
+        {hasLegacy ? <StatusPill label="Legacy v1" tone="warn" /> : null}
         <button className="desk-button" onClick={() => setEditing(true)}>Edit scopes</button>
         <OverflowMenu label={`Actions for ${client.label}`} actions={[
           { label: "Rotate secret", onClick: () => setConfirm("rotate"), disabled: rotatePending, confirms: true },

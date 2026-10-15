@@ -122,6 +122,8 @@ export function MemberArea() {
   // page. Every other error (401 signed-out, network) still warrants the fallback.
   const archivedRemoved = archivedPayments.error instanceof StructuredApiError && archivedPayments.error.status === 404;
   const archivedUnknown = !archivedRemoved && (archivedPayments.isError || (bootstrap.isError && !archivedPayments.data?.length));
+  // The layout swaps its body for an error block when this holds, which would also swallow the sign-in controls.
+  const bootstrapBlocked = bootstrap.isError && !archivedUnknown && !archivedPayments.data?.length;
   const refresh = () => client.invalidateQueries({ queryKey: ["member"] });
   const request = useMutation({ mutationFn: (applicationAnswers: CustomAnswers) => memberRequest<{ outcome: string; state: string }>(`/public/${resolvedSlug}/membership-requests`, { method: "POST", body: JSON.stringify({ application_answers: applicationAnswers }) }), onSuccess: refresh });
   const accept = useMutation({ mutationFn: () => memberRequest(`/member/makerspaces/${makerspaceId}/waiver/accept`, { method: "POST" }), onSuccess: refresh });
@@ -154,9 +156,9 @@ export function MemberArea() {
       user={unauthenticated ? { name: "Not signed in", menu: [{ label: "Sign in", onClick: () => setShowSignIn(true) }] }
         : { name: profile.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }],
         onSignOut: () => { void logout().catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
-    <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"}
+    <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
-      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrap.isError && !archivedUnknown && !archivedPayments.data?.length ? { status: "error", error: "Couldn't load your makerspace. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
+      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: "Couldn't load your makerspace. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
       primary={membership?.membership_status === "active" && bootstrap.data?.modules.includes("presence") ? { label: presence.data?.active ? "End presence" : "Start 2-hour presence", onClick: () => presence.data?.active ? end.mutate() : start.mutate(), pending: start.isPending || end.isPending } : undefined}>
     {membershipModuleOn ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
     {activeTab === "account" && profile.data ? <Link className="desk-button-brand inline-flex" to="/mfa">Manage two-step sign-in</Link> : null}
@@ -224,7 +226,14 @@ export function MemberArea() {
     {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <EmptyState message="Nothing to pay. You are all settled." /> : null}
     {activeTab === "payments" && payments.error ? <p role="alert" className="text-sm text-danger">{message(payments.error)}</p> : null}
     <SupportContact branding={bootstrap.data?.branding} />
-    </MemberScreenLayout></MemberSectionNavigation>
+    </MemberScreenLayout>
+    {/* A failed bootstrap must not strand a signed-out visitor: sign-in and invitation-code claim stay reachable. */}
+    {bootstrapBlocked ? <div className="mt-5 grid gap-5">
+      {unauthenticated && slug ? <MemberClaimRedemption slug={slug} onRedeemed={() => setClaimSession(true)} /> : null}
+      {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>Sign in to your account</button> : null}
+      {memberships.isError && !unauthenticated ? <Link className="desk-button-brand inline-flex" to="/admin">Sign in</Link> : null}
+    </div> : null}
+    </MemberSectionNavigation>
     </MemberPortalTabs>
   </div>;
 }

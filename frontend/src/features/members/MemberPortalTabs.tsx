@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Home, Package, CalendarClock, Calendar, Wallet, Inbox, User } from "lucide-react";
 import { AppShell, type ShellUser, type ShellWorkspace } from "../../components/shell";
 import { useLocation } from "react-router-dom";
+import { ThemeToggle } from "../../components/ThemeToggle";
 
 export const MEMBER_TABS = ["overview", "loans", "bookings", "events", "payments", "inbox", "account"] as const;
 export type MemberTab = typeof MEMBER_TABS[number];
@@ -41,6 +42,9 @@ export function MemberPortalTabs({ modules, active, children, workspace, user }:
         scrolled into view for the on-screen keyboard keeps clear of it. A list row's text keeps
         at least 12rem, so on a phone its status/amount/actions drop under the title instead of
         squeezing it to a few characters per line. */}
-    <div className="min-w-0 space-y-5 [&_:is(input,select,textarea)]:scroll-mb-28 [&_.sticky.bottom-0]:bottom-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom,0px))] lg:[&_.sticky.bottom-0]:bottom-0 [&_.rounded-2xl.flex-wrap>:first-child]:basis-48">{children}</div>
+    <div className="min-w-0 space-y-5 [&_:is(input,select,textarea)]:scroll-mb-28 [&_.sticky.bottom-0]:bottom-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom,0px))] lg:[&_.sticky.bottom-0]:bottom-0 [&_.rounded-2xl.flex-wrap>:first-child]:basis-48">
+      {/* Visible on every member screen, as the old header's toggle was; the user menu keeps its copy. */}
+      <div className="flex justify-end"><ThemeToggle variant="icon" /></div>
+      {children}</div>
   </AppShell>;
 }

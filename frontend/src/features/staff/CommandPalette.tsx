@@ -7,6 +7,7 @@ import { staffRequest } from "../../lib/api";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { TAB_LABELS } from "./staffAccess";
 import { staffTabPath } from "./staffTabs";
+import { SIDEBAR_LABELS } from "./sidebarSections";
 import { quickCreateCommands } from "./quickCreate";
 
 type Hit = { entity: string; id: number; label: string; tab: string; query: Record<string, string> };
@@ -30,7 +31,9 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
     enabled: open && term.length >= 2,
     staleTime: 0,
   });
-  const commands: Command[] = allowedTabs.filter((tab) => (TAB_LABELS[tab] ?? tab).toLowerCase().includes(search.toLowerCase().trim()))
+  // Match the old tab name and the sidebar's name ("Inbox", "Home", "Job pickups") so either finds the page.
+  const needle = search.toLowerCase().trim();
+  const commands: Command[] = allowedTabs.filter((tab) => [TAB_LABELS[tab] ?? tab, SIDEBAR_LABELS[tab]].some(name => name?.toLowerCase().includes(needle)))
     .map((tab) => ({ key: `tab-${tab}`, label: `Go to ${TAB_LABELS[tab] ?? tab}`, tab }));
   commands.push(...quickCreateCommands(actions, allowedTabs, isSuperadmin).filter(command => command.label.toLowerCase().includes(search.toLowerCase().trim())));
   if (term === search.trim() && term.length >= 2) results.data?.results.filter((hit) => allowedTabs.includes(hit.tab)).forEach((hit) => commands.push({ key: `${hit.entity}-${hit.id}`, label: `${TAB_LABELS[hit.tab] ?? hit.entity}: ${hit.label}`, tab: hit.tab, query: hit.query }));

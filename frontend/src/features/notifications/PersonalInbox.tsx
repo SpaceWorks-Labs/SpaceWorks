@@ -37,6 +37,13 @@ function dateGroup(value: string) {
   return date >= week ? "Earlier this week" : "Older";
 }
 
+/** The server decides the page size: a page with a `next` link is full, and the last page's size follows from the count. */
+function serverPageSize(data: Page<unknown>, page: number) {
+  const length = data.results.length;
+  if (data.next || page === 1) return Math.max(1, length);
+  return Math.max(1, Math.round((data.count - length) / (page - 1)));
+}
+
 export function PersonalInbox({ makerspaceId, member = false, announcement }: {
   makerspaceId: number; member?: boolean; announcement?: Action;
 }) {
@@ -101,7 +108,7 @@ export function PersonalInbox({ makerspaceId, member = false, announcement }: {
               {expanded[row.id] ? <p className="whitespace-pre-wrap break-words text-sm">{row.summary}</p> : null}
             </div> : null}
           </div></div>;
-      }) }} pagination={rows.data ? { page, pageSize: 24, count: rows.data.count,
+      }) }} pagination={rows.data ? { page, pageSize: serverPageSize(rows.data, page), count: rows.data.count,
         onChange: next => setPage({ page: next, tab: tabs.active }) } : undefined}
       detail={read.error || readAll.error ? <ErrorBlock error={read.error ?? readAll.error} /> : undefined} />
   </section>;

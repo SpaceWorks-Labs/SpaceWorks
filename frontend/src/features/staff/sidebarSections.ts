@@ -21,7 +21,7 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "settings", tabs: ["settings", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
   { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },
 ];
-const LABELS: Record<string, string> = {
+export const SIDEBAR_LABELS: Readonly<Record<string, string>> = {
   dashboard: "Home", notifications: "Inbox", handover: "Job pickups", inventory: "Items",
   needsfix: "Repair shelf", tobuy: "To buy", qr: "QR tools",
   "organization-analytics": "Org analytics", settings: "General", users: "Staff & roles", "email-logs": "Delivery log",
@@ -42,7 +42,7 @@ const ICONS: Record<string, LucideIcon> = {
 export function sidebarSections(moduleAllowedTabs: readonly string[], activeKey: string,
   path: (tab: string) => string = tab => staffTabPath(tab, false), onSelect?: (tab: string) => void,
   flat = false): ShellSection[] {
-  const item = (key: string): ShellItem => ({ key, label: LABELS[key] ?? TAB_LABELS[key], href: path(key), icon: ICONS[key], onSelect: () => onSelect?.(key) });
+  const item = (key: string): ShellItem => ({ key, label: SIDEBAR_LABELS[key] ?? TAB_LABELS[key], href: path(key), icon: ICONS[key], onSelect: () => onSelect?.(key) });
   if (flat) return [{ key: "desk", items: ["requests", "direct", "handover", "payments", "notifications"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
   return SIDEBAR_SECTIONS.map(section => {
     const items = section.tabs.filter(key => moduleAllowedTabs.includes(key)).map(item);

@@ -12,7 +12,7 @@ export function useRequestQueues(makerspaceId: number, values: Record<string, st
     id: values.id, page: probing ? 1 : Number(values[`${tab}Page`]),
     ordering: probing ? "" : values.ordering, search: probing ? "" : search,
     onPageChange: (page: number) => setPage(page, `${tab}Page`), resetKey: String(makerspaceId),
-    enabled: visible.includes(tab) && (probing || resolved === tab),
+    enabled: visible.includes(tab) && (probing || resolved === tab || resolved === "all"),
   });
   // Keep the established query-key prefixes so accept, issue, return and renew refresh these lists.
   const pending = usePaginatedQuery<HardwareRequest>(options("pending", "pending", "pending-requests"));
@@ -26,7 +26,9 @@ export function useRequestQueues(makerspaceId: number, values: Record<string, st
   const probeError = probing && !finding && !found && probes.some(query => query.isError);
   const notFound = probing && !finding && !found && !probeError;
   const tab = found ?? (probing ? visible[0] : resolved);
-  const selected = queries[tab ?? "pending"];
+  // In the "all" view every visible queue is on screen; otherwise just the selected one.
+  const involved: RequestTab[] = tab === "all" ? visible : [tab ?? "pending"];
+  const selected = queries[involved[0] ?? "pending"];
   const retry = () => { visible.forEach(key => { void queries[key].refetch(); }); };
-  return { tab, selected, finding, found, probeError, notFound, retry };
+  return { tab, selected, queries, involved, finding, found, probeError, notFound, retry };
 }

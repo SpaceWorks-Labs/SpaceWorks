@@ -68,7 +68,7 @@ export function MemberCardsPanel({ makerspaceId }: { makerspaceId: number }) {
       isEmpty={tabs.active === "cards" && rows.length === 0}
       empty={{ message: status === "active" ? "No cards yet. Issue one from the Issue tab." : "No revoked cards.",
         action: status === "active" ? { label: "Issue a card", onClick: () => tabs.select("issue") } : undefined }}
-      filters={tabs.active === "cards" ? { controls: <SegmentedControl label="Card status" value={status}
+      filters={tabs.active === "cards" ? { views: <SegmentedControl label="Card status" value={status}
         options={[{ value: "active", label: "Active" }, { value: "revoked", label: "Revoked" }]}
         onChange={value => { setStatus(value as CardStatus); setSelected([]); }} /> } : undefined}
       body={tabs.active === "cards" ? { kind: "table", table: <>

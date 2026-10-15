@@ -53,7 +53,7 @@ export function OperationsReports({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [grain, setGrain] = useState("day");
-  const [selectedReport, setSelectedReport] = useState<ReportKey>("most-lent");
+  const [selectedReport, setSelectedReport] = useState<ReportKey>("summary");
   const [columns, setColumns] = useState<string[]>([]);
   const [months, setMonths] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
@@ -116,7 +116,7 @@ export function OperationsReports({
   return <>
     <DetailLayout title="Reports" width="wide" asideSide="start"
       meta={[`Operations reporting for ${scopeLabel}.`, selected?.title ?? "Choose a report"]}
-      state={{ status: catalog.isLoading ? "loading" : catalog.error ? "error" : "ready", error: "Couldn't load reports. Try again.", onRetry: () => void catalog.refetch() }}
+      state={{ status: catalog.isLoading ? "loading" : "ready" }}
       isEmpty={reportsEnabled && Boolean(catalog.data && !catalogEntries.length)}
       empty={{ message: "No reports available yet. Enable the reporting modules to get started." }}
       actions={{ primary: !printingOnly ? { label: "Export", pending: exportReport.isPending, pendingLabel: "Exporting…",
@@ -172,7 +172,10 @@ export function OperationsReports({
             ) : null}
           </div>
         </div>
-        {catalog.error ? <p className="mt-3 text-sm text-danger">{catalog.error instanceof Error ? catalog.error.message : "Could not load report catalog."}</p> : null}
+        {catalog.error ? <div role="alert" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-danger">
+          <p>Couldn't load reports. Try again.{catalog.error instanceof Error && catalog.error.message ? ` ${catalog.error.message}` : ""}</p>
+          <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>Retry</button>
+        </div> : null}
         {selectedReport === "member-retention" ? <label className="eyebrow grid gap-1 mt-3">Retention months (blank: 3, 6, 12)<input className="desk-input" type="number" min={1} max={120} value={months} onChange={(event) => setMonths(event.target.value)} /></label> : null}
         {selectedReport === "payment-reconciliation" ? <div className="flex flex-wrap gap-2 mt-3">
           <label className="eyebrow grid gap-1">Report payment status<select className="desk-input max-w-full" value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}><option value="">All statuses</option>{PAYMENT_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>

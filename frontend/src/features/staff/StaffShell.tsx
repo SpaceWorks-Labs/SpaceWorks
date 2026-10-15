@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { skipToken, useQuery } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Cog } from "lucide-react";
 import { AppShell, JobTrayPill, type ShellWorkspace } from "../../components/shell";
 import type { StaffAuthUser } from "../../lib/api";
@@ -10,6 +10,7 @@ import { sidebarSections } from "./sidebarSections";
 import { useUnreadNotifications } from "./useUnreadNotifications";
 import { collectionResults, machineKeys, type MachineCollection, type MachineType } from "./machinesApi";
 import { machineTypeSegment, staffTabPath } from "./staffTabs";
+import { visibleRequestTabs } from "./panels/requestTabs";
 
 type Props = { activeMakerspace?: Makerspace; allowedTabs: readonly string[]; activeTab: string;
   guestOnly: boolean; singleTenantLocked: boolean; handoutOnly: boolean; user: StaffAuthUser;
@@ -27,7 +28,12 @@ export function StaffShell(props: Props) {
   });
   const types = useQuery<MachineCollection<MachineType>>({ queryKey: machineKeys.types(space?.id ?? -1), queryFn: skipToken, enabled: false });
   const path = (tab: string, subPath = "") => staffTabPath(tab, guestOnly, space?.slug, singleTenantLocked, subPath);
-  const tabs = space ? allowedTabs : allowedTabs.filter(key => ["organizations", "platform-dashboard"].includes(key));
+  // `requests` passes the tab gate for any hardware action, but each queue needs accept_request or
+  // issue_request. With neither, the page would be a dead end: hide it and open the front desk instead.
+  const noQueues = !visibleRequestTabs(guestOnly || props.handoutOnly, props.actions, props.isSuperadmin).length;
+  const redirectTab = ["direct", "handover"].find(key => allowedTabs.includes(key));
+  const tabs = space ? allowedTabs.filter(key => key !== "requests" || !noQueues || !redirectTab)
+    : allowedTabs.filter(key => ["organizations", "platform-dashboard"].includes(key));
   const nav = sidebarSections(tabs, activeTab, path, props.setTab, props.handoutOnly);
   let activeKey = activeTab;
   for (const section of nav) for (const item of [...section.items, ...section.more ?? []]) {
@@ -54,6 +60,7 @@ export function StaffShell(props: Props) {
       name: "Choose a space", subtitle: "Super Admin", avatar: { kind: "icon", icon: "Settings", tone: "neutral" },
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),
     } : undefined;
+  if (space && activeTab === "requests" && noQueues && redirectTab) return <Navigate replace to={path(redirectTab)} />;
   return <>
     <AppShell variant="staff" workspace={workspace} nav={nav} activeKey={activeKey}
       compactNav={props.handoutOnly ? "bottom-tabs" : "drawer"} footerLinks={publicPage}

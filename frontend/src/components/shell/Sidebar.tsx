@@ -5,6 +5,7 @@ import { ActionControl } from "../ui";
 import { SidebarSection } from "./SidebarSection";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { UserMenu } from "./UserMenu";
+import { navKeys } from "./navKeys";
 import { focusRing, type AppShellProps } from "./types";
 
 export function Sidebar({ variant, workspace, search, nav, activeKey, footerLinks = [], user, status, onNavigate }: Omit<AppShellProps, "children" | "compactNav"> & { onNavigate?: () => void }) {
@@ -20,7 +21,7 @@ export function Sidebar({ variant, workspace, search, nav, activeKey, footerLink
       </button> : null}
     </div>
     <nav aria-label={variant === "staff" ? "Staff sections" : "Member portal"}
-      data-sidebar-scroll className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3.5 pb-4">
+      data-sidebar-scroll onKeyDown={event => navKeys(event, "vertical")} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3.5 pb-4">
       {nav.map(section => <SidebarSection key={`${user.name}:${section.key}`} section={section} activeKey={activeKey} owner={user.name} onNavigate={onNavigate} />)}
       {footerLinks.map(action => <ActionControl key={action.label} action={action} className="w-full justify-start" />)}
     </nav>

@@ -53,6 +53,11 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
     method: "POST", body: JSON.stringify(testDestination ? { destination_id: Number(testDestination) } : {}),
   }), onSuccess: result => { setTestOpen(false); toast(`Test ${result.kind} #${result.id}: ${words(result.status)}.`, { tone: result.status === "failed" ? "error" : "success" }); return refresh(); } });
   const update = (key: keyof typeof filters, value: string) => { setFilters({ ...filters, [key]: value }); setPage(1); };
+  const clearFilters = () => { setFilters({ channel: "", status: "", feature: "", event: "", destination: "" }); setPage(1); };
+  const chipText: Record<keyof typeof filters, string> = { status: `status: ${words(filters.status)}`, channel: `channel: ${words(filters.channel)}`,
+    feature: `family: ${FAMILIES[filters.feature] ?? words(filters.feature)}`, event: `event: ${filters.event}`,
+    destination: `destination: ${destinations.data?.find(row => String(row.id) === filters.destination)?.label ?? filters.destination}` };
+  const chips = (Object.keys(filters) as (keyof typeof filters)[]).filter(key => filters[key]).map(key => ({ key, label: chipText[key], onRemove: () => update(key, "") }));
   const failed = logs.data?.results.filter(row => row.status === "failed").length ?? 0;
   const target = <label className="grid gap-2 text-sm font-semibold">Test target<select className="desk-input" value={testDestination} onChange={event => setTestDestination(event.target.value)}>
     <option value="">Email to my account</option>{destinations.data?.filter(row => row.is_active).map(row => <option key={row.id} value={row.id}>{row.label} ({words(row.channel)})</option>)}
@@ -73,8 +78,8 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
     isEmpty={!suppressed && logs.data?.results.length === 0}
     empty={{ message: "Nothing sent yet. Send a test to check your setup." }}
     filtered={Object.values(filters).some(Boolean)} filteredEmpty={{ message: "No deliveries match. Try another filter.",
-      action: { label: "Clear filters", onClick: () => { setFilters({ channel: "", status: "", feature: "", event: "", destination: "" }); setPage(1); } } }}
-    filters={suppressed ? undefined : { controls: <div className="grid gap-4">
+      action: { label: "Clear filters", onClick: clearFilters } }}
+    filters={suppressed ? undefined : { activeCount: chips.length, chips, onClear: clearFilters, controls: <div className="grid gap-4">
       <SegmentedControl label="Delivery status" value={filters.status} options={[{ value: "", label: "All" }, ...STATUSES.map(value => ({ value, label: words(value) }))]} onChange={value => update("status", value)} />
       {destinationState}<div className="grid gap-3 sm:grid-cols-3">
         <label className="grid gap-1 text-sm">Channel<select className="desk-input" value={filters.channel} onChange={event => update("channel", event.target.value)}>

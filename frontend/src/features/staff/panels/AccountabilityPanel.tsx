@@ -18,12 +18,14 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
   const report = useStaffGet<AccountabilityResponse>(["accountability", makerspace.id], `/admin/makerspace/${makerspace.id}/accountability`);
   const data = report.data;
   const anonymous = data?.anonymous_accountability;
+  // An empty (or unknown) `section` param means every section, as before the redesign.
   const tabs = useOpsTabs("section", [
+    { key: "all", label: "All" },
     { key: "overdue", label: "Overdue", count: data?.overdue.length },
     { key: "problems", label: "Problems", count: data?.problem_reports.length },
     { key: "offenders", label: "Repeat offenders", count: data?.repeat_offenders.length },
     { key: "restricted", label: "Restricted", count: data?.restrictions.length },
-  ], "overdue");
+  ], "all");
   const section = tabs.active;
 
   const refresh = () => {
@@ -58,9 +60,14 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
     if (target && reason) restrict.mutate({ userId: target.requester_id, reason });
   };
 
-  const selectedCount = section === "overdue" ? data?.overdue.length : section === "problems"
-    ? data?.problem_reports.length : section === "offenders" ? data?.repeat_offenders.length : data?.restrictions.length;
-  const empty = { overdue: "No overdue loans. Nice.", problems: "No open problem reports.",
+  const counts = { overdue: data?.overdue.length ?? 0, problems: data?.problem_reports.length ?? 0,
+    offenders: data?.repeat_offenders.length ?? 0, restricted: data?.restrictions.length ?? 0 };
+  const hasAnonymous = Boolean(anonymous && anonymous.total_issues > 0);
+  const selectedCount = section === "all" ? counts.overdue + counts.problems + counts.offenders + counts.restricted : counts[section as keyof typeof counts];
+  // In the combined view only sections with something in them are drawn, each under its own heading.
+  const on = (key: keyof typeof counts) => section === "all" ? counts[key] > 0 || (key === "offenders" && hasAnonymous) : section === key;
+  const heading = (label: string) => section === "all" ? <h2 className="title-section mt-2">{label}</h2> : null;
+  const empty = section === "all" ? "Nothing to follow up. No overdue loans, open problems or restrictions." : { overdue: "No overdue loans. Nice.", problems: "No open problem reports.",
     offenders: "No damage or loss on record against a named person.", restricted: "No one is restricted here." }[section]!;
   const status = (value: string) => <StatusPill label={opsStatusLabel(value)} tone={value === "active" ? "success" : "danger"} />;
   return <div onClickCapture={tabs.onClickCapture}>
@@ -71,18 +78,19 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
         { label: "Open problems", value: data?.problem_reports.length ?? 0, href: tabs.href("problems") },
         { label: "Repeat offenders", value: data?.repeat_offenders.length ?? 0, href: tabs.href("offenders") },
         { label: "Restricted", value: data?.restrictions.length ?? 0, href: tabs.href("restricted") },
-      ]} isEmpty={!selectedCount && !(section === "offenders" && anonymous && anonymous.total_issues > 0)}
+      ]} isEmpty={!selectedCount && !(["all", "offenders"].includes(section) && hasAnonymous)}
       empty={{ message: empty }} body={{ kind: "rows", rows: <>
-        {section === "overdue" ? <>{data?.overdue.map(row => <ListRow key={row.type + "-" + row.reference_id}
+        {on("overdue") ? <>{heading("Overdue loans")}{data?.overdue.map(row => <ListRow key={row.type + "-" + row.reference_id}
           title={row.label || "(unnamed)"} identity={{ kind: "avatar", name: row.requester_username, seed: row.requester_username }}
           meta={row.requester_username + " · " + (row.type === "direct" ? "Direct handout" : "Request")}
           right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={"Overdue " + row.days_overdue + " d"} tone="danger" />
             {row.type === "request" ? <a className="desk-button" href={"/m/" + makerspace.slug + "/admin/requests?id=" + row.reference_id}>Open loan</a> : null}</div>} />)}
           {data?.truncated.overdue ? <p className="text-sm text-muted">Showing the earliest overdue loans only.</p> : null}</> : null}
-        {section === "problems" ? <>{data?.problem_reports.map(row => <ProblemReportCard key={row.id} row={row}
+        {on("problems") ? <>{heading("Open problems")}{data?.problem_reports.map(row => <ProblemReportCard key={row.id} row={row}
           makerspace={makerspace} onTriaged={refreshAfterTriage} />)}
           {data?.truncated.problem_reports ? <p className="text-sm text-muted">Showing the oldest open reports only.</p> : null}</> : null}
-        {section === "offenders" ? <>
+        {on("offenders") ? <>
+          {heading("Repeat offenders")}
           {anonymous && anonymous.total_issues > 0 ? <div className="rounded-xl border border-line bg-surface p-4">
             <h2 className="title-section">Account-less loans</h2>
             <p className="mt-2 text-sm">{anonymous.total_issues} {anonymous.total_issues === 1 ? "incident" : "incidents"} · {anonymous.total_quantity} {anonymous.total_quantity === 1 ? "item" : "items"}</p>
@@ -98,10 +106,10 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
           {!data?.repeat_offenders.length ? <p className="text-sm text-muted">{empty}</p> : null}
           {data?.truncated.repeat_offenders ? <p className="text-sm text-muted">Showing the top offenders only.</p> : null}
         </> : null}
-        {section === "restricted" ? data?.restrictions.map(row => <ListRow key={row.requester_id} title={row.username}
+        {on("restricted") ? <>{heading("Restricted")}{data?.restrictions.map(row => <ListRow key={row.requester_id} title={row.username}
           identity={{ kind: "avatar", name: row.username, seed: String(row.requester_id) }}
           meta={row.restriction_reason} right={<div className="flex flex-wrap items-center gap-3">{status(row.access_status)}
-            {isSuperadmin ? <button className="desk-button" type="button" disabled={restore.isPending} onClick={() => restore.mutate(row.requester_id)}>{restore.isPending && restore.variables === row.requester_id ? "Restoring…" : "Restore access"}</button> : null}</div>} />) : null}
+            {isSuperadmin ? <button className="desk-button" type="button" disabled={restore.isPending} onClick={() => restore.mutate(row.requester_id)}>{restore.isPending && restore.variables === row.requester_id ? "Restoring…" : "Restore access"}</button> : null}</div>} />)}</> : null}
       </> }} detail={<>
         {restrict.error ? <ErrorBlock error={restrict.error} /> : null}
         {restore.error ? <ErrorBlock error={restore.error} /> : null}

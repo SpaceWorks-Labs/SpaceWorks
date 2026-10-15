@@ -3,7 +3,7 @@ import { Panel } from "./shared";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 
 const HARDWARE = ["most-lent", "top-borrowers", "damaged-missing", "damaged-lost", "recently-added", "taken-items", "active-loans", "returns", "qr-scans", "member-activity", "fablab-health", "machine-usage", "event-attendance", "booking-utilization", "maintenance-activity"];
-const FINANCE = ["payments-ledger", "revenue-over-time", "cash-book", "accounting-journal"];
+const FINANCE = ["payments-ledger", "payment-reconciliation", "revenue-over-time", "cash-book", "accounting-journal"];
 const COVERAGE = ["loan-throughput", "inventory-control", "evidence-compliance", "import-quality", "procurement-performance", "communications-health", "community-engagement", "module-operational-health", "certification-coverage"];
 type Selection = { selected: string | null; columns: string[]; catalog: ReportCatalogItem[]; specialists: Set<string>; preferGeneric: boolean };
 const Context = createContext<Selection | null>(null);

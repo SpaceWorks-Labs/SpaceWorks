@@ -19,6 +19,7 @@ import {
   type View,
 } from "./PublicInventoryParts";
 import { PublicRequestPanel, type ActiveTab } from "./PublicRequestPanel";
+import { useRequestDraft } from "./useRequestDraft";
 import { useInventoryCart } from "./publicInventory/useInventoryCart";
 import { usePublicCategories, usePublicInventory, useTenantBootstrap } from "./usePublicInventory";
 
@@ -39,6 +40,7 @@ export function PublicInventoryPage({ embedded }: { embedded?: EmbeddedCatalogue
   const { cart, selectedItems, incrementItem, decrementItem, clearCart } = useInventoryCart();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [requestTab, setRequestTab] = useState<ActiveTab>("borrow");
+  const requestDraft = useRequestDraft();
   const categoryParam = view.kind === "category" ? view.slug : "";
   const sortParam = view.kind === "sort" ? view.sort : "name";
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
@@ -97,7 +99,7 @@ export function PublicInventoryPage({ embedded }: { embedded?: EmbeddedCatalogue
     </QueryContent>
   </div>;
   const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access}
-    activeTab={requestTab} onActiveTabChange={setRequestTab} />;
+    activeTab={requestTab} onActiveTabChange={setRequestTab} draft={requestDraft} />;
   const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
   return <div style={brandStyle}>
     {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}

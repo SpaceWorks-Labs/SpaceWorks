@@ -4,7 +4,7 @@ import type { MachineServiceRequest } from "../../../../generated/api";
 
 // "Active" (everything not yet finished) is the default so running and ready jobs are never hidden
 // behind an empty Pending tab — the pre-revamp console listed every job at once.
-const ACTIVE = new Set(["pending", "accepted", "in_progress", "completed"]);
+const ACTIVE = new Set(["pending", "accepted", "in_progress", "completed", "failed"]);
 const statuses = [
   { key: "active", label: "Active" }, { key: "pending", label: "Pending" }, { key: "accepted", label: "Accepted" },
   { key: "in_progress", label: "In progress" }, { key: "completed", label: "Ready" },
@@ -15,7 +15,7 @@ const statuses = [
 export const serviceQueueStatusKeys = statuses.map(item => item.key);
 const matches = (key: string, status: string) => key === "all" || (key === "active" ? ACTIVE.has(status) : status === key);
 const emptyCopy: Record<string, string> = {
-  active: "No jobs waiting or running. New requests land here.", all: "No jobs yet. New requests land here.",
+  active: "No jobs waiting, running or needing a reprint. New requests land here.", all: "No jobs yet. New requests land here.",
 };
 export function ServiceQueueTabs({ rows, children, initialStatus = "active" }: {
   rows: MachineServiceRequest[] | undefined; children: (rows: MachineServiceRequest[] | undefined) => ReactNode; initialStatus?: string;

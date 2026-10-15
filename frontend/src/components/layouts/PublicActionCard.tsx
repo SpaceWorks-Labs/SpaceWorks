@@ -15,9 +15,10 @@ export type PublicActionCardProps = {
   /** onOpen runs before the sheet opens; secondary adds a second verb that opens the same sheet. */
   mobileBar: { summary: string; label: string; onOpen?: () => void; secondary?: { label: string; onOpen: () => void } };
 };
-function ActionCardContent({ title, summary, form, primary, secondary, note, state, doneContent }: PublicActionCardProps) {
+function ActionCardContent({ title, summary, form, primary, secondary, note, state, doneContent, inSheet = false }: PublicActionCardProps & { inSheet?: boolean }) {
   return <Card className="grid gap-4 shadow-overlay">
-    <h2 className="title-panel">{title}</h2>{summary}
+    {/* The phone sheet already titles itself; repeating it reads as a duplicate heading. */}
+    {inSheet ? null : <h2 className="title-panel">{title}</h2>}{summary}
     {state === "done" ? <div role="status">{doneContent ?? "Complete"}</div> : state === "closed" ? <p role="status">{note ?? "This action is closed."}</p>
       : <>{form}{primary ? <ActionControl action={primary} primary className="desk-button-brand w-full" /> : null}</>}
     {secondary?.length ? <div className="flex flex-wrap gap-2">{secondary.map(action => <ActionControl key={action.label} action={action} />)}</div> : null}
@@ -39,7 +40,7 @@ export function PublicActionCard(props: PublicActionCardProps) {
     </div>
     <Modal open={open} onClose={() => setOpen(false)} title={props.title}
       footer={<ActionControl action={{ label: "Close", onClick: () => setOpen(false) }} />}>
-      <ActionCardContent {...props} />
+      <ActionCardContent {...props} inSheet />
     </Modal>
   </>;
 }

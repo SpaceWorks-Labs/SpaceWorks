@@ -1,5 +1,5 @@
 import { SegmentedControl } from "../../components/ui";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { RequestCartItem } from "../../types/inventory";
@@ -8,6 +8,7 @@ import { getAccessToken, refreshAccessToken } from "../../lib/api";
 import { submitPublicRequest } from "./api";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { PublicToolScanPanel } from "./PublicToolScanPanel";
+import { useRequestDraft, newIdempotencyKey, type RequestDraft } from "./useRequestDraft";
 
 export type ActiveTab = "borrow" | "scan";
 
@@ -22,19 +23,9 @@ type PublicRequestPanelProps = {
   /** Lets the page open the panel straight on "Scan a tool" (the phone bar does). Uncontrolled when omitted. */
   activeTab?: ActiveTab;
   onActiveTabChange?: (tab: ActiveTab) => void;
+  /** The page owns the draft so it survives the phone sheet unmounting this panel. Own state when omitted. */
+  draft?: RequestDraft;
 };
-
-// The header is required for account-less submissions, and it is what makes a retry
-// idempotent: the same key with the same payload returns the original request. Held for
-// the lifetime of one composed request and rotated only after a successful submit, so a
-// network retry of the SAME attempt cannot create a second request.
-function newIdempotencyKey() {
-  const cryptoRef = globalThis.crypto;
-  if (cryptoRef && typeof cryptoRef.randomUUID === "function") {
-    return cryptoRef.randomUUID();
-  }
-  return `req-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
 
 export function PublicRequestPanel({
   items,
@@ -44,19 +35,18 @@ export function PublicRequestPanel({
   requestAccess,
   activeTab: controlledTab,
   onActiveTabChange,
+  draft: draftProp,
 }: PublicRequestPanelProps) {
   const queryClient = useQueryClient();
   const [ownTab, setOwnTab] = useState<ActiveTab>("borrow");
   const activeTab = controlledTab ?? ownTab;
   const setActiveTab = (tab: ActiveTab) => { setOwnTab(tab); onActiveTabChange?.(tab); };
-  const [requestedFor, setRequestedFor] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [contactName, setContactName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-  const [website, setWebsite] = useState("");
-  const [publicToken, setPublicToken] = useState("");
-  const idempotencyKey = useRef(newIdempotencyKey());
+  const ownDraft = useRequestDraft();
+  const {
+    requestedFor, setRequestedFor, submitted, setSubmitted, contactName, setContactName,
+    contactEmail, setContactEmail, contactPhone, setContactPhone, website, setWebsite,
+    publicToken, setPublicToken, idempotencyKey,
+  } = draftProp ?? ownDraft;
   // A signed-in member who RELOADED this page holds no in-memory access token -- it lives
   // behind the refresh cookie, and unlike `MemberArea` this page never hydrates. Without
   // the probe they would be classified as anonymous and their request filed against the

@@ -24,7 +24,7 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
         related_name="registrations",
     )
     # Admission provenance survives later changes to the event audience.
-    registration_audience = models.CharField(max_length=8, choices=Event.RegistrationAudience.choices, default=Event.RegistrationAudience.MEMBERS)
+    registration_audience = models.CharField(max_length=32, choices=Event.RegistrationAudience.choices, default=Event.RegistrationAudience.MEMBERS)
     ticket_type = models.ForeignKey("events.EventTicketType", on_delete=models.SET_NULL, null=True, blank=True)
     invite = models.ForeignKey("events.EventInvite", on_delete=models.SET_NULL, null=True, blank=True)
     promo_code = models.ForeignKey("events.EventPromoCode", on_delete=models.SET_NULL, null=True, blank=True)

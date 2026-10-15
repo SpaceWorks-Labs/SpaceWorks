@@ -8,7 +8,7 @@ from apps.hardware_requests.self_checkout_models import PublicToolLoan
 from apps.makerspaces.models import MakerspaceMembership, MakerspaceWaiver
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import servable_queryset
-from apps.makerspaces.waiver_state import current_acceptance
+from apps.makerspaces.waiver_state import acceptance_on_file_q, current_acceptance
 from apps.makerspaces import member_dashboard_service as dashboard
 from apps.makerspaces.member_loans import member_loans
 from apps.presence.models import PresenceSession
@@ -131,7 +131,7 @@ def _event_registrations(makerspace, member):
         "id", "checkin_token", "status", "created_at", "event__title",
         "event__starts_at", "event__ends_at", "event__status", "event__makerspace_id",
         "event__cancellation_cutoff_hours",
-        "registered_via_makerspace_id", "host_waiver_id",
+        "registered_via_makerspace_id", "host_waiver_id", "registration_audience",
     )
     if getattr(member, "_claim_audit_context", None) is not None:
         rows = rows.filter(event__makerspace=makerspace)
@@ -153,6 +153,13 @@ def _event_registrations(makerspace, member):
             is_active=True,
         ).values_list("makerspace_id", flat=True)
     )
+    # QR reads accept historical self or witnessed membership evidence too.
+    # Resolve all hosts together so dashboard cost does not grow per registration.
+    hosts_with_membership_evidence = set(
+        MakerspaceMembership.objects.filter(
+            user=member, makerspace_id__in=hosts_needing_waiver,
+        ).filter(acceptance_on_file_q()).values_list("makerspace_id", flat=True)
+    )
 
     def usable_token(row):
         # Must agree with `EventCheckInQrView`: a token advertised here whose QR route
@@ -162,9 +169,10 @@ def _event_registrations(makerspace, member):
             and row.registered_via_makerspace_id != row.event.makerspace_id
         )
         if (
-            visitor
+            (visitor or row.registration_audience == "participating_organizations")
             and row.host_waiver_id is None
             and row.event.makerspace_id in hosts_needing_waiver
+            and row.event.makerspace_id not in hosts_with_membership_evidence
         ):
             return False
         return (

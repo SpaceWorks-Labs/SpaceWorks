@@ -24,7 +24,7 @@ certification gating. Staff MFA is a separate question.
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `charges.bookings`; `payments.bookings` with Online payments |
 | Membership | `membership`, `member_accounts`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -185,6 +185,14 @@ Events can run with membership and the online payments rail off. Members-only re
 default audience; opt-in account registration, invitations, ticket types and promo codes
 support public workshops. Paid tickets still create core ledger charges for offline settlement.
 
+Opt-in `events.organization_audience` adds ?Participating organizations?: active members of
+this event?s organizer organizations and venue owner, directly or through their owned makerspaces,
+can register without joining the venue. Manager/affiliate links do not qualify. Public event
+labels name the usable organizations; membership loss leaves existing tickets readable.
+Portable imports block this audience until an authorized editor explicitly confirms the target
+organizations and ownership; ordinary edits and cloning cannot clear the block. Deployment
+backups preserve the original graph. Uninstall/purge retain the core money ledger.
+
 Event managers and organization organizers can invite staff to one event or series with
 selected permissions for details, registrations, invitations, check-in and scheduling.
 These staff can sign in and see only their granted events; grants confer no makerspace
@@ -324,6 +332,7 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `payments.membership` | `membership` | | Card rail for dues | Dues are still recorded and settled offline |
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
+| `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
 | `events.account_registration` | `events` | | Authenticated accounts can register for account-audience events | Events keep their members-only default |
 | `events.invites` | `events` | | Invite-only registration with expiring, limited-use codes | Invite audience and invite administration are refused |
 | `events.ticket_types` | `events` | | Public/member prices, sales windows and capacity per type | Flat event price applies |

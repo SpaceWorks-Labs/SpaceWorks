@@ -28,7 +28,7 @@ function dateRange(event: StaffEvent) {
   return `${new Date(event.starts_at).toLocaleString()} – ${new Date(event.ends_at).toLocaleString()}`;
 }
 
-export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
+export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspaceId: number; enabledFeatures?: string[] }) {
   const list = useUrlListState({ q: "", status: "", ordering: "starts_at", page: "1" });
   const { page, setPage } = list;
   const [params, setParams] = useSearchParams();
@@ -87,7 +87,7 @@ export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
     <div className="mb-3 flex gap-2" role="group" aria-label="Event type"><button className={creationMode === "single" ? "desk-button-primary" : "desk-button"} type="button" onClick={() => setCreationMode("single")}>One-time event</button><button className={creationMode === "series" ? "desk-button-primary" : "desk-button"} type="button" onClick={() => setCreationMode("series")}>Recurring series</button></div>
     <form data-create-event className="mb-5 rounded-xl border border-line bg-bg p-4" onSubmit={creationMode === "single" ? submit : submitSeries}>
       <h3 className="title-section mb-3">Create draft {creationMode === "single" ? "event" : "series"}</h3>
-      {creationMode === "single" ? <EventFields values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }} /> : <EventSeriesFields values={newSeriesValues} setValues={(next) => { if (next.registration_audience !== newSeriesValues.registration_audience) setSeriesAudienceEdited(true); setSeriesValues(next); }} />}
+      {creationMode === "single" ? <EventFields organizationAudienceEnabled={enabledFeatures.includes("events.organization_audience")} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }} /> : <EventSeriesFields organizationAudienceEnabled={enabledFeatures.includes("events.organization_audience")} values={newSeriesValues} setValues={(next) => { if (next.registration_audience !== newSeriesValues.registration_audience) setSeriesAudienceEdited(true); setSeriesValues(next); }} />}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button className="desk-button-primary" type="submit" disabled={events.isPending || create.isPending || createSeries.isPending}>{create.isPending || createSeries.isPending ? "Creating..." : creationMode === "single" ? "Create event" : "Create series"}</button>
         {create.error || createSeries.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(create.error || createSeries.error)}</p> : null}

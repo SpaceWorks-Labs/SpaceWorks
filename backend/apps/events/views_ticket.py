@@ -10,6 +10,7 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from apps.audit.services import record
+from apps.events.checkin_roster import host_waiver_state
 from apps.events.member_history import registrations_for_space
 from apps.events.models import EventRegistration
 from apps.events.participant_access import participant_space
@@ -18,7 +19,6 @@ from apps.events.views_checkin import CHECKABLE_EVENT_STATUSES
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.confirmation_render import render_confirmation_png
 from apps.makerspaces.guards import require_module
-from apps.makerspaces.models import MakerspaceWaiver
 
 
 class TicketRenderThrottle(UserRateThrottle):
@@ -38,12 +38,16 @@ def _png_available(registration):
     if (registration.status not in (EventRegistration.Status.REGISTERED, EventRegistration.Status.ATTENDED)
             or registration.event.status not in CHECKABLE_EVENT_STATUSES):
         return False
-    return not (
-        registration.registered_via_makerspace_id
-        and registration.registered_via_makerspace_id != registration.event.makerspace_id
-        and registration.host_waiver_id is None
-        and MakerspaceWaiver.objects.filter(makerspace_id=registration.event.makerspace_id, is_active=True).exists()
+    needs_waiver_evidence = (
+        registration.registration_audience == "participating_organizations"
+        or (
+            registration.registered_via_makerspace_id
+            and registration.registered_via_makerspace_id != registration.event.makerspace_id
+        )
     )
+    if needs_waiver_evidence:
+        return host_waiver_state(registration) != "missing"
+    return True
 
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 429)}

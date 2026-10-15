@@ -23,7 +23,11 @@ from apps.events.views_member_events import (
 )
 from apps.events.views_calendar import MemberEventCalendarFeedView, MemberEventCalendarView
 
+from .views_registration_calendar import MemberEventRegistrationCalendarView
+
 urlpatterns = [
+    path("makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/calendar.ics",
+         MemberEventRegistrationCalendarView.as_view(), name="member-event-registration-calendar"),
     path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/ticket/',
          MemberEventTicketView.as_view(), name='member-event-ticket'),
     path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/ticket.png',

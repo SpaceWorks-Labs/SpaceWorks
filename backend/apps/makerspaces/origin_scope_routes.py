@@ -5,6 +5,8 @@ from apps.makerspaces.origin_scope_model_lookups import (
     TARGET_SET_LOOKUPS,
 )
 
+PUBLIC_SLUG_ROUTES = {"public-event-organization-eligibility"}
+
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 
 MAKERSPACE_KWARG_ROUTES = {
@@ -153,7 +155,14 @@ def _authoritative_route_targets(request, view=None):
         or (url_name == 'admin-makerspace' and 'pk' in kwargs)
         or url_name in MODEL_LOOKUPS or url_name in TARGET_SET_LOOKUPS
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
-        or url_name in REPLAY_TOKEN_ROUTES)
+        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES)
+    if url_name in PUBLIC_SLUG_ROUTES:
+        from .lookup import get_public_makerspace
+        from django.http import Http404
+        try:
+            targets.add(get_public_makerspace(kwargs.get("makerspace_slug")).pk)
+        except Http404:
+            invalid = True
     if url_name in REPLAY_TOKEN_ROUTES:
         token = kwargs.get("public_token")
         resolved = apps.get_model("makerspaces.StationCredential").objects.filter(

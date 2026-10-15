@@ -1,3 +1,4 @@
+import { saveCalendarBlob } from "./eventCalendar";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
@@ -39,6 +40,10 @@ export function MemberEventTicketPage() {
     const blob = await memberRequestBlob(`${base}/ticket.png`);
     saveTicketBlob(blob, ticket.data?.event.title ?? "event");
   } });
+  const calendar = useMutation({ mutationFn: async () => {
+    const blob = await memberRequestBlob(`${base}/calendar.ics`);
+    saveCalendarBlob(blob, "registration");
+  } });
   const authError = identity.error || ticket.error;
   const unauthenticated = authError instanceof StructuredApiError && authError.status === 401;
   const current = authError ? undefined : ticket.data;
@@ -56,6 +61,8 @@ export function MemberEventTicketPage() {
         <p><time dateTime={current.event.starts_at}>{new Date(current.event.starts_at).toLocaleString()}</time>{current.event.location ? ` · ${current.event.location}` : ""}</p>
         {current.ticket_png_available && ["registered", "attended"].includes(current.status) ? <button className="desk-button-primary w-fit" type="button" disabled={download.isPending} onClick={() => download.mutate()}>{download.isPending ? "Preparing ticket..." : "Download ticket PNG"}</button> : <p className="text-sm text-muted">A ticket download is available once your registration is confirmed.</p>}
         {["registered", "attended"].includes(current.status) && ["published", "completed"].includes(current.event.status) ? <a className="desk-button w-fit" href={googleCalendarUrl(current.event)} target="_blank" rel="noopener noreferrer">Add to Google Calendar</a> : null}
+        <button className="desk-button w-fit" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>Download registration calendar</button>
+        {calendar.error ? <p role="alert" className="text-danger">Could not download this calendar.</p> : null}
         {download.error ? <p role="alert" className="text-danger">{download.error.message}</p> : null}
       </> : null}
     </section>

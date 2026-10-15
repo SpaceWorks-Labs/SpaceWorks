@@ -48,6 +48,15 @@ class OrganizationMakerspaceInline(TabularInline):
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(Organization)
 class OrganizationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
@@ -111,73 +120,6 @@ class OrganizationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             target=obj,
             meta={"slug": obj.slug},
         )
-
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-        for deleted in formset.deleted_objects:
-            makerspace = deleted.makerspace
-            relationship = deleted.relationship
-            organization_slug = deleted.organization.slug
-            deleted.delete()
-            audit.record(
-                request.user,
-                "organization.link_removed",
-                makerspace=makerspace,
-                target=form.instance,
-                meta={
-                    "organization_slug": organization_slug,
-                    "relationship": relationship,
-                },
-            )
-        for instance in instances:
-            created = instance.pk is None
-            if isinstance(instance, OrganizationMakerspace) and created:
-                instance.created_by = request.user
-            instance.save()
-            if isinstance(instance, OrganizationMakerspace):
-                audit.record(
-                    request.user,
-                    "organization.link_created" if created
-                    else "organization.link_updated",
-                    makerspace=instance.makerspace,
-                    target=instance,
-                    meta={
-                        "organization_slug": instance.organization.slug,
-                        "relationship": instance.relationship,
-                    },
-                )
-        formset.save_m2m()
-
-
-@admin.register(OrganizationMakerspace)
-class OrganizationMakerspaceAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    list_display = (
-        "organization",
-        "makerspace",
-        "relationship",
-        "created_by",
-        "created_at",
-    )
-    list_filter = ("relationship", "makerspace")
-    search_fields = ("organization__name", "organization__slug", "makerspace__name")
-    autocomplete_fields = ("organization", "makerspace")
-    readonly_fields = ("created_by", "created_at", "updated_at")
-
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-        audit.record(
-            request.user,
-            "organization.link_updated" if change else "organization.link_created",
-            makerspace=obj.makerspace,
-            target=obj,
-            meta={
-                "organization_slug": obj.organization.slug,
-                "relationship": obj.relationship,
-            },
-        )
-
 
 class OrganizationMembershipForm(forms.ModelForm):
     class Meta:
@@ -296,3 +238,5 @@ class OrganizationMembershipAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
                 "granted_actions": sorted(obj.granted_actions or []),
             },
         )
+
+from .admin_links import OrganizationMakerspaceAdmin  # noqa: F401 - registration and compatibility

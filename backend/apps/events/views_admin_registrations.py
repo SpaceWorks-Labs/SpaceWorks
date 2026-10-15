@@ -55,6 +55,8 @@ class EventRegistrationListView(APIView):
         )
         paginator = _RegistrationPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
+        from .organization_audience import annotate_roster_eligibility
+        annotate_roster_eligibility(event, page)
         context = scoped_payment_context(
             request.user,
             rbac.Action.MANAGE_EVENTS,

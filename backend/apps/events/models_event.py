@@ -22,8 +22,10 @@ class Event(models.Model):
         MEMBERS = "members", "Members"
         ACCOUNTS = "accounts", "Authenticated accounts"
         INVITE = "invite", "Invited accounts"
+        PARTICIPATING_ORGANIZATIONS = "participating_organizations", "Participating organizations"
 
-    registration_audience = models.CharField(max_length=8, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
+    organization_admission_blocked = models.BooleanField(default=False, editable=False)
+    registration_audience = models.CharField(max_length=32, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
     category = models.ForeignKey("events.EventCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
     tags = models.JSONField(default=list, blank=True)
 

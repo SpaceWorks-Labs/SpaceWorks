@@ -2275,6 +2275,55 @@ in these rows, only a deployment-local keyed digest, so they need no PII encrypt
 or S3 collector. Events module purge and whole-tenant purge delete both concrete models;
 retention registration survives tombstoning even though discovery and routes disappear.
 
+### Participating-organizations audience (Lane G)
+
+`participating_organizations` requires `events.organization_audience` (Events parent,
+default off); it needs neither membership installation nor account-registration features.
+The live candidate set is the event's organizer organizations plus its venue's OWNER
+organization. Manager/affiliate links and accepted collaborators add no organization.
+Active direct organization members qualify regardless of action grants; active members
+of the candidates' OWNER-linked spaces also qualify. Accounts must be persisted, active,
+unrestricted and non-stub. Organizations must be active; public-profile consent is not
+eligibility. Both venue and contributing spaces use canonical servability and exclude
+hard-hidden spaces, including for local members and superadmins. No membership or RBAC
+identity is created. The venue remains the PII, audit, money and routing anchor.
+
+`organizations/audience.py` is the reusable, always-present batched membership predicate.
+The events adapter `organization_audience.py` fences event -> all discovered makerspaces
+(sorted PK) -> organizations -> accounts (NO KEY UPDATE) -> links -> memberships, then
+rechecks the proof. Ownership changing during root discovery refuses with a retryable
+409 rather than acquiring an out-of-order root. Organization console and standalone
+admin owner-link mutations route through `services_console.change_link`; the inline
+under Organization is read-only to avoid parent-first owner writes. Series organizer
+projection/removal locks all affected occurrences before the makerspace root.
+
+Registration, re-registration, approval, automatic/manual promotion and cancellation undo
+all apply the live predicate under the event lock. Automatic FIFO skips ineligible rows
+without changing their queue, quote or debt; explicit operations refuse atomically.
+Optional code/email invites require the invite feature and cannot substitute for membership.
+Bound codes and email resolution require verified email, and failed admission consumes
+no invite/promo. Public/staff/partner registration share host-waiver checking/stamping:
+current explicit self-consent or already-recorded current consent is required. Staff cannot
+assert another person's acceptance. Partner membership, collaboration, waiver and module
+requirements remain additional requirements, with no presence-session dependency.
+
+Public projections expose only usable organization IDs/names and the audience label.
+The separate authenticated eligibility advisory is private/no-store, varies on authorization
+and cookie, and carries no membership/proof identity. The staff roster's batched live
+`no_longer_eligible` flag is advisory; eligibility loss never cancels a ticket. Saved admission
+provenance permits exact-owner QR, PNG, one-registration ICS and cancellation after loss,
+subject to existing account/local-membership, tenant/module and recorded-waiver safeguards.
+It never grants membership history. Audience writes recheck `edit_details` under locks and
+audit old/new audiences and organization IDs, never membership lists.
+
+Event/series `organization_admission_blocked` is exported data but RESET to true during
+portable import. Global organizations, memberships and organizer bridges remain excluded;
+an unrelated target venue owner cannot make an imported audience ready. Only explicit
+staff audience reconfiguration clears the block; generated occurrences and clones inherit
+it. Deployment backup preserves the original graph/marker. These booleans add no PII,
+User edge or object ownership. Existing event datasets and local purge predicates retain
+responsibility; local purges never delete shared global organizations or foreign organizers.
+
 ### Event access, ticketing and discovery (WP1, 2026-10-11)
 
 - **Lane B staff tools (2026-10-15).** Duplication requires live `edit_details` authority,
@@ -3243,6 +3292,13 @@ decoded cleanly and no rollback happened. The decoder now requires canonical bas
 encoder always emits canonical output, so stored envelopes are unaffected.
 
 ## Organization accounts and organization-derived authority
+
+- **Admission membership is not authority.** The always-present `organizations/audience.py`
+  checks active direct memberships and active memberships in OWNER-linked servable, non-hidden
+  makerspaces against explicit organization IDs. It ignores action grants and profile-publication
+  consent and never widens RBAC. Events supplies its own live organizer/venue candidate set;
+  bookings imports no events policy. Owner-link admin writes use the console mutation service,
+  and the Organization inline is read-only to preserve makerspace-before-organization locks.
 
 - **An `Organization` is a platform entity, not a module.** It is creatable before any makerspace
   exists, spans makerspaces through `OrganizationMakerspace` (`owner | manager | affiliate`, at most

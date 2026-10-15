@@ -38,13 +38,16 @@ function failureMessage(error: StructuredApiError | null) {
   return error.detail ?? error.message;
 }
 
-export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "" }: {
+export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "", hostWaiver = null }: {
   makerspaceSlug: string; publicToken: string; waitlist: boolean; approvalRequired: boolean;
-  customForm: CustomFormSchema; audience?: "members" | "accounts" | "invite";
+  customForm: CustomFormSchema; audience?: "members" | "accounts" | "invite" | "participating_organizations";
+  hostWaiver?: { id: number; version: string; body: string } | null;
   tickets?: EventTicket[]; promoEnabled?: boolean; ticketRequired?: boolean; currency?: string;
 }) {
   const queryClient = useQueryClient();
   const tenantPath = useTenantPath(makerspaceSlug);
+  const [waiverAccepted, setWaiverAccepted] = useState(false);
+  useEffect(() => { setWaiverAccepted(false); }, [hostWaiver?.id, hostWaiver?.version]);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [needsPhone, setNeedsPhone] = useState(false);
@@ -58,13 +61,22 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   const successRef = useRef<HTMLDivElement>(null);
   const registration = useMutation({
     mutationFn: async () => {
-      const rawTransportBody = { ...(phone.trim() ? { phone: phone.trim() } : {}), ...(email.trim() ? { email: email.trim() } : {}), website, custom_answers: answers, ...(inviteCode ? { invite_code: inviteCode } : {}), ...(promoCode ? { promo_code: promoCode } : {}), ...(ticketId !== null ? { ticket_type_id: ticketId } : {}) };
+      const rawTransportBody = { ...(hostWaiver ? { host_waiver_id: hostWaiver.id, host_waiver_version: hostWaiver.version, host_waiver_accepted: waiverAccepted } : {}), ...(phone.trim() ? { phone: phone.trim() } : {}), ...(email.trim() ? { email: email.trim() } : {}), website, custom_answers: answers, ...(inviteCode ? { invite_code: inviteCode } : {}), ...(promoCode ? { promo_code: promoCode } : {}), ...(ticketId !== null ? { ticket_type_id: ticketId } : {}) };
       return tenantPublicRequest<RegistrationResult>(makerspaceSlug, registerPath(makerspaceSlug, publicToken), {
         method: "POST", body: JSON.stringify(rawTransportBody),
       });
     },
-    onError: (error) => { if (error instanceof StructuredApiError) { if (error.body.phone) setNeedsPhone(true); if (error.body.email) setNeedsEmail(true); } },
+    onError: async (error) => {
+      if (!(error instanceof StructuredApiError)) return;
+      if (error.body.phone) setNeedsPhone(true);
+      if (error.body.email) setNeedsEmail(true);
+      if (error.code === "host_waiver_required") {
+        setWaiverAccepted(false);
+        await queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility", makerspaceSlug, publicToken] });
+      }
+    },
     onSuccess: async () => { await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility", makerspaceSlug, publicToken] }),
       queryClient.invalidateQueries({ queryKey: ["public-events", makerspaceSlug] }),
       queryClient.invalidateQueries({ queryKey: ["public-event", makerspaceSlug, publicToken] }),
       queryClient.invalidateQueries({ queryKey: ["member", makerspaceSlug, "activity"] }),
@@ -86,6 +98,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     event.preventDefault();
     const errors = validateCustomAnswers(customForm, answers);
     setClientErrors(errors);
+    if (hostWaiver && !waiverAccepted) { setClientErrors({ waiver: "Accept the current host waiver." }); return; }
     if (tickets.length && ticketId === null) { setClientErrors({ ticket: "Choose a ticket type." }); return; }
     if (audience === "invite" && !inviteCode.trim()) { setClientErrors({ invite: "Enter your invitation code." }); return; }
     if (Object.keys(errors).length) return;
@@ -102,6 +115,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={registration.isPending} />
     <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={currency} disabled={registration.isPending} />
     {audience === "invite" ? <label className="grid gap-1 text-sm">Invitation code<input className="desk-input" required maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
+    {hostWaiver ? <fieldset className="rounded-lg border border-line p-3"><legend>Host waiver</legend><p className="whitespace-pre-wrap text-sm">{hostWaiver.body}</p><label className="mt-2 flex gap-2"><input type="checkbox" checked={waiverAccepted} onChange={(e) => setWaiverAccepted(e.target.checked)} />I accept this host waiver (version {hostWaiver.version}).</label>{clientErrors.waiver ? <p role="alert">{clientErrors.waiver}</p> : null}</fieldset> : null}
     {promoEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
     {clientErrors.ticket || clientErrors.invite ? <p role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
     <CustomFormFields schema={customForm} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...clientErrors }} />

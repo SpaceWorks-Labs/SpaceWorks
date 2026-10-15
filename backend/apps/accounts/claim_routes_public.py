@@ -50,6 +50,10 @@ PUBLIC_CLAIM_ROUTES = {
     **_anonymous("public-printer-service-status"),
     **_anonymous("public-event-list"),
     **_anonymous("public-event-detail"),
+    **{("public-event-organization-eligibility", method): Refused(
+        "organization eligibility requires an account session"
+    ) for method in ("GET", "HEAD")},
+    ("public-event-organization-eligibility", "OPTIONS"): AnonymousRead(),
     # The organization directory is deployment-global read-only presentation; a walk-in
     # claim session reads it exactly like any anonymous visitor.
     **_anonymous("public-organization-detail"),

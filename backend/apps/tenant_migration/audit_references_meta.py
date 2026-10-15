@@ -233,16 +233,9 @@ AUDIT_META_REFERENCES.update(
         S, "accounts.User", ("organization.membership_deleted", "user_id"),
     )
 )
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "organizations.Organization",
-        ("event.organizers_updated", "old_organization_ids"),
-        ("event.organizers_updated", "organization_ids"),
-        ("organization.invitation_created", "organization_id"),
-        ("organization.invitation_redeemed", "organization_id"),
-        ("organization.invitation_revoked", "organization_id"),
-    )
-)
+from .audit_references_organization_audience import declarations as organization_audience_references
+AUDIT_META_REFERENCES.update(organization_audience_references(_reference, S))
+
 AUDIT_META_REFERENCES.update(
     _reference(
         S, "organizations.OrganizationMembership",

@@ -644,6 +644,7 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/event-calendar-feed/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-certificates/{id}/download/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/calendar.ics",
+  "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/calendar.ics",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/cancel/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/feedback/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/qr",
@@ -703,6 +704,7 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/events/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/calendar.ics",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/eligibility/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/feedback/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/register/",
   "/api/v1/public/{makerspace_slug}/inventory/",
@@ -1924,10 +1926,13 @@ export type CollaborativeEvent = {
   "host_name": string;
   "host_slug": string;
   "host_waiver": HostWaiver | null;
+  "consent_repair_required": boolean;
   "organizers": Array<EventOrganizerSummary>;
   "series": Record<string, unknown> | null;
   "show_registration_count": boolean;
   "registration_count": number | null;
+  "participating_organizations": Array<ParticipatingOrganization>;
+  "audience_label": string | null;
 };
 
 export type CollaborativeEventRegistrationInput = {
@@ -2599,6 +2604,9 @@ export type EventAdmin = {
   "staff_permissions": Array<string>;
   "can_manage_staff": boolean;
   "show_registration_count": boolean;
+  "participating_organizations": Array<ParticipatingOrganization>;
+  "audience_label": string | null;
+  "organization_admission_blocked": boolean;
 };
 
 export type EventAttendanceMark = {
@@ -2691,10 +2699,17 @@ export type EventCollaboratorReplace = {
   "slugs": Array<string>;
 };
 
-export type EventDefaultRegistrationAudienceEnum = "members" | "accounts" | "invite";
+export type EventDefaultRegistrationAudienceEnum = "members" | "accounts" | "invite" | "participating_organizations";
 
 export type EventDuplicate = {
   "attach_series"?: boolean;
+};
+
+export type EventEligibility = {
+  "eligible": boolean;
+  "reason": string | null;
+  "consent_repair_required": boolean;
+  "host_waiver": HostWaiverProjection | null;
 };
 
 export type EventEligibleMember = {
@@ -2747,6 +2762,7 @@ export type EventRegistrationAdmin = {
   "cancelled_at": string | null;
   "restore_until": string | null;
   "status_before_cancel": string;
+  "no_longer_eligible": boolean;
 };
 
 export type EventRegistrationAdminStatusEnum = "pending_approval" | "registered" | "waitlisted" | "rejected" | "cancelled" | "attended";
@@ -2800,6 +2816,10 @@ export type EventSeriesDetail = {
   "image_url": string;
   "staff_permissions": Array<string>;
   "can_manage_staff": boolean;
+  "participating_organizations": Array<ParticipatingOrganization>;
+  "audience_label": string | null;
+  "organization_admission_blocked": boolean;
+  "organization_audience_enabled": boolean;
 };
 
 export type EventSeriesListResponse = {
@@ -2859,7 +2879,7 @@ export type EventSeriesWrite = {
   "effective_from"?: string;
 };
 
-export type EventSeriesWriteRegistrationAudienceEnum = "members" | "accounts" | "invite";
+export type EventSeriesWriteRegistrationAudienceEnum = "members" | "accounts" | "invite" | "participating_organizations";
 
 export type EventStaffRegistration = {
   "member_id": number;
@@ -3147,6 +3167,12 @@ export type HostingError = {
 };
 
 export type HostWaiver = {
+  "id": number;
+  "version": string;
+  "body": string;
+};
+
+export type HostWaiverProjection = {
   "id": number;
   "version": string;
   "body": string;
@@ -6250,6 +6276,11 @@ export type PairingCreate = {
 
 export type PaperSizeEnum = "A4" | "LETTER" | "custom";
 
+export type ParticipatingOrganization = {
+  "id": number;
+  "name": string;
+};
+
 export type PasswordLoginResult = LoginResponse | MFAChallengeResponse;
 
 export type PasswordResetAcknowledgement = {
@@ -7670,6 +7701,8 @@ export type PublicEvent = {
 } | null;
   "show_registration_count": boolean;
   "registration_count": number | null;
+  "participating_organizations": Array<ParticipatingOrganization>;
+  "audience_label": string | null;
 };
 
 export type PublicEventRegistrationInput = {
@@ -7679,6 +7712,9 @@ export type PublicEventRegistrationInput = {
   "invite_code"?: string;
   "ticket_type_id"?: number;
   "promo_code"?: string;
+  "host_waiver_id"?: number | null;
+  "host_waiver_version"?: string | null;
+  "host_waiver_accepted"?: boolean;
 };
 
 export type PublicEventRegistrationResponse = {

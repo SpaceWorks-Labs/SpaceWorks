@@ -193,6 +193,11 @@ MEMBER_CLAIM_ROUTES = {
        for method in ("GET", "HEAD")},
     **_options("member-event-ticket"),
     **_options("member-event-ticket-png"),
+    **{("member-event-registration-calendar", method): Refused(
+        "registration calendars can contain foreign-hosted rows",
+        ownership=RowOwnership.MIXED_REFUSED,
+    ) for method in ("GET", "HEAD")},
+    **_options("member-event-registration-calendar"),
     ("member-event-calendar", "GET"): Refused(
         "event calendars can contain foreign-hosted registration rows",
         ownership=RowOwnership.MIXED_REFUSED,

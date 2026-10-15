@@ -8,12 +8,14 @@ from apps.events.capacity import (
     registration_is_open,
 )
 from apps.events.models import Event, EventRegistration
+from .serializers_organization_audience import OrganizationAudienceFields
 from .serializers_ticketing_public import EventTicketingPublicSerializer
 from apps.forms_schema.serializers import CustomFormSubmissionMixin
 from apps.inventory import public_image_storage
 
 
 PUBLIC_EVENT_FIELDS = (
+    'participating_organizations', 'audience_label',
     'public_token',
     'title',
     'description',
@@ -43,7 +45,7 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
     name = serializers.CharField(source='organization.name', read_only=True)
 
 
-class PublicEventSerializer(EventTicketingPublicSerializer):
+class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
     public_token = serializers.UUIDField(read_only=True)
     title = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
@@ -135,11 +137,27 @@ class PublicEventRegistrationInputSerializer(
     CustomFormSubmissionMixin,
     serializers.Serializer,
 ):
+    host_waiver_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, write_only=True)
+    host_waiver_version = serializers.CharField(max_length=64, required=False, allow_null=True, write_only=True)
+    host_waiver_accepted = serializers.BooleanField(required=False, default=False, write_only=True)
     phone = serializers.CharField(max_length=64, required=False, allow_blank=True, write_only=True)
     email = serializers.EmailField(required=False, allow_blank=True, write_only=True)
     invite_code = serializers.CharField(max_length=128, required=False, write_only=True)
     ticket_type_id = serializers.IntegerField(min_value=1, required=False, write_only=True)
     promo_code = serializers.CharField(max_length=128, required=False, write_only=True)
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        event = self.context["event"]
+        if request and request.user.is_authenticated and EventRegistration.objects.filter(
+            event=event, member=request.user,
+            status__in=(EventRegistration.Status.REGISTERED, EventRegistration.Status.WAITLISTED,
+                        EventRegistration.Status.PENDING_APPROVAL),
+        ).exists():
+            # An owned-row retry repairs consent only; answers stay on the saved row.
+            # The service rechecks ownership, eligibility and event state under locks.
+            return attrs
+        return super().validate(attrs)
 
     def custom_form_schema(self):
         return self.context['event'].custom_form

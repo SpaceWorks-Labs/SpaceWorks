@@ -8,6 +8,7 @@ from .presentation_catalog_types import P
 
 ENTRIES = (
     P("booking.space_rules_updated", "Booking space rules updated"),
+    P("event.audience_updated", "Event audience updated"),
     P("event.badge_template_updated", "Event badge template updated"),
     P("event.badges_generated", "Event badges generated"),
     P("event.calendar_feed_created", "Event calendar feed created"),
@@ -29,6 +30,8 @@ ENTRIES = (
     P("event.image_removed", "Event image removed"),
     P("event.image_updated", "Event image updated"),
     P("event.organizers_updated", "Event organizers updated"),
+    P("event.registration_calendar_downloaded", "Event registration calendar downloaded"),
+    P("event.series_audience_updated", "Event series audience updated"),
     P("event.series_cancelled", "Event series cancelled"),
     P("event.series_collaboration_accepted", "Event series collaboration accepted"),
     P("event.series_collaboration_declined", "Event series collaboration declined"),
@@ -54,8 +57,6 @@ ENTRIES = (
     P("organization.invitation_revoked", "Organization invitation revoked",
       ("organization_id",)),
     P("organization.link_created", "Organization link created"),
-    P("organization.link_removed", "Organization link removed",
-      ("organization_slug", "relationship")),
     P("organization.link_updated", "Organization link updated"),
     P("organization.membership_created", "Organization membership created"),
     P("organization.membership_deleted", "Organization membership deleted",

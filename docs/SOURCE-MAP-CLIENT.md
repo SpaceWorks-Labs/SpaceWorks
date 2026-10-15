@@ -20,6 +20,10 @@ and `staffTabs.ts` own its superadmin navigation and the manager usage tab.
   `frontend/src/features/auth/` + `members/MemberAuthPanel.tsx` — provider-config-driven social/member auth.
   `frontend/src/features/printing|bookings|forms|...` — feature slices. `frontend/src/lib/`,
   `components/ui/`, `types/`, `generated/api.ts`.
+- `frontend/src/features/events/OrganizationEventAdmission.tsx` ? signed-in account identity,
+  private per-account/event eligibility query, sign-in/error/loading states and current host consent.
+  `features/staff/EventOrganizationAudience.tsx` explains live candidates and offers explicit
+  target-import review; event/series pickers are feature gated and roster eligibility is advisory.
 - `frontend/src/features/events/` — the standalone anonymous PIN-station route. Its
   `EventCheckInStationPage.tsx` exchanges the event-scoped PIN, then reuses the offline roster/sync API,
   IndexedDB state and operator UI owned by `features/staff/eventCheckInOfflineApi.ts`,

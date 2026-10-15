@@ -140,7 +140,7 @@ export function StaffTabContent({
           }
         />
       ) : null}
-      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} /> : null}
+      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} enabledFeatures={activeMakerspace.enabled_features} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "organized" && !isSuperadmin ? <OrganizedEventsPanel /> : null}
       {activeTab === "organization-analytics" && !isSuperadmin && !singleTenantLocked ? (
         <OrganizationAnalyticsPanel makerspaces={makerspaces} />

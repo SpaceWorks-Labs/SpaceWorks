@@ -1,3 +1,4 @@
+import { OrganizationEventAdmission } from "../events/OrganizationEventAdmission";
 import { useState } from "react";
 import { downloadEventCalendar } from "../events/eventCalendar";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -42,13 +43,14 @@ export function PublicEventDetailPage() {
         {event.category ? <p className="text-sm text-muted">{event.category.name}</p> : null}
         {event.tags?.length ? <p className="text-sm text-muted">{event.tags.join(" · ")}</p> : null}
         {event.show_registration_count !== false && event.registration_count != null ? <p className="text-sm text-muted">{event.registration_count} registered</p> : null}
+        {event.audience_label ? <p className="text-sm font-semibold">{event.audience_label}</p> : null}
         <p className="whitespace-pre-wrap">{event.description}</p>
         <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
         <button className="desk-button w-fit" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate(event)}>Add to calendar</button>
         {calendar.error ? <p role="alert">Could not download this calendar.</p> : null}
         <button className="desk-button w-fit" type="button" onClick={async () => { setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: window.location.href }); else await navigator.clipboard.writeText(window.location.href); } catch { setShareError("Could not share this event."); } }}>Share event</button>
         {shareError ? <p role="alert">{shareError}</p> : null}
-        {event.registration_open ? <EventRegistrationForm key={`${makerspaceSlug}:${event.public_token}`} makerspaceSlug={makerspaceSlug} publicToken={event.public_token} waitlist={event.availability === "Full"} approvalRequired={event.registration_requires_approval} customForm={event.custom_form} audience={event.registration_audience} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} promoEnabled={event.promo_codes_enabled} currency={event.currency} /> : <p>Registration is closed.</p>}
+        {event.registration_audience === "participating_organizations" ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} /> : event.registration_open ? <EventRegistrationForm key={`${makerspaceSlug}:${event.public_token}`} makerspaceSlug={makerspaceSlug} publicToken={event.public_token} waitlist={event.availability === "Full"} approvalRequired={event.registration_requires_approval} customForm={event.custom_form} audience={event.registration_audience} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} promoEnabled={event.promo_codes_enabled} currency={event.currency} /> : <p>Registration is closed.</p>}
       </> : null}
     </div>
   </main>;

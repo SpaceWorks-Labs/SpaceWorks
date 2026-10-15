@@ -32,7 +32,8 @@ def duplicate_event(event, *, actor, attach_series=False):
         event_authority.require(actor, source, EDIT_DETAILS)
         values = copy_fields(source, EVENT_FIELDS | {"badge_template", "timezone_name"})
         values["title"] = source.title[:193].rstrip() + " (copy)"
-        clone = Event(makerspace=source.makerspace, created_by=actor, **values)
+        clone = Event(makerspace=source.makerspace, created_by=actor,
+                      organization_admission_blocked=source.organization_admission_blocked, **values)
         if attach_series:
             if not source.series_id:
                 from rest_framework.exceptions import ValidationError
@@ -43,6 +44,8 @@ def duplicate_event(event, *, actor, attach_series=False):
             local_start = source.starts_at.astimezone(ZoneInfo(series.recurrence_timezone))
             clone.series_occurrence_key = f"copy{uuid4().hex[:16]}:{local_start:%Y%m%dT%H%M%S}"
             clone.series_override_fields = sorted(INHERITABLE_FIELDS)
+        from .registration_access import validate_event_audience
+        validate_event_audience(clone)
         key = source.image_key
         source_prefix = f"event/{source.makerspace_id}/"
         if source.series_id and "image_key" not in (source.series_override_fields or []):

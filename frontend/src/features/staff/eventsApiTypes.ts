@@ -16,9 +16,12 @@ export type StaffEvent = {
   staff_permissions?: import("./eventStaffPermissions").EventPermission[];
   can_manage_staff?: boolean;
   ticketing_features?: string[];
+  participating_organizations?: { id: number; name: string }[];
+  audience_label?: string | null;
+  organization_admission_blocked?: boolean;
   id: number;
   makerspace_id: number;
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   category_id?: number | null; tags?: string[];
   title: string;
   description: string;
@@ -53,6 +56,7 @@ export type StaffEvent = {
 };
 
 export type EventRegistration = {
+  no_longer_eligible?: boolean;
   id: number;
   event_id: number;
   name: string;
@@ -68,7 +72,7 @@ export type EventRegistration = {
 };
 
 export type EventPayload = {
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   category_id?: number | null; tags?: string[];
   title: string;
   description: string;

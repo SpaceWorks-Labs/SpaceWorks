@@ -25,6 +25,12 @@ _DISABLE_ACCESS_SEQUENCE = (
 
 
 class MakerspaceMutationMixin:
+    def _validate_event_default(self, instance, values):
+        if values.get("event_default_registration_audience") == "participating_organizations":
+            from apps.makerspaces.platform import feature_enabled
+            if not feature_enabled(instance, "events.organization_audience"):
+                raise serializers.ValidationError({"event_default_registration_audience": "Enable organization audience first."})
+
     @transaction.atomic
     def create(self, validated_data):
         setup = validated_data.pop("creation_setup", None)
@@ -35,6 +41,7 @@ class MakerspaceMutationMixin:
             branding["display_name"] = public_display_name
             validated_data["branding_config"] = branding
         instance = super().create(validated_data)
+        self._validate_event_default(instance, validated_data)
         if domain_verification.is_self_host() and instance.frontend_domain:
             instance.frontend_domain_status = Makerspace.DomainStatus.VERIFIED
             instance.domain_verified_at = timezone.now()
@@ -84,6 +91,7 @@ class MakerspaceMutationMixin:
                 self._validate_access_change(locked, new_flag, is_superadmin)
             for field, value in validated_data.items():
                 setattr(locked, field, value)
+            self._validate_event_default(locked, validated_data)
             if (
                 "frontend_domain" in validated_data
                 and validated_data["frontend_domain"] != old_domain

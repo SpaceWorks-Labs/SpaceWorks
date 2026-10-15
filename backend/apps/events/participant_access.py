@@ -22,7 +22,7 @@ def participant_space(user, makerspace_id, registration_id):
     registration = get_object_or_404(
         EventRegistration.objects.select_related("event__makerspace").filter(
             member=user, event__makerspace_id=makerspace_id,
-            registration_audience__in=("accounts", "invite"),
+            registration_audience__in=("accounts", "invite", "participating_organizations"),
         ), pk=registration_id,
     )
     space = registration.event.makerspace

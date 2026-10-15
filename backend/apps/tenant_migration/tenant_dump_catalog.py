@@ -88,7 +88,7 @@ class TenantDumpCatalogError(AssertionError):
 # OIDC browser attempts now bind the staff/member surface; these transient rows remain DROP.
 # Lane B publication choice and cancellation/FIFO provenance. Literal reconstruction
 # reproduced the preceding pin before adding these four fields.
-CATALOG_SCHEMA_SHA256 = "cec957eeaef57523e5ac51195fab2eb1ab63b4408b36ea90db5ca26f878661ae"
+CATALOG_SCHEMA_SHA256 = "6f3c726485c592314fdb0a6d6acccfb158cfd4d45fe1ef0ec9f313220bb043dd"
 
 
 def catalog_models(apps_registry=apps):

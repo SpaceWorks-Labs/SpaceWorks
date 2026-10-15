@@ -36,7 +36,7 @@ export function EventRegisterMember({
   eventId: number;
   customForm: StaffEvent["custom_form"];
   disabled: boolean;
-  audience?: "members" | "accounts" | "invite"; ticketsEnabled?: boolean; promosEnabled?: boolean;
+  audience?: "members" | "accounts" | "invite" | "participating_organizations"; ticketsEnabled?: boolean; promosEnabled?: boolean;
 }) {
   const [promoCode, setPromoCode] = useState("");
   const [inviteCode, setInviteCode] = useState("");

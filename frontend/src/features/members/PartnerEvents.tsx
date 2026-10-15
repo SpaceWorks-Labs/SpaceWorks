@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { EventContactFallback } from "../events/EventContactFallback";
+import { EventConsentRepairForm } from "../events/EventConsentRepairForm";
 import { StructuredApiError } from "../../lib/api";
 import { EventTicketPicker } from "../events/EventTicketPicker";
 import { EventPrice } from "../events/EventPrice";
@@ -13,7 +14,7 @@ import { staffRequest } from "../../lib/api";
 
 const EVENT_TONES = ["border-accent", "border-secondary", "border-success", "border-warn"] as const;
 type CollaborativeEventWithPolicy = CollaborativeEvent & {
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   ticket_types?: EventTicket[]; ticket_selection_required?: boolean; promo_codes_enabled?: boolean;
   payment_amount?: string; currency?: string;
   registration_requires_approval: boolean;
@@ -46,6 +47,7 @@ export function PartnerEvents({
     retry: false,
   });
   const [openId, setOpenId] = useState<number | null>(null);
+  const [repairedConsent, setRepairedConsent] = useState<string[]>([]);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [needsPhone, setNeedsPhone] = useState(false);
@@ -135,6 +137,7 @@ export function PartnerEvents({
           // holds that acceptance and the POST path deliberately exempts them -- asking
           // again would be a second, meaningless agreement.
           const waiver = event.host_slug === slug ? null : event.host_waiver;
+          const consentKey = `${event.id}:${event.host_waiver?.id}:${event.host_waiver?.version}`;
           const open = openId === event.id;
           const tickets = event.ticket_types ?? [];
           const mustExpand = needsAnswers || Boolean(waiver) || Boolean(event.ticket_selection_required) || tickets.length > 0 || event.registration_audience === "invite" || Boolean(event.promo_codes_enabled);
@@ -189,6 +192,11 @@ export function PartnerEvents({
                 {event.promo_codes_enabled ? <label>Promo code (optional)<input className="desk-input" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
               </div> : null}
               {!event.registration_open && event.effective_registration_cutoff_at ? <p className="mt-2 text-xs text-muted">Closed at {new Date(event.effective_registration_cutoff_at).toLocaleString()}</p> : null}
+              {repairedConsent.includes(consentKey) ? <p role="status">Your registration consent has been updated.</p> :
+                event.consent_repair_required && event.host_waiver ? <EventConsentRepairForm
+                  key={consentKey} makerspaceSlug={event.host_slug} publicToken=""
+                  waiver={event.host_waiver} partner={{ makerspaceId, eventId: event.id, slug }}
+                  onRepaired={() => setRepairedConsent(current => [...current, consentKey])} /> : null}
               {/* Unmounted when closed rather than hidden, so keyboard users cannot tab
                   into fields for an event they are not registering for. */}
               {open && waiver ? (

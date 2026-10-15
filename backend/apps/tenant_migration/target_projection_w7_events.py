@@ -3,6 +3,9 @@ from .target_projection_types import TargetField
 from .tenant_dump_types import AuthorityDisposition as D, authority
 
 EVENT_FIELD_PROJECTION = {
+    **{(label, "organization_admission_blocked"): TargetField(
+        True, reason="Portable organization references are excluded; staff must explicitly review target-local audience.")
+       for label in ("events.Event", "events.EventSeries")},
     **{(label, field): TargetField(use_model_default=True, reason="Source keyed code/contact digests are never target credentials.") for label, field in (("events.EventInvite", "code_digest"), ("events.EventInvite", "email_digest"), ("events.EventPromoCode", "code_digest"))},
     **{(label, "revoked_at"): TargetField(resolver=timezone.now, reason="Source codes cannot grant admission or discounts on target.")
        for label in ("events.EventInvite", "events.EventPromoCode")},
@@ -14,6 +17,9 @@ EVENT_AUTHORITY_ENTRIES = tuple(
         ("events.EventInvite", "revoked_at"), ("events.EventPromoCode", "code_digest"),
         ("events.EventPromoCode", "revoked_at"),
     )
+) + tuple(
+    ((label, "organization_admission_blocked"), authority(D.RESET, "Target staff must deliberately review imported organization admission."))
+    for label in ("events.Event", "events.EventSeries")
 ) + tuple(
     (edge, authority(D.PRESERVE, reason))
     for edge, reason in (

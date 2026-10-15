@@ -128,15 +128,15 @@ class EventSeriesDetailView(APIView):
         if not manager and not any(event_authority.can(request.user, series, permission)
                                    for permission in (EDIT_DETAILS, PUBLISH_SCHEDULE)):
             raise PermissionDenied()
-        if any(key in request.data for key in services_series.RECURRENCE_FIELDS):
-            event_authority.require(request.user, series, PUBLISH_SCHEDULE)
-        if set(request.data) - services_series.RECURRENCE_FIELDS - {"effective_from"}:
-            event_authority.require(request.user, series, EDIT_DETAILS)
-        if 'payment_amount' in request.data and not event_authority.can_manage_grants(request.user, series):
-            raise PermissionDenied()
         serializer = EventSeriesWriteSerializer(series, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         changes = dict(serializer.validated_data)
+        if any(key in changes for key in services_series.RECURRENCE_FIELDS):
+            event_authority.require(request.user, series, PUBLISH_SCHEDULE)
+        if set(changes) - services_series.RECURRENCE_FIELDS - {"effective_from"}:
+            event_authority.require(request.user, series, EDIT_DETAILS)
+        if 'payment_amount' in changes and not event_authority.can_manage_grants(request.user, series):
+            raise PermissionDenied()
         effective_from = changes.pop("effective_from", None)
         if not manager and not changes:
             raise ValidationError({"detail": "Supply details or schedule changes."})

@@ -43,6 +43,12 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   The handover side owns `hardware_requests/kiosk_command_policy.py` (the literal operation table),
   `kiosk_online_commands.py` (work package + dispatch into existing workflows) and `kiosk_views.py`;
   `evidence/services_upload.py` is the shared row+staging-presign service.
+- `backend/apps/organizations/audience.py` ? always-present explicit-organization account
+  eligibility, batched SQL and membership-source locks. No separable-domain imports or RBAC
+  grants. `admin_links.py` routes owner-link admin mutations through `services_console.change_link`;
+  the original admin barrel preserves registration/import compatibility.
+- `backend/apps/makerspaces/capability_definitions_yuyu.py` ? parity feature definitions,
+  composed by the canonical capability catalogue and installer area discovery.
 - `backend/apps/organizations/` — `Organization` (platform entity, creatable before any makerspace, NOT a
   module_registry key), its opt-in public profile and cross-makerspace event catalogue,
   `OrganizationMakerspace` (the many-to-many link, at most one `owner` per space),

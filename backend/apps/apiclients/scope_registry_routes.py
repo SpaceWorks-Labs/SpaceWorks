@@ -58,6 +58,7 @@ _ROUTE_DEFINITIONS = (
         "public-printer-service-request", _WRITE, PUBLIC_WRITE_SCOPES,
         TARGET_TENANT_SLUG, False, True,
     ),
+    ("public-event-organization-eligibility", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-detail", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-list", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-organization-detail", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),

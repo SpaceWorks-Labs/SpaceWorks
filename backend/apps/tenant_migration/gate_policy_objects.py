@@ -37,7 +37,7 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.events.services_images.update_image": "Called by the tenant-resolved event image route.",
     "apps.events.services_series_images.remove_image": "Called by the tenant-resolved event series image route.",
     "apps.events.services_series_images.update_image": "Called by the tenant-resolved event series image route.",
-    "apps.events.services.update_event": (
+    "apps.events.services_event_details.update_event": (
         "Runs inside the tenant-resolved admin event route's transaction; it can clear "
         "image_key when an occurrence stops overriding its series template."
     ),

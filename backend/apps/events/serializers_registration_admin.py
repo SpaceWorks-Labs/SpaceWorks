@@ -9,13 +9,14 @@ from apps.operations.cancellation_restore import restore_deadline
 class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
     event_id = serializers.IntegerField(read_only=True)
     ticket_type_id = serializers.IntegerField(read_only=True, allow_null=True)
+    no_longer_eligible = serializers.BooleanField(read_only=True, default=False)
     payment = serializers.SerializerMethodField()
     restore_until = serializers.SerializerMethodField()
 
     class Meta:
         model = EventRegistration
         fields = (
-            'id', 'event_id', 'name', 'email', 'phone', 'custom_answers',
+            'no_longer_eligible', 'id', 'event_id', 'name', 'email', 'phone', 'custom_answers',
             'status', 'created_at', 'payment', 'ticket_type_id', 'quoted_amount', 'discount_amount',
             'cancelled_at', 'status_before_cancel', 'restore_until',
         )

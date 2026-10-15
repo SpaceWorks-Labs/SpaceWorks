@@ -65,7 +65,9 @@ def _lock(registration, actor):
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(registration.event.makerspace_id)
     assert_mapped_write_allowed(registration.event.makerspace_id)
-    event = services._locked_event(registration.event_id)
+    event = services._locked_event(registration.event_id, lock_makerspace=False)
+    from .organization_audience import lock_admission_sources
+    lock_admission_sources(event, event.registrations.values_list("member_id", flat=True))
     event.makerspace = require_module_locked(event.makerspace, "events")
     event_authority.require(actor, event, MANAGE_REGISTRATIONS)
     ticket_id = EventRegistration.objects.filter(pk=registration.pk).values_list("ticket_type_id", flat=True).get()
@@ -120,6 +122,8 @@ def restore_registration(registration, *, actor):
     via = locked.registered_via_makerspace or event.makerspace
     require_registration_access(event, locked.member, staff=True,
                                 collaborative=via.pk != event.makerspace_id, via=via)
+    from .organization_audience import require_queued_admission
+    require_queued_admission(event, locked)
     select_ticket(event, locked.ticket_type_id, locked.member)
     # Approval survives cancellation, but an approval from an earlier registration
     # cycle must not bypass a newly introduced approval requirement.

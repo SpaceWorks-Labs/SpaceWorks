@@ -42,7 +42,9 @@ def publish(event, *, actor):
     services._validate(locked)
     if locked.ends_at < timezone.now():
         raise EventInvalidTransition("Ended events cannot be published.")
-    require_module_locked(locked.makerspace, "events")
+    locked.makerspace = require_module_locked(locked.makerspace, "events")
+    from .registration_access import validate_event_audience
+    validate_event_audience(locked)
     limits.check_quota(locked.makerspace, "events", adding=1)
     locked.status = Event.Status.PUBLISHED
     locked.save(update_fields=["status", "updated_at"])

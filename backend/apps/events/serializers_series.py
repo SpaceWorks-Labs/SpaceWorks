@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from rest_framework import serializers
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -11,7 +13,15 @@ from .serializers_ticketing import TicketInputSerializer
 from .serializers_event_authority import EventAuthorityFields
 
 class EventSeriesWriteSerializer(serializers.Serializer):
-    registration_audience = serializers.ChoiceField(choices=("members", "accounts", "invite"), required=False)
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping):
+            return super().to_internal_value(data)
+        unknown = set(data) - set(self.fields)
+        if unknown:
+            raise serializers.ValidationError({key: "Unexpected field." for key in unknown})
+        return super().to_internal_value(data)
+
+    registration_audience = serializers.ChoiceField(choices=("members", "accounts", "invite", "participating_organizations"), required=False)
     ticket_types = TicketInputSerializer(many=True, required=False, write_only=True)
     title = serializers.CharField(max_length=200)
     description = serializers.CharField(allow_blank=True, default="", required=False)
@@ -73,12 +83,22 @@ class EventSeriesSummarySerializer(EventAuthorityFields, serializers.ModelSerial
         return obj.occurrences.filter(status__in=("draft", "published")).count()
 
 
-class EventSeriesDetailSerializer(EventSeriesSummarySerializer):
+from .serializers_organization_audience import OrganizationAudienceFields
+
+
+class EventSeriesDetailSerializer(OrganizationAudienceFields, EventSeriesSummarySerializer):
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
     image_url = serializers.SerializerMethodField()
+    organization_audience_enabled = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_organization_audience_enabled(self, obj):
+        from apps.makerspaces.platform import feature_enabled
+        return feature_enabled(obj.makerspace, "events.organization_audience")
 
     class Meta(EventSeriesSummarySerializer.Meta):
         fields = EventSeriesSummarySerializer.Meta.fields + (
+            "participating_organizations", "audience_label", "organization_admission_blocked", "organization_audience_enabled",
             "description", "location", "location_kind", "custom_form", "capacity",
             "payment_amount", "registration_requires_approval", "registration_audience",
             "cancellation_cutoff_hours",

@@ -42,19 +42,57 @@ def create_invite(event, *, actor, email="", max_uses=1, expires_at=None):
     return invite, code
 
 
-def redeem_invite(event, code, member):
+@transaction.atomic
+def redeem_invite(event, code, member, *, actor):
+    event = _locked_event(event.pk, lock_makerspace=False)
+    from .organization_audience import lock_admission_sources, require_organization_audience
+    lock_admission_sources(event, [getattr(member, "pk", None)])
+    event.makerspace = require_module_locked(event.makerspace, "events")
+    if member is not None:
+        from apps.accounts.models import User
+        member = User.objects.select_for_update(no_key=True).filter(pk=member.pk).first()
+    require_organization_audience(event, member)
     require_feature(event, "events.invites")
     invite = EventInvite.objects.select_for_update().filter(
         event=event, makerspace=event.makerspace, code_digest=code_digest(code or "", "invite"),
     ).first()
     if not invite or invite.revoked_at or invite.uses >= invite.max_uses or (
         invite.expires_at and invite.expires_at <= timezone.now()
-    ) or (invite.email_digest and (not member or not member.email or not hmac.compare_digest(
+    ) or (invite.email_digest and (not member or not member.email or not member.email_verified_at or not hmac.compare_digest(
         invite.email_digest, code_digest(member.email, "email")
     ))):
         raise NotFound("Invitation not found.")
     invite.uses += 1
     invite.save(update_fields=["uses"])
+    _audit(event, actor, "event.invite_consumed", invite, {"uses": invite.uses})
+    return invite
+
+
+@transaction.atomic
+def resolve_for_account(event, member, *, actor):
+    """Optional verified-email admission, never an alternative membership proof."""
+    event = _locked_event(event.pk, lock_makerspace=False)
+    from .organization_audience import lock_admission_sources, require_organization_audience
+    lock_admission_sources(event, [getattr(member, "pk", None)])
+    event.makerspace = require_module_locked(event.makerspace, "events")
+    if member is not None:
+        from apps.accounts.models import User
+        member = User.objects.select_for_update(no_key=True).filter(pk=member.pk).first()
+    require_organization_audience(event, member)
+    require_feature(event, "events.invites")
+    if not member or not member.email or not member.email_verified_at:
+        return None
+    rows = EventInvite.objects.select_for_update().filter(
+        event=event, makerspace=event.makerspace, email_digest=code_digest(member.email, "email"),
+        revoked_at__isnull=True,
+    ).order_by("pk")
+    now = timezone.now()
+    invite = next((row for row in rows if row.uses < row.max_uses
+                   and (row.expires_at is None or row.expires_at > now)), None)
+    if invite:
+        invite.uses += 1
+        invite.save(update_fields=["uses"])
+        _audit(event, actor, "event.invite_consumed", invite, {"uses": invite.uses})
     return invite
 
 

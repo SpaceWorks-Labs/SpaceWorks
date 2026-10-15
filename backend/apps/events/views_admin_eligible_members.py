@@ -36,13 +36,20 @@ class EventEligibleMemberListView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
-        registered = EventRegistration.objects.filter(event=event).exclude(
+        registered = EventRegistration.objects.filter(event=event, member_id__isnull=False).exclude(
             status=EventRegistration.Status.CANCELLED
         ).values_list('member_id', flat=True)
+        from .organization_audience import AUDIENCE, eligible_event_accounts
+        if event.registration_audience == AUDIENCE:
+            accounts = eligible_event_accounts(event).exclude(pk__in=registered).order_by("display_name", "pk")
+            return Response(EventEligibleMemberSerializer([
+                {"member_id": user.pk, "display_name": user.display_name or user.username}
+                for user in accounts
+            ], many=True).data)
         memberships = MakerspaceMembership.objects.select_related('user').filter(
             makerspace=event.makerspace, status='active', user__is_active=True,
             user__access_status=User.AccessStatus.ACTIVE,
-        ).exclude(user_id__in=[value for value in registered if value]).order_by(
+        ).exclude(user_id__in=registered).order_by(
             'user__display_name', 'user__username'
         )
         return Response(

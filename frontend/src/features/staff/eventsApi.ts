@@ -46,7 +46,7 @@ export {
 
 export function useEvents(makerspaceId: number, page = 1, query = "") {
   return useQuery({ queryKey: [...eventKeys.list(makerspaceId), page, query], queryFn: () =>
-    staffRequest<Paginated<StaffEvent> & { default_registration_audience?: "members" | "accounts" | "invite" }>(
+    staffRequest<Paginated<StaffEvent> & { default_registration_audience?: "members" | "accounts" | "invite" | "participating_organizations" }>(
       `${staffPath(EVENT_LIST_PATH, { makerspace_id: makerspaceId })}?${query || `page=${page}`}`,
     ) });
 }
@@ -65,6 +65,11 @@ export function useEventInvalidation(makerspaceId: number, eventId?: number) {
       queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       ...(eventId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
+      queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-event"] }),
       ]),
     ]);
   };
@@ -94,6 +99,11 @@ export function useUpdateEvent(makerspaceId: number, eventId: number) {
     ), onSuccess: async () => { await Promise.all([
       queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
+      queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-event"] }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
       queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
@@ -110,6 +120,11 @@ export function useReplaceEventOrganizers(makerspaceId: number, eventId: number)
     ),
     onSuccess: async () => Promise.all([
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
+      queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-event"] }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
       queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),

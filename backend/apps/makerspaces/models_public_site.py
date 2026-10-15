@@ -5,8 +5,8 @@ from django.db import models
 
 class PublicSiteSettings(models.Model):
     event_default_registration_audience = models.CharField(
-        max_length=8, default="members",
-        choices=[("members", "Members"), ("accounts", "Authenticated accounts"), ("invite", "Invited accounts")],
+        max_length=32, default="members",
+        choices=[("members", "Members"), ("accounts", "Authenticated accounts"), ("invite", "Invited accounts"), ("participating_organizations", "Participating organizations")],
     )
     public_inventory_enabled = models.BooleanField(default=True)
     public_site_enabled = models.BooleanField(default=True)

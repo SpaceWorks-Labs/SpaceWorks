@@ -1,0 +1,188 @@
+"""Event create/update service; explicit validation and transactional authority."""
+
+
+from django.db import transaction
+from django.utils import timezone
+from rest_framework import serializers
+
+from apps.makerspaces import limits
+from apps.makerspaces.guards import require_module_locked
+from apps.makerspaces.models import Makerspace
+from .capacity import CONFIRMED_STATUSES
+from .exceptions import CapacityConflict, EventInvalidTransition
+from .models import Event, EventRegistration
+from .services_core import (EVENT_FIELDS, INHERITABLE_FIELDS, _locked_event, _validate,
+                       _canonical_form, _audit, _refresh, _may_promote)
+from .services_registration_state import promote_automatically
+
+@transaction.atomic
+def create_event(
+    *, makerspace, actor, title, description, starts_at, ends_at, location,
+    capacity, is_public, location_kind=Event.LocationKind.OTHER, custom_form=None,
+    payment_amount=0, registration_requires_approval=False,
+    registration_cutoff_at=None, registration_cutoff_lead_minutes=None,
+    timezone_name=None, cancellation_cutoff_hours=None,
+    registration_audience=None, category_id=None, tags=None, show_registration_count=True,
+):
+    locked_space = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+    require_module_locked(locked_space, "events")
+    event = Event(
+        makerspace=locked_space,
+        registration_audience=registration_audience or locked_space.event_default_registration_audience, category_id=category_id, tags=tags or [],
+        created_by=actor,
+        show_registration_count=show_registration_count,
+        title=title,
+        description=description,
+        starts_at=starts_at,
+        ends_at=ends_at,
+        location=location,
+        location_kind=location_kind,
+        custom_form=_canonical_form(custom_form),
+        capacity=capacity,
+        payment_amount=payment_amount,
+        registration_requires_approval=registration_requires_approval,
+        cancellation_cutoff_hours=cancellation_cutoff_hours,
+        registration_cutoff_at=registration_cutoff_at,
+        registration_cutoff_lead_minutes=registration_cutoff_lead_minutes,
+        is_public=is_public,
+        **({"timezone_name": timezone_name} if timezone_name else {}),
+    )
+    from .registration_access import validate_event_audience
+    validate_event_audience(event)
+    _validate(event)
+    event.save()
+    _audit(event, actor, "event.created", event)
+    return _refresh(event)
+
+
+@transaction.atomic
+def update_event(event, *, actor, inherit_fields=(), **changes):
+    from apps.events.services_calendar import CALENDAR_EVENT_FIELDS, calendar_event_changed
+
+    locked = _locked_event(event.pk, lock_makerspace=False)
+    from .organization_audience import lock_admission_sources
+    original_audience = locked.registration_audience
+    prospective_audience = changes.get("registration_audience", original_audience)
+    if "registration_audience" in inherit_fields and locked.series_id:
+        prospective_audience = locked.series.registration_audience
+    locked.registration_audience = prospective_audience
+    # Promotion fences every participant; acquire the same complete account set now.
+    participant_ids = locked.registrations.values_list("member_id", flat=True)
+    lock_admission_sources(locked, [*participant_ids, getattr(actor, "pk", None)], include_authority=True)
+    locked.registration_audience = original_audience
+    locked.makerspace = require_module_locked(locked.makerspace, "events")
+    if locked.status not in (Event.Status.DRAFT, Event.Status.PUBLISHED):
+        raise EventInvalidTransition("Terminal events cannot be updated.")
+    unknown = set(changes) - EVENT_FIELDS
+    if unknown:
+        raise serializers.ValidationError(
+            {field: "This field cannot be updated." for field in sorted(unknown)}
+        )
+    inherit_fields = set(inherit_fields or ())
+    invalid_inherit = inherit_fields - INHERITABLE_FIELDS
+    if invalid_inherit:
+        raise serializers.ValidationError(
+            {field: "This field cannot inherit from a series." for field in invalid_inherit}
+        )
+    if inherit_fields & set(changes):
+        raise serializers.ValidationError(
+            {field: "A field cannot be changed and inherited together." for field in inherit_fields & set(changes)}
+        )
+    if inherit_fields and locked.series_id is None:
+        raise serializers.ValidationError({"inherit_fields": "This event is not in a series."})
+    if "registration_audience" in changes or "registration_audience" in inherit_fields:
+        from . import event_authority
+        from .event_permissions import EDIT_DETAILS
+        from .staff_grant_locks import lock_authority
+        actor = lock_authority(actor, locked)
+        event_authority.require(actor, locked, EDIT_DETAILS)
+    old_audience = locked.registration_audience
+    if inherit_fields:
+        from apps.events.services_series import occurrence_inherited_value
+
+        for field in inherit_fields:
+            changes[field] = occurrence_inherited_value(locked, field)
+
+    if 'custom_form' in changes:
+        changes['custom_form'] = _canonical_form(changes['custom_form'])
+    if (
+        "registration_requires_approval" in changes
+        and changes["registration_requires_approval"]
+        != locked.registration_requires_approval
+        and locked.status != Event.Status.DRAFT
+    ):
+        raise EventInvalidTransition(
+            "Approval policy can only be changed while the event is a draft."
+        )
+
+    now = timezone.now()
+    old_capacity, old_ends_at, old_image_key = locked.capacity, locked.ends_at, locked.image_key
+    for field, value in changes.items():
+        setattr(locked, field, value)
+    from .registration_access import validate_event_audience
+    validate_event_audience(locked)
+    _validate(locked)
+
+    confirmed = EventRegistration.objects.filter(
+        event=locked, status__in=CONFIRMED_STATUSES
+    ).count()
+    if locked.capacity > 0 and confirmed > locked.capacity:
+        raise CapacityConflict("Capacity cannot be below confirmed occupancy.")
+    if (
+        locked.status == Event.Status.PUBLISHED
+        and old_ends_at < now <= locked.ends_at
+    ):
+        limits.check_quota(locked.makerspace, "events", adding=1)
+
+    if "registration_audience" in changes:
+        # Explicit local review resumes admission for existing waiters in this transaction.
+        locked.organization_admission_blocked = False
+    promoted = []
+    capacity_changed = "capacity" in changes and locked.capacity != old_capacity
+    if (
+        _may_promote(locked, now)
+        and (locked.capacity == 0 or locked.capacity > confirmed)
+    ):
+        if not locked.registration_requires_approval:
+            promoted = promote_automatically(
+                locked,
+                actor,
+                None if locked.capacity == 0 else locked.capacity - confirmed,
+            )
+
+    if changes:
+        update_fields = set(changes)
+        if "registration_audience" in changes:
+            update_fields.add("organization_admission_blocked")
+        if locked.series_id:
+            overrides = set(locked.series_override_fields or [])
+            overrides.update((set(changes) & INHERITABLE_FIELDS) - inherit_fields)
+            overrides.difference_update(inherit_fields)
+            locked.series_override_fields = sorted(overrides)
+            update_fields.add("series_override_fields")
+        locked.save(update_fields=[*sorted(update_fields), "updated_at"])
+        if set(changes) & CALENDAR_EVENT_FIELDS:
+            calendar_event_changed(locked)
+        if "image_key" in inherit_fields and old_image_key:
+            from apps.inventory import public_image_storage
+
+            public_image_storage.release_public_image_on_commit(
+                locked.makerspace, old_image_key
+            )
+    meta = {"changed_fields": sorted(changes)}
+    if "registration_audience" in changes:
+        from .organization_audience import candidate_ids
+        _audit(locked, actor, "event.audience_updated", locked,
+               {"old_audience": old_audience, "new_audience": locked.registration_audience,
+                "organization_ids": sorted(candidate_ids(locked))})
+    if inherit_fields:
+        meta["inherited_fields"] = sorted(inherit_fields)
+    if capacity_changed:
+        meta.update(
+            old_capacity=old_capacity,
+            new_capacity=locked.capacity,
+        )
+    if capacity_changed or promoted:
+        meta["promoted_registration_ids"] = [row.pk for row in promoted]
+    _audit(locked, actor, "event.updated", locked, meta)
+    return _refresh(locked)

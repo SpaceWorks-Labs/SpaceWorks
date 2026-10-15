@@ -7,12 +7,8 @@ from apps.organizations.models import Organization, OrganizationMakerspace, Orga
 from .models import EventOrganizer, EventSeriesOrganizer
 
 
-def lock_authority(actor, target):
-    if actor is None:
-        return None
-    # The domain target and tenant are already locked. Organization parents precede
-    # their users/links/memberships, matching organization administration. Local role
-    # changes take the same tenant lock before touching memberships/roles.
+def authority_sources(target):
+    """Unlocked discovery; domain/tenant locks stabilize these bridge sets."""
     links = OrganizationMakerspace.objects.filter(makerspace_id=target.makerspace_id)
     events = EventOrganizer.objects.none()
     series = EventSeriesOrganizer.objects.none()
@@ -25,6 +21,16 @@ def lock_authority(actor, target):
     organization_ids = set(links.values_list("organization_id", flat=True))
     organization_ids.update(events.values_list("organization_id", flat=True))
     organization_ids.update(series.values_list("organization_id", flat=True))
+    return links, events, series, organization_ids
+
+
+def lock_authority(actor, target):
+    if actor is None:
+        return None
+    # The domain target and tenant are already locked. Organization parents precede
+    # their users/links/memberships, matching organization administration. Local role
+    # changes take the same tenant lock before touching memberships/roles.
+    links, events, series, organization_ids = authority_sources(target)
     list(Organization.objects.select_for_update().filter(pk__in=organization_ids).order_by("pk"))
     # Protect account status/credentials while allowing FK KEY SHARE on invitee
     # identities; reciprocal redemptions must not deadlock on the two User rows.

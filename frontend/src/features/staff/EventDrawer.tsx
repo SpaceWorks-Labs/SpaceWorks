@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { ConfirmDialog, DetailDrawer, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
+import { EventOrganizationAudience } from "./EventOrganizationAudience";
 import { EventDuplicateAction } from "./EventDuplicateAction";
 import { EventInvitesPanel } from "./EventInvitesPanel";
 import { EventTicketsPanel } from "./EventTicketsPanel";
@@ -66,13 +67,14 @@ export function EventDrawer({ eventId, makerspaceId, onClose }: {
       {eventQuery.error ? <EmptyState title="Unable to load event" description={eventErrorText(eventQuery.error)} /> : null}
       {event ? <div className="grid gap-5">
         <div className="flex flex-wrap items-center gap-2"><StatusBadge status={event.status} />{event.series_summary ? <span className="rounded-full border border-secondary px-2 py-1 text-xs font-semibold text-secondary-ink">Recurring · {event.series_summary.title}</span> : null}<span className="text-sm text-muted">{event.capacity === 0 ? "Unlimited capacity" : `${event.capacity} places`} · Registration {event.registration_open ? "open" : "closed"}</span></div>
+        <EventOrganizationAudience event={event} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} />
         {access.edit ? <EventDuplicateAction event={event} makerspaceId={makerspaceId} /> : null}
         {event.effective_registration_cutoff_at ? <p className="text-sm text-muted">Effective cutoff: <span className="font-mono">{new Date(event.effective_registration_cutoff_at).toLocaleString()}</span></p> : null}
         {access.edit ? <ImageUploader endpoint={`/admin/events/${eventId}/image`} currentUrl={event.image_url} label="Event photo (shown publicly)" shape="wide" disabled={readOnly} onChanged={invalidateEvent} /> : null}
         {access.edit || access.publish ? <form onSubmit={(e) => { e.preventDefault(); saveOccurrence(); }}>
           {event.series_summary ? <h3 className="title-section mb-3">Edit this occurrence</h3> : null}
           {access.manager ? <EventCategoriesField makerspaceId={makerspaceId} value={values.category_id ?? null} onChange={(category_id) => setValues({ ...values, category_id })} disabled={readOnly} /> : null}
-          <EventFields values={values} setValues={setValues} disabled={readOnly} approvalLocked={event.status !== "draft"} canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />
+          <EventFields organizationAudienceEnabled={event.ticketing_features?.includes("events.organization_audience")} values={values} setValues={setValues} disabled={readOnly} approvalLocked={event.status !== "draft"} canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />
           {!readOnly ? <button className="desk-button-primary mt-3" type="submit" disabled={update.isPending}>{update.isPending ? "Saving..." : "Save changes"}</button> : <p className="mt-3 text-sm text-muted">Terminal events are read-only.</p>}
         </form> : <p className="whitespace-pre-wrap text-sm text-muted">{event.description}</p>}
         {(access.edit || access.publish) && event.series_summary && event.series_override_fields.length && !readOnly ? <section><h3 className="title-section">Occurrence overrides</h3><p className="mt-1 text-sm text-muted">Reset a field to inherit the current series template again.</p><div className="mt-2 flex flex-wrap gap-2">{event.series_override_fields.filter((field) => field === "payment_amount" ? access.manager : ["starts_at", "ends_at"].includes(field) ? access.publish : access.edit).map((field) => <button key={field} className="desk-button" type="button" disabled={update.isPending} onClick={() => update.mutate({ inherit_fields: [field] })}>Reset {field.replace(/_/g, " ")}</button>)}</div></section> : null}

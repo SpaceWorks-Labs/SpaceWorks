@@ -44,6 +44,15 @@ Continued from [SOURCE-MAP.md](SOURCE-MAP.md); paths are relative to the reposit
   waitlist registrations, immutable check-in history and the event-owned `EventStationBinding`, feedback,
   certificate artifacts,
   recurring series, member feed credentials, makerspace collaboration and organization attribution.
+  `organization_audience.py` adapts the core organization membership predicate and locks its
+  live proof; `host_waivers.py` owns transactional current consent and audited stamping.
+  `serializers_organization_audience.py` / `views_organization_audience.py` separate public
+  attribution from private eligibility; `views_registration_calendar.py` serves exact-owner ICS.
+  `registration_locks.py` shares the event/source fence and registration locks.
+  `services_core.py` / `services_event_details.py`, `services_series_templates.py` /
+  `services_series_update.py` and `services_attendance_correction.py` keep mutations below
+  the ceiling behind explicit service barrels. `serializers_event_details.py` and
+  `serializers_admin_responses.py` split read/envelope contracts behind the existing barrel.
   `services.py` remains the audited transactional boundary for one-off event and registration mutations,
   delegating lifecycle and registration-state transitions to `services_lifecycle.py`,
   `services_registration.py` and `services_registration_state.py`. The other `services_*` modules own the

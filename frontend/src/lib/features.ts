@@ -57,6 +57,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "notifications.member_preferences", parent_module: "notifications", label: "Member communication preferences" },
   { key: "events.invites", parent_module: "events", label: "Event invitations" },
   { key: "events.account_registration", parent_module: "events", label: "Account event registration" },
+  { key: "events.organization_audience", parent_module: "events", label: "Participating organizations audience" },
   { key: "events.ticket_types", parent_module: "events", label: "Event ticket types" },
   { key: "events.promo_codes", parent_module: "events", label: "Event promo codes" },
   { key: "events.offline_checkin", parent_module: "events", label: "Offline & station check-in" },

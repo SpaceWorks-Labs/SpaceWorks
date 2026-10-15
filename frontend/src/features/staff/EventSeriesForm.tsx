@@ -37,9 +37,9 @@ export function seriesPayload(values: SeriesFormValues): EventSeriesPayload {
   return { ...payload, ...(payload.ticket_types ? { ticket_types: payload.ticket_types.map((ticket) => ({ ...ticket, sales_start_at: ticket.sales_start_at ? new Date(ticket.sales_start_at).toISOString() : null, sales_end_at: ticket.sales_end_at ? new Date(ticket.sales_end_at).toISOString() : null })) } : {}), recurrence_rule: rule.join(";"), title: payload.title.trim(), location: payload.location.trim() };
 }
 
-export function EventSeriesFields({ values, setValues, disabled = false, canEditDetails = true, canEditSchedule = true, canEditPrice = true }: {
+export function EventSeriesFields({ values, setValues, disabled = false, canEditDetails = true, canEditSchedule = true, canEditPrice = true, organizationAudienceEnabled = false }: {
   values: SeriesFormValues; setValues: (values: SeriesFormValues) => void; disabled?: boolean;
-  canEditDetails?: boolean; canEditSchedule?: boolean; canEditPrice?: boolean;
+  canEditDetails?: boolean; canEditSchedule?: boolean; canEditPrice?: boolean; organizationAudienceEnabled?: boolean;
 }) {
   const set = <K extends keyof SeriesFormValues>(key: K, value: SeriesFormValues[K]) => setValues({ ...values, [key]: value });
   const unit = { DAILY: "day", WEEKLY: "week", MONTHLY: "month" }[values.frequency];
@@ -56,7 +56,7 @@ export function EventSeriesFields({ values, setValues, disabled = false, canEdit
     <p className="rounded-lg border border-line bg-surface p-3 text-sm text-muted sm:col-span-2">{cadence}</p>
     <label className="grid gap-1 text-sm font-semibold text-ink">Location<input className="desk-input" maxLength={255} disabled={disabled || !canEditDetails} value={values.location} onChange={(e) => set("location", e.target.value)} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">Capacity per occurrence<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.capacity} onChange={(e) => set("capacity", Number(e.target.value))} /></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Registration audience<select className="desk-input" value={values.registration_audience ?? "members"} disabled={disabled || !canEditDetails} onChange={(e) => set("registration_audience", e.target.value as SeriesFormValues["registration_audience"])}><option value="members">Members</option><option value="accounts">Authenticated accounts</option><option value="invite">Invited accounts</option></select></label>
+    <label className="grid gap-1 text-sm font-semibold text-ink">Registration audience<select className="desk-input" value={values.registration_audience ?? "members"} disabled={disabled || !canEditDetails} onChange={(e) => set("registration_audience", e.target.value as SeriesFormValues["registration_audience"])}><option value="members">Members</option><option value="accounts">Authenticated accounts</option><option value="invite">Invited accounts</option>{organizationAudienceEnabled || values.registration_audience === "participating_organizations" ? <option value="participating_organizations" disabled={!organizationAudienceEnabled}>Participating organizations</option> : null}</select></label>
     {values.ticket_types ? <div className="sm:col-span-2"><EventTicketTemplates value={values.ticket_types} onChange={(tickets) => set("ticket_types", tickets)} disabled={disabled || !canEditDetails} /></div> : null}
     <label className="grid gap-1 text-sm font-semibold text-ink">Price per occurrence<input className="desk-input" type="number" min="0" step="0.01" disabled={disabled || !canEditPrice} value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">Registration closes minutes before<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.registration_cutoff_lead_minutes ?? ""} onChange={(e) => set("registration_cutoff_lead_minutes", e.target.value === "" ? null : Number(e.target.value))} /></label>

@@ -141,7 +141,7 @@ class PublicEventRegistrationView(APIView):
 
         serializer = PublicEventRegistrationInputSerializer(
             data=request.data,
-            context={'event': event},
+            context={'event': event, 'request': request},
         )
         serializer.is_valid(raise_exception=True)
         registration_data = dict(serializer.validated_data)
@@ -150,7 +150,7 @@ class PublicEventRegistrationView(APIView):
             registration = services.register(
                 event,
                 member=request.user,
-                actor=request.user,
+                actor=request.user, repair_duplicate=True,
                 **registration_data,
             )
         except DuplicateRegistration as exc:

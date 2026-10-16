@@ -70,6 +70,14 @@ public bookings page link to owned confirmations without carrying a QR in naviga
 Lane D shared communications live in `integrations/broadcasts_models.py` (abstract schema),
 `broadcasts_registry.py` (typed adapters), `broadcasts_worker.py` (200-account batches and
 recovery) and `broadcasts_delivery.py` (execution checks/status reconciliation).
+Phase-1a personal notification contracts live in `integrations/models_contract.py`,
+`models_endpoints.py`, `notification_outbox.py`, `notification_resolution.py`,
+`notification_delivery.py`, `notification_proofs.py` and their `notification_*` siblings.
+`notifications/models_preferences.py` owns personal multi-select policy; the existing
+`integrations.NotificationPreference` still owns the tenant matrix. Domain lanes register
+live validators/renderers with `notification_sources.py`; provider lanes register factories
+through `notification_providers.py`. HTTP shapes and proof requirements are frozen in
+`docs/notification-contract.md`, with the Phase-2 trigger target in `docs/notification-coverage.md`.
 `delivery_sources.py` is the pre-send/digest eligibility registry; `delivery_digest.py`
 rebuilds summaries from durable source outbox references. `EmailDelivery` and `EmailLog`
 carry source kind/id/metadata through lifecycle dispatch, deferral and retry.

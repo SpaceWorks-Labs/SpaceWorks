@@ -293,8 +293,8 @@ UNMANAGED_FIELD_NAMES = {}
 from .tenant_dump_modules import MODULE_FIELD_NAMES
 FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= MODULE_FIELD_NAMES
 FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= {"event_default_registration_audience"}
-
 from .catalog_wp4 import field_snapshot
 FIRST_PARTY_FIELD_NAMES = field_snapshot(FIRST_PARTY_FIELD_NAMES)
-
 FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= {"cancelled_at", "status_before_cancel"}
+from .catalog_notifications_contract import FIELD_NAMES as NOTIFICATION_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(NOTIFICATION_FIELDS)

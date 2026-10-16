@@ -37,9 +37,12 @@ class NotificationChannel(models.TextChoices):
     DISCORD = "discord", "Discord"
     WEBHOOK = "webhook", "Signed webhook"
     NATIVE_PUSH = "native_push", "Native push"
+    WHATSAPP = "whatsapp", "WhatsApp"
 
 
 class NonEmailNotificationChannel(models.TextChoices):
+    # Personal-only: the legacy room dispatcher never sends this channel.
+    WHATSAPP = "whatsapp", "WhatsApp"
     TELEGRAM = "telegram", "Telegram"
     SLACK = "slack", "Slack"
     MATTERMOST = "mattermost", "Mattermost"

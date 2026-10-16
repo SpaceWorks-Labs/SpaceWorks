@@ -21,3 +21,6 @@ urlpatterns = [
     path("telegram/webhook", views.TelegramWebhookView.as_view(), name="telegram-webhook"),
     path("telegram/test-alert", views.TelegramTestAlertView.as_view(), name="telegram-test-alert"),
 ]
+
+from .notification_contract_urls import urlpatterns as contract_urls
+urlpatterns += contract_urls

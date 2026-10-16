@@ -1,5 +1,7 @@
 from django.db import models
 
+from .models_preferences import NotificationPreference
+
 from .models_broadcasts import MemberBroadcast
 from .models_inbox import MemberNotificationPreference, NotificationInboxRow
 

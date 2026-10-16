@@ -76,3 +76,9 @@ __all__ = [
     'PushDevice',
     'SmsProviderChoice',
 ]
+
+from .models_contract import NotificationDelivery, NotificationEnvelope
+from .models_endpoints import ChannelConfiguration, NotificationEndpoint, NotificationEndpointChallenge, WhatsAppTemplate
+
+__all__ += ["NotificationDelivery", "NotificationEnvelope", "ChannelConfiguration", "NotificationEndpoint",
+            "NotificationEndpointChallenge", "WhatsAppTemplate"]

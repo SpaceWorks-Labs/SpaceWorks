@@ -15,6 +15,7 @@ from .classification_modules import EXPORTED_MODEL_FIELDS as _MODULE_FIELDS
 from .classification_w7_events import extend_event_export_fields
 from .classification_wp3 import WP3_EXPORTED_FIELDS, WP3_OMITTED_MODELS
 from .classification_wp4 import exported_fields, OMITTED_MODELS as WP4_OMITTED
+from apps.tenant_migration.catalog_notifications_contract import OMITTED_MODELS as NOTIFICATION_OMITTED
 
 EXPORTED_MODEL_FIELDS = {
     **_DOMAIN_EXPORTED_MODEL_FIELDS,
@@ -39,6 +40,7 @@ EXPORTED_MODEL_FIELDS["bookings.BookingCheckInEvent"] = "id booking actor action
 EXPORTED_MODEL_FIELDS["notifications.MemberNotificationPreference"] += " daily_digest"
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
+    **NOTIFICATION_OMITTED,
     "bookings.BookingSpaceStaffGrant": "Resource authority is reissued on the target; never portable.",
     "bookings.BookingSpaceStaffGrantInvite": "Deployment-local single-use credential; never portable.",
     "events.EventStaffGrant": "Event-scoped authority is reissued on the target; never portable.",

@@ -67,9 +67,11 @@ export const openApiTags = [
   "Member profile",
   "Memberships",
   "Native push",
+  "Notification contract",
   "Notification delivery",
   "Notifications",
   "Payments",
+  "Personal notification contract",
   "Personal notifications",
   "Platform",
   "Presence",
@@ -677,11 +679,20 @@ export const openApiPaths = [
   "/api/v1/health/",
   "/api/v1/health/readiness/",
   "/api/v1/integrations/makerspace/{makerspace_id}/bounce-webhook",
+  "/api/v1/integrations/makerspace/{makerspace_id}/channels",
+  "/api/v1/integrations/makerspace/{makerspace_id}/channels-test",
+  "/api/v1/integrations/makerspace/{makerspace_id}/channels/{channel}",
   "/api/v1/integrations/makerspace/{makerspace_id}/delivery-logs",
   "/api/v1/integrations/makerspace/{makerspace_id}/delivery-logs/{kind}/{id}/retry",
   "/api/v1/integrations/makerspace/{makerspace_id}/delivery-test",
   "/api/v1/integrations/makerspace/{makerspace_id}/email-suppressions",
   "/api/v1/integrations/makerspace/{makerspace_id}/email-suppressions/{id}",
+  "/api/v1/integrations/makerspace/{makerspace_id}/personal/challenges/{challenge_id}/verify",
+  "/api/v1/integrations/makerspace/{makerspace_id}/personal/deliveries",
+  "/api/v1/integrations/makerspace/{makerspace_id}/personal/endpoints",
+  "/api/v1/integrations/makerspace/{makerspace_id}/personal/endpoints/start",
+  "/api/v1/integrations/makerspace/{makerspace_id}/personal/endpoints/{id}",
+  "/api/v1/integrations/makerspace/{makerspace_id}/personal/preferences",
   "/api/v1/integrations/makerspace/{makerspace_id}/timing-policy",
   "/api/v1/integrations/push/devices",
   "/api/v1/integrations/push/devices/{device_id}",
@@ -2293,9 +2304,9 @@ export type Channel59dEnum = "telegram" | "slack" | "mattermost" | "discord" | "
 
 export type Channel673Enum = "email" | "in_app" | "native_push";
 
-export type ChannelB30Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push";
+export type ChannelB30Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
 
-export type ChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook";
+export type ChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook" | "whatsapp";
 
 export type CheckoutUrl = {
   "checkout_url": string;
@@ -2503,6 +2514,157 @@ export type ContainerScanHistoryItem = {
 export type ContentTypeEnum = "image/png" | "image/jpeg";
 
 export type ContextEnum = "issue" | "return" | "inventory_check";
+
+export type ContractChallenge = {
+  "challenge_id": number;
+  "expires_at": string;
+  "connect_url"?: string;
+  "instructions"?: string;
+};
+
+export type ContractChallengeStart = {
+  "channel": "telegram" | "slack" | "mattermost" | "discord" | "whatsapp";
+  "consent": boolean;
+  "consent_version": string;
+  "phone_number"?: string;
+};
+
+export type ContractChannel = {
+  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
+  "enabled": boolean;
+  "room_enabled": boolean;
+  "personal_enabled": boolean;
+  "email_fallback": boolean;
+  "provider": string;
+  "integration_identity": string;
+  "generation": number;
+  "quotas": ContractQuota;
+  "credentials_set": boolean;
+  "templates": Array<ContractWhatsAppTemplate>;
+};
+
+export type ContractChannelPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<ContractChannel>;
+};
+
+export type ContractChannelPatch = {
+  "enabled"?: boolean;
+  "room_enabled"?: boolean;
+  "personal_enabled"?: boolean;
+  "email_fallback"?: boolean;
+  "provider"?: string;
+  "integration_identity"?: string;
+  "quotas"?: ContractQuota;
+  "templates"?: Array<ContractWhatsAppTemplate>;
+  "credentials"?: {
+  [key: string]: string;
+};
+};
+
+export type ContractDelivery = {
+  "id": number;
+  "envelope_id": number;
+  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
+  "state": "accepted" | "sent" | "delivered" | "read" | "failed" | "skipped" | "retrying";
+  "attempt_count": number;
+  "next_attempt_at": string | null;
+  "last_error": string;
+  "retryable": boolean;
+  "event": string;
+  "feature": string;
+  "created_at": string;
+  "updated_at": string;
+};
+
+export type ContractDeliveryPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<ContractDelivery>;
+};
+
+export type ContractEndpoint = {
+  "id": number;
+  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
+  "provider": string;
+  "integration_generation": number;
+  "verification_state": "verified" | "revoked";
+  "verified_at": string;
+  "consented_at": string;
+  "consent_version": string;
+  "revoked_at": string | null;
+  "created_at": string;
+};
+
+export type ContractEndpointPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<ContractEndpoint>;
+};
+
+export type ContractError = {
+  "detail": string;
+  "code"?: string;
+};
+
+export type ContractPreferences = {
+  "preferences": Array<ContractSelection>;
+};
+
+export type ContractProofVerify = {
+  "code"?: string;
+  "state"?: string;
+};
+
+export type ContractProviderResult = {
+  "accepted": boolean;
+  "provider_id": string;
+  "retryable": boolean;
+  "error_code": string;
+  "sanitized_error": string;
+};
+
+export type ContractQuota = {
+  "daily_limit"?: number;
+  "recipient_daily_limit"?: number;
+};
+
+export type ContractRevoked = {
+  "revoked": boolean;
+};
+
+export type ContractSelection = {
+  "category": "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
+  "channels": Array<"email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp">;
+  "email_fallback"?: boolean;
+  "available_channels"?: Array<string>;
+};
+
+export type ContractTest = {
+  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
+  "endpoint_id"?: number;
+  "room_id"?: number;
+};
+
+export type ContractValidationError = {
+  "detail": string;
+  "code"?: string;
+} | {
+  [key: string]: string | Array<string> | Record<string, unknown>;
+};
+
+export type ContractWhatsAppTemplate = {
+  "event": string;
+  "audience": string;
+  "locale"?: string;
+  "template_name": string;
+  "variables": Array<string>;
+  "approved"?: boolean;
+};
 
 export type Count = {
   "count": number;
@@ -4314,7 +4476,7 @@ export type JournalLine = {
 
 export type Key4feEnum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
 
-export type KeyB30Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push";
+export type KeyB30Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
 
 export type Kind21fEnum = "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
 
@@ -6015,7 +6177,7 @@ export type ModuleAction = {
   "key": string;
 };
 
-export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook";
+export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
 
 export type MostLentReport = {
   "rows": Array<Array<unknown>>;

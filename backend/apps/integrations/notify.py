@@ -237,11 +237,13 @@ def notify_lifecycle(makerspace, *, feature, event, build, sync=False):
     # Snapshot at the event, before on_commit/queue delays; all rooms and retries agree.
     occurred_at = timezone.now().isoformat()
     event_key = uuid4()
-    if sync:
-        return _run_guarded(makerspace, feature, event, build, True, occurred_at, event_key)
     try:
+        from .notification_legacy import persist, dispatch
+        envelope = persist(makerspace, feature, event, None, event_key, occurred_at)
+        if sync:
+            return dispatch(envelope, build, True, occurred_at, event_key)
         transaction.on_commit(
-            lambda: _run_guarded(makerspace, feature, event, build, False, occurred_at, event_key),
+            lambda: dispatch(envelope, build, False, occurred_at, event_key),
             robust=True,
         )
     except Exception:

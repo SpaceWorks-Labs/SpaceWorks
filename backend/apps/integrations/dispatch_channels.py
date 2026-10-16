@@ -122,6 +122,8 @@ def dispatch_channel(
     """
     if channel not in NonEmailNotificationChannel.values:
         raise ValueError(f"Unsupported notification channel: {channel}")
+    if channel == NonEmailNotificationChannel.WHATSAPP:
+        raise ValueError("WhatsApp requires an explicit personal envelope")
 
     # Push resolves its recipients at delivery time, so the alert's subject has to travel
     # on the row or a narrowed recipient rule would match nothing by then.
@@ -152,6 +154,9 @@ def dispatch_channel(
                 "notification_channel_module_disabled",
             )
         ]
+
+    if configuration_blocks(makerspace, channel):
+        return [record(NotificationDeliveryStatus.SKIPPED, "notification_channel_configuration_disabled")]
 
     if channel == NonEmailNotificationChannel.NATIVE_PUSH:
         # Push has no room to address: it is delivered per device to a named user, so it
@@ -227,3 +232,10 @@ def _enqueue_notification(log_id):
 
 
 from .dispatch_channels_delivery import _deliver_notification  # noqa: E402,F401
+
+
+def configuration_blocks(makerspace, channel):
+    from .models_endpoints import ChannelConfiguration
+    config = ChannelConfiguration.objects.filter(makerspace=makerspace, channel=channel).first()
+    return bool(config and not (config.enabled and (
+        config.personal_enabled if channel == "native_push" else config.room_enabled)))

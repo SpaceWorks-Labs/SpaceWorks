@@ -49,6 +49,12 @@ SECONDARY_FIELDS += _fields("events.EventBroadcast", ("subject", "body"),
                             "makerspace_id", "secondary", ((None, None), ("none", "none")))
 SECONDARY_FIELDS += _fields("bookings.BookingBroadcast", ("subject", "body"),
                             "makerspace_id", "secondary", ((None, None), ("none", "none")))
+SECONDARY_FIELDS += _fields("integrations.NotificationEnvelope", ("message_body",),
+                            "makerspace_id", "secondary", ((None,), ("none",)))
+SECONDARY_FIELDS += _fields("integrations.NotificationEndpoint", ("destination", "provider_subject"),
+                            "makerspace_id", "secondary", ((None, None), ("none", "none")))
+SECONDARY_FIELDS += _fields("integrations.NotificationEndpointChallenge", ("candidate_destination",),
+                            "makerspace_id", "secondary", ((None,), ("none",)))
 ALL_FIELDS = SOURCE_FIELDS + SECONDARY_FIELDS
 BY_MODEL = {}
 for _field in ALL_FIELDS:

@@ -4,6 +4,10 @@ from .gate_policy_replay import REPLAY_TASK_PARTICIPANTS, REPLAY_FANOUT_PARTICIP
 
 
 TASK_EXEMPTIONS = {
+    "apps.integrations.notification_tasks.sweep_notification_outbox": (
+        "Only enqueues deliver_envelope ids and writes nothing; each delivery task resolves its "
+        "envelope's tenant through TASK_TENANT_RESOLVERS and is gated there."
+    ),
     "apps.operations.tasks_platform.run_platform_problem_checks_task": (
         "Read-only platform monitoring; writes only a disposable deployment cache marker."
     ),
@@ -66,6 +70,9 @@ TASK_TENANT_RESOLVERS = {
     ),
     "apps.integrations.tasks.deliver_notification_task": (
         "integrations.NotificationDeliveryLog", 0, "makerspace_id"
+    ),
+    "apps.integrations.notification_tasks.deliver_envelope": (
+        "integrations.NotificationEnvelope", 0, "makerspace_id"
     ),
 }
 

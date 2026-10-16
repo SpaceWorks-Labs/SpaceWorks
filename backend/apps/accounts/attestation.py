@@ -7,12 +7,15 @@ from datetime import timedelta
 from urllib.parse import urlsplit
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models_devices import (
     DeviceAttestationChallenge,
-    NativeAppRegistration,
+)
+from apps.accounts.native_app_identity import (
+    eligible_registration_q, eligible_registrations, registration_is_eligible, registration_signing_identities,
 )
 
 
@@ -57,25 +60,31 @@ def challenge_digest(raw):
     return hmac.new(settings.SECRET_KEY.encode(), str(raw).encode(), hashlib.sha256).hexdigest()
 
 
-def configured_app(platform, verifier_config_key, environment):
-    entry = (
-        getattr(settings, "DEVICE_ATTESTATION_APPS", {})
-        .get(platform, {})
-        .get(verifier_config_key)
-    )
-    if not isinstance(entry, dict):
+def configured_app(platform, verifier_config_key, environment, *, registration=None):
+    row = registration or eligible_registrations().filter(
+        platform=platform, verifier_config_key=verifier_config_key, environment=environment,
+    ).first()
+    if row is None or not registration_is_eligible(row) or (
+        row.platform != platform or row.environment != environment
+    ):
         raise AttestationUnavailable("Device attestation is unavailable.")
-    signing_identity = str(entry.get("signing_identity") or "")
-    if not signing_identity or environment not in (entry.get("environments") or []):
-        raise AttestationUnavailable("Device attestation is unavailable.")
+    try:
+        signing_identity = registration_signing_identities(row)[0]
+    except ValidationError as exc:
+        raise AttestationUnavailable("Device attestation is unavailable.") from exc
     mode = readiness_mode(platform, signing_identity)
     if mode == "external":
-        url = getattr(settings, f"DEVICE_{platform.upper()}_ATTESTATION_VERIFY_URL")
-        parsed = urlsplit(str(url))
-        if parsed.scheme != "https" or not parsed.netloc:
+        try:
+            parsed = urlsplit(str(getattr(settings, f"DEVICE_{platform.upper()}_ATTESTATION_VERIFY_URL")))
+            valid_url = parsed.scheme == "https" and bool(parsed.hostname)
+        except ValueError:
+            valid_url = False
+        if not valid_url:
             raise AttestationUnavailable("Device attestation is unavailable.")
-    if mode == "unavailable":
-        raise AttestationUnavailable('Device attestation is unavailable.')
+    if mode == "unavailable" or (mode == "development_insecure" and (
+        not settings.DEBUG or environment == "production"
+    )):
+        raise AttestationUnavailable("Device attestation is unavailable.")
     return signing_identity
 
 
@@ -93,12 +102,10 @@ def _approved_registration(*, platform, app_id, environment):
     verified makerspace context into this path. The column and its uniqueness rules exist
     now so that phase does not need a second migration.
     """
-    registration = NativeAppRegistration.objects.filter(
-        makerspace__isnull=True,
+    registration = eligible_registrations().filter(
         platform=platform,
         app_id=app_id,
         environment=environment,
-        status=NativeAppRegistration.Status.APPROVED,
     ).first()
     if registration is None:
         raise AttestationUnavailable('Device attestation is unavailable.')
@@ -115,6 +122,7 @@ def create_challenge(*, platform, app_id, environment):
         platform,
         registration.verifier_config_key,
         environment,
+        registration=registration,
     )
     ttl = settings.DEVICE_ATTESTATION_CHALLENGE_TTL_SECONDS
     if ttl <= 0:
@@ -123,6 +131,7 @@ def create_challenge(*, platform, app_id, environment):
     DeviceAttestationChallenge.objects.create(
         registration=registration,
         platform=platform, app_id=app_id, signing_identity=signing_identity,
+        signing_identities=registration_signing_identities(registration),
         environment=environment, challenge_digest=challenge_digest(raw),
         expires_at=timezone.now() + timedelta(
             seconds=ttl
@@ -137,10 +146,10 @@ def live_approved_challenge(raw_challenge):
     challenge = (
         DeviceAttestationChallenge.objects.select_related("registration")
         .filter(
+            eligible_registration_q("registration__"),
             challenge_digest=challenge_digest(raw_challenge),
             consumed_at__isnull=True,
             expires_at__gt=now,
-            registration__status=NativeAppRegistration.Status.APPROVED,
         )
         .first()
     )
@@ -179,14 +188,14 @@ def consume_attestation_challenge(
             challenge.challenge_digest, challenge_digest(raw_challenge)
         )
         and supplied_identity_matches
-        and challenge.registration.status == NativeAppRegistration.Status.APPROVED
+        and registration_is_eligible(challenge.registration)
         and _authority_matches(challenge)
     ) else None
 
 
 def _authority_matches(challenge):
     registration = challenge.registration
-    return not (
+    return registration_is_eligible(registration) and not (
         challenge.platform != registration.platform
         or challenge.app_id != registration.app_id
         or challenge.environment != registration.environment
@@ -200,14 +209,14 @@ def verify_attestation(challenge, raw_challenge, payload):
     # development registration.
     if (settings.DEVICE_ATTESTATION_DEV_INSECURE and settings.DEBUG
             and challenge.environment == "development" and payload == {"type": "development"}):
-        return VerifiedAttestation(subject="development")
+        return VerifiedAttestation(subject="development", metadata={"signing_identity": challenge.signing_identity})
     mode = readiness_mode(challenge.platform, challenge.signing_identity)
     if mode == "unavailable":
         raise AttestationUnavailable("Device attestation is unavailable.")
     if mode == "development_insecure":
         if not settings.DEBUG or challenge.environment != "development" or payload != {"type": "development"}:
             raise AttestationRejected("Attestation was rejected.")
-        return VerifiedAttestation(subject="development")
+        return VerifiedAttestation(subject="development", metadata={"signing_identity": challenge.signing_identity})
     if mode == "in_process":
         if challenge.platform == "apple":
             from apps.accounts.attestation_app_attest import verify_app_attest
@@ -224,4 +233,4 @@ def verify_attestation(challenge, raw_challenge, payload):
         raise AttestationRejected("Attestation was rejected.")
     if not isinstance(subject, str) or not subject or len(subject) > 512:
         raise AttestationRejected("Attestation was rejected.")
-    return VerifiedAttestation(subject=subject)
+    return VerifiedAttestation(subject=subject, metadata={"signing_identity": challenge.signing_identity})

@@ -1,7 +1,7 @@
-import re
-
 from django.conf import settings
-from django.core.checks import Error, Tags, register
+from django.core.checks import Error, Tags, Warning, register
+from django.db import connections
+from django.db.utils import OperationalError, ProgrammingError
 
 
 @register(Tags.security)
@@ -15,15 +15,30 @@ def check_development_attestation(app_configs=None, **kwargs):
     return []
 
 
-@register()
-def check_mobile_min_versions(app_configs=None, **kwargs):
-    errors = []
-    for name in ("MOBILE_MIN_VERSION_ANDROID", "MOBILE_MIN_VERSION_IOS"):
-        value = getattr(settings, name)
-        if value and not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", value):
-            errors.append(Error(
-                f"{name} must be empty or a dotted numeric version.",
-                hint="Use a version such as 1.4.0; no prefixes or prerelease suffixes.",
-                id="accounts.E002",
+@register(Tags.database)
+def check_legacy_native_identities(app_configs=None, databases=None, **kwargs):
+    from apps.accounts.native_app_identity import eligible_registrations
+
+    warnings = []
+    for alias in databases or ["default"]:
+        try:
+            connection = connections[alias]
+            table = "accounts_nativeappregistration"
+            if table not in connection.introspection.table_names():
+                continue
+            with connection.cursor() as cursor:
+                columns = {column.name for column in connection.introspection.get_table_description(cursor, table)}
+            if "signing_identities" not in columns:
+                continue  # The check also runs before migrate on existing installations.
+            rows = list(eligible_registrations().using(alias).filter(signing_identities=[])
+                        .values_list("pk", "app_id", "environment"))
+        except (OperationalError, ProgrammingError):
+            continue
+        if rows:
+            labels = ", ".join(f"#{pk} {app_id} ({environment})" for pk, app_id, environment in rows)
+            warnings.append(Warning(
+                f"Native registrations have no stored signing identities: {labels}",
+                hint="Enter distribution signer digests or the App ID Prefix in /control/; legacy env fallback is temporary.",
+                id="accounts.W001",
             ))
-    return errors
+    return warnings

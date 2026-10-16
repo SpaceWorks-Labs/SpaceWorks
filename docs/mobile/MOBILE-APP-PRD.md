@@ -290,6 +290,10 @@ Done when, in **each** repo:
 
 ## 9. Things the owner provides or manages (not the developer)
 
+Follow the [native mobile integration operator guide](../mobile-integration.md) for every server-side
+/control/ value and the separate build-input handoff (Cloud project number, Firebase file, entitlements
+and link-contract manifest paths).
+
 - Apple Developer Program (organisation, needs a D-U-N-S number) and Google Play Console accounts.
 - Bundle IDs, App Attest + Push capabilities, APNs key, Firebase project (Android FCM), Play Integrity
   API enabled and linked, signing keys (Play App Signing upload key, Apple certificates). All held as CI

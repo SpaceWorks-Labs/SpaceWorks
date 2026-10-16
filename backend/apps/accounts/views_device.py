@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.accounts.native_app_identity import eligible_registration_q, matched_signing_identity
 from apps.accounts import audit_events
 from apps.accounts.attestation import (
     AttestationRejected, AttestationUnavailable,
@@ -183,8 +184,8 @@ class DeviceLoginView(APIView):
                 registration = (
                     NativeAppRegistration.objects.select_for_update()
                     .filter(
-                        pk=challenge.registration_id,
-                        status=NativeAppRegistration.Status.APPROVED,
+                        eligible_registration_q(), pk=challenge.registration_id,
+                        platform=challenge.platform, app_id=challenge.app_id, environment=challenge.environment,
                     )
                     .first()
                 )
@@ -197,7 +198,7 @@ class DeviceLoginView(APIView):
                     registration=registration,
                     user=user, platform=challenge.platform, app_id=challenge.app_id,
                     authority=authority_for_login(user, login_method="password"),
-                    signing_identity=challenge.signing_identity, environment=challenge.environment,
+                    signing_identity=matched_signing_identity(challenge, verified.metadata), environment=challenge.environment,
                     attestation_subject_fingerprint=audit_events.fingerprint(verified.subject),
                     attestation_key_id=verified.metadata.get("key_id"),
                     attestation_public_key=verified.metadata.get("public_key"),

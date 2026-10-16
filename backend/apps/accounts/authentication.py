@@ -16,10 +16,10 @@ from apps.accounts.claim_tenants import claim_tenant_matches
 from apps.accounts.claim_tokens import ClaimAccessToken
 from apps.accounts.claim_routes import CLAIM_REACHABLE_PREFIXES
 from apps.accounts.models import User
+from apps.accounts.native_app_identity import registration_is_eligible
 from apps.accounts.models_devices import (
     DeviceGrant,
     DeviceRefreshFamily,
-    NativeAppRegistration,
 )
 from apps.accounts.tokens import validate_auth_generation
 
@@ -103,7 +103,7 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             valid = bool(
                 grant and grant.status == DeviceGrant.Status.ACTIVE
                 and grant.revoked_at is None
-                and grant.registration.status == NativeAppRegistration.Status.APPROVED
+                and registration_is_eligible(grant.registration)
                 and user.is_active and user.access_status == User.AccessStatus.ACTIVE
                 and DeviceRefreshFamily.objects.filter(
                     pk=family_id, grant=grant, user=user, revoked_at__isnull=True

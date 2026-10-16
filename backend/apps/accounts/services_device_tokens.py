@@ -10,10 +10,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import UntypedToken
 
 from apps.accounts import audit_events
+from apps.accounts.native_app_identity import registration_is_eligible
 from apps.accounts.models_devices import (
     DeviceRefreshFamily,
     DeviceRefreshToken,
-    NativeAppRegistration,
 )
 from apps.accounts.services_tokens import blacklist_device_family
 from apps.accounts.tokens import SpaceWorksRefreshToken
@@ -95,7 +95,7 @@ def rotate_device_refresh(raw):
             blacklist_device_family(family, revoke_grant=True)
         elif (
             grant.status != grant.Status.ACTIVE
-            or grant.registration.status != NativeAppRegistration.Status.APPROVED
+            or not registration_is_eligible(grant.registration)
         ):
             blacklist_device_family(family)
         else:

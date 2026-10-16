@@ -992,6 +992,29 @@ idempotency rules as web checkout.
   `_revoke_locked` cleanup deactivates the user's active `PushDevice` rows there and stamps
   `invalidated_at`; their grants and push subscriptions in other makerspaces remain usable.
 
+**Native app configuration lives on the registration (phase 1e).** All native eligibility checks
+require an approved deployment-global registration (makerspace IS NULL); association files and
+minimum versions additionally require production. Registrations hold 1–5 Android distribution signer
+digests or exactly one Apple App ID Prefix. Challenges snapshot the complete list and retain the
+first scalar for the external verifier; every grant issuer records the matched signer from verified
+metadata, including MFA. Only an empty registration list may consult DEVICE_ATTESTATION_APPS, with
+a warning check; new operator configuration needs no env JSON. External verification supports only
+the first signer. The legacy tenant_restore_target_state.reconcile_native_app_registrations helper
+still rebuilds rows from env declarations, has no caller in this tree, and is a compatibility gap;
+it must not be introduced into a live restore without adapting it to stored identities. These
+platform security models remain omitted from tenant exports. The highest dotted-numeric production
+minimum per platform comes from registrations. Readiness uses one read-only builder for the
+superadmin API and /control/ page, with login separate from optional push/revocation/associations,
+no secret values, persisted readiness state or provider probes. Registration edits use the existing
+control settings audit mixin.
+
+**Mobile associations grant no browser trust.** Exact well-known JSON paths are served only on
+configured primary frontend hosts and verified, servable non-archived custom frontend domains.
+Managed host middleware keeps its 400 refusal; other untrusted hosts receive view-level 404. The
+existing integrations/mobile_link_contract.py supplies all supported components and exclusions.
+Only public application proxy blocks route these paths; control-plane and tunnel snippets, their
+404 fallback and socket-peer allowlists stay unchanged. See docs/mobile-integration.md.
+
 **Generic OIDC providers are configuration, not a second verification path (phase 17).**
 `accounts/models_oidc.OidcProvider` (superadmin-only, platform-scoped) holds `issuer`, `jwks_url`,
 `client_id` and two switches; `social_oidc.verify_oidc_token` reuses the same

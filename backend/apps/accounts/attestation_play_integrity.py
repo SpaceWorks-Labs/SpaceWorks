@@ -71,18 +71,19 @@ def verify_play_integrity(challenge, raw_challenge, payload):
             raise ValueError("Request binding failed")
         app = claims.get("appIntegrity", {})
         digests = [certificate_digest(value) for value in app.get("certificateSha256Digest", [])]
-        expected_digest = certificate_digest(challenge.signing_identity)
-        if challenge.environment == "production" and (
-            app.get("appRecognitionVerdict") != "PLAY_RECOGNIZED" or expected_digest not in digests
-        ):
+        expected = [certificate_digest(value) for value in (
+            getattr(challenge, "signing_identities", None) or [challenge.signing_identity]
+        )]
+        digest = next((value for value in digests if value in expected), None)
+        if digest is None or (challenge.environment == "production" and
+                              app.get("appRecognitionVerdict") != "PLAY_RECOGNIZED"):
             raise ValueError("App identity failed")
         verdicts = claims["deviceIntegrity"]["deviceRecognitionVerdict"]
         if not isinstance(verdicts, list) or "MEETS_DEVICE_INTEGRITY" not in verdicts:
             raise ValueError("Device integrity failed")
-        digest = expected_digest if expected_digest in digests else next(iter(digests), expected_digest)
     except (KeyError, TypeError, ValueError, AttributeError, OverflowError, binascii.Error) as exc:
         raise AttestationRejected("Attestation was rejected.") from exc
     return VerifiedAttestation(
         subject=f"{challenge.app_id}:{digest}",
-        metadata={"package": challenge.app_id, "certificate_digest": digest},
+        metadata={"package": challenge.app_id, "certificate_digest": digest, "signing_identity": digest},
     )

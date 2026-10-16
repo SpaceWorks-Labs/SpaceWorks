@@ -431,6 +431,8 @@ state/sharing and drop schedules, so neither restores source disclosure rules.
 ### mobile
 
 [Read the mobile module reference](MODULES-PLATFORM.md#mobile).
+Configure branded app registrations, identity, associations and readiness with the
+[mobile integration operator guide](mobile-integration.md).
 
 ## Backup & custody
 

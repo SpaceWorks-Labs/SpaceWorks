@@ -77,4 +77,4 @@ def verify_app_attest(challenge, raw_challenge, payload):
             x509.ExtensionNotFound, x509.DuplicateExtension) as exc:
         raise AttestationRejected("Attestation was rejected.") from exc
     canonical_key_id = base64.b64encode(key_id).decode()
-    return VerifiedAttestation(subject=canonical_key_id, metadata={"key_id": canonical_key_id, "public_key": pem})
+    return VerifiedAttestation(subject=canonical_key_id, metadata={"key_id": canonical_key_id, "public_key": pem, "signing_identity": challenge.signing_identity})

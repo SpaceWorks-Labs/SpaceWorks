@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.accounts.views_mobile_readiness import MobileReadinessView
+
 from apps.admin_api.views_platform_monitoring import (
     MakerspaceUsageView, PlatformDashboardView, PlatformProblemsView,
 )
@@ -75,6 +77,7 @@ from .urls_utils import _separable
 
 
 urlpatterns = [
+    path("platform/mobile-readiness", MobileReadinessView.as_view(), name="admin-platform-mobile-readiness"),
     path("platform/dashboard", PlatformDashboardView.as_view(), name="admin-platform-dashboard"),
     path("platform/problems", PlatformProblemsView.as_view(), name="admin-platform-problems"),
     path("makerspace/<int:makerspace_id>/usage", MakerspaceUsageView.as_view(), name="admin-makerspace-usage"),

@@ -3,6 +3,7 @@
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
+from apps.accounts.native_app_identity import eligible_registration_q, matched_signing_identity
 from apps.accounts import audit_events
 from apps.accounts.models_devices import DeviceAttestationChallenge, DeviceGrant, NativeAppRegistration
 from apps.accounts.serializers_device import DeviceGrantSerializer
@@ -47,14 +48,15 @@ def issue_session(user, data, request):
         assert_mobile_grant_creation_enabled()
         if device.get("grant_id"):
             grant = DeviceGrant.objects.select_for_update().filter(
+                eligible_registration_q("registration__"),
                 pk=device["grant_id"], user=user, status=DeviceGrant.Status.ACTIVE,
-                registration__status=NativeAppRegistration.Status.APPROVED,
             ).first()
         else:
             assert_grant_user_allowed(user)
             attestation = DeviceAttestationChallenge.objects.get(pk=device["attestation_id"])
             registration = NativeAppRegistration.objects.select_for_update().filter(
-                pk=attestation.registration_id, status=NativeAppRegistration.Status.APPROVED,
+                eligible_registration_q(), pk=attestation.registration_id,
+                platform=attestation.platform, app_id=attestation.app_id, environment=attestation.environment,
             ).first()
             grant = None
             if registration:
@@ -62,7 +64,7 @@ def issue_session(user, data, request):
                     registration=registration, user=user, platform=attestation.platform,
                     authority=authority_for_login(user, login_method=device.get("login_method")),
                     app_id=attestation.app_id, environment=attestation.environment,
-                    signing_identity=attestation.signing_identity,
+                    signing_identity=matched_signing_identity(attestation, device.get("attestation_metadata", {})),
                     attestation_subject_fingerprint=device["subject_hash"],
                     attestation_key_id=device.get("attestation_metadata", {}).get("key_id"),
                     attestation_public_key=device.get("attestation_metadata", {}).get("public_key"),

@@ -6,6 +6,14 @@
 }
 import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
 (application) {
+    handle /.well-known/assetlinks.json {
+        reverse_proxy backend:8000
+    }
+
+    handle /.well-known/apple-app-site-association {
+        reverse_proxy backend:8000
+    }
+
     handle /api/v1/internal/* {
         respond 403
     }

@@ -371,6 +371,12 @@ while pack application explicitly asserts the target source gate before writes.
   `rbac_memberships.py`, `rbac_organizations.py`, and `rbac_superadmin.py` (`can(...)`, action-based
   `actions_for_membership`/`makerspaces_for_action`/`scope_by_action`, makerspace scoping, superadmin
   hide/archive exclusion).
+  Native mobile integration setup: `accounts/native_app_identity.py` owns global registration eligibility,
+  identity normalization and production minimum-version comparison. `mobile_associations.py` builds
+  public documents using the unchanged `integrations/mobile_link_contract.py`;
+  `views_mobile_associations.py` enforces frontend-host eligibility. `mobile_readiness.py` is the one
+  read-only report builder used by `views_mobile_readiness.py` and `admin_native_apps.py`;
+  `forms_native_apps.py` validates registration edits. Operator setup: `docs/mobile-integration.md`.
 - `backend/apps/makerspaces/` — `Makerspace` model (tenant root; unique `slug`; `frontend_domain`, module
   flags, `resource_limit_overrides`, `archived_at`, `superadmin_access_enabled`), bootstrap views, dynamic
   CORS, module guards, `module_registry.py` (canonical module registry — all module lists derive from

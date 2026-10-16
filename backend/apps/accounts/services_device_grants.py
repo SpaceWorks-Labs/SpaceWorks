@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
+from apps.accounts.native_app_identity import eligible_registration_q, matched_signing_identity
 from apps.accounts import audit_events
 from apps.accounts.models import User
 from apps.accounts.models_devices import DeviceGrant, NativeAppRegistration
@@ -68,8 +69,7 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
             registration = (
                 NativeAppRegistration.objects.select_for_update()
                 .filter(
-                    pk=challenge.registration_id,
-                    status=NativeAppRegistration.Status.APPROVED,
+                    eligible_registration_q(), pk=challenge.registration_id,
                     platform=challenge.platform,
                     app_id=challenge.app_id,
                     environment=challenge.environment,
@@ -84,7 +84,7 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
                 authority=authority_for_login(user, login_method=login_method),
                 platform=challenge.platform,
                 app_id=challenge.app_id,
-                signing_identity=challenge.signing_identity,
+                signing_identity=matched_signing_identity(challenge, verified_attestation.metadata),
                 environment=challenge.environment,
                 attestation_subject_fingerprint=audit_events.fingerprint(
                     verified_attestation.subject

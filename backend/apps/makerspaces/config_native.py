@@ -1,7 +1,8 @@
 """Public native login discovery; credentials and verifier configuration stay private."""
 
-from django.conf import settings
 from rest_framework import serializers
+
+from apps.accounts.native_app_identity import min_app_versions
 
 from apps.accounts.login_methods import (
     password_login_enabled, phone_login_enabled, provider_login_enabled,
@@ -14,8 +15,8 @@ from apps.integrations.sms import sms_configured
 
 
 class NativeMinVersionSerializer(serializers.Serializer):
-    android = serializers.CharField(allow_null=True)
-    ios = serializers.CharField(allow_null=True)
+    android = serializers.CharField(allow_null=True, help_text="Highest dotted-numeric minimum among approved global production Android registrations, or null.")
+    ios = serializers.CharField(allow_null=True, help_text="Highest dotted-numeric minimum among approved global production Apple registrations, or null.")
 
 
 class NativeGoogleSerializer(serializers.Serializer):
@@ -74,9 +75,6 @@ def native_config():
             for row in enabled_providers() if provider_login_enabled(row.provider_key)
         ]
     return {
-        "min_app_version": {
-            "android": settings.MOBILE_MIN_VERSION_ANDROID or None,
-            "ios": settings.MOBILE_MIN_VERSION_IOS or None,
-        },
+        "min_app_version": min_app_versions(),
         "providers": providers,
     }

@@ -26,6 +26,9 @@ class AttestationPayloadField(serializers.JSONField):
 
 
 ATTESTATION_DESCRIPTION = (
+    'Challenges require an approved deployment-global registration and snapshot its signing identities. '
+    'Play Integrity accepts any registered distribution signer and grants retain the matched digest. '
+    'External verifiers receive only the first signing identity. '
     'Submit the returned challenge with the device login attestation payload: '
     'Android {"type":"play_integrity","token":"..."} uses Standard requestHash = '
     'base64url(SHA-256(challenge UTF-8)), without padding. '

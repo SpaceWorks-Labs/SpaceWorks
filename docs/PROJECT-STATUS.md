@@ -129,9 +129,11 @@ otherwise), bound in `config/request_id.py` and echoed on the response. Log line
 the worker (`config/celery_signals.py`). Audit rows are correlated **through the log line**
 (`audit_recorded` with the row's `event_uuid`), not by writing the id into `meta`, so the attested record
 is unchanged. `GET /api/v1/metrics/` serves Prometheus text behind `METRICS_TOKEN` (404 when unset);
-`SENTRY_DSN` opts into error tracking with PII off. CI: `.github/workflows/tests.yml` runs both test
-topologies, the frontend build and the CLAUDE.md/AGENTS.md drift check, and the release workflow depends on
-it. The forward plan itself is local-only under `docs/plans/2026-09-03-forward-plan/`.
+`SENTRY_DSN` opts into error tracking with PII off. Tests run locally before pushing
+(`./scripts/dev.sh test`, `./scripts/dev.sh e2e`), not in Actions. The release workflow builds/publishes
+backend/frontend images, creates the GitHub Release, promotes rolling tags and optionally deploys via
+the self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.
+The forward plan itself is local-only under `docs/plans/2026-09-03-forward-plan/`.
 
 **Search and live updates (phase 1).** Every inventory, machine and event list accepts `?q=` (full-text with
 phrase and exclusion syntax, typo-tolerant on the name) through `apps/inventory/search.py`; the member
@@ -150,7 +152,7 @@ asynchronous, throttled, bounded integrity verification of a filtered range
 coverage; the `audit-trail` report is a CSV-only, export-only, unschedulable, tenant-only download.
 
 **Browser and accessibility gates (phase 2).** `frontend/e2e/` (Playwright) drives the loan spine through a
-real browser and object storage — `scripts/dev.sh e2e` locally, the `e2e` job in CI — and axe runs in
+real browser and object storage — `./scripts/dev.sh e2e` locally before pushing — and axe runs in
 both jsdom panel tests and Chromium. `manage.py seed_e2e` seeds a disposable makerspace per run.
 
 **Signed webhooks (phase 3).** `webhook` is a notification channel module: a destination with an HTTPS
@@ -158,11 +160,12 @@ endpoint and a signing secret receives every matrix-routed notification as signe
 (`docs/api-client-protocol.md` → "Outbound webhooks"), through the same delivery log and retries as the
 chat channels; failed deliveries can be re-queued from `/control/`.
 
-**Editions and the single box (phase 4).** `SPACEWORKS_EDITION` (`makerspace`, `events`, `bookings`,
+**Editions (phase 4).** `SPACEWORKS_EDITION` (`makerspace`, `events`, `bookings`,
 `organization`) hides the loan or events surfaces and 404s their public routes without changing any
-capability (`docs/MODULES.md` → Editions); `events` and `bookings` install profiles match. The single-box
-shape (`Dockerfile.allinone`, `docker/compose.single.yml`, `.spaceworks-layer`) runs everything but
-Postgres and MinIO in one container; setup asks for both the edition and the shape.
+capability (`docs/MODULES.md` → Editions); `events` and `bookings` install profiles match.
+The single-box shape and `spaceworks-allinone` image were removed on 2026-10-15;
+`.spaceworks-layer=single` is refused by setup, update and the Compose wrapper with
+[switch steps](update-recovery.md#moving-off-a-single-box-install).
 
 **Member ID cards and certification gating (phase 5).** A member card is a revocable QR credential over one
 membership, printed as a CR80 card or a sheet, resolvable only by staff holding `scan_member_cards`, with a

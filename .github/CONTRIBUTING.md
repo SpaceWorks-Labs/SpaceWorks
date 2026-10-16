@@ -11,7 +11,7 @@ to get a change merged.
 3. Confirm the backend test suite is green before you start:
 
    ```bash
-   cd backend && pytest
+   ./scripts/dev.sh test
    ```
 
 ## Project layout
@@ -64,7 +64,9 @@ to get a change merged.
 
 ## Pull requests
 
-1. Make sure `cd backend && pytest` passes and the frontend builds (`cd frontend && npm run build`).
+1. Run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally before pushing, and build the frontend
+   (`cd frontend && npm run build`). Actions builds/releases backend/frontend images, promotes rolling
+   tags and optionally deploys through the self-hosted runner; `pip-audit` runs on PRs. Tests are local only.
 2. Update docs (`README.md`, `docs/`, and `CLAUDE.md` if you change tooling/architecture) alongside
    the code.
 3. Open the PR against `dev`—not `main`—describing **what** changed and **why**, and call out any

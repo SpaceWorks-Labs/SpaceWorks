@@ -6,6 +6,7 @@ WRAPPER_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${SPACEWORKS_UPDATE_INSTALL_DIR:-$(cd "$WRAPPER_SCRIPT_DIR/.." && pwd)}"
 export SPACEWORKS_UPDATE_INSTALL_DIR="$ROOT"
 source "$WRAPPER_SCRIPT_DIR/spaceworks-repository.sh"
+source "$WRAPPER_SCRIPT_DIR/compose-deployment.sh"
 configure_release_repository
 TOPOLOGY="${1:-}"
 [[ "$TOPOLOGY" == "bundled" || "$TOPOLOGY" == "cloud" ]] || {
@@ -50,8 +51,7 @@ LAYER="${SPACEWORKS_COMPOSE_LAYER:-}"
 if [[ -z "$LAYER" && "${SPACEWORKS_COMPOSE_BUILD_LAYER:-0}" == "1" ]]; then
   LAYER="build"
 fi
-# The install shape chosen at setup persists here so an update never silently changes a
-# single-box install back into the multi-service one (or vice versa).
+# The Compose layer chosen at setup persists here across updates.
 if [[ -z "$LAYER" && -f "$ROOT/.spaceworks-layer" ]]; then
   LAYER="$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")"
   [[ "$LAYER" =~ ^[a-z-]+$ ]] || { echo "Invalid layer in $ROOT/.spaceworks-layer." >&2; exit 64; }
@@ -63,6 +63,7 @@ if [[ "${SPACEWORKS_COMPOSE_BUILD_LAYER:-0}" == 1 ]]; then
     tls|saas) LAYER="build-$LAYER" ;;
   esac
 fi
+refuse_single_box_layer "$LAYER" || exit $?
 if [[ "$TOPOLOGY" == "cloud" && "$LAYER" != "none" ]]; then
   echo "Named Compose overlays are available only for bundled topology." >&2
   exit 64
@@ -78,21 +79,14 @@ case "$LAYER" in
   build-saas)
     COMPOSE_FILES+=("$ROOT/docker/compose.build.yml" "$ROOT/docker/compose.saas.yml")
     ;;
-  # The single-box shape: parks the multi-service processes behind an inactive profile and
-  # activates the `app` service the base file declares under `profiles: ["single"]`.
-  single)
-    COMPOSE_FILES+=("$ROOT/docker/compose.single.yml")
-    export COMPOSE_PROFILES="single${COMPOSE_PROFILES:+,$COMPOSE_PROFILES}"
-    ;;
   *)
-    echo "Unknown Compose layer; use none, build, tls, build-tls, saas, build-saas, or single." >&2
+    echo "Unknown Compose layer; use none, build, tls, build-tls, saas, build-saas." >&2
     exit 64
     ;;
 esac
 if [[ "$LAYER" != "none" ]]; then
   RECORD="$OPS_DIR/compose-topology-$LAYER.json"
 fi
-source "$WRAPPER_SCRIPT_DIR/compose-deployment.sh"
 if [[ "$TOPOLOGY" == bundled ]]; then
   append_deployment_layers "$LAYER" "$ROOT"
   RECORD="${RECORD%.json}${DEPLOYMENT_SUFFIX}.json"

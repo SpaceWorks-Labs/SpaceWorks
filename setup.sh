@@ -5,6 +5,10 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 ROOT="$PWD"
+source "$ROOT/scripts/compose-deployment.sh"
+if [[ -f "$ROOT/.spaceworks-layer" ]]; then
+  refuse_single_box_layer "$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")" || exit $?
+fi
 source "$ROOT/scripts/install-owner.sh"
 require_install_owner "$ROOT/setup.sh" "$@"
 COMPOSE=("$ROOT/scripts/spaceworks-compose.sh" bundled)
@@ -33,6 +37,7 @@ die()  { printf '\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 source "$ROOT/scripts/setup-host-orchestration.sh"
 source "$ROOT/scripts/spaceworks-repository.sh"
 source "$ROOT/scripts/cleanup-run-once.sh"
+source "$ROOT/scripts/setup-proxy-config.sh"
 
 # Questionnaire precedes Docker checks, image pulls and writes to the checkout.
 source "$ROOT/scripts/setup-questions.sh"
@@ -101,7 +106,6 @@ chmod 600 .env
 mkdir -p "$ROOT/backups"
 chmod 700 "$ROOT/backups"
 prepare_compose_wrapper
-source "$ROOT/scripts/compose-deployment.sh"
 deployment_services
 if [[ "$BUILD_FROM_SOURCE" == 1 ]]; then
   say "Building and starting the app from source (first run can take a few minutes)..."
@@ -182,12 +186,24 @@ if [ "$FIRST_RUN" = 1 ]; then
 
   say "All done!"
   rm -f -- "$ROOT/.spaceworks-answers"
-  echo "  Website: $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
+  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
+    echo "  Website (hosted elsewhere): $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
+  else
+    echo "  Website: $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
+  fi
   echo "  API: $([[ "$HTTPS_MODE" == 1 ]] && echo http || echo https)://$WEBHOST/api"
   echo "  Control plane: /control/ on the backend only, through a private connection."
   [ "$GEN_PASS" = 1 ] && warn "  Generated admin password: ${ADMINPASS}   (save this now)"
   echo
-  echo   "Next: log into the React staff console at /admin, add inventory, and turn on 'public inventory' for your makerspace."
+  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
+    echo "Next: log into the React staff console at $(deployment_value PUBLIC_APP_BASE_URL)/admin, add inventory, and turn on 'public inventory' for your makerspace."
+  else
+    echo   "Next: log into the React staff console at /admin, add inventory, and turn on 'public inventory' for your makerspace."
+  fi
+  if [[ "$HTTPS_MODE" == 3 ]]; then
+    write_proxy_nginx_config || warn "Could not write the nginx example; see docs/self-hosting.md."
+    print_proxy_nginx_steps
+  fi
 else
   say "App started. To create the first admin (only if you haven't yet), run:"
   echo "  ${COMPOSE[*]} run --rm --no-deps backend --role management python manage.py setup_instance --username admin --password 'a-strong-password' --makerspace-name 'My Makerspace'"

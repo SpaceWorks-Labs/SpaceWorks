@@ -112,7 +112,7 @@ since moved or been retired; each verdict below names where the code is today.
 | 19 | Middleware re-resolves client | **Done** | `inventory/middleware.py` attaches `request.api_client` |
 
 Guard added: `tests/perf/test_list_query_budgets.py` puts a fixed query ceiling on the hot list endpoints
-so an N+1 regression fails CI instead of slowing a queue.
+so an N+1 regression fails local tests before pushing instead of slowing a queue.
 
 ---
 

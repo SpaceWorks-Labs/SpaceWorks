@@ -11,6 +11,21 @@ generation stopped afterwards, so **0.3.0 through 0.5.1 were never recorded here
 window see `git log` and the condensed changelog in `CLAUDE.md`, which also carries the design
 rule each change introduced.
 
+## Unreleased
+
+- **Standard containers for every install** — the single-box shape is removed and the all-in-one image
+  is no longer built or published. Existing single-box installs must switch to standard containers before updating;
+  setup and update refuse the old choice and print [switch steps](docs/update-recovery.md#moving-off-a-single-box-install).
+- **Your own nginx** — HTTPS option 3 writes `spaceworks-proxy.nginx.conf` in the install directory and
+  prints the DNS, Certbot, installation and reload steps.
+- **API-only setup** — offers automatic HTTPS or your own reverse proxy and points you to the website
+  hosted elsewhere.
+- **Upload limits fixed** — the built-in web server no longer rejects bulk inventory imports over 1 MB
+  or tenant-migration archive uploads; API bodies allow 10 MB and the archive import route 20 GB.
+- **Tests run locally only** — run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` before pushing.
+  Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
+  and optionally deploys through the self-hosted runner; `pip-audit` still runs on PRs.
+
 ## 0.9.2 (2026-10-14)
 
 - **Deploys run on a self-hosted GitHub Actions runner** - after the release workflow publishes a main

@@ -40,7 +40,7 @@ refreshes the Compose trust records. `.env`, database/object volumes and backups
 
 The pinned archive is first unpacked in temporary storage. Its shared questionnaire asks hosting model
 (one space, several `/m/<slug>` spaces, or subdomain platform), whether to run the website here, HTTPS,
-standard/single-box containers, and bundled/external storage. It then asks the web address if needed,
+and bundled/external storage. It then asks the web address if needed,
 makerspace name/subdomain, edition and initial module profile, request access, admin identity/password,
 optional Google/Stripe credentials, the GitHub repository to follow, and
 "Install a GitHub Actions runner on this server for automatic deploys? [y/N]" (default No).
@@ -74,8 +74,9 @@ unless explicitly invoked with `--allow-production-demo`.
 
 ## API-only and external storage
 
-Choose **No, API only** to host React on Netlify or another service. The installer requires HTTPS API
-hosting, sets CORS/CSRF origins and the makerspace's verified `frontend_domain` to the first supplied
+Choose **No, API only** to host React on Netlify or another service. These installs must use HTTPS
+option 2 (automatic Caddy) or 3 (your own reverse proxy); plain HTTP is not offered. The installer
+sets CORS/CSRF origins and the makerspace's verified `frontend_domain` to the first supplied
 site. Additional origins are public origins; the first is the staff site. A shared multi-tenant staff site
 is registered in `PLATFORM_STAFF_ORIGINS`. Set the external frontend's `VITE_API_URL` to
 `https://<server-domain>/api` (for a platform, the apex or first tenant API subdomain works).
@@ -86,29 +87,69 @@ routes stay private. Automatic HTTPS adds `compose.api-only-edge.yml`, moves the
 Caddy on 80/443, and removes its website dependency. With an existing reverse proxy, nginx binds only
 `127.0.0.1:8080`; forward the public API domain there, preserving Host, client forwarding and
 `X-Forwarded-Proto: https`. A normal local website behind an existing proxy uses the same loopback port.
-Single box supports a local website over HTTP; choose standard containers for HTTPS, hosted platforms,
-API-only or a source build.
 
 For bundled Silo with HTTPS, point `files.<server-domain>` (or `files.<platform-domain>`) to the server.
 Caddy serves this hostname automatically. With your own proxy, forward it to `127.0.0.1:9000`.
-The Silo console stays at loopback 9001. Configure proxy upload-size limits for your evidence files.
+The Silo console stays at loopback 9001. With your own proxy, allow at least `128m` uploads on
+`files.<domain>` (printing accepts up to 100 MiB; evidence and documents 10 MiB).
 
 Choose **External S3-compatible buckets** to set both backend/browser endpoint URLs, region, private
 evidence bucket, public-image bucket, credentials, public image base URL and presign method.
 `SPACEWORKS_STORAGE=external` adds `docker/compose.external-storage.yml`: `minio` and `createbuckets`
-have inactive profiles, and backend/candidate/single-app dependencies no longer start them. All app
+have inactive profiles, and backend/candidate dependencies no longer start them. All app
 processes inherit external credentials through the base environment anchor. Provision private evidence
 access, public image reads, bucket versioning and browser-origin CORS in the provider dashboard;
 the installer never changes remote bucket policies. HTTPS sites require HTTPS storage/image URLs.
 These overlays need Docker Compose 2.24.4 or newer (`!override` and `!reset`).
 
-The primary layer (`none`, `tls`, `saas`, `single`) persists in `.spaceworks-layer`; frontend/storage
+The primary layer (`none`, `tls`, `saas`) persists in `.spaceworks-layer`; frontend/storage
 selectors persist in `.env`. The wrapper appends those overlays and validates the matching hashed
 `compose-topology[-<layer>][-api-only][-external-storage].json` record. Source builds retain the selected
 TLS/SaaS layer. Updates exclude the website from their image list when disabled; failed-update rollback,
 explicit snapshot rollback and restore all reuse the same wrapper/topology. The live-event process is
 included in image updates and writer fencing. Never activate `website-disabled` or `storage-disabled`
 profiles manually on a deployment that selected those services off.
+
+## Custom domain with your own nginx
+
+Choose HTTPS **option 3** if you already run a reverse proxy. Setup writes
+`spaceworks-proxy.nginx.conf` in the install directory and prints the steps below; you install the
+configuration and manage certificates yourself. nginx must already be running with the Certbot nginx
+plugin installed.
+
+The generated configuration redirects HTTP to HTTPS and forwards `<domain>` to `127.0.0.1:8080`.
+It keeps `/api/v1/live/` SSE streams unbuffered and keeps calendar subscription `.ics` URLs out of
+access and error logs because those URLs are bearer credentials. With bundled storage only, it also
+forwards `files.<domain>` to `127.0.0.1:9000`, preserving the Host header for presigned uploads.
+Both HTTPS servers allow uploads up to `128m`, except tenant-migration archive imports
+(`/api/v1/admin/platform/tenant-migrations/imports`), which allow `20g` to match the app's
+own archive ceiling. The bundled website and API-only edges apply the same rule internally: `10m` for
+API bodies (bulk inventory import is the largest at 5 MiB) and `20g` for that one import route; every
+other file goes straight to storage through a presigned URL.
+
+1. Point DNS A/AAAA for `<domain>` at this server, plus `files.<domain>` with bundled storage.
+2. Obtain the certificate (include the second `-d` only with bundled storage):
+
+   ```bash
+   sudo certbot certonly --nginx --cert-name <domain> -d <domain> [-d files.<domain>]
+   ```
+
+3. Copy the generated file, replacing `<install-dir>` with your installation directory:
+
+   ```bash
+   sudo cp "<install-dir>/spaceworks-proxy.nginx.conf" /etc/nginx/conf.d/spaceworks.conf
+   ```
+
+   Debian sites-available users may install and enable the file there instead.
+4. Test and reload nginx:
+
+   ```bash
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+5. Open `https://<domain>/api/v1/health/` to check.
+
+Automatic HTTPS (**option 2**, built-in Caddy) handles these routes and certificates for you.
 
 ## Production Compose
 
@@ -552,18 +593,6 @@ appear for `reports` or printing-related workflows.
 A makerspace's `frontend_domain` and its `cors_allowed_origins` (API-client origins) are used for
 per-tenant browser access; only the `frontend_domain` origin may hold a staff session.
 
-## The single-box install
-
-`setup.sh` asks "How should it run?". **Single box** runs nginx, the built frontend, gunicorn, the live
-update stream, a Celery worker, the scheduler loop and Redis in ONE container (`spaceworks-allinone`,
-built from `Dockerfile.allinone`) beside Postgres and MinIO. It is the same code and the same fail-closed
-process entrypoint per role; it only reduces what an operator has to run. The choice is persisted in
-`.spaceworks-layer`, which `scripts/spaceworks-compose.sh` reads so updates keep the shape. To switch by
-hand: `SPACEWORKS_COMPOSE_LAYER=single scripts/spaceworks-compose.sh bundled up -d` (or write `single`
-to `.spaceworks-layer`). The container listens on 8080 internally and is published on `HTTP_PORT`; the
-Django control plane (`/control/`) is still not proxied through it. Redis state lives in the
-`allinone_state` volume so rate-limit counters survive a restart; queued deliveries do not need to (tasks
-acknowledge late and are re-enqueued on commit).
 
 
 Connected printer delivery uses `DEVICE_COMMAND_LEASE_SECONDS=60` and `DEVICE_COMMAND_MAX_ATTEMPTS=10`. These positive operational knobs govern acknowledgement and bounded delivery retries. An acknowledged print may finish after its delivery lease expires. Device key rotation/revocation invalidates prior command ownership. Automatic terminal application defaults off per printer binding; staff review uses existing machine scope and charging rules.

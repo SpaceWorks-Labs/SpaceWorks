@@ -3186,6 +3186,22 @@ encoder always emits canonical output, so stored envelopes are unaffected.
 
 ## Organization accounts and organization-derived authority
 
+- **New makerspaces require an owner organization through installer, API, staff console and `/control/`.**
+  These entry points share `organizations/services_owner.assign_owner_organization`: exactly one active
+  existing organization ID or a new name, with organization creation, the owner link and their audit
+  entries in the same transaction as makerspace creation. Lock order matches `change_link`: check
+  `visible_spaces`, call `assert_write_allowed` (the shared migration gate), lock the makerspace with
+  `select_for_update`, then lock the organization. New names always create a new organization with a
+  unique slug. Installer setup asks for the organization name as its own required question and preserves an
+  existing owner on reruns, rechecking under the makerspace lock. Existing ownerless makerspaces are
+  untouched by migrations and remain usable; explicitly rerunning `setup_instance` can assign an owner (a hidden or migration-frozen
+  space is skipped with a warning; only a brand-new space fails the whole setup).
+  Tenant import and `seed_e2e` are the exceptions to the creation requirement: a tenant dump carries no
+  organization rows, so an imported target is created ownerless, and the development seeder may create
+  ownerless spaces. In `/control/` an owner failure after form validation (a concurrent deactivation, a
+  migration gate) rolls the whole add back and returns to the add page with an error message, never a 500.
+  An answers file saved before the organization question reaches `setup_instance` with an empty
+  `--organization-name`, which defaults to the makerspace name.
 - **An `Organization` is a platform entity, not a module.** It is creatable before any makerspace
   exists, spans makerspaces through `OrganizationMakerspace` (`owner | manager | affiliate`, at most
   one owner per space), and is therefore **not** a `module_registry` key: registry keys are

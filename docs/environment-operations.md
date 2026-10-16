@@ -115,6 +115,7 @@ Consumed by `setup_instance`, the image build, or the e2e seed; never needed at 
 | `SETUP_MAKERSPACE_NAME` | read outside `settings.py` |  |
 | `SETUP_MAKERSPACE_SLUG` | read outside `settings.py` |  |
 | `SETUP_MODULE_PROFILE` | read outside `settings.py` |  |
+| `SETUP_ORGANIZATION_NAME` | read outside `settings.py` |  |
 | `SETUP_SUPERADMIN_EMAIL` | read outside `settings.py` |  |
 | `SETUP_SUPERADMIN_PASSWORD` | read outside `settings.py` |  |
 | `SETUP_SUPERADMIN_USERNAME` | read outside `settings.py` |  |

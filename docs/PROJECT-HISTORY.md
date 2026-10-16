@@ -6,6 +6,7 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — owner organizations at makerspace creation.** Installer setup asks for the organization name as its own question, before the makerspace name; installer, API, staff console and `/control/` share atomic owner assignment. The console searches and paginates active organizations or accepts a new name. Existing ownerless spaces remain usable without a migration; tenant import and `seed_e2e` are exceptions.
 - **2026-10-15 — standard containers and local tests.** The all-in-one image is no longer built or published; the single-box shape is removed with refusal and switch steps for existing installs. Own-nginx HTTPS setup generates proxy configuration and prints certificate/install steps; API-only setup offers HTTPS only and points to the external website. CI runs no tests: use `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally; Actions builds/releases backend/frontend images, promotes rolling tags and optionally deploys, with `pip-audit` retained on PRs.
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which

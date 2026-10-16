@@ -4279,6 +4279,8 @@ export type MaintenanceScheduleWrite = {
 export type MaintenanceScheduleWriteTriggerEnum = "days" | "usage" | "both";
 
 export type Makerspace = {
+  "organization_id"?: number;
+  "organization_name"?: string;
   "creation_setup"?: MakerspaceCreationSetup;
   "creation_invitation": CreationInviteDelivery | null;
   "install_profile_id"?: number;
@@ -5505,13 +5507,13 @@ export type OrganizationDetail = {
   "id": number;
   "slug": string;
   "name": string;
+  "is_active": boolean;
   "governance_actions": Array<string>;
   "granted_actions": Array<string>;
   "description": string;
   "website": string;
   "logo_url": string | null;
   "public_profile_enabled": boolean;
-  "is_active": boolean;
   "legal_name": string;
   "registration_number": string;
   "contact_email": string;
@@ -5648,6 +5650,7 @@ export type OrganizationSummary = {
   "id": number;
   "slug": string;
   "name": string;
+  "is_active": boolean;
   "governance_actions": Array<string>;
   "granted_actions": Array<string>;
 };
@@ -6529,6 +6532,8 @@ export type PatchedMaintenanceScheduleWrite = {
 };
 
 export type PatchedMakerspace = {
+  "organization_id"?: number;
+  "organization_name"?: string;
   "creation_setup"?: MakerspaceCreationSetup;
   "creation_invitation"?: CreationInviteDelivery | null;
   "install_profile_id"?: number;

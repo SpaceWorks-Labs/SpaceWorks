@@ -143,6 +143,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
       setMakerspaceOpen(false);
       setMakerspaceForm(emptyMakerspaceForm);
       queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
   });
 
@@ -189,7 +190,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
           </label>
           <div className="desk-actions ml-auto flex flex-wrap gap-2">
             <button className="desk-button-primary" type="button" onClick={openAdd} disabled={!assignableRoles.length}>Add staff</button>
-            {isSuperadmin ? <button className="desk-button" type="button" onClick={() => setMakerspaceOpen(true)}>Create makerspace</button> : null}
+            {isSuperadmin ? <button className="desk-button" type="button" onClick={() => { createMakerspace.reset(); setMakerspaceOpen(true); }}>Create makerspace</button> : null}
           </div>
         </div>
 

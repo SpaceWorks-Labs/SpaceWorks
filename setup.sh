@@ -151,7 +151,8 @@ if [ "$FIRST_RUN" = 1 ]; then
   SETUP_SUPERADMIN_PASSWORD="$ADMINPASS" \
   ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T -e SETUP_SUPERADMIN_PASSWORD backend --role management python manage.py setup_instance \
     --username "$ADMINUSER" --email "$ADMINEMAIL" \
-    --makerspace-name "$MSNAME" --makerspace-slug "$MS_SUBDOMAIN" --profile "$MSPROFILE"
+    --makerspace-name "$MSNAME" --makerspace-slug "$MS_SUBDOMAIN" \
+    --organization-name "${ORG_NAME:-}" --profile "$MSPROFILE"
 
   configure_setup_domain
 

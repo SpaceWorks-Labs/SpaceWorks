@@ -8,6 +8,7 @@ export type OrganizationSummary = {
   id: number;
   slug: string;
   name: string;
+  is_active: boolean;
   governance_actions: string[];
   granted_actions: string[];
 };
@@ -16,7 +17,6 @@ export type OrganizationDetail = OrganizationSummary & {
   website: string;
   logo_url: string | null;
   public_profile_enabled: boolean;
-  is_active: boolean;
   legal_name?: string;
   registration_number?: string;
   contact_email?: string;
@@ -70,18 +70,26 @@ export function useChangeOrganizationLink(id: number) {
     ]) });
 }
 
+type OrganizationFilters = { page?: number; search?: string; active?: boolean };
+
 export const organizationKeys = {
   all: ["organizations"] as const,
-  list: (page: number) => ["organizations", "list", page] as const,
+  list: (filters: number | OrganizationFilters = {}) => {
+    const { page = 1, search = "", active }: OrganizationFilters = typeof filters === "number" ? { page: filters } : filters;
+    return ["organizations", "list", { page, search, active }] as const;
+  },
   detail: (id: number) => ["organizations", id] as const,
   memberships: (id: number, page: number) => ["organizations", id, "memberships", page] as const,
   invitations: (id: number, page: number) => ["organizations", id, "invitations", page] as const,
 };
 
-export function useOrganizations(page = 1) {
+export function useOrganizations(filters: number | OrganizationFilters = {}) {
+  const { page = 1, search = "", active }: OrganizationFilters = typeof filters === "number" ? { page: filters } : filters;
+  const params = new URLSearchParams({ page: String(page), search });
+  if (active !== undefined) params.set("active", String(active));
   return useQuery({
-    queryKey: organizationKeys.list(page),
-    queryFn: () => staffRequest<Page<OrganizationSummary>>(`/admin/organizations/?page=${page}`),
+    queryKey: organizationKeys.list({ page, search, active }),
+    queryFn: () => staffRequest<Page<OrganizationSummary>>(`/admin/organizations/?${params}`),
   });
 }
 

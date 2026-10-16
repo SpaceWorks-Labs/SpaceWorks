@@ -28,6 +28,31 @@ class MakerspaceSerializer(
             raise serializers.ValidationError("Use setup only when creating a makerspace.")
         return value
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        fields = ("organization_id", "organization_name")
+        supplied = [field for field in fields if field in attrs]
+        if self.instance is not None:
+            if supplied:
+                raise serializers.ValidationError({
+                    field: "Choose an owner organization only when creating a makerspace."
+                    for field in supplied
+                })
+        elif len(supplied) != 1:
+            raise serializers.ValidationError({
+                field: "Provide exactly one of organization_id or organization_name."
+                for field in fields
+            })
+        return attrs
+
+    organization_id = serializers.IntegerField(
+        required=False, write_only=True, min_value=1,
+        help_text="Existing active owner organization ID. On create, supply this or organization_name, exactly one; refused on update.",
+    )
+    organization_name = serializers.CharField(
+        required=False, write_only=True, max_length=200,
+        help_text="Create a new owner organization with this name. On create, supply this or organization_id, exactly one; refused on update.",
+    )
     install_profile_id = serializers.IntegerField(required=False, write_only=True, min_value=1)
     creation_setup = MakerspaceCreationSetupSerializer(required=False, write_only=True)
     creation_invitation = CreationInviteDeliverySerializer(read_only=True, allow_null=True)
@@ -91,6 +116,7 @@ class MakerspaceSerializer(
     class Meta:
         model = Makerspace
         fields = [
+            "organization_id", "organization_name",
             "creation_setup", "creation_invitation",
             "install_profile_id",
             "id",

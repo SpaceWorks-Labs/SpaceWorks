@@ -41,12 +41,20 @@ refreshes the Compose trust records. `.env`, database/object volumes and backups
 The pinned archive is first unpacked in temporary storage. Its shared questionnaire asks hosting model
 (one space, several `/m/<slug>` spaces, or subdomain platform), whether to run the website here, HTTPS,
 and bundled/external storage. It then asks the web address if needed,
-makerspace name/subdomain, edition and initial module profile, request access, admin identity/password,
+organization name (its own question; it becomes the makerspace's owner), makerspace name,
+subdomain if applicable, edition and initial module profile, request access, admin identity/password,
 optional Google/Stripe credentials, the GitHub repository to follow, and
 "Install a GitHub Actions runner on this server for automatic deploys? [y/N]" (default No).
 Only Linux with systemd supports runner installation; other hosts skip it.
 The curl installer asks the repository before downloading that repository's questionnaire. Every prompt displays its
 default; required values and invalid combinations are asked again.
+
+Every new makerspace created through the installer, staff console, API or `/control/` gets an owner
+organization. The installer creates a new organization with the supplied name; the console and
+`/control/` require either an existing active organization or a new name. API clients must supply exactly
+one of `organization_id` or `organization_name` on creation. Existing ownerless makerspaces keep working
+without a data migration; tenant import and `seed_e2e` are exceptions to this creation requirement.
+Rerunning `setup_instance` preserves an existing owner and can assign one to an ownerless space.
 
 One summary lists all answers (secrets hidden), services, DNS/proxy requirements and host actions, followed
 by `Proceed? [Y/n]`. It shows whether the runner will be installed and explains:

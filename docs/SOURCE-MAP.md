@@ -31,6 +31,11 @@ invitation delivery after commit. The console creation steps live in
 `features/staff/panels/usersModals/CreationWizardSteps.tsx`.
 `organizations/views_console.py` and `services_console.py` own superadmin create/link
 setup alongside `views_admin.py`; `features/staff/OrganizationSetup.tsx` renders it.
+`organizations/services_owner.py` owns atomic owner assignment shared by the installer, makerspace API
+and `/control/`; `makerspaces/admin_owner.py` defines the add-only owner organization form and the
+`MakerspaceAdmin` mixin that assigns the owner and turns a post-validation owner failure into a message.
+`features/staff/panels/usersModals/OrganizationPicker.tsx` supplies the creation wizard's searchable,
+paginated active-organization picker and new-organization option.
 Organization-link audit IDs are inert source provenance in
 `tenant_migration/audit_references_meta_ux.py`.
 `features/members/memberCard/offlineLoans.ts` stores an explicit own-loan projection;

@@ -125,7 +125,8 @@ All deployment decisions come first, in this order:
    existing reverse proxy. A hosted platform always uses automatic HTTPS; API-only requires HTTPS.
 4. **Storage:** bundled Silo (default), or external S3 endpoint, region, separate private/public buckets,
    access/secret keys, public image base URL and PUT/POST presigning.
-5. **Instance:** web address if not already known, makerspace name, platform subdomain if applicable,
+5. **Instance:** web address if not already known, **organization name** (asked on its own and created as
+   the owner of your makerspace), makerspace name, platform subdomain if applicable,
    edition, initial module profile, and who may submit borrow requests.
 6. **Admin:** username, your email, and password (blank generates one).
 7. **Optional integrations:** Google Web client ID, Stripe secret/webhook keys and currency.

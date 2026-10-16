@@ -70,6 +70,8 @@ ask_setup_questions() {
   WEBHOST="$PUBLIC_DOMAIN"
   if [[ "$HOSTING_MODEL" == 3 ]]; then WEBHOST="$PLATFORM_DOMAIN"; fi
   [[ -n "$WEBHOST" ]] || question WEBHOST 'Web address (host name or IP, no http://)' localhost host || return 1
+  echo 'Makerspaces belong to an organization (your network, university, company or community).'
+  question ORG_NAME 'Organization name' '' org_name || return 1
   question MSNAME 'Name of your makerspace' 'My Makerspace' name || return 1
   [[ "$HOSTING_MODEL" != 3 ]] || question MS_SUBDOMAIN 'First makerspace subdomain' makerspace slug || return 1
   echo 'What is this installation for?'
@@ -147,6 +149,7 @@ setup_summary() {
     "$WEBHOST" "${PLATFORM_DOMAIN:-none}" "${TLS_EMAIL:-none}" "${SITE_ORIGINS:-none}"
   printf '  Makerspace: %s; URL slug/subdomain: %s; edition: %s; request access: %s\n' \
     "$MSNAME" "${MS_SUBDOMAIN:-none}" "$SPACEWORKS_EDITION" "$REQUEST_ACCESS"
+  printf '  Organization: %s (owner of %s)\n' "$ORG_NAME" "$MSNAME"
   echo "  Initial modules: $MSPROFILE; membership will be $([[ "$REQUEST_ACCESS" == members ]] && echo enabled || echo disabled) to match request access."
   printf '  Admin: %s <%s>; password: %s (hidden)\n' "$ADMINUSER" "$ADMINEMAIL" "$([[ "$GEN_PASS" == 1 ]] && echo generated || echo entered)"
   printf '  Google: %s; Stripe: %s; currency: %s; install GitHub Actions runner: %s\n' \

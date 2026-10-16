@@ -3,12 +3,22 @@ import secrets
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+from django.http import Http404
 from django.utils.text import slugify
+from rest_framework.exceptions import APIException
 
 from apps.backup.custody import initialize_custody_state
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import DEFAULT_PROFILE, PROFILES
+from apps.organizations.models import OrganizationMakerspace
+from apps.organizations.services_owner import (
+    assign_owner_organization,
+    bootstrap_owner_organization,
+)
+from apps.tenant_migration.gate_errors import SourceMigrationGateError
+from apps.tenant_migration.gate_runtime import assert_write_allowed
 
 
 class Command(BaseCommand):
@@ -21,11 +31,21 @@ class Command(BaseCommand):
         parser.add_argument("--makerspace-name", default=os.getenv("SETUP_MAKERSPACE_NAME", "My Makerspace"))
         parser.add_argument("--makerspace-slug", default=os.getenv("SETUP_MAKERSPACE_SLUG", ""))
         parser.add_argument(
+            "--organization-name", default=os.getenv("SETUP_ORGANIZATION_NAME"),
+            help="Owner organization name (defaults to the makerspace name).",
+        )
+        parser.add_argument(
             "--profile",
             choices=sorted(PROFILES),
             default=os.getenv("SETUP_MODULE_PROFILE", "") or DEFAULT_PROFILE,
             help="Which modules to install on the first makerspace.",
         )
+
+    @staticmethod
+    def _owner(makerspace):
+        return OrganizationMakerspace.objects.filter(
+            makerspace=makerspace, relationship=OrganizationMakerspace.Relationship.OWNER,
+        ).select_related("organization").first()
 
     def handle(self, *args, **options):
         username = options["username"] or os.getenv("SETUP_SUPERADMIN_USERNAME") or "superadmin"
@@ -66,16 +86,30 @@ class Command(BaseCommand):
                 user.save(update_fields=["is_superuser", "is_staff", "role"])
 
         slug = options["makerspace_slug"] or slugify(options["makerspace_name"])
-        makerspace, space_created = Makerspace.objects.get_or_create(
-            slug=slug,
-            defaults={"name": options["makerspace_name"], "created_by": user},
-        )
-        if space_created:
-            initialize_custody_state(makerspace.pk)
-        # Only on creation: re-running setup must never silently rewrite the modules an
-        # operator has since chosen.
-        if space_created:
-            apply_profile(makerspace, options["profile"], actor=user)
+        with transaction.atomic():
+            makerspace, space_created = Makerspace.objects.get_or_create(
+                slug=slug,
+                defaults={"name": options["makerspace_name"], "created_by": user},
+            )
+            if space_created:
+                assert_write_allowed(makerspace.pk)
+                makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+                initialize_custody_state(makerspace.pk)
+                # Reruns must preserve the operator's current module selection.
+                apply_profile(makerspace, options["profile"], actor=user)
+            owner = self._owner(makerspace)
+            organization_name = options["organization_name"] or options["makerspace_name"]
+            if space_created:
+                owner = bootstrap_owner_organization(user, makerspace.pk, new_name=organization_name)
+            elif owner is None:
+                try:
+                    # assign_owner_organization re-checks under the tenant lock, so
+                    # concurrent setup runs cannot both attach an owner.
+                    owner = assign_owner_organization(user, makerspace.pk, new_name=organization_name)
+                except (Http404, APIException, SourceMigrationGateError) as exc:
+                    # An existing space may be hidden from this superadmin or frozen by a
+                    # migration gate; setup reruns must not fail on an optional backfill.
+                    self.stderr.write(f"Skipped assigning an owner organization: {exc}")
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -83,6 +117,8 @@ class Command(BaseCommand):
                 f"{'created' if space_created else 'found'} makerspace {makerspace.slug}."
             )
         )
+        if owner is not None:
+            self.stdout.write(f"Owner organization: {owner.organization.name} (owns {makerspace.name}).")
         if space_created:
             self.stdout.write(
                 f"Installed the '{options['profile']}' module profile "

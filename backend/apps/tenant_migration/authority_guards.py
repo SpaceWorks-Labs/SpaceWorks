@@ -156,6 +156,17 @@ DECLARED_AUTHORITY_FIELDS = {
 }
 
 
+from .catalog_p2_presence import FIELD_NAMES as PRESENCE_FIELDS
+AUTHORIZATION_SOURCES += tuple(APPS_DIR / "presence" / name for name in (
+    "policy.py", "services.py", "privacy.py", "display.py", "event_attendance.py", "notifications.py",
+))
+SCANNED_MODEL_LABELS |= PRESENCE_FIELDS.keys()
+DECLARED_AUTHORITY_FIELDS.update({
+    (label, field): "Source-local presence/disclosure input; the entire model is DROP on tenant import."
+    for label, fields in PRESENCE_FIELDS.items() for field in fields if field != "id"
+})
+
+
 def _normalise_field_name(name, model_fields):
     root = name.split("__", 1)[0]
     if root.endswith("_id") and root[:-3] in model_fields:

@@ -214,4 +214,6 @@ PLANS = (
     ),
 )
 
+from apps.presence.purge import delete as presence_delete
+PLANS += (ModulePurgePlan("presence", "Current and historical presence sessions and display preferences.", presence_delete),)
 BY_KEY = {plan.key: plan for plan in PLANS}

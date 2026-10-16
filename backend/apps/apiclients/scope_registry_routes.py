@@ -128,6 +128,10 @@ from .scope_registry_wp4 import definitions as wp4_routes
 _ROUTE_DEFINITIONS += wp4_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
 
 
+from .scope_registry_p2_presence import routes as presence_routes
+_ROUTE_DEFINITIONS += presence_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
+
+
 def _build_registry():
     registry = {}
     for definition in _ROUTE_DEFINITIONS:

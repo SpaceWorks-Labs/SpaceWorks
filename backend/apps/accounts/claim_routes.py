@@ -28,7 +28,10 @@ CLAIM_REACHABLE_PREFIXES = (
 
 from .claim_routes_profiles import PROFILE_CLAIM_ROUTES
 
+from .claim_routes_p2_presence import ROUTES as PRESENCE_ROUTES
+
 CLAIM_ROUTES = {
+    **PRESENCE_ROUTES,
     **PROFILE_CLAIM_ROUTES,
     **PUBLIC_CLAIM_ROUTES,
     **MEMBER_CLAIM_ROUTES,

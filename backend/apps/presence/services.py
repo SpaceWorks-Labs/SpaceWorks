@@ -1,194 +1,186 @@
+"""Transactional presence writers. Lock tenant, then account, then session."""
 from datetime import timedelta
 
-from django.db import transaction
+from django.contrib.auth import get_user_model
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.accounts.claim_sessions import claim_context, token_payload_for_context, validated_claim_session
 from apps.audit import services as audit
-from apps.accounts.claim_sessions import (
-    claim_context,
-    token_payload_for_context,
-    validated_claim_session,
+from apps.tenant_migration.gate_runtime import tenant_write
+from .geofence import require_inside
+from .models import PresencePreference, PresenceSession, PresenceSettings
+from .policy import PresenceError, owned_project, require_account, require_staff, validate_duration
+from .services_claim import (
+    _validate_claim_scope, end_sessions_for_claim, end_sessions_for_membership, expire_claim_presence,
 )
-from apps.makerspaces.models import MakerspaceMembership, presence_presets
-from apps.presence.geofence import evaluate_geofence, geofence_metadata
-from apps.presence.guard import MemberPresenceRequired
-from apps.presence.models import PresenceSession
 
 
-def _active_sessions(user, makerspace, now, *, claim_id=None):
-    rows = PresenceSession.objects.select_for_update().filter(
-        member=user,
-        makerspace=makerspace,
-        ended_at__isnull=True,
-        expires_at__gt=now,
-    )
-    if claim_id is not None:
-        rows = rows.filter(created_via_claim_session_id=claim_id)
-    return rows.order_by("-started_at", "-id")
-
-
-def start_session(user, makerspace, duration_minutes, *, latitude=None, longitude=None, accuracy=None):
-    if duration_minutes not in presence_presets(makerspace):
-        raise ValidationError({"duration_minutes": "Choose an allowed session length."})
-    # ADVISORY by design (owner decision): browser-supplied coordinates are spoofable, so the geofence
-    # is recorded for staff visibility but NEVER blocks a session. Do not convert this into a hard gate.
-    geofence_result = evaluate_geofence(makerspace, latitude=latitude, longitude=longitude, accuracy=accuracy)
+def _lock_account(user, space):
+    from apps.makerspaces.models import Makerspace
     context = claim_context(user)
-    with transaction.atomic():
-        claim = None
-        if context is not None:
-            claim = validated_claim_session(
-                token_payload_for_context(context, user.pk), for_update=True
-            )
-            _validate_claim_scope(claim, user, makerspace)
-        membership = MakerspaceMembership.objects.select_for_update().filter(
-            makerspace=makerspace, user=user, status="active"
-        ).first()
-        if membership is None:
-            raise MemberPresenceRequired()
-        now = timezone.now()
-        requested_duration = timedelta(minutes=duration_minutes)
-        requested_expiry = now + requested_duration
-        if claim is not None:
-            requested_expiry = min(requested_expiry, claim.absolute_expires_at)
-        active = list(
-            _active_sessions(
-                user,
-                makerspace,
-                now,
-                claim_id=claim.pk if claim is not None else None,
-            )
-        )
-        # Ordinary reuse is keyed on the session's DURATION, which is the shipped rule:
-        # asking for the same length a moment later must return the same session, and
-        # comparing against `now + duration` makes that impossible because the requested
-        # expiry always moves forward. A claim-created start additionally requires the
-        # existing session to sit inside the claim deadline, so the authorization a claim
-        # produces can never outlive the claim itself.
-        reusable = bool(
-            active
-            and active[0].expires_at - active[0].started_at == requested_duration
-            and (claim is None or active[0].expires_at <= claim.absolute_expires_at)
-        )
-        if reusable:
-            return active[0]
-        for session in active:
-            session.ended_at = now
-            session.ended_by = user
-            session.end_reason = PresenceSession.EndReason.SUPERSEDED
-            session.save(update_fields=["ended_at", "ended_by", "end_reason"])
-            audit.record(user, "presence.superseded", makerspace=makerspace, target=session)
-        session = PresenceSession.objects.create(
-            member=user,
-            makerspace=makerspace,
-            membership=membership,
-            started_at=now,
-            expires_at=requested_expiry,
-            created_via_claim_session=claim,
-        )
-        audit.record(user, "presence.started", makerspace=makerspace, target=session, meta=geofence_metadata(geofence_result))
-        return session
+    space = Makerspace.objects.select_for_update(no_key=True).get(pk=space.pk)
+    PresenceSettings.objects.get_or_create(makerspace=space)
+    user = get_user_model().objects.select_for_update(no_key=True).get(pk=user.pk)
+    if context is not None:
+        user._claim_audit_context = context
+    return user, space
+
+
+def _claim(user, space):
+    context = claim_context(user)
+    if context is None:
+        return None
+    claim = validated_claim_session(token_payload_for_context(context, user.pk), for_update=True)
+    _validate_claim_scope(claim, user, space)
+    return claim
+
+
+def _rows(user, space):
+    return PresenceSession.objects.select_for_update().filter(
+        account=user, makerspace=space, ended_at=None).order_by("-started_at", "-pk")
+
+
+def _end(session, actor, reason, now):
+    session.ended_at, session.ended_by, session.end_reason = now, actor, reason
+    session.save(update_fields=["ended_at", "ended_by", "end_reason"])
+    audit.record(actor, "presence.ended", makerspace=session.makerspace, target=session,
+                 meta={"reason": reason})
+
+
+def _create(user, space, membership, duration, *, actor, status, project=None,
+            hide_on_display=None, claim=None, registration=None):
+    now = timezone.now()
+    expiry = now + timedelta(minutes=duration)
+    if registration:
+        expiry = min(expiry, registration.event.ends_at)
+    if claim:
+        expiry = min(expiry, claim.absolute_expires_at)
+    if expiry <= now:
+        raise PresenceError("presence_expired", "The check-in authorization has expired.")
+    active = list(_rows(user, space))
+    for row in active:
+        if (row.expires_at > now and row.expires_at - row.started_at == timedelta(minutes=duration)
+                and row.status == status and row.project_id == getattr(project, "pk", None)
+                and row.event_registration_id == getattr(registration, "pk", None)
+                and row.created_via_claim_session_id == getattr(claim, "pk", None)
+                and (hide_on_display is None or row.hide_on_display == hide_on_display)):
+            return row
+    for row in active:
+        reason = "expired" if row.expires_at <= now else "superseded"
+        _end(row, actor, reason, min(now, row.expires_at))
+    preference, _ = PresencePreference.objects.get_or_create(makerspace=space, account=user)
+    if hide_on_display is not None and preference.hide_on_display != hide_on_display:
+        preference.hide_on_display = hide_on_display
+        preference.save(update_fields=["hide_on_display"])
+        audit.record(actor, "presence.preference_updated", makerspace=space, target=preference)
+    session = PresenceSession.objects.create(
+        account=user, member=user, makerspace=space, membership=membership,
+        started_at=now, expires_at=expiry, status=status, project=project,
+        hide_on_display=preference.hide_on_display, created_via_claim_session=claim,
+        event_registration=registration,
+    )
+    audit.record(actor, "presence.started", makerspace=space, target=session,
+                 meta={"status": status, "staff_recorded": actor.pk != user.pk})
+    return session
+
+
+def start_session(user, makerspace, duration_minutes, *, latitude=None, longitude=None,
+                  accuracy=None, status=None, project_id=None, hide_on_display=None):
+    return _start(user, makerspace, duration_minutes, actor=user, staff=False,
+                  latitude=latitude, longitude=longitude, accuracy=accuracy, status=status,
+                  project_id=project_id, hide_on_display=hide_on_display)
+
+
+def staff_check_in(actor, user, space, duration_minutes, **options):
+    return _start(user, space, duration_minutes, actor=actor, staff=True, **options)
+
+
+def _start(user, space, duration, *, actor, staff, latitude=None, longitude=None,
+           accuracy=None, status=None, project_id=None, hide_on_display=None):
+    with tenant_write(space.pk):
+        claim = _claim(user, space)
+        context = claim_context(user)
+        user, space = _lock_account(user, space)
+        if staff:
+            require_staff(actor, space)
+        membership = require_account(user, space)
+        if staff and membership is None:
+            # Staff record people on this roster (members, or this space's walk-ins);
+            # account-only guests check themselves in inside the geofence.
+            raise PresenceError("account_not_in_space", "Use a member or walk-in from this makerspace.", status_code=403)
+        if context and (membership is None or context.membership_id != membership.pk):
+            raise PresenceError("claim_scope", "Claim session belongs to another makerspace.", status_code=403)
+        validate_duration(space, duration)
+        if not staff:
+            require_inside(space, latitude=latitude, longitude=longitude, accuracy=accuracy)
+        if user.is_walk_in and not staff and claim is None:
+            raise PresenceError("walk_in_staff_required", "Ask staff to check in this walk-in.", status_code=403)
+        guest = membership is None or (staff and user.is_walk_in)
+        status = status or ("guest" if guest else "visiting")
+        if status not in {"working", "visiting", "guest"} or (guest != (status == "guest")):
+            raise PresenceError("invalid_presence_status", "Choose an eligible status; event attendance requires a live ticket check-in.")
+        project = owned_project(user, space, project_id, status)
+        return _create(user, space, membership, duration, actor=actor, status=status,
+                       project=project, hide_on_display=hide_on_display, claim=claim)
 
 
 def current_session(user, makerspace):
-    rows = PresenceSession.objects.filter(
-        member=user, makerspace=makerspace, ended_at__isnull=True,
-        expires_at__gt=timezone.now(),
-    )
+    require_account(user, makerspace)
+    rows = PresenceSession.objects.filter(account=user, makerspace=makerspace, ended_at=None,
+                                           expires_at__gt=timezone.now())
     context = claim_context(user)
-    if context is not None:
-        rows = rows.filter(created_via_claim_session__session_id=context.session_id)
-    return rows.order_by("-started_at", "-id").first()
+    if context:
+        rows = rows.filter(created_via_claim_session__session_id=context.session_id,
+                           expires_at__lte=context.absolute_expires_at)
+    return rows.order_by("-started_at", "-pk").first()
 
 
-def end_session(user, makerspace):
-    context = claim_context(user)
-    with transaction.atomic():
-        claim_id = None
-        if context is not None:
-            claim = validated_claim_session(
-                token_payload_for_context(context, user.pk), for_update=True
-            )
-            _validate_claim_scope(claim, user, makerspace)
-            claim_id = claim.pk
-        session = _active_sessions(
-            user, makerspace, timezone.now(), claim_id=claim_id
-        ).first()
-        if session is None:
-            return None
-        session.ended_at = timezone.now()
-        session.ended_by = user
-        session.end_reason = PresenceSession.EndReason.USER_ENDED
-        session.save(update_fields=["ended_at", "ended_by", "end_reason"])
-        audit.record(user, "presence.ended", makerspace=makerspace, target=session)
-        return session
+def renew_session(user, space, duration_minutes):
+    with tenant_write(space.pk):
+        claim = _claim(user, space)
+        user, space = _lock_account(user, space)
+        require_account(user, space)
+        validate_duration(space, duration_minutes)
+        row = PresenceSession.objects.select_for_update().filter(account=user, makerspace=space).order_by("-started_at", "-pk").first()
+        if row is None or (claim and row.created_via_claim_session_id != claim.pk):
+            raise PresenceError("session_required", "Check in before renewing.")
+        if row.ended_at is not None and row.end_reason != "expired":
+            raise PresenceError("session_ended", "Check in again after ending your presence.")
+        if row.expires_at < timezone.now() - timedelta(minutes=10):
+            raise PresenceError("session_expired", "This session has expired. Check in again with your current location.")
+        expiry = timezone.now() + timedelta(minutes=duration_minutes)
+        if row.event_registration_id:
+            from apps.events.models import EventRegistration
+            from apps.makerspaces.platform import module_enabled
+            registration = EventRegistration.objects.select_related("event").get(pk=row.event_registration_id)
+            if (not module_enabled(space, "events") or registration.status != "attended"
+                    or registration.event.status != "published"):
+                raise PresenceError("event_session", "This event attendance is no longer current.")
+            expiry = min(expiry, registration.event.ends_at)
+        if claim:
+            expiry = min(expiry, claim.absolute_expires_at)
+        if expiry <= timezone.now():
+            raise PresenceError("presence_expired", "The check-in authorization has expired.")
+        row.expires_at, row.expiry_reminded_at = expiry, None
+        row.ended_at, row.ended_by, row.end_reason = None, None, ""
+        row.revision += 1
+        row.save(update_fields=["expires_at", "expiry_reminded_at", "revision", "ended_at", "ended_by", "end_reason"])
+        audit.record(user, "presence.renewed", makerspace=space, target=row)
+        return row
 
 
-def end_sessions_for_membership(actor, membership, reason="membership_revoked"):
-    now = timezone.now()
-    for session in _active_sessions(membership.user, membership.makerspace, now):
-        session.ended_at = now
-        session.ended_by = actor
-        session.end_reason = reason
-        session.save(update_fields=["ended_at", "ended_by", "end_reason"])
-        audit.record(actor, "presence.ended_membership_revoked", makerspace=membership.makerspace, target=session)
-
-
-def end_sessions_for_claim(claim, *, ended_at, actor):
-    """Lock claim then end exactly the active presence rows carrying its FK."""
-    with transaction.atomic():
-        from apps.accounts.models_claim import MemberClaimCode
-
-        locked = (
-            MemberClaimCode.objects.select_for_update(of=("self",))
-            .select_related("membership")
-            .get(pk=claim.pk)
-        )
-        if (
-            locked.session_id != claim.session_id
-            or locked.membership_id != claim.membership_id
-        ):
-            raise RuntimeError("Claim-session provenance is inconsistent.")
-        sessions = list(
-            PresenceSession.objects.select_for_update().filter(
-                created_via_claim_session=locked,
-                member_id=locked.membership.user_id,
-                makerspace_id=locked.membership.makerspace_id,
-                ended_at__isnull=True,
-                expires_at__gt=ended_at,
-            )
-        )
-        for session in sessions:
-            session.ended_at = ended_at
-            session.ended_by = actor
-            session.end_reason = PresenceSession.EndReason.CLAIM_REVOKED
-            session.save(update_fields=["ended_at", "ended_by", "end_reason"])
-            audit.record(
-                actor,
-                "presence.ended_claim_revoked",
-                makerspace=session.makerspace,
-                target=session,
-                meta={"claim_session_id": str(locked.session_id)},
-            )
-
-
-def expire_claim_presence(session_id):
-    """End expired/revoked claim presence after a signed access token is rejected."""
-    from apps.accounts.models_claim import MemberClaimCode
-
-    claim = MemberClaimCode.objects.filter(session_id=session_id).first()
-    now = timezone.now()
-    if claim and (
-        claim.revoked_at is not None
-        or (claim.absolute_expires_at and claim.absolute_expires_at <= now)
-    ):
-        end_sessions_for_claim(claim, ended_at=now, actor=None)
-
-
-def _validate_claim_scope(claim, user, makerspace):
-    if (
-        claim.membership.user_id != user.pk
-        or claim.membership.makerspace_id != makerspace.pk
-    ):
-        raise PermissionDenied("Claim session does not belong to this member and makerspace.")
+def end_session(user, makerspace, *, actor=None):
+    actor = actor or user
+    with tenant_write(makerspace.pk):
+        claim = _claim(user, makerspace)
+        user, makerspace = _lock_account(user, makerspace)
+        if actor.pk != user.pk:
+            require_staff(actor, makerspace)
+        else:
+            require_account(user, makerspace)
+        rows = _rows(user, makerspace)
+        if claim:
+            rows = rows.filter(created_via_claim_session=claim)
+        for row in rows:
+            reason = "user_ended" if actor.pk == user.pk else "staff_ended"
+            _end(row, actor, reason, timezone.now())

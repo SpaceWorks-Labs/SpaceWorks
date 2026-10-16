@@ -86,6 +86,10 @@ for _feature, _channels in DEFAULT_CHANNEL_STATE.items():
     _channels[C.WHATSAPP] = False
 
 
+from .notification_catalog_p2_presence import register as register_presence
+register_presence(FEATURE_EVENTS, DEFAULT_CHANNEL_STATE)
+
+
 def default_state(feature, channel):
     """The catalog default for a cell (False for any unknown feature/channel)."""
     return DEFAULT_CHANNEL_STATE.get(feature, {}).get(channel, False)

@@ -136,7 +136,13 @@ def user_payload(user, request=None):
         if makerspace_id not in membership_space_ids
     ]
 
+    from apps.makerspaces.resource_grant_sources import payload_entries
+    resource_grants = (
+        payload_entries(user, makerspace_ids=org_space_ids)
+        if include_organizations and claim_context is None else {}
+    )
     return {
+        **resource_grants,
         "id": user.id,
         "username": user.username,
         "email": user.email,
@@ -148,5 +154,4 @@ def user_payload(user, request=None):
         "must_change_password": user.must_change_password,
         "makerspaces": membership_entries + org_only_entries,
     }
-
 

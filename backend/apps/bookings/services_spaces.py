@@ -87,6 +87,8 @@ def create_space(
     requester_notifications_enabled=None, payment_amount=0, machine_type=None,
 ):
     locked_makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+    from .booking_authority import require_tenant
+    require_tenant(actor, locked_makerspace)
     machine_type = _machine_type(locked_makerspace, machine_type)
     space = BookableSpace(
         makerspace=locked_makerspace,
@@ -121,6 +123,13 @@ def update_space(space, *, actor, audit_service, **changes):
         .select_related('makerspace')
         .get(pk=space.pk)
     )
+    from .booking_authority import require
+    require(actor, locked, "edit_details")
+    from .booking_permissions import DESCRIPTIVE_FIELDS
+    from .booking_authority import can_manage_grants
+    if not can_manage_grants(actor, locked) and set(changes) - DESCRIPTIVE_FIELDS:
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied("Resource grants allow descriptive fields only.")
     if not locked.is_active:
         raise BookingInvalidTransition('Inactive spaces cannot be updated.')
     unknown = set(changes) - SPACE_FIELDS
@@ -157,6 +166,8 @@ def deactivate_space(space, *, actor, audit_service):
         .select_related('makerspace')
         .get(pk=space.pk)
     )
+    from .booking_authority import require
+    require(actor, locked, None)
     if not locked.is_active:
         raise BookingInvalidTransition('Space is already inactive.')
     locked.is_active = False

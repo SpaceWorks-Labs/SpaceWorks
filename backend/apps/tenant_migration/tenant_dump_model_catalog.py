@@ -31,6 +31,7 @@ PROJECTED_MODEL_LABELS = frozenset(
     events.EventSeries events.Event events.EventRegistration
     events.EventCheckInEvent events.EventStationBinding events.EventFeedbackSurvey events.EventFeedbackResponse
     events.EventAttendanceCertificate
+    events.EventCertificateArtwork events.EventCertificateTemplateRevision
     evidence.EvidencePhoto evidence.EvidenceObjectRetentionState
     evidence.EvidenceRetentionPolicy hardware_requests.HardwareRequest
     hardware_requests.HardwareRequestItem hardware_requests.HardwareRequestItemAsset
@@ -77,9 +78,16 @@ PROJECTED_MODEL_LABELS |= WP4_PROJECTED_LABELS
 
 from .catalog_w7_events import EVENT_PROJECTED_MODELS
 PROJECTED_MODEL_LABELS |= EVENT_PROJECTED_MODELS
+from .catalog_broadcasts import FIELD_NAMES as BROADCAST_FIELDS
+PROJECTED_MODEL_LABELS |= BROADCAST_FIELDS.keys()
+from .catalog_website import FIELD_NAMES as WEBSITE_FIELDS
+PROJECTED_MODEL_LABELS |= WEBSITE_FIELDS.keys()
 
 from .catalog_wp3 import WP3_PROJECTED_LABELS
 PROJECTED_MODEL_LABELS |= WP3_PROJECTED_LABELS
+
+from .catalog_booking_arrival import FIELD_NAMES as BOOKING_ARRIVAL_FIELDS
+PROJECTED_MODEL_LABELS |= BOOKING_ARRIVAL_FIELDS.keys()
 
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 

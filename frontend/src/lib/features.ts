@@ -57,6 +57,11 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "notifications.member_preferences", parent_module: "notifications", label: "Member communication preferences" },
   { key: "events.invites", parent_module: "events", label: "Event invitations" },
   { key: "events.account_registration", parent_module: "events", label: "Account event registration" },
+  { key: "events.organization_audience", parent_module: "events", label: "Participating organizations audience" },
+  { key: "bookings.broadcasts", parent_module: "bookings", label: "Booker broadcasts" },
+  { key: "events.broadcasts", parent_module: "events", label: "Event broadcasts" },
+  { key: "reports.event_pdf", parent_module: "reports", label: "Post-event PDF" },
+  { key: "reports.event_exports", parent_module: "reports", label: "Event detail exports" },
   { key: "events.ticket_types", parent_module: "events", label: "Event ticket types" },
   { key: "events.promo_codes", parent_module: "events", label: "Event promo codes" },
   { key: "events.offline_checkin", parent_module: "events", label: "Offline & station check-in" },
@@ -64,6 +69,16 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "maintenance.reminders", parent_module: "maintenance", label: "Maintenance reminders" },
   { key: "machines.certifications", parent_module: "machines", label: "Certification gating" },
   { key: "inventory.kiosk", parent_module: null, label: "Kiosk" },
+  { key: "bookings.passes", parent_module: "bookings", label: "Printable booking passes" },
+  { key: "bookings.clone", parent_module: "bookings", label: "Clone resources" },
+  { key: "bookings.staff_tools", parent_module: "bookings", label: "Staff reservation tools" },
+  { key: "bookings.analytics", parent_module: "bookings", label: "Resource analytics" },
+  { key: "bookings.utilization_pdf", parent_module: "bookings", label: "Resource utilization PDF" },
+  { key: "bookings.exports", parent_module: "bookings", label: "Resource reservation exports" },
+  { key: "bookings.confirmations", parent_module: "bookings", label: "Private booking confirmations" },
+  { key: "bookings.checkin", parent_module: "bookings", label: "Booking QR arrival" },
+  { key: "bookings.staff_grants", parent_module: "bookings", label: "Resource staff grants" },
+  { key: "events.certificate_designer", parent_module: "events", label: "Certificate designer" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

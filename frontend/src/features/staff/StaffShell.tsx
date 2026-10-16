@@ -13,7 +13,7 @@ import { machineTypeSegment, staffTabPath } from "./staffTabs";
 import { visibleRequestTabs } from "./panels/requestTabs";
 
 type Props = { activeMakerspace?: Makerspace; allowedTabs: readonly string[]; activeTab: string;
-  guestOnly: boolean; singleTenantLocked: boolean; handoutOnly: boolean; user: StaffAuthUser;
+  guestOnly: boolean; singleTenantLocked: boolean; handoutOnly: boolean; grantOnly?: boolean; user: StaffAuthUser;
   roleName?: string; isSuperadmin: boolean; makerspaces: Makerspace[]; setSelected: (id: number | null) => void;
   setTab: (tab: string) => void; signOut: () => Promise<void>; actions: readonly string[]; children: ReactNode };
 
@@ -32,8 +32,9 @@ export function StaffShell(props: Props) {
   // issue_request. With neither, the page would be a dead end: hide it and open the front desk instead.
   const noQueues = !visibleRequestTabs(guestOnly || props.handoutOnly, props.actions, props.isSuperadmin).length;
   const redirectTab = ["direct", "handover"].find(key => allowedTabs.includes(key));
+  // "granted" (Assigned resources) is a global tab: event/booking grant holders reach it with no workspace selected.
   const tabs = space ? allowedTabs.filter(key => key !== "requests" || !noQueues || !redirectTab)
-    : allowedTabs.filter(key => ["organizations", "platform-dashboard"].includes(key));
+    : allowedTabs.filter(key => ["organizations", "platform-dashboard", "granted"].includes(key));
   const nav = sidebarSections(tabs, activeTab, path, props.setTab, props.handoutOnly);
   let activeKey = activeTab;
   for (const section of nav) for (const item of [...section.items, ...section.more ?? []]) {
@@ -55,24 +56,29 @@ export function StaffShell(props: Props) {
     ...(props.makerspaces.length > 1 ? props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })) : []),
     ...(props.isSuperadmin ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : []), ...publicPage,
   ] : [];
+  const hasGrants = Boolean(user.event_grants?.length || user.booking_grants?.length);
+  // A grant-only console (event/booking grants, no makerspace actions) has no makerspace-wide
+  // search, commands or job tray: those read makerspace-scoped data the account cannot see.
+  const makerspaceTools = !!space && !props.grantOnly;
   const workspace: ShellWorkspace | undefined = space ? { name: space.name, subtitle: [space.public_code || space.slug, props.roleName].filter(Boolean).join(" · "),
     avatar: { kind: "avatar", name: space.name, seed: space.slug }, menu, locked: singleTenantLocked || props.makerspaces.length === 1 } : props.isSuperadmin ? {
       name: "Choose a space", subtitle: "Super Admin", avatar: { kind: "icon", icon: "Settings", tone: "neutral" },
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),
-    } : undefined;
+    } : hasGrants ? { name: "Assigned resources", subtitle: "Resource staff", avatar: { kind: "icon", icon: "Calendar", tone: "neutral" }, menu: [], locked: true }
+    : undefined;
   if (space && activeTab === "requests" && noQueues && redirectTab) return <Navigate replace to={path(redirectTab)} />;
   return <>
     <AppShell variant="staff" workspace={workspace} nav={nav} activeKey={activeKey}
       compactNav={props.handoutOnly ? "bottom-tabs" : "drawer"} footerLinks={publicPage}
-      search={space ? { label: "Search and commands", shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
-      status={space ? <JobTrayPill makerspaceId={space.id} /> : null}
+      search={makerspaceTools ? { label: "Search and commands", shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
+      status={makerspaceTools ? <JobTrayPill makerspaceId={space.id} /> : null}
       user={{ name: user.username, role: props.roleName, menu: [{ label: "Account & two-step sign-in", href: "/mfa" }, ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
       {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
           Both pills share the job-status query keys, so this adds no polling. */}
-      {space ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}
+      {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}
       {props.children}
     </AppShell>
-    {space ? <CommandPalette key={space.id} makerspaceId={space.id} makerspaceSlug={space.slug} allowedTabs={allowedTabs}
+    {makerspaceTools && space ? <CommandPalette key={space.id} makerspaceId={space.id} makerspaceSlug={space.slug} allowedTabs={allowedTabs}
       guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} ownerName={user.username} actions={props.actions}
       isSuperadmin={props.isSuperadmin} open={paletteOpen} onOpenChange={setPaletteOpen} /> : null}
   </>;

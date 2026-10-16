@@ -15,15 +15,15 @@ export function OperationsReportsBookings(props: FablabPanelProps) {
         {props.aggregate ? <div className="mt-4 space-y-6">{groups.map((group) => (
           <section key={group.makerspaceId} className="rounded-md border border-line p-4">
             <h4 className="eyebrow">{props.makerspaceName(group.makerspaceId)}</h4>
-            <BookingsReport rows={group.rows} data={group.data} />
+            <BookingUtilizationSummary rows={group.rows} data={group.data} />
           </section>
-        ))}</div> : <BookingsReport rows={rows} data={query.data} />}
+        ))}</div> : <BookingUtilizationSummary rows={rows} data={query.data} />}
       </DataState>
     </Panel>
   );
 }
 
-function BookingsReport({ rows, data }: { rows: BookingUtilizationRow[]; data?: ReportResponse<BookingUtilizationRow> }) {
+export function BookingUtilizationSummary({ rows, data }: { rows: BookingUtilizationRow[]; data?: ReportResponse<BookingUtilizationRow> }) {
   return <>
     <StatCards stats={[["Reserved hours", sum(rows, "reserved_hours")], ["Completed hours", sum(rows, "completed_hours")], ["Upcoming", sum(rows, "upcoming")], ["No-shows", sum(rows, "no_show")]]} />
     <div className="mt-4 grid gap-4 lg:grid-cols-2">

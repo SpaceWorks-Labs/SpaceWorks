@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, PolymorphicProxySerializer, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,7 +9,11 @@ from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
 from apps.events import services
+from apps.events import event_authority
 from apps.events.models import EventRegistration
+from apps.events.event_permissions import MANAGE_REGISTRATIONS, CHECK_IN
+from apps.events.services_registration_tools import annotate_registration_restore_history
+from apps.events.serializers_checkin import EventCheckInResultSerializer
 from apps.events.serializers_admin import (
     EventAttendanceMarkSerializer,
     EmptyActionSerializer,
@@ -32,13 +36,7 @@ from apps.makerspaces.models import MakerspaceMembership
 from apps.payments.models import Payment
 
 
-REGISTRATION_ACTION_ERRORS = {
-    400: OpenApiResponse(EVENT_VALIDATION_ERROR_SCHEMA, description='Unexpected request body or events module disabled.'),
-    401: OpenApiResponse(ErrorSerializer, description='Authentication is required.'),
-    403: OpenApiResponse(ErrorSerializer, description='Event management is required.'),
-    404: OpenApiResponse(ErrorSerializer, description='Registration not found.'),
-    409: EVENT_ERROR_409,
-}
+from .registration_view_errors import REGISTRATION_ACTION_ERRORS
 
 
 class EventRegistrationListView(APIView):
@@ -51,10 +49,14 @@ class EventRegistrationListView(APIView):
         responses={200: EventRegistrationListResponseSerializer, **REGISTRATION_ACTION_ERRORS},
     )
     def get(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
-        queryset = EventRegistration.objects.filter(event=event).order_by('created_at', 'id')
+        event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
+        queryset = annotate_registration_restore_history(
+            EventRegistration.objects.filter(event=event).order_by('created_at', 'id')
+        )
         paginator = _RegistrationPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
+        from .organization_audience import annotate_roster_eligibility
+        annotate_roster_eligibility(event, page)
         context = scoped_payment_context(
             request.user,
             rbac.Action.MANAGE_EVENTS,
@@ -79,7 +81,7 @@ class EventRegistrationListView(APIView):
     #
     # Takes a `member_id` rather than free-text contact fields. Registering someone
     # means naming a real person, and a person with no account is given one at the
-    # counter (`walk_in_services`) first — so there is one identity path, instead of the
+    # counter (`walk_in_services`) first â€” so there is one identity path, instead of the
     # events surface minting half-identified attendees of its own.
 
     @extend_schema(
@@ -94,7 +96,7 @@ class EventRegistrationListView(APIView):
         },
     )
     def post(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
         serializer = EventStaffRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if event.registration_audience != "members":
@@ -143,10 +145,14 @@ class EventRegistrationMarkAttendedView(APIView):
         tags=['Admin events'],
         summary='Mark an event registration attended',
         request=EventAttendanceMarkSerializer,
-        responses={200: EventRegistrationAdminSerializer, **REGISTRATION_ACTION_ERRORS},
+        responses={200: PolymorphicProxySerializer(
+            component_name="EventAttendanceResult",
+            serializers=[EventRegistrationAdminSerializer, EventCheckInResultSerializer],
+            resource_type_field_name=None,
+        ), **REGISTRATION_ACTION_ERRORS},
     )
     def post(self, request, pk, *args, **kwargs):
-        registration = _manageable_registration(request.user, pk)
+        registration = _manageable_registration(request.user, pk, CHECK_IN)
         serializer = EventAttendanceMarkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         registration = services.mark_attended(
@@ -154,6 +160,8 @@ class EventRegistrationMarkAttendedView(APIView):
             actor=request.user,
             source=serializer.validated_data["source"],
         )
+        if not event_authority.can(request.user, registration.event, MANAGE_REGISTRATIONS):
+            return Response(EventCheckInResultSerializer(registration).data)
         context = scoped_payment_context(
             request.user,
             rbac.Action.MANAGE_EVENTS,
@@ -173,7 +181,7 @@ class _RegistrationActionView(APIView):
     operation = None
 
     def execute(self, request, pk):
-        registration = _manageable_registration(request.user, pk)
+        registration = _manageable_registration(request.user, pk, MANAGE_REGISTRATIONS)
         _validate_empty_action(request)
         registration = self.operation(registration, actor=request.user)
         context = scoped_payment_context(
@@ -239,50 +247,4 @@ class EventRegistrationCancelView(_RegistrationActionView):
         return self.execute(request, pk)
 
 
-class EventEligibleMemberListView(APIView):
-    """The roster the staff registration picker reads.
-
-    Hung off the EVENT rather than the makerspace, so it inherits `_manageable_event`
-    and introduces no new authority question: whoever may manage this event may see who
-    they can register for it. A separate makerspace-level member list would have needed
-    its own permission answer, and the obvious candidates were all wrong — the
-    direct-loan roster is gated on `ISSUE_DIRECT_LOAN` plus a self-checkout feature an
-    events manager need not hold, and the full membership list is `MANAGE_MAKERSPACE`.
-
-    Already-registered members are excluded: offering someone the picker can only reject
-    as a duplicate is an error the interface should not have made available.
-    """
-
-    permission_classes = [IsActiveStaff]
-
-    @extend_schema(
-        tags=['Admin events'],
-        summary='List members who can be registered for an event',
-        request=None,
-        responses={200: EventEligibleMemberSerializer(many=True), **REGISTRATION_ACTION_ERRORS},
-    )
-    def get(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
-        registered = EventRegistration.objects.filter(event=event).exclude(
-            status=EventRegistration.Status.CANCELLED
-        ).values_list('member_id', flat=True)
-        memberships = MakerspaceMembership.objects.select_related('user').filter(
-            makerspace=event.makerspace, status='active', user__is_active=True,
-            user__access_status=User.AccessStatus.ACTIVE,
-        ).exclude(user_id__in=[value for value in registered if value]).order_by(
-            'user__display_name', 'user__username'
-        )
-        return Response(
-            EventEligibleMemberSerializer(
-                [
-                    {
-                        'member_id': membership.user_id,
-                        'display_name': (
-                            membership.user.display_name or membership.user.username
-                        ),
-                    }
-                    for membership in memberships
-                ],
-                many=True,
-            ).data
-        )
+from .views_admin_eligible_members import EventEligibleMemberListView

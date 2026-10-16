@@ -11,6 +11,15 @@ def _refused(name, methods, reason):
 
 
 AUTH_CLAIM_ROUTES = {
+    **_refused("auth-reauth", ("GET", "HEAD", "POST"), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-social-start", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-social-complete", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-enrollment-email", ("POST",), "claim sessions cannot enroll MFA"),
+    **_refused("auth-reauth-enrollment-confirm", ("POST",), "claim sessions cannot enroll MFA"),
+    **_refused(
+        "auth-organizations-self-service", ("GET", "HEAD", "POST"),
+        "claim sessions cannot create organizations",
+    ),
     **_refused("auth-mfa", ("GET", "HEAD", "POST"), "claim sessions cannot manage MFA"),
     **_refused("auth-mfa-enroll", ("POST",), "claim sessions cannot enroll MFA"),
     **_refused("auth-mfa-confirm", ("POST",), "claim sessions cannot enroll MFA"),

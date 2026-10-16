@@ -38,6 +38,7 @@ export {
 
 export {
   bootstrapTenant,
+  tenantMemberRequest,
   tenantPublicRequest,
   tenantPublicRequestBlob,
 } from "./api/tenant";

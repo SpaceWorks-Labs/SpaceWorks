@@ -34,7 +34,7 @@ def _transition(event, actor, expected, new_status, action):
 
 
 @transaction.atomic
-def publish(event, *, actor):
+def publish(event, *, actor, publish_website=False, website_revision=None):
     services = _boundary()
     locked = services._locked_event(event.pk)
     if locked.status != Event.Status.DRAFT:
@@ -42,10 +42,20 @@ def publish(event, *, actor):
     services._validate(locked)
     if locked.ends_at < timezone.now():
         raise EventInvalidTransition("Ended events cannot be published.")
-    require_module_locked(locked.makerspace, "events")
+    locked.makerspace = require_module_locked(locked.makerspace, "events")
+    from .staff_grant_locks import lock_authority
+    actor = lock_authority(actor, locked)
+    from .event_authority import require
+    from .event_permissions import PUBLISH_SCHEDULE
+    require(actor, locked, PUBLISH_SCHEDULE)
+    from .registration_access import validate_event_audience
+    validate_event_audience(locked)
     limits.check_quota(locked.makerspace, "events", adding=1)
     locked.status = Event.Status.PUBLISHED
     locked.save(update_fields=["status", "updated_at"])
+    if publish_website:
+        from .services_website import set_release_locked
+        set_release_locked(locked, actor=actor, released=True, revision=website_revision)
     calendar_event_changed(locked)
     meta = {"old_status": Event.Status.DRAFT, "new_status": Event.Status.PUBLISHED}
     services._audit(locked, actor, "event.published", locked, meta)

@@ -5,11 +5,14 @@ import { ListRow, OverflowMenu, Pagination, StatusBadge } from "../../components
 import { QueryContent } from "../../components/layouts/LayoutFrame";
 import { CustomAnswersView } from "../forms/CustomAnswersView";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
+import { BookingReservationEditor } from "./BookingReservationEditor";
 import { opsQueryState, opsStatusLabel } from "./opsPresentation";
-import { useSpaceBookings, type Booking, type BookingAction, type BookingFilters } from "./bookingsApi";
+import { useSpaceBookings, type BookableSpace, type Booking, type BookingAction, type BookingFilters } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
 
-type Props = { makerspaceId: number; spaceId: number; bookings: ReturnType<typeof useSpaceBookings>;
+type Props = { makerspaceId: number; spaceId: number; space: BookableSpace;
+  /** Payment reconciliation is a space-manager power; a resource grant alone does not carry it. */
+  canReconcile: boolean; bookings: ReturnType<typeof useSpaceBookings>;
   list: ReturnType<typeof useUrlListState<{ page: string; status: string; starts_at: string; ends_at: string; ordering: string }>>;
   filters: BookingFilters; setFilter: <K extends keyof BookingFilters>(key: K, value: BookingFilters[K]) => void;
   page: number; setPage: Dispatch<SetStateAction<number>>; onAction: (booking: Booking, action: BookingAction) => void };
@@ -17,7 +20,7 @@ function bookingTime(booking: Booking) {
   const format = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
   return format.format(new Date(booking.starts_at)) + " – " + format.format(new Date(booking.ends_at));
 }
-export function BookingRequests({ makerspaceId, spaceId, bookings, list, filters, setFilter, page, setPage, onAction }: Props) {
+export function BookingRequests({ makerspaceId, spaceId, space, canReconcile, bookings, list, filters, setFilter, page, setPage, onAction }: Props) {
   const [, setParams] = useSearchParams();
   return <section aria-labelledby="space-bookings-title" className="grid gap-4">
     <div><h2 id="space-bookings-title" className="title-panel">Bookings <span className="tabular-nums">({bookings.data?.count ?? 0})</span></h2>
@@ -48,23 +51,29 @@ export function BookingRequests({ makerspaceId, spaceId, bookings, list, filters
           <div className="text-sm"><a className="flex min-h-11 items-center break-all hover:underline" href={"mailto:" + booking.email}>{booking.email}</a>
             <a className="flex min-h-11 items-center text-muted hover:underline" href={"tel:" + booking.phone}>{booking.phone}</a></div>
           <BookingAnswers booking={booking} />
-          <PaymentReconcileActions makerspaceId={makerspaceId} payment={booking.payment}
-            invalidateKeys={[["booking-space", spaceId, "bookings"], ["booking-space", spaceId]]} />
-          <BookingActions booking={booking} onAction={action => onAction(booking, action)} />
+          {canReconcile ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={booking.payment}
+            invalidateKeys={[["booking-space", spaceId, "bookings"], ["booking-space", spaceId]]} /> : null}
+          {space.staff_tools_enabled ? <BookingReservationEditor key={`${booking.id}-${booking.starts_at}-${JSON.stringify(booking.custom_answers)}-${booking.note}`} space={space} booking={booking} /> : null}
+          <BookingActions undoEnabled={space.staff_tools_enabled} booking={booking} onAction={action => onAction(booking, action)} />
         </div>
       </article>)}</div>
       {bookings.data ? <Pagination page={page} pageSize={24} count={bookings.data.count} totalPages={Math.ceil(bookings.data.count / 24)} onChange={setPage} /> : null}
     </QueryContent>
   </section>;
 }
-function BookingActions({ booking, onAction }: { booking: Booking; onAction: (action: BookingAction) => void }) {
+function BookingActions({ booking, onAction, undoEnabled }: { booking: Booking; undoEnabled?: boolean; onAction: (action: BookingAction) => void }) {
   const ended = new Date(booking.ends_at) <= new Date();
-  const primary = booking.status === "pending" ? { label: "Approve", action: "approve" as const }
+  // An arrived booker has used the slot: it can still complete, but no longer cancel or no-show.
+  const arrived = Boolean(booking.arrived_at);
+  const restorable = undoEnabled && booking.restore_until && new Date(booking.restore_until) > new Date();
+  const primary = restorable ? { label: "Undo cancellation", action: "restore" as const }
+    : booking.status === "pending" ? { label: "Approve", action: "approve" as const }
     : booking.status === "confirmed" && ended ? { label: "Complete", action: "complete" as const } : undefined;
-  const overflow = booking.status === "pending" ? [{ label: "Reject", onClick: () => onAction("reject"), confirms: true, tone: "danger" as const }]
+  const cancel = { label: "Cancel", onClick: () => onAction("cancel"), confirms: true, tone: "danger" as const };
+  const overflow = booking.status === "pending" ? [{ label: "Reject", onClick: () => onAction("reject"), confirms: true, tone: "danger" as const }, ...(arrived ? [] : [cancel])]
     : booking.status === "confirmed" ? [
-      { label: "Cancel", onClick: () => onAction("cancel"), confirms: true, tone: "danger" as const },
-      ...(ended ? [{ label: "No-show", onClick: () => onAction("no-show"), confirms: true }] : []),
+      ...(arrived ? [] : [cancel]),
+      ...(ended && !arrived ? [{ label: "No-show", onClick: () => onAction("no-show"), confirms: true }] : []),
     ] : [];
   return <div className="flex flex-wrap items-center justify-end gap-3">
     {primary ? <button className="desk-button" type="button" onClick={() => onAction(primary.action)}>{primary.label}</button> : null}

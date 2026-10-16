@@ -22,8 +22,10 @@ class Event(models.Model):
         MEMBERS = "members", "Members"
         ACCOUNTS = "accounts", "Authenticated accounts"
         INVITE = "invite", "Invited accounts"
+        PARTICIPATING_ORGANIZATIONS = "participating_organizations", "Participating organizations"
 
-    registration_audience = models.CharField(max_length=8, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
+    organization_admission_blocked = models.BooleanField(default=False, editable=False)
+    registration_audience = models.CharField(max_length=32, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
     category = models.ForeignKey("events.EventCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
     tags = models.JSONField(default=list, blank=True)
 
@@ -89,6 +91,7 @@ class Event(models.Model):
         blank=True,
     )
     is_public = models.BooleanField(default=False)
+    show_registration_count = models.BooleanField(default=True)
     # Public-bucket object key for the event cover image. Managed only by the
     # dedicated image endpoints (never by the generic update path), so it is
     # deliberately absent from services.EVENT_FIELDS.
@@ -180,6 +183,9 @@ class Event(models.Model):
 
     def clean(self):
         super().clean()
+        if self.starts_at and self.ends_at:
+            from .website_validation import validate_owner_window
+            validate_owner_window(self)
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
         try:

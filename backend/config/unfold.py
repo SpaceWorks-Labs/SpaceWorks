@@ -139,6 +139,7 @@ UNFOLD = {
                 "title": _("Operations"),
                 "separator": True,
                 "items": [
+                    _item("Storage", "storage", "control-storage"),
                     _item("Stock transfers", "swap_horiz", "admin:operations_stocktransfer_changelist"),
                     _item("Stocktakes", "fact_check", "admin:operations_stocktakesession_changelist"),
                     _item("QR print batches", "print", "admin:operations_qrprintbatch_changelist"),
@@ -177,7 +178,6 @@ UNFOLD = {
                 "items": [
                     _item("Users", "person", "admin:accounts_user_changelist"),
                     _item("Staff memberships", "badge", "admin:makerspaces_makerspacemembership_changelist"),
-                    _item("Groups", "groups", "admin:auth_group_changelist"),
                 ],
             },
             {

@@ -8,6 +8,7 @@ import { MemberPortalTabs } from "./MemberPortalTabs";
 import { bootstrapTenant, refreshAccessToken, logout } from "../../lib/api";
 import { hasClaimSession } from "./MemberClaimSession";
 import { MemberAuthPanel } from "./MemberAuthPanel";
+import { OrganizationSelfCreation } from "../organizations/OrganizationSelfCreation";
 import { MemberAccountProfile } from "./MemberAccountProfile";
 import { MemberAccountSessions } from "./MemberAccountSessions";
 import { MemberAccountMembership } from "./MemberAccountMembership";
@@ -61,6 +62,8 @@ export function MemberAccountPage() {
           {selfService && section === "membership" ? <MemberAccountMembership key={`membership-${data.makerspace.id}`} makerspaceId={data.makerspace.id} onLeft={() => setLeft(true)} /> : null}
           {selfExport && section === "data" ? <MemberAccountExports key={`exports-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
         </> : null}
+        {/* Organization self-creation is account-wide, so it rides on the first section rather than a gated tab. */}
+        {!restoring && !hasClaimSession() && section === (tabs[0]?.key || "profile") ? <OrganizationSelfCreation /> : null}
       </> }]} /></MemberSectionNavigation>
   </MemberPortalTabs>;
 }

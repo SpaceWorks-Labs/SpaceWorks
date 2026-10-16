@@ -82,7 +82,26 @@ class TenantDumpCatalogError(AssertionError):
 # Merge lane/w2-notify with integration/2026-10 (including lane/w2-events,
 # lane/w2-machines and lane/w2-loans); the coordinator recomputes the merged digest.
 # Re-blessed after permanent removal of the deployment updater singleton.
-CATALOG_SCHEMA_SHA256 = "971cdeb8cbf63d0d5461dc51d9085fd7ad6bba7480fcaf638cdd9de392b4b2d7"
+# Lane A grants plus the inherited installer audience/digest-default fields. The
+# literal snapshot reconstruction reproduced the previous pin before those additions;
+# Django's runtime catalog guard still verifies the complete graph on supported hosts.
+# OIDC browser attempts now bind the staff/member surface; these transient rows remain DROP.
+# Lane B publication choice and cancellation/FIFO provenance. Literal reconstruction
+# reproduced the preceding pin before adding these four fields.
+# Lane D: two concrete history models and durable outbox source identity. The
+# standalone graph check reproduced the preceding pin before adding these fields.
+# BK-B: nullable cancellation timestamp and prior reservation state.
+# BK-G: reconcile the integrated Lane E/BK-C graph plus the scalar pass template.
+# Literal reconstruction reproduces b90ce9de before the later merged model additions.
+CATALOG_SCHEMA_SHA256 = "7a7132b9cf5e6f6883e4c8c868cbb35219fcf86f8fbb8cfc46329c484e7e9dc2"
+# BK-D adds typed booking campaign/delivery history. Literal reconstruction
+# reproduced HEAD's complete graph before computing the new digest.
+# Lane F: platform-only, nonportable session reauthentication proof.
+# Lane C: five typed editorial/asset models plus the separate framing-origin field.
+# Literal graph reconstruction reproduced HEAD before pinning this reviewed graph;
+# Django's runtime catalog guard remains the integration verification.
+# BK-D adds typed booking campaign/delivery history. Literal reconstruction
+# reproduces the integrated checkpoint graph, including both broadcast histories.
 
 
 def catalog_models(apps_registry=apps):

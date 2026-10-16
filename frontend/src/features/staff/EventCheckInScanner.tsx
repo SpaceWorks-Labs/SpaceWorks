@@ -2,8 +2,8 @@ import { opsStatusLabel } from "./opsPresentation";
 import { useEffect, useRef, useState } from "react";
 
 import { ScanWorkbench } from "../../components/ui";
-import { useCorrectAttendance } from "./eventFeedbackApi";
 import { StructuredApiError } from "../../lib/api";
+import { EventAttendanceTools } from "./EventAttendanceTools";
 import {
   useMarkEventAttended,
   useResolveEventCheckIn,
@@ -31,8 +31,7 @@ export default function EventCheckInScanner({
   const [resolved, setResolved] = useState<EventCheckInResolution | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
-  const [confirmedId, setConfirmedId] = useState<number | null>(null);
-  const correct = useCorrectAttendance(makerspaceId, eventId);
+  const [attendedId, setAttendedId] = useState<number | null>(null);
   const resolve = useResolveEventCheckIn(eventId);
   const attend = useMarkEventAttended(makerspaceId, eventId, "qr");
   // On a phone the workbench stacks the camera card and the code field ABOVE the result, so the
@@ -47,6 +46,7 @@ export default function EventCheckInScanner({
   const handleScan = async (value: string) => {
     setError(null);
     setConfirmed(null);
+    setAttendedId(null);
     setResolved(null);
     try {
       setResolved(await resolve.mutateAsync(value.trim()));
@@ -70,7 +70,7 @@ export default function EventCheckInScanner({
     try {
       await attend.mutateAsync(resolved.registration_id);
       setConfirmed(`${resolved.name} checked in.`);
-      setConfirmedId(resolved.registration_id);
+      setAttendedId(resolved.registration_id);
       setResolved(null);
     } catch (cause) {
       if (cause instanceof StructuredApiError && cause.status === 409) {
@@ -107,6 +107,12 @@ export default function EventCheckInScanner({
             ? "This event was cancelled, so attendance cannot be confirmed."
             : `Attendance cannot be confirmed while this event is ${resolved.event_status}.`;
 
+  // Attendance tools (print the attended badge, correct a mistaken check-in) apply to the guest just
+  // confirmed and to a scanned code that was already checked in. They carry the correction, so the
+  // recent entry does not repeat it as a second, identical Undo.
+  const toolsId = attendedId ?? (resolved?.status === "attended" ? resolved.registration_id : null);
+  const attendanceTools = toolsId !== null ? <EventAttendanceTools eventId={eventId} makerspaceId={makerspaceId} registrationId={toolsId}
+    onCorrected={() => { setAttendedId(null); setConfirmed(null); setResolved(null); }} /> : null;
   // `scroll-mb-*` keeps the scrolled-to result clear of the shell's bottom tabs and the home indicator.
   return <section ref={sectionRef} aria-labelledby="event-checkin-title" className="grid gap-4 [&_section[aria-labelledby]]:scroll-mb-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom)+1rem)]">
     <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="event-checkin-title" className="title-panel">Check in by QR</h3><button className={`desk-button ${FOCUS}`} type="button" onClick={onClose}>Done</button></div>
@@ -114,8 +120,8 @@ export default function EventCheckInScanner({
       findPending={resolve.isPending || attend.isPending}
       result={resolved ? { title: resolved.name, tone: confirmable ? "success" : "warn", summary: <div className="grid gap-2"><p>{opsStatusLabel(resolved.status)}</p>{resolved.payment_status ? <p>Payment: {resolved.payment_status}</p> : null}{resolved.host_waiver_state === "missing" ? <p>No host waiver on file — take one at the desk.</p> : null}{blockedReason ? <p>{blockedReason}</p> : null}</div>,
         next: { label: "Confirm attendance", onClick: handleConfirm, disabled: !confirmable || attend.isPending, disabledReason: blockedReason || (attend.isPending ? "Attendance is being recorded." : undefined) },
-      } : error ? { title: "Couldn’t check in", tone: "danger", summary: error, next: { label: "Scan another", onClick: () => { setError(null); setResolved(null); } } } : confirmed ? { title: confirmed, tone: "success", next: { label: "Scan another", onClick: () => setConfirmed(null) } } : undefined}
-      controls={resolved ? <button className="desk-button" type="button" onClick={() => setResolved(null)}>Scan another</button> : undefined}
-      recent={confirmed ? [{ key: "latest", label: confirmed, tone: "success", undo: confirmedId !== null ? { label: "Undo", pending: correct.isPending, onClick: () => correct.mutate(confirmedId, { onSuccess: () => { setConfirmed(null); setConfirmedId(null); }, onError: cause => setError(cause instanceof Error ? cause.message : "Couldn’t undo attendance.") }) } : undefined }] : []} recentTitle="Recent check-ins" />
+      } : error ? { title: "Couldn’t check in", tone: "danger", summary: error, next: { label: "Scan another", onClick: () => { setError(null); setResolved(null); } } } : confirmed ? { title: confirmed, tone: "success", next: { label: "Scan another", onClick: () => { setConfirmed(null); setAttendedId(null); } } } : undefined}
+      controls={resolved || attendanceTools ? <>{resolved ? <button className="desk-button" type="button" onClick={() => setResolved(null)}>Scan another</button> : null}{attendanceTools}</> : undefined}
+      recent={confirmed ? [{ key: "latest", label: confirmed, tone: "success" }] : []} recentTitle="Recent check-ins" />
   </section>;
 }

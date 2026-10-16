@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
+import { WebAnalytics } from "./components/WebAnalytics";
+import { installAnalyticsNavigationGuard } from "./lib/webAnalytics";
 import { PwaRegistration } from "./components/PwaRegistration";
 import { ToastHost } from "./components/ui/ToastHost";
 import "./index.css";
@@ -15,6 +17,7 @@ import { pruneExpiredOfflineStates } from "./features/staff/eventCheckInOfflineS
 import { listQueues } from "./features/kiosk/offlineQueueStore";
 import { replayQueue } from "./features/kiosk/kioskReplayClient";
 
+installAnalyticsNavigationGuard();
 initializeTheme();
 cleanupLegacyAccessToken();
 void pruneExpiredOfflineStates().catch(() => undefined);
@@ -27,6 +30,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <QueryClientProvider client={queryClient}>
       <TenantProvider>
         <BrowserRouter>
+          <WebAnalytics />
           <PwaRegistration />
           <ToastHost />
           <App />

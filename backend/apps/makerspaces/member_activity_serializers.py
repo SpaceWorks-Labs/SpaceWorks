@@ -11,13 +11,6 @@ class MemberLoanActivitySerializer(serializers.Serializer):
     overdue = serializers.BooleanField()
 
 
-class MemberBookingActivitySerializer(serializers.Serializer):
-    space_name = serializers.CharField()
-    starts_at = serializers.DateTimeField()
-    ends_at = serializers.DateTimeField()
-    status = serializers.CharField()
-
-
 class MemberPrintActivitySerializer(serializers.Serializer):
     public_token = serializers.UUIDField()
     status = serializers.CharField()

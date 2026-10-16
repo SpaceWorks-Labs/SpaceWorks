@@ -21,6 +21,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module_for_servable
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.bookings.access import require_booking_account
+from .website_visibility import public_spaces as _public_spaces
 
 
 LOOSE_ERROR_SCHEMA = {'type': 'object', 'additionalProperties': {}}
@@ -38,14 +39,6 @@ PUBLIC_BOOKING_SUBMISSION_ERRORS = {
     423: OpenApiResponse(ErrorSerializer, description='Tenant frozen for migration.'),
     503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.'),
 }
-
-
-def _public_spaces(makerspace):
-    return BookableSpace.objects.filter(
-        makerspace=makerspace,
-        is_public=True,
-        is_active=True,
-    )
 
 
 class PublicBookableSpaceListView(APIView):
@@ -131,6 +124,9 @@ class PublicSpaceAvailabilityView(APIView):
         return Response(PublicSpaceAvailabilitySerializer(payload).data)
 
 
+from .serializers_confirmation_result import BOOKING_SUBMISSION_RESPONSE
+
+
 class PublicBookingSubmissionView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [ClientTierRateThrottle]
@@ -140,7 +136,7 @@ class PublicBookingSubmissionView(APIView):
         tags=['Public bookings'],
         request=PublicBookingInputSerializer,
         responses={
-            201: PublicBookingResponseSerializer,
+            201: BOOKING_SUBMISSION_RESPONSE,
             **PUBLIC_BOOKING_SUBMISSION_ERRORS,
         },
     )
@@ -178,4 +174,5 @@ class PublicBookingSubmissionView(APIView):
         return Response(
             PublicBookingResponseSerializer(booking).data,
             status=status.HTTP_201_CREATED,
+            headers={"Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer"},
         )

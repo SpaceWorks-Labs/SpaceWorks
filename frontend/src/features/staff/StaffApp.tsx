@@ -103,7 +103,7 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   }
 
   const hasSingleTenantAccess =
-    !singleTenantLocked || Boolean(activeMakerspace);
+    !singleTenantLocked || Boolean(activeMakerspace) || Boolean(user.event_grants?.some((grant) => grant.makerspace_id === tenant.makerspaceId) || user.booking_grants?.some((grant) => grant.makerspace_id === tenant.makerspaceId));
 
   if (!hasSingleTenantAccess) {
     return (
@@ -169,6 +169,7 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
       setTab={setTab}
       signOut={signOut}
       singleTenantLocked={singleTenantLocked}
+      lockedMakerspaceId={tenant.makerspaceId ?? undefined}
       user={user}
     />
   );

@@ -105,7 +105,8 @@ def _run_source(makerspace, source, now, local_tz, limit, counts):
         counts["skipped"] += 1
         return
     makerspace = current
-    for row in claim_reminders(makerspace=makerspace, source=source.key, now=now, limit=limit):
+    for row in claim_reminders(makerspace=makerspace, source=source.key, now=now, limit=limit,
+                              normalize_claim=source.normalize_claim):
         failed = False
         try:
             message = source.build(makerspace, row, now, local_tz)

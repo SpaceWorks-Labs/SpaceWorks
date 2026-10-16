@@ -117,6 +117,8 @@ def _claim(schedule_id, now, force):
 
 
 def _skip_reason(schedule, definition):
+    if any(key in (schedule.filters or {}) for key in ("subject_kind", "subject_id")):
+        return "subject_filter_not_schedulable"
     if definition is None or not definition.exportable or not definition.schedulable:
         return "report_unavailable"
     if schedule.format not in definition.allowed_formats:

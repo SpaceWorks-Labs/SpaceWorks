@@ -6,11 +6,14 @@ export type EventTicket = {
 };
 
 export type PublicEventDetail = {
+  website?: import("./websiteTypes").EventWebsite | null;
+  audience_label?: string | null; participating_organizations?: { id: number; name: string }[];
   public_token: string; title: string; description: string;
   starts_at: string; ends_at: string; location: string;
+  show_registration_count?: boolean; registration_count?: number | null;
   capacity: number | null; payment_amount: string; currency: string;
   availability: "Available" | "Limited" | "Full";
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   ticket_types?: EventTicket[]; ticket_selection_required?: boolean; promo_codes_enabled?: boolean;
   category?: { id: number; name: string; slug: string } | null; tags?: string[];
   registration_requires_approval: boolean;

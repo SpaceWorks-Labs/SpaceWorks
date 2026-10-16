@@ -4,6 +4,11 @@ from django.db import models
 
 
 class PublicSiteSettings(models.Model):
+    website_embed_origins = models.JSONField(default=list, blank=True)
+    event_default_registration_audience = models.CharField(
+        max_length=32, default="members",
+        choices=[("members", "Members"), ("accounts", "Authenticated accounts"), ("invite", "Invited accounts"), ("participating_organizations", "Participating organizations")],
+    )
     public_inventory_enabled = models.BooleanField(default=True)
     public_site_enabled = models.BooleanField(default=True)
     public_landing_page = models.CharField(

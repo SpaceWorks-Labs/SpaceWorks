@@ -21,10 +21,10 @@ from apps.events.serializers_checkin import (
 )
 from apps.events.throttles import EventCheckInResolveThrottle
 from apps.events.views_admin import _manageable_event
+from apps.events.event_permissions import CHECK_IN
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.member_activity_service import active_membership
-from apps.makerspaces.models import MakerspaceWaiver
 from apps.payments.models import Payment
 from apps.presence.guard import MemberPresenceRequired
 
@@ -51,7 +51,7 @@ class EventCheckInResolveView(APIView):
         },
     )
     def post(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, CHECK_IN)
         try:
             token = UUID(str(request.data["checkin_token"]))
         except (KeyError, TypeError, ValueError, AttributeError):
@@ -154,14 +154,14 @@ class EventCheckInQrView(APIView):
         # the same failure the never-block rule prevents for payments. What this closes is the
         # row with NO acceptance at all, and the member can repair it themselves by
         # re-submitting registration, which stamps the current waiver.
-        if (
-            registration.registered_via_makerspace_id
-            and registration.registered_via_makerspace_id != registration.event.makerspace_id
-            and registration.host_waiver_id is None
-            and MakerspaceWaiver.objects.filter(
-                makerspace_id=registration.event.makerspace_id, is_active=True,
-            ).exists()
-        ):
+        needs_waiver_evidence = (
+            registration.registration_audience == "participating_organizations"
+            or (
+                registration.registered_via_makerspace_id
+                and registration.registered_via_makerspace_id != registration.event.makerspace_id
+            )
+        )
+        if needs_waiver_evidence and host_waiver_state(registration) == "missing":
             raise NotFound()
 
         title = registration.event.title

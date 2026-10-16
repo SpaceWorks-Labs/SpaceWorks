@@ -9,6 +9,12 @@ def _same(label, names, disposition, reason):
 
 
 AUTHORITY_ENTRIES = (
+    (("events.EventAttendanceCertificate", "layout_snapshot"), authority(
+        D.RESET, "Preserve issuance parameters and SHA-256; discard source-bucket version identity.",
+    )),
+    (("events.EventCertificateArtwork", "version_id"), authority(
+        D.RESET, "Source bucket version identity is local; SHA-256 pins the imported artwork.",
+    )),
     *_same(
         "accounts.User",
         "is_superuser is_staff role",
@@ -287,3 +293,5 @@ AUTHORITY_ENTRIES = (
     ),
 )
 
+from .catalog_booking_arrival import authority_entries as booking_arrival_authority
+AUTHORITY_ENTRIES += booking_arrival_authority(authority, D)

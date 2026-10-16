@@ -7,8 +7,8 @@ EVENT_FIELD_NAMES = {
     "events.EventCategory": frozenset("id makerspace name slug".split()),
 }
 EVENT_ADDED_FIELDS = {
-    "events.EventSeries": frozenset("registration_audience".split()),
-    "events.Event": frozenset("registration_audience category tags".split()),
+    "events.EventSeries": frozenset("registration_audience organization_admission_blocked".split()),
+    "events.Event": frozenset("registration_audience category tags organization_admission_blocked".split()),
     "events.EventRegistration": frozenset("registration_audience ticket_type invite promo_code quoted_amount discount_amount".split()),
 }
 

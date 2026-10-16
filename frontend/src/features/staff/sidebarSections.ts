@@ -3,7 +3,7 @@ import {
   ArrowLeftRight, ShoppingCart, Tags, Container, BookOpen, ShieldCheck, QrCode, ScanLine,
   Upload, Cog, Monitor, Users, Calendar, CalendarClock, CreditCard, ChartNoAxesCombined,
   ScrollText, CircleAlert, Building2, Network, Settings, Mail, KeyRound, Download,
-  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, type LucideIcon,
+  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, type LucideIcon,
 } from "lucide-react";
 import type { ShellItem, ShellSection } from "../../components/shell";
 import { TAB_LABELS } from "./staffAccess";
@@ -15,7 +15,7 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "desk", label: "Front desk", tabs: ["requests", "direct", "handover", "payments"] },
   { key: "inventory", label: "Inventory", tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
   { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
-  { key: "community", label: "Community", tabs: ["members", "events", "bookings"], more: ["cards"] },
+  { key: "community", label: "Community", tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
   { key: "insights", label: "Insights", tabs: ["reports", "audit", "accountability"] },
   { key: "organizations", label: "Organizations", caption: "Across venues", tabs: ["organizations", "organized", "organization-analytics"] },
   { key: "settings", tabs: ["settings", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
@@ -32,7 +32,7 @@ const ICONS: Record<string, LucideIcon> = {
   tobuy: ShoppingCart, categories: Tags, containers: Container, ledger: BookOpen, warranty: ShieldCheck,
   qr: QrCode, scanner: ScanLine, bulk: Upload, machines: Cog, devices: Monitor, members: Users,
   events: Calendar, bookings: CalendarClock, cards: CreditCard, reports: ChartNoAxesCombined,
-  audit: ScrollText, accountability: CircleAlert, organizations: Building2, organized: Calendar,
+  audit: ScrollText, accountability: CircleAlert, organizations: Building2, organized: Calendar, granted: CalendarCheck,
   "organization-analytics": Network, settings: Settings, users: Users, emailtemplates: Mail,
   "email-logs": Mail, api: KeyRound, exports: Download, backups: DatabaseBackup, usage: Gauge,
   modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, platform: Settings,
@@ -43,7 +43,7 @@ export function sidebarSections(moduleAllowedTabs: readonly string[], activeKey:
   path: (tab: string) => string = tab => staffTabPath(tab, false), onSelect?: (tab: string) => void,
   flat = false): ShellSection[] {
   const item = (key: string): ShellItem => ({ key, label: SIDEBAR_LABELS[key] ?? TAB_LABELS[key], href: path(key), icon: ICONS[key], onSelect: () => onSelect?.(key) });
-  if (flat) return [{ key: "desk", items: ["requests", "direct", "handover", "payments", "notifications"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
+  if (flat) return [{ key: "desk", items: ["requests", "direct", "handover", "payments", "notifications", "granted"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
   return SIDEBAR_SECTIONS.map(section => {
     const items = section.tabs.filter(key => moduleAllowedTabs.includes(key)).map(item);
     const more = section.more?.filter(key => moduleAllowedTabs.includes(key)).map(item);

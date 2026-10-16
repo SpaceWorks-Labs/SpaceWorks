@@ -43,6 +43,12 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   The handover side owns `hardware_requests/kiosk_command_policy.py` (the literal operation table),
   `kiosk_online_commands.py` (work package + dispatch into existing workflows) and `kiosk_views.py`;
   `evidence/services_upload.py` is the shared row+staging-presign service.
+- `backend/apps/organizations/audience.py` ? always-present explicit-organization account
+  eligibility, batched SQL and membership-source locks. No separable-domain imports or RBAC
+  grants. `admin_links.py` routes owner-link admin mutations through `services_console.change_link`;
+  the original admin barrel preserves registration/import compatibility.
+- `backend/apps/makerspaces/capability_definitions_yuyu.py` ? parity feature definitions,
+  composed by the canonical capability catalogue and installer area discovery.
 - `backend/apps/organizations/` — `Organization` (platform entity, creatable before any makerspace, NOT a
   module_registry key), its opt-in public profile and cross-makerspace event catalogue,
   `OrganizationMakerspace` (the many-to-many link, at most one `owner` per space),
@@ -214,3 +220,23 @@ under `MANAGE_BOOKINGS`; this does not grant Machines-console authority.
 
 Booking-space and event handlers use explicit `views_admin_spaces.py` / `views_admin_events.py`
 barrels over the corresponding `views_admin_space_list/detail.py` and `views_admin_event_list/detail.py`.
+
+### Lane F shared reads and governance
+
+- `apiclients/read_contract.py`, `read_prefixes.py`, `scope_registry_reads.py`:
+  core signed server-read policy, typed targets, signed cursors, mandatory prefixes
+  and privileged scopes. Events adapts through `integration_targets.py`,
+  `views_integration.py`, `serializers_integration.py`, `urls_integration.py`.
+- `makerspaces/calendar_bearers.py`: subscription-bearer recognition without a
+  separable domain import; Events retains its compatibility export.
+- `organizations/services_self_service.py`, `views_self_service.py`: platform
+  creation policy, serialized quotas and account API. `services_governance.py`,
+  `views_governance.py`: non-escalation, last-governor and safe global deletion.
+  `admin.py` re-exports focused organization and membership admin modules.
+
+- `accounts/models_reauthentication.py`, `reauthentication.py`,
+  `reauthentication_intents.py`, `reauthentication_permissions.py`,
+  `reauthentication_control.py`, serializers/views and migration 0028 own global
+  session-bound recent proof and single-use social/email intents. Account cleanup
+  removes aged proof. `apiclients/admin.py` re-exports focused client/request/import
+  admin registrations so the reauthentication boundary remains explicit.

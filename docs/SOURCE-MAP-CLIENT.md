@@ -20,6 +20,10 @@ and `staffTabs.ts` own its superadmin navigation and the manager usage tab.
   `frontend/src/features/auth/` + `members/MemberAuthPanel.tsx` — provider-config-driven social/member auth.
   `frontend/src/features/printing|bookings|forms|...` — feature slices. `frontend/src/lib/`,
   `components/ui/`, `types/`, `generated/api.ts`.
+- `frontend/src/features/events/OrganizationEventAdmission.tsx` ? signed-in account identity,
+  private per-account/event eligibility query, sign-in/error/loading states and current host consent.
+  `features/staff/EventOrganizationAudience.tsx` explains live candidates and offers explicit
+  target-import review; event/series pickers are feature gated and roster eligibility is advisory.
 - `frontend/src/features/events/` — the standalone anonymous PIN-station route. Its
   `EventCheckInStationPage.tsx` exchanges the event-scoped PIN, then reuses the offline roster/sync API,
   IndexedDB state and operator UI owned by `features/staff/eventCheckInOfflineApi.ts`,
@@ -61,3 +65,12 @@ Account changes and logout clear these snapshots and any offline card currently
 displayed in another tab. `MemberCardPanel.tsx` refuses retained Query data after
 a failed card refresh; access denial also clears the saved snapshot.
 Neither worker caches API data.
+
+Lane F browser infrastructure: `lib/webAnalytics.ts` and `components/WebAnalytics.tsx`
+project public route templates and enforce credential navigation boundaries. Runtime
+nginx configuration comes from `docker-entrypoint.d/40-web-analytics.sh`.
+`features/auth/ReauthenticationDialog.tsx`, `ReauthenticationReturn.tsx`,
+`PasswordlessMfaProof.tsx`, `reauthenticationApi.ts`, `reauthenticationSocial.ts` and
+`lib/api/reauthentication.ts` own browser step-up and same-session mutation retry.
+Organization self-creation lives in `features/organizations/OrganizationSelfCreation.tsx`
+and its query API; staff membership/deletion controls reuse the governance endpoints.

@@ -1,11 +1,13 @@
 import { plural } from "../../lib/plural";
 import { useState } from "react";
 
-import { EmptyState, ErrorText, ListRow, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
+import { EmptyState, ErrorBlock, ErrorText, ListRow, OverflowMenu, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
 import type { OrganizationDetail } from "./organizationsApi";
+import { useUpdateOrganizationMember } from "../organizations/organizationSelfServiceApi";
 import { useOrganizationMemberships } from "./organizationsApi";
 
 export function OrganizationMemberships({ organization }: { organization: OrganizationDetail }) {
+  const update = useUpdateOrganizationMember(organization.id);
   const [page, setPage] = useState(1);
   const enabled = organization.governance_actions.includes("manage_organization_members");
   const memberships = useOrganizationMemberships(organization.id, page, enabled);
@@ -15,6 +17,8 @@ export function OrganizationMemberships({ organization }: { organization: Organi
     <section className="rounded-xl border border-line bg-bg p-4" aria-labelledby="organization-members-heading">
       <h3 className="title-section" id="organization-members-heading">Memberships</h3>
       {memberships.isLoading ? <Skeleton className="mt-3 h-28 w-full" /> : null}
+      {update.error ? <ErrorBlock className="mt-3" error={update.error} /> : null}
+      <p className="mt-2 text-sm text-muted">Invite another governor before removing the last governor. Changing authority requires recent identity verification.</p>
       {memberships.error ? <ErrorText resource="organization members" onRetry={() => { void memberships.refetch(); }} /> : null}
       {memberships.data && !memberships.data.results.length ? <EmptyState message="It's just you so far. Create an invitation to bring in your team." /> : null}
       {memberships.data?.results.length ? (
@@ -23,7 +27,17 @@ export function OrganizationMemberships({ organization }: { organization: Organi
           identity={{ kind: "avatar", name: member.display_name || member.username, seed: String(member.user_id) }}
           meta={<><span className="[overflow-wrap:anywhere]">{member.email}</span> · Joined <RelativeTime date={member.created_at} /><br />Governance: {member.governance_actions.map(action => action.replace(/_/g, " ")).join(", ") || "none"}
             <br />Makerspace actions: {member.granted_actions.map(action => action.replace(/_/g, " ")).join(", ") || "none"}</>}
-          right={<StatusPill label={member.status} tone={member.status === "active" ? "success" : "warn"} />} />)}</div>
+          right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={member.status} tone={member.status === "active" ? "success" : "warn"} />
+            <OverflowMenu label={`Manage ${member.display_name || member.username}`} actions={[
+              { label: member.status === "active" ? "Suspend" : "Reactivate", tone: member.status === "active" ? "danger" : "default", pending: update.isPending,
+                onClick: () => update.mutate({ memberId: member.id, status: member.status === "active" ? "suspended" : "active" }),
+                ...(member.status === "active" ? { confirm: { title: "Suspend this member?", message: "They lose this organization's authority until reactivated.", confirmLabel: "Suspend" } } : {}) },
+              ...organization.governance_actions.map(action => ({
+                label: `${member.governance_actions.includes(action) ? "Revoke" : "Grant"} ${action === "manage_organization_members" ? "governor" : "profile editor"}`,
+                pending: update.isPending,
+                onClick: () => update.mutate({ memberId: member.id, governance_actions: member.governance_actions.includes(action) ? member.governance_actions.filter(value => value !== action) : [...member.governance_actions, action] }),
+              })),
+            ]} /></div>} />)}</div>
       ) : null}
       {memberships.data ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

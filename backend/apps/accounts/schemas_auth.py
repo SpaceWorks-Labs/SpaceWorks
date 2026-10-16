@@ -26,21 +26,30 @@ AuthMembershipSerializer = inline_serializer(
         "referrals_enabled": serializers.BooleanField(),
     },
 )
-UserPayloadSerializer = inline_serializer(
-    name="AuthUserPayload",
-    fields={
-        "id": serializers.IntegerField(),
-        "username": serializers.CharField(),
-        "email": serializers.EmailField(),
-        "display_name": serializers.CharField(),
-        "phone": serializers.CharField(),
-        "email_verified": serializers.BooleanField(),
-        "role": serializers.CharField(),
-        "is_superuser": serializers.BooleanField(),
-        "must_change_password": serializers.BooleanField(),
-        "makerspaces": serializers.ListField(child=AuthMembershipSerializer),
-    },
-)
+class AuthUserPayload(serializers.Serializer):
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    display_name = serializers.CharField()
+    phone = serializers.CharField()
+    email_verified = serializers.BooleanField()
+    role = serializers.CharField()
+    is_superuser = serializers.BooleanField()
+    must_change_password = serializers.BooleanField()
+    makerspaces = serializers.ListField(child=AuthMembershipSerializer)
+
+    def get_fields(self):
+        from apps.makerspaces.resource_grant_sources import registered_sources
+
+        fields = super().get_fields()
+        for source in registered_sources():
+            if source.payload_serializer is not None:
+                fields[source.key] = source.payload_serializer(many=True, required=False)
+        return fields
+
+
+UserPayloadSerializer = AuthUserPayload()
+
 LoginRequestSerializer = inline_serializer(
     name="LoginRequest",
     fields={

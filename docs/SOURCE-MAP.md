@@ -36,6 +36,96 @@ The picker stays outside the shell (S10); global routes use its no-workspace mod
 `features/members/MemberPortalTabs.tsx` composes the member `AppShell` from the unchanged
 `memberTabs(modules)` selector, using URL navigation links and the shared `#main-content`
 skip target. `MemberArea.tsx` supplies workspace/account data and unchanged tab bodies.
+BK-H signed booking reads are mapped in
+[SOURCE-MAP-BOOKING-READS.md](SOURCE-MAP-BOOKING-READS.md). They use the existing core
+HMAC, typed-target, cursor and re-auth contracts; Events is never imported.
+
+BK-F resource websites are mapped in [SOURCE-MAP-BOOKING-WEBSITES.md](SOURCE-MAP-BOOKING-WEBSITES.md).
+Bookings supplies typed adapters to the always-present website/asset/clone infrastructure.
+
+BK-G printable passes are mapped in [SOURCE-MAP-BOOKING-PASSES.md](SOURCE-MAP-BOOKING-PASSES.md).
+They consume the existing core positioned-layout/PDF primitives without importing Events.
+
+BK-C booking arrival is isolated in `bookings/models_arrival.py` (abstract credential /
+projection fields and append-only history), `services_arrival.py` (resolve/confirm/reverse),
+`services_arrival_policy.py` (locked lifecycle/time-edit matrix) and `arrival_projection.py`
+(minimal scanner DTO and BK-E aggregate query). The existing Booking save boundary invokes
+the guard so BK-B's ordinary service saves consume it without duplicating BK-B tools.
+`confirmation_access.py`, `confirmation_render.py`, `serializers_arrival.py`,
+`views_confirmation.py`/`urls_confirmation.py` and `views_arrival.py`/`urls_arrival.py`
+own private confirmations and scanner endpoints. `calendar_render.py` is the shared booking
+feed/single-ICS serializer; PNG/calendar formatting reuses always-present
+`makerspaces/confirmation_render.py`. `makerspaces/confirmation_secrets.py` supplies neutral
+QR log redaction; `confirmation_privacy.py` applies private headers through the existing
+request-ID middleware and handlers, including errors before view dispatch. `tenant_migration/catalog_booking_arrival.py` declares portable arrival
+facts; credential omission/fresh reconstruction, User closure, datasets and purge are wired
+in their existing registries. No stored asset is introduced.
+Frontend `bookings/BookingConfirmation.tsx` + `bookingConfirmationApi.ts` provide private
+QR/download/rotation controls; `staff/BookingArrivalScanner.tsx` uses the shared camera
+scanner plus manual entry and explicit resolve/confirm/reverse controls. The drawer combines the BK-B tab shell and staff tools with the BK-C scanner.
+Roster `arrived_at` hides unavailable edits/cancellation/no-show actions; completion remains
+independent of arrival. MyBookings, public submission and the
+public bookings page link to owned confirmations without carrying a QR in navigation URLs.
+
+Lane D shared communications live in `integrations/broadcasts_models.py` (abstract schema),
+`broadcasts_registry.py` (typed adapters), `broadcasts_worker.py` (200-account batches and
+recovery) and `broadcasts_delivery.py` (execution checks/status reconciliation).
+`delivery_sources.py` is the pre-send/digest eligibility registry; `delivery_digest.py`
+rebuilds summaries from durable source outbox references. `EmailDelivery` and `EmailLog`
+carry source kind/id/metadata through lifecycle dispatch, deferral and retry.
+`operations/report_subjects.py` owns generic subject validation/authorization;
+`report_download.py` dispatches registered CSV/XLSX/PDF renderers and download audits.
+`report_pdf.py` renders paginated metric/value tables with provenance; new event report
+definitions/builders/typed contracts are `report_definitions_events.py`,
+`reports_event_exports.py`, `serializers_reports_events_detail.py`.
+
+Booking resource reports (BK-E): `bookings/report_subject.py` registers the typed
+`bookable_space` policy; `report_features.py` projects request-local UI capabilities.
+`operations/report_definitions_bookings.py` registers four tenant-only reports;
+`reports_booking_resources.py` reuses `reports_bookings.py` and wires
+`extend_with_booking_arrival_counts` to BK-C `arrival_projection.arrival_metrics`,
+using the same tenant/resource/overlap window. Resource rows and exports include separately
+labelled current arrival counts; legacy tenant reservation utilisation is unchanged. `reports_booking_exports.py`
+reads allow-listed reservation/contact and answer snapshots through model accessors;
+`serializers_reports_bookings.py` defines the typed response contracts, including the
+resource-only arrival-count row.
+`reports_booking_pdf.py` supplies reservation semantics to the shared renderer;
+`report_pdf_fonts.py` selects the embedded Unicode font (backend image: DejaVu Sans).
+`BookingResourceAnalytics.tsx`, `BookingResourceTabs.tsx` and `bookingReportsApi.ts`
+provide resource/date query keys, accessible drawer tabs and audited download actions;
+`OperationsReportsBookings.tsx` exports the summary shared with the existing tenant report.
+Regression tests live under `backend/tests/operations/test_booking_*reports.py`,
+`test_booking_report_exports.py` and `test_booking_arrival_reports.py`; staff/arrival matrix regressions live in
+`backend/tests/bookings/test_arrival_staff_tools_integration.py`. The resource analytics
+Vitest file covers separately labelled arrival counts.
+
+Event adapters live in `events/broadcasts.py`, `models_broadcasts.py`,
+`services_broadcasts.py`, `views_broadcasts.py`, `serializers_broadcasts.py` and
+`urls_communications.py`; `services_bulk_invites.py`/`views_bulk_invites.py` own the
+bounded code-free email invitation flow, and `report_subject.py` owns event report policy.
+`makerspaces/module_purge_collectors_events.py` is re-exported by the existing collector
+barrel; `tenant_migration/catalog_broadcasts.py` declares inert portable history.
+Staff drawer components are `EventBroadcastsPanel.tsx`, `EventBulkInvites.tsx` and
+`EventAnalyticsPanel.tsx`, backed by `eventCommunicationsApi.ts` query keys/mutations.
+
+Event staff authority lives in `events/event_authority.py`, with its permission vocabulary
+in `event_permissions.py` and concrete typed event/series grants in `models_staff_grants.py`.
+`services_staff_grants.py` adapts the always-present
+`makerspaces/resource_grants_services.py` invite lifecycle; abstract fields and validation
+are in `makerspaces/resource_grants_models.py`. `resource_grant_sources.py` is the query-free
+runtime discovery registry consulted by account sign-in, auth payloads and MFA. Events
+registers its `staff_payload.py` source only while active; retention and purge continue
+to own concrete event rows after tombstoning. `views_staff_grants.py`,
+`serializers_staff_grants.py` and `urls_staff_grants.py` own invite/grant management and
+redemption; `views_accessible_events.py` lists only events the actor can access.
+`registration_view_errors.py` holds registration error schemas shared by the registration
+and eligible-member views, keeping their imports independent.
+`staff_grant_locks.py` stabilizes creator authority under user, role, membership and organizer
+locks; `serializers_event_authority.py` adds the shared permissions/manager projection to
+event and series serializers. `event_authority_page.py` resolves list-page authority in
+batches; list views pass its results through serializer context, while details keep
+per-object checks. Discovery includes series entries with `event_id=null`,
+so a granted series remains reachable before it has occurrences.
 
 WP1 event access and ticketing lives in `events/registration_access.py`, `invites.py`,
 `ticketing.py` and `promos.py`; `participant_access.py` limits account ticket reads to
@@ -262,7 +352,8 @@ while pack application explicitly asserts the target source gate before writes.
   `local_now`, `to_local`, `local_day_bounds`, `is_open` and `next_open_interval`
   (aware inputs, UTC half-open bounds; fold/gap policy in its docstring).
   `admin_api/views_makerspace_profile.py` serves audited, MANAGE_MAKERSPACE-scoped
-  `/admin/makerspace/<id>/profile`; currency uses `MakerspacePaymentSettings.default_currency`.
+  `/admin/makerspace/<id>/profile`; `profile_settings.py` shares its audited writer with setup.
+  Currency uses `MakerspacePaymentSettings.default_currency`.
   `origin_scope.py` (browser origin→tenant guard), `provisioning.py`/`hosting.py`, `secrets.py`.
   `models_stations.py` owns shared inert `Station` metadata plus the complete live
   `StationCredential` envelope; `station_credentials.py`, `station_sessions.py`, `station_security.py` and
@@ -379,6 +470,7 @@ while pack application explicitly asserts the target source gate before writes.
   are thin barrels: the exported field lists live in `classification_domain.py`, the global/omitted
   model reasons in `classification_platform.py`, and the declared `accounts.User` edges in
   `references_core.py`; adapter extensions compose `classification_7b.py`/`references_7b.py`.
+  `restore_hooks.py` clears copied download bearers during restore and slice staging.
   Credential omission checks live in `guards_credentials.py` behind the original `guards.py` exports. Its `guards._equal(subject, declared,
   actual)` is called with the *scanned* set passed as `declared`, so `extra=` in a failure means **scanned
   but not registered** — read the signature before deciding which side to fix.
@@ -405,6 +497,7 @@ while pack application explicitly asserts the target source gate before writes.
   and exact object bytes before `source_gate_release.py` performs the fenced `copy_capture` release;
   `tenant_dump_staging.py` + `tenant_dump_database_cleanup.py` own marker-guarded crash cleanup;
   `tenant_dump_cleanup.py` retries refused unpublished-object deletion from its durable capture-row key;
+  `restore_hooks.py` clears copied tenant-dump download bearers during restore and slice staging;
   `tenant_dump_derivation.py` derives and seals output only from that capture;
   `tenant_dump_pii.py` binds raw mapped-column mode findings and ciphertext AAD identities;
   `tenant_dump_key_inventory.py` freezes and exact-set checks source-broker key facts, while
@@ -460,6 +553,12 @@ shared deployment questionnaire. `setup.sh` consumes confirmed private answers a
 stack. `scripts/setup-questions.sh` owns question order/summary, `setup-question-input.sh` owns
 validation and private answer transport, and `setup-write-environment.sh` writes the confirmed dotenv
 and primary layer. `setup-first-run.sh` preserves existing secrets and supports a confirmed retry.
+`setup-area-questions.sh` owns the shared area follow-ups; `setup-areas-json.sh` encodes their private
+stdin document. `module-area-selection.sh` presents the live on/partial/off menu, while
+`module-legacy-selection.sh` preserves module-key exclusion automation. Backend `makerspaces/setup_areas.py`
+maps bundles to registry modules/features; `setup_area_application.py` and `setup_settings.py` apply
+them atomically through audited writers via `apply_setup_areas`. `integrations/timing_settings.py`
+and `machines/policy_settings.py` are shared with their existing staff editors.
 `compose-deployment.sh` appends the frontend/storage overlays consistently for `spaceworks-compose.sh`
 and `setup-host-orchestration.sh` topology records. Update, rollback and restore use that wrapper.
 
@@ -468,3 +567,19 @@ and `setup-host-orchestration.sh` topology records. Update, rollback and restore
 the database. `install-runner.sh` optionally registers the install-owner GitHub Actions systemd service
 and prints required repository/security settings; `runner-release.py` verifies its release asset checksum.
 The release workflow deploys an exact published main version through the installed updater.
+
+Lane E printable credentials: `operations/printable_layout.py`, `printable_serializers.py`,
+`printable_fonts.py` and `printable_pdf.py` are always-present geometry/font/overflow/PDF
+mechanisms with no domain imports. `events/badge_templates.py` validates event fields and
+converts v1 layouts; `badge_rendering.py` adapts authorized values. Certificate design is
+owned by `models_certificate_templates.py`, `certificate_templates.py`,
+`services_certificate_templates.py`, `certificate_artwork_storage.py`,
+`serializers_certificate_templates.py`, `views_certificate_templates.py` and
+`urls_credentials.py`; `services_certificates.py` freezes issuance and
+`certificate_rendering.py` consumes its snapshot; `certificate_rendering_legacy.py`
+preserves pre-designer PDF bytes for rows with empty migration snapshots.
+`backup/object_reference_certificates.py`
+registers artwork keys embedded in issuance JSON; the normal retention/purge registries
+also include concrete artwork and revision rows. Frontend shared design controls live in
+`components/print-layout/`; `EventCertificateDesigner.tsx` and
+`eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.

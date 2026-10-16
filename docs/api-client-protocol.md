@@ -219,3 +219,78 @@ def verify(headers, raw_body: bytes, secret: str, tolerance=300) -> bool:
 Respond with any 2xx. Anything else, or a timeout, is retried by the delivery worker; after the retries a
 space manager can retry from Delivery logs, or a superadmin from `/control/`. Endpoints must be public HTTPS — private and
 loopback addresses are refused when the destination is saved and again at send time.
+
+## Signed staff-data reads (Lane F)
+
+GET and HEAD routes require a server client bound to exactly one makerspace,
+Events installed and `events.api_read` enabled:
+
+| Route | Required scopes |
+| --- | --- |
+| `/api/v1/events/` | `events:read` |
+| `/api/v1/events/<id>/` | `events:read` |
+| `/api/v1/events/<id>/participants/` | `events:read` AND `participants:read` |
+
+Only a platform superadmin grants these scopes. Browser/publishable keys, global
+clients, JWT sessions, `public:*` and frozen `legacy:v1` never authorize these
+routes. The prefix remains mandatory even if removed from an operator override
+or public-API enforcement is off. Sign the full path including its query string
+using the existing protocol above. Nonce, clock and rotation policies are unchanged.
+
+Events allow only ID, title, status, start/end and location. Participants allow
+registration ID, display name and registration date. With both prerequisite
+scopes, `participants:attendance:read` adds the current attendance date (null when
+no longer attended). Contacts, answers, ticket/check-in credentials and money are
+excluded. Participant reads audit an opaque client fingerprint and row count.
+
+Lists return `{ "next_cursor": string|null, "results": [...] }`. Use `page_size`
+1-200 (default 100) and return the cursor unchanged. Signed cursors expire after
+24 hours and bind client, tenant, subject and attendance projection. Ascending
+immutable IDs prevent inserts from duplicating earlier rows; this is live
+pagination, not a frozen export. Responses are private/no-store. Foreign IDs,
+hidden/unservable tenants and unknown targets fail closed. Client, scope, module
+and feature revocations apply on the next request.
+
+`apiclients/read_contract.py` is core infrastructure: domain live startup registers
+typed `ReadTarget` adapters. Add explicit GET/HEAD registry entries, dedicated
+server-only scopes and a mandatory prefix for a new domain; never import Events
+to reuse authentication, target resolution, throttles or signed keyset pagination.
+
+## Signed booking reads (BK-H)
+
+These GET/HEAD routes require Bookings and opt-in `bookings.api_read`, with the
+same mandatory HMAC, tenant-bound server principal, operator-only grants, signed
+keyset pagination, nonce policy, throttling and private/no-store responses above.
+No browser, global, user session, public wildcard or legacy client is upgraded.
+
+| Route under `/api/v1/booking-integration/` | Required scope |
+| --- | --- |
+| `resources/` | `booking_resources:read` |
+| `resources/<id>/` | `booking_resources:read` |
+| `bookings/` | `bookings:read` |
+| `bookings/<id>/` | `bookings:read` |
+| `resources/<id>/bookings/` | `bookings:read` |
+
+Resource reads contain only integer ID, name, kind, description, capacity,
+location, active and public flags. Signed staff integrations may read private or
+inactive resources; these scopes never confer public website visibility.
+Reservation reads contain only integer ID, resource ID, window, status and display
+name. Resource and reservation read scopes are independent; reading reservations
+does not require resource-read authority. `bookings:attendance:read` additionally
+requires `bookings:read` at grant time and never authorizes a route alone. It adds
+only current unreversed `arrived_at` (nullable), including arrivals retained after
+completion. Reversed arrivals return null. No contact, note, answer, credential,
+machine link, form, grant, booking rule or payment field appears.
+
+Reservation GET and HEAD append `api_client.bookings_read` with an opaque client
+fingerprint, row count and attendance projection, through the source write fence;
+frozen sources refuse that audited read. Foreign/missing targets fail closed before
+the view. Cursors bind the client, tenant, resource/list subject and attendance
+projection; changing scopes cannot reuse an earlier projection's cursor. Lists
+are live ID-ordered reads, not snapshots. Scopes/features/revocation are rechecked
+on each request, without consulting user RBAC or resource staff grants.
+
+Website sections/assets from parallel BK-F are not part of this initial projection.
+After its merge, extend only approved public page fields through its release/visibility
+adapter, never through unrestricted model serialization. See the BK-H lane report
+for the remaining public route, schema and analytics integration checks.

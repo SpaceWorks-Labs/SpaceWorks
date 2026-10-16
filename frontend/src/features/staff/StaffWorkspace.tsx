@@ -32,6 +32,7 @@ export function StaffWorkspace({
   setTab,
   signOut,
   singleTenantLocked,
+  lockedMakerspaceId,
   user,
 }: {
   activeMakerspace?: Makerspace;
@@ -47,6 +48,7 @@ export function StaffWorkspace({
   setTab: (tab: string) => void;
   signOut: () => Promise<void>;
   singleTenantLocked: boolean;
+  lockedMakerspaceId?: number;
   user: StaffAuthUser;
 }) {
   const location = useLocation();
@@ -67,9 +69,10 @@ export function StaffWorkspace({
     canUseToBuy,
     canViewAudit,
     defaultTab,
+    grantOnly,
     handoutOnly,
     printingOnly,
-  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly);
+  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly, Boolean(user.event_grants?.length), Boolean(user.booking_grants?.length));
   const visibleMakerspaces =
     singleTenantLocked && activeMakerspace
       ? [activeMakerspace]
@@ -114,7 +117,7 @@ export function StaffWorkspace({
   return (
     <StaffListContext.Provider value={{ ownerName: user.username, canShare: canManageMakerspace, actions, isSuperadmin }}>
       <StaffShell activeMakerspace={activeMakerspace} allowedTabs={moduleAllowedTabs} activeTab={routeTabDenied ? "" : activeTab}
-        guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} user={user}
+        guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} grantOnly={grantOnly} user={user}
         roleName={activeRoleName} isSuperadmin={isSuperadmin} makerspaces={makerspaces} setSelected={setSelected}
         setTab={setTab} signOut={signOut} actions={actions}>
         {routeTabDenied ? <PageHeader title="Page unavailable" /> : null}
@@ -156,6 +159,7 @@ export function StaffWorkspace({
               canSeePrinting={canSeePrinting}
               canViewAudit={canViewAudit}
               singleTenantLocked={singleTenantLocked}
+              lockedMakerspaceId={lockedMakerspaceId}
             />
           )}
       </StaffShell>

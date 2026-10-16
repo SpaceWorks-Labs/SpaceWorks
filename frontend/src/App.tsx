@@ -1,3 +1,5 @@
+import { ReauthenticationDialog } from "./features/auth/ReauthenticationDialog";
+import { ReauthenticationReturn } from "./features/auth/ReauthenticationReturn";
 import { AppRoutes } from "./AppRoutes";
 import { lazy, Suspense } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
@@ -9,6 +11,7 @@ const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").
 export default function App() {
   const tenant = useTenant();
   const { pathname } = useLocation();
+  if (pathname === "/reauth/callback" || pathname === "/reauth/confirm") return <ReauthenticationReturn confirmation={pathname === "/reauth/confirm"} />;
   // Station UUID routes must open their precached shell even when no-store
   // config.js / tenant bootstrap cannot load. Central /kiosk/:slug stays distinct.
   if (/^\/m\/[^/]+\/kiosk\/[^/]+\/?$/.test(pathname)
@@ -32,5 +35,5 @@ export default function App() {
       title="Site unavailable" body="The configured tenant could not be resolved."
       primary={{ label: "Retry", onClick: () => window.location.reload() }} />;
   }
-  return <AppRoutes mode={tenant.mode} landing={<LandingPage />} />;
+  return <><AppRoutes mode={tenant.mode} landing={<LandingPage />} /><ReauthenticationDialog /></>;
 }

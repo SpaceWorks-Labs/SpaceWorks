@@ -11,6 +11,8 @@ LIFECYCLE_EXEMPTIONS = {
 
 
 OBJECT_MUTATION_PARTICIPANTS = {
+    "apps.makerspaces.website_assets.delete_object": "Private website rollback/replacement cleanup belongs to the tenant-resolved durable website transaction or post-commit cleanup.",
+    "apps.makerspaces.website_assets.copy_object": "Called only by an authorized domain clone/COW adapter inside clone_transaction and its tenant source gate.",
     "apps.data_export.subject_services.run_subject_export": (
         "The subject task or recovery sweep holds subject_boundary through archive upload and finalization."
     ),
@@ -37,7 +39,7 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.events.services_images.update_image": "Called by the tenant-resolved event image route.",
     "apps.events.services_series_images.remove_image": "Called by the tenant-resolved event series image route.",
     "apps.events.services_series_images.update_image": "Called by the tenant-resolved event series image route.",
-    "apps.events.services.update_event": (
+    "apps.events.services_event_details.update_event": (
         "Runs inside the tenant-resolved admin event route's transaction; it can clear "
         "image_key when an occurrence stops overriding its series template."
     ),

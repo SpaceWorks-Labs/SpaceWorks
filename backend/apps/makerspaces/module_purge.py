@@ -255,6 +255,10 @@ def _free_private_storage(makerspace, sizes, deleted_keys):
         return
     freed = sum(
         size for key, size in sizes.items() if size and key in deleted_keys
+        # Artwork upload reservations cover the staging object too. A failed
+        # staging deletion cannot grant the tenant that reserved budget back.
+        and (not key.startswith("events/certificate-artwork/")
+             or f"staging/{key}" in deleted_keys)
     )
     if not freed:
         return

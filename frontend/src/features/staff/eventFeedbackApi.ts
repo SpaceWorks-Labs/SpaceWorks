@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
-import type { CustomAnswers, CustomFormQuestion } from "../forms/customFormTypes";
+import type { CustomFormQuestion } from "../forms/customFormTypes";
 import { eventKeys, staffPath, type Paginated } from "./eventsApiTypes";
 import { organizedEventKeys } from "./organizedEventsApi";
 
@@ -65,10 +65,23 @@ function useInvalidateFeedback(eventId: number, makerspaceId: number) {
 export function useConfigureFeedbackSurvey(eventId: number, makerspaceId: number) {
   const invalidate = useInvalidateFeedback(eventId, makerspaceId);
   return useMutation({
-    mutationFn: (payload: Pick<FeedbackSurvey, "title" | "thank_you_text" | "questions" | "certificate_enabled">) =>
+    mutationFn: (payload: Pick<FeedbackSurvey, "title" | "thank_you_text" | "questions"> & Partial<Pick<FeedbackSurvey, "certificate_enabled">>) =>
       staffRequest<FeedbackSurvey>(path("/admin/events/{id}/feedback-survey/", eventId), {
         method: "PUT", body: JSON.stringify(payload),
       }),
+    onSuccess: invalidate,
+  });
+}
+
+export type FeedbackTemplate = "quick_pulse" | "event_review" | "session_speaker";
+
+export function useApplyFeedbackTemplate(eventId: number, makerspaceId: number) {
+  const invalidate = useInvalidateFeedback(eventId, makerspaceId);
+  return useMutation({
+    mutationFn: (template: FeedbackTemplate) => staffRequest<FeedbackSurvey>(
+      path("/admin/events/{id}/feedback-survey/templates/", eventId),
+      { method: "POST", body: JSON.stringify({ template }) },
+    ),
     onSuccess: invalidate,
   });
 }
@@ -133,5 +146,3 @@ export function useCertificateDownload(eventId: number, makerspaceId: number) {
     onSuccess: invalidate,
   });
 }
-
-export type FeedbackSubmission = { answers: CustomAnswers; email?: string };

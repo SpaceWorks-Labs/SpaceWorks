@@ -34,7 +34,7 @@ export type PublicBookingInput = {
   website?: string;
 };
 
-export type PublicBookingResult = { status: "pending" | "confirmed" };
+export type PublicBookingResult = { status: "pending" | "confirmed"; public_token?: string; confirmation_available?: boolean };
 
 const SPACES_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/";
 const AVAILABILITY_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/";
@@ -83,6 +83,7 @@ export function useSubmitPublicBooking(slug: string, token: string) {
       { method: "POST", body: JSON.stringify(payload) },
     ),
     onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["member", slug] });
       if (result.status === "confirmed") {
         await queryClient.invalidateQueries({ queryKey: publicBookingKeys.availabilityPrefix(slug, token) });
       }

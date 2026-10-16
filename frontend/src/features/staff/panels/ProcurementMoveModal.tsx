@@ -59,7 +59,7 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
       return staffRequest(`/procurement/to-buy/${item.id}/move-to-printing`, { method: "POST", body: JSON.stringify(printingPayload(printing)) });
     },
     onSuccess: () => {
-      invalidatePrintingViews(queryClient, makerspace.id);
+      invalidatePrintingViews(queryClient);
       queryClient.invalidateQueries({ queryKey: ["procurement", makerspace.id] });
       onMoved();
       onClose();

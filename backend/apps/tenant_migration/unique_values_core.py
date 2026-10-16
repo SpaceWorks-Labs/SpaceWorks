@@ -29,6 +29,9 @@ from .unique_values_policy import (
 # named constraints retain their database name. Every entry is intentionally literal:
 # adding a new global uniqueness rule must force a reviewed migration disposition.
 CORE_UNIQUE_RULES = {
+    ("accounts.ReauthenticationSession", "field:session_id"): _policy(
+        UniqueValueDisposition.DROP_ROW, "Browser step-up authority is omitted at every portable fidelity."
+    ),
     ("makerspaces.MembershipTerm", "field:renewed_from"): _policy(
         REMAP, "The one-to-one renewal predecessor follows its imported term identity."
     ),
@@ -47,6 +50,7 @@ CORE_UNIQUE_RULES = {
     ("bookings.BookableSpace", "field:public_token"): _policy(
         FRESH, "Source bearer tokens are replaced."
     ),
+    ("bookings.Booking", "field:checkin_token"): _policy(FRESH, "Fresh target arrival credential."),
     ("bookings.Booking", "field:public_token"): _policy(
         FRESH, "Source bearer tokens are replaced."
     ),

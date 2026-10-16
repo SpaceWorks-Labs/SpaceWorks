@@ -9,7 +9,9 @@ PUBLIC_ALL = "public:*"
 TARGET_GLOBAL = "global"
 TARGET_TENANT_SLUG = "tenant_slug"
 TARGET_TENANT_TOKEN = "tenant_token"
-TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN})
+TARGET_CLIENT_SUBJECT = "client_subject"
+TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN,
+                          TARGET_CLIENT_SUBJECT})
 
 PUBLIC_READ_SCOPES = frozenset({PUBLIC_READ, PUBLIC_ALL})
 PUBLIC_WRITE_SCOPES = frozenset({PUBLIC_WRITE, PUBLIC_ALL})
@@ -21,6 +23,9 @@ class ScopeRegistryEntry:
     target_mode: str
     tenant_apps_admitted: bool = False
     legacy_v1: bool = False
+    server_only: bool = False
+    tenant_bound: bool = False
+    required_scopes: frozenset[str] = frozenset()
 
 
 _READ = ("GET", "HEAD")
@@ -30,6 +35,16 @@ _WRITE = ("POST",)
 # target mode, tenant-app admission, legacy-v1 admission). Legacy admission is explicit
 # so adding a route cannot silently widen the frozen cutover capability.
 _ROUTE_DEFINITIONS = (
+    ("website-discover", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, False),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-booking-resource", "public-booking-website", "public-booking-website-image",
+    )),
+    ("member-booking-pass", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-confirmation", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-confirmation-png", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-calendar", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-rotate-checkin", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in ("public-event-website", "public-event-website-section", "public-event-website-session", "public-event-website-image", "public-event-website-schedule", "public-event-website-speaker")),
     ("member-booking-reschedule", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("member-booking-feed-settings", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("member-booking-feed-settings", ("POST", "DELETE"), PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
@@ -58,6 +73,7 @@ _ROUTE_DEFINITIONS = (
         "public-printer-service-request", _WRITE, PUBLIC_WRITE_SCOPES,
         TARGET_TENANT_SLUG, False, True,
     ),
+    ("public-event-organization-eligibility", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-detail", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-list", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-organization-detail", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
@@ -118,6 +134,11 @@ def _build_registry():
             if key in registry:
                 raise ValueError(f"Duplicate API-client scope registry key: {key}")
             registry[key] = entry
+    from .scope_registry_reads import read_route_entries
+    for key, entry in read_route_entries().items():
+        if key in registry:
+            raise ValueError(f"Duplicate API-client scope registry key: {key}")
+        registry[key] = entry
     return MappingProxyType(registry)
 
 

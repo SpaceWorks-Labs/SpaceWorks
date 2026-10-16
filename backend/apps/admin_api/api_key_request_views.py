@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -29,7 +30,7 @@ from apps.openapi_errors import errors
     summary="List or create API key requests",
     parameters=[OpenApiParameter("makerspace", int, OpenApiParameter.QUERY)],
 )
-class ApiKeyRequestListCreateView(generics.ListCreateAPIView):
+class ApiKeyRequestListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIView):
     serializer_class = ApiKeyRequestSerializer
     permission_classes = [IsActiveStaff]
 

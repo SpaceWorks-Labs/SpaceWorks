@@ -25,10 +25,24 @@ EXPORTED_MODEL_FIELDS = {
     **WP3_EXPORTED_FIELDS,
 }
 extend_event_export_fields(EXPORTED_MODEL_FIELDS)
-EXPORTED_MODEL_FIELDS["bookings.Booking"] += " calendar_sequence calendar_updated_at"
+from apps.tenant_migration.catalog_broadcasts import EXPORTED_FIELDS as BROADCAST_FIELDS
+EXPORTED_MODEL_FIELDS.update(BROADCAST_FIELDS)
+from apps.tenant_migration.catalog_website import EXPORTED_FIELDS as WEBSITE_FIELDS
+EXPORTED_MODEL_FIELDS.update(WEBSITE_FIELDS)
+EXPORTED_MODEL_FIELDS["makerspaces.Makerspace"] += " website_embed_origins"
+EXPORTED_MODEL_FIELDS["events.Event"] += " show_registration_count organization_admission_blocked"
+EXPORTED_MODEL_FIELDS["events.EventSeries"] += " organization_admission_blocked"
+EXPORTED_MODEL_FIELDS["events.EventRegistration"] += " cancelled_at status_before_cancel waitlist_position_at"
+EXPORTED_MODEL_FIELDS["makerspaces.Makerspace"] += " event_default_registration_audience"
+EXPORTED_MODEL_FIELDS["bookings.Booking"] += " calendar_sequence calendar_updated_at cancelled_at status_before_cancel checkin_token arrived_at"
+EXPORTED_MODEL_FIELDS["bookings.BookingCheckInEvent"] = "id booking actor action source recorded_at"
 EXPORTED_MODEL_FIELDS["notifications.MemberNotificationPreference"] += " daily_digest"
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
+    "bookings.BookingSpaceStaffGrant": "Resource authority is reissued on the target; never portable.",
+    "bookings.BookingSpaceStaffGrantInvite": "Deployment-local single-use credential; never portable.",
+    "events.EventStaffGrant": "Event-scoped authority is reissued on the target; never portable.",
+    "events.EventStaffGrantInvite": "Deployment-local single-use credential; never portable.",
     **_PLATFORM_OMITTED_MODELS, **DEVICE_OMITTED_MODELS,
     **WP3_OMITTED_MODELS, **WP4_OMITTED,
 }

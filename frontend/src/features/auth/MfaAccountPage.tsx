@@ -1,3 +1,5 @@
+import { reauthenticationSessionKey } from "./reauthenticationApi";
+import { PasswordlessMfaProof } from "./PasswordlessMfaProof";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -16,8 +18,8 @@ export function MfaAccountPage() {
   const [codes, setCodes] = useState<string[]>();
   const [notice, setNotice] = useState("");
   useEffect(() => { void refreshAccessToken().then(setReady); }, []);
-  const status = useQuery({ queryKey: ["mfa-status"], enabled: ready,
-    queryFn: () => staffRequest<{ enabled: boolean; required: boolean }>("/auth/mfa"), retry: false });
+  const status = useQuery({ queryKey: [...reauthenticationSessionKey(), "mfa-status"], enabled: ready,
+    queryFn: () => staffRequest<{ enabled: boolean; required: boolean; password_available: boolean }>("/auth/mfa"), retry: false });
   const enroll = useMutation({ mutationFn: () => staffRequest<MfaChallenge>("/auth/mfa", {
     method: "POST", body: JSON.stringify({ password }),
   }), onSuccess: (value) => { clearAccessToken(); setPassword(""); setChallenge(value); } });
@@ -27,6 +29,11 @@ export function MfaAccountPage() {
   if (challenge) return <MfaFlow challenge={challenge} onCancel={() => { setChallenge(undefined); setReady(false); }}
     onComplete={result => { setAccessToken(result.access); setChallenge(undefined); setReady(true); void status.refetch(); }} />;
   const enabled = status.data?.enabled;
+  // A passwordless account (social / OIDC sign-in only) cannot type a current password, so
+  // enrollment is proven through PasswordlessMfaProof instead; managing an EXISTING
+  // authenticator still needs a password the account does not have.
+  const passwordAvailable = status.data?.password_available !== false;
+  const needsPassword = passwordAvailable || !!enabled;
   const busy = enroll.isPending || change.isPending;
   return <>
     <CenteredCardLayout title={codes ? "Save your recovery codes" : "Two-step sign-in"} media={{ icon: "ShieldCheck", tone: "accent" }}
@@ -36,14 +43,17 @@ export function MfaAccountPage() {
         `${enabled ? "Your authenticator is enrolled." : "Add an authenticator to protect your account."}${status.data?.required ? " MFA is required for this account." : ""}`}
       content={<div className="grid gap-4">
         {ready ? <><StatusPill label={enabled ? "Authenticator on" : "Authenticator off"} tone={enabled ? "success" : "neutral"} />
-          <label className="grid gap-2 text-sm font-semibold" htmlFor="mfa-password">Confirm your current password
-            <input id="mfa-password" className="desk-input" type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} /></label></> : null}
+          {passwordAvailable ? <label className="grid gap-2 text-sm font-semibold" htmlFor="mfa-password">Confirm your current password
+            <input id="mfa-password" className="desk-input" type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} /></label>
+            : !enabled ? <PasswordlessMfaProof />
+            : <p className="text-sm text-muted">Your existing MFA-management operations require a current password. Contact your administrator if you cannot supply one.</p>}</> : null}
         {codes ? <MfaRecoveryCodes codes={codes} /> : null}
         {enroll.error || change.error ? <ErrorBlock error={(enroll.error ?? change.error)!} /> : null}
       </div>}
       primary={codes ? { label: "I've saved my codes", onClick: () => { setCodes(undefined); setNotice("Your recovery codes are saved. Sign in again to continue."); } } : !ready ? { label: "Staff sign-in", href: "/admin" } : {
-        label: enabled ? "Regenerate recovery codes" : "Enroll authenticator", pending: busy, disabled: !password || status.isLoading,
-        disabledReason: "Confirm your current password to continue.", onClick: () => enabled ? change.mutate("recovery") : enroll.mutate() }}
+        label: enabled ? "Regenerate recovery codes" : "Enroll authenticator", pending: busy, disabled: (needsPassword && !password) || status.isLoading,
+        disabledReason: passwordAvailable ? "Confirm your current password to continue." : "Managing an enrolled authenticator requires a current password.",
+        onClick: () => enabled ? change.mutate("recovery") : enroll.mutate() }}
       footer={<div className="grid gap-4"><div className="flex flex-wrap gap-4"><Link to="/admin" className="desk-link min-h-11">Staff sign-in</Link><Link to="/member" className="desk-link min-h-11">Member sign-in</Link></div>
         {ready && enabled && !status.data?.required ? <DangerZone title="Disable MFA" consequence="Your account will use password sign-in without an authenticator."
           action={{ label: "Disable MFA", disabled: !password || busy, onClick: () => setConfirmDisable(true) }} /> : null}</div>} />

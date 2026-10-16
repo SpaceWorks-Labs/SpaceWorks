@@ -16,6 +16,9 @@ def required(user):
     local = rbac.scope_by_makerspace(user, candidates, "id")
     if any(rbac.effective_actions(user, space.pk) for space in local):
         return True
+    from apps.makerspaces.resource_grant_sources import has_authority
+    if has_authority(user, makerspace_ids=candidates.values_list("pk", flat=True)):
+        return True
     if not rbac.has_any_org_authority(user):
         return False
     # Action-based scoping includes organization-derived staff, never community identity.

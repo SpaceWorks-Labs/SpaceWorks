@@ -6,6 +6,11 @@ override in tenant_dump_authority.py before the catalog guard will pass.
 """
 
 FIRST_PARTY_FIELD_NAMES = {
+    "accounts.ReauthenticationSession": frozenset("id user session_id surface auth_generation credential_fingerprint mfa_version auth_time social_verified_at enrollment_confirmed_at created_at updated_at".split()),
+    "bookings.BookingSpaceStaffGrant": frozenset("id makerspace space permissions created_at revoked_at user granted_by revoked_by".split()),
+    "bookings.BookingSpaceStaffGrantInvite": frozenset("id makerspace space permissions created_at revoked_at token_digest email_digest created_by expires_at redeemed_at redeemed_by".split()),
+    "events.EventStaffGrant": frozenset("id makerspace event series permissions created_at revoked_at user granted_by revoked_by".split()),
+    "events.EventStaffGrantInvite": frozenset("id makerspace event series permissions created_at revoked_at token_digest email_digest created_by expires_at redeemed_at redeemed_by".split()),
     "makerspaces.SpacePackProfile": frozenset("id name pack created_at updated_at".split()),
     "makerspaces.MakerspaceLoanPolicy": frozenset("id makerspace default_loan_days loan_renewal_mode loan_max_renewals loan_renewal_days loan_max_active loan_max_items loan_reminder_offsets_hours loan_escalate_overdue_days updated_at".split()),
     'notifications.NotificationInboxRow': frozenset('id makerspace user feature event event_key title summary link read_at created_at'.split()),
@@ -27,7 +32,7 @@ FIRST_PARTY_FIELD_NAMES = {
     'accounts.DeviceRefreshToken': frozenset('blacklisted_at created_at expires_at family id jti rotated_at token_fingerprint'.split()),
     'accounts.PlatformLoginMethods': frozenset('id password_enabled phone_enabled self_registration_enabled social_enabled updated_at'.split()),
     'accounts.MemberClaimCode': frozenset('absolute_expires_at code_digest consumed_at consumed_ip expires_at failed_attempts id issued_at issued_by membership revoked_at revoked_by session_id'.split()),
-    'accounts.OidcBrowserAttempt': frozenset('code_verifier consumed_at created_at expires_at id intended_membership intended_user nonce_digest origin provider redirect_uri state_digest'.split()),
+    'accounts.OidcBrowserAttempt': frozenset('code_verifier consumed_at created_at expires_at id intended_membership intended_user nonce_digest origin provider redirect_uri state_digest surface'.split()),
     'accounts.PhoneVerificationChallenge': frozenset('code_digest consumed_at created_at expires_at failed_attempts id last_sent_at phone_e164 purpose user'.split()),
     'accounts.PasswordResetEnvelope': frozenset('attempts claim_expires_at claim_owner claimed_at consumed_at credential_fingerprint digest digest_is_live email_fingerprint email_normalized expires_at generation id requested_at status superseded_at terminal_at user'.split()),
     'accounts.SocialIdentity': frozenset('created_at id provider provider_sub updated_at user'.split()),
@@ -210,8 +215,10 @@ FIRST_PARTY_FIELD_NAMES = {
     'events.EventStationBinding': frozenset('created_at event id station'.split()),
     'events.EventFeedbackSurvey': frozenset('answered_question_ids certificate_enabled closed_at created_at event id is_open opened_at questions thank_you_text title updated_at'.split()),
     'events.EventFeedbackResponse': frozenset('answers_snapshot certificate_requested created_at id registration survey'.split()),
-    'events.EventAttendanceCertificate': frozenset('content_type event_ends_at event_starts_at event_title id issued_at issuer_name object_key recipient_name registration rendered_at response revision revocation_reason revoked_at revoked_by serial sha256 size_bytes status'.split()),
-    'bookings.BookableSpace': frozenset('approval_mode booking_lead_time_minutes capacity created_at created_by custom_form description id image_key is_active is_public kind location machine_type makerspace max_booking_advance_days max_booking_duration_minutes min_booking_duration_minutes name payment_amount public_token requester_notifications_enabled show_public_availability show_public_booker_names updated_at buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours'.split()),
+    'events.EventAttendanceCertificate': frozenset('content_type event_ends_at event_starts_at event_title id issued_at issuer_name layout_snapshot object_key recipient_name registration rendered_at response revision revocation_reason revoked_at revoked_by serial sha256 size_bytes status template_revision'.split()),
+    'events.EventCertificateArtwork': frozenset('id event object_key size_bytes sha256 version_id promoted_at created_at'.split()),
+    'events.EventCertificateTemplateRevision': frozenset('id event artwork parameters created_at'.split()),
+    'bookings.BookableSpace': frozenset('approval_mode booking_lead_time_minutes capacity created_at created_by custom_form description id image_key is_active is_public kind location machine_type makerspace max_booking_advance_days max_booking_duration_minutes min_booking_duration_minutes name pass_template payment_amount public_token requester_notifications_enabled show_public_availability show_public_booker_names updated_at buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours'.split()),
     'bookings.Booking': frozenset('created_at custom_answers email ends_at id member name note phone public_token space starts_at status'.split()),
     'maintenance.MaintenanceSchedule': frozenset('anchor created_at created_by description id interval_days is_active machine next_due updated_at'.split()),
     'maintenance.MaintenanceLog': frozenset('cost created_at id machine parts_note performed_at performed_by summary'.split()),
@@ -235,6 +242,12 @@ FIRST_PARTY_FIELD_NAMES = {
 from .catalog_7b import PRINTER_FIELD_NAMES
 
 FIRST_PARTY_FIELD_NAMES.update(PRINTER_FIELD_NAMES)
+from .catalog_broadcasts import FIELD_NAMES as BROADCAST_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(BROADCAST_FIELDS)
+from .catalog_website import FIELD_NAMES as WEBSITE_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(WEBSITE_FIELDS)
+FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= {"website_embed_origins"}
+FIRST_PARTY_FIELD_NAMES["integrations.EmailLog"] |= {"source_kind", "source_id", "source_metadata"}
 
 from .catalog_7c import LABEL_FIELD_NAMES
 
@@ -242,11 +255,17 @@ FIRST_PARTY_FIELD_NAMES.update(LABEL_FIELD_NAMES)
 
 from .catalog_w7_events import extend_event_field_snapshot
 extend_event_field_snapshot(FIRST_PARTY_FIELD_NAMES)
+FIRST_PARTY_FIELD_NAMES["events.Event"] |= {"show_registration_count"}
+FIRST_PARTY_FIELD_NAMES["events.EventRegistration"] |= {"cancelled_at", "status_before_cancel", "waitlist_position_at"}
 
 from .catalog_wp3 import WP3_FIELD_NAMES, WP3_EXTRA_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(WP3_FIELD_NAMES)
 for _label, _names in WP3_EXTRA_FIELDS.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+
+from .catalog_booking_arrival import FIELD_NAMES as BOOKING_ARRIVAL_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(BOOKING_ARRIVAL_FIELDS)
+FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= {"checkin_token", "arrived_at"}
 
 AUTO_CREATED_FIELD_NAMES = {
     'auth.Group_permissions': frozenset('group id permission'.split()),
@@ -272,6 +291,9 @@ UNMANAGED_FIELD_NAMES = {}
 
 from .tenant_dump_modules import MODULE_FIELD_NAMES
 FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= MODULE_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= {"event_default_registration_audience"}
 
 from .catalog_wp4 import field_snapshot
 FIRST_PARTY_FIELD_NAMES = field_snapshot(FIRST_PARTY_FIELD_NAMES)
+
+FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= {"cancelled_at", "status_before_cancel"}

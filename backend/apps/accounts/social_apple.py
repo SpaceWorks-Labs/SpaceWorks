@@ -27,6 +27,7 @@ def verify_apple_token(raw_token, *, nonce, audience):
         claims.get("email_verified")
     ).lower() == "true"
     return {
+        "auth_time": claims.get("auth_time"),
         "sub": subject,
         "email": email,
         "email_verified": bool(email and verified),

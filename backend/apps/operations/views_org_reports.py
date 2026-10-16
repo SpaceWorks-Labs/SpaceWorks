@@ -108,6 +108,8 @@ class OrganizationAnalyticsView(APIView):
         },
     )
     def get(self, request, organization_id, report_key, *args, **kwargs):
+        from .report_subjects import reject_aggregate
+        reject_aggregate(request.query_params)
         definition = reports.validate_report_key(report_key)
         organization = _organization_for_report(
             request.user, organization_id, definition

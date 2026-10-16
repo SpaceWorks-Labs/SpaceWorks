@@ -32,6 +32,8 @@ def _rules(disposition, *fields):
 
 
 OMITTED_FIELD_RECONSTRUCTIONS = {
+    ("bookings.BookingBroadcastDelivery", "outbox"): NULL,
+    ("events.EventBroadcastDelivery", "outbox"): NULL,
     **_rules(
         DROP_ROW,
         ("apiclients.ApiClient", "client_id"),
@@ -50,6 +52,7 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         FRESH,
         ("bookings.BookableSpace", "public_token"),
         ("bookings.Booking", "public_token"),
+        ("bookings.Booking", "checkin_token"),
         ("events.Event", "public_token"),
         ("events.EventSeries", "public_token"),
         # Deliberately invalidate source event check-in QR codes at the trust boundary.

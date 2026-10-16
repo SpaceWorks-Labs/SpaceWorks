@@ -29,7 +29,7 @@ function dateRange(event: StaffEvent) {
   return `${new Date(event.starts_at).toLocaleString()} – ${new Date(event.ends_at).toLocaleString()}`;
 }
 
-export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
+export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspaceId: number; enabledFeatures?: string[] }) {
   const list = useUrlListState({ q: "", status: "", ordering: "starts_at", page: "1" });
   const { page, setPage } = list;
   const [params, setParams] = useSearchParams();
@@ -39,6 +39,15 @@ export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
   const createSeries = useCreateEventSeries(makerspaceId);
   const [values, setValues] = useState<EventFormValues>(emptyEventForm);
   const [seriesValues, setSeriesValues] = useState(emptySeriesForm);
+  const [audienceEdited, setAudienceEdited] = useState(false);
+  const [seriesAudienceEdited, setSeriesAudienceEdited] = useState(false);
+  useEffect(() => {
+    setValues(emptyEventForm); setSeriesValues(emptySeriesForm);
+    setAudienceEdited(false); setSeriesAudienceEdited(false);
+  }, [makerspaceId]);
+  const defaultAudience = events.data?.default_registration_audience;
+  const newValues = defaultAudience && !audienceEdited ? { ...values, registration_audience: defaultAudience } : values;
+  const newSeriesValues = defaultAudience && !seriesAudienceEdited ? { ...seriesValues, registration_audience: defaultAudience } : seriesValues;
   const [creationMode, setCreationMode] = useState<"single" | "series">("single");
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("event")) || null);
   const linkedId = params.get("event");
@@ -49,19 +58,22 @@ export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
   useQuickCreate("event", () => { setCreationMode("single"); setCreating(true); });
 
   function submit() {
-    create.mutate(payloadFor(values), {
+    // Unknown default and untouched field: let the server apply the space's default audience.
+    const { registration_audience: audience, ...rest } = payloadFor(newValues);
+    create.mutate(defaultAudience || audienceEdited ? { ...rest, registration_audience: audience } : rest, {
       onSuccess: (created) => {
         setCreating(false);
-        setValues(emptyEventForm);
+        setValues(emptyEventForm); setAudienceEdited(false);
         openEvent(created.id);
       },
     });
   }
   function submitSeries() {
-    createSeries.mutate(seriesPayload(seriesValues), {
+    const { registration_audience: seriesAudience, ...seriesRest } = seriesPayload(newSeriesValues);
+    createSeries.mutate(defaultAudience || seriesAudienceEdited ? { ...seriesRest, registration_audience: seriesAudience } : seriesRest, {
       onSuccess: (created) => {
         setCreating(false);
-        setSeriesValues(emptySeriesForm);
+        setSeriesValues(emptySeriesForm); setSeriesAudienceEdited(false);
         setSelectedSeriesId(created.series.id);
       },
     });
@@ -81,16 +93,19 @@ export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
   const denied = apiError?.status === 403 || (apiError?.status === 400 && apiError.body.module);
   const rows = events.data?.results ?? [];
   const shown = rows;
+  const organizationAudience = enabledFeatures.includes("events.organization_audience");
   const openEvent = (id: number) => { setSelectedId(id); setParams(current => { const next = new URLSearchParams(current); next.set("event", String(id)); return next; }); };
   if (selectedId !== null) return <EventDrawer key={selectedId} eventId={selectedId} makerspaceId={makerspaceId} onClose={closeSelection}
     onOpenSeries={seriesId => { closeSelection(); setSelectedSeriesId(seriesId); }} />;
   if (selectedSeriesId !== null) return <EventSeriesDrawer key={selectedSeriesId} seriesId={selectedSeriesId} makerspaceId={makerspaceId} onClose={() => setSelectedSeriesId(null)} onSelectOccurrence={id => { setSelectedSeriesId(null); openEvent(id); }} />;
   if (creating) return <FormPageLayout state={{ status: "ready" }} header={{ title: creationMode === "single" ? "New event" : "New series", subtitle: "Start with a draft. Publish when every detail is ready." }}
     back={{ label: "All events", onClick: () => setCreating(false) }} cancel={{ label: "Cancel", onClick: () => setCreating(false) }}
-    form={<div data-create-event>{creationMode === "single" ? <EventFields values={values} setValues={setValues} /> : <EventSeriesFields values={seriesValues} setValues={setSeriesValues} />}
+    form={<div data-create-event>{creationMode === "single" ? <EventFields organizationAudienceEnabled={organizationAudience} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }} />
+      : <EventSeriesFields organizationAudienceEnabled={organizationAudience} values={newSeriesValues} setValues={(next) => { if (next.registration_audience !== newSeriesValues.registration_audience) setSeriesAudienceEdited(true); setSeriesValues(next); }} />}
       {create.error || createSeries.error ? <p className="mt-3 text-sm text-danger" role="alert">{eventErrorText(create.error || createSeries.error)}</p> : null}</div>}
-    preview={{ label: "Event preview", content: <EventCreatePreview values={creationMode === "single" ? values : seriesValues} /> }}
-    submit={{ label: creationMode === "single" ? "Create event" : "Create series", pending: create.isPending || createSeries.isPending, pendingLabel: "Creating…", onClick: creationMode === "single" ? submit : submitSeries }} />;
+    preview={{ label: "Event preview", content: <EventCreatePreview values={creationMode === "single" ? newValues : newSeriesValues} /> }}
+    submit={{ label: creationMode === "single" ? "Create event" : "Create series", pending: create.isPending || createSeries.isPending, pendingLabel: "Creating…",
+      disabled: events.isPending, disabledReason: events.isPending ? "Loading this space's default registration audience." : undefined, onClick: creationMode === "single" ? submit : submitSeries }} />;
   return <div><ListLayout
     header={{ title: "Events", subtitle: "Bring people together. Make something happen.", primary: denied ? undefined : { label: "New event", onClick: () => { setCreationMode("single"); setCreating(true); } }, secondary: denied ? undefined : { label: "New series", onClick: () => { setCreationMode("series"); setCreating(true); } } }}
     callout={denied ? undefined : collaborations.callout}

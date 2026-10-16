@@ -58,7 +58,7 @@ export function SocialSignInButtons({
   }, []);
 
   useEffect(() => {
-    if (surface !== "member" || callbackHandled.current) return;
+    if (callbackHandled.current) return;
     callbackHandled.current = true;
     void completeOidcBrowserCallback()
       .then((result) => {
@@ -84,12 +84,10 @@ export function SocialSignInButtons({
     });
   }, [config, surface]);
 
-  const oidcProviders = surface === "member"
-    ? Object.entries(config ?? {}).filter(
+  const oidcProviders = Object.entries(config ?? {}).filter(
         (entry): entry is [string, NonNullable<SocialConfig[`oidc:${string}`]>] =>
           entry[0].startsWith("oidc:") && Boolean(entry[1]?.enabled),
-      )
-    : [];
+      );
   // Accounts-off hides only the built-in consumer ecosystem. Institution-owned OIDC
   // is the member login path that must remain available; staff still keep the built-ins.
   const showBuiltins = surface === "staff" || memberAccounts;
@@ -134,7 +132,7 @@ export function SocialSignInButtons({
                 setOidcPending(key);
                 setError("");
                 try {
-                  await beginOidcBrowser(slug, email, makerspaceSlug);
+                  await beginOidcBrowser(slug, email, makerspaceSlug, surface);
                 } catch (nextError) {
                   setOidcPending("");
                   setError(nextError instanceof Error ? nextError.message : "Identity-provider sign-in failed.");

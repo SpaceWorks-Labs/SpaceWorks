@@ -29,6 +29,8 @@ import { MakerspacePublicStatsSettings } from "./MakerspacePublicStatsSettings";
 import { MakerspaceSubdomainSettings } from "./MakerspaceSubdomainSettings";
 import { MakerspaceWebhookSettings } from "./MakerspaceWebhookSettings";
 import { MakerspaceArchiveRequestPanel } from "./MakerspaceArchiveRequestPanel";
+import { EventDefaultsSettings } from "./EventDefaultsSettings";
+import { BorrowRequestAccessSettings } from "./BorrowRequestAccessSettings";
 import { NotificationTimingSettings } from "./NotificationTimingSettings";
 import { NotificationDestinations } from "./NotificationDestinations";
 import { EvidenceRetentionPanel } from "./EvidenceRetentionPanel";
@@ -168,6 +170,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
         ? <SpacePacksPanel key={makerspace.id} makerspaceId={makerspace.id} isSuperadmin={isSuperadmin} /> : null}
     </> },
     { id: "lending", title: "Lending", rows: <>
+      {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("loans.enabled") ? <BorrowRequestAccessSettings makerspaceId={makerspace.id} /> : null}
       <MakerspaceReminderSettings {...shared} />
       {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? <KioskStationSettings makerspace={makerspace} /> : null}
     </> },
@@ -178,6 +181,8 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       <MakerspaceBookingSettings {...shared} />
       {enabledModules.includes("bookings") ? <MakerspaceBookingRulesSettings makerspace={makerspace} /> : null}
     </> },
+    ...(canManageMakerspace && enabledModules.includes("events") ? [{ id: "events", title: "Events",
+      rows: <EventDefaultsSettings key={makerspace.id} makerspaceId={makerspace.id} /> }] : []),
     { id: "materials", title: "Machines & materials", rows: <MakerspaceFilamentSettings {...shared} /> },
     { id: "money", title: "Money", rows: <>
       <MakerspacePaymentSettings makerspace={settings.data ?? makerspace} />

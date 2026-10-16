@@ -43,6 +43,8 @@ def build_object_ownership_plan(sovereign_makerspace_ids):
                 ]
             )
         rows = model._base_manager.exclude(**{rule.field_name: ""}).values(*query_fields)
+        if rule.model_label == "events.EventCertificateArtwork":
+            rows = rows.filter(promoted_at__isnull=False)
         for row in rows.iterator(chunk_size=500):
             # A NULL key column survives the exclude() above -- Django keeps NULL rows
             # out of an `exclude(field="")` -- and str(None) would enter the closure as
@@ -90,6 +92,8 @@ def build_object_ownership_plan(sovereign_makerspace_ids):
                 ),
             ))
     references.extend(_audit_meta_references())
+    from .object_reference_certificates import certificate_snapshot_references
+    references.extend(certificate_snapshot_references(sovereign))
     return ObjectOwnershipPlan(references, sovereign)
 
 

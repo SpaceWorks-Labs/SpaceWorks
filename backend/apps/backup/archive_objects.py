@@ -72,6 +72,8 @@ def object_closure():
 
 
 def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
+    if model._meta.label == "events.EventCertificateArtwork":
+        queryset = queryset.filter(promoted_at__isnull=False)
     spec = DATASET_SPECS.get(model._meta.label)
     ownership_paths = spec[1].any_paths if spec else ()
     if not ownership_paths and any(
@@ -184,9 +186,12 @@ def capture_objects(root, object_keys, modes):
 
 def module_for_model(label):
     return {
+        "events.EventPageAsset": "events",
+        "bookings.BookingResourcePageAsset": "bookings",
         "events.Event": "events",
         "events.EventSeries": "events",
         "events.EventAttendanceCertificate": "events",
+        "events.EventCertificateArtwork": "events",
         "bookings.BookableSpace": "bookings",
         "maintenance.MaintenanceLogDocument": "maintenance",
         "procurement.ToBuyReceipt": "procurement",

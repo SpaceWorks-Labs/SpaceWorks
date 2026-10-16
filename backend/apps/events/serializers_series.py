@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from rest_framework import serializers
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -8,9 +10,18 @@ from apps.inventory import public_image_storage
 
 
 from .serializers_ticketing import TicketInputSerializer
+from .serializers_event_authority import EventAuthorityFields
 
 class EventSeriesWriteSerializer(serializers.Serializer):
-    registration_audience = serializers.ChoiceField(choices=("members", "accounts", "invite"), required=False, default="members")
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping):
+            return super().to_internal_value(data)
+        unknown = set(data) - set(self.fields)
+        if unknown:
+            raise serializers.ValidationError({key: "Unexpected field." for key in unknown})
+        return super().to_internal_value(data)
+
+    registration_audience = serializers.ChoiceField(choices=("members", "accounts", "invite", "participating_organizations"), required=False)
     ticket_types = TicketInputSerializer(many=True, required=False, write_only=True)
     title = serializers.CharField(max_length=200)
     description = serializers.CharField(allow_blank=True, default="", required=False)
@@ -40,7 +51,7 @@ class EventSeriesWriteSerializer(serializers.Serializer):
     effective_from = serializers.DateTimeField(required=False, write_only=True)
 
 
-class EventSeriesSummarySerializer(serializers.ModelSerializer):
+class EventSeriesSummarySerializer(EventAuthorityFields, serializers.ModelSerializer):
     makerspace_id = serializers.IntegerField(read_only=True)
     next_occurrence_at = serializers.SerializerMethodField()
     future_occurrence_count = serializers.SerializerMethodField()
@@ -48,7 +59,7 @@ class EventSeriesSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = EventSeries
         fields = (
-            "id", "public_token", "makerspace_id", "title", "status",
+            "id", "staff_permissions", "can_manage_staff", "public_token", "makerspace_id", "title", "status",
             "recurrence_timezone", "dtstart_local_date", "dtstart_local_time",
             "recurrence_rule", "duration_minutes", "revision", "next_occurrence_at",
             "future_occurrence_count", "last_materialized_at",
@@ -72,13 +83,29 @@ class EventSeriesSummarySerializer(serializers.ModelSerializer):
         return obj.occurrences.filter(status__in=("draft", "published")).count()
 
 
-class EventSeriesDetailSerializer(EventSeriesSummarySerializer):
+from .serializers_organization_audience import OrganizationAudienceFields
+
+
+class EventSeriesDetailSerializer(OrganizationAudienceFields, EventSeriesSummarySerializer):
+    website_enabled = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_website_enabled(self, obj):
+        from apps.makerspaces.platform import feature_enabled
+        return feature_enabled(obj.makerspace, "events.website")
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
     image_url = serializers.SerializerMethodField()
+    organization_audience_enabled = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_organization_audience_enabled(self, obj):
+        from apps.makerspaces.platform import feature_enabled
+        return feature_enabled(obj.makerspace, "events.organization_audience")
 
     class Meta(EventSeriesSummarySerializer.Meta):
         fields = EventSeriesSummarySerializer.Meta.fields + (
-            "description", "location", "location_kind", "custom_form", "capacity",
+            "participating_organizations", "audience_label", "organization_admission_blocked", "organization_audience_enabled",
+            "website_enabled", "description", "location", "location_kind", "custom_form", "capacity",
             "payment_amount", "registration_requires_approval", "registration_audience",
             "cancellation_cutoff_hours",
             "registration_cutoff_lead_minutes", "is_public", "created_by_id", "created_at",

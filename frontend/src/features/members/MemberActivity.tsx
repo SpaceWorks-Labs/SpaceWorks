@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { useTenantPath } from "../../lib/tenant";
 import { useEffect, useState } from "react";
 
 import { EmptyState, ListRow, StatusPill, RelativeTime, Modal, TicketCard } from "../../components/ui";
@@ -138,6 +140,7 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
   /** Printed on event tickets; the hosting makerspace, not the platform. */
   makerspaceName: string;
 }) {
+  const tenantPath = useTenantPath(makerspaceSlug);
   if (!modules.includes("membership")) return null;
   const printerRequests = (activity.machine_service_requests ?? []).filter(request => request.machine_type === "3d_printer");
   const otherServiceRequests = (activity.machine_service_requests ?? []).filter(request => request.machine_type !== "3d_printer");
@@ -157,6 +160,7 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
     {(section === "all" || section === "events") && modules.includes("events") && activity.event_registrations ? <Section title="Event registrations"><MemberCalendarActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} />{registrations.length ? registrations.map(item => <ListRow key={item.registration_id} title={item.event_title} identity={{ kind: "date", date: item.starts_at }}
       meta={<><span className="tabular-nums">{new Date(item.starts_at).toLocaleString()}</span>{item.status === "pending_approval" ? " · No payment until confirmed" : ""}{item.waitlist_position ? ` · Waitlist ${item.waitlist_position}` : ""}</>}
       right={<div className="grid gap-2"><StatusPill label={REGISTRATION_LABELS[item.status] ?? item.status} tone={statusTone(item.status)} />
+        <Link className="desk-button-ghost" to={tenantPath(`member/events/${item.registration_id}/ticket`)}>Open ticket</Link>
         {item.checkin_token ? <CheckInQr makerspaceId={makerspaceId} registrationId={item.registration_id} title={item.event_title} startsAt={item.starts_at} organisation={makerspaceName} /> : null}
         <MemberEventCancel makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} status={item.status} canCancel={item.can_cancel} cutoffAt={item.cancellation_cutoff_at} />
         <MemberEventFeedback makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} feedbackPath={item.feedback_path} certificate={item.certificate} /></div>} />) : <EmptyState message={eventPeriod === "past" ? "No past events yet." : "You’re not registered for anything yet. See what’s on."} action={{ label: "See events", href: `/m/${makerspaceSlug}/events` }} />}</Section> : null}

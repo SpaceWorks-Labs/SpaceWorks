@@ -117,7 +117,16 @@ def _receipt_reserved(bucket_kind, key):
 
 
 def _occupied(bucket_kind, key):
-    return _receipt_reserved(bucket_kind, key) or object_exists(bucket_kind, key)
+    if _receipt_reserved(bucket_kind, key):
+        return True
+    if bucket_kind == "private":
+        from apps.events.models import EventCertificateArtwork
+
+        # A row reserves its unique key even when its bytes are missing. Allocate
+        # here so promotion, imported rows and issuance snapshots share one key.
+        if EventCertificateArtwork.objects.filter(object_key=key).exists():
+            return True
+    return object_exists(bucket_kind, key)
 
 
 def choose_target_key(bucket_kind, source_key, job_id):

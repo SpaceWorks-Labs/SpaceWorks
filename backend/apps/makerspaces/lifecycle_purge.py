@@ -82,6 +82,7 @@ def _delete_object_graph(makerspace):
         EventSeries,
         EventSeriesCollaborator,
         EventStationBinding,
+        EventStaffGrant, EventStaffGrantInvite,
     )
     from apps.hardware_requests.models import HardwareRequest, ReplayCommand
     from apps.hardware_requests.models import PublicToolLoan, RequesterAccountability
@@ -231,11 +232,20 @@ def _delete_object_graph(makerspace):
         EventAttendanceCertificate.objects.filter(
             registration__event__makerspace=makerspace
         ).delete()
+        from apps.events.models import EventCertificateArtwork, EventCertificateTemplateRevision
+        EventCertificateTemplateRevision.objects.filter(event__makerspace=makerspace).delete()
+        EventCertificateArtwork.objects.filter(event__makerspace=makerspace).delete()
         EventFeedbackResponse.objects.filter(
             survey__event__makerspace=makerspace
         ).delete()
         EventFeedbackSurvey.objects.filter(event__makerspace=makerspace).delete()
         StationCredential.objects.filter(station__makerspace=makerspace).delete()
+        EventStaffGrantInvite.objects.filter(makerspace=makerspace).delete()
+        EventStaffGrant.objects.filter(makerspace=makerspace).delete()
+        from apps.bookings.models_broadcasts import BookingBroadcast
+        BookingBroadcast.objects.filter(makerspace=makerspace).delete()
+        from apps.events.models_broadcasts import EventBroadcast
+        EventBroadcast.objects.filter(makerspace=makerspace).delete()
         EventStationBinding.objects.filter(station__makerspace=makerspace).delete()
         EventCheckInEvent.objects.filter(makerspace=makerspace).delete()
         # Registrations otherwise survive until the final makerspace cascade. Delete
@@ -246,6 +256,8 @@ def _delete_object_graph(makerspace):
             source_series_collaboration__makerspace=makerspace
         ).exclude(event__makerspace=makerspace).delete()
         EventSeriesCollaborator.objects.filter(makerspace=makerspace).delete()
+        from apps.events.models_website import EventPage
+        EventPage.objects.filter(makerspace=makerspace).delete()
         Event.objects.filter(makerspace=makerspace).delete()
         EventSeries.objects.filter(makerspace=makerspace).delete()
         # Credentials and event bindings are already gone. Delete every Station kind so
@@ -272,4 +284,6 @@ def _delete_object_graph(makerspace):
         # Generic provenance has no FK to the source/anchor rows it describes, so
         # delete it explicitly rather than relying on the makerspace CASCADE.
         ExternalTenantReference.objects.filter(makerspace=makerspace).delete()
+        from apps.bookings.models_arrival import BookingCheckInEvent
+        BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace).delete()
         makerspace.delete()

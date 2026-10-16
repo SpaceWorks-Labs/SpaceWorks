@@ -8,6 +8,7 @@ from apps.events.models_attendance import (
 from apps.events.models_station import EventStationBinding
 from apps.events.models_feedback import EventFeedbackResponse, EventFeedbackSurvey
 from apps.events.models_certificates import EventAttendanceCertificate
+from .models_certificate_templates import EventCertificateArtwork, EventCertificateTemplateRevision
 from apps.events.organizer_models import EventOrganizer
 from apps.events.models_series import (
     EventSeries,
@@ -16,12 +17,19 @@ from apps.events.models_series import (
 )
 from apps.events.models_calendar import MemberCalendarFeed
 
+from .models_staff_grants import EventStaffGrant, EventStaffGrantInvite
 from .models_invites import EventInvite
 from .models_tickets import EventTicketType
 from .models_promos import EventPromoCode
 from .models_categories import EventCategory
+from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
+from .models_website import EventPage, EventPageAsset, EventPageSection, EventSession, EventSessionSpeaker
 
 __all__ = [
+    "EventCertificateArtwork", "EventCertificateTemplateRevision",
+    "EventPage", "EventPageAsset", "EventPageSection", "EventSession", "EventSessionSpeaker",
+    "EventBroadcast", "EventBroadcastDelivery",
+    "EventStaffGrant", "EventStaffGrantInvite",
     "EventInvite", "EventTicketType", "EventPromoCode", "EventCategory",
     "Event",
     "EventAttendanceCertificate",

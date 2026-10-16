@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.generics import GenericAPIView
@@ -22,7 +23,7 @@ GATE_WRITE_ERRORS = {
 }
 
 
-class StaffInvitationListView(GenericAPIView):
+class StaffInvitationListView(RecentReauthenticationMixin, GenericAPIView):
     permission_classes = [IsAuthenticated, HasMakerspaceAction]
     required_action = Action.MANAGE_MAKERSPACE
     throttle_classes = [ScopedRateThrottle]

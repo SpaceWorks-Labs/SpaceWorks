@@ -12,8 +12,11 @@ from apps.apiclients.scope_registry_routes import (
     TARGET_MODES,
     TARGET_TENANT_SLUG,
     TARGET_TENANT_TOKEN,
+    TARGET_CLIENT_SUBJECT,
     ScopeRegistryEntry,
 )
+
+from .scope_registry_reads import read_scope_vocabulary
 
 LEGACY_SCOPE = "legacy:v1"
 SCOPE_VOCABULARY = frozenset(
@@ -23,7 +26,7 @@ SCOPE_VOCABULARY = frozenset(
         PUBLIC_WRITE,
         PUBLIC_ALL,
     }
-)
+) | read_scope_vocabulary()
 BROWSER_SCOPES = frozenset(
     {
         LEGACY_SCOPE,
@@ -78,6 +81,9 @@ def resolve_target(request, entry):
     try:
         match = _request_match(request)
         kwargs = getattr(match, "kwargs", {}) or {}
+        if entry.target_mode == TARGET_CLIENT_SUBJECT:
+            from .read_contract import resolve_read_target
+            return resolve_read_target(request, match)
         if entry.target_mode == TARGET_TENANT_SLUG:
             from apps.makerspaces.lookup import get_public_makerspace
 
@@ -120,6 +126,10 @@ def resolve_target_once(request, entry):
 
 
 def target_allows(entry, client, target, resolved):
+    if entry.server_only and getattr(client, "client_type", None) != "server":
+        return False
+    if entry.tenant_bound and client.makerspace_id is None:
+        return False
     if entry.target_mode == TARGET_GLOBAL:
         return client.makerspace_id is None or entry.tenant_apps_admitted
     if not resolved:
@@ -130,6 +140,8 @@ def target_allows(entry, client, target, resolved):
 
 def scope_allows(entry, scopes):
     scopes = frozenset(scopes or ())
+    if not entry.required_scopes.issubset(scopes):
+        return False
     if LEGACY_SCOPE in scopes and entry.legacy_v1:
         return True
     return not scopes.isdisjoint(entry.scopes)
@@ -184,9 +196,15 @@ def _urlconf_routes(patterns, route="", namespaces=()):
         yield full_route, view_name, _concrete_methods(pattern.callback)
 
 
+def _protected_prefixes():
+    from .read_prefixes import mandatory_hmac_prefixes
+    return tuple(prefix.lstrip("/") for prefix in dict.fromkeys(
+        [*settings.HMAC_PROTECTED_PATH_PREFIXES, *mandatory_hmac_prefixes()]))
+
+
 def validate_registry():
     routes = list(_urlconf_routes(get_resolver().url_patterns))
-    prefixes = tuple(prefix.lstrip("/") for prefix in settings.HMAC_PROTECTED_PATH_PREFIXES)
+    prefixes = _protected_prefixes()
     protected = [
         (route, view_name, methods)
         for route, view_name, methods in routes
@@ -217,7 +235,7 @@ def validate_registry():
 
 
 def unregistered_protected_routes():
-    prefixes = tuple(prefix.lstrip("/") for prefix in settings.HMAC_PROTECTED_PATH_PREFIXES)
+    prefixes = _protected_prefixes()
     missing = [
         (route, view_name, method)
         for route, view_name, methods in _urlconf_routes(get_resolver().url_patterns)

@@ -13,6 +13,7 @@ from apps.events.services_checkin_roster import issue_roster
 from apps.events.services_checkin_sync import synchronize, validated_lease
 from apps.events.throttles import EventOfflineRosterThrottle, EventOfflineSyncThrottle
 from apps.events.views_admin import _manageable_event
+from apps.events.event_permissions import CHECK_IN
 from apps.hardware_requests.exceptions import ErrorSerializer
 
 
@@ -40,7 +41,7 @@ class EventOfflineRosterView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         payload = issue_roster(
-            _manageable_event(request.user, pk),
+            _manageable_event(request.user, pk, CHECK_IN),
             actor=request.user,
             kind="staff",
         )
@@ -60,7 +61,7 @@ class EventOfflineSyncView(APIView):
         responses={200: OfflineCheckInSyncResponseSerializer, **ERRORS},
     )
     def post(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, CHECK_IN)
         serializer = OfflineCheckInSyncRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         lease = validated_lease(

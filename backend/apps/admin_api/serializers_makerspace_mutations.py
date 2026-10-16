@@ -25,6 +25,12 @@ _DISABLE_ACCESS_SEQUENCE = (
 
 
 class MakerspaceMutationMixin:
+    def _validate_event_default(self, instance, values):
+        if values.get("event_default_registration_audience") == "participating_organizations":
+            from apps.makerspaces.platform import feature_enabled
+            if not feature_enabled(instance, "events.organization_audience"):
+                raise serializers.ValidationError({"event_default_registration_audience": "Enable organization audience first."})
+
     @transaction.atomic
     def create(self, validated_data):
         setup = validated_data.pop("creation_setup", None)
@@ -35,6 +41,7 @@ class MakerspaceMutationMixin:
             branding["display_name"] = public_display_name
             validated_data["branding_config"] = branding
         instance = super().create(validated_data)
+        self._validate_event_default(instance, validated_data)
         if domain_verification.is_self_host() and instance.frontend_domain:
             instance.frontend_domain_status = Makerspace.DomainStatus.VERIFIED
             instance.domain_verified_at = timezone.now()
@@ -69,6 +76,7 @@ class MakerspaceMutationMixin:
         discord_webhook_url = validated_data.pop("discord_webhook_url", missing)
         public_display_name = validated_data.pop("public_display_name", missing)
         new_flag = validated_data.pop("superadmin_access_enabled", None)
+        anonymous_requests = validated_data.pop("anonymous_requests_enabled", missing)
 
         with with_makerspace_custody_lock(instance.pk) as custody:
             locked = custody.makerspace
@@ -83,6 +91,7 @@ class MakerspaceMutationMixin:
                 self._validate_access_change(locked, new_flag, is_superadmin)
             for field, value in validated_data.items():
                 setattr(locked, field, value)
+            self._validate_event_default(locked, validated_data)
             if (
                 "frontend_domain" in validated_data
                 and validated_data["frontend_domain"] != old_domain
@@ -105,6 +114,12 @@ class MakerspaceMutationMixin:
             if discord_webhook_url is not missing:
                 locked.set_discord_webhook_url(discord_webhook_url)
             locked.save()
+            if anonymous_requests is not missing:
+                from apps.makerspaces.request_access import RequestAccessConflict, set_anonymous_requests
+                try:
+                    set_anonymous_requests(locked, anonymous_requests, actor=actor)
+                except RequestAccessConflict as exc:
+                    raise serializers.ValidationError({"anonymous_requests_enabled": str(exc)}) from exc
             from apps.makerspaces.membership_admission_settings import sync_legacy_settings
             sync_legacy_settings(actor, locked, validated_data)
             if access_changes:

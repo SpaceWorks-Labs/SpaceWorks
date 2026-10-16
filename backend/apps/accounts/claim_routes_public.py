@@ -20,6 +20,21 @@ def _anonymous(name):
 
 
 PUBLIC_CLAIM_ROUTES = {
+    **_anonymous("public-booking-resource"),
+    **_anonymous("public-booking-website"),
+    **_anonymous("public-booking-website-image"),
+    **{(name, method): Refused("claim sessions cannot read or rotate account arrival credentials")
+       for name, methods in (
+           ("member-booking-confirmation", ("GET", "HEAD")),
+           ("member-booking-confirmation-png", ("GET", "HEAD")),
+           ("member-booking-calendar", ("GET", "HEAD")),
+           ("member-booking-pass", ("GET", "HEAD")),
+           ("member-booking-rotate-checkin", ("POST",)),
+       ) for method in methods},
+    **{(name, "OPTIONS"): AnonymousRead() for name in (
+        "member-booking-confirmation", "member-booking-confirmation-png",
+        "member-booking-calendar", "member-booking-rotate-checkin", "member-booking-pass",
+    )},
     ('member-booking-reschedule', 'POST'): Allowed(tenant=SLUG, audited=True),
     ('member-booking-reschedule', 'OPTIONS'): AnonymousRead(),
     **{('member-booking-feed-settings', method): Refused(
@@ -50,6 +65,10 @@ PUBLIC_CLAIM_ROUTES = {
     **_anonymous("public-printer-service-status"),
     **_anonymous("public-event-list"),
     **_anonymous("public-event-detail"),
+    **{("public-event-organization-eligibility", method): Refused(
+        "organization eligibility requires an account session"
+    ) for method in ("GET", "HEAD")},
+    ("public-event-organization-eligibility", "OPTIONS"): AnonymousRead(),
     # The organization directory is deployment-global read-only presentation; a walk-in
     # claim session reads it exactly like any anonymous visitor.
     **_anonymous("public-organization-detail"),

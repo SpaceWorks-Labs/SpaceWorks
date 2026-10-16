@@ -1,6 +1,7 @@
 """Transactional registration lifecycle transitions."""
 
 from django.db import transaction
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.events.capacity import registration_spots_left
@@ -13,21 +14,10 @@ from apps.events.service_payments import (
 )
 from apps.events.services_calendar import calendar_registration_changed
 from apps.makerspaces.guards import require_module_locked
+from apps.operations.cancellation_restore import record_cancellation
 
 
-def _boundary():
-    # Imported lazily so services.py can retain the established public import boundary.
-    from apps.events import services
-
-    return services
-
-
-def _lock_registration(event, registration_id):
-    registration = EventRegistration.objects.select_for_update().get(pk=registration_id)
-    if registration.event_id != event.pk:
-        raise EventInvalidTransition("Registration does not belong to this event.")
-    registration.event = event
-    return registration
+from .registration_locks import _boundary, _fence, _lock_registration
 
 
 def _decision_is_open(event):
@@ -38,7 +28,7 @@ def _lock_waiters(event):
     return list(
         EventRegistration.objects.select_for_update()
         .filter(event=event, status=EventRegistration.Status.WAITLISTED)
-        .order_by("created_at", "id")
+        .order_by(Coalesce("waitlist_position_at", "created_at"), "id")
     )
 
 
@@ -48,6 +38,14 @@ def _promote(event, actor, waiters, count=None, *, mode):
     for registration in waiters:
         if count is not None and len(selected) >= count:
             break
+        from .organization_audience import OrganizationAudienceRefused, require_queued_admission
+        from .host_waivers import HostWaiverRequired
+        try:
+            require_queued_admission(event, registration)
+        except (OrganizationAudienceRefused, HostWaiverRequired):
+            if mode == "automatic_fifo":
+                continue
+            raise
         available = registration_spots_left(event, registration.ticket_type)
         if available is not None and available <= 0:
             continue
@@ -68,6 +66,7 @@ def _promote(event, actor, waiters, count=None, *, mode):
 
 
 def promote_automatically(event, actor, count=None):
+    _fence(event)
     if event.registration_requires_approval:
         return []
     return _promote(
@@ -78,7 +77,8 @@ def promote_automatically(event, actor, count=None):
 @transaction.atomic
 def approve_registration(registration, *, actor):
     services = _boundary()
-    event = services._locked_event(registration.event_id)
+    event = services._locked_event(registration.event_id, lock_makerspace=False)
+    _fence(event)
     locked = _lock_registration(event, registration.pk)
     if (
         not event.registration_requires_approval
@@ -86,6 +86,8 @@ def approve_registration(registration, *, actor):
         or not _decision_is_open(event)
     ):
         raise EventInvalidTransition("This registration cannot be approved.")
+    from .organization_audience import require_queued_admission
+    require_queued_admission(event, locked)
     available = registration_spots_left(event, locked.ticket_type)
     new_status = (
         EventRegistration.Status.REGISTERED
@@ -119,7 +121,8 @@ def approve_registration(registration, *, actor):
 @transaction.atomic
 def reject_registration(registration, *, actor):
     services = _boundary()
-    event = services._locked_event(registration.event_id)
+    event = services._locked_event(registration.event_id, lock_makerspace=False)
+    _fence(event)
     locked = _lock_registration(event, registration.pk)
     if locked.status not in (
         EventRegistration.Status.PENDING_APPROVAL,
@@ -148,7 +151,8 @@ def reject_registration(registration, *, actor):
 @transaction.atomic
 def promote_registration(registration, *, actor):
     services = _boundary()
-    event = services._locked_event(registration.event_id)
+    event = services._locked_event(registration.event_id, lock_makerspace=False)
+    _fence(event)
     locked = _lock_registration(event, registration.pk)
     if (
         not event.registration_requires_approval
@@ -156,6 +160,8 @@ def promote_registration(registration, *, actor):
         or not _decision_is_open(event)
     ):
         raise EventInvalidTransition("This registration cannot be promoted manually.")
+    from .organization_audience import require_queued_admission
+    require_queued_admission(event, locked)
     available = registration_spots_left(event, locked.ticket_type)
     if available is not None and available <= 0:
         raise CapacityConflict("No event capacity is available.")
@@ -167,7 +173,8 @@ def promote_registration(registration, *, actor):
 @transaction.atomic
 def cancel_registration(registration, *, actor=None, member_cancel=False):
     services = _boundary()
-    event = services._locked_event(registration.event_id)
+    event = services._locked_event(registration.event_id, lock_makerspace=False)
+    _fence(event)
     require_module_locked(event.makerspace_id, "events")
     locked = _lock_registration(event, registration.pk)
     if member_cancel and (
@@ -181,8 +188,9 @@ def cancel_registration(registration, *, actor=None, member_cancel=False):
     ):
         raise EventInvalidTransition("This registration cannot be cancelled.")
     old_status = locked.status
+    provenance = record_cancellation(locked, now=timezone.now())
     locked.status = EventRegistration.Status.CANCELLED
-    locked.save(update_fields=["status"])
+    locked.save(update_fields=["status", *provenance])
     calendar_registration_changed(locked)
     services._audit(
         event,
@@ -202,46 +210,4 @@ def cancel_registration(registration, *, actor=None, member_cancel=False):
     return services._refresh(locked)
 
 
-@transaction.atomic
-def correct_attendance(registration, *, actor):
-    services = _boundary()
-    event = services._locked_event(registration.event_id)
-    locked = _lock_registration(event, registration.pk)
-    if locked.status != EventRegistration.Status.ATTENDED:
-        raise EventInvalidTransition("Only attended registrations can be corrected.")
-    certificates = list(
-        EventAttendanceCertificate.objects.select_for_update().filter(
-            registration=locked,
-            status=EventAttendanceCertificate.Status.ACTIVE,
-        )
-    )
-    locked.status = EventRegistration.Status.REGISTERED
-    locked.save(update_fields=["status"])
-    now = timezone.now()
-    for certificate in certificates:
-        certificate.status = EventAttendanceCertificate.Status.REVOKED
-        certificate.revoked_at = now
-        certificate.revoked_by = actor
-        certificate.revocation_reason = (
-            EventAttendanceCertificate.RevocationReason.ATTENDANCE_CORRECTED
-        )
-        certificate.save(
-            update_fields=[
-                "status", "revoked_at", "revoked_by", "revocation_reason",
-            ]
-        )
-        services._audit(
-            event,
-            actor,
-            "event.certificate_revoked",
-            certificate,
-            {"reason": certificate.revocation_reason, "revision": certificate.revision},
-        )
-    services._audit(
-        event,
-        actor,
-        "event.registration_attendance_corrected",
-        locked,
-        {"registration_id": locked.pk, "revoked_certificates": len(certificates)},
-    )
-    return services._refresh(locked), certificates
+from .services_attendance_correction import correct_attendance

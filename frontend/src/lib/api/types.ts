@@ -49,6 +49,14 @@ export type StaffAuthUser = {
   role: string;
   is_superuser: boolean;
   must_change_password: boolean;
+  booking_grants?: {
+    space_id: number; makerspace_id: number; makerspace_slug: string;
+    name: string; source: "booking_grant"; permissions: string[];
+  }[];
+  event_grants?: {
+    event_id: number | null; series_id: number | null; makerspace_id: number;
+    makerspace_slug: string; title: string; source: "event_grant"; permissions: string[];
+  }[];
   makerspaces: {
     id: number;
     slug: string;

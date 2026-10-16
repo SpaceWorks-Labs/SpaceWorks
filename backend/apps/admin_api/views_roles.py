@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -75,7 +76,7 @@ def _catalog(actor, makerspace):
     return rows
 
 
-class RoleListCreateView(APIView):
+class RoleListCreateView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin roles"], description="Requires manage_makerspace for all roles, or manage_members for action-less community roles only.", responses={200: RoleSerializer(many=True), **ERRORS})
@@ -104,7 +105,7 @@ class RoleListCreateView(APIView):
         return Response(RoleSerializer(role_queryset().get(pk=role.pk)).data, status=status.HTTP_201_CREATED)
 
 
-class RoleDetailView(APIView):
+class RoleDetailView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin roles"], responses={200: RoleSerializer, **ERRORS})
@@ -161,7 +162,7 @@ def _machine_scope_payload(makerspace, role):
     }
 
 
-class RoleMachineScopeView(APIView):
+class RoleMachineScopeView(RecentReauthenticationMixin, APIView):
     """Which machines a role's MANAGE_MACHINES grant reaches.
 
     Console parity: machine scoping fails closed, so without this surface a Space Manager

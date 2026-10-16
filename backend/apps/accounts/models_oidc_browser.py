@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.db import models
+from apps.accounts.models_social import SocialSurface
 
 
 class OidcBrowserAttempt(models.Model):
     """Single-use authorization-code attempt with three protocol secrets."""
 
     provider = models.CharField(max_length=64)
+    surface = models.CharField(max_length=16, choices=SocialSurface.choices, default=SocialSurface.MEMBER)
     state_digest = models.CharField(max_length=64, unique=True)
     nonce_digest = models.CharField(max_length=64, unique=True)
     code_verifier = models.CharField(max_length=128)

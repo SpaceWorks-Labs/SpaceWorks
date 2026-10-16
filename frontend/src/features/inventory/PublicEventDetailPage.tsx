@@ -1,5 +1,8 @@
 import { CenteredCardLayout, PublicLayout, PublicDetailLayout } from "../../components/layouts";
 import { publicPageChrome } from "./PublicPageChrome";
+import { PublicEventWebsite } from "../events/PublicEventWebsite";
+import { PublicWebsiteImage } from "../../components/PublicWebsiteImage";
+import { OrganizationEventAdmission } from "../events/OrganizationEventAdmission";
 import { useState } from "react";
 import { downloadEventCalendar } from "../events/eventCalendar";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -33,6 +36,8 @@ export function PublicEventDetailPage() {
   const eventQuery = useQuery({
     queryKey: ["public-event", makerspaceSlug, publicToken],
     staleTime: 0, gcTime: 0, refetchOnMount: "always",
+    // Keep live programme delays current while the page is open.
+    refetchInterval: 30_000, refetchIntervalInBackground: false, refetchOnWindowFocus: true,
     queryFn: () => tenantPublicRequest<PublicEventDetail>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken ?? "")}/`),
     enabled: Boolean(makerspaceSlug && publicToken),
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
@@ -42,6 +47,8 @@ export function PublicEventDetailPage() {
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const state = eventQuery.isLoading ? { status: "loading" as const } : eventQuery.error
     ? publicErrorState(eventQuery.error, { noun: "Events" }, () => { void eventQuery.refetch(); }) : { status: "ready" as const };
+  const organizationAudience = event?.registration_audience === "participating_organizations";
+  const showCount = event?.show_registration_count !== false && event?.registration_count != null;
   if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title="Event not found" body="This event is no longer available." primary={{ label: "All events", href: tenantPath("events") }} />;
   return <div style={brandStyle}>
     {event ? <PageMetadata title={event.title} description={event.description.slice(0, 200)} path={location.pathname} image={event.image_url} /> : null}
@@ -49,18 +56,23 @@ export function PublicEventDetailPage() {
       breadcrumb={[{ label: "All events", href: tenantPath("events") }, { label: event?.title ?? "Event" }]}>
       <PublicDetailLayout title={event?.title ?? "Event"} state={state}
         cover={event?.image_url ? { src: event.image_url, alt: "" } : undefined}
-        chips={[...(event?.category ? [{ label: event.category.name }] : []), ...(event?.tags ?? []).map(label => ({ label }))]}
+        chips={[...(event?.audience_label ? [{ label: event.audience_label, tone: "info" as const }] : []), ...(event?.category ? [{ label: event.category.name }] : []), ...(event?.tags ?? []).map(label => ({ label }))]}
         facts={event ? [{ identity: { kind: "date", date: event.starts_at }, primary: new Date(event.starts_at).toLocaleString(), secondary: `Until ${new Date(event.ends_at).toLocaleString()}` },
           ...(event.location ? [{ identity: { kind: "icon" as const, icon: "Info" as const, tone: "neutral" as const }, primary: event.location }] : [])] : []}
-        sections={event ? [{ id: "about", label: "About", content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> }] : []}
+        sections={event ? [{ id: "about", label: "About", content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> },
+          ...(event.website ? [{ id: "website", label: "Event details", content: <PublicEventWebsite website={event.website}
+            links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
+            image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : [])] : []}
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
           state: event?.registration_open ? "open" : "closed", note: event?.registration_open ? undefined : `Registration is closed.${event?.effective_registration_cutoff_at ? ` Closed ${new Date(event.effective_registration_cutoff_at).toLocaleString()}.` : ""}`,
           summary: event ? <div className="flex flex-wrap items-end gap-6">
             <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
             <dl><dt className="eyebrow">Capacity</dt><dd className="font-semibold tabular-nums text-ink">{eventCapacityLabel(event.capacity)}</dd></dl>
+            {showCount ? <dl><dt className="eyebrow">Registered</dt><dd className="font-semibold tabular-nums text-ink">{event.registration_count}</dd></dl> : null}
             <StatusPill label={event.availability} tone={event.availability === "Full" ? "warn" : "success"} />
           </div> : null,
-          form: event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} /> : null,
+          form: event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} />
+            : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} /> : null,
           secondary: event ? [{ label: "Add to calendar", pending: calendar.isPending, onClick: () => calendar.mutate(event) }, { label: "Share event", onClick: async () => {
             setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: window.location.href }); else await navigator.clipboard.writeText(window.location.href); } catch { setShareError("Could not share this event."); }
           } }] : [],

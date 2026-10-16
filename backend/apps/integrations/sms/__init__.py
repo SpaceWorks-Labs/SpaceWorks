@@ -13,11 +13,11 @@ concern with separate credentials.
 
 import logging
 
-from apps.integrations.sms.base import SmsDeliveryError, SmsProvider
+from apps.integrations.sms.base import SmsProvider
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["SmsDeliveryError", "SmsProvider", "get_sms_provider", "sms_configured", "send_sms"]
+__all__ = ["SmsProvider", "get_sms_provider", "sms_configured", "send_sms"]
 
 
 def _settings_row():

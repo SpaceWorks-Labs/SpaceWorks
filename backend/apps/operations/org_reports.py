@@ -21,7 +21,8 @@ class InvalidOrganizationAggregationScope(OrganizationAggregationError):
 
 
 def organization_strategy_keys():
-    return tuple(STRATEGIES)
+    from .report_registry import REPORT_REGISTRY
+    return tuple(key for key in STRATEGIES if key in REPORT_REGISTRY)
 
 
 def organization_report_data(

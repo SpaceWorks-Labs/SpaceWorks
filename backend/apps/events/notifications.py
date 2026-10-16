@@ -8,14 +8,19 @@ from apps.integrations.email_templates_fablab import events_context
 from apps.integrations.email_templates_registry_fablab_defaults import (
     EVENTS_REQUESTER_BODIES,
 )
+from apps.integrations.email_templates_registry_fablab import EVENTS_KEYS
 from apps.integrations.notify import EmailDelivery, LifecyclePayload, notify_lifecycle
+from apps.integrations.recipients import has_selection, requester_selected
 from apps.integrations.staff_notifications import staff_emails_for_feature
 from apps.makerspaces.servability import servable_q
-from apps.notifications.inbox import InboxDelivery
+from apps.notifications.inbox import InboxDelivery, eligible_owner
 from apps.organizations.models import OrganizationMakerspace
 
 
 logger = logging.getLogger(__name__)
+
+# Kept in step with notification_catalog and the email template registry.
+EVENT_NOTIFICATION_EVENTS = frozenset(EVENTS_KEYS)
 
 
 def _notify_makerspace(
@@ -48,6 +53,19 @@ def _notify_makerspace(
                 makerspace, "events", event=event_name
             )
         )
+        if (event_name == "registration_restored" and registration is not None
+                and makerspace.pk == event.makerspace_id and registration.member_id
+                and (not has_selection(makerspace, "events", event_name)
+                     or requester_selected(makerspace, "events", event_name))
+                and eligible_owner(makerspace, registration.member_id)):
+            owner = registration.member
+            if owner.is_active and owner.access_status == "active" and owner.email and owner.email_verified_at:
+                member_email = render(makerspace, "events", "requester", event_name, context)
+                emails += (EmailDelivery(
+                    to_email=owner.email, subject=member_email["subject"],
+                    text_body=member_email["text_body"], html_body=member_email["html_body"],
+                    audience="requester", stream="events", user_id=owner.pk,
+                ),)
         return LifecyclePayload(
             text=staff["text_body"], emails=emails, context=context,
             data={

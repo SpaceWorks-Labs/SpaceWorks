@@ -10,6 +10,45 @@ happens to its data.
 > here in the same commit. The rules modules must obey (install/uninstall/purge semantics, the `email`
 > gate, two-level capabilities) are in `docs/INVARIANTS.md`, not here.
 
+## Areas used by setup
+
+Setup first asks whether to enable every area (default no). Yes selects all eight areas and still
+asks their normal follow-ups in order; no asks yes/no about each area. Inventory & lending, Machines
+and Reports default to yes; the other five default to no. An existing events/bookings edition defaults to its corresponding
+area plus Membership, Online payments and Reports, preserving plans, checkout and reporting;
+Inventory and Machines are off. Areas enable every child feature supported by the selected
+modules and its feature prerequisites. Follow-up answers may turn off self-checkout, kiosk or
+certification gating. Staff MFA is a separate question.
+Per-person accounts (self sign-up, password/Google/Apple/phone sign-in and the member area) are always
+on in setup. Membership adds plans, vouching, renewals and the mobile app.
+
+| Area | Modules | Features |
+| --- | --- | --- |
+| Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
+| Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
+| Events | `events` | `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
+| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
+| Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
+| Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
+| Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
+| Always on | Six core modules, `backup`, `notifications`, `email`, `member_accounts` | Every satisfiable child of `backup`, `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence` |
+
+The source is `makerspaces/setup_areas.py`; registry module keys/defaults are unchanged. Inventory
+off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Charges,
+receipts and offline settlement work without Online payments. See the
+[follow-up questions and defaults](setup-for-makerspaces.md#area-follow-up-questions).
+
+The change menu shows on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks
+follow-ups only for newly enabled areas. `--all-modules` enables all eight areas and every supported
+feature, keeping existing settings and staff MFA unchanged. Newly enabled areas get defaults;
+`--without` exclusions still apply, and unavailable modules are reported rather than installed. Automation
+can use `--areas=inventory,machines` (empty selects core and always-on services only), `--all-modules`,
+`--without=key1,key2`, `--makerspace`, `--all-makerspaces`, and `--confirm-removals`.
+Module-key CLI commands and legacy `setup_instance --profile` remain available; the questionnaire
+offers neither profiles nor individual modules. Application reads JSON from stdin, validates through
+the existing services and audited model paths, and never calls purge.
+
 ## The three levels
 
 | Level | Who changes it | What it means |
@@ -148,7 +187,117 @@ Events can run with membership and the online payments rail off. Members-only re
 default audience; opt-in account registration, invitations, ticket types and promo codes
 support public workshops. Paid tickets still create core ledger charges for offline settlement.
 
+Opt-in `events.organization_audience` adds ?Participating organizations?: active members of
+this event?s organizer organizations and venue owner, directly or through their owned makerspaces,
+can register without joining the venue. Manager/affiliate links do not qualify. Public event
+labels name the usable organizations; membership loss leaves existing tickets readable.
+Portable imports block this audience until an authorized editor explicitly confirms the target
+organizations and ownership; ordinary edits and cloning cannot clear the block. Deployment
+backups preserve the original graph. Uninstall/purge retain the core money ledger.
+
+Event managers and organization organizers can invite staff to one event or series with
+selected permissions for details, registrations, invitations, check-in and scheduling.
+These staff can sign in and see only their granted events; grants confer no makerspace
+role or actions. Invitations expire after seven days and revocation applies immediately.
+Grants and invitation credentials are excluded from portable exports and imports;
+the destination must issue fresh access. Uninstall retains the rows, while events purge
+deletes them, including when the events app is tombstoned.
+
+The ordinary event tools also include draft duplication, validated registration-answer edits,
+five-minute cancellation undo, feedback starter templates, owned ticket PNG downloads and
+Google Calendar links. They use the Events module and the relevant staff permission; there
+is no additional feature switch. Duplication copies owned cover images to fresh keys and
+never copies participation or grants. Undo refuses historical charges, consumed invitations
+or discounts, closed admission and unavailable confirmed seats. Public registration counts
+can be hidden per event. Purge removes these event fields and copied images with their
+existing event records; uninstall retains them.
+
+Opt-in `events.certificate_designer` adds private artwork uploads, positioned name boxes
+and server PDF previews in the Events drawer. Every save creates an immutable revision;
+issued certificates freeze the selected design, so later changes never alter pending or
+retried certificates. Turning the feature off removes editing and preview access while
+existing certificate snapshots remain readable through their ordinary authorized path.
+Artwork, revisions and certificates are removed by an Events purge in dependency order.
+Badges use the shared positioned layout engine with bundled fonts and overflow validation;
+printed contacts and bearer QR codes are forbidden. Custom answers require registration
+management plus the tenant audit permission. These badge changes use the existing Events
+module rather than a new feature switch.
+
+Opt-in `events.broadcasts` requires Notifications and Email. Staff with event registration
+authority compose email campaigns filtered by registration status and attendance, review
+drafts, send and cancel from the Events drawer. Only verified eligible accounts receive
+mail; preferences, suppression and quiet hours apply. Delivery history survives uninstall;
+events purge removes campaigns and their event-source outboxes. Imported unfinished
+campaigns are cancelled and cannot resume. Bulk email-bound invitations reuse Events
+invites and email only an event link; the signed-in participant verifies their email to
+use an invitation without entering a code.
+
+`events.api_read` is off by default. Only a platform superadmin can grant
+`events:read`, `participants:read` and `participants:attendance:read` to a server
+client bound to one makerspace. Read routes always require a valid HMAC signature,
+even when public-API enforcement is optional. Participants require event and
+participant scopes; attendance needs the extra scope. Contacts, custom answers,
+payment data and bearer credentials are excluded. Without the feature reads are
+refused. Uninstall retains history; purge uses the existing Events retention graph.
+Bookings reuses the core target/signature/keyset mechanisms through typed adapters.
+
+Opt-in `events.website` adds curated event and series pages: introductions and page logos,
+speakers, tracks, rooms, sessions, sponsors, FAQs and links. Detail editors manage sections
+and private images; schedule publishers manage programme times, live delays and website
+release. Existing events start without a released website. Publishing an event releases its
+saved page only when ?Publish website with event? is selected; pages can then be released
+or unreleased independently. An occurrence inherits its series page until an editor saves
+an independent, initially unreleased copy. Event duplication copies content and images to
+fresh private keys, with no copied release or live delays.
+
+Opt-in `events.embed` requires `events.website`. A released, public, unexpired event can
+appear as a backend HTML card only on the makerspace's exact HTTPS framing origins,
+configured in Public site settings by a makerspace manager. The empty list disables
+embedding. Ordinary SPA pages deny framing. Public website images are private stored
+objects read through the live visibility gate, not public bucket URLs. Existing event
+covers retain their public behavior. Deployment-local discovery, canonical sitemaps and
+crawler share cards respect public visibility and directory consent; discovery does not
+require an enhanced page to be released. Uninstall hides the enhanced surfaces and retains
+the rows and objects; Events purge removes both. Portable imports retain editorial content
+and private objects but reset page release and framing origins for target-side review.
+
 ## Bookings
+
+Opt-in `bookings.website` adds resource detail pages with curated rules, amenities, FAQs,
+links, sponsors and private gallery images. Existing active/public resources retain their
+core catalogue and booking behavior when the feature is off or the page is unreleased.
+Only explicitly published sections and their images appear after a separate website
+release. Resource `edit_details` staff edit content/images; `publish_page` staff release
+or unrelease a saved revision. Neither permission can make a private resource public or
+activate it. Private previews are separate authorized, no-store reads.
+
+`bookings.embed` also defaults off and requires `bookings.website`. Released resource
+cards can be embedded only from the makerspace's exact HTTPS framing-origin allow-list;
+ordinary site pages continue to deny framing. Share cards use the existing public cover,
+never a private gallery image. `/discover/bookings` and sitemaps honor directory consent
+and verified custom domains separately from direct resource access. New discovery is
+paginated; the existing tenant resource list remains an array.
+
+Disabling either feature retains editorial data. Bookings module purge removes pages,
+sections and private gallery objects with their resource; whole-tenant purge also collects
+them. Resource clones copy assets into independent keys and start private/unreleased.
+Portable imports retain editorial content but reset release and framing trust for target
+review; deployment backups preserve the original graph.
+
+Opt-in `bookings.broadcasts` requires Notifications and Email and defaults off. Resource
+reservation managers can compose, preview, queue and cancel email campaigns for pending
+and/or confirmed bookings starting in a bounded future window (maximum 366 days). Each
+account receives at most one campaign email, using its verified live address. Requester
+settings, membership consent where present, personal preferences, suppression, quotas and
+quiet hours apply. Campaigns never enter digests or staff chat. Import preserves history
+but cancels unfinished campaigns and removes source outbox authority.
+
+Booking reminders also reach eligible account-only bookers, with no Membership, Events,
+Presence or online-payment dependency. Old queued reminders are invalidated by cancellation
+or a changed booking window/revision, including entries in already-built daily digests.
+Unverified email and existing membership opt-out still suppress delivery. Bookings purge
+removes campaign/delivery history and booking-source outboxes; the core ledger remains.
+
 
 ### bookings
 
@@ -156,6 +305,51 @@ Bookings accepts authenticated active accounts without installing `membership`. 
 memberships retain their waiver requirement; booking in advance never requires presence.
 
 [Read the bookings module reference](MODULES-WORKSHOPS.md#bookings).
+
+`bookings.confirmations` (off by default) adds owner-only confirmation details, a private QR
+PNG, Google Calendar link and single-booking ICS download. `bookings.checkin` (also off,
+requires confirmations) lets authorized staff resolve that resource's QR and separately
+confirm or reverse arrival. It requires no events, membership, presence or online-payment
+module. Arrival is recorded from 30 minutes before start through end and remains independent
+of completion and charges. Active arrival must be reversed before cancellation, rescheduling
+or no-show; completion retains it and a later correction never reopens the booking.
+Switching these features off hides their routes without deleting history. Bookings purge
+removes arrival history before reservations; portable archives retain historical facts and
+regenerate QR credentials. These are arrival counts, never measured-use duration.
+
+`bookings.passes` (off by default, requires confirmations) adds printable PDF passes,
+a resource pass-designer tab and sample previews. Only display name, resource, booking
+window and an optional booking reference can print. Answers, notes, contacts and QR
+credentials are always refused, including in older stored layouts. Owners download their
+own confirmed/completed pass; staff need check-in permission and a current recorded
+arrival. Template editing alone grants no scanner printing or roster access. Layouts stay
+on uninstall and travel as bounded resource configuration; Bookings/tenant purge removes
+them with resources. No artwork or PDF objects are stored. Without this feature,
+confirmations and arrival continue independently and pass routes refuse.
+
+`bookings.staff_grants` (off by default) delegates selected operations for one resource.
+Its four permissions cover descriptive editing, reservation management, check-in and page
+release. Pricing, rules, machine links, activation, visibility policy, finance and further
+delegation retain tenant permissions. Invites expire after seven days and recheck the
+sender's current authority when accepted. Without the feature, existing tenant booking
+management continues and resource grants confer no access. Uninstall retains history;
+Bookings purge deletes resource staff grants/invites along with resources and reservations,
+while preserving the core payment ledger. Portable imports require staff to reissue grants.
+
+
+`bookings.clone` (off by default) lets tenant booking managers create an active,
+private copy of resource configuration with independent cover images. Protected
+booking rules start at defaults; copying them requires makerspace-management
+permission. No bookings or staff access are copied. `bookings.staff_tools` (off by
+default) adds reservation note/answer edits, validated time moves and exact undo of
+cancellation within five minutes. Moves obey the existing and proposed cutoffs and
+current rules; undo refuses any historical charge or changed admission state. Neither
+feature grants payment, certification-override or identity-reassignment authority.
+Without these features the ordinary existing workflows continue. Cancellation
+provenance and restored lifecycle notifications remain part of booking history;
+uninstall retains them, and ordinary Bookings purge removes resource/reservation
+history and their owned cover images while preserving the core payment ledger.
+
 
 ## Membership
 
@@ -206,6 +400,14 @@ memberships retain their waiver requirement; booking in advance never requires p
 | Feature | Default | What it adds |
 | --- | --- | --- |
 | `reports.saved_views` | ON | Personal server-side report filters and columns, with optional manager-published makerspace sharing. Opening a view rechecks both reader and owner authority. |
+| `reports.event_pdf` | OFF | Audited post-event analytics PDF using the event-attendance builder; requires Events, full event management and tenant audit permission. |
+| `reports.event_exports` | OFF | Registration and feedback CSV/XLSX plus previews; requires Events, event registration management and tenant audit permission. |
+
+Event analytics in the drawer uses one tenant-local event subject through the existing
+report registry. New exports cannot be scheduled or aggregated across tenants or an
+organization. Subject-filtered saved views recheck both owner and reader. Feature off
+refuses its export; it retains event history. Manual PDF files are generated on demand
+and add no stored objects; events purge removes the underlying history, not the core ledger.
 
 Membership reports add counts-only join-month cohorts and retention at 3/6/12 months (or a chosen
 anniversary), plus per-currency MRR/ARR from recurring terms. Reports require `membership`;
@@ -270,6 +472,20 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `payments.membership` | `membership` | | Card rail for dues | Dues are still recorded and settled offline |
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
+| `bookings.api_read` | `bookings` | | Minimal resource/reservation reads for operator-granted, tenant-bound HMAC server clients; arrivals need a separate scope | Integration reads refuse; booking and audit history stays |
+| `bookings.passes` | `bookings` (needs `bookings.confirmations`) | | Answer-free pass designer, owner downloads and staff printing after active arrival | Pass routes refuse; stored layouts retained |
+| `bookings.analytics` | `bookings` (needs `reports`) | | Resource calendar reservation occupancy with resource management AND tenant audit authority | Resource analytics refuses; existing tenant-wide utilisation is unchanged |
+| `bookings.utilization_pdf` | `bookings` (needs `reports`, `bookings.analytics`) | | Audited resource PDF for a complete tenant-local period, requiring full tenant booking management AND audit | Resource PDF refuses; stored booking history stays |
+| `bookings.exports` | `bookings` (needs `reports`) | | Tenant-local reservation contacts and custom-answer previews/CSV/XLSX, requiring resource management AND audit | New detail exports refuse; booking history stays |
+| `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
+| `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
+| `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
+
+| `events.website` | `events` | | Curated released pages with private assets and programmes | Enhanced routes and images disappear; core event details remain |
+| `events.embed` | `events` | `events.website` feature | Exact-origin backend HTML cards | Embed route refuses |
+| `events.broadcasts` | `events` | `notifications`, `email` | Durable email campaigns with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
+| `reports.event_pdf` | `reports` | `events` | Post-event PDF from the report registry | PDF refuses; event analytics/history retained |
+| `reports.event_exports` | `reports` | `events` | Tenant-local registration/feedback previews and CSV/XLSX | Detail exports refuse; event history retained |
 | `events.account_registration` | `events` | | Authenticated accounts can register for account-audience events | Events keep their members-only default |
 | `events.invites` | `events` | | Invite-only registration with expiring, limited-use codes | Invite audience and invite administration are refused |
 | `events.ticket_types` | `events` | | Public/member prices, sales windows and capacity per type | Flat event price applies |
@@ -302,3 +518,10 @@ belong to no module: they are standalone capabilities that apply whenever you en
 ## Removing a module from the build entirely
 
 [Read about removing a module from the build entirely](MODULES-LIFECYCLE.md#removing-a-module-from-the-build-entirely).
+
+Event website content includes speaker profiles and private photos, tiered sponsors and logos,
+venue and room information, highlights, a tagline, accent colour and ordered section switches.
+Turning a website section off also hides its direct public detail and image access unless
+another enabled section uses the image. Content editing requires event `edit_details`;
+programme edits and live track delays require `publish_schedule`. These additions use the
+existing `events.website` feature; embedding still additionally requires `events.embed`.

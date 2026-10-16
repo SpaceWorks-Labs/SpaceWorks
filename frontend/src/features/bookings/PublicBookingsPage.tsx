@@ -12,7 +12,9 @@ import { EmptyState, ListRow, StatusPill } from "../../components/ui";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
+import { RouteLink } from "../../components/ui/RouteLink";
 import { publicErrorState } from "../inventory/publicErrorState";
+import { BookingConfirmation } from "./BookingConfirmation";
 import { PublicBookingForm } from "./PublicBookingForm";
 import { usePublicSpaces, type PublicBookableSpace } from "./publicBookingsApi";
 
@@ -42,6 +44,7 @@ export function PublicBookingsPage() {
   const activeToken = params.get("space");
   const setActiveToken = (token: string | null) => { const next = new URLSearchParams(params); if (token) next.set("space", token); else next.delete("space"); setParams(next); };
   const selectedSpace = (spaces.error ? [] : spaces.data ?? []).find(space => space.public_token === activeToken);
+  const confirmationToken = params.get("confirmation");
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
 
   if (selectedSpace) return <div style={brandStyle}><PageMetadata title={`${selectedSpace.name} · ${displayName}`} description={selectedSpace.description} path={canonicalPath} image={selectedSpace.image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={{ status: "ready" }}
@@ -61,6 +64,7 @@ export function PublicBookingsPage() {
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
       header={{ title: "Book a makerspace", subtitle: `Book a space at ${displayName}`, primary: { label: "My bookings", href: tenantPath("member/bookings") } }}
       state={spaces.isLoading ? { status: "loading" } : spaces.error ? publicErrorState(spaces.error, { noun: "Bookings" }, () => { void spaces.refetch(); }) : { status: "ready" }}>
+      {confirmationToken ? <BookingConfirmation slug={makerspaceSlug} token={confirmationToken} /> : null}
       <DiscoveryControls state={discovery} searchLabel="Search spaces" filters={Object.entries(KIND_LABELS).map(([value, label]) => ({ value, label }))} />
       <p role="status" className="mb-4 text-sm text-muted">{visibleSpaces.length} matching space(s)</p>
       {!visibleSpaces.length ? <EmptyState message={spaces.data?.length ? "No spaces match these filters. Try another search." : "No bookable spaces yet. Check back soon."} /> : null}
@@ -70,7 +74,8 @@ export function PublicBookingsPage() {
           <ListRow title={space.name} onClick={() => setActiveToken(space.public_token)} identity={space.image_url ? { kind: "image", src: space.image_url } : { kind: "icon", icon: "Calendar", tone: "neutral" }}
             meta={<>{space.location}<span className="mt-1 block">{space.description}</span><span className="mt-2 block">Capacity {space.capacity === 0 ? "not specified" : space.capacity} · {KIND_LABELS[space.kind]}</span></>}
             right={<div className="grid justify-items-end gap-3"><StatusPill label={space.approval_mode === "approve" ? "Needs approval" : "Instant when available"} tone={space.approval_mode === "approve" ? "warn" : "success"} />
-              <button className="desk-button" type="button" aria-expanded={open} onClick={() => setActiveToken(open ? null : space.public_token)}>{open ? "Close booking form" : "Choose a time"}</button></div>} />
+              <div className="flex flex-wrap justify-end gap-2"><RouteLink className="desk-button-ghost" href={tenantPath(`bookings/${space.public_token}`)}>Resource details</RouteLink>
+              <button className="desk-button" type="button" aria-expanded={open} onClick={() => setActiveToken(open ? null : space.public_token)}>{open ? "Close booking form" : "Choose a time"}</button></div></div>} />
           {discovery.view === "calendar" && discovery.month ? <SpaceDiscoveryCalendar slug={makerspaceSlug} space={space} month={discovery.month} timeZone={discovery.timeZone} /> : null}
           {open ? <div className="mt-4"><PublicBookingForm key={space.public_token} makerspaceSlug={makerspaceSlug} space={space} /></div> : null}
         </article>;

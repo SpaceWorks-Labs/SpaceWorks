@@ -1,3 +1,4 @@
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -22,7 +23,7 @@ from apps.makerspaces.models import Makerspace, MakerspaceMembership, Makerspace
 from apps.payments.models import Payment
 
 
-class MembershipListCreateView(APIView):
+class MembershipListCreateView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
@@ -110,7 +111,7 @@ class MembershipListCreateView(APIView):
         )
 
 
-class MembershipRoleAssignView(APIView):
+class MembershipRoleAssignView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(

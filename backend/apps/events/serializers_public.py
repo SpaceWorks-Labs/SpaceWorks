@@ -8,12 +8,14 @@ from apps.events.capacity import (
     registration_is_open,
 )
 from apps.events.models import Event, EventRegistration
+from .serializers_organization_audience import OrganizationAudienceFields
 from .serializers_ticketing_public import EventTicketingPublicSerializer
 from apps.forms_schema.serializers import CustomFormSubmissionMixin
 from apps.inventory import public_image_storage
 
 
 PUBLIC_EVENT_FIELDS = (
+    'website', 'participating_organizations', 'audience_label',
     'public_token',
     'title',
     'description',
@@ -23,6 +25,7 @@ PUBLIC_EVENT_FIELDS = (
     'location_kind',
     'custom_form',
     'capacity',
+    'show_registration_count', 'registration_count',
     'payment_amount',
     'currency',
     'availability',
@@ -42,7 +45,21 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
     name = serializers.CharField(source='organization.name', read_only=True)
 
 
-class PublicEventSerializer(EventTicketingPublicSerializer):
+class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
+    website = serializers.SerializerMethodField()
+
+    @extend_schema_field({"allOf": [{"$ref": "#/components/schemas/Website"}], "nullable": True})
+    def get_website(self, obj):
+        if self.context.get("omit_website"):
+            return None
+        from django.http import Http404
+        from .views_website_public import projection
+        from .serializers_website import WebsiteSerializer
+        try:
+            return WebsiteSerializer(projection(obj)).data
+        except Http404:
+            return None
+
     public_token = serializers.UUIDField(read_only=True)
     title = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
@@ -55,6 +72,8 @@ class PublicEventSerializer(EventTicketingPublicSerializer):
     )
     custom_form = serializers.JSONField(allow_null=True, read_only=True)
     capacity = serializers.IntegerField(min_value=0, read_only=True)
+    show_registration_count = serializers.BooleanField(read_only=True)
+    registration_count = serializers.SerializerMethodField()
     payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     currency = serializers.SerializerMethodField()
     availability = serializers.SerializerMethodField()
@@ -68,6 +87,13 @@ class PublicEventSerializer(EventTicketingPublicSerializer):
     )
     organizers = EventOrganizerSummarySerializer(many=True, read_only=True)
     series = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_registration_count(self, obj):
+        if not obj.show_registration_count:
+            return None
+        from .capacity import confirmed_occupancy
+        return confirmed_occupancy(obj)
 
     @extend_schema_field(
         {
@@ -125,11 +151,27 @@ class PublicEventRegistrationInputSerializer(
     CustomFormSubmissionMixin,
     serializers.Serializer,
 ):
+    host_waiver_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, write_only=True)
+    host_waiver_version = serializers.CharField(max_length=64, required=False, allow_null=True, write_only=True)
+    host_waiver_accepted = serializers.BooleanField(required=False, default=False, write_only=True)
     phone = serializers.CharField(max_length=64, required=False, allow_blank=True, write_only=True)
     email = serializers.EmailField(required=False, allow_blank=True, write_only=True)
     invite_code = serializers.CharField(max_length=128, required=False, write_only=True)
     ticket_type_id = serializers.IntegerField(min_value=1, required=False, write_only=True)
     promo_code = serializers.CharField(max_length=128, required=False, write_only=True)
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        event = self.context["event"]
+        if request and request.user.is_authenticated and EventRegistration.objects.filter(
+            event=event, member=request.user,
+            status__in=(EventRegistration.Status.REGISTERED, EventRegistration.Status.WAITLISTED,
+                        EventRegistration.Status.PENDING_APPROVAL),
+        ).exists():
+            # An owned-row retry repairs consent only; answers stay on the saved row.
+            # The service rechecks ownership, eligibility and event state under locks.
+            return attrs
+        return super().validate(attrs)
 
     def custom_form_schema(self):
         return self.context['event'].custom_form

@@ -33,8 +33,8 @@ def assert_social_user_active(user):
 def assert_staff_authority(user, request):
     from apps.accounts.services_social_identity import SocialResolutionError
 
-    scope = getattr(request, "selected_makerspace_id", None) or staff_origin_scope(
-        request
+    scope = getattr(request, "selected_makerspace_id", None) or (
+        staff_origin_scope(request) if request is not None else NO_STAFF_ORIGIN_SCOPE
     )
     if scope is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
         raise SocialResolutionError("staff_access_required", 403)
@@ -58,6 +58,9 @@ def assert_staff_authority(user, request):
         if has_any_governance(user):
             return
     elif rbac.effective_actions(user, scope):
+        return
+    from apps.makerspaces.resource_grant_sources import has_authority
+    if has_authority(user, makerspace_ids=None if scope is NO_STAFF_ORIGIN_SCOPE else [scope]):
         return
     raise SocialResolutionError("staff_access_required", 403)
 

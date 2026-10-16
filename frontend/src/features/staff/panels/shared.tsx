@@ -1,4 +1,3 @@
-import { EmptyState } from "../../../components/ui/EmptyState";
 import type React from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -102,11 +101,6 @@ export function useStaffGet<T>(key: unknown[], path: string, enabled = true) {
 export function categoryResults(data?: CategoryListResponse) {
   if (!data) return [];
   return Array.isArray(data) ? data : data.results;
-}
-
-export function JsonRows({ data }: { data: unknown[] }) {
-  if (!data.length) return <EmptyState message="No records." />;
-  return <pre className="mt-3 max-h-80 overflow-auto rounded-md border border-line bg-bg p-3 text-xs text-muted">{JSON.stringify(data, null, 2)}</pre>;
 }
 
 export function Panel({ title, children }: { title: string; children: React.ReactNode }) {

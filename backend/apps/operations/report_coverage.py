@@ -61,6 +61,9 @@ def check_report_module_coverage(app_configs=None, **kwargs):
             id="operations.E001",
         ))
     for module_key, coverage in REPORT_MODULE_COVERAGE.items():
+        from apps.makerspaces.module_registry import module_available
+        if not module_available(module_key):
+            continue
         for report_key in coverage.reports:
             definition = REPORT_REGISTRY.get(report_key)
             if definition is None:

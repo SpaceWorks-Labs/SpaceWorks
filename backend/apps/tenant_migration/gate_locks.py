@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 import psycopg2
-from django.db import connection, connections, transaction
+from django.db import connection, connections
 
 from apps.tenant_migration.gate_errors import SourceMigrationGateUnavailable
 
@@ -19,12 +19,6 @@ def acquire_shared(makerspace_id):
 
 def acquire_exclusive(makerspace_id):
     _execute_transaction("pg_advisory_xact_lock", makerspace_id)
-
-
-def acquire_unscoped_writer_shared():
-    _execute_transaction(
-        "pg_advisory_xact_lock_shared", UNSCOPED_WRITER_LOCK_KEY
-    )
 
 
 def acquire_unscoped_writer_exclusive():
@@ -150,11 +144,4 @@ def _new_lock_connection():
 @contextmanager
 def unscoped_writer_shared_boundary():
     with shared_boundary(UNSCOPED_WRITER_LOCK_KEY):
-        yield
-
-
-@contextmanager
-def shared_transaction(makerspace_id):
-    with transaction.atomic():
-        acquire_shared(makerspace_id)
         yield

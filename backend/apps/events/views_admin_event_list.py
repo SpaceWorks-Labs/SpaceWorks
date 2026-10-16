@@ -4,10 +4,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.events import event_authority
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events import services
 from apps.events.models import Event
-from apps.events.serializers_admin import EventAdminSerializer, EventListResponseSerializer, EventWriteSerializer
+from apps.events.serializers_admin import EventAdminSerializer, EventListWithDefaultsSerializer, EventWriteSerializer
+from apps.events.serializers_event_authority import event_list_context
 from apps.inventory.search import apply_q
 from .views_admin_event_detail import (
     _visible_makerspace,
@@ -31,15 +33,14 @@ class EventListCreateView(APIView):
             *LIST_PARAMETERS,
             OpenApiParameter("status", str, enum=Event.Status.values),
         ],
-        responses={200: EventListResponseSerializer, **{code: ErrorSerializer for code in (400, 401, 403, 404)}},
+        responses={200: EventListWithDefaultsSerializer, **{code: ErrorSerializer for code in (400, 401, 403, 404)}},
     )
     def get(self, request, makerspace_id, *args, **kwargs):
         makerspace = _visible_makerspace(request.user, makerspace_id)
-        queryset = rbac.scope_by_action(
+        queryset = event_authority.events_for(
             request.user,
-            rbac.Action.MANAGE_EVENTS,
+            None,
             Event.objects.filter(makerspace=makerspace),
-            field='makerspace_id',
         )
         queryset = (
             _annotate_registration_counts(queryset)
@@ -56,7 +57,13 @@ class EventListCreateView(APIView):
         queryset = order_list(queryset, request.query_params, {"starts_at", "title", "status", "created_at"}, "starts_at")
         paginator = _EventPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
-        return _paginated_response(paginator, page, EventAdminSerializer)
+        context = event_list_context(request, page)
+        response = _paginated_response(
+            paginator, page,
+            lambda rows, many: EventAdminSerializer(rows, many=many, context=context),
+        )
+        response.data["default_registration_audience"] = makerspace.event_default_registration_audience
+        return response
 
     @extend_schema(
         tags=['Admin events'],
@@ -80,7 +87,6 @@ class EventListCreateView(APIView):
             **values,
         )
         return Response(
-            EventAdminSerializer(event).data,
+            EventAdminSerializer(event, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
-

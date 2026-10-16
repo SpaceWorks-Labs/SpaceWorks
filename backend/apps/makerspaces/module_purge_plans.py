@@ -20,6 +20,8 @@ inseparable from the makerspace's (see `NOT_SEPARABLE`).
 from dataclasses import dataclass
 from typing import Callable
 
+from .module_purge_collectors_booking_website import bookings_private_keys, bookings_private_key_sizes
+
 from apps.makerspaces.module_purge_collectors import (
     bookings_delete,
     bookings_public_images,
@@ -106,13 +108,14 @@ PLANS = (
         # The one-line description is what the purge confirmation shows an operator, so it
         # has to name what actually goes: registrations are only the first layer.
         "events",
-        "Events, series, registrations, check-in history, feedback, certificates and "
+        "Events, series, registrations, check-in history, feedback, certificates, template revisions, artwork and "
         "calendar feeds.",
         events_delete,
         pii_labels=(
             "events.EventRegistration",
             "events.EventFeedbackResponse",
             "events.EventAttendanceCertificate",
+            "events.EventBroadcast",
         ),
         private_keys=events_private_keys,
         private_key_sizes=events_private_key_sizes,
@@ -120,8 +123,9 @@ PLANS = (
     ),
     ModulePurgePlan(
         "bookings", "Bookable spaces and their bookings.", bookings_delete,
-        pii_labels=("bookings.Booking",),
+        pii_labels=("bookings.Booking", "bookings.BookingBroadcast"),
         public_image_keys=bookings_public_images,
+        private_keys=bookings_private_keys, private_key_sizes=bookings_private_key_sizes,
     ),
     ModulePurgePlan(
         "maintenance", "Maintenance schedules, logs and log documents.", maintenance_delete,

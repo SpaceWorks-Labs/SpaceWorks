@@ -19,6 +19,10 @@ SEEDED_RESOLUTIONS = {
 
 
 FK_POLICIES = {
+    ("events.EventCertificateTemplateRevision", "artwork"): ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED,
+        "Revisions only reference promoted artwork; remap its retained identity.",
+    ),
     ("inventory.InventoryProduct", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),
     ("integrations.DestinationCategoryScope", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),
     ("integrations.RecipientCategoryScope", "category"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "The owning recipient scope is dropped."),

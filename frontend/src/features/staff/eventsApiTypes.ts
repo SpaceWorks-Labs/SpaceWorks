@@ -13,10 +13,18 @@ export type EventRegistrationStatus =
 export type EventRegistrationCounts = Record<EventRegistrationStatus, number>;
 
 export type StaffEvent = {
+  staff_permissions?: import("./eventStaffPermissions").EventPermission[];
+  can_manage_staff?: boolean;
   ticketing_features?: string[];
+  broadcasts_enabled?: boolean;
+  badge_sensitive_fields_allowed?: boolean;
+  report_features?: string[];
+  participating_organizations?: { id: number; name: string }[];
+  audience_label?: string | null;
+  organization_admission_blocked?: boolean;
   id: number;
   makerspace_id: number;
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   category_id?: number | null; tags?: string[];
   title: string;
   description: string;
@@ -34,6 +42,7 @@ export type StaffEvent = {
   registration_open: boolean;
   offline_checkin_enabled: boolean;
   is_public: boolean;
+  show_registration_count?: boolean;
   image_url: string | null;
   status: EventStatus;
   custom_form: CustomFormSchema | null;
@@ -50,6 +59,7 @@ export type StaffEvent = {
 };
 
 export type EventRegistration = {
+  no_longer_eligible?: boolean;
   id: number;
   event_id: number;
   name: string;
@@ -57,11 +67,15 @@ export type EventRegistration = {
   phone: string;
   status: EventRegistrationStatus;
   payment: PaymentSummary | null;
+  custom_answers?: import("../forms/customFormTypes").CustomAnswerSnapshot;
+  cancelled_at?: string | null;
+  status_before_cancel?: EventRegistrationStatus | null;
+  restore_until?: string | null;
   created_at: string;
 };
 
 export type EventPayload = {
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   category_id?: number | null; tags?: string[];
   title: string;
   description: string;
@@ -76,6 +90,7 @@ export type EventPayload = {
   registration_cutoff_lead_minutes: number | null;
   cancellation_cutoff_hours?: number | null;
   is_public: boolean;
+  show_registration_count?: boolean;
   custom_form: CustomFormSchema;
 };
 

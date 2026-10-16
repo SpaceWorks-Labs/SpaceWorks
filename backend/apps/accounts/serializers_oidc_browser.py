@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from apps.accounts.models_social import SocialSurface
 
 
 class OidcBrowserStartSerializer(serializers.Serializer):
+    surface = serializers.ChoiceField(choices=SocialSurface.choices, default=SocialSurface.MEMBER)
     redirect_uri = serializers.URLField(max_length=2048)
     email = serializers.EmailField(required=False, allow_blank=True)
     makerspace_slug = serializers.SlugField(required=False, allow_blank=True)

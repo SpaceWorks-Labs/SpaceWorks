@@ -60,6 +60,15 @@ services:
     container_name: spaceworks-backend
     environment: &backend-env
       SECRET_KEY: ${SECRET_KEY:-dev-insecure-change-me}
+      WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+      WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+      WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      ROUTE_METRICS_ENABLED: ${ROUTE_METRICS_ENABLED:-False}
+      PROMETHEUS_MULTIPROC_DIR: ${PROMETHEUS_MULTIPROC_DIR:-/tmp/spaceworks-prometheus}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      ORGANIZATION_SELF_CREATION_ENABLED: ${ORGANIZATION_SELF_CREATION_ENABLED:-False}
+      ORGANIZATION_SELF_CREATION_MAX_OWNED: ${ORGANIZATION_SELF_CREATION_MAX_OWNED:-3}
+      ORGANIZATION_SELF_CREATION_MAX_PER_DAY: ${ORGANIZATION_SELF_CREATION_MAX_PER_DAY:-1}
       DEBUG: ${DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
       DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_APP_USER:-spaceworks_app}:${POSTGRES_APP_PASSWORD:-spaceworks-app-dev}@db:5432/makerspace_manager}
@@ -121,7 +130,7 @@ services:
       SPACEWORKS_HOST_MARKER_PATH: /run/spaceworks-host/restore-marker.json
       BACKUP_PRODUCER_CAPABILITY_MARKER_PATH: /run/spaceworks-host/producer-capability.json
       BACKUP_PRODUCER_PRIVILEGED_SCRIPTS_DIR: /run/spaceworks-privileged-scripts
-    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]
+    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn --config python:config.gunicorn_metrics config.wsgi:application --bind 0.0.0.0:8000"]
     healthcheck: {test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/', timeout=3).read()\""], interval: 10s, timeout: 5s, retries: 6}
     ports:
       - "8001:8000"
@@ -136,7 +145,7 @@ services:
       context: ./backend
     container_name: spaceworks-live
     environment: *backend-env
-    command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "32", "--timeout", "0"]
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "32", "--timeout", "0"]
     volumes:
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, orchestration-ready: {condition: service_completed_successfully}}
@@ -212,7 +221,7 @@ services:
     build:
       context: ./backend
     environment: *backend-env
-    command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
     volumes:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
@@ -229,6 +238,10 @@ services:
     environment:
       TENANT_API_URL: ${TENANT_API_URL:-/api}
       TENANT_TOKEN: ${TENANT_TOKEN:-}
+      WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+      WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+      WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
     container_name: spaceworks-frontend
     ports:
       - "80:80"

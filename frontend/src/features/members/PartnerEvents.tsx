@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { EventContactFallback } from "../events/EventContactFallback";
+import { EventConsentRepairForm } from "../events/EventConsentRepairForm";
 import { StructuredApiError } from "../../lib/api";
 import { EventTicketPicker } from "../events/EventTicketPicker";
 import { EventPrice } from "../events/EventPrice";
@@ -14,7 +15,7 @@ import { staffRequest } from "../../lib/api";
 
 const EVENT_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 type CollaborativeEventWithPolicy = CollaborativeEvent & {
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   ticket_types?: EventTicket[]; ticket_selection_required?: boolean; promo_codes_enabled?: boolean;
   payment_amount?: string; currency?: string;
   registration_requires_approval: boolean;
@@ -48,6 +49,7 @@ export function PartnerEvents({
   });
   const [openId, setOpenId] = useState<number | null>(null);
   useEffect(() => { if (!visible) setOpenId(null); }, [visible]);
+  const [repairedConsent, setRepairedConsent] = useState<string[]>([]);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [needsPhone, setNeedsPhone] = useState(false);
@@ -138,6 +140,7 @@ export function PartnerEvents({
           // holds that acceptance and the POST path deliberately exempts them -- asking
           // again would be a second, meaningless agreement.
           const waiver = event.host_slug === slug ? null : event.host_waiver;
+          const consentKey = `${event.id}:${event.host_waiver?.id}:${event.host_waiver?.version}`;
           const open = openId === event.id;
           const tickets = event.ticket_types ?? [];
           const mustExpand = needsAnswers || Boolean(waiver) || Boolean(event.ticket_selection_required) || tickets.length > 0 || event.registration_audience === "invite" || Boolean(event.promo_codes_enabled);
@@ -150,7 +153,7 @@ export function PartnerEvents({
                 <button
                   type="button"
                   className="desk-button-brand"
-                  disabled={!event.registration_open || register.isPending || (open && (blocked || (tickets.length > 0 && ticketId === null) || (event.ticket_selection_required && !tickets.length) || (event.registration_audience === "invite" && !inviteCode.trim())))}
+                  disabled={!event.registration_open || register.isPending || (open && (blocked || (tickets.length > 0 && ticketId === null) || (event.ticket_selection_required && !tickets.length)))}
                   onClick={() => {
                     if (mustExpand && !open) {
                       setPhone(""); setEmail(""); setNeedsPhone(false); setNeedsEmail(false);
@@ -184,7 +187,7 @@ export function PartnerEvents({
               {open ? <div className="mt-3 grid gap-2">
                 <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={register.isPending} />
                 <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={event.currency ?? ""} disabled={register.isPending} />
-                {event.registration_audience === "invite" ? <label className="grid gap-1 text-sm">Invitation code<input className="desk-input" autoCapitalize="characters" spellCheck={false} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
+                {event.registration_audience === "invite" ? <><label className="grid gap-1 text-sm">Invitation code<input className="desk-input" autoCapitalize="characters" spellCheck={false} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">Leave blank if your verified account email was invited.</p></> : null}
                 {event.promo_codes_enabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" autoCapitalize="characters" spellCheck={false} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
               </div> : null}
               {!event.registration_open && event.effective_registration_cutoff_at ? <p className="mt-2 text-xs text-muted">Closed at {new Date(event.effective_registration_cutoff_at).toLocaleString()}</p> : null}
@@ -220,6 +223,12 @@ export function PartnerEvents({
               ) : null}
               {register.error ? <p role="alert" className="text-sm text-danger">{register.error.message}</p> : null}
               </Modal> : <EventPrice amount={event.payment_amount ?? "0"} currency={event.currency ?? ""} tickets={tickets} ticketRequired={event.ticket_selection_required} />}
+              {/* Consent repair belongs to an existing registration, so it stays outside the register sheet. */}
+              {repairedConsent.includes(consentKey) ? <p role="status" className="mt-2 text-sm text-success-ink">Your registration consent has been updated.</p> :
+                event.consent_repair_required && event.host_waiver ? <EventConsentRepairForm
+                  key={consentKey} makerspaceSlug={event.host_slug} publicToken=""
+                  waiver={event.host_waiver} partner={{ makerspaceId, eventId: event.id, slug }}
+                  onRepaired={() => setRepairedConsent(current => [...current, consentKey])} /> : null}
             </li>
           );
         })}</ul></section>)}

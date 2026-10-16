@@ -23,6 +23,14 @@ def to_local(makerspace, dt):
     return _aware(dt).astimezone(ZoneInfo(makerspace.timezone))
 
 
+def local_date_expression(instant_field, timezone_field):
+    """Postgres per-row local day, for directory queries spanning tenant timezones."""
+    from django.db.models import DateField, DateTimeField, F, Func
+    from django.db.models.functions import Cast
+    return Cast(Func(F(timezone_field), F(instant_field), function="timezone",
+                     output_field=DateTimeField()), output_field=DateField())
+
+
 def local_now(makerspace):
     return to_local(makerspace, datetime.now(timezone.utc))
 

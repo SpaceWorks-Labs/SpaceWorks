@@ -36,6 +36,9 @@ def dispatch_email(
     sync=False,
     recipient_id=None,
     feature="",
+    source_kind="",
+    source_id=None,
+    source_metadata=None,
 ):
     from apps.integrations.dispatch import _deliver
 
@@ -67,6 +70,7 @@ def dispatch_email(
             connection_kind=connection,
             recipient_id=recipient_id,
             feature=feature,
+            source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
             status=EmailLog.Status.SKIPPED,
             error=reason or "Email is disabled for this makerspace.",
         )
@@ -109,6 +113,7 @@ def dispatch_email(
                             connection_kind=connection,
                             recipient_id=recipient_id,
                             feature=feature,
+                            source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
                             status=EmailLog.Status.FAILED,
                             error="Daily email limit reached for this space.",
                         )
@@ -138,6 +143,7 @@ def dispatch_email(
         connection_kind=connection,
         recipient_id=recipient_id,
         feature=feature,
+        source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
     )
     if not persist_body:
         # In-memory only - _deliver's save(update_fields=...) excludes the body fields,

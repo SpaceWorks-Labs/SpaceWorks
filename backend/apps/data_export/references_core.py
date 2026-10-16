@@ -16,11 +16,27 @@ RAW_USER_REFERENCE_FIELDS = frozenset(  # Raw integers are not discoverable as F
 # SpacePackProfile has no accounts.User FKs; platform attribution lives in AuditLog.
 RELATIONAL_USER_FIELDS = frozenset(
     {
+        ("bookings.BookingBroadcast", "created_by"),
+        ("bookings.BookingBroadcastDelivery", "recipient"),
+        ("events.EventBroadcast", "created_by"),
+        ("events.EventBroadcastDelivery", "recipient"),
+        # Excluded credential rows never pull these accounts into an archive.
+        ("bookings.BookingSpaceStaffGrant", "user"),
+        ("bookings.BookingSpaceStaffGrant", "granted_by"),
+        ("bookings.BookingSpaceStaffGrant", "revoked_by"),
+        ("bookings.BookingSpaceStaffGrantInvite", "created_by"),
+        ("bookings.BookingSpaceStaffGrantInvite", "redeemed_by"),
+        ("events.EventStaffGrant", "user"),
+        ("events.EventStaffGrant", "granted_by"),
+        ("events.EventStaffGrant", "revoked_by"),
+        ("events.EventStaffGrantInvite", "created_by"),
+        ("events.EventStaffGrantInvite", "redeemed_by"),
         ("notifications.NotificationInboxRow", "user"),
         ("notifications.MemberNotificationPreference", "user"),
         ("integrations.EmailSuppression", "created_by"),
         ("integrations.EmailLog", "recipient"),
         ("accounts.UserMFA", "user"),
+        ("accounts.ReauthenticationSession", "user"),
         ("accounts.MFAChallenge", "user"),
         ("accounts.StaffInvitation", "created_by"),
         ("accounts.StaffInvitation", "accepted_by"),
@@ -181,6 +197,25 @@ RELATIONAL_USER_FIELDS = frozenset(
 )
 
 _EXCLUDED_USER_EDGE_REASONS = {
+    ("accounts.ReauthenticationSession", "user"): "Source-bound browser proof is never portable and never expands the user closure.",
+    **{edge: "Booking resource authority and credentials are omitted at both fidelities."
+       for edge in (
+           ("bookings.BookingSpaceStaffGrant", "user"),
+           ("bookings.BookingSpaceStaffGrant", "granted_by"),
+           ("bookings.BookingSpaceStaffGrant", "revoked_by"),
+           ("bookings.BookingSpaceStaffGrantInvite", "created_by"),
+           ("bookings.BookingSpaceStaffGrantInvite", "redeemed_by"),
+       )},
+    **{
+        edge: "Event staff credentials and authority are omitted at both fidelities; reissue on the target."
+        for edge in (
+            ("events.EventStaffGrant", "user"),
+            ("events.EventStaffGrant", "granted_by"),
+            ("events.EventStaffGrant", "revoked_by"),
+            ("events.EventStaffGrantInvite", "created_by"),
+            ("events.EventStaffGrantInvite", "redeemed_by"),
+        )
+    },
     # machines.MakerspaceMachineTypePolicy has no accounts.User FKs; its tenant/type
     # preferences do not expand the portable user closure.
     # operations.ReminderSchedule deliberately has no accounts.User FK: opaque
@@ -199,7 +234,7 @@ _EXCLUDED_USER_EDGE_REASONS = {
     ("tenant_migration.TenantDumpCapture", "requested_by"): "Source capture coordination must not contribute to a tenant archive's user closure.",
 }
 
-RELATIONAL_USER_FIELDS |= frozenset({("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
+RELATIONAL_USER_FIELDS |= frozenset({("bookings.BookingCheckInEvent", "actor"), ("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
 _EXCLUDED_USER_EDGE_REASONS[("bookings.BookingCalendarFeed", "user")] = "Source-bound calendar authority is excluded from portable closure."
 
 # WP4 policies, schedules and materials have no User FKs. Personal watches and

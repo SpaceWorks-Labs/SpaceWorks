@@ -5,9 +5,12 @@ from apps.makerspaces.origin_scope_model_lookups import (
     TARGET_SET_LOOKUPS,
 )
 
+PUBLIC_SLUG_ROUTES = {"public-booking-resource", "public-booking-website", "public-booking-website-image", "member-booking-pass", "member-booking-confirmation", "member-booking-confirmation-png", "member-booking-calendar", "member-booking-rotate-checkin", "public-event-organization-eligibility"}
+
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 
 MAKERSPACE_KWARG_ROUTES = {
+    "website-origins": "makerspace_id",
     'admin-booking-machine-types': 'makerspace_id',
     'admin-makerspace-setup-state': 'makerspace_id',
     'admin-maintenance-overdue': 'makerspace_id',
@@ -44,6 +47,8 @@ MAKERSPACE_KWARG_ROUTES.update(WP4_ROUTES)
 # These routes have no tenant-bearing path segment by design: each is a listing whose
 # queryset is explicitly narrowed by the named makerspace query parameter.
 QUERY_SCOPED_ROUTES = {
+    'admin-accessible-events',
+    'admin-accessible-booking-spaces',
     'admin-search',                # ?makerspace_id= is mandatory
     'admin-api-key-requests',       # requester-owned API-key requests; ?makerspace=
     'admin-audit-logs',             # tenant audit-log listing; ?makerspace=
@@ -146,13 +151,27 @@ def _authoritative_route_targets(request, view=None):
     kwargs.update(getattr(view, 'kwargs', {}) or {})
     targets = set()
     invalid = False
+    # Domain adapters register targets without widening any user RBAC scope.
+    # This resolver is advisory for origin/source-gate scoping; HMAC authorization
+    # independently verifies the signature, server client and required scopes.
+    from apps.apiclients.read_contract import read_target_registered, resolve_read_target
+    if match is not None and read_target_registered(match.view_name):
+        target, resolved = resolve_read_target(request, match)
+        return url_name, {target.pk} if resolved else set(), not resolved, True
     registered = MAKERSPACE_KWARG_ROUTES.get(url_name)
     route_recognized = bool(
         registered or 'makerspace_id' in kwargs
         or (url_name == 'admin-makerspace' and 'pk' in kwargs)
         or url_name in MODEL_LOOKUPS or url_name in TARGET_SET_LOOKUPS
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
-        or url_name in REPLAY_TOKEN_ROUTES)
+        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES)
+    if url_name in PUBLIC_SLUG_ROUTES:
+        from .lookup import get_public_makerspace
+        from django.http import Http404
+        try:
+            targets.add(get_public_makerspace(kwargs.get("makerspace_slug")).pk)
+        except Http404:
+            invalid = True
     if url_name in REPLAY_TOKEN_ROUTES:
         token = kwargs.get("public_token")
         resolved = apps.get_model("makerspaces.StationCredential").objects.filter(

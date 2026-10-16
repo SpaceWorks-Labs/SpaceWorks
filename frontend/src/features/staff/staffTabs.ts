@@ -74,6 +74,7 @@ const TAB_PATHS: Record<string, string> = {
   migration: "tenant-migration",
   cards: "member-cards",
   organized: "organized-events",
+  granted: "assigned-events",
   "organization-analytics": "organization-analytics",
 };
 
@@ -97,7 +98,8 @@ export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?:
   // Checked before the module gate and outside the early return below: an app the
   // deployment does not ship is unreachable no matter what the tenant enabled, and a
   // makerspace row that has not loaded its modules yet must not show it either.
-  const shipped = tabs.filter((tabName) => !unavailable.has(TAB_APPS[tabName] ?? ""));
+  const shipped = tabs.filter((tabName) => !unavailable.has(TAB_APPS[tabName] ?? "")
+    && !(tabName === "granted" && unavailable.has("events") && unavailable.has("bookings")));
 
   const modules = makerspace?.enabled_modules;
   if (!modules) return shipped;
@@ -141,7 +143,7 @@ export function staffBasePath(guestOnly: boolean) {
 // on the inventory tab, not 404. Relaxing it globally would change how every existing
 // bookmark resolves, so the exception is opt-in and currently holds exactly one tab.
 const TABS_WITH_SUBPATHS = new Set(["machines"]);
-const GLOBAL_TABS = new Set(["organizations", "platform-dashboard"]);
+const GLOBAL_TABS = new Set(["organizations", "platform-dashboard", "granted"]);
 
 export function staffTabPath(
   tab: string,

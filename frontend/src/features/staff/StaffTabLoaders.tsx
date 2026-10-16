@@ -12,6 +12,7 @@ export const Ledger = lazy(() => import("./panels/Ledger").then((m) => ({ defaul
 export const MachinesPanel = lazy(() => import("./panels/MachinesPanel").then((m) => ({ default: m.MachinesPanel })));
 export const EventsPanel = lazy(() => import("./EventsPanel").then((m) => ({ default: m.EventsPanel })));
 export const OrganizedEventsPanel = lazy(() => import("./panels/OrganizedEventsPanel").then((m) => ({ default: m.OrganizedEventsPanel })));
+export const GrantedEventsPanel = lazy(() => import("./GrantedEventsPanel").then((m) => ({ default: m.GrantedEventsPanel })));
 export const OrganizationAnalyticsPanel = lazy(() => import("./panels/OrganizationAnalyticsPanel").then((m) => ({ default: m.OrganizationAnalyticsPanel })));
 export const OrganizationsPanel = lazy(() => import("./panels/OrganizationsPanel").then((m) => ({ default: m.OrganizationsPanel })));
 export const BookingsPanel = lazy(() => import("./BookingsPanel").then((m) => ({ default: m.BookingsPanel })));
@@ -43,3 +44,5 @@ export const HandoverConsole = lazy(() => import("./panels/machine/HandoverConso
 export const DataExportsPanel = lazy(() => import("./DataExportsPanel").then((m) => ({ default: m.DataExportsPanel })));
 export const BackupRestorePanel = lazy(() => import("./BackupRestorePanel").then((m) => ({ default: m.BackupRestorePanel })));
 export const TenantMigrationPanel = lazy(() => import("./TenantMigrationPanel").then((m) => ({ default: m.TenantMigrationPanel })));
+
+export const GrantedBookingSpacesPanel = lazy(() => import("./GrantedBookingSpacesPanel").then((m) => ({ default: m.GrantedBookingSpacesPanel })));

@@ -172,4 +172,10 @@ class MetricsView(APIView):
             response = HttpResponse("unauthorized\n", status=401, content_type="text/plain")
             response["WWW-Authenticate"] = "Bearer"
             return response
-        return HttpResponse(_collect(), content_type=CONTENT_TYPE)
+        body = _collect()
+        if getattr(settings, "ROUTE_METRICS_ENABLED", False):
+            from apps.operations.route_metrics import exposition
+            body += exposition()
+        response = HttpResponse(body, content_type=CONTENT_TYPE)
+        response["Cache-Control"] = "private, no-store"
+        return response

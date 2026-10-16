@@ -14,12 +14,26 @@ JSON_REFERENCE_FIELDS = frozenset(
         # live reference of any kind.
         ("devices.DeviceEvent", "details"),
         ("bookings.BookableSpace", "custom_form"),
+        # Booking pass geometry and four fixed field names; no identifiers or PII.
+        ("bookings.BookableSpace", "pass_template"),
         ("bookings.Booking", "custom_answers"),
+        # Reservation-status enum strings select recipients; no account references.
+        ("bookings.BookingBroadcast", "statuses"),
         ("events.Event", "custom_form"),
         # Public tag strings are discovery labels, never model identifiers.
         ("events.Event", "tags"),
+        # Curated venue scalars and layout enum strings/booleans, never model IDs.
+        ("events.EventPage", "venue"),
+        ("events.EventPage", "section_order"),
+        ("events.EventPage", "section_enabled"),
         ("events.Event", "badge_template"),
+        # Fixed layout scalars, never recipient identity. Artwork keys in issuance
+        # snapshots are remapped separately by tenant_migration.object_fields.
+        ("events.EventCertificateTemplateRevision", "parameters"),
+        ("events.EventAttendanceCertificate", "layout_snapshot"),
         ("events.Event", "series_override_fields"),
+        # Registration status enum labels filter recipients; no account identifiers.
+        ("events.EventBroadcast", "statuses"),
         ("events.EventSeries", "custom_form"),
         ("events.EventRegistration", "custom_answers"),
         ("events.EventFeedbackSurvey", "questions"),
@@ -31,6 +45,7 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("machines.MachineServiceRequest", "capability_payload"),
         ("machines.MachineType", "capability_config"),
         ("makerspaces.Makerspace", "cors_allowed_origins"),
+        ("makerspaces.Makerspace", "website_embed_origins"),
         ("makerspaces.Makerspace", "enabled_modules"),
         ("makerspaces.Makerspace", "enabled_features"),
         ("makerspaces.Makerspace", "resource_limit_overrides"),

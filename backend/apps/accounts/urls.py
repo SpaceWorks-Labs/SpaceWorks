@@ -43,10 +43,12 @@ from apps.accounts.views_oidc_browser import (
 )
 from apps.accounts.views_claim import ClaimRedemptionView
 from apps.organizations.views_redeem import OrganizationInvitationRedeemView
+from apps.organizations.views_self_service import OrganizationSelfServiceView
 
 from apps.accounts.urls_security import auth_urlpatterns
 
 urlpatterns = [
+    path("organizations/self-service/", OrganizationSelfServiceView.as_view(), name="auth-organizations-self-service"),
     *auth_urlpatterns,
     path("social/nonce", SocialNonceView.as_view(), name="social-nonce"),
     path("social/google", GoogleSocialLoginView.as_view(), name="social-google"),

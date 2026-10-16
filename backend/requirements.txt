@@ -13,6 +13,7 @@ drf-spectacular>=0.30
 # day drf-spectacular drops the dependency, an unrelated upgrade breaks both.
 PyYAML>=6,<7
 gunicorn>=23
+prometheus-client>=0.22,<1
 pytest>=9
 pytest-django>=4.12
 whitenoise>=6.12
@@ -25,7 +26,9 @@ requests>=2.32,<3
 httpx[http2]==0.28.1
 openpyxl>=3.1,<4
 Pillow
-reportlab>=4.2,<5
+reportlab[shaping]>=4.4.9,<5
+python-bidi>=0.6,<0.7
+arabic-reshaper>=3,<4
 python-dateutil>=2.9,<3
 tzdata>=2025.2
 icalendar>=7.0,<8

@@ -34,6 +34,13 @@ S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 from .target_projection_w7_events import EVENT_AUDIT_EDGES
 
 AUDIT_META_REFERENCES = {
+    **_reference(R, "bookings.BookableSpace", ("booking.space_cloned", "source_space_id")),
+    **_reference(R, "bookings.Booking", ("booking.restored", "booking_id")),
+    **_reference(R, "events.EventCertificateArtwork", ("event.certificate_template_saved", "artwork_id")),
+    **_reference(R, "events.EventCertificateTemplateRevision",
+                 ("event.certificate_template_previewed", "revision_id"),
+                 ("event.certificate_created", "template_revision_id")),
+    **_reference(R, "bookings.Booking", ("booking.arrival_confirmed", "booking_id"), ("booking.arrival_reversed", "booking_id")),
     **{edge: AuditReference(R, model) for edge, model in EVENT_AUDIT_EDGES.items()},
     **_reference(R, "makerspaces.MakerspaceLoanPolicy",
                  ("makerspace.return_policy_updated", "policy_id")),
@@ -81,6 +88,7 @@ AUDIT_META_REFERENCES = {
         ("event.registration_rejected", "registration_id"),
         ("event.registration_promoted", "registration_id"),
         ("event.registration_cancelled", "registration_id"),
+        ("event.registration_restored", "registration_id"),
         ("event.registration_attended", "registration_id"),
     ),
     **_reference(
@@ -94,6 +102,7 @@ AUDIT_META_REFERENCES = {
     # the AST guard reports them as dynamic rather than as declared paths.
     **_reference(
         R, "events.Event",
+        ("event.duplicated", "source_event_id"),
         # All three organizer actions, not just the one the AST guard can see. The guard
         # only discovers literal action strings, and created/updated are chosen with a
         # conditional -- but portable import remaps meta ids by EXACT action/path, so an
@@ -231,16 +240,9 @@ AUDIT_META_REFERENCES.update(
         S, "accounts.User", ("organization.membership_deleted", "user_id"),
     )
 )
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "organizations.Organization",
-        ("event.organizers_updated", "old_organization_ids"),
-        ("event.organizers_updated", "organization_ids"),
-        ("organization.invitation_created", "organization_id"),
-        ("organization.invitation_redeemed", "organization_id"),
-        ("organization.invitation_revoked", "organization_id"),
-    )
-)
+from .audit_references_organization_audience import declarations as organization_audience_references
+AUDIT_META_REFERENCES.update(organization_audience_references(_reference, S))
+
 AUDIT_META_REFERENCES.update(
     _reference(
         S, "organizations.OrganizationMembership",

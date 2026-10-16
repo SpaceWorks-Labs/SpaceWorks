@@ -34,13 +34,13 @@ FEATURE_EVENTS = {
         "published", "cancelled", "completed", "registration_created",
         "registration_pending_approval", "registration_waitlisted",
         "registration_approved", "registration_rejected",
-        "registration_cancelled", "registration_promoted", "registration_attended",
+        "registration_cancelled", "registration_restored", "registration_promoted", "registration_attended",
         "series_published", "series_cancelled", "series_completed",
         "series_generation_failed",
         "reminder",
     ),
     F.BOOKINGS: (
-        "created", "confirmed", "rejected", "cancelled", "completed", "no_show",
+        "created", "confirmed", "rejected", "cancelled", "restored", "completed", "no_show",
         "reminder",
     ),
     F.MAINTENANCE: (

@@ -7,7 +7,7 @@ import { organizedEventKeys } from "./organizedEventsApi";
 
 export type EventSeriesStatus = "draft" | "published" | "cancelled" | "completed";
 export type EventSeriesPayload = {
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   ticket_types?: import("./EventTicketTemplates").TicketTemplate[];
   title: string;
   description: string;
@@ -28,6 +28,13 @@ export type EventSeriesPayload = {
   effective_from?: string;
 };
 export type EventSeries = Omit<EventSeriesPayload, "effective_from"> & {
+  participating_organizations?: { id: number; name: string }[];
+  audience_label?: string | null;
+  organization_admission_blocked?: boolean;
+  organization_audience_enabled?: boolean;
+  website_enabled?: boolean;
+  staff_permissions?: import("./eventStaffPermissions").EventPermission[];
+  can_manage_staff?: boolean;
   id: number;
   public_token: string;
   makerspace_id: number;
@@ -88,7 +95,11 @@ function useInvalidate(makerspaceId: number, seriesId?: number) {
     client.invalidateQueries({ queryKey: eventSeriesKeys.list(makerspaceId) }),
     client.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
     client.invalidateQueries({ queryKey: organizedEventKeys.all }),
+    client.invalidateQueries({ queryKey: ["events", "accessible"] }),
     client.invalidateQueries({ queryKey: ["public-events"] }),
+    client.invalidateQueries({ queryKey: ["public-event"] }),
+    client.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+    client.invalidateQueries({ queryKey: ["event"] }),
     client.invalidateQueries({ queryKey: ["member"] }),
     ...(seriesId ? [
       client.invalidateQueries({ queryKey: eventSeriesKeys.detail(seriesId) }),

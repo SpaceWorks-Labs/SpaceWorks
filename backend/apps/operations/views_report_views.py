@@ -2,9 +2,10 @@
 
 from django.db import transaction
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -37,6 +38,8 @@ def authorize_view(actor, space, state):
     require_action(actor, definition.required_action, space.pk)
     for module in definition.required_modules:
         require_module(space, module)
+    from .report_subjects import authorize
+    authorize(actor, space, definition, state.get("filters", {}))
     return definition
 
 
@@ -52,9 +55,11 @@ def accessible_report_views(actor, space):
 
 
 def owner_authorized(row, space):
-    definition = REPORT_REGISTRY.get(row.state.get("report_key"))
-    return bool(definition and active_user(row.owner)
-                and rbac.can(row.owner, definition.required_action, space.pk))
+    try:
+        authorize_view(row.owner, space, row.state)
+    except (APIException, Http404):
+        return False
+    return active_user(row.owner)
 
 
 class SavedReportViewListCreateView(APIView):
@@ -66,10 +71,14 @@ class SavedReportViewListCreateView(APIView):
         space = space_for_views(request.user, makerspace_id)
         owners, rows = {}, []
         for row in accessible_report_views(request.user, space):
-            key = (row.owner_id, row.state.get("report_key"))
+            key = (row.owner_id, row.state.get("report_key"), str(row.state.get("filters", {})))
             if key not in owners:
                 owners[key] = owner_authorized(row, space)
             if owners[key]:
+                try:
+                    authorize_view(request.user, space, row.state)
+                except (APIException, Http404):
+                    continue
                 rows.append(row)
         pager = StaffListPagination()
         page = pager.paginate_queryset(rows, request, view=self)

@@ -3,11 +3,6 @@ import { defineConfig } from "vitest/config";
 import { kioskPwa } from "./scripts/kiosk-pwa";
 import { memberPwa } from "./scripts/member-pwa";
 
-// This config file runs in Node, but the project carries no @types/node (the app
-// itself is browser-only). Declaring the one global we need keeps `tsc -b` happy
-// without pulling in a dependency the app never uses.
-declare const process: { env: Record<string, string | undefined> };
-
 export default defineConfig({
   plugins: [react(), memberPwa(), kioskPwa()],
   server: {
@@ -15,6 +10,11 @@ export default defineConfig({
     // Inside the dev container the backend is another service on the compose
     // network, not localhost — docker-compose.dev.yml sets this to http://backend:8000.
     proxy: {
+      // Shared website HTML belongs to Django, including its exact framing policy.
+      ...Object.fromEntries(["/embed/", "/share/", "/sitemap.xml", "/robots.txt"].map(path => [path, {
+        target: process.env.VITE_DEV_PROXY_TARGET || "http://localhost:8000",
+        changeOrigin: false,
+      }])),
       "/api": {
         target: process.env.VITE_DEV_PROXY_TARGET || "http://localhost:8000",
         changeOrigin: true,

@@ -8,6 +8,7 @@ import {
   validateCustomAnswers,
   type CustomAnswers,
 } from "../forms/customFormTypes";
+import { BookingConfirmation } from "./BookingConfirmation";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { useSubmitPublicBooking, type PublicBookableSpace } from "./publicBookingsApi";
 
@@ -62,6 +63,7 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
         <p className="mt-1 text-sm text-muted">
           {pending ? "Staff must approve this request before the slot is confirmed." : "Your selected slot is confirmed and booked."}
         </p>
+        {booking.data.public_token && booking.data.confirmation_available ? <BookingConfirmation slug={makerspaceSlug} token={booking.data.public_token} /> : null}
       </div>
     );
   }

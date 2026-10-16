@@ -8,6 +8,20 @@ import type { PaymentSummary } from "./PaymentReconcileActions";
 export type BookingStatus = "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
 export type BookableSpace = {
   id: number;
+  clone_enabled?: boolean;
+  staff_tools_enabled?: boolean;
+  can_copy_booking_rules?: boolean;
+  cancellation_cutoff_hours?: number;
+  report_features?: string[];
+  recurring_enabled?: boolean;
+  staff_grants_enabled?: boolean;
+  checkin_enabled?: boolean;
+  passes_enabled?: boolean;
+  website_enabled?: boolean;
+  embed_enabled?: boolean;
+  broadcasts_enabled?: boolean;
+  staff_permissions?: string[];
+  can_manage_grants?: boolean;
   public_token: string;
   makerspace_id: number;
   name: string;
@@ -47,9 +61,13 @@ export type Booking = {
   starts_at: string;
   ends_at: string;
   status: BookingStatus;
+  arrived_at?: string | null;
   note: string;
   custom_answers: CustomAnswerSnapshot | null;
   payment: PaymentSummary | null;
+  cancelled_at?: string | null;
+  status_before_cancel?: string;
+  restore_until?: string | null;
   created_at: string;
 };
 
@@ -61,6 +79,7 @@ const SPACE_DETAIL_PATH: ApiPath = "/api/v1/admin/spaces/{id}/";
 const SPACE_DEACTIVATE_PATH: ApiPath = "/api/v1/admin/spaces/{id}/deactivate/";
 const SPACE_BOOKINGS_PATH: ApiPath = "/api/v1/admin/spaces/{id}/bookings/";
 const ACTION_PATHS = {
+  restore: "/api/v1/admin/bookings/{id}/restore/",
   approve: "/api/v1/admin/bookings/{id}/approve/",
   reject: "/api/v1/admin/bookings/{id}/reject/",
   cancel: "/api/v1/admin/bookings/{id}/cancel/",
@@ -98,7 +117,7 @@ export function useBookableSpace(spaceId: number) {
   });
 }
 
-export function useSpaceBookings(spaceId: number, filters: BookingFilters, page = 1, ordering = "starts_at") {
+export function useSpaceBookings(spaceId: number, filters: BookingFilters, page = 1, ordering = "starts_at", enabled = true) {
   const timestamp = (value: string) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toISOString(); };
   const query = new URLSearchParams({ page: String(page), ordering });
   if (filters.status) query.set("status", filters.status);
@@ -106,18 +125,25 @@ export function useSpaceBookings(spaceId: number, filters: BookingFilters, page 
   if (filters.starts_at) query.set("starts_at", timestamp(filters.starts_at));
   if (filters.ends_at) query.set("ends_at", timestamp(filters.ends_at));
   return useQuery({
+    enabled,
     queryKey: [...bookingKeys.bookings(spaceId), filters.status ?? "", filters.starts_at ?? "", filters.ends_at ?? "", filters.booking_id ?? "", page, ordering],
     queryFn: () => staffRequest<Paginated<Booking>>(staffPath(SPACE_BOOKINGS_PATH, { id: spaceId }) + "?" + query),
   });
 }
 
-function useSpaceInvalidation(makerspaceId: number, spaceId?: number) {
+export function useSpaceInvalidation(makerspaceId: number, spaceId?: number) {
   const queryClient = useQueryClient();
   return async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: bookingKeys.spaces(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: ["public-spaces"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-booking-resource"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-website-image"] }),
+      queryClient.invalidateQueries({ queryKey: ["booking-discover"] }),
       queryClient.invalidateQueries({ queryKey: ["operations-report"] }),
+      queryClient.invalidateQueries({ queryKey: ["member"] }),
+      queryClient.invalidateQueries({ queryKey: ["bookings", "accessible"] }),
+      queryClient.invalidateQueries({ queryKey: ["fablab-report", "booking-utilization"] }),
       ...(spaceId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: bookingKeys.detail(spaceId) }),
         queryClient.invalidateQueries({ queryKey: bookingKeys.bookings(spaceId) }),

@@ -15,6 +15,7 @@ GLOBAL_MODELS = {
 }
 
 OMITTED_MODELS = {
+    "accounts.ReauthenticationSession": "Deployment-local browser step-up proof; never tenant authority.",
     "notifications.NotificationInboxRow": "Short-lived personal delivery text and read telemetry; target inbox starts empty.",
     "integrations.EmailSuppression": "Deployment-keyed address suppression must be re-established on the target.",
     "makerspaces.SpacePackProfile": "Deployment-global configuration preset, never tenant-owned or tenant authority.",

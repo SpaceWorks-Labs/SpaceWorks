@@ -14,8 +14,9 @@ def _same(label, names, disposition, reason):
 
 
 SUPPLEMENTAL_AUTHORITY_ENTRIES = (
+    *_same("integrations.EmailLog", "source_kind source_id source_metadata", D.DROP, "Source delivery identity is omitted telemetry."),
     *_same('bookings.BookableSpace',
-           'buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours', D.PRESERVE,
+           'buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours pass_template', D.PRESERVE,
            'Tenant booking windows and member cancellation policy travel under target module gates.'),
     *_same('events.Event', 'cancellation_cutoff_hours', D.PRESERVE,
            'The event cancellation deadline is a portable scheduling policy.'),

@@ -1,9 +1,12 @@
+import { WebsiteEmbedOrigins } from "./WebsiteEmbedOrigins";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./panels/shared";
 
 export function MakerspacePublicSiteSettings({ makerspace, loading }: { makerspace: Makerspace; loading: boolean }) {
   const client = useQueryClient();
+  const [embedOpen, setEmbedOpen] = useState(false);
   const update = useMutation({
     mutationFn: (patch: Pick<Makerspace, "public_site_enabled" | "public_landing_page">) =>
       staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, { method: "PATCH", body: JSON.stringify(patch) }),
@@ -25,6 +28,7 @@ export function MakerspacePublicSiteSettings({ makerspace, loading }: { makerspa
       </select>
     </label>
     <p className="text-xs text-muted">If the selected family is disabled, the home uses an available family.</p>
+    <details onToggle={(event) => setEmbedOpen(event.currentTarget.open)}><summary className="cursor-pointer font-semibold">Website embedding</summary>{embedOpen ? <WebsiteEmbedOrigins makerspaceId={makerspace.id} /> : null}</details>
     {update.error ? <p role="alert" className="text-sm text-danger">{update.error.message}</p> : null}
   </div>;
 }

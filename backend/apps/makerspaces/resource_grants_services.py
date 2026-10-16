@@ -1,0 +1,169 @@
+"""Audited, locked grant lifecycle, parameterised by a typed domain adapter."""
+
+import hashlib
+import hmac
+import secrets
+from dataclasses import dataclass
+from typing import Callable
+
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, ValidationError as ModelValidationError
+from django.db import transaction
+from django.utils import timezone
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
+from apps.audit.services import record
+from .resource_grants_models import validate_permission_set
+
+
+@dataclass(frozen=True)
+class GrantAdapter:
+    grant_model: type
+    invite_model: type
+    permissions: tuple
+    namespace: str
+    audit_prefix: str
+    target: Callable
+    lock_target: Callable
+    scope: Callable
+    can_manage: Callable
+    can: Callable
+    active: Callable
+    lock_authority: Callable
+
+
+def credential_digest(value, *, namespace, purpose):
+    # Bearer tokens are case-sensitive. Only email identity is normalized.
+    normalized = str(value).strip().lower() if purpose == "email" else str(value)
+    message = f"resource-grants:{namespace}:{purpose}:{normalized}".encode()
+    return hmac.new(settings.SECRET_KEY.encode(), message, hashlib.sha256).hexdigest()
+
+
+def _permissions(adapter, values):
+    try:
+        validate_permission_set(values, adapter.permissions)
+    except ModelValidationError as exc:
+        raise ValidationError({"permissions": exc.messages}) from exc
+    return sorted(values)
+
+
+def _require_subset(adapter, actor, target, permissions):
+    actor = adapter.lock_authority(actor, target)
+    if not adapter.can_manage(actor, target) or not all(
+        adapter.can(actor, target, permission) for permission in permissions
+    ):
+        raise PermissionDenied("Resource staff access cannot exceed current authority.")
+    return actor
+
+
+def _audit(adapter, actor, action, row):
+    record(actor, f"{adapter.audit_prefix}_{action}", makerspace=row.makerspace,
+           target=row, meta={"permissions": row.permissions})
+
+
+@transaction.atomic
+def create_invite(adapter, target, *, actor, permissions, email="", send=None):
+    target = adapter.lock_target(target)
+    permissions = _permissions(adapter, permissions)
+    _require_subset(adapter, actor, target, permissions)
+    if send is not None and not email:
+        raise ValidationError({"email": "An email address is required for delivery."})
+    token = secrets.token_urlsafe(32)
+    row = adapter.invite_model.objects.create(
+        **adapter.scope(target), permissions=permissions, created_by=actor,
+        token_digest=credential_digest(token, namespace=adapter.namespace, purpose="invite"),
+        email_digest=(credential_digest(email, namespace=adapter.namespace, purpose="email")
+                      if email else ""),
+    )
+    _audit(adapter, actor, "invited", row)
+    if send is not None:
+        transaction.on_commit(lambda: send(row, email, token))
+    return row, token
+
+
+@transaction.atomic
+def update_permissions(adapter, grant, *, actor, permissions):
+    target = adapter.lock_target(adapter.target(grant))
+    row = adapter.grant_model.objects.select_for_update().get(pk=grant.pk)
+    if row.revoked_at:
+        raise ValidationError({"detail": "This staff grant has been revoked."})
+    permissions = _permissions(adapter, permissions)
+    _require_subset(adapter, actor, target, permissions)
+    row.permissions = permissions
+    row.save(update_fields=["permissions"])
+    _audit(adapter, actor, "updated", row)
+    return row
+
+
+@transaction.atomic
+def revoke_grant(adapter, grant, *, actor):
+    target = adapter.lock_target(adapter.target(grant))
+    _require_subset(adapter, actor, target, ())
+    row = adapter.grant_model.objects.select_for_update().get(pk=grant.pk)
+    if row.revoked_at is None:
+        row.revoked_at, row.revoked_by = timezone.now(), actor
+        row.save(update_fields=["revoked_at", "revoked_by"])
+        _audit(adapter, actor, "revoked", row)
+    return row
+
+
+@transaction.atomic
+def revoke_invite(adapter, invite, *, actor):
+    target = adapter.lock_target(adapter.target(invite))
+    _require_subset(adapter, actor, target, ())
+    row = adapter.invite_model.objects.select_for_update().get(pk=invite.pk)
+    if row.revoked_at is None:
+        row.revoked_at = timezone.now()
+        row.save(update_fields=["revoked_at"])
+        _audit(adapter, actor, "invite_revoked", row)
+    return row
+
+
+@transaction.atomic
+def redeem_invite(adapter, token, *, actor, makerspace_id=None):
+    if not adapter.active(actor):
+        raise PermissionDenied()
+    candidate = adapter.invite_model.objects.filter(
+        token_digest=credential_digest(token, namespace=adapter.namespace, purpose="invite"),
+    ).first()
+    if not candidate or (makerspace_id is not None and candidate.makerspace_id != makerspace_id):
+        raise NotFound("Invitation not found.")
+    # Domain lock order precedes credentials. No nullable joins under FOR UPDATE.
+    try:
+        target = adapter.lock_target(adapter.target(candidate))
+        row = adapter.invite_model.objects.select_for_update().get(pk=candidate.pk)
+    except ObjectDoesNotExist as exc:
+        # A draft occurrence and its cascading invite can disappear during regeneration.
+        raise NotFound("Invitation not found.") from exc
+    if (row.revoked_at or row.redeemed_at or row.expires_at <= timezone.now()
+            or row.makerspace_id != target.makerspace_id):
+        raise NotFound("Invitation not found.")
+    from apps.accounts.models import User
+    creator = User.objects.filter(pk=row.created_by_id).first()
+    creator = _require_subset(adapter, creator, target, _permissions(adapter, row.permissions))
+    account = User.objects.filter(pk=actor.pk).first()
+    if not adapter.active(account):
+        raise PermissionDenied()
+    if row.email_digest and (
+        not account.email_verified_at or not account.email or not hmac.compare_digest(
+            row.email_digest,
+            credential_digest(account.email, namespace=adapter.namespace, purpose="email"),
+        )
+    ):
+        raise PermissionDenied("A matching verified email is required.")
+    grant = adapter.grant_model.objects.select_for_update().filter(
+        **adapter.scope(target), user=account, revoked_at__isnull=True,
+    ).first()
+    if grant is None:
+        grant = adapter.grant_model.objects.create(
+            **adapter.scope(target), user=account, permissions=row.permissions, granted_by=creator,
+        )
+        _audit(adapter, actor, "created", grant)
+    else:
+        grant.permissions = sorted(set(grant.permissions) | set(row.permissions))
+        grant.save(update_fields=["permissions"])
+        _audit(adapter, actor, "updated", grant)
+    row.redeemed_at, row.redeemed_by = timezone.now(), account
+    row.save(update_fields=["redeemed_at", "redeemed_by"])
+    _audit(adapter, actor, "invite_redeemed", row)
+    return grant

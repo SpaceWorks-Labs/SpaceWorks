@@ -46,7 +46,7 @@ export {
 
 export function useEvents(makerspaceId: number, page = 1, query = "") {
   return useQuery({ queryKey: [...eventKeys.list(makerspaceId), page, query], queryFn: () =>
-    staffRequest<Paginated<StaffEvent>>(
+    staffRequest<Paginated<StaffEvent> & { default_registration_audience?: "members" | "accounts" | "invite" | "participating_organizations" }>(
       `${staffPath(EVENT_LIST_PATH, { makerspace_id: makerspaceId })}?${query || `page=${page}`}`,
     ) });
 }
@@ -60,10 +60,18 @@ export function useEventInvalidation(makerspaceId: number, eventId?: number) {
   const queryClient = useQueryClient();
   return async () => {
     await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["event-website", makerspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["event-discover"] }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       ...(eventId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
+      queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-event"] }),
       ]),
     ]);
   };
@@ -79,22 +87,18 @@ export function useCreateEvent(makerspaceId: number) {
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(created.id) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
     ]); },
   });
 }
 
 export function useUpdateEvent(makerspaceId: number, eventId: number) {
-  const queryClient = useQueryClient();
+  const invalidate = useEventInvalidation(makerspaceId, eventId);
   return useMutation({
     mutationFn: (payload: EventPatch) => staffRequest<StaffEvent>(
       staffPath(EVENT_DETAIL_PATH, { id: eventId }),
       { method: "PATCH", body: JSON.stringify(payload) },
-    ), onSuccess: async () => { await Promise.all([
-      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
-      queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
-      queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
-      queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
-    ]); },
+    ), onSuccess: invalidate,
   });
 }
 
@@ -107,8 +111,14 @@ export function useReplaceEventOrganizers(makerspaceId: number, eventId: number)
     ),
     onSuccess: async () => Promise.all([
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
+      queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-event"] }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       queryClient.invalidateQueries({ queryKey: ["public-organization"] }),
     ]),
   });
@@ -122,7 +132,8 @@ function useLifecycle(makerspaceId: number, eventId: number, path: ApiPath) {
 }
 
 export function usePublishEvent(makerspaceId: number, eventId: number) {
-  return useLifecycle(makerspaceId, eventId, EVENT_PUBLISH_PATH);
+  const invalidate = useEventInvalidation(makerspaceId, eventId);
+  return useMutation({ mutationFn: (options: { publish_website: boolean; website_revision?: number } | undefined) => staffRequest<StaffEvent>(staffPath(EVENT_PUBLISH_PATH, { id: eventId }), { method: "POST", body: JSON.stringify(options ?? {}) }), onSuccess: invalidate });
 }
 export function useCancelEvent(makerspaceId: number, eventId: number) {
   return useLifecycle(makerspaceId, eventId, EVENT_CANCEL_PATH);

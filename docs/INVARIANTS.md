@@ -14,6 +14,42 @@ beyond any single module. Read the subsection covering what you are touching.
 
 ## Cross-cutting invariants (from shipped batches)
 
+**Recent reauthentication (Lane F).** `accounts.ReauthenticationSession` holds
+server-only browser proof bound to the stable browser session ID, user, surface,
+deployment generation, password/email/linked-identity fingerprint and MFA version.
+Refresh never changes auth_time; proofs expire after ten minutes. Native sessions
+cannot acquire this browser proof. Password verification also requires TOTP when MFA is enrolled;
+passwordless MFA holders may use replay-protected TOTP alone. Social intents are
+single-use, session/origin/version bound and five-minute limited: verified linked
+subject and provider auth_time within 60 seconds are required, followed by enrolled
+MFA. A provider unable to prove freshness cannot stamp proof. Passwordless MFA
+enrollment instead accepts fresh social proof or a single-use, verified-email,
+session-bound fifteen-minute confirmation; emailed proof never authorizes sensitive
+actions by itself. Existing password checks for other MFA management remain.
+
+Role/grant changes, API-client management and organization governance/deletion use
+the shared boundary. Control has its own CSRF-protected reauthentication form and
+preserves the existing control MFA gate; its proof never authorizes the SPA. Global
+proof/intent mutation is source-gate exempt, while protected tenant operations still
+use their ordinary fences. Proofs are global, omitted from tenant artifacts, have an
+explicit excluded User edge/unique-key disposition, no scoped PII or object ownership,
+CASCADE on account deletion and existing thirty-day auth-state cleanup. The complete
+model graph is pinned; deployment restore generation invalidates old proof.
+
+**Monitoring and analytics (Lane F).** `/control/storage/` is read-only and inherits
+superadmin/active-account/control-MFA boundaries; hidden tenant names/counters are
+excluded, deployment database/table totals remain global. Optional route metrics use
+bounded compiled route/method/status labels and Prometheus multi-process files,
+never raw paths/queries/credentials. Per-master directories are cleared at master
+start; all-in-one clears shared files once before its two masters. Prometheus owns
+retention. The existing metrics token gate is unchanged. Optional analytics supports
+only trusted Plausible manual scripts, route-template URLs and empty referrers.
+Unknown/private/bearer routes never inject; credential-boundary navigation removes
+script/queue, cancels collection and reloads the document. Disabled analytics installs
+no navigation guard. Strict-origin applies site-wide and configured origins alone
+extend CSP. See `docs/monitoring-and-analytics.md` and `docs/helm.md`; Helm retains H1
+admission and requires externally prepared state, never inventing recovery authority.
+
 **Makerspace local days** go through `makerspaces.local_time`; never derive a tenant's day from deployment UTC or the browser zone. Opening hours are advisory (empty = always open; dated exceptions replace a day), and public bootstrap exposes timezone/hours only. Country remains staff-only. The profile currency is `MakerspacePaymentSettings.default_currency`; existing charge currencies never change with it.
 
 **Self-host vs managed SaaS (all managed features dormant by default).** `PLATFORM_DOMAIN_SUFFIX`
@@ -480,8 +516,8 @@ unregistered, if the derived lists change, or if a migration-referenced callable
 **Modules are OPT-IN.** `DEFAULT_ENABLED_MODULES` resolves to **7 keys** - the 6 core ones plus
 `backup`. Release deployment is host tooling, not a module.
 `member_accounts`, `mobile` and `payments` once carried it too and are now opt-in for new
-makerspaces (existing rows kept them through `0057`). Everything else is off, and a new makerspace
-installs core plus whatever profile the operator chose (`minimal` 6 / `workshop` 14 / `lending` 17 /
+makerspaces (existing rows kept them through `0057`). Everything else is off in the registry default. Guided setup explicitly installs the chosen
+areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 14 / `lending` 17 /
 `recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 34 — pinned by
 `tests/modules/test_combo_profiles.py`).
 `ModuleDefinition.default_enabled` defaults to **False** and core must not set it (core is on by
@@ -514,9 +550,13 @@ that is the *other* axis: `python manage.py suggest_tombstones` reads what every
 has installed and prints the `TOMBSTONED_APPS=` line to paste into `.env`. It is conservative by
 construction — an app is suggested only when **no** makerspace uses any of its modules, because a
 tombstone is process-global and would break the one tenant still using it. Apps owning no module key
-(`warranty`, `presence`) are listed separately for a by-hand decision. `setup.sh`
-and `setup_instance --profile` (env `SETUP_MODULE_PROFILE`, default `recommended`) apply one,
-**only when the makerspace is first created** so a re-run never rewrites an operator's choices.
+(`warranty`, `presence`) are listed separately for a by-hand decision. `setup_instance --profile` remains available to legacy CLI automation and applies only on creation.
+The guided installer instead selects areas in its up-front questionnaire, deriving all satisfiable
+features from the registries and applying validated answers through `apply_setup_areas` on stdin.
+It offers neither profiles nor individual module questions. The change menu uses the same areas,
+asking follow-ups only for newly enabled areas; uninstall always retains data. Inventory off clears
+`loans.enabled` while keeping core. Registry defaults are unchanged; areas are an explicit operator
+choice, never a rewrite of existing tenants.
 Core modules are **added back by `_canonical_modules`, not rejected** — no caller has to carry the core
 set and no otherwise-valid save fails on a row that lost one. Because `public_inventory` is core, the
 module can no longer express "private makerspace"; the existing `Makerspace.public_inventory_enabled`
@@ -683,6 +723,20 @@ terminal-guard trigger. Settling one offline requires an append-only `ManualSett
 in the same transaction as the status flip. NOTE: the line below calling `payments.enabled` standalone is
 stale — it is parented to the `payments` module, and the per-domain `payments.*` keys are parented to
 their own domain modules with `payments` in `requires_modules`.
+
+**Booking ledger writes are required (BK-0, 2026-10-15).** With charge tracking enabled,
+instant creation and approval commit their required debt in the booking transaction.
+Debt lookup, insert or audit failure rolls back confirmation, calendar revision, audits
+and post-commit notification callbacks. Recurrence retains its outer atomic transaction:
+a required ledger failure rolls back earlier occurrences too. Cancellation likewise
+requires the pending-charge update and audit to succeed with the booking transition;
+failure rolls both back. Missing or nonpending charges remain a valid no-op, settled
+money stays unchanged, and tracking disabled after confirmation does not prevent
+cancelling an existing pending debt. Optional rail readiness, checkout scheduling and
+post-commit checkout remain best-effort. Provider expiry/native-intent cancellation
+retain the existing best-effort boundary in `payments/reconciliation_rail.py`.
+No feature flag may bypass these ledger guarantees; cancellation provenance added by
+BK-B must join the same transaction.
 
 **A6 master switches are additive `AND`s, never replacements.** `payments.enabled`, `mobile.push` and
 `presence.geofence` are standalone (`parent_module=None`) features that sit **in front of** the readiness
@@ -2232,7 +2286,623 @@ Load-bearing details that carried over unchanged:
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
+### Event printable credentials (Lane E)
+
+- Badge templates read as version 2 with top-left millimetre boxes, grid snapping,
+  bundled font choices, 6-48 pt size, bold, alignment and colour. Version 1 converts
+  on read without mutating the stored template; legacy contact selectors are removed
+  from that safe projection (name is the fallback). New contact bindings refuse.
+  ReportLab remains authoritative:
+  text shrinks no lower than 6 pt, then overflow refuses with a typed validation error.
+  Shared `operations/printable_*` geometry, serializers, fonts and PDF primitives
+  never import events or bookings. Noto fonts ship in the backend image; CJK uses
+  the standard PDF CID fallback. RTL wraps logical lines before bidi reordering.
+- Printed badges never contain email, phone or a bearer check-in QR. Custom-answer
+  bindings retain current-form validation and require live registration-management
+  authority AND tenant `VIEW_AUDIT` before reading answers. Template-edit authority
+  cannot widen printing authority. Check-in-only staff may print attended rows only;
+  the existing check-in result offers a single attended badge through the same path.
+- `events.certificate_designer` defaults off, is parented to Events and needs only
+  Events. Live `edit_details` designs and previews; issue/revoke/reissue retains full
+  event management. A preview accepts a fixed sample recipient, never staff-supplied
+  recipient data. Render/download paths are private/no-store, throttled and audited.
+- Every certificate-design save inserts an immutable `EventCertificateTemplateRevision`.
+  Issuance locks the event and copies both its revision FK and complete layout/artwork
+  parameters into the immutable certificate snapshot. Pending, failed and retried
+  renders use that snapshot even after edits or feature disablement. Database triggers
+  enforce revision/snapshot immutability and same-event artwork/template ownership.
+  Recurrence edits cancel configured old drafts instead of deleting retained designs.
+- Artwork is private PNG/JPEG input, at most 10 MiB and 16 million decoded pixels.
+  Ten-minute PUTs bind MIME and length to staging keys only. Server validation strips
+  metadata and re-encodes PNG; conditional final-key creation promotes once. Reads
+  verify SHA-256, using the frozen S3 version when available; restored versions may
+  fall back to canonical bytes only with the same checksum. Final keys are never
+  client writable. Object I/O runs outside row-lock transactions.
+- Presigning reserves 10 MiB of managed quota transactionally with the owned row and
+  audit. Signer failure rolls all three back. Successful promotion replaces the
+  reservation with canonical size; failed uploads/attachments keep their reserved
+  budget and purgeable keys. Transient staging bytes follow existing storage-accounting
+  conventions rather than being charged twice. Purge releases artwork quota only
+  after both final and staging keys are confirmed deleted.
+- Design rows have no User FK or textual PII; recipient names remain on the existing
+  encrypted certificate model. Revisions/artwork remain retained until module/tenant
+  purge, ordered certificates -> revisions -> artwork. Purges collect both key forms
+  and preserve foreign tenants. Unpromoted reservations are omitted from portable
+  data and object capture. Portable import remaps artwork keys in rows AND issuance
+  JSON through the object manifest, clears source bucket VersionIds and preserves
+  checksums. Deployment backups preserve the complete design/snapshot metadata.
+
+### Event websites and shared public serving (Lane C)
+
+`events/website_visibility.py` owns the existing public event predicate (public, published,
+not expired), extracted without changing the core list/detail contract. Enhanced detail,
+programme, session, speaker, image, embed and share reads also require `events.website`
+and the effective page's release. Only `visibility=published` children are projected;
+unknown, foreign, draft, unreleased, disabled and expired website data are uniform 404s.
+Core event fields and existing public-bucket covers retain their original behavior.
+Directory discovery and sitemaps add public-site publication, canonical servability,
+hard-hide and central-directory consent; direct event access does not inherit directory
+consent. Tenant custom-domain sitemaps name their own canonical URLs. Event discovery
+uses tenant-local date filters through `local_time.local_date_expression`, pagination 24,
+and honors `show_registration_count`; the older tenant list stays an array.
+
+`EventPage` has exactly one typed event/series owner and a matching makerspace. A series
+page supplies occurrence defaults until an occurrence copies its content on write. That
+snapshot and every private asset have independent identities, start unreleased, and cannot
+change their owner. Typed `EventPageSection` kinds share bounded editorial fields for
+speakers, tracks, rooms, sponsors, FAQs, resources, introductions and logos. Concrete session
+track/room/speaker/asset FKs must remain on that page and have the appropriate kind, enforced
+by SQL triggers as well as service validation. Planned session windows fit their owner and
+all inheriting occurrences; owner edits refuse with typed validation, with SQL backstops.
+Series -> occurrence locks serialize programme/window writes. SQL wall-time conversion
+matches recurrence's ZoneInfo fold=0 at DST overlaps/gaps; duration arithmetic is elapsed UTC.
+A session delay of 0?1440 minutes leaves planned times intact and shifts that session and
+later published sessions in its track by the running maximum delay. Other tracks do not
+move. Occurrences with differing programmes must first create their own overrides.
+
+Page-owned metadata includes a bounded tagline, optional hex accent colour, a complete
+canonical group order and group toggles (HERO, ABOUT, HIGHLIGHTS, SCHEDULE, SPEAKERS,
+SPONSORS, VENUE, FAQ, RESOURCES). Legacy logo/intro sections map to HERO/ABOUT.
+Disabled groups are removed by the public projection, including direct speaker/session
+reads and private-image reference checks; hiding a group never deletes its editorial rows.
+Speaker sections carry headline, organization and HTTP(S)-only website/LinkedIn/X links;
+the existing page asset is the photo. Sponsors use the same asset as their logo and one
+of platinum/gold/silver/partner/community_partner. Highlights carry icon, title and text.
+Venue is one typed, bounded page JSON value with public address, finite range-checked
+coordinates, HTTP(S) map link, directions, parking, transit and accessibility notes;
+rooms remain sections with a maximum of 30 per page. These JSON fields contain no model
+or User IDs. Clone and series copy-on-write preserve all content/layout fields while
+release still resets. Older payloads that omit new page metadata or same-slug section profile/tier/icon fields
+preserve saved values; explicit blanks still clear optional text.
+
+All mutations recheck live `event_authority` under locks: sections/assets require
+`edit_details`, programme/delays/release require `publish_schedule`. A read-only grant cannot
+create a copy-on-write page, even with an unchanged payload. Optimistic page revisions
+refuse stale saves/releases. Release requires an own page and a published owner; the event
+publish action can atomically release a saved own page only with the explicit checkbox and
+current revision. Every write audits identifiers/revision/counts, not content. Clone uses
+Lane B's durable asset transaction, copies the effective website before optional series
+attachment, and never copies release or live-delay history. This preserves valid short
+occurrence overrides when attaching their draft clones to a longer series template.
+
+Always-present `makerspaces/website_assets.py` accepts multipart uploads, never client keys
+or final-key presigns. It bounds input to 5 MB, one frame and 16 megapixels before decode,
+reuses byte sniffing, strips metadata and re-encodes to WebP at most 2048 pixels per edge.
+New keys use `<domain>/website/<tenant>/<page>/...` in the private bucket. Staging is removed
+before commit; every new key is enlisted for rollback cleanup. Replacement redirects section
+references to a fresh asset, then deletes old versions after commit; only confirmed deletion
+frees quota. Copy/clone validates ownership and byte-size metadata, uses fresh keys and the
+shared bounded-copy limits. Public images are streamed through a live-gated backend path,
+with no-store/nosniff and no object URL in JSON. Public React reads use tenant-aware blob
+transport (including client headers and external API origins); staff previews use staff
+transport and separate private/no-store endpoints.
+
+Curated website text and image descriptions are intentional publication data, like event
+titles/descriptions, not private contact/answer fields or new scoped-PII sources. These five
+models have no User FKs or credentials. They have explicit export datasets, field/reference
+and unique dispositions, retained object ownership, private-key collectors, quota
+reconciliation and module/tenant purge coverage. Portable content travels with remapped
+FKs and verified object-journal keys, but release and framing origins reset to false/empty.
+An imported asset's typed page row plus its verified same-tenant object journal prove
+ownership even after collision-driven key regeneration and a second migration. Deployment
+backup retains the original content/release graph. Retention remains registered under
+Events tombstoning; the runtime adapter and public surfaces disappear. Deleted page audit
+targets remain inert source provenance.
+
+`makerspaces/website_visibility.py`, `website_directory.py`, `website_serving.py` and
+`website_views.py` are domain-neutral infrastructure. Typed adapters own public resolution,
+query predicates, cards and effective-page release; bookings supplies its adapter without
+importing events or inheriting event expiry. Restricted Markdown is rendered by React with
+no HTML parser and only HTTP(S) links. Share HTML uses escaped core fields and the existing
+public cover, is noindex, and caches content server-side for 600 seconds only after a live
+gate on every request; HTTP revalidation prevents unrelease/module changes reviving stale
+HTML. Cache identities include subject, tenant and release revision.
+
+Every supported SPA serving config denies framing, including nginx's index fallback.
+`/embed/` is proxied to Django, which alone emits the exact `frame-ancestors` policy and
+exempts its response from X-Frame-Options. `website_embed_origins` is a separate framing
+allow-list (at most 20 canonical exact HTTPS origins; no paths, credentials or wildcards),
+never a CORS/staff-origin grant. Empty or invalid stored policy refuses embeds. Only tenant
+`MANAGE_MAKERSPACE` may edit it. New proxy locations forward the real client chain so
+public throttles do not collapse all visitors into the frontend container's address.
+
+### Event communications and subject reports (Lane D)
+
+`integrations/broadcasts_models.py`, `broadcasts_registry.py`, `broadcasts_worker.py`
+and `broadcasts_delivery.py` are always-present shared infrastructure. Domain adapters
+own typed campaign/recipient models, resource authority and selection. Events uses
+`EventBroadcast` and `EventBroadcastDelivery`; bookings must not import events to reuse
+the engine. Campaigns require the domain feature plus notifications and email. Queueing
+is serialized by the tenant lock and limited to ten campaigns per hour per makerspace.
+The worker batches at 200 accounts, deduplicates by account, and creates each delivery
+and its unique outbox relation in one transaction. The existing reminder task recovers
+unfinished batches and enqueue failures through per-tenant source-gate boundaries.
+This guarantees durable enqueue identity, not exactly-once SMTP acceptance.
+
+Every send passes through `integrations/delivery_sources.py` inside `dispatch_delivery`:
+immediate, quiet-hours release and retry all reload campaign state, the original sender's
+current resource authority and live recipient eligibility. Unknown/tombstoned sources
+fail closed. Event recipients need matching registration status/attendance, a verified,
+valid account email, active account and any existing membership, notification consent,
+matrix, suppression and module/feature gates. Cancellation stops unclaimed sends;
+already accepted provider sends cannot be recalled. Templates render data-only bounded
+placeholders at send time through the existing email renderer. Ticket URLs navigate to
+the authenticated member ticket page; they contain no check-in/admission credential.
+Audit records contain state/counts and identifiers, never message bodies or recipient lists.
+
+Campaign sources are excluded when assigning digests AND while collecting digest inputs.
+Digest summaries retain input outbox IDs; `delivery_digest.py` rebuilds them by rechecking
+each registered source before delivery and every retry, dropping stale entries and skipping
+empty summaries. Booking reminder adapters supply durable booking/window/revision/offset
+identity via `EmailDelivery`/`dispatch_email` source fields and register their own live
+predicate. No generic worker imports a separable domain to implement these checks.
+
+Bulk event invitations accept at most 200 validated addresses per call and reuse
+`create_invite`. Emails contain only an event navigation link. Verified-email resolution
+and bound-code redemption use the existing locked resolver; invite-only registration
+without a code now uses that resolver and explains missing verification. Organization
+audience membership remains an additional admission requirement. No credential enters
+an outbox body, template context, log or export.
+
+`operations/report_subjects.py` validates paired `subject_kind`/`subject_id` through typed
+domain adapters and resolves the subject inside the selected tenant. Event-scoped
+attendance, registration/feedback preview, CSV/XLSX download and saved views require
+manage_registrations authority AND tenant VIEW_AUDIT. PDFs require full event management
+(tenant/organizer, no scoped grant) and an ended event. New detail/PDF definitions are
+unschedulable, non-deployment-aggregate and explicitly excluded from organization reports.
+Subject filters are refused on ALL schedules and aggregate paths, including legacy keys.
+Unfiltered legacy report permissions and calculation semantics remain intact. Saved views
+recheck reader and owner authority against their exact subject. PII previews/downloads
+audit; export provenance includes subject identity and tenant-local date bounds. Report
+registry PDF dispatch uses the same builder rows, provenance and render throttle as other
+formats. Feedback text uses the scoped-PII model accessor; exports never carry ticket tokens.
+
+Campaign subject/body use scoped secondary PII encryption and the DB write fence. Both
+concrete history models are tenant export datasets with explicit User closure. Portable
+import cancels nonterminal campaigns, clears delivery outbox links/cursors, and skips
+pending deliveries; terminal history survives. The source outbox and digest references
+are omitted telemetry. Events-only purge removes event campaigns and event-source outboxes,
+preserving other domains; whole-tenant purge removes all. These models own no S3 objects;
+manual PDF bytes are streamed, never stored. Retention/encryption/purge declarations survive
+tombstoning while adapters, feature rows and report definitions disappear.
+
+### Booking public resource websites (BK-F)
+
+`bookings/website_visibility.py` owns the active/public resource predicate extracted
+unchanged from `views_public`. New core detail keeps existing direct visibility without
+adding central-directory consent. `bookings.website` and explicit page release additionally
+gate enhanced detail, images, embeds and share HTML. Only published sections and their
+referenced images are public. Private, inactive, foreign, disabled and unreleased enhanced
+content returns indistinguishable 404s. Public detail returns core fields and null website
+when the feature is off/unreleased; the legacy catalogue remains an array. Availability
+and booker-name flags keep their existing separate behavior. Approved public flat price,
+currency and duration/lead/horizon/cancellation summaries never expose internal buffers,
+machine links, notes, answers, contacts or reservation identities.
+
+`BookingResourcePage` belongs to one resource; its tenant is derived from that typed FK.
+Bounded rules/amenity/FAQ/link/sponsor/gallery sections and assets have immutable page
+ownership, with SQL guards for cross-page asset references and reparenting. Editorial
+text is deliberate publication data, not a new private-contact source; there are no User
+FKs or new scoped-PII/JSON fields. Restricted Markdown uses the shared React renderer with
+escaped HTML and HTTP(S)-only links. New features default off and are Bookings-parented.
+
+Content and private image changes require live `edit_details`; release/unrelease requires
+`publish_page`. Services acquire the source gate, resource and tenant/authority locks,
+then check revision and permission again. Publishing cannot make a resource public or
+active. Private previews are authorized no-store endpoints; public image IDs never grant
+draft access. Saves, release and image changes advance page revision and audit only that
+revision. Asset upload accepts no object keys, uses shared bounded staging/sniff/WebP/quota
+and rollback cleanup, and stores `bookings/website/<tenant>/<page>/...` privately.
+Replacement remaps section references to fresh keys and releases quota only after confirmed
+post-commit deletion. Cloning copies the page/sections/assets inside the existing durable
+clone transaction with independent keys and reset release; no authority/history is copied.
+
+The Bookings adapter consumes always-present makerspaces visibility, assets, directory,
+embed/share and clone mechanisms; it imports no Events services and has no event expiry
+rule. Discover/sitemap add public-site and directory consent. Custom-domain sitemaps use
+verified canonical resource URLs. Shared embeds require feature/release and a nonempty
+exact HTTPS framing policy, and use “Book a time”; nginx/Caddy retain default SPA framing
+denial through index fallback. Crawler routes use the existing public cover and shared
+escaped, noindex HTML. Live visibility checks precede cache reads; identity includes tenant,
+resource update and page release revision, so unrelease/visibility/module changes cannot
+revive cached content. Public analytics continues to use route templates, with private
+and credential routes excluded.
+
+All three concrete models have literal export fields, datasets, reference/unique policies,
+object ownership and retention registrations independent of runtime tombstoning. Portable
+import resets page release; typed imported asset metadata plus the same-tenant verified
+object journal proves ownership when keys retain source IDs. Deleted page audit targets
+remain inert source provenance. Module purge cascades page rows from `BookableSpace` and
+collects private keys/sizes; whole-tenant purge, storage reconciliation and backup/migration
+capture include gallery objects. The core payment ledger remains outside module purge.
+
+### Booking clone, edits and cancellation undo (BK-B)
+
+`bookings.clone` and `bookings.staff_tools` are opt-in Bookings features with no
+Events dependency. Cloning requires tenant `MANAGE_BOOKINGS`, copies declared
+configuration into an active private resource with a fresh UUID and owned cover key,
+and never copies reservations, grants, feeds, payments or delivery/arrival history.
+Rules use model defaults unless explicitly copied by a `MANAGE_MAKERSPACE` actor;
+machine links revalidate installed modules and tenant ownership. The shared durable
+clone transaction accounts storage and cleans failed copies. Query-free extensions
+in always-present makerspaces infrastructure let website adapters copy their children
+inside that transaction; a copied website must remain unreleased.
+
+Reservation note/answer and time edits require live `manage_reservations` authority
+and run under source/write fences and resource then booking locks. Inputs are strict
+allow-lists; answer edits validate the current schema into the existing private
+snapshot format, and audit only changed field names. Time edits permit only pending
+or confirmed rows whose old start is strictly beyond the current cutoff; the proposed
+start must also be strictly beyond it, using one server-clock snapshot. Shared
+`bookings/admission.py` checks active resource/owner, optional-membership waiver,
+certification, duration, lead/horizon, opening hours and buffers. Moves check conflicts,
+retain status/identity/flat charge and increment the calendar revision. Approval
+intentionally retains its established narrower policy. Active-arrival refusal runs in this same locked movement boundary; the model save
+guard rotates the credential atomically with the calendar change using the captured
+server clock. Detail edits also refuse arrived and terminal reservations.
+
+Cancellation records nullable `cancelled_at` and `status_before_cancel` in the same
+atomic transaction as calendar changes, audit and required pending-debt cancellation.
+Legacy null provenance refuses undo. Undo requires current cancelled state, prior
+pending/confirmed, and `cancelled_at <= now < cancelled_at + five minutes`. Any
+historical payment row or newly required charge refuses it. Ordinary current admission
+must yield exactly the prior state; previously approved confirmations cannot bypass
+an approval policy. Pending restores occupy no window, matching creation. Restore
+preserves creation time/identity, clears cancellation provenance, increments calendar
+revision, audits `booking.restored` and schedules `restored` after commit through the
+normal registered requester/staff templates and preference/module gates. Refusal or
+rollback emits no restored event. These scalar provenance fields travel with the
+existing booking dataset; they add no User edges, PII mapping or object ownership.
+Existing booking module/tenant purge and owned-image collection cover clones, while
+the core payment ledger remains retained. Target undo still needs live authority,
+current admission and its server clock; portable provenance is never permission.
+
+### Booking resource analytics and exports (BK-E)
+
+Booking reports extend the always-present report registry and subject/PDF infrastructure;
+no booking code imports separable events. `subject_kind="bookable_space"` resolves the
+resource inside the selected tenant before a builder runs. New analytics, reservations
+and answer previews/downloads/saved views require live tenant `MANAGE_BOOKINGS` or that
+resource's `manage_reservations` grant, AND tenant `VIEW_AUDIT`. PDFs require full tenant
+booking management plus audit and a complete positive date period. Rules/price/payment
+permissions, scanners and descriptive editors convey no report authority. Saved views
+reauthorize their owner and reader on every replay; sharing never grants access.
+
+`bookings.analytics`, `bookings.utilization_pdf` (also needs analytics) and
+`bookings.exports` are opt-in Bookings children requiring Reports, discovered by the
+installer without installing Reports implicitly. All four new definitions are
+unschedulable, non-deployment-aggregate and explicit organization exclusions. Subject
+filters are refused on every scheduling/deployment/organization path, including legacy
+`booking-utilization`. The unfiltered legacy report retains its permissions and metrics.
+
+Resource analytics applies the resource predicate BEFORE the existing utilisation
+aggregation. Confirmed/completed/no-show reserved intervals clip to the requested window;
+the denominator is the whole calendar window, never opening hours or measured use.
+Utilisation is null without both bounds. Dates are inclusive tenant-local calendar labels
+converted by `local_day_bounds` to UTC half-open bounds; exports stamp those instants,
+subject and tenant timezone in provenance. Reservation/answer details select overlapping
+booking windows (not creation dates), retain original booking timestamps and use explicit
+column lists. PII reads use model attributes and eager tenant paths, never raw values or
+ciphertext. Custom-answer snapshots preserve their stored labels. No notes, payment data,
+public booking UUIDs, feed/check-in credentials or arbitrary model fields are exported.
+Previews/downloads audit through the source write fence; subject responses are private,
+no-store. CSV/XLSX keep the shared formula protection and export renders are throttled.
+
+`reports_booking_resources.extend_with_booking_arrival_counts` is the named BK-C hook.
+It now calls `bookings.arrival_projection.arrival_metrics` over the same tenant, resource
+and half-open reservation-overlap predicate, sets `arrival_counts_available=True`, and
+adds `arrived_reservations` and `confirmed_without_recorded_arrival` to resource rows and
+CSV/XLSX/PDF columns (report version 2). Reversals clear the current arrival; completion
+alone never implies one. The resource UI labels these counts separately from reservation
+hours. Legacy tenant utilisation retains its existing fields and calculations. The shared PDF renderer embeds a Unicode
+font (bundled Apache-licensed Roboto through the shared, domain-independent font
+helper), rather than silently dropping Greek glyphs from bundled Vera. This keeps
+Latin, Greek and Cyrillic coverage independent of the host's installed fonts.
+
+This lane creates no persistent models/fields, stored report objects or new routes.
+Existing SavedView import projection resets state/sharing, so source subject IDs cannot
+replay in another tenant. Existing tenant/module purge, classification, User closure,
+encryption and object ownership remain sufficient; the model catalog hash is unchanged.
+Tombstoning Bookings removes its subject adapter, report definitions and feature keys;
+tombstoning events does not affect booking reports.
+
+### Booker communications and occurrence reminders (BK-D)
+
+`bookings/broadcasts.py` is a thin typed adapter over the always-present
+`integrations/broadcasts_*` engine. `BookingBroadcast` targets exactly one resource
+and its tenant, a future start window ending within 366 days, and pending/confirmed
+states (confirmed by default). Selection excludes started and contact-only bookings,
+deduplicates by account and uses the current verified account email, never copied
+`Booking.email`. Compose/queue/cancel and every send require live `manage_reservations`
+through `booking_authority`, `bookings.broadcasts`, Notifications and Email, plus a
+servable, non-hidden tenant. Ten queues/hour/tenant are serialized by its row lock;
+API calls additionally have a per-user throttle. Sender revocation and matching booking
+loss stop unclaimed sends on immediate, quiet-hours and retry paths. Render-time loss
+also skips safely. Email only: no campaign body enters staff chat or a digest.
+
+`communication_recipients.py` preserves current account standing, optional membership
+status/notification consent, requester selection, matrix, personal preferences and
+suppression. Account-owned booking reminders do not require the Membership module.
+Email-only eligibility gates do not suppress independently enabled requester inbox delivery.
+`reminder_delivery.py` registers source `bookings.booking`: tenant/resource/booking/
+recipient IDs, exact UTC start/end, calendar sequence, reminder kind and offset are
+stored on the outbox. The claim subject includes the occurrence window and revision;
+an old revision's completed claim cannot suppress a moved or restored occurrence.
+Legacy claims still prevent duplicate/uncertain sends for the same start on upgrade,
+including bookings whose calendar sequence already advanced through approval. Delivery reloads
+that exact source and requires confirmed status, a future start, current offset and
+effective requester toggle. The shared digest retains input outbox IDs and rebuilds
+at inclusion, delivery and every retry; stale entries are dropped, empty summaries
+skip. Legacy source-less booking reminders fail closed even when Bookings is tombstoned.
+No note, answer or credential belongs in source metadata or a template placeholder.
+
+Campaign subject/body use scoped secondary PII encryption and the persistent DB write
+fence. Concrete campaign/delivery datasets include both tenant and typed resource closure,
+with explicit created_by/recipient User edges. Import cancels nonterminal campaigns,
+zeros cursors, marks recipients complete, clears outbox links and skips pending delivery
+history. Audit targets remap through the exported-model catalog; count-only metadata
+has no new reference edges. Outbox/source/digest references are omitted telemetry.
+Bookings-only purge removes booking campaigns and booking-source outboxes, retaining
+other domains and letting shared summaries rebuild survivors; whole-tenant purge removes
+all. No S3 objects are created, so object/storage/backup ownership registries need no
+new keys. Retention declarations remain present under tombstoning; runtime adapters and
+the opt-in capability disappear. Restored lifecycle notifications remain BK-B's concern.
+
+### Booking resource staff grants (BK-A)
+
+`bookings/booking_authority.py` owns every booking staff predicate, including locked
+service mutations. Tenant `MANAGE_BOOKINGS` retains local custom-role and organization
+action authority. A resource grant adds only its typed `BookableSpace`: `edit_details`
+allows name/kind/description/capacity/location/form and images; `manage_reservations`
+allows roster, purpose-limited member selection, ordinary on-behalf creation/recurrence
+and lifecycle transitions. `check_in` and `publish_page` reserve their separate scanner
+and page-release boundaries for their owning lanes; neither admits roster or contact data.
+No grant conveys rules (`MANAGE_MAKERSPACE`), pricing, machine links/certification
+overrides, activation, public/name policy, payment controls, cloning or delegation.
+Staff creation retains active local membership/current waiver and ordinary booking rules;
+account-only self-booking remains independent of membership. Grant-only rosters have no
+payment summary; finance actions retain existing tenant finance/payment permissions.
+
+`bookings.staff_grants` is opt-in, parented on Bookings, with no events dependency. Live
+queries recheck account standing, module/feature, canonical servability, target ownership
+and revocation. Hard-hidden tenants suppress resource-only discovery and new invite creation/redemption;
+their real local staff keep ordinary RBAC authority and can revoke dormant credentials. Origin target registration applies to every new route.
+The shared source registry projects `source="booking_grant"` with resource permissions,
+never tenant actions; sign-in/refresh/MFA discover it without importing events. Mixed
+assignments share the narrow workspace. Revocation is effective on the next request and
+before a locked mutation. Always-present `resource_grant_locks.py` stabilizes delegation
+against local roles, accounts and organization authority, shared by events and bookings.
+
+Concrete `BookingSpaceStaffGrant` and `BookingSpaceStaffGrantInvite` use the shared
+seven-day HMAC-only invitation lifecycle and typed resource FKs. Only tenant
+`MANAGE_BOOKINGS` creates, updates or revokes; redemption revalidates the sender's live
+authority, permission subset and matching verified email under resource/tenant/invite
+locks. No grantee can delegate. State changes audit `booking.staff_grant_*` without
+credentials or contacts. Raw invitation tokens appear once or in synchronous redacted
+email fragment links; no persisted outbox body or query cache contains them.
+
+Both entire models are omitted at both export fidelities and DROP on portable import.
+They have no datasets or unique-value materialization. All five User edges are excluded
+from archive closure; audit targets retain inert source provenance. These rows contain
+only keyed email digests and account FKs, no new PII fields or S3 objects: no encryption,
+write-fence mapping or object collector is needed. Module purge explicitly deletes both
+credential tables in that tenant; whole-tenant purge cascades them. Retention registration
+survives tombstoning; runtime discovery/routes/features do not. Source migration gates
+apply before grant mutations. The catalog pin includes both concrete model graphs.
+
+### Booking printable passes (BK-G)
+
+`bookings.passes` defaults off, belongs to Bookings and requires
+`bookings.confirmations`; it has no Events, Membership, Presence or payment-rail
+dependency. Owners may download confirmed/completed passes through their existing
+private account-owned confirmation scope. Claim sessions are explicitly refused.
+Staff printing requires live resource `check_in`, the check-in feature, a
+confirmed/completed booking and a current active arrival. Neither `edit_details`
+nor reservation-management alone grants scanner printing. Resource -> booking locks
+serialize the final arrival check and render/audit with arrival reversal and lifecycle
+changes. A completed arrival may print until explicitly reversed.
+
+Every save, template read, preview and actual render validates the same fixed field
+bindings: display name, resource, tenant-local booking window and optional numeric
+booking reference. Unknown/legacy custom-answer, note, contact, QR, public-token,
+arbitrary-text and artwork bindings refuse; no sensitive binding is silently removed.
+Only these four projected strings cross into the shared PDF renderer. Template editors
+can preview only fixed fictional values, never select another person's booking.
+All booking passes use this answer-free policy, regardless of additional roster/export
+authority. Actual PDFs are regenerated after authorization, never cached or shared with
+sample previews or confirmation PNGs. Public booking/check-in identities never print.
+
+The existing always-present `operations/printable_*` utilities own grid geometry,
+Unicode/RTL/fallback fonts and overflow refusal. Layout is bounded version-2 JSON on
+`BookableSpace.pass_template`, copied independently on ordinary resource cloning.
+It contains no PII, User FK, object key or live embedded reference: the existing tenant
+resource dataset and purge paths cover it, both export fidelities emit it, and portable
+import preserves configuration subject to target feature/authority gates and render
+validation. No encryption registration or object collector is needed, and no PDF or
+artwork is persisted. The schema graph pin includes the new field and the integrated
+Lane E/BK-C models. Uninstall retains layouts; module/tenant purge deletes them with
+their resource, preserving other tenants and the core ledger. Template writes, previews
+and downloads audit identifiers only. All pass routes are private/no-store/no-referrer
+including pre-dispatch failures; renders are limited to 30/hour/account.
+
+### Booking confirmations and QR arrival (BK-C)
+
+`bookings.confirmations` and `bookings.checkin` are opt-in Bookings-parented features;
+check-in additionally requires confirmations. Owned detail, QR PNG, rotation and one-booking
+ICS use the existing account-owned booking predicate without requiring membership, events,
+presence or the payment rail. Existing revoked-member and account restrictions still apply.
+Submission returns the noncredential booking UUID and confirmation availability; the
+honeypot response remains status-only and creates nothing. Account-less claim sessions
+are explicitly refused on these durable credential/download routes. Every private success/error is
+no-store/no-referrer. PNG/ICS downloads and credential rotation audit without private content.
+`calendar_render.booking_calendar` serializes both feed and single downloads with stable UID,
+calendar revision, and CANCELLED/TENTATIVE/CONFIRMED state. Calendar links contain only public
+resource title/location and selected times. PNGs contain resource/window/status and the QR,
+never contacts, notes or custom answers. No PNG is persisted or reused as a printable pass.
+
+Booking QR credentials are independent random UUIDs prefixed `spaceworks-booking:`; neither
+public booking identity nor calendar tokens are accepted. Scanner requests carry credentials
+only in POST bodies. `check_in` authority is checked on the selected resource for read-only
+resolve and again under resource -> booking locks for arrival/reversal. Malformed, unknown and
+foreign-resource credentials have uniform 404 responses. Scanner projections are answer-free:
+display name, resource, window/status, current arrival and advisory waiver state. Scanner-only
+users cannot open the roster, contacts, answers, notes or payment summary. Camera capture and
+manual entry require explicit resolve and confirmation; no station/offline/door path exists.
+
+Only confirmed reservations on active resources may arrive, inclusively from 30 minutes
+before start through end. Duplicate arrival is idempotent only while still eligible. Arrival
+never changes occupancy, completion, payment, presence or physical access. Cancellation,
+member/staff time edits and no-show require an explicit reversal first; no-show additionally
+requires confirmed and ended. Completion after end is valid with or without QR arrival and
+retains an existing arrival. Authorized reversal after completion clears only arrival, never
+reopens the booking. Pending and all terminal states refuse new/reinstated arrival.
+`services_arrival_policy.prepare_booking_save` protects ordinary service saves, including
+BK-B staff edits and exact undo, under their existing locks: terminal/started/old-cutoff and
+new-cutoff time edits refuse; moving/cancelling/restoring atomically rotates the old QR.
+Member rescheduling uses one clock snapshot for old/new cutoff checks and current account /
+optional-membership waiver eligibility. BK-B retains ownership of full staff-edit admission,
+cancellation provenance and restore notification policy; it can set `_arrival_clock` to its
+already-captured server time before saving. Queryset updates are not workflow entry points.
+
+`BookingCheckInEvent` is append-only at ORM and PostgreSQL boundaries; corrections append
+`reversed` facts and change only `Booking.arrived_at`. Every mutation audits IDs/actions,
+never credentials. Shared log redaction removes prefixed QR payloads. History is an explicitly
+tenant-filtered portable dataset, its actor joins the reviewed User closure, and subject export
+follows the booking owner. The credential is omitted at both fidelities and regenerated on
+import; arrival/history remain historical facts. No new free-text PII, encrypted column or
+stored object is introduced; the existing booking name accessor and encryption fence apply.
+Bookings/module and whole-tenant purge explicitly remove immutable history before its
+PROTECTed booking, using their existing authorized immutable-delete context. Retention
+registries remain present when bookings is tombstoned. BK-E calls
+`bookings.arrival_projection.arrival_metrics(queryset)` with its already-authorized tenant,
+resource and date predicate. It returns `arrived_reservations` and
+`confirmed_without_recorded_arrival`; these counts never imply measured-use duration or
+replace calendar reservation utilisation.
+
+### Event-scoped staff grants
+
+`events/event_authority.py` is the staff event authority API: tenant `MANAGE_EVENTS`,
+unchanged organization organizer authority, relevant series authority and live scoped grants.
+`edit_details`, `manage_registrations`, `manage_invitations`, `check_in` and
+`publish_schedule` confer only their event operations. A grant never adds makerspace RBAC
+actions or widens `scope_by_makerspace`; list predicates admit only its event or series
+occurrences. Grant management, station PINs, collaboration, payments, deletion,
+certificate issue/revoke and analytics PDFs remain tenant/organizer operations.
+
+Concrete `EventStaffGrant` and `EventStaffGrantInvite` rows belong to events and use typed
+event/series FKs, exactly one target, and partial uniqueness for live grants. The abstract
+fields and locked create/redeem/update/revoke mechanism live in always-present
+`makerspaces/resource_grants_models.py` and `resource_grants_services.py`, parameterized
+by a domain adapter. Bookings can supply its own concrete models without importing events.
+Permission validation, HMAC-only token/contact digests and seven-day expiry are shared.
+Redemption locks the resource and invite, rechecks single use, expiry, revocation, resource
+servability, the creator's current management authority and non-escalation, and requires a
+matching verified account email for bound invitations. Raw tokens are returned once and
+may appear only in synchronous redacted invitation email links, never persisted outbox
+bodies, list responses or audit metadata. Every mutation records `event.staff_grant_*`.
+
+Account staff sign-in/refresh, workspace discovery and staff MFA consult the query-free
+`makerspaces/resource_grant_sources.py` registry, never events directly. An active app
+registers its source in `AppConfig.ready()`; a tombstoned app contributes no authority.
+Queries recheck grants on every request, including tenant/module and staff-origin scope.
+Granted events are projected with `source="event_grant"` and their permissions; no
+makerspace actions are manufactured. Organizer authority is unchanged.
+
+Both entire models are omitted at **both export fidelities** and `DROP` in tenant imports.
+They have no export datasets or target uniqueness materialization: a target must reissue
+all delegated authority and credentials. Their User FKs are explicitly excluded from user
+closure, and retained audit targets become inert source provenance. Email is never stored
+in these rows, only a deployment-local keyed digest, so they need no PII encryption mapping
+or S3 collector. Events module purge and whole-tenant purge delete both concrete models;
+retention registration survives tombstoning even though discovery and routes disappear.
+
+### Participating-organizations audience (Lane G)
+
+`participating_organizations` requires `events.organization_audience` (Events parent,
+default off); it needs neither membership installation nor account-registration features.
+The live candidate set is the event's organizer organizations plus its venue's OWNER
+organization. Manager/affiliate links and accepted collaborators add no organization.
+Active direct organization members qualify regardless of action grants; active members
+of the candidates' OWNER-linked spaces also qualify. Accounts must be persisted, active,
+unrestricted and non-stub. Organizations must be active; public-profile consent is not
+eligibility. Both venue and contributing spaces use canonical servability and exclude
+hard-hidden spaces, including for local members and superadmins. No membership or RBAC
+identity is created. The venue remains the PII, audit, money and routing anchor.
+
+`organizations/audience.py` is the reusable, always-present batched membership predicate.
+The events adapter `organization_audience.py` fences event -> all discovered makerspaces
+(sorted PK) -> organizations -> accounts (NO KEY UPDATE) -> links -> memberships, then
+rechecks the proof. Ownership changing during root discovery refuses with a retryable
+409 rather than acquiring an out-of-order root. Organization console and standalone
+admin owner-link mutations route through `services_console.change_link`; the inline
+under Organization is read-only to avoid parent-first owner writes. Series organizer
+projection/removal locks all affected occurrences before the makerspace root.
+
+Registration, re-registration, approval, automatic/manual promotion and cancellation undo
+all apply the live predicate under the event lock. Automatic FIFO skips ineligible rows
+without changing their queue, quote or debt; explicit operations refuse atomically.
+Optional code/email invites require the invite feature and cannot substitute for membership.
+Bound codes and email resolution require verified email, and failed admission consumes
+no invite/promo. Public/staff/partner registration share host-waiver checking/stamping:
+current explicit self-consent or already-recorded current consent is required. Staff cannot
+assert another person's acceptance. Partner membership, collaboration, waiver and module
+requirements remain additional requirements, with no presence-session dependency.
+
+Public projections expose only usable organization IDs/names and the audience label.
+The separate authenticated eligibility advisory is private/no-store, varies on authorization
+and cookie, and carries no membership/proof identity. The staff roster's batched live
+`no_longer_eligible` flag is advisory; eligibility loss never cancels a ticket. Saved admission
+provenance permits exact-owner QR, PNG, one-registration ICS and cancellation after loss,
+subject to existing account/local-membership, tenant/module and recorded-waiver safeguards.
+It never grants membership history. Audience writes recheck `edit_details` under locks and
+audit old/new audiences and organization IDs, never membership lists.
+
+Event/series `organization_admission_blocked` is exported data but RESET to true during
+portable import. Global organizations, memberships and organizer bridges remain excluded;
+an unrelated target venue owner cannot make an imported audience ready. Only explicit
+staff audience reconfiguration clears the block; generated occurrences and clones inherit
+it. Deployment backup preserves the original graph/marker. These booleans add no PII,
+User edge or object ownership. Existing event datasets and local purge predicates retain
+responsibility; local purges never delete shared global organizations or foreign organizers.
+
 ### Event access, ticketing and discovery (WP1, 2026-10-11)
+
+- **Lane B staff tools (2026-10-15).** Duplication requires live `edit_details` authority,
+  creates a fresh draft identity, defaults to standalone, and never copies registrations,
+  credentials or grants. Optional series attachment requires management of that series.
+  The explicit adapter copies only declared children and fresh owned asset keys; durable
+  outer transactions roll back quota and clean failed copies. Shared helpers in makerspaces
+  and operations never import events, so bookings can reuse the mechanisms.
+- **Cancellation undo restores state, not money.** Cancellation records server-clock
+  provenance; legacy null provenance refuses undo. Within five minutes, event and ticket
+  locks serialize exact restore with registration and promotion. Any historical charge,
+  invite/promo consumption or newly required charge refuses it. Confirmed/approval restore
+  uses the registration admission helper; waitlist restore preserves its queue position,
+  except a later-created waiter's intervening promotion moves it to the tail. Creation time
+  remains intact. Refusals mutate nothing; restore audits and dispatches `registration_restored`.
+- **Ticket PNGs are owner-only, registered/attended-only, no-store, throttled and audited.**
+  Calendar formatting receives only authorized public fields. Public projections honor
+  `show_registration_count`, including suppressing exact ticket spots when counts are hidden.
 
 - **Events no longer requires membership.** `members` remains the default audience. `accounts`
   requires `events.account_registration` and `require_active_account`; `invite` requires
@@ -2491,6 +3161,24 @@ Load-bearing details that carried over unchanged:
   "attended nothing", an absent key says "this space does not run events".
 
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
+
+- **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,
+  and quarantine's credential reset does not cover it. `apps/data_export/restore_hooks.py` clears
+  bearers at all three seams that copy these rows: classic `rehydrate_control_record` (both kinds),
+  compound `DatabaseStateTarget.rehydrate` on the candidate alias, and delayed B1 slice merge, where
+  `slice_fixtures` scrubs the `DROP_ROW_TO_SLICE` `row_preimage` before staging. Tenant dumps never
+  carry this model (`OMITTED_MODELS`).
+- **A restored `backup.BackupArchive` download bearer is never usable.**
+  `apps/backup/services_access.invalidate_download_tokens_after_restore` clears bearers at classic
+  `rehydrate_control_record` and compound `DatabaseStateTarget.rehydrate`. B1 slice merge needs no sweep:
+  `BackupArchive.makerspace` is a `PROJECT_GLOBAL_BOUNDARIES` `PROJECT_NULL_TO_SLICE` boundary whose
+  delta carries only the `field_preimage`. Tenant dumps omit the model (`OMITTED_MODELS`).
+- **`TenantDumpCapture` download bearers are cleared pre-emptively at all three seams** by
+  `apps/tenant_migration/restore_hooks.py`: classic `rehydrate_control_record`, compound
+  `DatabaseStateTarget.rehydrate`, and the `slice_fixtures` `row_preimage` scrub (its `makerspace` FK
+  is a `DROP_ROW_TO_SLICE` boundary). Today `publish_tenant_dump`'s token has no caller and no redeemer.
+  **RULE:** a future `TenantDumpCapture` download route must keep these hooks, and any new model carrying
+  a `download_token_*` bearer needs a sweep at every seam that copies its rows.
 
 ### Offsite destinations and the `backup` module (lane backup, 2026-10-09)
 
@@ -3184,6 +3872,29 @@ encoder always emits canonical output, so stored envelopes are unaffected.
 
 ## Organization accounts and organization-derived authority
 
+### Organization self-service and governance (Lane F)
+
+Self-creation is a global platform switch, default OFF, never a makerspace module.
+Active verified unrestricted accounts create bounded private organizations under
+an account-row lock. Immutable creation audits enforce the rolling daily limit
+even after deletion. Initial membership grants global governance only, never
+tenant actions, identity, links or ownership. Link governance remains superadmin-only.
+Governance mutations require recent reauthentication, preserve the last active
+member governor and recheck non-escalation on suspended-member reactivation.
+Deletion refuses tenant links, retained domain references and artwork; disposable
+memberships/invitations are removed only with an otherwise deletable organization.
+Tenant/module purge never deletes shared organizations or foreign organizers.
+Existing global retention and portability exclusions remain; this adds no org model,
+tenant-owned field or object key.
+
+
+- **Admission membership is not authority.** The always-present `organizations/audience.py`
+  checks active direct memberships and active memberships in OWNER-linked servable, non-hidden
+  makerspaces against explicit organization IDs. It ignores action grants and profile-publication
+  consent and never widens RBAC. Events supplies its own live organizer/venue candidate set;
+  bookings imports no events policy. Owner-link admin writes use the console mutation service,
+  and the Organization inline is read-only to preserve makerspace-before-organization locks.
+
 - **An `Organization` is a platform entity, not a module.** It is creatable before any makerspace
   exists, spans makerspaces through `OrganizationMakerspace` (`owner | manager | affiliate`, at most
   one owner per space), and is therefore **not** a `module_registry` key: registry keys are
@@ -3275,6 +3986,64 @@ encoder always emits canonical output, so stored envelopes are unaffected.
   `makerspace_id`, routing, PII custody and quotas remain untouched.
 
 ## API client scopes and the protected-route registry
+
+### Signed booking integration reads (BK-H)
+
+`bookings.api_read` is an opt-in Bookings child without Events, Membership,
+Reports or rail dependencies. `/api/v1/booking-integration/` always requires verified
+HMAC, including when operator prefixes are overridden or public auth is optional.
+Only tenant-bound active server clients qualify. `booking_resources:read` and
+`bookings:read` independently authorize resource and reservation reads;
+`bookings:attendance:read` requires reservation scope and adds only current
+unreversed `arrived_at`, including retained completed arrivals. Read grant policy
+is operator-only, outside browser and frozen legacy vocabulary. Resource grants
+and user authority never authorize integration reads.
+
+Core `apiclients/scope_registry_booking_reads.py` holds metadata without importing
+Bookings. Live Bookings startup registers typed resource and reservation targets
+in the existing read contract; cross-tenant/unresolved/hidden/unservable targets
+deny. Tombstoning either domain removes only its own scopes, routes, prefixes and
+features. All ten concrete GET/HEAD entries exclude legacy-v1. Explicit serializer
+allow-lists omit contacts, answers, notes, credentials, forms and reservation money.
+Only a released public page may add approved public price/currency, rule summaries,
+published sections and backend image references through its nested allow-list; signed
+resource authority never bypasses the canonical public visibility/release gates.
+Names use scoped PII attributes with tenant relations loaded. Private resources
+are readable by signed resource authority without making them publicly visible.
+
+Reservation reads audit opaque principal/count/projection under the source fence;
+failed audit cannot disclose data. Shared signed cursors bind client, tenant,
+subject and attendance projection; responses are private/no-store. Booking grant
+mutations retain the existing session-bound recent-reauth mixin; no second proof
+system or user scope is introduced. Booking analytics routes are explicitly
+allow-listed in `bookingAnalyticsRoutes.ts`, send route templates and empty
+referrers, and exclude confirmation queries, private routes and credentials.
+
+No model, field, User edge, object key, stored export or new PII storage is added.
+Existing audit retention, target references and tenant purge apply; classification,
+encryption, portability and the model-graph catalog pin remain unchanged by the read
+projection. BK-F website data uses its canonical public release/visibility adapter.
+Public detail/image/discovery routes remain public-scoped and never inherit server
+booking or reservation scopes.
+
+### Signed integration reads (Lane F)
+
+`apiclients/read_contract.py` owns signature-marker permissions, typed tenant target
+resolution, per-client throttling and signed keyset cursors. Live domain startup
+registers adapters without queries; core imports no separable Events policy.
+`read_prefixes.py` is safe during settings construction and makes signed reads
+mandatory independently of optional public-client rollout. Only verified HMAC
+receives the marker; user sessions, publishable keys and browser clients cannot.
+Read scopes are operator-only, absent from browser and legacy-v1 authority. Targets
+require exactly one live non-hidden tenant and a subject belonging to it.
+Participant scope requires event scope; attendance additionally requires participant
+scope. Serializers use allow-lists and the scoped-PII model accessor for names,
+never raw encrypted values, contacts, answers, credentials or money. Attendance
+uses current status and immutable check-in history. Participant-read audit contains
+opaque principal/count/projection only. Responses are private/no-store and cursors
+bind client, tenant, subject and projection with 24h expiry. No new tenant model,
+object key or purge ownership is introduced by these adapters.
+
 
 - **`apps/apiclients/scope_registry*.py` is the single source of truth for what an `ApiClient` may
   reach**, and it is keyed on the **fully qualified versioned `view_name`** — never the bare name.

@@ -60,6 +60,8 @@ class BookableSpace(models.Model):
         default=None,
         validators=[validate_form_schema],
     )
+    # Fixed field bindings/geometry only; no PII, artwork or credentials.
+    pass_template = models.JSONField(blank=True, default=dict)
     requester_notifications_enabled = models.BooleanField(
         null=True,
         blank=True,

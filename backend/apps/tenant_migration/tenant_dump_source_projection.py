@@ -104,6 +104,8 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
 
 
 def _source_row_allowed(label, row, makerspace_id, cross_tenant):
+    if label == "events.EventCertificateArtwork":
+        return row["promoted_at"] is not None
     if label == "makerspaces.MembershipRequest":
         return row["state"] not in {"requested", "invited", "awaiting_vouches"}
     if label == "apiclients.ApiKeyRequest":

@@ -6,8 +6,6 @@ import json
 
 from django.db import connections
 
-from apps.backup.recipient_selection import BackupBuildError
-
 
 @dataclass(frozen=True)
 class IndexComponent:
@@ -121,15 +119,6 @@ def load_unique_rules(using="default") -> tuple[UniqueRule, ...]:
             components=tuple(sorted(components, key=lambda item: item.position)),
         ))
     return tuple(sorted(result, key=lambda item: (item.schema, item.table, item.index_name)))
-
-
-def assert_rule_reproduced(expected: UniqueRule, using="default"):
-    actual = {item.identity: item for item in load_unique_rules(using)}.get(expected.identity)
-    if actual is None or actual.definition_payload() != expected.definition_payload():
-        raise BackupBuildError(
-            f"Target PostgreSQL did not reproduce unique rule {expected.index_name}."
-        )
-    return actual
 
 
 def _digest(value) -> str:

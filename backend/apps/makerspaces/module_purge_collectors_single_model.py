@@ -47,14 +47,28 @@ def _cascade_model_labels(model, seen=None):
 def bookings_delete(makerspace, cursor):
     from apps.accounts import rbac
     from apps.bookings.models import BookableSpace, Booking, BookingCalendarFeed
+    from apps.bookings.models_staff_grants import BookingSpaceStaffGrant, BookingSpaceStaffGrantInvite
+    from apps.bookings.models_broadcasts import BookingBroadcast
+    from apps.integrations.models import EmailLog
+    # Summaries can reference other domains: remove booking entries, then let
+    # shared digest delivery rebuild the survivors; do not delete foreign mail.
+    EmailLog.objects.filter(makerspace=makerspace, source_kind__in=["booking_broadcast", "bookings.booking"]).delete()
+    campaigns, campaign_labels = _delete(BookingBroadcast.objects.filter(makerspace=makerspace))
+    grants, grant_labels = _delete(BookingSpaceStaffGrant.objects.filter(makerspace=makerspace))
+    invites, invite_labels = _delete(BookingSpaceStaffGrantInvite.objects.filter(makerspace=makerspace))
     feeds, feed_labels = _delete(rbac.scope_notification_policy(BookingCalendarFeed.objects.all(), makerspace_id=makerspace.pk))
 
+    from apps.bookings.models_arrival import BookingCheckInEvent
+    arrivals, arrival_labels = _delete(BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace))
     bookings, booking_labels = _delete(
         rbac.scope_notification_policy(Booking.objects.all(), makerspace_id=makerspace.pk, field='space__makerspace_id')
     )
     spaces, space_labels = _delete(rbac.scope_notification_policy(BookableSpace.objects.all(), makerspace_id=makerspace.pk))
     return _counts(
-        model_labels=booking_labels | space_labels | feed_labels,
+        model_labels=booking_labels | space_labels | feed_labels | grant_labels | invite_labels | arrival_labels | campaign_labels,
+        arrivals=arrivals,
+        broadcasts=campaigns,
+        staff_grants=grants, staff_invites=invites,
         calendar_feeds=feeds,
         bookings=bookings,
         bookable_spaces=spaces,

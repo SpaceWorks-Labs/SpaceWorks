@@ -235,9 +235,11 @@ from apps.accounts.models_social import (  # noqa: E402
 )
 
 from apps.accounts.models_mfa import UserMFA, MFAChallenge  # noqa: E402
+from apps.accounts.models_reauthentication import ReauthenticationSession  # noqa: E402
 from apps.accounts.models_staff_invitations import StaffInvitation  # noqa: E402
 
 __all__ = [
+    'ReauthenticationSession',
     'UserMFA',
     'MFAChallenge',
     'StaffInvitation',

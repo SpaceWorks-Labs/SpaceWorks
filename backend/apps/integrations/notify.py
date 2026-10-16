@@ -35,6 +35,9 @@ class EmailDelivery:
     mute_event: str = ""
     persist_body: bool = True
     user_id: int | None = None
+    source_kind: str = ""
+    source_id: int | None = None
+    source_metadata: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -91,6 +94,8 @@ def _dispatch_email_delivery(makerspace, feature, feature_event, delivery, sync,
         return
     try:
         log = dispatch_email(
+            source_kind=delivery.source_kind, source_id=delivery.source_id,
+            source_metadata=delivery.source_metadata,
             makerspace=makerspace,
             to_email=delivery.to_email,
             subject=delivery.subject,

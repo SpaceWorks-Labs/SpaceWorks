@@ -76,6 +76,9 @@ def update_booking_rules(space, *, actor, **changes):
         })
 
     locked = _locked_space(space.pk)
+    from .booking_authority import require_tenant
+    from apps.accounts import rbac
+    require_tenant(actor, locked.makerspace, action=rbac.Action.MANAGE_MAKERSPACE)
     if not locked.is_active:
         raise BookingInvalidTransition('Inactive spaces cannot be updated.')
 

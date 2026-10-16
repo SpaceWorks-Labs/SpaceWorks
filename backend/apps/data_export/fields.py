@@ -22,6 +22,9 @@ USER_PROJECTIONS = {
 }
 
 ALWAYS_OMITTED = {
+    ("bookings.Booking", "checkin_token"): "Source arrival bearer credential; target issues a fresh one.",
+    ("bookings.BookingBroadcastDelivery", "outbox"): "Source-local send authority never travels.",
+    ("events.EventBroadcastDelivery", "outbox"): "Source-local send authority never travels.",
     ("devices.DeviceCommand", "lease_token_digest"): "Deployment-local command delivery credential.",
     # Trigger-maintained full-text vectors: derived from exported columns and rebuilt by
     # the search trigger on the target, so they never travel (apps/inventory/search.py).

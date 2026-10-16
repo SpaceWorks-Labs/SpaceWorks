@@ -7,11 +7,12 @@ from apps.integrations.email import email_enabled
 from apps.makerspaces.models import Makerspace, default_branding_config
 from apps.makerspaces.theme_validation import public_theme_config
 from apps.makerspaces.servability import is_servable, servable_queryset
-from apps.makerspaces.capabilities import FEATURE_MODULES, FEATURES
+from apps.makerspaces.capabilities import FEATURES
+from apps.makerspaces.capability_eligibility import configuration_feature_enabled
 from apps.makerspaces.module_registry import is_frontend_exposed, module_available, module_workflows
 from apps.makerspaces.request_access import ANYONE, effective_policy
 from apps.separability.registry import runtime_active
-from apps.makerspaces.loan_visibility import LOAN_MODULES, LOAN_FEATURES
+from apps.makerspaces.loan_visibility import LOAN_MODULES
 
 # Derived from the module registry, which also decides frontend exposure: an
 # internal master switch declares frontend_exposed=False and is dropped from both
@@ -152,23 +153,7 @@ def feature_enabled(makerspace, key):
     # archived checks and only the new lifecycle states fail closed here.
     if not is_servable(makerspace, allow_archived=True):
         return False
-    if key in LOAN_FEATURES and not feature_enabled(makerspace, "loans.enabled"):
-        return False
-    definition = FEATURES.get(key)
-    if definition is None or key not in set(makerspace.enabled_features or []):
-        return False
-    # A string parent must be a recognised feature-module; None => standalone feature
-    # with no parent-module prerequisite (e.g. self-checkout on a private makerspace).
-    if definition.parent_module is not None and definition.parent_module not in FEATURE_MODULES:
-        return False
-    required_modules = [
-        module
-        for module in (definition.parent_module, *definition.requires_modules)
-        if module is not None
-    ]
-    return all(
-        module_enabled(makerspace, module) for module in required_modules
-    ) and all(feature_enabled(makerspace, feature) for feature in definition.requires_features)
+    return configuration_feature_enabled(makerspace, key)
 
 def bootstrap_payload(makerspace):
     from apps.makerspaces.editions import current_edition

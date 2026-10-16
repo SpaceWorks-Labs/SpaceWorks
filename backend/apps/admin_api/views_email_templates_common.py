@@ -54,18 +54,6 @@ STREAM_MODULES = {
     "certifications": "machines",
 }
 
-def _stream_module_available(makerspace, stream):
-    key = STREAM_MODULES.get(stream)
-    if key is None:
-        return True
-    try:
-        from apps.makerspaces.platform import module_enabled
-
-        return bool(module_enabled(makerspace, key))
-    except Exception:
-        return True
-
-
 def _resolve_makerspace(actor, makerspace_id, stream):
     actions = STREAM_ACTIONS.get(stream)
     if actions is None:

@@ -24,7 +24,8 @@ class EventSeries(models.Model):
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="event_series"
     )
-    registration_audience = models.CharField(max_length=8, choices=(("members", "Members"), ("accounts", "Authenticated accounts"), ("invite", "Invited accounts")), default="members")
+    organization_admission_blocked = models.BooleanField(default=False, editable=False)
+    registration_audience = models.CharField(max_length=32, choices=(("members", "Members"), ("accounts", "Authenticated accounts"), ("invite", "Invited accounts"), ("participating_organizations", "Participating organizations")), default="members")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True)
@@ -79,6 +80,12 @@ class EventSeries(models.Model):
                 name="series_ms_status_date_idx",
             )
         ]
+
+    def clean(self):
+        super().clean()
+        if self.pk and self.dtstart_local_date and self.dtstart_local_time and self.duration_minutes:
+            from .website_validation import validate_owner_window
+            validate_owner_window(self)
 
     def save(self, *args, **kwargs):
         self.title = (self.title or "").strip()

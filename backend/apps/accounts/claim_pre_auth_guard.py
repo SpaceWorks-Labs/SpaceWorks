@@ -20,10 +20,16 @@ from rest_framework.views import APIView
 # configured on claim-reachable routes. Exact class+method matching makes a new hook a
 # build failure instead of silently trusting executable pre-auth code.
 POLICY_OVERRIDE_ALLOWLIST = {
+    "apps.bookings.views_passes.BookingPassRenderThrottle": set(),
+    "apps.bookings.views_confirmation.BookingConfirmationThrottle": set(),
     "apps.bookings.throttles_feed.BookingFeedTokenThrottle": {"get_cache_key"},
     "apps.bookings.throttles_feed.BookingFeedIpThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAChallengeThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAUserThrottle": {"get_cache_key"},
+    "apps.accounts.views_reauthentication.ReauthenticationThrottle": {"get_cache_key"},
+    "apps.organizations.views_self_service.OrganizationCreationThrottle": {"get_cache_key"},
+    "apps.organizations.views_self_service.OrganizationCreationIpThrottle": {"get_cache_key"},
+    "apps.admin_api.permissions.IsActiveStaff": {"has_permission", "has_object_permission"},
     # `_authenticate_claim` is the sanctioned claim-session path added in D5. It is listed
     # deliberately: this guard exists so that a NEW method on a configured policy class is a
     # decision rather than an accident, and the claim authenticator is exactly such a decision.
@@ -68,6 +74,11 @@ POLICY_OVERRIDE_ALLOWLIST = {
     # bearer token, so the budget keys on that token rather than the caller.
     "apps.events.throttles.EventCalendarFeedTokenThrottle": {"get_cache_key"},
     "apps.events.throttles.EventCalendarFeedIpThrottle": {"get_cache_key"},
+    # Ticket renders only set a per-user scope/rate; all lifecycle methods are DRF's.
+    "apps.events.views_ticket.TicketRenderThrottle": set(),
+    # Certificate downloads share a principal-keyed render budget. The only hook
+    # selects that cache key; it never authenticates or grants claim authority.
+    "apps.events.throttles.CredentialRenderThrottle": {"get_cache_key"},
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},

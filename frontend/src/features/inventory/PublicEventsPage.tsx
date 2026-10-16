@@ -93,7 +93,8 @@ export function PublicEventsPage() {
   return <div style={brandStyle}>
     <PageMetadata title={`Events · ${displayName}`} description={`Upcoming public workshops, meetups and community events at ${displayName}.`} path={canonicalPath} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
-      header={{ title: "Upcoming events", subtitle: `What's on at ${displayName}`, primary: { label: "My events", href: tenantPath("member/events") } }}
+      header={{ title: "Upcoming events", subtitle: `What's on at ${displayName}`, primary: { label: "My events", href: tenantPath("member/events") },
+        ...(tenant.mode === "central" ? { secondary: { label: "Discover across makerspaces", href: "/discover" } } : {}) }}
       state={events.isLoading ? { status: "loading" } : events.error ? publicErrorState(events.error, { noun: "Events" }, () => { void events.refetch(); }) : { status: "ready" }}>
       <DiscoveryControls state={discovery} searchLabel="Search events" filters={[{ value: "free", label: "Free events" }, { value: "open", label: "Registration open" }]} />
       <div className="mb-5 flex flex-wrap gap-3"><label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm font-semibold sm:max-w-xs">Category<select className="desk-input w-full font-normal" value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{[...new Map((events.data ?? []).flatMap(item => item.category ? [[item.category.slug, item.category] as const] : [])).values()].map(row => <option key={row.slug} value={row.slug}>{row.name}</option>)}</select></label>

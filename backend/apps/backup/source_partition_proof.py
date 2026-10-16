@@ -2,7 +2,6 @@
 
 import base64
 from datetime import datetime
-import hashlib
 import json
 import re
 
@@ -51,10 +50,6 @@ def verify_source_partition_proof(proof, *, expected=None):
     except (Ed25519Error, KeyError, TypeError, ValueError) as exc:
         raise BackupBuildError("The signed source-partition proof is invalid.") from exc
     return True
-
-
-def proof_digest(proof):
-    return hashlib.sha256(_canonical_json(proof)).hexdigest()
 
 
 def _validate_unsigned(payload):

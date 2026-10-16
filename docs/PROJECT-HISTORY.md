@@ -9,19 +9,25 @@
 - **2026-10-17 — personal notification delivery.** Transactional envelopes/outbox, encrypted
   per-space channel configuration, provider-proven connections, multi-select category choices and
   email fallback; Telegram private /start linking and contract-token room sender, Slack/Mattermost/
-  Discord OAuth adapters and Twilio WhatsApp. Meta source is present but unmounted/unregistered;
-  OAuth/member-token and remaining adapter limits are recorded in the delivery contract/coverage.
+  Discord OAuth adapters and Twilio WhatsApp. Phase 3 wires member JWT personal routes, authenticated
+  actor/challenge-bound OAuth completion and environment-backed provider settings; Meta is registered/
+  mounted but its unregistered-module readiness gate remains in the delivery contract/coverage.
   Equipment/watch/certification and membership/ledger/API/device/operations sources reserve personal
-  intents; maintenance/procurement and member-broadcast producer conversion remains incomplete.
+  intents; maintenance/procurement barrels and member broadcasts now call those adapters. Catalog
+  strings and stocktake/first-failure inbox dedup landed; same-booking-owner contact mail and narrowly
+  whitelisted unverified operational staff email remain supported.
   Mandatory mail and email-only security proofs keep their existing policy.
 - **2026-10-17 — public maker pages.** Global handles with 30-day rename/retirement rules,
   independent publication and family consent, counts-only local-day activity, cache-only GitHub
   calendar and SPOKE/HOSTED/ATTENDED history. Member publication/timeline editor, live-gated share
-  cards, sitemap and reserved-segment crawler routing; no directory-consent backfill into public pages.
+  cards, sitemap and reserved-segment crawler routing; viewer_is_owner on the optional-JWT public read,
+  membership-local verified on member profiles; no directory-consent backfill into public pages.
 - **2026-10-17 — presence programme.** Hard-geofenced self check-in with staff alternative,
   account-only guests, project/visitor/live-event statuses, expiry and revision-bound renewals,
   privacy settings and anonymous TV endpoint plus /m/<slug>/now. Independent opt-in presence key;
-  existing-space installation backfill and shared preset/editor wiring are absent in this tree.
+  makerspaces/0096 installs it for existing spaces, while new spaces opt in. Service/bootstrap defaults
+  are 60/120/180/240 minutes; current-session exposes display policy even when empty. The privacy
+  settings section is mounted for Space Managers; notification-feature editor wiring remains incomplete.
 - **2026-10-17 — event operations.** Account-linked speakers, single-use claim links and scoped
   speaking history; ticket/category edit with refused referenced deletes; account-only attendee
   history. Simpler create/drawer, separate staff/owner/delegate envelopes, reminders, certificates
@@ -29,7 +35,8 @@
 - **2026-10-17 — booking operations and place galleries.** Resource-scoped requests queue,
   decision reasons, append-only encrypted departure remarks and issue resolution; public galleries,
   shared keyboard Gallery and Hosted at venue block. Personal lifecycle/reminder/campaign adapters;
-  requester alerts default on with audit-aware preservation of explicit tenant choices.
+  requester alerts default on with audit-aware preservation of explicit tenant choices. Dashboard
+  open_booking_issues counts unresolved issues under current booking authority and links to that queue.
 - **2026-10-17 — Space Manager navigation and settings.** Task groups, Staff & roles under People,
   settings hub/search/checklist, domain-console settings and communication-channel controls. Loan
   policy admits EDIT_INVENTORY or MANAGE_MAKERSPACE; fixed Event/Booking Manager actions retained.

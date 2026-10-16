@@ -20,7 +20,7 @@ generation, expiry, consent and secret-code digest. State stays below the frozen
 existing transactional `consume` service, which creates the verified endpoint exactly
 once. Browser-submitted user/chat IDs are never proof. OAuth user tokens stay in memory.
 The server selects every redirect URI from settings, including optional substitution
-of the configuration's persisted makerspace ID; request hosts/origins cannot select it.
+of persisted makerspace/challenge IDs and appended notify_challenge; request hosts/origins cannot select it.
 
 Slack installation uses a separately purposed challenge, consumed under a configuration
 row lock before token exchange. The live Space Manager authorization is checked again
@@ -64,8 +64,9 @@ and five-minute skew. Discord verifies Ed25519 over timestamp and raw body with 
 skew **before parsing**. Mattermost outgoing/slash tokens use constant-time comparison.
 Inbound routes acknowledge only: they cannot make workflow decisions, create endpoints
 from typed IDs, or change delivery state. Discord ping and Slack URL verification work.
-Callbacks are throttled. OAuth callbacks accept GET and form POST; HEAD is refused so
-link previews cannot consume a proof. Successful OAuth responses disable caching/referrers.
+Callbacks are throttled. Legacy OAuth callback URLs require authentication and accept GET/form POST
+only for Slack installation; personal completion uses authenticated POST challenge verification.
+HEAD is refused so link previews cannot consume a proof. Successful OAuth responses disable caching/referrers.
 
 ## Files changed
 
@@ -119,9 +120,9 @@ Every concrete route has drf-spectacular request/response/error annotations.
 | POST | `/slack/install/start` | No body; JWT, scoped Space Manager; existing Slack channel configuration must contain client_id/client_secret/signing_secret | 201 `{connect_url, expires_at}` |
 | POST | `/mattermost/installation` | JWT, scoped Space Manager; `{server_url, bot_token, client_id, client_secret, webhook_token}`; complete replacement | 200 `{channel, generation, configured}` |
 | POST | `/discord/installation` | JWT, scoped Space Manager; `{bot_token, application_id, public_key, guild_id, client_secret}`; complete replacement | 200 `{channel, generation, configured}` |
-| GET, POST | `/slack/oauth/callback` | `{code, state}` in query or form; single-use signed state plus provider code proof; handles installation and personal linking | 200 `{verified:true}` |
-| GET, POST | `/mattermost/oauth/callback` | `{code, state}`; signed state plus configured-server OAuth proof | 200 `{verified:true}` |
-| GET, POST | `/discord/oauth/callback` | `{code, state}`; signed state plus Discord identify proof | 200 `{verified:true}` |
+| GET, POST | `/slack/oauth/callback` | `{code, state}` in query or form; single-use signed state plus provider code proof; authenticated actor-bound Slack installation only; personal linking is refused | 200 `{verified:true}` |
+| GET, POST | `/mattermost/oauth/callback` | `{code, state}`; authenticated legacy callback refuses personal completion; use POST personal/challenges/{id}/verify | 400 validation |
+| GET, POST | `/discord/oauth/callback` | `{code, state}`; authenticated legacy callback refuses personal completion; use POST personal/challenges/{id}/verify | 400 validation |
 | POST | `/slack/inbound` | Raw JSON/form body; X-Slack-Request-Timestamp + X-Slack-Signature | 200 `{ok:true}` or `{challenge}` |
 | POST | `/mattermost/inbound` | JSON/form body containing configured token | 200 `{ok:true}` |
 | POST | `/discord/inbound` | Raw JSON; X-Signature-Ed25519 + X-Signature-Timestamp | 200 Discord interaction acknowledgement |
@@ -146,9 +147,9 @@ schema digest, public-profile predicate or frontend file was changed.
 - Audit presentation: `notification.chat_install_started` and
   `notification.chat_install_state_consumed`, exposing only `channel`. Existing
   `notification.channel_configured` and endpoint audit actions remain in use.
-- Source-gate anonymous participants: `notification_slack_views.ChatOAuthCallbackView.post`
-  and `notification_slack_views.ChatInboundView.post`. There is no quiescence exemption.
-  Installation/endpoint writes acquire `tenant_write`; GET callbacks use those same services.
+- Source-gate anonymous participant: `notification_slack_views.ChatInboundView.post` only.
+  Phase 3 removed the obsolete anonymous OAuth participant; callback completion is authenticated.
+  There is no quiescence exemption. Installation/endpoint writes acquire `tenant_write`.
 - Every route carries `makerspace_id`, so the existing authoritative origin/tenant target
   resolver handles it directly. Queries use the existing RBAC notification-policy scope.
 - These integrations paths are **outside** the configured/default mandatory HMAC prefixes
@@ -160,32 +161,23 @@ schema digest, public-profile predicate or frontend file was changed.
 
 ## Integrator requests
 
-1. Wire four settings into `backend/config/settings.py` and the deployment environment
-   documentation/settings surface (these are intentionally outside this lane):
+1. **DONE in Phase 3:** `config/settings.py` loads the three
+   `NOTIFICATION_{SLACK,MATTERMOST,DISCORD}_REDIRECT_URI` values (blank default) and
+   `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` (boolean false default) from the environment;
+   deployment manifests forward them and backup classifies them as nonblocking value comparisons.
+   Personal redirect URLs name the HTTPS frontend notification-settings page, optionally expand
+   `{makerspace_id}` / `{challenge_id}` and append `notify_challenge=<id>`. Register the resulting
+   return URI in the provider console; authorization and exchange use the identical URI. The UI
+   receives `?notify_challenge=<id>&code=...&state=...` and calls authenticated personal verify.
+   Blank/malformed/non-HTTPS settings refuse linking.
 
-   ```python
-   NOTIFICATION_SLACK_REDIRECT_URI = env("NOTIFICATION_SLACK_REDIRECT_URI", default="")
-   NOTIFICATION_MATTERMOST_REDIRECT_URI = env("NOTIFICATION_MATTERMOST_REDIRECT_URI", default="")
-   NOTIFICATION_DISCORD_REDIRECT_URI = env("NOTIFICATION_DISCORD_REDIRECT_URI", default="")
-   NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS = env.bool("NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS", default=False)
-   ```
-
-   Redirect examples:
-   `https://api.example/api/v1/integrations/makerspace/{makerspace_id}/slack/oauth/callback`
-   and corresponding `mattermost` / `discord` URLs. The placeholder is expanded from the
-   persisted configuration, never request URL data. Register each concrete tenant URL in
-   its app's provider console. Blank/malformed/non-HTTPS settings refuse linking.
-
-2. Fix the Phase-1 member-session reachability gap in `accounts/authentication.py`.
-   `_member_surface_path_allowed` currently permits claim prefixes and integrations/push only;
-   the frozen `/integrations/makerspace/{id}/personal/...` APIs therefore reject ordinary
-   member JWTs before their explicit-owner/RBAC checks. Add an exact path predicate for
-   positive makerspace IDs and these frozen personal routes only: `endpoints` (list),
-   `endpoints/start`, `endpoints/{positive_id}` (revoke),
-   `challenges/{positive_id}/verify`, `preferences`, `deliveries`. Keep channel settings,
-   test send and installations outside that member surface. Extend real-token session
-   surface tests; do not use a broad `/integrations/` exemption. This is independent of
-   all three provider implementations and affects every personal-channel lane.
+2. **DONE in Phase 3:** `accounts/authentication.py` full-matches six numeric-ID personal
+   route shapes (optional final slash): endpoints, endpoints/start, endpoints/{id},
+   challenges/{id}/verify, preferences and deliveries. No broad integrations exemption;
+   channel settings/tests/installations remain outside member reach. Personal code/state
+   completion requires the authenticated account and URL challenge to match signed state
+   before provider I/O; configuration/challenge locks serialize single-use completion.
+   Anonymous completion is gone. The callback class retains authenticated Slack installation only.
 
 3. Regenerate OpenAPI with spectacular `--format openapi-json` and the frontend client
    on the merged Django graph. Frontend UI must call installation routes as documented,
@@ -211,8 +203,10 @@ at use time. The integrator may later centralize that hook without changing fiel
 
 ## Deferred
 
-Django/pytest, integrated schema generation, live-token member authentication regression
-tests, the final module-variation matrix, frontend setup/linking UX and real provider
+Phase 3 resolves member admission, authenticated completion and frontend return handling; the
+original lane validation above remains historical, with no new runtime pass claimed here.
+
+Django/pytest, integrated schema generation, the final module-variation matrix and real provider
 credential smoke tests belong to integration/Claude. Slack token-rotation-enabled apps
 need token renewal before token expiry; this lane installs non-expiring server bot tokens
 and refuses expired/revoked tokens rather than silently changing installation generation.

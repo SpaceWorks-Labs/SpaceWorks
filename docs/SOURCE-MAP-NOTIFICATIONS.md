@@ -20,6 +20,9 @@ notification_fake.py is registered only by tests.
 notification_api_access/channels/personal/delivery/errors/serializers and notification_contract_urls
 own the scoped HTTP surface. notification_proofs.py owns challenge creation, single-use provider
 proof consumption and revocation; notification_providers.py is the factory/result/proof seam.
+accounts/authentication.py full-matches the six personal route shapes for member JWTs.
+notification_oauth_verification.py binds authenticated actor/URL challenge/state before exchange
+and serializes completion; notification_slack_views.py retains authenticated Slack installation only.
 Migrations 0033–0036 and notifications/0004 own schema, PII fences and personal preferences.
 
 notification_telegram.py owns provider/cache/generation/send checks; callbacks.py authenticates
@@ -31,14 +34,17 @@ HTTP/JWT/signatures; notification_slack_oauth.py durable state/PKCE/redirect sel
 notification_slack_installation.py install validation; notification_slack_views.py shared OAuth and
 acknowledge-only callbacks. notification_mattermost.py/http.py own configured-server OAuth/DM and
 DNS/TLS policy. notification_discord.py owns identify/DM/signatures. Their *_urls.py mount surfaces;
-IntegrationsConfig.ready registers these and Telegram/Twilio providers.
+IntegrationsConfig.ready registers these and Telegram/Twilio/Meta providers. OAuth redirect settings
+are environment-backed; notification_slack_oauth.py expands tenant/challenge placeholders and appends
+notify_challenge for the frontend return, using the same redirect for exchange.
 
 notification_wa_twilio.py owns the WhatsApp factory/proof/send; *_config/http/templates/callbacks
 split credential/address/URL policy, REST/error mapping, approval/variables and signed events;
 *_views/urls expose callbacks and approval diagnostics. notification_wa_meta.py and its
-*_callbacks/http/ingress/schema/templates/views/urls implement the parallel Meta source, which is
-not registered/mounted in this tree. notification_wa_window.py owns bounded replay/window helpers;
-Meta uses it, Twilio currently evaluates its own inbound timestamp window.
+*_callbacks/http/ingress/schema/templates/views/urls implement the registered/mounted Meta source;
+its _ready still requires an unregistered whatsapp module. notification_wa_window.py owns bounded
+replay/window helpers shared by both providers, resolution and delivery. Reserved bindings are
+notification_opt_in / notification_test, member/en, for both providers.
 
 ## Domain sources and call sites
 
@@ -53,16 +59,20 @@ latches back-in-stock and notify_me.py reserves watch intents.
 machines/notifications_p2_service.py owns printer/generic service sources, certifications.py
 member/staff certification edges/digests, maintenance.py schedule/log sources, stock.py consumable/
 procurement sources. service workflow/email barrels and low_stock.py call the wired adapters;
-maintenance/notifications.py and procurement/notifications.py still use legacy dispatch.
+maintenance/notifications.py and procurement/notifications.py are explicit re-export barrels for
+the source-backed maintenance/stock adapters.
 
 operations/notifications_p2.py supplies explicit-owner/staff fan-out and safe source snapshots;
 makerspaces/notifications_p2_members/terms/vouches/broadcasts/subdomains own membership/admission,
 renewals, vouches, audience checks and subdomain outcomes. Membership barrels and reminders call
-them; notifications/broadcasts.py still uses the legacy producer despite the registered adapter.
+them; notifications/broadcasts.py calls notify_broadcast per selected account in its audited transaction.
 payments/notifications_p2.py owns ledger/reminder/document notices independent of payment rail.
 apiclients/notifications_p2.py owns API-access outcomes; devices/notifications_p2.py owns immutable
 outage/recovery snapshots. operations/notifications_p2_alerts.py owns stocktake and first-email-failure
-signal; notifications_p2_reports.py owns live authorized report navigation notices.
+signal; notifications/emit.py and legacy_inbox.py share those source intents/UUID identities with
+personal delivery to deduplicate retained legacy mirrors. notifications_p2_reports.py owns live
+authorized report navigation notices. notification_catalog.py includes the landed adapter event strings;
+notification_resolution.legacy_staff_email_allowed owns the operational-only staff mailbox allowance.
 Event and Booking adapter ownership is in [SOURCE-MAP-COMMUNITY.md](SOURCE-MAP-COMMUNITY.md).
 
 ## Channel UI and registry composition
@@ -72,7 +82,8 @@ channelCatalog.ts owns providers/credential fields. ChannelSetupPanel/Form, What
 ChannelTestSend and ChannelDeliveryLog compose tenant setup/diagnostics. PersonalChannels,
 ConnectChannel and ChannelPreferences own account connection/category choices; MyNotificationSettings
 composes them in the staff Inbox action/member Channels tab. Saves send changed fields only, avoiding
-accidental generation rotation. MEMBER JWT admission for those routes remains absent in this tree.
+accidental generation rotation. MyNotificationSettings consumes notify_challenge/code/state and calls
+authenticated personal verify; MEMBER JWT admission now covers exactly the personal route shapes.
 
 Audit presentation and tenant-migration catalog/gate siblings below declare retained schema,
 PII/export dispositions and callback participants. Existing encryption/registry.py,
@@ -111,6 +122,7 @@ provider/route mounting; provider source files alone do not imply a mounted inte
 `models_contract.py`, `models_endpoints.py`, `notification_api_access.py`,
 `notification_api_channels.py`, `notification_api_delivery.py`, `notification_api_errors.py`,
 `notification_api_personal.py`, `notification_api_serializers.py`, `notification_availability.py`,
+`notification_oauth_verification.py`,
 `notification_builtin.py`, `notification_catalog_p2_presence.py`, `notification_contract_urls.py`,
 `notification_delivery.py`, `notification_digest.py`, `notification_discord.py`,
 `notification_discord_urls.py`, `notification_email_source.py`, `notification_fake.py`,

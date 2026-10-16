@@ -374,18 +374,19 @@ history and their owned cover images while preserving the core payment ledger.
 Time-limited member and guest check-in and the public current-presence TV display. Independent,
 opt-in and dependency-free; self check-in needs an enabled/configured geofence and an in-range
 browser reading. GPS remains spoofable; authorized staff can check in members/walk-ins without it.
-The presence service offers 1/2/3/4 h defaults (configured presets win); bootstrap still has the
-older 1/2/4 h default. Status is working, visiting, attending_event or guest. Names and personal
+The presence service and bootstrap share 1/2/3/4 h defaults (configured presets win).
+Status is working, visiting, attending_event or guest. Names and personal
 opt-out are controlled separately; public project/event titles need their own live visibility.
 Expiry produces a personal renewal notice, default in-app/push. `/m/<slug>/now` displays current
 rows only; it publishes no account IDs, contacts, coordinates or history.
 
 Without it: session, roster, privacy and TV routes refuse and the module-gated UI disappears.
 Uninstall retains history; purge deletes `PresenceSession`, `PresenceSettings` and
-`PresencePreference`; portable import drops them. The migration backfills account identity,
-**not installation on existing makerspaces** — enable the module explicitly in this tree.
-The privacy component and expiry category exist but their settings-shell/enum integration is
-incomplete; see the presence rule in [INVARIANTS.md](INVARIANTS.md).
+`PresencePreference`; portable import drops them. `makerspaces/0096` installs presence on all
+existing makerspaces, including archived ones, preserving other choices; reverse is a no-op.
+New makerspaces still opt in. Current-session exposes personal opt-out/name policy even when empty.
+Space Managers configure privacy in the module-gated settings section. The expiry category still
+lacks feature-enum/editor integration; see the presence rule in [INVARIANTS.md](INVARIANTS.md).
 
 ### member_accounts
 
@@ -403,7 +404,9 @@ credentials under Communication channels; staff manage their own connections und
 and a member Channels tab exists. Manager defaults prefer verified Telegram, otherwise email;
 other accounts default email/in-app. Tenant matrix/module/suppression rules still apply. WhatsApp
 is a personal channel with `twilio|meta` provider configuration, **not a separate module key**;
-Twilio is wired, Meta integration is incomplete. Member-token/OAuth limits are recorded in the
+Twilio and Meta are registered/mounted, but Meta's readiness still requires an unregistered module.
+Member JWTs reach exactly the six personal routes and OAuth uses authenticated challenge verification.
+Remaining delivery limits are recorded in the
 [delivery contract](notification-contract.md#integration-limits-in-this-tree). Security mail and
 mandatory-mail exemptions keep their own delivery rules.
 

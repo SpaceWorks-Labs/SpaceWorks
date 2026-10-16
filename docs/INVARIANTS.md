@@ -1311,8 +1311,10 @@ lock the account and names; DB constraints enforce case-insensitive uniqueness a
   serves live-gated OG/Twitter cards and public sitemap entries use the same predicate. Bundled nginx
   and Caddy rewrite recognized crawlers on grammar-matching, nonreserved single segments to that share
   route; ordinary navigation goes to the SPA. No crawler exception may bypass consent/tenant gates.
-  The owner's Edit link currently uses a browser-local hint, not an authenticated ownership lookup;
-  mutations still resolve the authenticated membership. Portable import resets public/family consent.
+  The main public read optionally authenticates JWTs and returns `viewer_is_owner` from the live
+  account/handle owner match (false for anonymous/other viewers), with no-store. Member profile
+  reads/writes expose `verified` from this selected membership's `verified_at`, never another space's
+  proof. Mutations still resolve the authenticated membership. Portable import resets public/family consent.
 
 **Notification channels are modules, one key each (phase 20).** `email`, `telegram`, `slack`,
 `mattermost` and `discord` each own a module key, so a space living in Discord ships no Slack
@@ -1373,28 +1375,43 @@ integration gaps; `notification-coverage.md` distinguishes converted producers f
   tenant and recipient permission and retains suppression/module rules. Security mail stays email-only.
 - Telegram proves a private `/start`; Slack workspace OIDC, Mattermost configured-server OAuth and
   Discord identify OAuth prove provider identities. The authenticated challenge verify endpoint
-  binds code/state to the signed-in account. This tree also retains anonymous OAuth completion and
-  lacks member-token admission for personal routes: do not describe authenticated-only completion
-  or working member Channels access as shipped. No typed destination ID establishes identity.
+  binds signed state to both the signed-in account and URL challenge before provider I/O, then
+  locks/consumes once. The frontend returns with `notify_challenge`, code and state and posts to
+  that verify route; anonymous personal completion is gone. Member JWTs full-match exactly the six
+  frozen personal route shapes, never a broad integrations prefix; channel settings/tests/installations
+  retain staff authority. No typed destination ID establishes identity.
 - WhatsApp is a personal channel (`twilio|meta`), without rooms or a registry module key. Signed
   matching inbound codes prove consent; SMS login proof is unrelated. STOP revokes, authenticated
   inbound opens the 24 h service window; outside it an approved event/audience/locale template is
-  required. Twilio reserved bindings are `opt_in`/`test` (member/en), Meta uses
-  `notification_opt_in`/`notification_test` (member/en). Do not interchange those names. Twilio is
-  registered/mounted; Meta source exists but startup/URL wiring is absent, and its readiness check
-  asks for an unregistered `whatsapp` module. Neither provider promises exactly-once upstream send.
+  required. Both providers use `notification_opt_in` (code variable) / `notification_test` (no
+  variables), member/en. Both are registered/mounted and share `in_session_window` across provider,
+  resolver and delivery; exactly 24 h and future timestamps refuse free text. Meta's readiness check
+  still asks for an unregistered `whatsapp` module, blocking normal send/start/test despite wiring.
+  Neither provider promises exactly-once upstream send.
 - Provider settings are deployment-wide: `TELEGRAM_WEBHOOK_SECRET` is environment-backed.
   OAuth reads `NOTIFICATION_SLACK_REDIRECT_URI`, `NOTIFICATION_MATTERMOST_REDIRECT_URI` and
-  `NOTIFICATION_DISCORD_REDIRECT_URI` from Django settings: HTTPS, optional `{makerspace_id}`,
+  `NOTIFICATION_DISCORD_REDIRECT_URI` from Django settings: HTTPS frontend notification-settings
+  URL, optional `{makerspace_id}` / `{challenge_id}`, appended `notify_challenge`,
   blank refuses. Mattermost private hosts default refused unless
   `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS is True`; Meta defaults
-  `WHATSAPP_META_GRAPH_VERSION` to `v25.0`. These latter names are adapter lookups only in this
-  tree; `config/settings.py` does not load their environment variables. Slack installation uses
-  PKCE; OAuth UI can consume `notify_challenge`/code/state at the authenticated verify route.
+  `WHATSAPP_META_GRAPH_VERSION` to `v25.0`. All five are environment-backed in `config/settings.py`
+  and forwarded through deployment manifests; backup treats them as nonblocking value comparisons.
+  Authorization and token exchange use identical redirects. Slack installation uses PKCE and its
+  callback requires an authenticated matching actor; personal completion uses only challenge verify.
 - Hardware, machine, watch, certification, membership, ledger, API-access, device and operations
   adapters reserve personal source-backed intents. Equipment rooms re-check their source/scope
-  before delivery. Maintenance/procurement barrels and member-broadcast producer still use legacy
-  dispatch here. Source adapters existing on disk do not prove their call sites were converted.
+  before delivery. Maintenance/procurement barrels delegate to machine adapters; member broadcasts
+  reserve per-account intents inside the audited transaction. Stocktake/first-email-failure legacy
+  inbox mirrors share source intent and UUID/get-or-create identity with personal delivery. Catalog
+  strings include the landed membership/document/problem-report/API/report/failure/stocktake events.
+- Legacy email recipients retain narrow compatibility. `bookings.owner_mailbox` preserves an
+  unverified owner's same booking contact address for lifecycle/reminders, rechecking ownership,
+  decrypted address equality, revision and all live delivery gates. Its reserved email leg prevents
+  parallel envelope mail; skipped legs release recoverable delivery. Operational unverified staff
+  email requires the `legacy_staff_email_allowed` source whitelist plus active tenant membership/RBAC
+  and current recipient scope; never campaigns or requester/member audiences. Hardware's separate
+  same-owner verified-contact mail remains; shared equipment email policy/render hooks and generic
+  machine/stocktake module-gate overrides are still missing (see the delivery contract).
 
 The original v2 additions below remain additive and dormant until configured. Their default selection
 fails **OPEN** to the action-based default — a broken selection, scope, module or template lookup must
@@ -1473,13 +1490,14 @@ bypass. Coordinates are validated and discarded, never stored in sessions, audit
 - **`presence` is an independent opt-in module.** `require_enabled` gates session, roster, privacy
   and TV APIs on module/runtime/servability. Uninstall retains rows; purge removes sessions,
   `PresencePreference` and `PresenceSettings`. Portable import drops all three, never reviving
-  source attendance or display consent. This tree has no migration installing it for existing spaces.
+  source attendance or display consent. `makerspaces/0096` installs it on every existing makerspace,
+  including archived rows, preserving other module choices without duplicates; reverse is a no-op.
+  New makerspaces still opt in through the module registry.
 - **Identity is an account, with optional membership.** An existing membership must be active;
   an account-only guest cannot bypass a revoked membership. Staff use members or this space's
   walk-ins; account-only guests self check in through the geofence. `account` and legacy `member`
   reference the same user, enforced by a DB check. Presence-service defaults are 60/120/180/240
-  minutes; configured presets win. The older bootstrap validator still defaults to 60/120/240
-  in this tree — do not claim those defaults are synchronized.
+  minutes in both the service and bootstrap validator; configured presets win.
 - **Statuses have provenance.** `working` requires an owned project here; private projects remain
   selectable without publishing their titles. Members may be `visiting`; account-only visitors and
   staff-recorded walk-ins are `guest`. Only the post-commit live event-ticket hook assigns
@@ -1495,14 +1513,16 @@ bypass. Coordinates are validated and discarded, never stored in sessions, audit
   rows and removes project/event titles. With names on and personal opt-out allowed, `hide_on_display`
   does the same for that person. With opt-out disabled, the name remains visible despite the flag.
   Labels are `A member`/`A guest`. Presence names do not depend on profile publication. Session
-  responses expose display policy; the current-session wrapper has only active/session/presets.
+  responses expose display policy. Current-session returns top-level `personal_opt_out_allowed`
+  and `names_displayed`, even without a session, respecting the person's hidden preference. Paginated
+  staff rosters expose the tenant policy on empty/populated results; end responses retain policy too.
 - **TV is an allow-list projection.** Anonymous `GET /api/v1/public/makerspaces/<slug>/presence/now/`
   and `/m/<slug>/now` expose display_name/status/since and optional public project/event titles,
   no IDs, contacts, coordinates or history. Servability/module/origin checks precede the shared
   30-second tenant/display-generation cache. Model saves invalidate by generation; bulk writes
   bypassing signals are bounded by TTL. Public responses prevent intermediary retention;
-  authenticated previews bypass cache and return no-store. `PresencePrivacySettings` exists but is
-  not mounted in the settings shell in this tree.
+  authenticated previews bypass cache and return no-store. `PresencePrivacySettings` is mounted in
+  the settings shell for Space Managers when the presence module is enabled.
 
 **One colour vocabulary.** `frontend/src/index.css` holds the literal light and dark RGB triplets
 from `docs/design-revamp/research/ui-brand-spec.md` section A. Keep `:root {` and `:root.dark {` literal:

@@ -151,7 +151,8 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `webhook_schema.py` owns v2 event schemas (`docs/webhooks-v2.md`).
   F3's bounded templates live in `email_templates_registry_research.py`; domain
   legacy adapters use `notifications_research.py`; converted personal producers use source-backed
-  notification_outbox.emit. The delivery map identifies remaining legacy barrels.
+  notification_outbox.emit. Maintenance/procurement barrels now delegate to source-backed machine
+  adapters; the delivery map identifies remaining policy/transport limits.
   `broadcasts_templates.py` validates bounded shared campaign placeholders and renders them
   through the existing email engine. `delivery_content.py` holds transient rendered SMTP content
   separately from encrypted mapped model attributes, preserving strict PII reads.

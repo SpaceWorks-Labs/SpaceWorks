@@ -49,6 +49,12 @@ only affect the authenticated person's endpoints/preferences. Other managers and
 cannot configure channels. They see their own delivery metadata; a Space Manager can see
 the tenant's metadata. No response contains credentials, destinations or message bodies.
 
+`accounts/authentication.py` full-matches exactly six personal route shapes for member JWTs:
+endpoints, endpoints/start, endpoints/{id}, challenges/{id}/verify, preferences and deliveries.
+Tenant/challenge/endpoint IDs are numeric, with an optional final slash. This is not a broad
+integrations-prefix grant: channel configuration, tests and installation routes remain outside it.
+The views still enforce tenant/account standing and ownership.
+
 | Method | Suffix | Request | Response |
 |---|---|---|---|
 | GET | `/channels?page=` | â€” | Page<Channel> |
@@ -152,8 +158,11 @@ are explicitly classified as excluded. Module purge removes the graph in depende
   A candidate E.164 number is not proof: a signed matching inbound opt-in code establishes consent.
   STOP revokes. Only authenticated inbound starts the 24 h free-text window; otherwise an approved
   event/audience/locale template binding is required. Twilio uses Content SIDs with reserved
-  `opt_in` and `test` member/en bindings; Meta source uses `notification_opt_in` and
-  `notification_test` member/en bindings. SMS-login consent grants no WhatsApp consent.
+  `notification_opt_in` (code variable) and `notification_test` (no variables), both member/en;
+  Meta uses the same bindings and is registered with its webhook mounted. The shared
+  `notification_wa_window.in_session_window` governs both providers, resolution and delivery:
+  exactly 24 h and future inbound timestamps are outside the window. SMS-login consent grants
+  no WhatsApp consent. Meta's remaining readiness gate is recorded below.
   Browser PATCH cannot self-approve templates; provider refresh owns approval. Status callbacks
   correlate installation/message and advance monotonically. Ambiguous retries may duplicate sends.
 
@@ -161,15 +170,21 @@ Provider setting lookups are deployment-wide, never derived from the request hos
 
 | Django setting | Adapter behaviour |
 | --- | --- |
-| `NOTIFICATION_SLACK_REDIRECT_URI` | HTTPS required; blank refuses; optional `{makerspace_id}` substitution |
+| `NOTIFICATION_SLACK_REDIRECT_URI` | HTTPS frontend notification-settings URL; blank refuses; optional `{makerspace_id}` / `{challenge_id}` substitutions |
 | `NOTIFICATION_MATTERMOST_REDIRECT_URI` | Same server-selected redirect policy |
 | `NOTIFICATION_DISCORD_REDIRECT_URI` | Same server-selected redirect policy |
 | `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | Defaults false; only boolean true allows private self-host addresses |
 | `WHATSAPP_META_GRAPH_VERSION` | Defaults `v25.0` in the Meta HTTP adapter |
 
-These five names are `getattr(settings, ...)` lookups only in this tree. They are **not loaded
-from environment variables by `config/settings.py`**. Setting them in dotenv alone does not
-configure OAuth/private Mattermost/Meta. `TELEGRAM_WEBHOOK_SECRET` has its existing env loader.
+All five are environment-backed in `config/settings.py`, included in deployment examples/manifests
+and classified as nonblocking value-comparison settings for backup. Redirect defaults are blank;
+private Mattermost hosts default false. Redirect selection appends `notify_challenge=<id>`;
+authorization and token exchange use that identical URI. Register the resulting frontend return
+URI with the provider. The frontend relays code/state through authenticated
+`POST /personal/challenges/{id}/verify`; signed state must match both the account and URL challenge
+before provider I/O. Completion locks configuration/challenge and consumes once. Anonymous
+completion is gone; `ChatOAuthCallbackView` retains only authenticated, actor-bound Slack installation.
+`TELEGRAM_WEBHOOK_SECRET` retains its existing env loader.
 
 ## Domain delivery ownership
 
@@ -179,9 +194,16 @@ Event delegates use `events.grant_staff`; booking delegates use `bookings.grant_
 legacy matrix still owns those legs. Event campaigns pre-skip email because the campaign worker owns
 it; the extra channel task has no periodic lost-task resume. Booking campaigns with a saved category
 selection use envelopes and skip batch email; others keep the existing batch-email path.
-Account-addressed staff and booking email requires `email_verified_at`; account-less booking guests
-retain contact email. Requester booking notifications default on, with audit-aware backfill of only
-untouched false tenant settings; per-resource overrides still win.
+Booking lifecycle/reminder mail preserves an unverified owner's same booking contact mailbox through
+the email-only `bookings.owner_mailbox` source. It proves explicit ownership and equal decrypted
+`Booking.email`, then rechecks revision, standing, selection, module/matrix/configuration, personal
+choice, suppression and consent at send/retry. It never uses another person's contact address or a
+campaign audience. Its reserved email leg prevents a parallel envelope email when account verification
+changes; a skipped leg releases recoverable envelope delivery. Account-less guests retain contact mail.
+`notification_resolution.legacy_staff_email_allowed` preserves unverified active staff mail only for
+whitelisted operational sources with live tenant membership/RBAC and recipient scope, never campaigns
+or member/requester audiences. Other delivery gates remain. Requester booking notifications default on,
+with audit-aware backfill of only untouched false tenant settings; per-resource overrides still win.
 
 Hardware/machine/watch/certification and membership/payment/device/operations adapters register live
 sources. Equipment room delivery now consults `notifications_p2_rooms.eligible_room` before timing/
@@ -192,36 +214,33 @@ The [coverage inventory](notification-coverage.md) records which producers actua
 
 ## Integration limits in this tree
 
-Verified against `6d083b29` code; these are implementation limits, not completed lane requests:
+Verified against the merged Phase 3 wiring tree (`3fd2c82e`) on 2026-10-17:
 
-- `accounts/authentication.py` admits member prefixes and push routes, but not the six personal
-  notification route shapes. The member Channels UI exists; MEMBER JWT calls are refused before
-  the personal view. Staff access still uses the view's account/tenant policy.
-- `ChatOAuthCallbackView` still allows anonymous GET/POST completion. Authenticated verification
-  exists, but it is not the only completion path; the requested authenticated-only OAuth return
-  flow and the deployment setting loaders above are absent.
-- Meta files exist, but `IntegrationsConfig.ready` does not register their factory and
-  `integrations/urls.py` does not mount their webhook URL list. `_ready` additionally requires
-  an unregistered `whatsapp` module. `provider=meta` is accepted as configuration, not operational
-  delivery. Do not describe both WhatsApp providers as wired.
-- Maintenance and procurement entry points still call legacy dispatch; their new machine adapters
-  are not delegated from those barrels. Member broadcasts still call `notify_lifecycle`, not
-  `notifications_p2_broadcasts.notify_broadcast`.
+- Meta's factory and webhook are registered/mounted, but `MetaWhatsAppProvider._ready` still requires
+  `module_enabled(..., "whatsapp")`. No such module key is registered; normal installs therefore
+  refuse its send/start/test as not configured. Mounted callbacks do not establish operational delivery.
 - `notification_resolution` retains category `printing`→module `printing` for generic machine jobs,
   and `stock`→`procurement` for stocktake. Their requested source-specific module overrides are
   absent. A producer being wired does not guarantee delivery in a machine-service-only or
   stocktake-without-procurement install.
-- Equipment email policy/proven-address/render helpers exist but are not called by the shared
-  resolver/builtin mail transport. The resolver requires verified account email and does not
-  implement those legacy email-only exceptions. `source_ready` conservatively refuses affected
-  owner intents when an email mute would otherwise leak through; selected chat can be suppressed too.
+- Equipment email policy/render helpers are still not called by the shared resolver/builtin mail
+  transport. `hardware.owner_mailbox` separately preserves same-owner verified-contact email when
+  account email is unverified; the shared resolver has not adopted `proven_address`. A different
+  contact mailbox is not a personal endpoint. `source_ready` conservatively refuses affected owner
+  intents when an email mute would otherwise leak through; selected chat can be suppressed too.
 - Presence expiry is catalogued with default in-app/push, but `NotificationFeature` omits presence
-  from the personal editor. Stocktake/first-email-failure legacy inbox mirrors remain alongside
-  envelope delivery. Room live-source enforcement covers equipment; other converted room summaries
-  retain legacy retry semantics. Scheduled-report legacy status is not provider acknowledgement.
-  `notification_catalog.py` omits several literal adapter events (membership joined/verified/
-  invitation/vouched, document_issued, problem reports, subdomain/report/email-failure and stocktake),
-  so those event/template editors are incomplete.
+  from the personal editor and staff room-rule options. Room live-source enforcement covers equipment;
+  other converted room summaries retain legacy retry semantics. Scheduled-report legacy status is not
+  provider acknowledgement. Revoked memberships still refuse application-owner personal notices.
+- Event campaign channel tasks still have no periodic lost-task resume; legacy campaign workers own
+  their email. Optional account-linked event/staff/organization invitation notices remain unadded.
+
+Maintenance/procurement compatibility barrels now delegate to the source-backed machine adapters;
+member broadcasts call `notifications_p2_broadcasts.notify_broadcast` in the audited transaction.
+Stocktake/first-email-failure legacy inbox mirrors remain intentionally, but share source intent and
+`uuid5(NAMESPACE_URL, envelope.dedup_key)`/get-or-create identity with personal delivery. The catalog
+now includes membership joined/verified/invitation/vouched, document_issued, problem_report.filed,
+subdomain_request_resolved, email.failed, scheduled_report and stock scheduled/completed.
 
 The historical lane notes under `docs/p2-*.md` retain integration/test requests. No runtime test
 result is asserted by this documentation pass. Model/API/provider ownership is indexed in

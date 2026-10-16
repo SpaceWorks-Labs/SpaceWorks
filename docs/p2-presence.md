@@ -16,8 +16,8 @@ Django execution, Docker execution or real provider requests in this lane.
   staffed kiosk using its authorized staff principal. This adds no station-only grant
   and never accepts a client-supplied `staff` bypass flag.
 - Defaults are 60/120/180/240 minutes. Explicit tenant presets continue through the
-  existing `validate_presence_presets` validator. The presence API uses the new defaults;
-  the central bootstrap default needs the integrator edit below.
+  existing `validate_presence_presets` validator. Phase 3 synchronizes the central bootstrap
+  default and installs presence on existing spaces through makerspaces/0096; new spaces opt in.
 - `working` requires an owned `MemberProject` in this makerspace. Private projects are
   selectable but their titles never appear on the TV. Public title projection also
   honors the frozen profile consent, account/membership standing, and `show_projects`
@@ -97,9 +97,9 @@ All methods have drf-spectacular request/response/error declarations.
 |---|---|---|
 | GET | `/api/v1/public/makerspaces/<slug>/presence/now/` | Anonymous TV array; fields described above. |
 | POST | `/api/v1/public/<slug>/presence-sessions` | `duration_minutes`, optional `status`, `project_id`, `hide_on_display`, `latitude`, `longitude`, `accuracy`; returns current session. |
-| GET | `/api/v1/public/<slug>/presence-sessions/current` | `{active, session, presets}`. |
+| GET | `/api/v1/public/<slug>/presence-sessions/current` | `{active, session, presets, personal_opt_out_allowed, names_displayed}`; policy is present even without a session. |
 | POST | `/api/v1/public/<slug>/presence-sessions/current/renew` | `duration_minutes`; returns renewed session. |
-| POST | `/api/v1/public/<slug>/presence-sessions/current/end` | No body; `{active:false, session:null}`. |
+| POST | `/api/v1/public/<slug>/presence-sessions/current/end` | No body; `{active:false, session:null, personal_opt_out_allowed, names_displayed}`. |
 | GET | `/api/v1/public/<slug>/presence-sessions/projects` | Paginated own project options `{id,title,public_visible}`. |
 | GET, PATCH | `/api/v1/public/<slug>/presence-sessions/preferences` | `hide_on_display`; PATCH also changes current sessions. |
 | GET | `/api/v1/admin/makerspace/<id>/presence-sessions/current` | Paginated present roster; account identity/name, role, status and session times; no contacts. |
@@ -144,10 +144,9 @@ Session responses include `started_at`, `expires_at`, `ended_at`, `end_reason`,
 
 ## Integrator requests
 
-1. In `backend/apps/makerspaces/validators.py`, change
-   `DEFAULT_PRESENCE_PRESETS = [60, 120, 240]` to `[60, 120, 180, 240]` so bootstrap,
-   legacy configuration editors and this API share the same default. The presence
-   service already uses the approved four durations while preserving configured presets.
+1. **DONE in Phase 3:** `backend/apps/makerspaces/validators.py` uses
+   `DEFAULT_PRESENCE_PRESETS = [60, 120, 180, 240]`; bootstrap, configuration editors and
+   the presence API share the default while preserving explicit tenant presets.
 2. Update `docs/INVARIANTS.md`: replace the advisory-geofence paragraph near line 1389
    with v2's hard self-check-in rule, spoofability caveat and staff alternative; remove
    the earlier assertion that disabling `presence.geofence` cannot block check-in.
@@ -158,9 +157,10 @@ Session responses include `started_at`, `expires_at`, `ended_at`, `end_reason`,
    Refresh stale descriptive copy in `capability_definitions.py` (geofence) and
    `separability/tombstones.py` (presence now has its own module key).
 4. Wire the frontend to the API shapes above, including the mandatory-name disclosure
-   and paginated staff roster. Any makerspace intended to run check-in must explicitly
-   enable `presence`; decide whether existing configured tenants/profile packs should
-   receive it in the integrator's migration/profile rollout.
+   and paginated staff roster. **Phase 3 rollout done:** makerspaces/0096 installs presence
+   on every existing row, including archived tenants, preserving other choices with a no-op reverse.
+   New makerspaces opt in. Current-session and roster responses now expose top-level name/opt-out
+   policy even when empty; MakerspaceSettingsPanel mounts privacy for Space Managers with presence on.
 5. On the Django host, check migrations, generate OpenAPI with spectacular
    `--format openapi-json`, regenerate the frontend client, and recompute
    `tenant_dump_catalog.CATALOG_SCHEMA_SHA256` from the **merged** model graph.
@@ -169,7 +169,7 @@ Session responses include `started_at`, `expires_at`, `ended_at`, `end_reason`,
    The Claude verifier updated `tests/presence/test_geofence_c7.py`, `test_presence_m3.py`
    and `test_guard_m3.py` (plus a new `tests/presence/fence_helpers.py`) to the hard
    geofence; like all backend tests they are gitignored and must be carried over from
-   this worktree. Preset/bootstrap tests asserting `[60, 120, 240]` follow request 1.
+   this worktree. Preset/bootstrap tests must assert `[60, 120, 180, 240]` after Phase 3.
    Then run the final integrated variation matrix. This lane makes no runtime pass claim.
 
 ## Contract change requests
@@ -192,9 +192,9 @@ They cover service/API boundaries, privacy/cache withdrawal, guest/walk-in ident
 event post-commit/idempotency/replay rules, expiry/retry/envelopes, actual inbox delivery,
 channel opt-outs, module/tombstone guards, import DROP and tenant isolation.
 
-Optional advance reminders are not enabled. Default central-preset synchronization,
-shared notification preference vocabulary, frontend work, merged schema generation,
-digest re-pin and runtime verification remain with the integrator as listed above.
+Optional advance reminders are not enabled. Central-preset synchronization and existing-space
+rollout landed in Phase 3, and the privacy settings section is mounted. Shared notification preference
+vocabulary and runtime verification remain; merged schema/digest checks belong to integration.
 
 ## Files changed
 

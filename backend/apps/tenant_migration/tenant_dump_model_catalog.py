@@ -89,6 +89,8 @@ PROJECTED_MODEL_LABELS |= WP3_PROJECTED_LABELS
 from .catalog_booking_arrival import FIELD_NAMES as BOOKING_ARRIVAL_FIELDS
 PROJECTED_MODEL_LABELS |= BOOKING_ARRIVAL_FIELDS.keys()
 
+PROJECTED_MODEL_LABELS |= frozenset({"inventory.InventoryStockSnapshot", "machines.MachineStatusEvent", "machines.ConsumableCostRecord"})
+
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
 EXPLICIT_DROP_MODEL_REASONS = {

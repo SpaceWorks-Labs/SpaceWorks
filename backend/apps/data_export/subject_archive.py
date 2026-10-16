@@ -91,6 +91,20 @@ def build_subject_archive(job, *, monotonic=time.monotonic):
                         count += 1
                     output.write(b"]")
                 counts[dataset.model] = count
+            from .subject_runtime import runtime_projections
+            for label, query in runtime_projections(job.requested_by, job.makerspace_id):
+                count = 0
+                with archive.open("runtime_activity/" + label + ".json", "w") as output:
+                    output.write(b"[")
+                    for value in query.iterator(chunk_size=settings.DATA_EXPORT_PAGE_SIZE):
+                        if monotonic() >= deadline:
+                            raise ExportDeadlineExceeded(label, sum(counts.values()) + count)
+                        if count:
+                            output.write(b",")
+                        output.write(json.dumps(value, cls=DjangoJSONEncoder).encode())
+                        count += 1
+                    output.write(b"]")
+                counts[label] = count
             manifest = {
                 "kind": "subject_access", "registry_version": REGISTRY_VERSION,
                 "makerspace_id": job.makerspace_id, "subject_id": job.requested_by_id,

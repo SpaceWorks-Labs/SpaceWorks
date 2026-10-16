@@ -62,12 +62,12 @@ def _lock_assigned_machine(service_request):
     return Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
 
 
-def _release_queue_machine(service_request):
+def _release_queue_machine(service_request, actor=None):
     if service_request.assigned_machine_id:
         machine = Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
         if machine.status == Machine.Status.RUNNING:
-            machine.status = Machine.Status.IDLE
-            machine.save(update_fields=["status", "updated_at"])
+            from .status_tracking import change_status
+            change_status(machine, Machine.Status.IDLE, source="service_release", actor=actor)
 
 
 def _require_available(machine):

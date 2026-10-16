@@ -32,6 +32,7 @@ from django.utils import timezone
 # counterpart here, so a task added for the Celery deployment cannot silently go missing
 # from the beat-less one.
 SCHEDULED_TASKS = (
+    ("inventory-stock-snapshot", "apps.inventory.tasks.snapshot_stock_task", 24 * 60),
     ("member-push-recovery", "apps.notifications.tasks.sweep_member_push", 5),
     ("purge-deleted-accounts", "apps.accounts.tasks.purge_deleted_accounts_task", 24 * 60),
     ("subject-access-exports", "apps.data_export.subject_tasks.sweep_subject_exports_task", 60),

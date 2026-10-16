@@ -135,6 +135,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
                     raise PermissionDenied("Makerspace target does not match the selected makerspace.")
         _assert_source_gate(request)
         DeviceGrant.objects.filter(pk=grant.pk).update(last_used_at=timezone.now())
+        from apps.accounts.device_activity import record_device_activity
+        record_device_activity(grant, getattr(request, "selected_makerspace_membership", None))
         request.session_authority = surface
         return user, token
 

@@ -27,6 +27,28 @@ The member account page composes `MemberAccountDeletion.tsx`,
 `AccountDeletionReauthentication.tsx`, `AccountDeletionBlockers.tsx` and the session-keyed
 TanStack Query hooks in `accountDeletionApi.ts`. Privacy disclosure is in
 `docs/privacy-account-deletion.md`.
+Mobile analytics prerequisites (1f-1): `accounts/models_activity.py` owns grant/day and
+anonymous attestation outcomes; `device_activity.py` records validated authentication
+activity. `integrations/models_tracking.py` owns staff push attempts, anonymous SMS
+outcomes and tenant-bound bounce replay identities. Staff delivery uses `push.py`; member
+delivery keeps `notifications/member_push.py` and its fenced lease helpers.
+`integrations/email.py` stamps connection provenance, `dispatch_delivery.py` retains
+provider IDs and `views_bounce.py` handles exact correlation and replay protection.
+
+`machines/models_tracking.py`, `status_tracking.py` and `consumable_costs.py` own immutable
+status/cost facts. `service_manual_usage.py` contains typed manual logging behind the
+`service_consumable_pools.py` compatibility wrapper; `usage_attribution.py` validates
+optional local members/times. `inventory/cost_basis.py` validates current price units for
+products and pools. `admin_api/views_machine_usage_candidates.py` and the React
+`panels/machine/UsageAttributionFields.tsx` provide the scoped optional member picker.
+
+`inventory/models_tracking.py` defines stock observations; `availability_stock.observe_stock`
+reads authoritative quantity buckets, while `stock_snapshots.py` gates tenant fan-out and
+`tasks.py` exposes the daily task. `data_export/classification_m1f1.py` classifies new facts;
+`subject_runtime.py` provides the separate personal runtime allowlist, consumed by
+`subject_archive.py`. Tenant imports remap cost sources in `semantic_remap.py` using
+`tracking_references.py`; `verification_semantic.py` verifies non-FK references behind
+the existing `verification.py` exports. Regression coverage is `backend/tests/analytics/`.
 
 The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
 `AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,

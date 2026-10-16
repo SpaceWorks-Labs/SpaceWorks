@@ -22,10 +22,21 @@ def _scrub(rows, values):
 
 
 def scrub_email_logs(user, makerspace_id, address):
-    # to_email is scoped ciphertext at rest, so a SQL equality predicate misses it.
-    for row in _rows("integrations.EmailLog", makerspace_id=makerspace_id).iterator():
+    rows = _rows("integrations.EmailLog", makerspace_id=makerspace_id)
+    values = {"to_email": "", "subject": "", "text_body": "", "html_body": "",
+              "provider_message_id": ""}
+    if makerspace_id is None:
+        # Platform logs have no tenant DEK and are excluded from scoped encryption.
+        # Read their keyless address projection only for ownership matching; the
+        # strict mapped reader correctly refuses persisted non-envelope values.
+        for pk, recipient_id, to_email in rows.values_list("pk", "recipient_id", "to_email").iterator():
+            if recipient_id == user.pk or (address and to_email.strip().lower() == address.lower()):
+                _scrub(rows.filter(pk=pk), values)
+        return
+    # Tenant to_email is ciphertext at rest; match only authenticated model reads.
+    for row in rows.iterator():
         if row.recipient_id == user.pk or (address and row.to_email.strip().lower() == address.lower()):
-            _scrub([row], {"to_email": "", "subject": "", "text_body": "", "html_body": ""})
+            _scrub([row], values)
 
 
 def _profiles(user, makerspace_id):
@@ -66,6 +77,13 @@ def scrub_tenant(user, makerspace_id, *, username, address):
         "invite_email": "", "application_answers": None,
     })
     scrub_email_logs(user, makerspace_id, address)
+    attempts = _model("integrations.PushDeliveryAttempt")
+    if attempts is not None:
+        # The recipient snapshot still owns history after device reassignment.
+        attempts.objects.filter(Q(recipient=user) | Q(push_device__user=user),
+                                delivery_log__makerspace_id=makerspace_id).delete()
+    # CASCADE removes member deliveries through either the inbox row or device,
+    # including rows whose other endpoint now belongs to a different account.
     for label in ("integrations.PushDevice", "notifications.NotificationInboxRow"):
         rows = _rows(label, user=user, makerspace_id=makerspace_id)
         if hasattr(rows, "delete"):

@@ -36,7 +36,7 @@ def audit_target_dispositions(models=MODELS):
     dispositions = {}
     for label, model_disposition in models.items():
         key = normalize_audit_target_type(label)
-        if label in {"operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule", "events.EventCertificateArtwork", "events.EventPage", "bookings.BookingResourcePage"}:
+        if label in {"machines.ConsumableCostRecord", "operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule", "events.EventCertificateArtwork", "events.EventPage", "bookings.BookingResourcePage"}:
             # Preferences can be deleted; unpromoted artwork reservations do not
             # travel. Their immutable audit history still survives projection.
             # Keep the source ID as typed provenance, never a live target binding
@@ -45,6 +45,7 @@ def audit_target_dispositions(models=MODELS):
                 AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT,
                 label,
                 {
+                    "machines.ConsumableCostRecord": "audit_tracking_cost_target",
                     "operations.SavedView": "audit_saved_view_target",
                     "events.EventCertificateArtwork": "audit_unpromoted_artwork_target",
                     "events.EventPage": "audit_website_page_target",

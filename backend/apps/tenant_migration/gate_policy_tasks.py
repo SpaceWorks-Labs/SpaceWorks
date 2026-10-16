@@ -72,6 +72,7 @@ TASK_TENANT_RESOLVERS = {
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.inventory.tasks.snapshot_stock_task": "Daily stock observations gate each tenant separately.",
     "apps.notifications.tasks.deliver_member_push": (
         "Resolves inbox_row.makerspace and holds its dedicated source boundary through delivery."
     ),
@@ -137,6 +138,7 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.inventory.stock_snapshots.snapshot_inventory_stock": "Daily stock observations gate each tenant separately.",
     "apps.notifications.tasks.sweep_member_push": "Member push recovery gates each tenant separately.",
     "apps.accounts.account_purge.purge_account": "Account erasure and durable object cleanup gate each tenant separately.",
     "apps.integrations.broadcasts_worker.recover_for_tenants": "Recover durable campaigns and outboxes only inside each tenant's source gate.",

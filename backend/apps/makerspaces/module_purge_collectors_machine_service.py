@@ -27,7 +27,19 @@ def machine_service_delete(makerspace, cursor):
             "pk", flat=True
         )
     )
+    cursor.execute(
+        "DELETE FROM machines_consumablecostrecord WHERE makerspace_id = %s AND ("
+        "(source_kind = 'pooled_service' AND source_id = ANY(%s)) OR "
+        "(source_kind = 'non_pool_consumption' AND source_id IN "
+        "(SELECT id FROM machines_servicerequestconsumption WHERE service_request_id = ANY(%s))) OR "
+        "(source_kind = 'manual_adjustment' AND source_id IN "
+        "(SELECT id FROM machines_machineconsumableadjustment "
+        "WHERE service_request_id = ANY(%s) OR usage_entry_id = ANY(%s))))",
+        [makerspace.pk, request_ids, request_ids, request_ids, doomed_entries],
+    )
+    cost_records = cursor.rowcount
     deleted_labels = {
+        "machines.ConsumableCostRecord",
         "machines.MachineConsumableAdjustment",
         "machines.MachineUsageEntry",
         "machines.ServiceRequestConsumption",
@@ -74,6 +86,7 @@ def machine_service_delete(makerspace, cursor):
         deleted_labels.update(labels)
     return _counts(
         model_labels=deleted_labels,
+        consumable_cost_records=cost_records,
         service_requests=requests,
         service_files=files,
         machine_usage_entries=usage_entries,

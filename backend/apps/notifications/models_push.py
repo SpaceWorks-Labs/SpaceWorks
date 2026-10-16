@@ -13,6 +13,8 @@ class MemberPushDelivery(models.Model):
 
     inbox_row = models.ForeignKey("notifications.NotificationInboxRow", on_delete=models.CASCADE)
     push_device = models.ForeignKey("integrations.PushDevice", on_delete=models.CASCADE)
+    platform = models.CharField(max_length=16, blank=True)
+    provider_source = models.CharField(max_length=8, blank=True)
     status = models.CharField(max_length=8, choices=Status.choices, default=Status.PENDING)
     lease_token = models.UUIDField(null=True, blank=True)
     lease_until = models.DateTimeField(null=True, blank=True)

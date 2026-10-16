@@ -11,11 +11,14 @@ class PrinterPoolSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MachineConsumablePool
-        fields = ("id", "machine_id", "machine_type_id", "material", "color", "color_hex", "brand", "lot_code", "unit", "initial_grams", "remaining_grams", "low_threshold_grams", "is_active", "is_public", "opened_at", "created_at", "updated_at")
+        fields = ("id", "machine_id", "machine_type_id", "material", "color", "color_hex", "brand", "lot_code", "unit", "unit_cost", "cost_currency", "cost_unit", "initial_grams", "remaining_grams", "low_threshold_grams", "is_active", "is_public", "opened_at", "created_at", "updated_at")
         read_only_fields = ("id", "remaining_grams", "is_active", "created_at", "updated_at")
 
 
 class PrinterPoolCreateSerializer(serializers.Serializer):
+    unit_cost = serializers.DecimalField(max_digits=14, decimal_places=4, required=False, allow_null=True, min_value=Decimal("0"))
+    cost_currency = serializers.CharField(max_length=3, required=False, allow_blank=True)
+    cost_unit = serializers.CharField(max_length=16, required=False, allow_blank=True)
     machine_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     machine_type_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     is_public = serializers.BooleanField(required=False, default=True)
@@ -52,6 +55,8 @@ class PrinterPoolCorrectionSerializer(serializers.Serializer):
 
 
 class TypedManualUsageSerializer(serializers.Serializer):
+    member = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    started_at = serializers.DateTimeField(required=False, allow_null=True)
     machine_id = serializers.IntegerField(min_value=1)
     consumable_pool_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     service_request_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
@@ -72,5 +77,5 @@ class TypedManualUsageResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MachineUsageEntry
-        fields = ("id", "machine_id", "consumable_pool_id", "service_request_id", "duration_minutes", "outcome", "percent_complete", "reason", "consumed_grams", "metering_unit", "consumed_quantity", "hours", "note", "created_at")
+        fields = ("id", "machine_id", "consumable_pool_id", "service_request_id", "duration_minutes", "outcome", "percent_complete", "reason", "consumed_grams", "metering_unit", "consumed_quantity", "hours", "note", "member", "started_at", "created_at")
         read_only_fields = fields

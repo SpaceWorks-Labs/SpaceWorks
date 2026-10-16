@@ -8,6 +8,7 @@ from django.apps import apps
 from django.db.models import Q
 
 from apps.data_export.datasets import DATASET_SPECS
+from apps.data_export.subject_runtime import RUNTIME_FIELDS
 from apps.data_export.subject_selectors import SUBJECT_PATHS
 
 
@@ -22,6 +23,10 @@ def _model(label):
 def tenant_ids(user):
     result = set()
     for label, paths in SUBJECT_PATHS.items():
+        if label in RUNTIME_FIELDS:
+            # Runtime rows have no portable DATASET_SPECS predicate. Discover
+            # their tenant below, including both push ownership paths.
+            continue
         model = _model(label)
         if model is None:
             continue
@@ -41,6 +46,11 @@ def tenant_ids(user):
         ("notifications.MemberNotificationPreference", "user", "makerspace"),
         ("integrations.PushDevice", "user", "makerspace"),
         ("integrations.EmailLog", "recipient", "makerspace"),
+        ("accounts.DeviceActivityDay", "grant__user", "makerspace"),
+        ("notifications.MemberPushDelivery", "inbox_row__user", "inbox_row__makerspace"),
+        ("notifications.MemberPushDelivery", "push_device__user", "inbox_row__makerspace"),
+        ("integrations.PushDeliveryAttempt", "recipient", "delivery_log__makerspace"),
+        ("integrations.PushDeliveryAttempt", "push_device__user", "delivery_log__makerspace"),
     ):
         model = _model(label)
         if model is not None:

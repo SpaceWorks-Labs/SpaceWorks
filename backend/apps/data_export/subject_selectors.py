@@ -13,6 +13,9 @@ from .datasets import DATASET_SPECS
 
 
 SUBJECT_PATHS = {
+    "accounts.DeviceActivityDay": ("grant__user",),
+    "notifications.MemberPushDelivery": ("inbox_row__user",),
+    "integrations.PushDeliveryAttempt": ("recipient",),
     "operations.SavedView": ("owner",),
     "apiclients.ApiKeyRequest": ("requester",),
     "bookings.BookingCheckInEvent": ("booking__member",),
@@ -37,7 +40,7 @@ SUBJECT_PATHS = {
     "integrations.NotificationRecipient": ("user",),
     "machines.MachineOperator": ("user",),
     "machines.MachineServiceRequest": ("member",),
-    "machines.MachineUsageEntry": ("service_request__member",),
+    "machines.MachineUsageEntry": ("service_request__member", "member"),
     "machines.CertificationGrant": ("membership__user",),
     "machines.ServiceRequestFile": ("owner_user",),
     "machines.ServiceRequestConsumption": ("service_request__member",),
@@ -57,6 +60,9 @@ SUBJECT_PATHS = {
 
 def subject_query(model, user, makerspace_id):
     label = model._meta.label
+    from .subject_runtime import RUNTIME_FIELDS, runtime_subject_query
+    if label in RUNTIME_FIELDS:
+        return runtime_subject_query(model, user, makerspace_id)
     if label == "accounts.User":
         return model.objects.filter(pk=user.pk)
     if label == "audit.AuditLog":

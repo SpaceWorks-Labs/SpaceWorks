@@ -1,5 +1,7 @@
 """Observe availability edges while the availability service holds the product lock."""
 
+from django.db import transaction
+from .models import InventoryProduct
 from apps.integrations.destinations import NotificationScope
 from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.notifications_research import bounded, notify_family, safe_adapter
@@ -31,3 +33,31 @@ def notify_low_stock(product):
         data={"product_id": product.pk},
         scope=NotificationScope(category=product.category_id),
     )
+
+
+@transaction.atomic
+def observe_stock(makerspace, *, now):
+    from zoneinfo import ZoneInfo
+    from django.utils import timezone
+    from apps.audit.services import record
+    from apps.accounts import rbac
+    from .models_tracking import InventoryStockSnapshot
+
+    day = timezone.localdate(now, ZoneInfo(makerspace.timezone))
+    products = rbac.scope_for_scheduled_work(
+        InventoryProduct.objects.select_for_update().filter(is_archived=False),
+        makerspace_id=makerspace.pk,
+    )
+    count = 0
+    for product in products.order_by("pk").iterator(chunk_size=500):
+        _, created = InventoryStockSnapshot.objects.get_or_create(
+            makerspace=makerspace, product=product, local_day=day,
+            defaults={"available": product.available_quantity, "issued": product.issued_quantity,
+                      "total": product.total_quantity, "out_of_stock": product.available_quantity <= 0,
+                      "below_reorder": product.available_quantity < product.reorder_point},
+        )
+        count += int(created)
+    if count:
+        record(None, "inventory.stock_observed", makerspace=makerspace,
+               meta={"local_day": day.isoformat(), "product_count": count})
+    return count

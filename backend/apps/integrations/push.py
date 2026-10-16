@@ -6,6 +6,8 @@ from apps.integrations.models_push import PlatformPushSettings, PushDevice
 from apps.integrations.push_fcm import PushProviderError, send_fcm
 from apps.integrations.staff_notifications import staff_user_ids_for_feature
 from apps.integrations.push_payload import push_data
+from apps.integrations.models_tracking import PushDeliveryAttempt
+from apps.notifications.member_push_leases import claim, complete
 
 logger = logging.getLogger(__name__)
 
@@ -72,18 +74,32 @@ def deliver_native_push(log):
         device_grant__status="active", user__is_active=True, user__access_status="active",
         device_grant__registration__status="approved",
         device_grant__registration__makerspace__isnull=True,
-    ).select_related("device_grant")
+    ).select_related("device_grant__registration")
     transient_failure = False
     for device in devices:
+        attempt, _ = PushDeliveryAttempt.objects.get_or_create(
+            delivery_log=log, push_device=device,
+            defaults={"recipient_id": device.user_id, "platform": device.device_grant.registration.platform, "provider_source": "platform"},
+        )
+        target = PushDeliveryAttempt.objects.filter(pk=attempt.pk, delivery_log_id=log.pk)
+        lease = claim(target)
+        if lease is None:
+            if target.exclude(status__in=("sent", "skipped")).exclude(last_error="invalid_token").exists():
+                transient_failure = True
+            continue
         try:
             data = push_data(
                 event_id=(log.payload or {}).get("event_key") or str(log.pk),
                 makerspace_id=log.makerspace_id, feature=log.feature, event=log.event,
                 link=(log.payload or {}).get("link", ""),
             )
-            send_device_push(settings_row, device, log.makerspace.name[:64], log.text_body, data)
+            sent = send_device_push(settings_row, device, log.makerspace.name[:64], log.text_body, data)
+            complete(target, lease, status="sent" if sent else "skipped",
+                     error="" if sent else "provider_not_configured")
         except PushProviderError as exc:
-            if exc.invalid_token:
+            changed = complete(target, lease, status="failed", exhausted=exc.invalid_token,
+                               error="invalid_token" if exc.invalid_token else "provider_failed")
+            if changed and exc.invalid_token:
                 deactivate_push_device(device)
             else:
                 transient_failure = True
@@ -92,6 +108,7 @@ def deliver_native_push(log):
                 "invalid_token": exc.invalid_token,
             })
         except Exception:
+            complete(target, lease, status="failed", error="delivery_failed")
             transient_failure = True
             logger.warning("native_push_delivery_failed", extra={
                 "push_device_id": device.pk, "provider": device.provider,

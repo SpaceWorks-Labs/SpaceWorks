@@ -66,7 +66,9 @@ def _deliver_row(row):
     )
     candidates = []
     for device in devices.iterator():
-        delivery, _ = deliveries.get_or_create(inbox_row=row, push_device=device)
+        delivery, _ = deliveries.get_or_create(inbox_row=row, push_device=device, defaults={
+            "platform": device.device_grant.registration.platform, "provider_source": "platform",
+        })
         if not allowed or not device_allowed(device, row):
             skip(_target(row, delivery.pk), "recipient_or_device_ineligible")
             continue
@@ -80,6 +82,9 @@ def _deliver_row(row):
         token = claim(target)
         if token is None:
             continue
+        target.filter(status="sending", lease_token=token).update(
+            platform=device.device_grant.registration.platform, provider_source="platform",
+        )
         retry = _send(row, settings_row, device, target, token) or retry
     return retry
 

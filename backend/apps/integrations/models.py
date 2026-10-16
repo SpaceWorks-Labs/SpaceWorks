@@ -43,6 +43,10 @@ from .models_sms import (
 )
 
 __all__ = [
+    'SmsSendLog',
+    'PushDeliveryAttempt',
+    'EmailProviderEvent',
+
     'CHANNEL_MODULE_KEYS',
     'ChatNotificationChannel',
     'ChatTemplate',
@@ -76,3 +80,5 @@ __all__ = [
     'PushDevice',
     'SmsProviderChoice',
 ]
+
+from .models_tracking import SmsSendLog, PushDeliveryAttempt, EmailProviderEvent  # noqa: F401

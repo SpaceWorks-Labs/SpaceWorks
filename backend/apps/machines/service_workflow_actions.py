@@ -174,8 +174,8 @@ def start(service_request, actor, machine_scope, *, machine_id=None, estimated_m
             pool = locked.run_consumable_pool
             locked.run_consumable_label, locked.run_consumable_material, locked.run_consumable_color = pool.label, pool.material, pool.color
         locked.save(update_fields=["assigned_machine", "status", "handled_by", "started_at", "estimated_minutes", "run_machine_name", "run_machine_model", "run_consumable_label", "run_consumable_material", "run_consumable_color", "run_estimated_minutes", "run_planned_grams", "updated_at"])
-        machine.status = Machine.Status.RUNNING
-        machine.save(update_fields=["status", "updated_at"])
+        from .status_tracking import change_status
+        change_status(machine, Machine.Status.RUNNING, source="service_start", actor=actor)
         _audit_transition(actor, locked, "assigned", extra={"machine_id": machine.pk})
         _audit_transition(actor, locked, "started")
         _notify_after_commit(locked, "started")
@@ -199,7 +199,9 @@ def complete(service_request, actor, *, actual_minutes, consumptions, actual_gra
             locked.actual_minutes = _minutes(actual_minutes, "actual_minutes")
         locked.status, locked.handled_by, locked.completed_at = MachineServiceRequest.Status.COMPLETED, actor, timezone.now()
         locked.save(update_fields=["status", "handled_by", "actual_minutes", "completed_at", "updated_at"])
-        _release_queue_machine(locked)
+        from .consumable_costs import record_service_cost
+        record_service_cost(locked, actor)
+        _release_queue_machine(locked, actor)
         _audit_transition(actor, locked, "completed")
         _notify_after_commit(locked, "completed")
         from apps.machines.service_payments import create_for_completed_request
@@ -236,7 +238,9 @@ def fail(service_request, actor, *, reason, percent_complete, actual_minutes, co
             locked.failed_at = timezone.now()
         locked.status, locked.handled_by = MachineServiceRequest.Status.FAILED, actor
         locked.save(update_fields=["status", "handled_by", "actual_minutes", "fail_percent_complete", "reason", "failed_at", "updated_at"])
-        _release_queue_machine(locked)
+        from .consumable_costs import record_service_cost
+        record_service_cost(locked, actor)
+        _release_queue_machine(locked, actor)
         _audit_transition(actor, locked, "failed")
         _notify_after_commit(locked, "failed")
         return locked

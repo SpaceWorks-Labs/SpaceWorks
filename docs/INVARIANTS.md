@@ -14,6 +14,62 @@ beyond any single module. Read the subsection covering what you are touching.
 
 ## Cross-cutting invariants (from shipped batches)
 
+**Analytics measurement ledgers (mobile 1f-1).** Consumable quantities have one finalized
+source per operation: pooled service requests at completion/failure (including actual =
+reserved, which writes no reconciliation adjustment), manual consume adjustments, and
+every non-pool `ServiceRequestConsumption`, including productless grams. Reservations,
+corrections, reconciliation deltas and retirements are separate measures; manual usage
+grams and printer telemetry must never be added again. Units remain separate.
+`ConsumableCostRecord` freezes the contemporaneous pool/product price in the consumption's
+own measurement unit and currency minor units, with half-up rounding of the total. Current
+prices use major currency units per `cost_unit`; kg/liter/meter prices normalize to
+grams/milliliters/millimeters. There is no procurement fallback or historical backfill.
+Unpriced consumption stays cost-unknown. Pool and inventory-product price triples are
+nullable together. Productless non-pool grams currently have no priced source.
+
+Every runtime machine status writer uses `machines/status_tracking.change_status` under
+the existing machine lock: manual change, service start/release, retirement, maintenance.
+It appends `MachineStatusEvent` and audit in the same transaction only for real changes.
+Before the first observed edge the historical status is unknown. Manual usage may set an
+active local `member` and `started_at` at INSERT only; older rows remain unattributed and
+the existing UPDATE/DELETE trigger is unchanged. The optional member picker is scoped to
+the resolved machine and requires permission to operate it.
+
+Authenticated native activity is unique on `(grant, makerspace-or-NULL, local_day)`, with
+NULLs treated as equal. Only the validated selected membership supplies the tenant and
+its timezone; unselected requests use NULL and the deployment timezone. The short cache
+uses the same triple and is populated after commit. This measures active app sessions
+(grants); platform counts deduplicate grants across tenant and NULL observations.
+
+Staff push uses `integrations.PushDeliveryAttempt`; member push keeps its existing
+`MemberPushDelivery` leases. Both stamp platform/provider source at creation; retries
+update attempts on that row and successful destinations are not resent. Staff attempts
+snapshot the recipient so device reassignment cannot transfer ownership of history.
+Email provider source comes from the actual connection, including platform SMTP fallback;
+older unknown values remain blank. Provider message IDs are retained only when returned.
+Signed bounce ingress deduplicates `(makerspace, event_id)` and correlates timestamps only
+on exact same-tenant message IDs; bounce and complaint timestamps remain independent.
+Uncorrelated events still suppress the address. SMS outcomes contain no phone/body;
+attestation outcomes contain no identifiers, proof or verifier response. Provider errors
+never enter these ledgers as free text.
+
+`InventoryStockSnapshot` is an append-only observation per `(product, local_day)` in the
+tenant timezone. It reads quantity buckets through inventory availability, never rebuilds
+past days, and measures **days observed out of stock**. Beat, the beat-less scheduler and
+the fan-out source-gate registry must all include its daily writer.
+
+Status, cost and stock facts travel in tenant exports; cost source IDs remap to their
+domain sources. Service-module purge deletes costs for the sources it removes, while
+independent manual pool usage and costs survive. Activity, push attempts, SMS/attestation
+outcomes and provider replay events are runtime-only and never travel in tenant dumps.
+Personal archives include a separate `runtime_activity/` section with explicit field
+allowlists for own activity and push outcomes, with no device destinations, tokens,
+leases or message content. Own unselected activity is included; another tenant's selected
+activity is not. Account purge must delete user-linked runtime rows. The 1d contract retains immutable
+usage rows and their member link to the anonymized User stub; it does not update the
+usage row or its started_at. SET_NULL is the declared policy for a future physical User
+delete, not permission to bypass the usage trigger. Anonymous facts survive.
+
 **Recent reauthentication (Lane F).** `accounts.ReauthenticationSession` holds
 server-only proof bound to the stable browser session ID or native DeviceRefreshFamily ID, user, surface,
 deployment generation, password/email/linked-identity fingerprint and MFA version.
@@ -1918,6 +1974,13 @@ email/phone/MFA challenges, password-reset envelopes, push devices and personal 
 rows are removed. Hardware-request identity snapshots, booking contacts/notes/answers,
 registration contacts/answers, owned service-job contacts, recipient/address-matched
 EmailLog content, and MembershipRequest invite addresses/application answers are scrubbed.
+EmailLog scrubbing also clears `provider_message_id`; bounce/complaint timestamps and
+provider outcome fields remain. Member push deliveries are deleted through either the
+user's inbox rows or push devices. Staff push attempts are deleted through their saved
+recipient or the user's push devices, inside the delivery log's tenant boundary.
+`DeviceActivityDay` rows are deleted through `grant.user` in the final global step,
+including NULL-makerspace activity, only after every tenant has finished. A gated
+tenant keeps its push history and defers all activity cleanup until a later sweep.
 Repeated sweeps do not repeat quota release or final-purge auditing.
 
 **Apple authorization is revoked, not merely unlinked.** Verified Apple claims retain
@@ -1943,11 +2006,14 @@ never travel in tenant artifacts; target cleanup resumes from the imported times
 **Retained and disclosed:** `AuditLog`; `Payment`/`Refund`/`ManualSettlement`;
 `PaymentDocument.payer_label` (historical username — walk-in usernames embed a name);
 `RequesterAccountability`/`ReturnEvent`; `EvidencePhoto` rows (bytes follow evidence
-retention); `MachineUsageEntry`, `EventAttendanceCertificate`, `EventFeedbackResponse`
+retention); `MachineUsageEntry` (including `member` linked to the anonymized User stub
+and unchanged `started_at`), `EventAttendanceCertificate`, `EventFeedbackResponse`
 (immutable triggers); staff-addressed notification emails mentioning the member (kept
 until EmailLog's existing retention); `NotificationDeliveryLog` text (deleted by
 `notifications/retention.py` on its existing windows); staff actor snapshots on other
-people's memberships. Backups age out under their own retention. The operator-facing
+people's memberships; anonymous `ConsumableCostRecord`, `InventoryStockSnapshot`,
+`MachineStatusEvent`, `SmsSendLog` and `AttestationVerificationLog` rows. Backups age out
+under their own retention. The operator-facing
 [privacy note](privacy-account-deletion.md) discloses the same list.
 
 ## Handover roles and the retired Guest Admin

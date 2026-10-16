@@ -167,6 +167,9 @@ core modules cannot be uninstalled at all.
 
 [Read the machine_service module reference](MODULES-WORKSHOPS.md#machine_service).
 
+Finalized consumable costs accompany their service sources and are removed with them
+during module purge; independent manual pool usage and its recorded costs remain.
+
 ### printing
 
 [Read the printing module reference](MODULES-WORKSHOPS.md#printing).

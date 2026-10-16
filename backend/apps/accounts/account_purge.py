@@ -113,7 +113,8 @@ def _finish_global(user_id, expected, counts):
 
 def _global_rows(user):
     from apps.accounts.models import (EmailVerificationChallenge, PhoneVerificationChallenge,
-                                     PasswordResetEnvelope, SocialIdentity, MFAChallenge, AccountRestoreIntent)
+                                     PasswordResetEnvelope, SocialIdentity, MFAChallenge, AccountRestoreIntent,
+                                     DeviceActivityDay)
     address = recorded_address(user)
     EmailVerificationChallenge.objects.filter(user=user).delete()
     PhoneVerificationChallenge.objects.filter(user=user).delete()
@@ -124,6 +125,9 @@ def _global_rows(user):
         predicate |= Q(email_normalized__iexact=address)
     PasswordResetEnvelope.objects.filter(predicate).delete()
     SocialIdentity.objects.filter(user=user).delete()
+    # Includes unselected (NULL-makerspace) activity. Wait for every tenant gate
+    # before removing this grant-owned history; the revoked grants themselves stay.
+    DeviceActivityDay.objects.filter(grant__user=user).delete()
     # Platform-addressed logs have no tenant gate. Tenant logs were scrubbed above.
     scrub_email_logs(user, None, address)
     from apps.accounts.account_deletion_discovery import _model

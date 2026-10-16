@@ -216,6 +216,9 @@ from apps.accounts.models_reauthentication import ReauthenticationSession  # noq
 from apps.accounts.models_staff_invitations import StaffInvitation  # noqa: E402
 
 __all__ = [
+    'DeviceActivityDay',
+    'AttestationVerificationLog',
+
     'ReauthenticationSession',
     'UserMFA',
     'MFAChallenge',
@@ -254,3 +257,4 @@ __all__ += ["AccountPurgeProgress", "AccountPurgeObject", "AppleRefreshCredentia
 
 from apps.accounts.models_account_restore import AccountRestoreIntent  # noqa: E402
 __all__ += ["AccountRestoreIntent"]
+from .models_activity import DeviceActivityDay, AttestationVerificationLog  # noqa: F401

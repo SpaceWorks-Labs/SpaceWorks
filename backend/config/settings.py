@@ -591,6 +591,7 @@ if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
 CELERY_BEAT_SCHEDULE = {
+    "inventory-stock-snapshot": {"task": "apps.inventory.tasks.snapshot_stock_task", "schedule": crontab(hour=0, minute=15)},
     "member-push-recovery": {
         "task": "apps.notifications.tasks.sweep_member_push",
         "schedule": crontab(minute="*/5"),

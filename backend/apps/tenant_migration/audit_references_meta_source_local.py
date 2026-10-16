@@ -2,6 +2,7 @@
 
 SOURCE_LOCAL_AUDIT_EDGES = frozenset(
     {
+        ("consumable.cost_recorded", "source_id"),
         ("event.checkin_roster_downloaded", "lease_id"),
         ("event.checkin_sync_processed", "lease_id"),
         ("event.registration_attended", "operation_id"),

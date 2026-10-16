@@ -17,18 +17,17 @@ def makerspace_mail_connection(makerspace):
     validate_smtp_endpoint(smtp_host, makerspace.smtp_port)
     use_ssl = makerspace.smtp_use_ssl
     use_tls = makerspace.smtp_use_tls and not use_ssl
-    return (
-        get_connection(
-            host=smtp_host,
-            port=makerspace.smtp_port,
-            username=makerspace.smtp_username or None,
-            password=makerspace.get_smtp_password() or None,
-            use_tls=use_tls,
-            use_ssl=use_ssl,
-            timeout=smtp_timeout_seconds(),
-        ),
-        makerspace.smtp_from_email or settings.DEFAULT_FROM_EMAIL,
+    connection = get_connection(
+        host=smtp_host,
+        port=makerspace.smtp_port,
+        username=makerspace.smtp_username or None,
+        password=makerspace.get_smtp_password() or None,
+        use_tls=use_tls,
+        use_ssl=use_ssl,
+        timeout=smtp_timeout_seconds(),
     )
+    connection.provider_source = "own"
+    return connection, makerspace.smtp_from_email or settings.DEFAULT_FROM_EMAIL
 
 
 def platform_mail_connection():
@@ -48,18 +47,17 @@ def platform_mail_connection():
     validate_smtp_endpoint(smtp_host, cfg.smtp_port)
     use_ssl = cfg.smtp_use_ssl
     use_tls = cfg.smtp_use_tls and not use_ssl
-    return (
-        get_connection(
-            host=smtp_host,
-            port=cfg.smtp_port,
-            username=cfg.smtp_username or None,
-            password=cfg.get_smtp_password() or None,
-            use_tls=use_tls,
-            use_ssl=use_ssl,
-            timeout=smtp_timeout_seconds(),
-        ),
-        cfg.from_email or settings.DEFAULT_FROM_EMAIL,
+    connection = get_connection(
+        host=smtp_host,
+        port=cfg.smtp_port,
+        username=cfg.smtp_username or None,
+        password=cfg.get_smtp_password() or None,
+        use_tls=use_tls,
+        use_ssl=use_ssl,
+        timeout=smtp_timeout_seconds(),
     )
+    connection.provider_source = "platform"
+    return connection, cfg.from_email or settings.DEFAULT_FROM_EMAIL
 
 
 def platform_email_configured() -> bool:

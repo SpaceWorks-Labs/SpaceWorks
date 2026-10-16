@@ -202,7 +202,7 @@ def _authority_matches(challenge):
     )
 
 
-def verify_attestation(challenge, raw_challenge, payload):
+def _verify_attestation(challenge, raw_challenge, payload, *, mode):
     # Simulators/emulators cannot attest, and Apple's in-process mode is selected by the
     # team ID alone, so the explicit development payload is honoured before mode dispatch
     # -- still only with DEBUG on (checks.E001 refuses the flag otherwise) and only for a
@@ -210,7 +210,6 @@ def verify_attestation(challenge, raw_challenge, payload):
     if (settings.DEVICE_ATTESTATION_DEV_INSECURE and settings.DEBUG
             and challenge.environment == "development" and payload == {"type": "development"}):
         return VerifiedAttestation(subject="development", metadata={"signing_identity": challenge.signing_identity})
-    mode = readiness_mode(challenge.platform, challenge.signing_identity)
     if mode == "unavailable":
         raise AttestationUnavailable("Device attestation is unavailable.")
     if mode == "development_insecure":
@@ -234,3 +233,21 @@ def verify_attestation(challenge, raw_challenge, payload):
     if not isinstance(subject, str) or not subject or len(subject) > 512:
         raise AttestationRejected("Attestation was rejected.")
     return VerifiedAttestation(subject=subject, metadata={"signing_identity": challenge.signing_identity})
+
+
+def verify_attestation(challenge, raw_challenge, payload):
+    from .models_activity import AttestationVerificationLog
+
+    mode, outcome = "unavailable", "failed"
+    try:
+        development = (settings.DEVICE_ATTESTATION_DEV_INSECURE and settings.DEBUG
+                       and challenge.environment == "development" and payload == {"type": "development"})
+        mode = "development_insecure" if development else readiness_mode(challenge.platform, challenge.signing_identity)
+        result = _verify_attestation(challenge, raw_challenge, payload, mode=mode)
+        outcome = "sent"
+        return result
+    except AttestationUnavailable:
+        outcome = "skipped"
+        raise
+    finally:
+        AttestationVerificationLog.objects.create(platform=challenge.platform, mode=mode, outcome=outcome)

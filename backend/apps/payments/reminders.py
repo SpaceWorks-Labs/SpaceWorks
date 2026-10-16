@@ -2,12 +2,13 @@
 
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import CharField, Exists, OuterRef, Q
 from django.db.models.functions import Cast
 
 from apps.accounts import rbac
 from apps.makerspaces.local_time import local_day_bounds, to_local
-from apps.makerspaces.platform import feature_enabled, module_enabled
+from apps.makerspaces.platform import feature_enabled
 from apps.operations.models_reminders import ReminderSchedule
 from apps.operations.reminder_types import ReminderMessage, ReminderSubject
 from apps.payments.models import MakerspaceBillingSettings, Payment
@@ -32,10 +33,8 @@ def _steps(makerspace, payment):
 
 
 def _eligible(makerspace):
-    from apps.integrations.notification_catalog import is_notification_enabled
-    return (module_enabled(makerspace, "email") and
-            is_notification_enabled(makerspace, "payments", "email") and
-            feature_enabled(makerspace, "billing.reminders"))
+    # Availability is resolved per explicit owner by the envelope worker.
+    return feature_enabled(makerspace, "billing.reminders")
 
 
 def _payments(makerspace):
@@ -109,8 +108,12 @@ def build_payment_message(makerspace, reminder, now, local_tz):
     return ReminderMessage(title="Payment reminder", event=event)
 
 
+@transaction.atomic
 def dispatch_payment_message(makerspace, reminder, message, now, local_tz):
     payment = _current_payment(makerspace, reminder, now)
     if payment is not None:
         from apps.payments.notifications import notify_payment
-        notify_payment(payment, message.event, requester_only=True)
+        result = notify_payment(payment, message.event, requester_only=True, reminder=reminder)
+        from apps.operations.notifications_p2 import finish_reminder
+        finish_reminder(makerspace, reminder, now, result)
+        return result

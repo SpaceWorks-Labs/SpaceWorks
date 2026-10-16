@@ -66,6 +66,8 @@ def vouch_for_request(actor, row):
         )
         audit.record(actor, "membership.vouched", makerspace=makerspace, target=row,
                      meta={"vouch_id": vouch.pk, "voucher_id": actor.pk})
+        from .notifications_p2_vouches import notify_vouch
+        notify_vouch(vouch)
         if valid_vouches(row, policy, now=now).count() >= policy.vouches_required:
             if row.state == "awaiting_payment":
                 advance(actor, row, policy)

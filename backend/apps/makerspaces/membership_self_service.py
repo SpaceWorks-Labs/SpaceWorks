@@ -42,7 +42,7 @@ def cancel_renewal(actor, makerspace_id, reason):
         audit.record(actor, "membership.renewal_cancelled", makerspace=makerspace,
                      target=membership, meta={"reason": reason})
         from apps.makerspaces.membership_renewal_notifications import notify_membership
-        transaction.on_commit(lambda: notify_membership(membership, "cancelled"))
+        notify_membership(membership, "cancelled")
     return membership
 
 

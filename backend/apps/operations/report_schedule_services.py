@@ -159,7 +159,7 @@ def schedule_inputs(schedule, now):
 
 def _build_and_deliver(schedule, definition, now, actor):
     makerspace = schedule.makerspace
-    errors, object_key = [], ""
+    errors, object_key, built = [], "", False
     try:
         date_range, report_filters = schedule_inputs(schedule, now)
         provenance = build_provenance(
@@ -185,23 +185,33 @@ def _build_and_deliver(schedule, definition, now, actor):
         store_report_object(key, payload, schedule.format)
         object_key = key
         url = signed_download_url(key)
+        built = True
     except Exception as exc:  # noqa: BLE001 - recorded on the delivery row instead
         logger.error("report_schedule_build_failed", extra={"schedule_id": schedule.pk, "error_type": type(exc).__name__})
         errors.append(f"build:{type(exc).__name__}")
-    else:
+    delivered = not errors
+    with transaction.atomic():
+        delivery = ReportDelivery.objects.create(
+            schedule=schedule, object_key=object_key,
+            status=ReportDelivery.Status.SENT if delivered else ReportDelivery.Status.FAILED,
+            error="; ".join(errors)[:2000],
+            expires_at=(
+                now + timedelta(seconds=settings.REPORT_DELIVERY_URL_TTL_SECONDS) if object_key else None
+            ),
+        )
+        if built:
+            from .notifications_p2_reports import notify_report
+            notify_report(delivery)
+    if built:
+        # As before: nothing is sent unless the build and presign both succeeded.
         try:
-            errors.extend(_send(schedule, definition, url))
-        except Exception as exc:  # noqa: BLE001 - retain the failed delivery receipt
+            errors.extend(_send(schedule, definition, url, delivery=delivery))
+        except Exception as exc:
             errors.append(f"send:{type(exc).__name__}")
     delivered = not errors
-    delivery = ReportDelivery.objects.create(
-        schedule=schedule, object_key=object_key,
-        status=ReportDelivery.Status.SENT if delivered else ReportDelivery.Status.FAILED,
-        error="; ".join(errors)[:2000],
-        expires_at=(
-            now + timedelta(seconds=settings.REPORT_DELIVERY_URL_TTL_SECONDS) if object_key else None
-        ),
-    )
+    delivery.status = ReportDelivery.Status.SENT if delivered else ReportDelivery.Status.FAILED
+    delivery.error = "; ".join(errors)[:2000]
+    delivery.save(update_fields=["status", "error"])
     audit.record(
         actor, "report_schedule.delivered" if delivered else "report_schedule.failed",
         makerspace=makerspace, target=schedule,
@@ -210,9 +220,11 @@ def _build_and_deliver(schedule, definition, now, actor):
     return delivery
 
 
-def _send(schedule, definition, url):
-    """Deliver the LINK to every configured leg; the bytes never enter a chat channel."""
+def _send(schedule, definition, url, delivery=None):
+    """Keep external email; selected staff use envelopes and rooms get navigation."""
+    from .notifications_p2 import staff_link
     makerspace = schedule.makerspace
+    navigation = staff_link(makerspace, "reports")
     title = definition.title or definition.key
     hours = max(settings.REPORT_DELIVERY_URL_TTL_SECONDS // 3600, 1)
     text = (
@@ -222,13 +234,19 @@ def _send(schedule, definition, url):
     errors = []
     if schedule.destination_id:
         ok, error = deliver_text_to_destination(
-            makerspace, schedule.destination, text=text, feature=NOTIFICATION_FEATURE,
+            makerspace, schedule.destination,
+            text=f"Scheduled report is ready. Sign in to the staff console: {navigation}",
+            feature=NOTIFICATION_FEATURE,
             event=NOTIFICATION_EVENT, reference=f"report-schedule-{schedule.pk}",
-            payload={"schedule_id": schedule.pk, "report_key": definition.key, "download_url": url},
+            payload={"schedule_id": schedule.pk, "report_key": definition.key},
         )
         if not ok:
             errors.append(f"{schedule.destination.channel}:{error}")
-    emails = recipient_emails(schedule, definition)
+    from .notifications_p2_reports import emailed_by_envelope
+    # A selected staff member keeps the existing signed-link email unless their own
+    # report envelope already emails them (navigation only), so nobody gets two.
+    personal = emailed_by_envelope(delivery, definition) if delivery is not None else set()
+    emails = [email for email in recipient_emails(schedule, definition) if email.strip().casefold() not in personal]
     for email in emails:
         try:
             log = dispatch_email(
@@ -243,7 +261,7 @@ def _send(schedule, definition, url):
             # SKIPPED means the `email` module is off for this makerspace; that leg did
             # not deliver, and the row must say so rather than count a silent skip as sent.
             errors.append(f"email:{log.status}")
-    if not schedule.destination_id and not emails:
+    if not schedule.destination_id and not emails and not personal:
         errors.append("no_recipients")
     return errors
 

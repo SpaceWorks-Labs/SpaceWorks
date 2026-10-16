@@ -110,4 +110,4 @@ def attempt_checkout(term_id, now):
             from apps.makerspaces.membership_renewal_notifications import notify_term
             audit.record(None, "membership.renewal_retry", makerspace=space,
                          target=term, meta={"attempt": attempt})
-            transaction.on_commit(lambda: notify_term(term, "renewal_failed"))
+            notify_term(term, "renewal_failed")

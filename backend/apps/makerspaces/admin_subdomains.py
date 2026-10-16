@@ -36,6 +36,7 @@ class SubdomainRequestAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     )
 
     @admin.action(description="Approve selected subdomain requests and provision")
+    @transaction.atomic
     def approve_and_provision(self, request, queryset):
         approved = 0
         skipped = 0
@@ -101,6 +102,7 @@ class SubdomainRequestAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         self.message_user(request, f"Approved {approved}, skipped {skipped}.")
 
     @admin.action(description="Reject selected subdomain requests")
+    @transaction.atomic
     def reject_selected(self, request, queryset):
         rejected = 0
         for req in queryset.select_related("makerspace", "requested_by"):

@@ -88,6 +88,6 @@ def _issue(payment, *, kind, actor, money_at, method, reference, amount,
     policy.save(update_fields=["next_document_number"])
     audit.record(actor, "payment.document_issued", makerspace=space, target=document,
                  meta={"kind": kind, "number": document.number})
-    from apps.payments.document_delivery import email_document
-    transaction.on_commit(lambda: email_document(document.pk))
+    from apps.payments.notifications_p2 import notify_document
+    notify_document(document)
     return document

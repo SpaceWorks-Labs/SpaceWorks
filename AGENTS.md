@@ -40,8 +40,8 @@ to action scope.
 
 ## Architecture: Concepts That Span Multiple Modules
 
-UIs are thin clients over an API server composed of deep modules; Telegram is an outbound notification
-channel only. Two architectural rules are load-bearing and easy to violate if you only read one module:
+UIs are thin clients over an API server composed of deep modules; Telegram carries notifications and
+verified private account-link proofs, never workflow decisions. Two architectural rules are load-bearing and easy to violate if you only read one module:
 
 1. **The Request Workflow Module is the single source of truth for state transitions.** The web admin
    panel, the guest-admin app and the `/control/` review page must all route through the *same* workflow
@@ -76,9 +76,19 @@ channel only. Two architectural rules are load-bearing and easy to violate if yo
 - **Check-In API Client** — **RETIRED** (`73a480c`, Part M7). `apps/checkin/` no longer exists and there is
   no `CHECKIN_MODE` setting. Requester identity now comes from authenticated member accounts, so there is no
   external verify dependency left to fail safe on.
-- **Telegram Integration** — sends per-makerspace group alerts. **Outbound only.** The webhook route is
-  retained but accept-and-ignores every callback, because a deployment that already ran `setWebhook` would
-  otherwise have Telegram retry a 404 for hours; no chat message may carry an inline keyboard.
+- **Notifications v2** — transactional personal envelopes/outbox, per-makerspace channel configuration
+  with encrypted credentials, provider-proven endpoints and per-category channel selections with email
+  fallback. Space Managers configure channels; personal choices cannot grant tenant authority. Mandatory
+  mail and email-only authentication proofs keep their rules. Contract and integration limits:
+  `docs/notification-contract.md`; actual adapter coverage: `docs/notification-coverage.md`.
+- **Telegram Integration** — sends per-makerspace room alerts and verified personal messages.
+  **Outbound for decisions.** The secret-authenticated webhook accepts only private `/start` account-link
+  proofs and accept-and-ignores every `callback_query`; no message carries an inline keyboard.
+  `setWebhook.allowed_updates` must include `message`. Rooms use the contract bot token when configured.
+- **Public profiles and presence** — opt-in `/<handle>` publication is separate from the member
+  directory. The `presence` module owns member/guest check-in and the privacy-controlled `/m/<slug>/now`
+  display. Self check-in requires an enabled, configured geofence and an in-range reading; staff can
+  check people in without GPS. Long-form consent, display and lifecycle rules: `docs/INVARIANTS.md`.
 
 ## Request State Machine
 
@@ -323,8 +333,10 @@ Stack (in use):
 - **API documentation:** drf-spectacular / OpenAPI (snapshot `frontend/openapi-schema.json` + generated
   `frontend/src/generated/api.ts`; regenerate both when routes/models change — spectacular needs
   `--format openapi-json`).
-- **Telegram:** request alerts and test alerts. Outbound only — the webhook acknowledges and discards
-  callbacks; decisions are made in the staff console or `/control/`.
+- **Notifications:** personal outboxes plus scoped staff rooms; Telegram, Slack, Mattermost, Discord
+  and WhatsApp provider adapters. See the delivery contract for integration limits. Telegram accepts
+  verified private `/start` account-link proofs only; decision callbacks are ignored and decisions
+  remain in the staff console or `/control/`.
 
 ## Current source map — in `docs/SOURCE-MAP.md`
 
@@ -385,7 +397,7 @@ because none are quoted here — this index is a router, not a summary.
 
 | Section of `docs/INVARIANTS.md` | Before you touch |
 | --- | --- |
-| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin hide/archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles; staff event registration; notifications v2; presence geofence; the colour vocabulary; the accessibility floor; console parity |
+| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin hide/archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles and public handles; staff event registration; notifications v2; presence check-in and TV privacy; the colour vocabulary; the accessibility floor; console parity |
 | **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |

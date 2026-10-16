@@ -1,6 +1,6 @@
-# Phase 1a notification contract
+# Notifications v2 personal delivery contract
 
-The new personal contract lives in `integrations/notification_*`, `models_contract.py`,
+The personal contract lives in `integrations/notification_*`, `models_contract.py`,
 `models_endpoints.py` and `notifications/models_preferences.py`. The existing
 `integrations.NotificationPreference` remains the tenant matrix. The new
 `notifications.NotificationPreference` is the per-person, per-category channel selection.
@@ -73,7 +73,8 @@ and advances the generation when their channel module or notifications is remove
 module reinstall never restores consent. Quotas accept
 daily_limit and recipient_daily_limit. Template bindings contain event, audience, locale,
 template_name and variables; approved is read-only and must be established by a provider.
-WhatsApp has no staff rooms. Existing room transports retain their destination credentials;
+WhatsApp has no staff rooms or registered module key. Telegram rooms prefer the contract bot token;
+other existing room transports retain their destination credentials;
 the new room enable switch gates them without changing their audience.
 
 Endpoint = id, channel, provider, integration_generation, verification_state,
@@ -132,104 +133,97 @@ pattern. All seven new model types are omitted from readable exports and DROP on
 so there are no new export datasets, JSON remaps or subject selectors. Their User edges
 are explicitly classified as excluded. Module purge removes the graph in dependency order.
 
-## Integration verification
+## Provider connection and deployment
 
-Migrations: integrations 0033 â†’ 0034 â†’ 0035 â†’ 0036, notifications 0004; actual parents
-are integrations 0032, notifications 0003, makerspaces 0093 and encryption 0007.
-Tests live in the gitignored `backend/tests/notifications_contract/` directory.
-Run these plus the existing notification/email/timing/tenant-export suites with the isolated
-test runner. No Docker/tests were run in this implementation lane.
+- **Telegram:** encrypted `credentials.bot_token` and a nonempty installation identity are required
+  for personal delivery. Start returns `https://t.me/<bot>?start=<opaque-code>`; only an original
+  private human `/start` with equal positive chat/from IDs and the secret-token header proves it.
+  `TELEGRAM_WEBHOOK_SECRET` is environment-backed and must match `setWebhook.secret_token`;
+  `allowed_updates` must include `message`. Every `callback_query` is acknowledged and ignored,
+  and no send has a keyboard. Rooms use the configured contract token, then legacy tenant/platform
+  fallback. Personal sends cannot fall through to rooms. Bot acceptance is `accepted`, not delivered.
+- **Slack / Mattermost / Discord:** provider OAuth proves identity; Slack binds workspace OIDC,
+  Mattermost binds configured-server `/users/me`, Discord uses identify. The authenticated
+  `/personal/challenges/{id}/verify` consumes code/state for the current account; the UI handles
+  `?notify_challenge=<id>&code=...&state=...`. Slack installation uses S256 PKCE (enable it on the
+  provider app); installation is distinct from personal OIDC. No submitted user/chat ID is proof.
+  Signed inbound chat hooks acknowledge only, with no decisions or destination assignment.
+- **WhatsApp:** Twilio signed inbound/status routes are mounted and its provider is registered.
+  A candidate E.164 number is not proof: a signed matching inbound opt-in code establishes consent.
+  STOP revokes. Only authenticated inbound starts the 24 h free-text window; otherwise an approved
+  event/audience/locale template binding is required. Twilio uses Content SIDs with reserved
+  `opt_in` and `test` member/en bindings; Meta source uses `notification_opt_in` and
+  `notification_test` member/en bindings. SMS-login consent grants no WhatsApp consent.
+  Browser PATCH cannot self-approve templates; provider refresh owns approval. Status callbacks
+  correlate installation/message and advance monotonically. Ambiguous retries may duplicate sends.
 
-Local syntax and static checks plus the dependency-free API client generator are available.
-The OpenAPI snapshot has an additive contract projection; regenerate it with spectacular
-`--format openapi-json` on the Django host, then rerun the client generator. Django was not
-installed locally and dependency downloads were blocked.
+Provider setting lookups are deployment-wide, never derived from the request host:
 
-The portable field/model dispositions are complete. The schema-digest pin still needs
-runtime recomputation: a literal reconstruction did not reproduce the Phase-0 pin, so this
-lane does not bless an unverified digest. Verify the base discrepancy and recompute
-`tenant_dump_catalog.schema_digest()` on the integrated Django model graph before running
-the portable catalog guard.
-The current Phase-0 pin is `7a7132b9cf5e6f6883e4c8c868cbb35219fcf86f8fbb8cfc46329c484e7e9dc2`.
-Do not bypass that guard or derive the pin from a changed graph without checking the
-runtime field/model universe first.
+| Django setting | Adapter behaviour |
+| --- | --- |
+| `NOTIFICATION_SLACK_REDIRECT_URI` | HTTPS required; blank refuses; optional `{makerspace_id}` substitution |
+| `NOTIFICATION_MATTERMOST_REDIRECT_URI` | Same server-selected redirect policy |
+| `NOTIFICATION_DISCORD_REDIRECT_URI` | Same server-selected redirect policy |
+| `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | Defaults false; only boolean true allows private self-host addresses |
+| `WHATSAPP_META_GRAPH_VERSION` | Defaults `v25.0` in the Meta HTTP adapter |
 
-Legacy `notify_lifecycle` reserves an envelope in the domain transaction and keeps its
-existing post-commit builder timing. After materialization it stores the encrypted replay
-snapshot and dispatches through that envelope. A crash before a legacy closure runs cannot
-reconstruct that closure; Phase 2 replaces these reservations with source-backed `emit`
-calls. Full transactional content persistence applies to the new contract immediately.
-Concrete provider implementations and domain adapter conversions remain Phase 2 work;
-the complete audience/channel target is [notification-coverage.md](notification-coverage.md).
+These five names are `getattr(settings, ...)` lookups only in this tree. They are **not loaded
+from environment variables by `config/settings.py`**. Setting them in dotenv alone does not
+configure OAuth/private Mattermost/Meta. `TELEGRAM_WEBHOOK_SECRET` has its existing env loader.
 
-## Files changed
+## Domain delivery ownership
 
-```text
-backend/apps/audit/presentation_catalog_platform.py
-backend/apps/data_export/classification.py
-backend/apps/data_export/references.py
-backend/apps/encryption/management/commands/backfill_scoped_pii.py
-backend/apps/encryption/management/commands/decrypt_scoped_pii.py
-backend/apps/encryption/registry.py
-backend/apps/integrations/apps.py
-backend/apps/integrations/delivery_sources.py
-backend/apps/integrations/dispatch_channels.py
-backend/apps/integrations/dispatch_channels_delivery.py
-backend/apps/integrations/migrations/0033_notification_endpoints.py
-backend/apps/integrations/migrations/0034_notification_contract.py
-backend/apps/integrations/migrations/0035_whatsapp_channel.py
-backend/apps/integrations/migrations/0036_notification_pii_fences.py
-backend/apps/integrations/models.py
-backend/apps/integrations/models_contract.py
-backend/apps/integrations/models_endpoints.py
-backend/apps/integrations/notification_api_access.py
-backend/apps/integrations/notification_api_channels.py
-backend/apps/integrations/notification_api_delivery.py
-backend/apps/integrations/notification_api_errors.py
-backend/apps/integrations/notification_api_personal.py
-backend/apps/integrations/notification_api_serializers.py
-backend/apps/integrations/notification_availability.py
-backend/apps/integrations/notification_builtin.py
-backend/apps/integrations/notification_catalog.py
-backend/apps/integrations/notification_contract_urls.py
-backend/apps/integrations/notification_delivery.py
-backend/apps/integrations/notification_digest.py
-backend/apps/integrations/notification_email_source.py
-backend/apps/integrations/notification_enums.py
-backend/apps/integrations/notification_fake.py
-backend/apps/integrations/notification_legacy.py
-backend/apps/integrations/notification_outbox.py
-backend/apps/integrations/notification_proofs.py
-backend/apps/integrations/notification_providers.py
-backend/apps/integrations/notification_quotas.py
-backend/apps/integrations/notification_resolution.py
-backend/apps/integrations/notification_sources.py
-backend/apps/integrations/notification_tasks.py
-backend/apps/integrations/notify.py
-backend/apps/integrations/tasks.py
-backend/apps/integrations/urls.py
-backend/apps/makerspaces/module_purge_collectors.py
-backend/apps/makerspaces/module_purge_plans.py
-backend/apps/makerspaces/origin_scope_routes.py
-backend/apps/notifications/migrations/0004_notification_preferences.py
-backend/apps/notifications/models.py
-backend/apps/notifications/models_preferences.py
-backend/apps/operations/management/commands/run_scheduled_tasks.py
-backend/apps/tenant_migration/catalog_notifications_contract.py
-backend/apps/tenant_migration/tenant_dump_field_snapshot.py
-backend/config/settings.py
-backend/tests/notifications_contract/conftest.py
-backend/tests/notifications_contract/test_api.py
-backend/tests/notifications_contract/test_delivery.py
-backend/tests/notifications_contract/test_outbox_models.py
-backend/tests/notifications_contract/test_proofs.py
-backend/tests/notifications_contract/test_resolution.py
-backend/tests/notifications_contract/test_timing_whatsapp.py
-backend/tests/test_notification_fanout.py
-docs/INVARIANTS.md
-docs/SOURCE-MAP.md
-docs/notification-contract.md
-docs/notification-coverage.md
-frontend/openapi-schema.json
-frontend/src/generated/api.ts
-```
+Events and Bookings now use source-backed personal envelopes for lifecycle, reminders and campaigns.
+Event delegates use `events.grant_staff`; booking delegates use `bookings.grant_alert`, both audience
+`member` with live resource authority. Event staff envelopes pre-skip in-app/native push because the
+legacy matrix still owns those legs. Event campaigns pre-skip email because the campaign worker owns
+it; the extra channel task has no periodic lost-task resume. Booking campaigns with a saved category
+selection use envelopes and skip batch email; others keep the existing batch-email path.
+Account-addressed staff and booking email requires `email_verified_at`; account-less booking guests
+retain contact email. Requester booking notifications default on, with audit-aware backfill of only
+untouched false tenant settings; per-resource overrides still win.
+
+Hardware/machine/watch/certification and membership/payment/device/operations adapters register live
+sources. Equipment room delivery now consults `notifications_p2_rooms.eligible_room` before timing/
+provider delivery. Loan financial owner notices belong to the Payment adapter; hardware charge
+summaries are staff-only, avoiding a second owner charge notice. Existing authentication mail stays
+synchronous/redacted email; custody and mandatory reminders retain their independent policy.
+The [coverage inventory](notification-coverage.md) records which producers actually call the adapters.
+
+## Integration limits in this tree
+
+Verified against `6d083b29` code; these are implementation limits, not completed lane requests:
+
+- `accounts/authentication.py` admits member prefixes and push routes, but not the six personal
+  notification route shapes. The member Channels UI exists; MEMBER JWT calls are refused before
+  the personal view. Staff access still uses the view's account/tenant policy.
+- `ChatOAuthCallbackView` still allows anonymous GET/POST completion. Authenticated verification
+  exists, but it is not the only completion path; the requested authenticated-only OAuth return
+  flow and the deployment setting loaders above are absent.
+- Meta files exist, but `IntegrationsConfig.ready` does not register their factory and
+  `integrations/urls.py` does not mount their webhook URL list. `_ready` additionally requires
+  an unregistered `whatsapp` module. `provider=meta` is accepted as configuration, not operational
+  delivery. Do not describe both WhatsApp providers as wired.
+- Maintenance and procurement entry points still call legacy dispatch; their new machine adapters
+  are not delegated from those barrels. Member broadcasts still call `notify_lifecycle`, not
+  `notifications_p2_broadcasts.notify_broadcast`.
+- `notification_resolution` retains category `printing`→module `printing` for generic machine jobs,
+  and `stock`→`procurement` for stocktake. Their requested source-specific module overrides are
+  absent. A producer being wired does not guarantee delivery in a machine-service-only or
+  stocktake-without-procurement install.
+- Equipment email policy/proven-address/render helpers exist but are not called by the shared
+  resolver/builtin mail transport. The resolver requires verified account email and does not
+  implement those legacy email-only exceptions. `source_ready` conservatively refuses affected
+  owner intents when an email mute would otherwise leak through; selected chat can be suppressed too.
+- Presence expiry is catalogued with default in-app/push, but `NotificationFeature` omits presence
+  from the personal editor. Stocktake/first-email-failure legacy inbox mirrors remain alongside
+  envelope delivery. Room live-source enforcement covers equipment; other converted room summaries
+  retain legacy retry semantics. Scheduled-report legacy status is not provider acknowledgement.
+  `notification_catalog.py` omits several literal adapter events (membership joined/verified/
+  invitation/vouched, document_issued, problem reports, subdomain/report/email-failure and stocktake),
+  so those event/template editors are incomplete.
+
+The historical lane notes under `docs/p2-*.md` retain integration/test requests. No runtime test
+result is asserted by this documentation pass. Model/API/provider ownership is indexed in
+[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md); run changed-code tests and their registry
+checks through the isolated runner in the final integration pass.

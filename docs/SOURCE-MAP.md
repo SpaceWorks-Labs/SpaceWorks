@@ -365,6 +365,15 @@ recovery and tenant-dump internals are in [SOURCE-MAP-RECOVERY.md](SOURCE-MAP-RE
 `backup/restore_hooks.py` and `tenant_migration/restore_hooks.py` clear copied download
 bearers during deployment restore and slice staging.
 
+## Community and notification delivery
+
+Public handles/profiles, GitHub/activity history, presence/TV, event speakers and booking departures/
+galleries, the combined makerspace home and staff settings are indexed in
+[SOURCE-MAP-COMMUNITY.md](SOURCE-MAP-COMMUNITY.md). Personal contract/provider files, domain
+notification adapters and channel UI are indexed in
+[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). These maps include concrete backend,
+frontend, migration and registry siblings; INVARIANTS.md owns their rules.
+
 ## Self-host entry points
 
 `install.sh` performs read-only host preflight and fetches a pinned temporary release before the

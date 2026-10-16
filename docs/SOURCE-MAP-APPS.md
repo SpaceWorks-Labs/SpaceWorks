@@ -138,7 +138,9 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `serializers_report_views.py`; `serializers_report_views_filters.py` shares the filter
   allow-list with schedules. The frontend report panel uses `ServerReportViews.tsx` and
   `SelectedReportPreview.tsx` for server preferences and selected-column previews.
-- `backend/apps/integrations/` — Telegram/email/Slack/Mattermost/native-push delivery, encrypted FCM/APNs
+- `backend/apps/integrations/` — personal envelopes/outbox and Telegram/email/Slack/Mattermost/Discord/
+  WhatsApp provider sources plus native push; concrete ownership and current mounting are indexed in
+  [SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). Encrypted FCM/APNs
   credentials + device registrations, `dispatch_email` choke point + `EmailLog` outbox + Celery task,
   webhook (auth via `X-Telegram-Bot-Api-Secret-Token` vs `TELEGRAM_WEBHOOK_SECRET`, fail-closed),
   `PlatformEmailSettings`, `DailyEmailCounter`, staff-notification recipient matrix.
@@ -148,7 +150,8 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `admin_suppression.py` provides superadmin-only, platform-mail suppression.
   `webhook_schema.py` owns v2 event schemas (`docs/webhooks-v2.md`).
   F3's bounded templates live in `email_templates_registry_research.py`; domain
-  adapters use `notifications_research.py` for on-commit staff and owner email delivery.
+  legacy adapters use `notifications_research.py`; converted personal producers use source-backed
+  notification_outbox.emit. The delivery map identifies remaining legacy barrels.
   `broadcasts_templates.py` validates bounded shared campaign placeholders and renders them
   through the existing email engine. `delivery_content.py` holds transient rendered SMTP content
   separately from encrypted mapped model attributes, preserving strict PII reads.

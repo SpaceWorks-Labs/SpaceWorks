@@ -36,10 +36,11 @@ class ApiKeyRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdm
     search_fields = ("label",)
 
     @admin.action(description="Approve selected API key requests and issue clients")
+    @transaction.atomic
     def approve_and_issue(self, request, queryset):
         approved_count = 0
         skipped_count = 0
-        for api_key_request in queryset.select_related("makerspace", "requester"):
+        for api_key_request in queryset.select_for_update(of=("self",)).select_related("makerspace", "requester"):
             if api_key_request.status != ApiKeyRequest.Status.PENDING:
                 skipped_count += 1
                 continue
@@ -129,10 +130,11 @@ class ApiKeyRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdm
                 level=messages.WARNING,
             )
     @admin.action(description="Reject selected API key requests")
+    @transaction.atomic
     def reject_selected(self, request, queryset):
         rejected_count = 0
         skipped_count = 0
-        for api_key_request in queryset.select_related("makerspace", "requester"):
+        for api_key_request in queryset.select_for_update(of=("self",)).select_related("makerspace", "requester"):
             if api_key_request.status != ApiKeyRequest.Status.PENDING:
                 skipped_count += 1
                 continue
@@ -169,5 +171,4 @@ class ApiKeyRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdm
                 f"Skipped {skipped_count} non-pending API key request(s).",
                 level=messages.WARNING,
             )
-
 

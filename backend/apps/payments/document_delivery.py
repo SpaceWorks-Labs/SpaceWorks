@@ -19,25 +19,15 @@ def download_path(document, user, *, makerspace_id, audience):
 
 def email_document(document_id):
     """No arbitrary recipient is accepted; contact is read from the payment owner."""
-    from apps.integrations.dispatch import dispatch_email
-    from apps.makerspaces.platform import member_payment_return_url
     from apps.payments.models import PaymentDocument
+    from apps.payments.notifications_p2 import notify_document
+    from apps.operations.notifications_p2 import scoped
 
     try:
-        document = PaymentDocument.objects.select_related("payment__member", "makerspace").get(pk=document_id)
-        payer = document.payment.member
-        if payer is None or not payer.email:
-            return
-        # A durable authenticated member page avoids mailing an already-expired grant.
-        # The payer requests a fresh five-minute download URL from that page.
-        dispatch_email(
-            to_email=payer.email, subject=f"{document.get_kind_display()} {document.number}",
-            text_body=(f"Your {document.get_kind_display().lower()} {document.number} is available.\n"
-                       f"{document.currency.upper()} {document.amount}\n"
-                       f"Sign in to download the PDF: {member_payment_return_url(document.makerspace)}"),
-            makerspace=document.makerspace, stream="payments", event="document_issued",
-            audience="requester", sync=True, persist_body=False,
-        )
+        seed = PaymentDocument.objects.only("makerspace_id").get(pk=document_id)
+        document = scoped(PaymentDocument, seed.makerspace_id).select_related(
+            "payment__member", "makerspace",
+        ).get(pk=document_id)
+        return notify_document(document)
     except Exception:
-        # Identifiers only: SMTP errors may contain recipient addresses or credentials.
-        logger.warning("payment_document_email_failed", extra={"document_id": document_id})
+        logger.warning("payment_document_notification_failed", extra={"document_id": document_id})

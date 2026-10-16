@@ -144,6 +144,8 @@ def complete_stocktake(actor, stocktake):
         locked.completed_at = timezone.now()
         locked.save(update_fields=["status", "completed_at", "approval_required"])
         audit.record(actor, "stocktake.completed", makerspace=locked.makerspace, target=locked)
+        from .notifications_p2_alerts import notify_stocktake
+        notify_stocktake(locked, "completed")
         emit_notification(
             locked.makerspace,
             level="info",

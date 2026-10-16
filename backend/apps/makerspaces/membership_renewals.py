@@ -69,7 +69,7 @@ def _open_next(term):
     next_term.renewed_from = term
     next_term.save(update_fields=["renewed_from"])
     from apps.makerspaces.membership_renewal_notifications import notify_term
-    transaction.on_commit(lambda: notify_term(next_term, "renewed"))
+    notify_term(next_term, "renewed")
     audit.record(None, "membership.renewed", makerspace=term.membership.makerspace,
                  target=term, meta={"membership_id": term.membership_id, "term_id": next_term.pk})
     return True
@@ -135,7 +135,7 @@ def _retry_state(term, now):
     term.save(update_fields=["renewal_attempts", "renewal_retry_at"])
     audit.record(None, "membership.renewal_retry", makerspace=term.membership.makerspace,
                  target=term, meta={"attempt": term.renewal_attempts})
-    transaction.on_commit(lambda: notify_term(term, "renewal_failed"))
+    notify_term(term, "renewal_failed")
 
 
 def _run_one(term_id, now, counts):

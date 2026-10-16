@@ -121,7 +121,7 @@ def _run_source(makerspace, source, now, local_tz, limit, counts):
                 else:
                     result = source.dispatch(current, row, message, now, local_tz)
                     failed = bool(result and result.failed_counts)
-                    if result is None or result.delivered_counts:
+                    if result is None or result.delivered_counts or result.scheduled:
                         counts["dispatched"] += 1
                     elif not failed:
                         counts["skipped"] += 1

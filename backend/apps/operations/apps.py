@@ -7,3 +7,7 @@ class OperationsConfig(AppConfig):
 
     def ready(self):
         from apps.operations import report_coverage  # noqa: F401
+        from .notifications_p2_alerts import register
+        register()
+        from .notifications_p2_reports import register as register_report_notifications
+        register_report_notifications()

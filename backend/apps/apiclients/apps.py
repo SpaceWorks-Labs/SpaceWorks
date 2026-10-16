@@ -7,3 +7,5 @@ class ApiClientsConfig(AppConfig):
 
     def ready(self):
         from apps.apiclients import checks  # noqa: F401
+        from .notifications_p2 import register
+        register()

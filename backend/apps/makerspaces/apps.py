@@ -24,6 +24,16 @@ class MakerspacesConfig(AppConfig):
         register_builtin_sources()
         from .profile_activity_p2 import register_sources
         register_sources()
+        from .notifications_p2_members import register as register_member_notifications
+        from .notifications_p2_terms import register as register_term_notifications
+        from .notifications_p2_subdomains import register as register_subdomain_notifications
+        register_member_notifications()
+        register_term_notifications()
+        register_subdomain_notifications()
+        from .notifications_p2_broadcasts import register as register_broadcast_notifications
+        register_broadcast_notifications()
+        from .notifications_p2_vouches import register as register_vouch_notifications
+        register_vouch_notifications()
 
         def invalidate_hosting_cache(**kwargs):
             # Any write to frontend_domain / frontend_domain_status must drop the

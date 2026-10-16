@@ -70,6 +70,8 @@ def dispatch(space, reminder, message, now, local_tz):
     row.next_due += timedelta(days=(max(0, (today-row.next_due).days)//row.interval_days+1)*row.interval_days)
     row.save(update_fields=["next_due"])
     record(None, "stocktake.scheduled", makerspace=space, target=session)
+    from .notifications_p2_alerts import notify_stocktake
+    notify_stocktake(session, "scheduled")
     emit_notification(space, title=message.title, event=message.event,
                       body="A scheduled stocktake is ready for counting.", level="info")
 

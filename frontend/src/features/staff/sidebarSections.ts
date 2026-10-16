@@ -38,21 +38,44 @@ const ICONS: Record<string, LucideIcon> = {
   modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, platform: Settings,
 };
 
-/** Presentation only: the caller supplies the already permission/module-filtered tab set. */
+/**
+ * The Space Manager holds every action, so the generic grouping above handed them nine
+ * long sections. Their menu is grouped by TASK instead (owner, 2026-10-16): what needs
+ * doing today, people, each domain, money, then settings behind one collapsed family.
+ * Less-used destinations sit under each group's "More". Nothing is dropped: every tab of
+ * SIDEBAR_SECTIONS appears here as well (sidebarSections.test walks the old list).
+ */
+export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
+  { key: "today", label: "Today", tabs: ["dashboard", "notifications", "requests", "direct", "handover"] },
+  { key: "people", label: "People", tabs: ["users", "members", "cards"], more: ["organizations", "organization-analytics"] },
+  { key: "inventory", label: "Inventory & loans", tabs: ["inventory", "accountability", "needsfix", "tobuy", "scanner"],
+    more: ["ledger", "stocktake", "transfers", "categories", "containers", "warranty", "qr", "bulk"] },
+  { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
+  { key: "events", label: "Events", tabs: ["events", "granted"], more: ["organized"] },
+  { key: "bookings", label: "Bookings", tabs: ["bookings"] },
+  { key: "money", label: "Money", tabs: ["payments", "reports"] },
+  { key: "settings", label: "Space settings", tabs: ["settings", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
+  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },
+];
+const SPACE_MANAGER_LABELS: Readonly<Record<string, string>> = { settings: "Settings hub" };
+
+/** Presentation only: the caller supplies the already permission/module-filtered tab set.
+ *  `spaceManager` selects the task-grouped menu; every other role keeps SIDEBAR_SECTIONS. */
 export function sidebarSections(moduleAllowedTabs: readonly string[], activeKey: string,
   path: (tab: string) => string = tab => staffTabPath(tab, false), onSelect?: (tab: string) => void,
-  flat = false): ShellSection[] {
-  const item = (key: string): ShellItem => ({ key, label: SIDEBAR_LABELS[key] ?? TAB_LABELS[key], href: path(key), icon: ICONS[key], onSelect: () => onSelect?.(key) });
+  flat = false, spaceManager = false): ShellSection[] {
+  const labels: Readonly<Record<string, string>> = spaceManager ? { ...SIDEBAR_LABELS, ...SPACE_MANAGER_LABELS } : SIDEBAR_LABELS;
+  const item = (key: string): ShellItem => ({ key, label: labels[key] ?? TAB_LABELS[key], href: path(key), icon: ICONS[key], onSelect: () => onSelect?.(key) });
   if (flat) return [{ key: "desk", items: ["requests", "direct", "handover", "payments", "notifications", "granted"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
-  return SIDEBAR_SECTIONS.map(section => {
+  return (spaceManager ? SPACE_MANAGER_SECTIONS : SIDEBAR_SECTIONS).map(section => {
     const items = section.tabs.filter(key => moduleAllowedTabs.includes(key)).map(item);
     const more = section.more?.filter(key => moduleAllowedTabs.includes(key)).map(item);
     if (section.key === "settings" && items.length) {
       const familyOpen = items.some(child => child.key === activeKey);
       // Staff & roles is a daily destination, not a setting: keep it one click away even
-      // while the Settings family is collapsed.
+      // while the Settings family is collapsed (the Space Manager menu lists it under People).
       const staff = !familyOpen && items[0].key !== "users" ? items.filter(child => child.key === "users") : [];
-      return { key: section.key, items: [{
+      return { key: section.key, label: spaceManager ? section.label : undefined, items: [{
         key: "settings-family", label: "Settings", href: items[0].href, icon: Settings,
         onSelect: items[0].onSelect, children: familyOpen ? items : undefined,
       }, ...staff] };

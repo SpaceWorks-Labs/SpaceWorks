@@ -37,14 +37,22 @@ import { EvidenceRetentionPanel } from "./EvidenceRetentionPanel";
 import { NotificationMuteMatrix } from "./NotificationMuteMatrix";
 import { NotificationRecipientPicker } from "./NotificationRecipientPicker";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
+import { MakerspaceLoanPolicySettings } from "./MakerspaceLoanPolicySettings";
+import { SettingsHub } from "./SettingsHub";
+import { staffTabPath } from "./staffTabs";
+import { ChannelSetupPanel } from "../notifications/ChannelSetupPanel";
+import { ChannelDeliveryLog } from "../notifications/ChannelDeliveryLog";
 
 type Props = {
   makerspace: Makerspace;
   isSuperadmin: boolean;
   canManageMakerspace: boolean;
+  /** The actor's permitted tabs, so the hub links only to settings pages they can open. */
+  allowedTabs?: readonly string[];
+  singleTenantLocked?: boolean;
 };
 
-export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMakerspace }: Props) {
+export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMakerspace, allowedTabs = [], singleTenantLocked = false }: Props) {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const queryClient = useQueryClient();
   const settings = useStaffGet<Makerspace>(
@@ -171,6 +179,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     </> },
     { id: "lending", title: "Lending", rows: <>
       {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("loans.enabled") ? <BorrowRequestAccessSettings makerspaceId={makerspace.id} /> : null}
+      {enabledModules.includes("request_workflow") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : null}
       <MakerspaceReminderSettings {...shared} />
       {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? <KioskStationSettings makerspace={makerspace} /> : null}
     </> },
@@ -193,6 +202,10 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       <NotificationMuteMatrix makerspaceId={makerspace.id} /><NotificationRecipientPicker makerspaceId={makerspace.id} />
       <NotificationDestinations availableChannels={enabledModules} makerspaceId={makerspace.id} />
     </> },
+    ...(canManageMakerspace && enabledModules.includes("notifications") ? [{ id: "channels", title: "Communication channels",
+      description: "Choose the mediums this space uses and set up their credentials. Staff and members can only pick channels you turn on here.",
+      rows: <><ChannelSetupPanel key={makerspace.id} makerspaceId={makerspace.id} enabledModules={enabledModules} />
+        <div className="py-4"><ChannelDeliveryLog key={makerspace.id} makerspaceId={makerspace.id} /></div></> }] : []),
     { id: "integrations", title: "Email & integrations", rows: <>
       <MakerspaceEmailSettings makerspace={makerspace} /><MakerspaceWebhookSettings makerspace={makerspace} />
       {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
@@ -202,6 +215,10 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       {canManageMakerspace ? <EvidenceRetentionPanel makerspaceId={makerspace.id} /> : null}
     </> },
   ];
+  // The hub goes first: search across every section here and the settings pages beside it.
+  sections.unshift({ id: "start", title: "Start here", rows: <SettingsHub makerspace={settings.data ?? makerspace}
+    sectionIds={sections.map(section => section.id)} allowedTabs={allowedTabs}
+    tabHref={tab => staffTabPath(tab, false, makerspace.slug, singleTenantLocked)} /> });
   return <>
     {/* Every editor owns its own query, so the parent GET never gates the page: while it
         loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a

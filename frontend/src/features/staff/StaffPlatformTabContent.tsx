@@ -3,7 +3,7 @@ import type { Makerspace } from "./panels/shared";
 import { TenantUsagePanel } from "./StaffTabLoaders";
 import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, PlatformSettingsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel } from "./StaffTabLoaders";
 
-export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspaces, isSuperadmin, canManageMakerspace, currentUser, onAuthRefresh }: { activeTab: string; activeMakerspace: Makerspace; makerspaces: Makerspace[]; isSuperadmin: boolean; canManageMakerspace: boolean; currentUser: StaffAuthUser; onAuthRefresh: () => void }) {
+export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspaces, isSuperadmin, canManageMakerspace, currentUser, onAuthRefresh, allowedTabs, singleTenantLocked }: { activeTab: string; activeMakerspace: Makerspace; makerspaces: Makerspace[]; isSuperadmin: boolean; canManageMakerspace: boolean; currentUser: StaffAuthUser; onAuthRefresh: () => void; allowedTabs?: readonly string[]; singleTenantLocked?: boolean }) {
   const makerspaceKey = activeMakerspace.id;
   return <>
       {activeTab === "usage" && canManageMakerspace ? <TenantUsagePanel key={makerspaceKey} makerspace={activeMakerspace} /> : null}
@@ -21,6 +21,8 @@ export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspac
           makerspace={activeMakerspace}
           isSuperadmin={isSuperadmin}
           canManageMakerspace={canManageMakerspace}
+          allowedTabs={allowedTabs}
+          singleTenantLocked={singleTenantLocked}
         />
       ) : null}
       {activeTab === "emailtemplates" ? (

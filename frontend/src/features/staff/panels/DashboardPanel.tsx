@@ -13,14 +13,16 @@ type Props = {
   guestOnly?: boolean; progress?: ReactNode;
 };
 
-export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, actions,
+export function DashboardPanel({ makerspace, allowedTabs, actions,
   isSuperadmin = false, singleTenantLocked = false, guestOnly = false, progress }: Props) {
   const dashboard = useStaffGet<DashboardCounts>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
   const permitted = TILES.filter(tile => (
     (dashboard.data?.scope_mode !== "machine" || MACHINE_TILE_KEYS.has(tile.key))
     && filterTabsByEnabledModules([dashboardDestination(tile.key).tab], makerspace).length > 0
     && (tile.key !== "failed_emails" || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("email"))
-    && (tile.key !== "pending_payments" || canManageMakerspace || allowedTabs?.includes("payments"))
+    // The server returns pending_payments only to finance staff (manage_makerspace or view_finance).
+    // A payments-tab holder without that (an Event Manager settling registrations) would see a false 0.
+    && (tile.key !== "pending_payments" || (dashboard.data !== undefined && "pending_payments" in dashboard.data))
     && (!allowedTabs || allowedTabs.includes(dashboardDestination(tile.key).tab))
     && (!tile.key.includes("prints") || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("printing"))
     && (tile.key !== "maintenance_overdue" || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("maintenance"))

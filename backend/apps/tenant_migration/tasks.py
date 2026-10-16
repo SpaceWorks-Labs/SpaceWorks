@@ -1,11 +1,16 @@
 from celery import shared_task
 
+from apps.tenant_migration.import_job_cleanup import (
+    resume_stalled_materializations,
+    resume_stale_pending_import_jobs,
+)
 from apps.tenant_migration.services_import_job import (
     cleanup_abandoned_import_objects,
     cleanup_expired_import_jobs,
     resume_expired_finalizing_import_jobs,
     run_import_job,
 )
+from apps.tenant_migration.services_import_staging import stage_import_job
 from apps.tenant_migration.services_export_job import run_migration_export_job
 from apps.tenant_migration.tenant_dump_cleanup import (
     cleanup_refused_tenant_dump_artifacts,
@@ -29,7 +34,11 @@ def cleanup_refused_tenant_dump_artifacts_task():
 
 @shared_task(name="apps.tenant_migration.tasks.resume_expired_finalizing_import_jobs_task")
 def resume_expired_finalizing_import_jobs_task():
-    return resume_expired_finalizing_import_jobs()
+    return (
+        resume_expired_finalizing_import_jobs()
+        + resume_stale_pending_import_jobs()
+        + resume_stalled_materializations()
+    )
 
 
 @shared_task(name="apps.tenant_migration.tasks.run_migration_export_job_task")
@@ -40,3 +49,9 @@ def run_migration_export_job_task(job_id):
 @shared_task(name="apps.tenant_migration.tasks.run_import_job_task")
 def run_import_job_task(job_id, actor_id, target_identity=None):
     return run_import_job(job_id, actor_id=actor_id, target_identity=target_identity)
+
+
+@shared_task(name="apps.tenant_migration.tasks.stage_import_job_task")
+def stage_import_job_task(job_id, actor_id):
+    job = stage_import_job(job_id, actor_id=actor_id)
+    return job.status if job is not None else None

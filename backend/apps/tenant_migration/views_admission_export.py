@@ -52,9 +52,11 @@ class MigrationAPIView(APIView):
     def handle_exception(self, exc):
         response = super().handle_exception(exc)
         codes = {
+            status.HTTP_400_BAD_REQUEST: "invalid_request",
             status.HTTP_401_UNAUTHORIZED: "not_authenticated",
             status.HTTP_403_FORBIDDEN: "permission_denied",
             status.HTTP_404_NOT_FOUND: "not_found",
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE: "unsupported_media_type",
             status.HTTP_429_TOO_MANY_REQUESTS: "throttled",
         }
         if (

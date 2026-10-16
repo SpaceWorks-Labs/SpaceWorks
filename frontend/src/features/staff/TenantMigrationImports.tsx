@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   abortTarget,
   activateTarget,
-  createImport,
   getImport,
   getVerification,
   listImports,
@@ -18,20 +17,17 @@ import {
   type VerificationReport,
 } from "./tenantMigrationApi";
 import { TenantMigrationIdentityDecisions } from "./TenantMigrationIdentityDecisions";
+import { ImportUploadResume, useImportArchiveUpload } from "./TenantMigrationUpload";
 import { ErrorText, parseReceipt, ReceiptOutput, StatusPill } from "./tenantMigrationUi";
 
 export function TenantMigrationImports({ pairings, active = true, phase = "import" }: { pairings: Pairing[]; active?: boolean; phase?: "import" | "verify" | "cutover" }) {
-  const client = useQueryClient();
   const [archive, setArchive] = useState<File | null>(null);
   const [digest, setDigest] = useState("");
   const imports = useQuery({
     queryKey: tenantMigrationKeys.imports,
     queryFn: listImports,
   });
-  const create = useMutation({
-    mutationFn: () => createImport({ archive: archive!, source_archive_digest: digest.trim() }),
-    onSuccess: () => client.invalidateQueries({ queryKey: tenantMigrationKeys.imports }),
-  });
+  const { upload: create, activeJobId } = useImportArchiveUpload();
 
   return (
     <>
@@ -43,7 +39,9 @@ export function TenantMigrationImports({ pairings, active = true, phase = "impor
         <label className="text-sm text-ink">Encrypted archive<input className="desk-input mt-1 w-full" type="file" onChange={(event) => setArchive(event.target.files?.[0] ?? null)} /></label>
         <label className="text-sm text-ink">Source archive digest<input className="desk-input mt-1 w-full code-text" value={digest} onChange={(event) => setDigest(event.target.value)} /></label>
       </div>
-      <button className="desk-button-primary mt-3" type="button" disabled={!archive || !digest.trim() || create.isPending} onClick={() => create.mutate()}>
+      <button className="desk-button-primary mt-3" type="button" disabled={!archive || !digest.trim() || create.isPending} onClick={() => {
+        if (archive) create.mutate({ file: archive, sourceArchiveDigest: digest.trim() });
+      }}>
         {create.isPending ? "Uploading encrypted archive…" : "Create target import"}
       </button>
       <ErrorText error={create.error} field="source_archive_digest" />
@@ -52,14 +50,14 @@ export function TenantMigrationImports({ pairings, active = true, phase = "impor
       {active ? <ErrorText error={imports.error} /> : null}
       <div className="grid gap-4">
         {(imports.data ?? []).map((job) => (
-          <ImportJobCard job={job} key={job.id} pairing={pairings.find((item) => item.migration_id === job.id)} active={active} phase={phase} />
+          <ImportJobCard job={job} key={job.id} drivingUpload={activeJobId === job.id} pairing={pairings.find((item) => item.migration_id === job.id)} active={active} phase={phase} />
         ))}
       </div>
     </>
   );
 }
 
-function ImportJobCard({ job: listedJob, pairing, active, phase }: { job: ImportJob; pairing?: Pairing; active: boolean; phase: "import" | "verify" | "cutover" }) {
+function ImportJobCard({ job: listedJob, pairing, drivingUpload, active, phase }: { job: ImportJob; pairing?: Pairing; drivingUpload: boolean; active: boolean; phase: "import" | "verify" | "cutover" }) {
   const client = useQueryClient();
   const [confirmCutover, confirmation] = useMigrationConfirmation();
   const [targetName, setTargetName] = useState("");
@@ -131,6 +129,8 @@ function ImportJobCard({ job: listedJob, pairing, active, phase }: { job: Import
         </div>
         <StatusPill tone={tone}>{lifecycle}</StatusPill>
       </div>
+      {job.status === "pending" ? <p className="mt-2 text-sm text-warn-ink">Decrypting and verifying the encrypted archive in the background. Identity decisions appear when it finishes.</p> : null}
+      {job.status === "uploading" ? <ImportUploadResume job={job} driving={drivingUpload} /> : null}
       {lifecycle === "IMPORTING" ? <p className="mt-2 text-sm text-warn-ink">{importFinalizing ? "Import finalization is still running. The tenant is not active." : "Materialized and verified, but not activated. The tenant remains IMPORTING."}</p> : null}
       {lifecycle === "ACTIVE" ? <p className="mt-2 text-sm text-success-ink">Target is ACTIVE. The source cutover receipt was consumed.</p> : null}
       {lifecycle === "ABORTED" ? <p className="mt-2 text-sm text-danger">Target is ABORTED. Transfer its signed abort receipt to recover the archived source.</p> : null}

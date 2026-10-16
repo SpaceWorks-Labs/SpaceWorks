@@ -36,7 +36,9 @@ Update it with code moves; the repository tree remains authoritative.
   `task_gate.py` (the write-drain lock protocol and its AST coverage guards in `source_gate_guards.py`);
   `archive_envelope.py` + `object_export.py` (streamed into `age`); `admission.py` (the source-superadmin
   closure approval); `materialization.py` + `raw_repository.py` + `row_planning.py`/`row_dispositions.py`
-  (one-shot insertion); `target_projection.py` (barrel over `target_projection_{types,fields,rows,references}.py`)
+  (one-shot insertion); `services_import_job.py` re-exports `services_import_run.py`
+  (requester checks and attempt-fenced execution) with `import_run_lock.py` holding the dedicated
+  advisory-lock connection; `target_projection.py` (barrel over `target_projection_{types,fields,rows,references}.py`)
   + `unique_values.py` (barrel: the rules dict is
   `unique_values_core.py`, the disposition/policy types `unique_values_policy.py`) + `closure_references.py`;
   `tenant_dump_model_catalog.py` + `tenant_dump_field_snapshot.py` +

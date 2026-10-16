@@ -22,3 +22,8 @@ from .views_import import (  # noqa: F401
     TenantImportRunView,
     TenantImportVerificationView,
 )
+from .views_import_upload import (  # noqa: F401
+    TenantImportArchiveChunkView,
+    TenantImportArchiveCompleteView,
+    TenantImportUploadStartView,
+)

@@ -14,13 +14,14 @@ def schedule_import_archive_unlink(path, job_id):
         return
 
     def unlink():
-        try:
-            Path(path).unlink(missing_ok=True)
-        except Exception:
-            logger.exception(
-                "tenant_import_archive_unlink_failed",
-                extra={"job_id": str(job_id), "archive_path": str(path)},
-            )
+        for candidate in (path, f"{path}.rows.age", f"{path}.rows.age.part"):
+            try:
+                Path(candidate).unlink(missing_ok=True)
+            except Exception:
+                logger.exception(
+                    "tenant_import_archive_unlink_failed",
+                    extra={"job_id": str(job_id), "archive_path": str(candidate)},
+                )
 
     # A crash after the database commit but before this callback leaves a repairable
     # orphan file discoverable from retention logs, never a rolled-back row naming a

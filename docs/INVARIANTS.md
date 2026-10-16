@@ -3999,6 +3999,90 @@ bytes because the difference lives only in discarded padding bits — so roughly
 decoded cleanly and no rollback happened. The decoder now requires canonical base64url. Our own
 encoder always emits canonical output, so stored envelopes are unaffected.
 
+**Import staging is asynchronous; the request only receives bytes (2026-10-16).** `POST .../imports`
+streams the `archive` part through `import_upload.ImportArchiveUploadHandler` straight into
+`BACKUP_OPS_DIR/tenant-imports/` (one write, size-capped while streaming), creates a `PENDING` job with
+`tenant_migration.import_upload_received`, and answers 202. The handler is installed in
+`initialize_request()` because the superadmin permission can read `request.data` before `post()`, and
+`dispatch()` deletes every file the handler wrote that no committed job owns. Decryption, the digest check
+and manifest validation run in `stage_import_job_task`, which alone moves a job
+`PENDING → AWAITING_IDENTITY | READY | FAILED` and records `import_created` or `import_staging_failed`.
+Rules that must hold:
+
+- **One owner per staging run.** The task claims a 6-hour `PeriodicTaskRun` lease named
+  `tenant-import-staging:<job id>`; its `last_run_at` is the attempt token.
+- **Paths are fenced, content is not.** Every create, rename or unlink of the archive, its sidecar or the
+  fixed `.rows.age.part` happens inside one short transaction that locks the lease row, then the job row,
+  and re-checks token, existence, `PENDING` and expiry. Bytes go through an already-open descriptor. Expiry
+  cleanup keeps the same lease-then-job order, so a stale or out-raced attempt can never write, publish or
+  delete another attempt's file, and no file outlives its job.
+- **The identity endpoints read a rows-only sidecar.** Staging seals every decrypted member except
+  `objects/**` (carried DEKs are never on disk) to the target's own age recipient as
+  `<archive>.rows.age`. Identity GET/POST refuse a `PENDING` job before any archive I/O (409
+  `import_staging`). Only a job staged before this change, which has no sidecar, still reads the full archive.
+  `schedule_import_archive_unlink` removes the archive, the sidecar and the part together.
+- **Brokerless deployments never stage in a request.** With `CELERY_TASK_ALWAYS_EAGER` the view does not
+  dispatch; `resume_stale_pending_import_jobs` (run by the existing finalization-recovery task) stages
+  `PENDING` jobs older than two minutes with no live lease, so the cron service does the work. A failed
+  enqueue also leaves the job `PENDING` for that sweep. It never fails the job, because the error does not
+  prove the message was lost.
+- **Brokerless runs are scheduled and fenced.** Claiming `READY -> MATERIALIZING` stores the
+  requester's `actor_id` and `target_identity` in `run_request`; `actor` remains the uploader.
+  Eager-mode views return 202 without dispatch. `resume_stalled_materializations` (every
+  deployment, two-minute grace) re-dispatches persisted requests whose run lock is free: without a
+  broker it is the only executor, and with one it recovers a run that lost its lock connection
+  before commit. It probes the lock first and skips live runs. A missing,
+  deleted or demoted requester fails with `forbidden` and `tenant_migration.import_run_refused`
+  before archive I/O. Every materializing execution, with or without a broker, holds an advisory
+  transaction lock in namespace `734311` on a dedicated psycopg2 connection for its lifetime;
+  `SET LOCAL idle_in_transaction_session_timeout = 0` protects that idle lock transaction.
+  While holding the job row lock, it rechecks lock retention through `pg_locks` before claiming
+  a fresh `run_attempt` UUID. The commit transaction checks that token and rechecks lock retention
+  before committing. No claimed token means no failure transition or cleanup; superseded attempts
+  cannot commit or clean shared objects, and failure transitions match their token. A concurrent
+  object-journal insert uses a savepoint and adopts the matching winner's `target_key` and
+  regeneration flag. Finalization keeps its existing promotion leases; cleanup deletes nothing
+  new, and terminal scrubbing clears both run fields.
+- **The staff console uploads resumable chunks.** `POST .../imports/uploads` starts an `UPLOADING`
+  job with a declared `upload_total_bytes` (1 byte through 20 GiB), an empty private 0600 archive
+  in the 0700 imports directory, and `import_upload_started`. The single multipart `POST .../imports`
+  remains available; its whole body must still fit the request timeout.
+- **One bounded parse before locking.** `PATCH .../imports/<id>/archive` accepts only
+  `application/offset+octet-stream`. `OffsetChunkParser` requires an integer `Content-Length` in
+  `1..8388608` and reads exactly that many bytes, refusing short reads. The view consumes
+  `request.data` before locking, including when a permission causes an earlier parse. No network
+  I/O runs in the transaction. Wrong media types return 415; invalid lengths/offsets and size
+  overflow return 400. CORS permits `Upload-Offset`, and the chunk route uses its own
+  `tenant_migration_upload` throttle (`THROTTLE_TENANT_MIGRATION_UPLOAD`, default `1200/min`).
+- **The database offset owns progress.** Under the job row lock, the job must be `UPLOADING` and
+  unexpired, and `Upload-Offset` must equal `upload_received_bytes`; mismatch is 409
+  `offset_mismatch` carrying that authoritative byte count. A chunk cannot exceed the declared
+  total. Its bounded local write, flush and fsync precede the received-count update and
+  `import_upload_chunk_received` audit (`import_id`, `offset`, `chunk_bytes`, `format_version: 1`)
+  in the same transaction. A rolled-back write may leave unacknowledged bytes, which a retry
+  overwrites at the database offset; staging verifies the complete archive digest.
+- **Expiry is sliding and rechecked while locked.** Start and each successful chunk grant 24 hours
+  of idle time. Cleanup locks staging lease rows before job rows, then rechecks expiry and
+  `target_makerspace IS NULL`; only still-expired pre-tenant jobs and their leases are deleted.
+  A chunk that refreshed expiry while cleanup waited survives with its file. Object rollback
+  stays outside the deletion transaction; uploading/pending jobs have no imported objects.
+- **Completion is idempotent.** `POST .../imports/<id>/archive/complete` requires received equals
+  total (otherwise 409 `upload_incomplete`), switches `UPLOADING` to `PENDING`, resets expiry to
+  export retention, and records `import_upload_received`. Dispatch happens after commit and follows
+  the same brokerless/recovery rule as multipart uploads. A fully received job already past
+  `UPLOADING` returns 202 without another audit or dispatch. Staging, run and recovery claims never
+  accept `UPLOADING`; identity GET/POST refuse it before archive I/O with 409 `import_staging`
+  and "The encrypted archive is still being uploaded."
+- **Client recovery uses server state.** Start immediately updates detail/list caches, even if the
+  first chunk fails. The console sends 8 MiB slices, reconciles failed chunks through job GET and
+  retries up to three times with backoff. A lost completion response is reconciled through GET;
+  a non-uploading job has completed the upload. Interrupted cards require a file of the original
+  size to resume; staging's digest check still refuses a different file of equal size. Uploading
+  jobs are not polled. Detail and list caches refresh on success or failure.
+
+Deployment prerequisite: nginx's `/api/` limit must be at least 10m (`c422fb1a`); ship that
+change with chunked upload. It accommodates an 8 MiB chunk, not the legacy whole-archive POST.
+
 ## Organization accounts and organization-derived authority
 
 ### Organization self-service and governance (Lane F)

@@ -95,6 +95,11 @@ class TenantDumpCatalogError(AssertionError):
 # Literal reconstruction reproduces b90ce9de before the later merged model additions.
 # Integration of design-revamp, yuyu-parity, setup-areas, org-setup and fixed-roles:
 # re-pinned from Django's schema_digest() over the merged live graph.
+# Re-blessed for TenantImportJob.upload_total_bytes/upload_received_bytes. The
+# frozen snapshot graph reproduced the prior digest exactly before adding them.
+# Re-blessed for TenantImportJob.run_request/run_attempt after reproducing the prior
+# digest from the frozen graph with schema_digest's canonical JSON encoding.
+# Merged feature/async-tenant-import: re-pin from the merged graph.
 CATALOG_SCHEMA_SHA256 = "81b67d683bb62a62e5937031d29e4af43d7791945b189674026d2ba482bd6bbd"
 # int-events: DROP-only EventAudienceOrganization, display-only staff-grant role_label and
 # Organization.is_discoverable; the runtime guard reproduced 7a7132b9 before these fields.

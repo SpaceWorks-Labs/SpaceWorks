@@ -49,6 +49,7 @@ TASK_EXEMPTIONS = {
     ),
     "apps.tenant_migration.tasks.resume_expired_finalizing_import_jobs_task": "Target-side import finalization recovery does not mutate the frozen source.",
     "apps.tenant_migration.tasks.run_import_job_task": "Target-side tenant materialization does not mutate the frozen source.",
+    "apps.tenant_migration.tasks.stage_import_job_task": "Target-side import staging does not mutate the frozen source.",
 }
 
 

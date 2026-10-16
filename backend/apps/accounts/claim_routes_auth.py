@@ -71,6 +71,8 @@ AUTH_CLAIM_ROUTES = {
     ("auth-refresh", "OPTIONS"): AnonymousRead(),
     ("auth-logout", "POST"): ControlRoute(),
     ("auth-logout", "OPTIONS"): AnonymousRead(),
+    ("auth-logout-all", "POST"): ControlRoute(),
+    ("auth-logout-all", "OPTIONS"): AnonymousRead(),
     ("auth-me", "GET"): ControlRoute(),
     ("auth-me", "HEAD"): ControlRoute(),
     ("auth-me", "OPTIONS"): AnonymousRead(),

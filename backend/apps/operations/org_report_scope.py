@@ -18,8 +18,8 @@ from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
 from apps.operations.report_registry import ReportDefinition
 from apps.operations.report_scope import ReportScope, combined_report_scope
-from apps.organizations.models import (
 from apps.accounts.native_session import is_native_session
+from apps.organizations.models import (
     Organization,
     OrganizationMakerspace,
     OrganizationMembership,

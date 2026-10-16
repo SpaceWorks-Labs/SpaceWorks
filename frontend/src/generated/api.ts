@@ -610,6 +610,7 @@ export const openApiPaths = [
   "/api/v1/auth/forgot-password",
   "/api/v1/auth/login",
   "/api/v1/auth/logout",
+  "/api/v1/auth/logout-all",
   "/api/v1/auth/me",
   "/api/v1/auth/member-sign-up",
   "/api/v1/auth/mfa",
@@ -4616,6 +4617,11 @@ export type LoginResponseSurfaceEnum = "member" | "staff" | "staff_api" | "verif
 
 export type LogMachineConsumption = {
   "quantity": string;
+};
+
+export type LogoutAllResponse = {
+  "web_sessions": number;
+  "devices": number;
 };
 
 export type LogoutResponse = {

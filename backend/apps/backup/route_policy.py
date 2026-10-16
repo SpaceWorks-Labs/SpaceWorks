@@ -17,6 +17,8 @@ QUARANTINE_ALLOWED = HEALTH_ROUTES | {
     ("auth-refresh", "OPTIONS"),
     ("auth-logout", "POST"),
     ("auth-logout", "OPTIONS"),
+    ("auth-logout-all", "POST"),
+    ("auth-logout-all", "OPTIONS"),
     ("auth-me", "GET"),
     ("auth-me", "HEAD"),
     ("auth-me", "OPTIONS"),

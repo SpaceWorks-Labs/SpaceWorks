@@ -59172,6 +59172,52 @@
                 }
             }
         },
+        "/api/v1/auth/logout-all": {
+            "post": {
+                "operationId": "api_v1_auth_logout_all_create",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LogoutAllResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                },
+                "summary": "Sign out of every browser and device session"
+            }
+        },
         "/api/v1/auth/me": {
             "get": {
                 "operationId": "api_v1_auth_me_retrieve",
@@ -95956,6 +96002,24 @@
                 ],
                 "type": "string",
                 "description": "* `member` - member\n* `staff` - staff\n* `staff_api` - staff_api\n* `verification_only` - verification_only"
+            },
+            "LogoutAllResponse": {
+                "type": "object",
+                "properties": {
+                    "web_sessions": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Revoked browser sessions, including legacy sessions."
+                    },
+                    "devices": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "devices",
+                    "web_sessions"
+                ]
             },
             "LogoutResponse": {
                 "type": "object",

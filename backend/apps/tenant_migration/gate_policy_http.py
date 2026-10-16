@@ -45,6 +45,7 @@ HTTP_EXEMPTIONS = {
     "control-mfa": "Global MFA credential and control-session state is excluded from tenant quiescence.",
     "auth-refresh": "Global user session state is excluded from tenant quiescence.",
     "auth-logout": "Global user session state is excluded from tenant quiescence.",
+    "auth-logout-all": "Global user session state is excluded from tenant quiescence.",
     "auth-change-password": "Global credential edits are excluded from tenant quiescence.",
     "auth-forgot-password": "Global account recovery is excluded from tenant quiescence.",
     "auth-reset-password": "Global credential edits are excluded from tenant quiescence.",

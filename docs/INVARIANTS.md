@@ -963,6 +963,20 @@ tokens are encrypted with an HMAC dedup fingerprint, owned by a device grant, an
 reports them invalid. Native Stripe PaymentSheet delegates to the same Payment/Connect resolution and
 idempotency rules as web checkout.
 
+- **Sign-out follows the credential's scope.** Device logout revokes that grant, its refresh
+  families and its push devices; per-session revoke invalidates the selected browser or device
+  session. Password change/reset revoke every device grant; account deletion signs out everywhere,
+  and restore requires fresh sign-in.
+- **`POST /api/v1/auth/logout-all` is global and always available to authenticated browser and
+  device sessions**, including account-only members, without a makerspace or feature gate. One
+  transaction revokes active browser sessions, legacy refresh sessions, device grants (and their
+  push devices), and blacklists outstanding refresh tokens. It audits `auth.logout_all` with counts
+  per kind and clears the refresh cookie. The response counts browser sessions (including legacy)
+  and devices; audit metadata separates modern and legacy browser sessions.
+- **Membership revocation and self-leave invalidate push only in that makerspace.** The shared
+  `_revoke_locked` cleanup deactivates the user's active `PushDevice` rows there and stamps
+  `invalidated_at`; their grants and push subscriptions in other makerspaces remain usable.
+
 **Generic OIDC providers are configuration, not a second verification path (phase 17).**
 `accounts/models_oidc.OidcProvider` (superadmin-only, platform-scoped) holds `issuer`, `jwks_url`,
 `client_id` and two switches; `social_oidc.verify_oidc_token` reuses the same

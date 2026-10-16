@@ -235,6 +235,7 @@ def _member_surface_path_allowed(path):
 def _verification_path_allowed(path):
     return path.rstrip("/") in {
         "/api/v1/auth/me",
+        "/api/v1/auth/logout-all",
         "/api/v1/auth/email-verification/resend",
         "/api/v1/auth/email-verification/confirm",
     }

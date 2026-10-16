@@ -30,6 +30,8 @@ def validate_session(user, token, *, lock=False):
     # lifetime; they acquire a marker on their next successful refresh.
     sid = token.get("sid")
     if not sid:
+        if user.account_restored_at:
+            raise AuthenticationFailed("Sign in again after restoring your account.", code="session_revoked")
         return None
     rows = OutstandingToken.objects
     if lock:

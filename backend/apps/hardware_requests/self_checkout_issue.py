@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.inventory import availability
 from apps.boxes.models import QrScanEvent
 from apps.evidence.finalization import charge_storage_once
@@ -42,8 +43,11 @@ def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit
     )
     finalized = validate_evidence_upload(evidence, label="Issue")
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         makerspace = require_feature_locked(makerspace, "inventory.self_checkout")
+        requester = lock_obligation_owner(requester)
         if not is_servable(makerspace):
             raise RequestValidationError("Makerspace is not available.")
         _lock_unused_evidence(evidence, issue=True)
@@ -116,4 +120,3 @@ def qr_has_active_loan(makerspace, qr):
         .filter(Q(qr_code=qr) | Q(qr_ids__contains=[qr.id]))
         .exists()
     )
-

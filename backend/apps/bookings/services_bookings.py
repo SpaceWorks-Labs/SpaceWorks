@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.bookings import notifications
 from apps.bookings.exceptions import BookingConflict, BookingInvalidTransition
 from apps.bookings.models import BookableSpace, Booking
@@ -82,6 +83,7 @@ def create_booking(
 
     assert_mapped_write_allowed(space.makerspace_id)
     locked_space = _locked_space(space.pk)
+    member = lock_obligation_owner(member)
     if actor is not None and getattr(member, "pk", None) != actor.pk:
         from .booking_authority import require
         from apps.presence.guard import require_active_member

@@ -10,14 +10,13 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts import audit_events
-from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus, User
-from apps.accounts.principal_guards import is_anonymous_requester
+from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus
+from apps.accounts.account_restore import recovery_eligible
+from apps.accounts.recovery_locks import locked_proof
 from apps.accounts.password_reset_crypto import (
     credential_fingerprint,
-    fixed_dummy_digest,
     new_dummy_digest,
     normalize_email,
-    otp_digest,
 )
 from apps.accounts.services_tokens import blacklist_outstanding_tokens
 
@@ -134,7 +133,7 @@ def _reenter_pending(envelope, normalized, requested_at):
 def confirm_password_reset(email, code, new_password, *, now=None):
     """Consume a live OTP and rotate the bound account credential.
 
-    The envelope is locked and compared before any user lookup. All errors whose
+    A preliminary digest match permits User-before-envelope locking. All errors whose
     counters or terminal state must persist are raised only after the atomic block.
     """
     normalized = normalize_email(email)
@@ -144,19 +143,8 @@ def confirm_password_reset(email, code, new_password, *, now=None):
     confirmed_user = None
 
     with transaction.atomic():
-        envelope = (
-            PasswordResetEnvelope.objects.select_for_update()
-            .filter(email_normalized__iexact=normalized)
-            .first()
-        )
-        stored_digest = (
-            envelope.digest if envelope is not None else fixed_dummy_digest(normalized)
-        )
-        # Nothing may branch on digest_is_live until this constant-time comparison has
-        # happened. Unknown and non-live rows therefore pay the same cryptographic work.
-        digest_matches = hmac.compare_digest(
-            stored_digest, otp_digest(str(code), normalized)
-        )
+        envelope, user, digest_matches = locked_proof(normalized, str(code), purpose="reset", now=confirmed_at)
+        confirmed_at = now or timezone.now()
         attempts_before = envelope.attempts if envelope is not None else MAX_ATTEMPTS
         if envelope is not None:
             envelope.attempts = min(envelope.attempts + 1, MAX_ATTEMPTS)
@@ -170,6 +158,8 @@ def confirm_password_reset(email, code, new_password, *, now=None):
 
         stage_one_passes = bool(
             envelope is not None
+            and user is not None
+            and envelope.purpose == "reset"
             and digest_matches
             and envelope.digest_is_live
             and envelope.status == PasswordResetEnvelopeStatus.ISSUED
@@ -179,7 +169,6 @@ def confirm_password_reset(email, code, new_password, *, now=None):
             and attempts_before < MAX_ATTEMPTS
         )
         if stage_one_passes:
-            user = User.objects.select_for_update().filter(pk=envelope.user_id).first()
             if not _credential_state_matches(user, envelope, normalized):
                 _discard_locked(envelope, confirmed_at, superseded=True)
             else:
@@ -229,13 +218,9 @@ def _credential_state_matches(user, envelope, normalized):
     except ValueError:
         return False
     return bool(
-        not user.is_tenant_dump_stub
+        recovery_eligible(user)
         and user.is_active
-        and user.access_status == User.AccessStatus.ACTIVE
-        and not user.is_walk_in
-        and not is_anonymous_requester(user)
-        # Re-checked at confirmation in case the account was promoted after issuance.
-        and not (user.is_superuser or user.role == User.Role.SUPERADMIN)
+        and not user.deletion_requested_at
         and current_email == normalized
         and hmac.compare_digest(
             envelope.credential_fingerprint,

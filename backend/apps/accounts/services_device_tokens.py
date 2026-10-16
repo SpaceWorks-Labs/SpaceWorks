@@ -8,9 +8,11 @@ from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import UntypedToken
+from rest_framework_simplejwt.settings import api_settings
 
 from apps.accounts import audit_events
 from apps.accounts.native_app_identity import registration_is_eligible
+from apps.accounts.models import User
 from apps.accounts.models_devices import (
     DeviceRefreshFamily,
     DeviceRefreshToken,
@@ -70,14 +72,25 @@ def rotate_device_refresh(raw):
 
     replay = False
     result = None
+    # Match Stage A's User -> credential order. This lookup is only discovery;
+    # the joined token/family owner is checked again after obtaining the lock.
+    owner_id = DeviceRefreshToken.objects.filter(jti=jti, token_fingerprint=token_fingerprint(raw)).values_list(
+        "family__user_id", flat=True).first()
+    if owner_id is None:
+        raise AuthenticationFailed("Invalid device refresh token.")
     with transaction.atomic():
+        try:
+            owner = User.objects.select_for_update(no_key=True).get(pk=owner_id)
+        except User.DoesNotExist as exc:
+            raise AuthenticationFailed("Invalid device refresh token.") from exc
         row = (
             DeviceRefreshToken.objects.select_for_update()
             .select_related("family__grant__registration", "family__user")
             .filter(jti=jti, token_fingerprint=token_fingerprint(raw))
             .first()
         )
-        if row is None or str(row.family_id) != str(family_id):
+        if (row is None or str(row.family_id) != str(family_id) or row.family.user_id != owner.pk
+                or str(claims.get(api_settings.USER_ID_CLAIM)) != str(getattr(owner, api_settings.USER_ID_FIELD))):
             raise AuthenticationFailed("Invalid device refresh token.")
         family, grant, user = row.family, row.family.grant, row.family.user
         unusable = bool(
@@ -90,6 +103,7 @@ def rotate_device_refresh(raw):
         elif (
             user.is_tenant_dump_stub
             or not user.is_active
+            or user.deletion_requested_at is not None
             or user.access_status != user.AccessStatus.ACTIVE
         ):
             blacklist_device_family(family, revoke_grant=True)

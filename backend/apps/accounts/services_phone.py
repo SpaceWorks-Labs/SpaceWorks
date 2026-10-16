@@ -80,7 +80,8 @@ def _issue(user, phone_e164, purpose, *, attestation_challenge=None):
     with transaction.atomic():
         if PhoneVerificationChallenge.objects.filter(
             phone_e164=phone_e164,
-            purpose=purpose,
+            purpose__in=(PhoneChallengePurpose.LOGIN, PhoneChallengePurpose.RESTORE)
+            if purpose in (PhoneChallengePurpose.LOGIN, PhoneChallengePurpose.RESTORE) else (purpose,),
             last_sent_at__gte=now - RESEND_COOLDOWN,
         ).exists():
             raise ChallengeCooldown
@@ -89,18 +90,21 @@ def _issue(user, phone_e164, purpose, *, attestation_challenge=None):
         # the login flow, where the caller is anonymous.
         PhoneVerificationChallenge.objects.filter(
             phone_e164=phone_e164,
-            purpose=purpose,
+            purpose__in=(PhoneChallengePurpose.LOGIN, PhoneChallengePurpose.RESTORE)
+            if purpose in (PhoneChallengePurpose.LOGIN, PhoneChallengePurpose.RESTORE) else (purpose,),
             consumed_at__isnull=True,
             failed_attempts__lt=MAX_FAILED_ATTEMPTS,
             expires_at__gt=now,
         ).update(consumed_at=now)
         code = _generate_otp()
+        from apps.accounts.account_restore import identifier_fingerprint
         challenge = PhoneVerificationChallenge.objects.create(
             user=user,
             purpose=purpose,
             attestation_challenge=attestation_challenge,
             phone_e164=phone_e164,
             code_digest=_digest(code, phone_e164),
+            credential_fingerprint=identifier_fingerprint(user) if purpose == PhoneChallengePurpose.RESTORE else "",
             expires_at=now + CHALLENGE_TTL,
             last_sent_at=now,
         )
@@ -111,7 +115,7 @@ def _issue(user, phone_e164, purpose, *, attestation_challenge=None):
         # and the challenge must survive a vendor failure so the generic ack is honest.
         sent = send_sms(
             to=phone_e164,
-            body=f"Your {_platform_name()} verification code is {code}. "
+            body=f"Your {_platform_name()} {'account restore' if purpose == PhoneChallengePurpose.RESTORE else 'verification'} code is {code}. "
             f"It expires in {int(CHALLENGE_TTL.total_seconds() // 60)} minutes.",
         )
     return challenge, sent

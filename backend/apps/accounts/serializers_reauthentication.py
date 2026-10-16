@@ -10,6 +10,8 @@ class ReauthenticationResultSerializer(serializers.Serializer):
     verified = serializers.BooleanField()
     expires_in = serializers.IntegerField()
     mfa_required = serializers.BooleanField(required=False)
+    factor_required = serializers.ChoiceField(choices=["totp", "phone", "email_code"], required=False)
+    factor_token = serializers.CharField(required=False)
 
 
 class ReauthenticationStatusSerializer(serializers.Serializer):
@@ -21,7 +23,7 @@ class ReauthenticationStatusSerializer(serializers.Serializer):
 
 class ReauthenticationSocialStartSerializer(serializers.Serializer):
     provider = serializers.CharField(max_length=64)
-    redirect_uri = serializers.URLField(max_length=2048)
+    redirect_uri = serializers.URLField(max_length=2048, required=False, default="", allow_blank=True)
 
 
 class ReauthenticationSocialStartedSerializer(serializers.Serializer):
@@ -53,3 +55,13 @@ class ReauthenticationEmailConfirmedSerializer(serializers.Serializer):
 
 class EmptySerializer(serializers.Serializer):
     pass
+
+
+class ReauthenticationFactorSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=200, write_only=True)
+    code = serializers.RegexField(r"^[0-9]{6}$", max_length=6, write_only=True)
+
+
+class ReauthenticationPhoneStartedSerializer(serializers.Serializer):
+    sent = serializers.BooleanField()
+    token = serializers.CharField()

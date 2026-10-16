@@ -26,6 +26,7 @@ Read by every backend process. `ALLOWED_HOSTS`, `SECRET_KEY` and the proxy postu
 | Variable | Default | Notes |
 |---|---|---|
 | `ADMIN_SITE_NAME` | `'Space Works'` |  |
+| `ACCOUNT_DELETION_RETENTION_DAYS` | `90` | Days between the account deletion request and scheduled identity purge; Stage A immediately deactivates the account. |
 | `ALLOWED_HOSTS` | `['localhost', '127.0.0.1']` | Django's host check; add every custom domain on self-host. |
 | `CORS_ALLOWED_ORIGINS` | `['http://localhost:5000', 'http://localhost:5173']` |  |
 | `CSRF_TRUSTED_ORIGINS` | `[]` |  |

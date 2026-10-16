@@ -109,6 +109,8 @@ def resolve_identities(archive, job, pk_map, required):
                 raise IdentityResolutionError(
                     f"Source user {source_id} has an incomplete LINK_EXISTING decision."
                 )
+            if source.get("deletion_requested_at") or source.get("account_purged_at"):
+                raise IdentityResolutionError("A deleted source identity must be imported as a separate inactive identity.")
         elif decision.identity_resolution == decision.IdentityResolution.CREATE_WALK_IN:
             if decision.target_user_id is not None:
                 raise IdentityResolutionError(
@@ -176,6 +178,15 @@ def _required_decision(job, source_id):
 
 def _create_walk_in(source, target_pk):
     date_joined = database_value(User._meta.get_field("date_joined"), source["date_joined"])
+    lifecycle = {
+        name: database_value(User._meta.get_field(name), source.get(name))
+        for name in ("deletion_requested_at", "deletion_purge_after", "purge_started_at", "account_purged_at")
+    }
+    deleted = bool(lifecycle["deletion_requested_at"] or lifecycle["account_purged_at"])
+    if lifecycle["account_purged_at"]:
+        from uuid import uuid4
+        source = {**source, "username": "deleted_" + uuid4().hex,
+                  "first_name": "", "last_name": "", "display_name": "Deleted member", "phone": ""}
 
     def create(username):
         user = User(
@@ -195,7 +206,8 @@ def _create_walk_in(source, target_pk):
             is_walk_in=True,
             is_staff=False,
             is_superuser=False,
-            is_active=True,
+            is_active=not deleted,
+            **lifecycle,
         )
         user.set_unusable_password()
         user.save(force_insert=True)

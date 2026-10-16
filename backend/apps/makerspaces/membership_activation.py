@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.makerspaces import limits
 from apps.makerspaces.models import (
     Makerspace,
@@ -18,7 +19,10 @@ from apps.makerspaces.models import (
 def _activate_membership(actor, makerspace, user, role, *, request=None, source, skip_dues=False):
     """Activate or reactivate exactly one membership in the mandated lock order."""
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        user = lock_obligation_owner(user)
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed
         ensure_join_allowed(makerspace)
         driving_request = None

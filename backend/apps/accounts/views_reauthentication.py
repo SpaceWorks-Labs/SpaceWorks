@@ -13,6 +13,7 @@ from apps.accounts.serializers_reauthentication import (
     ReauthenticationEmailSentSerializer, ReauthenticationResultSerializer, ReauthenticationSerializer,
     ReauthenticationSocialCompleteSerializer, ReauthenticationSocialStartSerializer,
     ReauthenticationSocialStartedSerializer, ReauthenticationStatusSerializer,
+    ReauthenticationFactorSerializer, ReauthenticationPhoneStartedSerializer,
 )
 from apps.openapi_errors import errors
 
@@ -55,8 +56,7 @@ class ReauthenticationView(APIView):
         credential = mfa_policy.credential(request.user)
         return response({"verified": verified, "password_available": request.user.has_usable_password(),
                          "mfa_enabled": bool(credential and credential.enabled_at),
-                         "providers": list(request.user.social_identities.filter(
-                             provider__startswith="oidc:").values_list("provider", flat=True))})
+                         "providers": list(request.user.social_identities.values_list("provider", flat=True))})
 
     @extend_schema(tags=["Reauthentication"], request=ReauthenticationSerializer,
                    responses={200: ReauthenticationResultSerializer, **ERRORS})
@@ -99,3 +99,34 @@ class ReauthenticationEnrollmentConfirmView(ReauthenticationView):
                    responses={200: ReauthenticationEmailConfirmedSerializer, **ERRORS})
     def post(self, request):
         return response(intents.confirm_email(request, **validated(ReauthenticationEmailConfirmSerializer, request)))
+
+
+class ReauthenticationSocialFactorView(ReauthenticationView):
+    http_method_names = ["post", "options"]
+
+    @extend_schema(tags=["Reauthentication"], request=ReauthenticationFactorSerializer,
+                   responses={200: ReauthenticationResultSerializer, **ERRORS})
+    def post(self, request):
+        from apps.accounts.reauthentication_factors import confirm_factor
+        return response(confirm_factor(request, **validated(ReauthenticationFactorSerializer, request)))
+
+
+class ReauthenticationPhoneStartView(ReauthenticationView):
+    http_method_names = ["post", "options"]
+
+    @extend_schema(tags=["Reauthentication"], request=EmptySerializer,
+                   responses={200: ReauthenticationPhoneStartedSerializer, **ERRORS})
+    def post(self, request):
+        from apps.accounts.reauthentication_phone import start
+        validated(EmptySerializer, request)
+        return response(start(request))
+
+
+class ReauthenticationPhoneConfirmView(ReauthenticationView):
+    http_method_names = ["post", "options"]
+
+    @extend_schema(tags=["Reauthentication"], request=ReauthenticationFactorSerializer,
+                   responses={200: ReauthenticationResultSerializer, **ERRORS})
+    def post(self, request):
+        from apps.accounts.reauthentication_phone import confirm
+        return response(confirm(request, **validated(ReauthenticationFactorSerializer, request)))

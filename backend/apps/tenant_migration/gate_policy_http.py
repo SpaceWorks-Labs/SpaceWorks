@@ -4,9 +4,17 @@ from .gate_policy_replay import REPLAY_HTTP_PARTICIPANTS
 
 
 HTTP_EXEMPTIONS = {
+    "auth-account-restore-email": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-restore-phone": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-restore-social-start": "Global provider recovery intent has no tenant mutation.",
+    "auth-account-restore-social-complete": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-deletion": "Global departure discovers and locks every owned tenant gate inside Stage A.",
     "auth-reauth": "Global browser session proof has no tenant-owned authority.",
     "auth-reauth-social-start": "Global session-bound credential intent.",
     "auth-reauth-social-complete": "Global credential verification and browser proof.",
+    "auth-reauth-social-factor": "Global session-bound provider second-factor proof.",
+    "auth-reauth-phone-start": "Global session-bound phone credential challenge.",
+    "auth-reauth-phone-confirm": "Global phone credential verification and session proof.",
     "auth-reauth-enrollment-email": "Global session-bound MFA enrollment confirmation.",
     "auth-reauth-enrollment-confirm": "Global enrollment-only proof, never a tenant grant.",
     "control-reauthentication": "Global control session proof; existing control MFA gate remains.",

@@ -52,6 +52,10 @@ class SocialNonceSerializer(serializers.Serializer):
 
 
 class SocialLoginSerializer(serializers.Serializer):
+    authorization_code = serializers.CharField(max_length=4096, required=False, write_only=True, trim_whitespace=False,
+                                               help_text="Optional Apple authorization code for later token revocation. Exchange failures never fail sign-in.")
+    redirect_uri = serializers.URLField(max_length=2048, required=False, default="", allow_blank=True,
+                                       help_text="Original same-origin Apple web authorization redirect URI; required when exchanging a web code.")
     id_token = serializers.CharField(max_length=16384, write_only=True)
     nonce = serializers.CharField(max_length=512, write_only=True)
     surface = serializers.ChoiceField(choices=SocialSurface.choices)
@@ -73,6 +77,11 @@ class SocialLoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         if (attrs["delivery"] == "web") != (attrs["client_platform"] == "web"):
             raise serializers.ValidationError("Invalid social delivery platform.")
+        if attrs.get("authorization_code") and attrs["delivery"] == "web":
+            from apps.accounts.oidc_browser_attempts import _valid_redirect
+            from apps.accounts.social_nonces import request_origin
+            if not _valid_redirect(attrs["redirect_uri"], request_origin(self.context["request"])):
+                raise serializers.ValidationError("Apple code exchange must use this site's redirect URI.")
         grant = getattr(self.context.get("request"), "device_grant", None)
         has_attestation = bool(attrs.get("challenge")) and bool(
             attrs.get("attestation")

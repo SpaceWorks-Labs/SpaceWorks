@@ -39,7 +39,7 @@ declare global {
     AppleID?: {
       auth: {
         init(options: Record<string, unknown>): void;
-        signIn(): Promise<{ authorization: { id_token: string }; user?: { name?: { firstName?: string; lastName?: string } } }>;
+        signIn(): Promise<{ authorization: { id_token: string; code?: string }; user?: { name?: { firstName?: string; lastName?: string } } }>;
       };
     };
   }
@@ -75,7 +75,7 @@ async function requestNonce(provider: SocialProvider, surface: SocialSurface) {
   });
 }
 
-async function complete(provider: SocialProvider, surface: SocialSurface, idToken: string, nonce: string, appleName = "") {
+async function complete(provider: SocialProvider, surface: SocialSurface, idToken: string, nonce: string, appleName = "", authorizationCode = "") {
   return publicV1Request<SocialLoginResult | MfaChallenge>(`/auth/social/${provider}`, {
     method: "POST",
     credentials: "include",
@@ -86,6 +86,7 @@ async function complete(provider: SocialProvider, surface: SocialSurface, idToke
       delivery: "web",
       client_platform: "web",
       ...(appleName ? { apple_name: appleName } : {}),
+      ...(authorizationCode ? { authorization_code: authorizationCode, redirect_uri: window.location.origin } : {}),
     }),
   });
 }
@@ -133,7 +134,7 @@ export async function signInWithApple(serviceId: string, surface: SocialSurface)
   });
   const result = await window.AppleID.auth.signIn();
   const name = [result.user?.name?.firstName, result.user?.name?.lastName].filter(Boolean).join(" ");
-  return complete("apple", surface, result.authorization.id_token, nonce, name);
+  return complete("apple", surface, result.authorization.id_token, nonce, name, result.authorization.code);
 }
 
 export async function beginOidcBrowser(

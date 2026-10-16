@@ -23,6 +23,7 @@ class PasswordResetEnvelope(models.Model):
     anonymous request path never needs to look up an account.
     """
 
+    purpose = models.CharField(max_length=16, default="reset", choices=[("reset", "Reset"), ("restore", "Restore")])
     email_normalized = models.CharField(max_length=254)
     email_fingerprint = models.CharField(max_length=64)
     digest = models.CharField(max_length=64)

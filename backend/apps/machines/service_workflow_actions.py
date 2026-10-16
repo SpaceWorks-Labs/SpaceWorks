@@ -2,6 +2,7 @@
 
 from django.db import transaction
 from django.utils import timezone
+from apps.accounts.account_obligations import lock_obligation_owner
 
 from apps.makerspaces import limits
 from apps.machines import role_scope
@@ -46,6 +47,11 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
             override_reason=certification_override_reason,
         )
         _require_module(makerspace, locked=True)
+        owner = lock_obligation_owner(member if member is not None else requester)
+        if member is not None:
+            member = owner
+        else:
+            requester = owner
         limits.check_quota(makerspace, "machine_service_open", adding=1)
         limits.check_quota(makerspace, "machine_service_submit", adding=1)
         if isinstance(target, ServiceQueue):
@@ -253,7 +259,12 @@ def create_reprint(service_request, actor):
     """Create an accepted child request that retains the original attachment root."""
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
+        from apps.makerspaces.models import Makerspace
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(service_request.makerspace_id)
+        Makerspace.objects.select_for_update().get(pk=service_request.makerspace_id)
         original = _locked_request(service_request)
+        lock_obligation_owner(original.member if original.member_id else original.requester)
         if original.status not in {MachineServiceRequest.Status.FAILED, MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.COLLECTED}:
             raise ServiceInvalidTransition("Only terminal service requests can be reprinted.")
         root = original.reprint_of or original
@@ -268,4 +279,3 @@ def create_reprint(service_request, actor):
         )
         _audit_transition(actor, child, "reprint_created", extra={"reprint_of_id": root.pk})
         return child
-

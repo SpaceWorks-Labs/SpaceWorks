@@ -32,6 +32,7 @@ const PublicPrintRequestPage = lazy(() => import("./features/printing/PublicPrin
 const PublicOrganizationPage = lazy(() => import("./features/organizations/PublicOrganizationPage").then((m) => ({ default: m.PublicOrganizationPage })));
 const OrganizationInvitationRedeemPage = lazy(() => import("./features/organizations/OrganizationInvitationRedeemPage").then((m) => ({ default: m.OrganizationInvitationRedeemPage })));
 const ResetPasswordPage = lazy(() => import("./features/staff/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
+const AccountRestorePage = lazy(() => import("./features/auth/AccountRestorePage").then((m) => ({ default: m.AccountRestorePage })));
 const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
@@ -91,7 +92,9 @@ function SingleTenantEvent() {
 export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landing: ReactNode }) {
   const location = useLocation();
   let routes: ReactNode;
-  if (location.pathname === "/mfa") {
+  if (location.pathname === "/account/restore") {
+    routes = <Routes><Route path="/account/restore" element={<AccountRestorePage />} /></Routes>;
+  } else if (location.pathname === "/mfa") {
     routes = <Routes><Route path="/mfa" element={<MfaAccountPage />} /></Routes>;
   } else if (location.pathname === "/staff-invitations/accept") {
     routes = <Routes><Route path="/staff-invitations/accept" element={<StaffInvitationAcceptPage />} /></Routes>;

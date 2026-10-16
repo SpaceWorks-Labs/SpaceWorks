@@ -15,6 +15,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.models import MakerspaceMembership, MembershipPlan, MembershipTerm
 
@@ -35,6 +36,8 @@ def term_end(plan, starts_at):
 def create_term(actor, membership, plan, starts_at=None):
     """Open a term for an active membership; a new term follows the current one."""
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(membership.makerspace_id)
         # Makerspace lock first, then the membership -- the order `_activate_membership`
         # mandates -- and the module gate re-checked under that lock (plan A8).
         makerspace = require_module_locked(membership.makerspace_id, "membership")
@@ -43,6 +46,7 @@ def create_term(actor, membership, plan, starts_at=None):
             .select_related("user")
             .get(pk=membership.pk)
         )
+        membership.user = lock_obligation_owner(membership.user)
         if plan.makerspace_id != makerspace.pk:
             raise ValidationError({"plan_id": "Plan must belong to this makerspace."})
         if not plan.is_active:

@@ -4,6 +4,7 @@ import logging
 import os
 import socket
 import uuid
+import secrets
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -12,7 +13,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus, User
-from apps.accounts.principal_guards import is_anonymous_requester
+from apps.accounts.account_restore import recovery_eligible, restorable, identifier_fingerprint
+from apps.accounts.account_restore_email import send_restore_link
 from apps.accounts.password_reset_crypto import (
     credential_fingerprint,
     generate_otp,
@@ -44,6 +46,7 @@ class DeliveryAttempt:
     claim: EnvelopeClaim
     recipient: str
     code: str
+    restore: bool = False
 
 
 def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None):
@@ -65,7 +68,7 @@ def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None)
             # The digest and `delivering` state committed before this SMTP call. This
             # call must remain synchronous and outside every row-lock transaction.
             delivered = bool(
-                send_password_reset_otp(
+                send_restore_link(attempt.recipient, attempt.code) if attempt.restore else send_password_reset_otp(
                     attempt.recipient,
                     attempt.code,
                     expires_in_minutes=int(CHALLENGE_TTL.total_seconds() // 60),
@@ -125,6 +128,9 @@ def prepare_delivery(claim, *, now=None):
     """Commit the digest and delivering state, returning the in-memory secret."""
     issued_at = now or timezone.now()
     with transaction.atomic():
+        # Stage A and final purge hold User before invalidating envelopes. Resolve
+        # from the immutable claim, then revalidate its envelope under that lock.
+        user = User.objects.select_for_update(no_key=True).filter(email__iexact=claim.email_normalized).first()
         envelope = (
             PasswordResetEnvelope.objects.select_for_update()
             .filter(
@@ -136,13 +142,10 @@ def prepare_delivery(claim, *, now=None):
         )
         if envelope is None:
             return None
-        # Envelope -> User is the declared lock order shared with confirmation.
-        user = (
-            User.objects.select_for_update()
-            .filter(email__iexact=envelope.email_normalized)
-            .first()
-        )
-        if not _recoverable(user):
+        if envelope.email_normalized != claim.email_normalized:
+            return None
+        archived = restorable(user, now=issued_at)
+        if not archived and not _recoverable(user):
             return _finish_claimed_terminal(
                 envelope, claim, PasswordResetEnvelopeStatus.DISCARDED, issued_at
             )
@@ -153,19 +156,20 @@ def prepare_delivery(claim, *, now=None):
                 envelope, claim, PasswordResetEnvelopeStatus.UNDELIVERABLE, issued_at
             )
 
-        code = generate_otp()
+        code = secrets.token_urlsafe(48) if archived else generate_otp()
         updated = PasswordResetEnvelope.objects.filter(
             pk=envelope.pk,
             generation=claim.generation,
             status=PasswordResetEnvelopeStatus.CLAIMED,
         ).update(
             user=user,
+            purpose="restore" if archived else "reset",
             digest=otp_digest(code, envelope.email_normalized),
             digest_is_live=True,
-            credential_fingerprint=credential_fingerprint(
+            credential_fingerprint=identifier_fingerprint(user) if archived else credential_fingerprint(
                 user, envelope.email_normalized
             ),
-            expires_at=issued_at + CHALLENGE_TTL,
+            expires_at=issued_at + (timedelta(hours=24) if archived else CHALLENGE_TTL),
             consumed_at=None,
             attempts=0,
             status=PasswordResetEnvelopeStatus.DELIVERING,
@@ -175,7 +179,7 @@ def prepare_delivery(claim, *, now=None):
         )
         if updated != 1:
             return None
-    return DeliveryAttempt(claim, envelope.email_normalized, code)
+    return DeliveryAttempt(claim, envelope.email_normalized, code, restore=archived)
 
 
 def finalize_delivery(claim, *, delivered, now=None):
@@ -230,14 +234,9 @@ def _finish_claimed_terminal(envelope, claim, status, now):
 
 def _recoverable(user):
     return bool(
-        user is not None
-        and not user.is_tenant_dump_stub
+        recovery_eligible(user)
         and user.is_active
-        and user.access_status == User.AccessStatus.ACTIVE
-        and not user.is_walk_in
-        and not is_anonymous_requester(user)
-        # A superadmin resets on the host (`changepassword` / `recover_superadmin`), never by email.
-        and not (user.is_superuser or user.role == User.Role.SUPERADMIN)
+        and not user.deletion_requested_at
     )
 
 

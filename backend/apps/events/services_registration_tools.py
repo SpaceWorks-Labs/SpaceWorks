@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models import CharField, Exists, OuterRef, Q
 from django.db.models.functions import Cast
 from django.utils import timezone
+from apps.accounts.account_obligations import lock_obligation_owner
 
 from apps.audit.models import AuditLog
 from apps.encryption.write_fence import assert_mapped_write_allowed
@@ -101,6 +102,7 @@ def _later_promotion(event, registration):
 def restore_registration(registration, *, actor):
     from apps.events import services
     event, locked = _lock(registration, actor)
+    locked.member = lock_obligation_owner(locked.member)
     now = timezone.now()
     ticket = locked.ticket_type
     prior = require_restorable(

@@ -15,6 +15,11 @@ GLOBAL_MODELS = {
 }
 
 OMITTED_MODELS = {
+    "accounts.AccountRestoreIntent": "Deployment-local single-use account recovery proof; never portable authority.",
+    "accounts.AccountPurgeProgress": "Source-deployment erasure progress; target resumes from User deletion timestamps.",
+    "accounts.AccountPurgeObject": "Source object deletion and quota journal; source keys never authorize target cleanup.",
+    "accounts.AppleRefreshCredential": "Encrypted platform Apple refresh credential; never portable.",
+    "accounts.AppleRevocation": "Source Apple credential revocation work; never target authority.",
     "accounts.PlatformAttestationSettings": "Platform attestation credentials; never tenant data.",
     "accounts.ReauthenticationSession": "Deployment-local browser step-up proof; never tenant authority.",
     "notifications.NotificationInboxRow": "Short-lived personal delivery text and read telemetry; target inbox starts empty.",

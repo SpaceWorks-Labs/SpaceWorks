@@ -190,6 +190,10 @@ class SocialLoginView(APIView):
             return _error(exc.code, exc.status_code)
         audit_events.record_auth_event(user, "auth.social_login_succeeded", target=user,
             meta=social_audit_meta(self.provider, outcome, claims["sub"]))
+        if self.provider == SocialProvider.APPLE:
+            from apps.accounts.apple_credentials import store_refresh_credential
+            store_refresh_credential(user, claims, data.get("authorization_code", ""),
+                                     data.get("redirect_uri", "") if data["delivery"] == "web" else "")
         if data["delivery"] == "device":
             grant = tokens["device_grant"]
             authority = "native_staff" if grant.authority == "staff" else "member"

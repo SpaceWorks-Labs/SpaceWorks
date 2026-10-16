@@ -295,6 +295,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
+ACCOUNT_DELETION_RETENTION_DAYS = env.int("ACCOUNT_DELETION_RETENTION_DAYS", default=90)
 # PostgreSQL supports 63-character identifiers. The approved Maintenance schema
 # intentionally uses a 32-character descriptive index name.
 SILENCED_SYSTEM_CHECKS = ["models.E034"]
@@ -593,6 +594,10 @@ CELERY_BEAT_SCHEDULE = {
     "member-push-recovery": {
         "task": "apps.notifications.tasks.sweep_member_push",
         "schedule": crontab(minute="*/5"),
+    },
+    "purge-deleted-accounts": {
+        "task": "apps.accounts.tasks.purge_deleted_accounts_task",
+        "schedule": crontab(hour=3, minute=20),
     },
     "reminder-sweep": {
         "task": "apps.operations.tasks_reminders.run_reminder_sweep_task",

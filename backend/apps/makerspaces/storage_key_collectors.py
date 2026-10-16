@@ -111,6 +111,7 @@ def _collect_private_coordination_keys(makerspace, add):
 
 
 def _public_coordination_keys(makerspace):
+    from apps.accounts.models_account_purge import AccountPurgeObject
     from apps.backup.models import RestoreRollbackObject
     from apps.tenant_migration.models import TenantImportObject
 
@@ -126,4 +127,8 @@ def _public_coordination_keys(makerspace):
             bucket_kind=TenantImportObject.BucketKind.PUBLIC_IMAGE,
         ).exclude(target_key="").values_list("target_key", flat=True)
     )
+    # Profiles may already be gone while durable account image deletion retries.
+    # Break-glass tenant purge must still collect those source-only keys.
+    keys.extend(AccountPurgeObject.objects.filter(makerspace=makerspace, deleted_at__isnull=True)
+                .values_list("object_key", flat=True))
     return keys

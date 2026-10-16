@@ -8,6 +8,26 @@
 
 ## Current source map (real paths)
 
+Account comeback lives in `accounts/account_restore.py` (locked eligibility and identity-only
+reactivation), `account_restore_email.py` (reset-queue restore links), `account_restore_phone.py`
+(phone login-start restore OTPs), and `account_restore_social.py` / `account_restore_social_device.py`
+(fresh existing provider proofs). `recovery_locks.py` owns User-before-envelope proof locking.
+`models_account_restore.py` stores single-use provider intents; `views_account_restore.py` and
+`serializers_account_restore.py` expose their anonymous, throttled confirmation contracts.
+The web restore-link landing page is `features/auth/AccountRestorePage.tsx`.
+
+Account deletion Stage B lives in `accounts/account_purge.py` (tenant orchestration and
+global identity finalization), `account_purge_scrub.py` (mutable tenant copies), and
+`account_purge_objects.py` (committed object deletion followed by quota release).
+`models_account_purge.py` defines tenant progress, object cleanup and Apple credential/
+revocation work. `apple_credentials.py` exchanges sign-in authorization codes;
+`apple_revocation.py` retries revocation from the Stage A on-commit task and daily sweep.
+`models_email.py` holds the email-challenge/counter classes re-exported by `models.py`.
+The member account page composes `MemberAccountDeletion.tsx`,
+`AccountDeletionReauthentication.tsx`, `AccountDeletionBlockers.tsx` and the session-keyed
+TanStack Query hooks in `accountDeletionApi.ts`. Privacy disclosure is in
+`docs/privacy-account-deletion.md`.
+
 The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
 `AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
 `WorkspaceSwitcher`, `UserMenu`, `MobileTopBar`, `SidebarDrawer`, `BottomTabs` and
@@ -240,6 +260,18 @@ existing field classification. `subject_boundary.py` reuses source-gate boundari
 Frontend account controls live in `features/members/MemberAccount*.tsx` with
 `memberAccountApi.ts`; staff plan controls use `MembershipRenewalFields.tsx`.
 See [member-account-renewals.md](member-account-renewals.md) for policy and limits.
+
+Platform account deletion lives in the `accounts/account_deletion*` service modules
+and `accounts/views_account_deletion.py` / `serializers_account_deletion.py`. Stage A archives identity,
+revokes session authority and coordinates existing membership/application services.
+`organizations/services_governance.py:self_departure` owns organization departure
+without requiring governance authority, while preserving the last-governor invariant.
+`accounts/reauthentication*.py` supplies browser/device proof and provider second-factor
+intents independently of the deletion transaction. Stage B purge uses the durable
+tenant/object journals described above.
+`accounts/account_obligations.py` locks the obligation owner after domain locks;
+new loans, bookings, registrations, service jobs and membership purchases use it
+to serialize against departure. Refresh rotation locks the account before tokens.
 Public item deep links live in `frontend/src/features/inventory/PublicItemPage.tsx`;
 they reuse `inventory/views.py`'s existing `PublicInventoryDetailView` and the
 catalogue's `PublicProductSerializer`. Public search builds an allowlisted vector

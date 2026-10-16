@@ -21,6 +21,13 @@ USER_PROJECTIONS = {
     ),
 }
 
+# Archived accounts must retain the lifecycle that prevents restored authority.
+USER_PROJECTIONS[Fidelity.PORTABLE] |= frozenset({
+    "deletion_requested_at", "deletion_purge_after",
+})
+USER_PROJECTIONS[Fidelity.PORTABLE] |= frozenset({"account_purged_at"})
+USER_PROJECTIONS[Fidelity.PORTABLE] |= frozenset({"purge_started_at"})
+
 ALWAYS_OMITTED = {
     ("bookings.Booking", "checkin_token"): "Source arrival bearer credential; target issues a fresh one.",
     ("bookings.BookingBroadcastDelivery", "outbox"): "Source-local send authority never travels.",

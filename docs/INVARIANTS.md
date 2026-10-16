@@ -15,14 +15,17 @@ beyond any single module. Read the subsection covering what you are touching.
 ## Cross-cutting invariants (from shipped batches)
 
 **Recent reauthentication (Lane F).** `accounts.ReauthenticationSession` holds
-server-only browser proof bound to the stable browser session ID, user, surface,
+server-only proof bound to the stable browser session ID or native DeviceRefreshFamily ID, user, surface,
 deployment generation, password/email/linked-identity fingerprint and MFA version.
-Refresh never changes auth_time; proofs expire after ten minutes. Native sessions
-cannot acquire this browser proof. Password verification also requires TOTP when MFA is enrolled;
+Refresh never changes auth_time; proofs expire after ten minutes. Device grants
+skip browser Origin validation only after authentication. Password verification also requires TOTP when MFA is enrolled;
 passwordless MFA holders may use replay-protected TOTP alone. Social intents are
 single-use, session/origin/version bound and five-minute limited: verified linked
-subject and provider auth_time within 60 seconds are required, followed by enrolled
-MFA. A provider unable to prove freshness cannot stamp proof. Passwordless MFA
+subject is required, never a new link. Provider auth_time must be within five minutes.
+Apple requires it; OIDC requests prompt=login and max_age=0; Google requests it through
+claims. GitHub, Google without fresh auth_time and OIDC without auth_time additionally need
+TOTP, else verified-phone OTP, else an intent-bound verified-email code. Email codes
+are single-use, ten-minute limited and attempt-capped. Passwordless MFA
 enrollment instead accepts fresh social proof or a single-use, verified-email,
 session-bound fifteen-minute confirmation; emailed proof never authorizes sensitive
 actions by itself. Existing password checks for other MFA management remain.
@@ -467,8 +470,10 @@ DROP like every other live disclosure rule. `recipient_emails` is staff-entered 
 the encryption registry (no existing JSON-list email column to mirror) — an owner call if that should change.
 **Scoped PII encryption (Part H, `apps/encryption/`; dormant unless enabled).** Per-makerspace DEK via a
 key broker (local/AWS-KMS), AAD-authenticated envelope crypto, `ScopedPiiModelMixin` on the 6 PII-holding
-models with a save-boundary that single-INSERTs envelopes + dual-read cache. Blind-index search
-(domain-separated HMAC bloom + exact + event-email hashes) for enabled deployments; disabled deployments
+models with a save-boundary that single-INSERTs envelopes + dual-read cache.
+Strict reads reject persisted legacy plaintext, while fresh in-memory assignments remain readable for
+model normalization before encryption; refreshing a row replaces stale caches with freshly verified values.
+Blind-index search (domain-separated HMAC bloom + exact + event-email hashes) for enabled deployments; disabled deployments
 search plaintext via ORM. Write-fence (`PiiGlobalWriteFence`/`PiiMakerspaceWriteFence` + PG
 `pii_assert_mapped_write_allowed()` triggers with global-then-tenant advisory locks) blocks mapped writes
 during maintenance; mapped services acquire the fence **before** their domain row lock. Enabling is a
@@ -1779,6 +1784,162 @@ The identity-only Devices console requires `MANAGE_DEVICES` until 7b/7c adapter 
 bearers live only in local modal state: secret requests return void to TanStack mutations, and closing
 the modal discards them. Shared query keys start with `["devices", makerspaceId]`; mutations invalidate
 both list and detail. Machine/QR-only adapter controls must wait for scoped sibling APIs.
+
+## Account deletion
+
+**Comeback restores identity only, inside the archive window.** Under the same User
+row lock used by restore, Stage B commits `purge_started_at` before its first tenant
+scrub. It cannot start before `now >= deletion_purge_after`. Restore refuses when
+that fence is set, at the exact deadline, after global purge, or when deletion is no
+longer requested. The fence survives tenant commits, gated tenants and object-storage
+cleanup; extending the deadline cannot reopen an account whose scrub already started.
+Every purge invocation locks User and skips an account restored since task discovery.
+
+Password-reset **requests remain account-independent**: identical queue work for active,
+archived and unknown addresses. Only the existing drain resolves identity; for an eligible
+archived account it sends a single-use, 24-hour restore link instead of reset mail, with
+five attempts and an identifier/credential fingerprint. Reset confirmation cannot redeem
+a restore proof. Signup does not issue restore mail. Phone login start performs the same
+one lookup and at most one send: an archived **phone-only** account gets a distinct
+restore OTP, with the existing uniform 200, shared login/restore cooldown, attempt cap,
+expiry and exact device-attestation binding. Restore OTPs never mint login sessions.
+
+Accounts with neither email nor phone may use an already-linked provider. Recovery
+intents are single-use, five-minute, nonce/state-bound, and browser-origin or exact
+approved native-app-attestation bound. Apple, Google and OIDC require verified fresh
+`auth_time` within five minutes; OIDC requests `prompt=login` and `max_age=0`, while Google
+requests the authentication-time claim. An `iat` or silent provider response never
+substitutes. This flow never creates or links an identity. Providers unable to prove
+freshness have no second-factor fallback after Stage A deletes those factors. Deletion
+preflight returns `restorable` and `restore_reason`, also shown before web confirmation;
+unverified phones without email and disabled/unconfigured providers are not advertised
+as usable recovery paths. Native-only configured Apple/Google identities can recover
+with their approved app and audience.
+
+Every confirmation rechecks the recovery-path exclusions against locked User: either
+form of superadmin (including promotion after issuance), walk-ins, anonymous principals,
+tenant-dump stubs and restricted accounts are refused. Identifier or linked-identity
+changes invalidate the issuance fingerprint. Email/phone restore requires a new validated
+password; social-only restore requires fresh provider authentication and keeps its password
+unusable. Success clears deletion timestamps and pending, unrun tenant/object purge work,
+sets `is_active=True`, and audits `account.restored`. Memberships, organization grants,
+sessions, device grants and push destinations remain revoked; restore returns no session.
+`account_restored_at` permanently refuses legacy browser JWTs without a revocable `sid`,
+so reactivation cannot revive old access tokens. Recovery issuance and confirmation take
+User before envelope locks, rechecking the proof/generation after locking, consistent
+with Stage A and final purge. Invalid guesses resolve no User and commit their counters.
+
+Stage A archives the platform account immediately; Stage B removes mutable identity
+copies after the retention window (90 days by default). The account deletion endpoint
+is a member surface for browser and device sessions. Email enrollment confirmation
+never proves deletion authority. Phone-only accounts use a separate `reauth` OTP
+purpose with uniform start responses and committed failed-attempt accounting.
+
+Deletion requires explicit `DELETE` confirmation and reauthentication within the existing
+ten-minute window. The timestamp is compared again against the locked
+`ReauthenticationSession` row inside the deletion transaction; proof consumption and
+failed attempts commit independently before that transaction. A refusal rolls back all
+domain mutations and records its audit outside the rollback.
+
+Every blocker is global: pending charges/refunds, held deposits (count only effective
+succeeded refunds with `amended_by IS NULL`), outstanding loans/requests, unresolved
+problem reports, restricted access, uncollected service jobs, upcoming active bookings
+and registrations, the last makerspace manager, any last organization governor, gated
+tenants and either form of superadmin. Service-job ownership includes legacy rows with
+`member IS NULL AND requester=user`. The leave-membership and existing
+`assert_governor_remains` rules remain authoritative. Open membership applications are
+cancelled through their applicant service, rather than becoming deletion blockers.
+
+Tenant discovery covers every owned/copied subject-selector path, including account-only
+participation and legacy service jobs. Locks follow source-gate shared locks, ascending
+Makerspace rows, ascending Organization rows, then User. Recompute both tenant and
+organization sets under the User lock and retry any growth, at most three attempts;
+continued changes return `deletion_retry` without a partial deletion.
+The account lock uses `no_key=True`, serializing obligation writers while allowing
+unrelated foreign-key references. Browser and device refresh rotation lock the User
+before token/family rows, so credential revocation cannot invert that lock order.
+
+Membership revocation reuses `_revoke_locked(self_leave=True)`. Organization self-departure
+requires no governor authority, suspends only the subject's membership, preserves the
+last governor and audits `organization.member_departed`. Stage A revokes device grants,
+refresh families, browser sessions, outstanding/API tokens and reauthentication proofs;
+deactivates push destinations; deletes MFA secrets/recovery codes; sets an unusable
+password and `is_active=False`; stamps `deletion_requested_at` and
+`deletion_purge_after` using `ACCOUNT_DELETION_RETENTION_DAYS` (default 90); and audits
+`account.deletion_requested`. Identity copies and immutable history remain at this stage.
+
+Obligation writers lock the owner's User with `select_for_update(no_key=True)` after
+their own tenant/domain locks and refuse a deletion-requested account: hardware request
+submission, staff direct handout, self-checkout, booking/registration creation and
+restoration, service submission/reprint, membership renewal/plan purchase and admission
+approval/acceptance. A late return fee may arrive after deletion through its on-commit
+hook; it still records the debt and audits `account.obligation_after_deletion`. Staff
+refunds remain allowed because they return money.
+
+Stage A records the current email in `User.deletion_email_ciphertext`, encrypted with the
+platform secret key, so subsequent address edits cannot strand address-only EmailLog
+copies. A random `deletion_username` coordinates tenant snapshots before the global
+username changes. These snapshots are never portable and are cleared at final purge. Address-only
+EmailLog ownership is resolved through decrypted model attributes, never SQL equality
+against scoped ciphertext. Blockers carry the owning makerspace slug for web fix links.
+
+**Stage B is resumable per tenant.** The daily `accounts.tasks.purge_deleted_accounts_task`
+is registered in both beat and the beat-less scheduler (1440 minutes), and declared as a
+tenant writer. `AccountPurgeProgress(user, makerspace, done_at)` tracks each tenant.
+Each scrub uses its own transaction under the skip-and-count `boundary_tenant_write`
+adapter. A gated tenant is retried later; completed tenants remain complete. Scoped PII
+is always rewritten row by row through `save()`, including valid nonempty Booking
+placeholders, cleared notes/custom answers, and unique EventRegistration email placeholders.
+Machine-service ownership remains `member=user OR (member IS NULL AND requester=user)`;
+staff authorship alone never erases somebody else's job. MemberCard stays exactly as
+membership revocation already redacted it.
+
+Mutable profile/project rows are deleted only after their public image keys, buckets and
+sizes have been written to `AccountPurgeObject` in the same transaction. Object deletion
+and its `deleted_at` stamp commit first. The ordinary `limits.free_storage` quota decrement
+and `quota_released_at` stamp then commit together in a separate transaction. Missing
+objects count as deleted. A storage failure or gate closure leaves durable pending work;
+tenant progress cannot finish until every quota stamp exists. Purge never substitutes a
+best-effort `release_public_image_on_commit` callback for this journal.
+
+Only after all tenants finish and every AppleRevocation is terminal are global identity
+fields cleared and `account_purged_at` set. The username becomes `deleted_<uuid hex>` and
+the display name becomes `Deleted member`; social identities and Apple credentials,
+email/phone/MFA challenges, password-reset envelopes, push devices and personal inbox
+rows are removed. Hardware-request identity snapshots, booking contacts/notes/answers,
+registration contacts/answers, owned service-job contacts, recipient/address-matched
+EmailLog content, and MembershipRequest invite addresses/application answers are scrubbed.
+Repeated sweeps do not repeat quota release or final-purge auditing.
+
+**Apple authorization is revoked, not merely unlinked.** Verified Apple claims retain
+their `aud`; optional sign-in authorization codes are exchanged using that client ID,
+the original web redirect URI, and an ES256 client-secret JWT. The exchanged id_token
+must verify for that client and match the authenticated subject. Refresh credentials are
+encrypted per `(social_identity, client_id)` and replaced with a new credential version on re-sign-in. Exchange failure
+never prevents verified sign-in. Stage A creates revocation work in its own transaction;
+each work row holds its own encrypted token copy and captured credential ID/version.
+The worker revokes only that snapshot, including after account restore, and deletes the
+current credential row only if its captured ID/version still matches. New sign-ins and
+repeat departures cannot replace old pending work. Terminal work clears its token copy;
+an on-commit task and the daily sweep retry with backoff. No stored credential, or failure
+through day 80, audits `account.apple_revocation_unavailable` and marks the work terminal.
+The confirmation UI always discloses manual removal in Apple Account settings.
+
+Portable and deployment backups preserve deletion timestamps. Portable identity creation
+keeps deletion-requested users inactive with their timestamps and anonymises purged users;
+linking a deleted source to an existing target account is refused rather than changing
+that target's unrelated platform identity. Source cleanup journals and Apple credentials
+never travel in tenant artifacts; target cleanup resumes from the imported timestamps.
+
+**Retained and disclosed:** `AuditLog`; `Payment`/`Refund`/`ManualSettlement`;
+`PaymentDocument.payer_label` (historical username — walk-in usernames embed a name);
+`RequesterAccountability`/`ReturnEvent`; `EvidencePhoto` rows (bytes follow evidence
+retention); `MachineUsageEntry`, `EventAttendanceCertificate`, `EventFeedbackResponse`
+(immutable triggers); staff-addressed notification emails mentioning the member (kept
+until EmailLog's existing retention); `NotificationDeliveryLog` text (deleted by
+`notifications/retention.py` on its existing windows); staff actor snapshots on other
+people's memberships. Backups age out under their own retention. The operator-facing
+[privacy note](privacy-account-deletion.md) discloses the same list.
 
 ## Handover roles and the retired Guest Admin
 

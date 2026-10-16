@@ -28,6 +28,8 @@ def apply_user_closure(rows, closure):
                 role="requester",
                 telegram_user_id="",
                 external_checkin_user_id="",
+                deletion_email_ciphertext="",
+                deletion_username="",
                 is_tenant_dump_stub=False,
             )
         rewritten.append(MappingProxyType(values))
@@ -115,6 +117,13 @@ def _stub_values(ref):
         "email_verified_at": None,
         "phone_verified_at": None,
         "self_registered_at": None,
+        "deletion_requested_at": None,
+        "deletion_purge_after": None,
+        "purge_started_at": None,
+        "account_restored_at": None,
+        "account_purged_at": None,
+        "deletion_email_ciphertext": "",
+        "deletion_username": "",
         "last_login": None,
         "date_joined": STUB_TIMESTAMP,
         "external_checkin_user_id": "",

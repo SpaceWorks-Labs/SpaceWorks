@@ -21,6 +21,7 @@ class SettingPolicy:
 # Literal by design: the env-surface test compares this with its existing scanner, so a
 # newly read setting cannot silently inherit a policy.
 ENV_SURFACE = frozenset("""
+ACCOUNT_DELETION_RETENTION_DAYS
 MFA_CHALLENGE_TTL_SECONDS MFA_MAX_ATTEMPTS
 THROTTLE_MFA_VERIFY THROTTLE_MFA_CHALLENGE THROTTLE_MFA_USER THROTTLE_MFA_MANAGE
 THROTTLE_STAFF_INVITE THROTTLE_STAFF_INVITE_ACCEPT

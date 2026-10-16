@@ -34,6 +34,15 @@ class User(AbstractUser):
     # flow must remain verification-only until they prove ownership of their email.
     # Staff-created users may legitimately start without an email verification stamp.
     self_registered_at = models.DateTimeField(null=True, blank=True)
+    deletion_requested_at = models.DateTimeField(null=True, blank=True)
+    deletion_purge_after = models.DateTimeField(null=True, blank=True)
+    purge_started_at = models.DateTimeField(null=True, blank=True)
+    account_restored_at = models.DateTimeField(null=True, blank=True)
+    account_purged_at = models.DateTimeField(null=True, blank=True)
+    # Stage A address snapshot, encrypted under the platform secret key.
+    deletion_email_ciphertext = models.TextField(blank=True, default="")
+    # Random target shared by all tenant scrubs before the global username changes.
+    deletion_username = models.CharField(max_length=150, blank=True, default="")
     external_checkin_user_id = models.CharField(max_length=128, blank=True)
     telegram_user_id = models.CharField(max_length=64, blank=True)
     must_change_password = models.BooleanField(default=False)
@@ -169,40 +178,7 @@ class User(AbstractUser):
                 setattr(self, f"_loaded_{field}", getattr(self, field))
 
 
-class EmailVerificationChallenge(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="email_challenges"
-    )
-    email = models.CharField(max_length=254)
-    code_digest = models.CharField(max_length=128)
-    expires_at = models.DateTimeField()
-    consumed_at = models.DateTimeField(null=True, blank=True)
-    failed_attempts = models.PositiveSmallIntegerField(default=0)
-    last_sent_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["user", "email", "expires_at"]),
-            models.Index(
-                fields=["user", "email"],
-                condition=models.Q(consumed_at__isnull=True),
-                name="email_challenge_active_idx",
-            ),
-        ]
-
-    def is_usable(self, now):
-        return (
-            self.consumed_at is None
-            and self.failed_attempts < 5
-            and self.expires_at > now
-        )
-
-
-class DailyOtpEmailCounter(models.Model):
-    day = models.DateField(unique=True)
-    count = models.PositiveIntegerField(default=0)
-
+from apps.accounts.models_email import EmailVerificationChallenge, DailyOtpEmailCounter  # noqa: E402
 
 from apps.accounts.models_devices import (  # noqa: E402
     DeviceAttestationChallenge,
@@ -270,3 +246,11 @@ __all__ = [
     'SocialSurface',
     'User',
 ]
+
+from apps.accounts.models_account_purge import (  # noqa: E402
+    AccountPurgeProgress, AccountPurgeObject, AppleRefreshCredential, AppleRevocation,
+)
+__all__ += ["AccountPurgeProgress", "AccountPurgeObject", "AppleRefreshCredential", "AppleRevocation"]
+
+from apps.accounts.models_account_restore import AccountRestoreIntent  # noqa: E402
+__all__ += ["AccountRestoreIntent"]

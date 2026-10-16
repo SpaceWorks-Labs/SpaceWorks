@@ -4,6 +4,7 @@ from datetime import timedelta
 import hashlib
 import json
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
@@ -30,7 +31,22 @@ def binding(request):
     active(user)
     token = getattr(request, "auth", None)
     if token is not None:
-        if token.get("device_grant_id") or token.get("surface") not in {"staff", "staff_api", "member"}:
+        if token.get("device_grant_id"):
+            from apps.accounts.models_devices import DeviceRefreshFamily
+            try:
+                families = DeviceRefreshFamily.objects.filter(
+                    pk=token.get("device_family_id"), grant_id=token["device_grant_id"], user=user,
+                    revoked_at__isnull=True, grant__status="active", grant__revoked_at__isnull=True,
+                    grant__registration__status="approved")
+                if token.get("surface") == "native_staff":
+                    families = families.filter(grant__authority="staff")
+                family = families.first()
+            except (ValidationError, ValueError, TypeError) as exc:
+                raise PermissionDenied("A current device session is required.") from exc
+            if family is None or token.get("surface") not in {"member", "native_staff"}:
+                raise PermissionDenied("A current device session is required.")
+            return "device:" + str(family.pk), token["surface"]
+        if token.get("surface") not in {"staff", "staff_api", "member"}:
             raise PermissionDenied("Use a browser session to verify your identity.")
         from apps.accounts.web_sessions import validate_session
         row = validate_session(user, token)
@@ -50,7 +66,8 @@ def versions(user):
     # Linked identities are credentials too. Include row identity so an unlink/
     # relink cannot resurrect a proof made before the credential was revoked.
     identities = list(user.social_identities.order_by("pk").values_list("pk", "provider", "provider_sub"))
-    fingerprint = hashlib.sha256((credential_fingerprint(user, user.email) + "\0" + json.dumps(identities)).encode()).hexdigest()
+    phone = [user.phone_e164, str(user.phone_verified_at or "")]
+    fingerprint = hashlib.sha256((credential_fingerprint(user, user.email) + "\0" + json.dumps([identities, phone])).encode()).hexdigest()
     return {"auth_generation": current_auth_generation(),
             "credential_fingerprint": fingerprint,
             "mfa_version": str(row.version) if row else ""}

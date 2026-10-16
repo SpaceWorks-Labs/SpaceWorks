@@ -75,7 +75,7 @@ class PhoneLoginStartView(APIView):
     @extend_schema(
         tags=["Auth"],
         summary="Request a phone sign-in code",
-        description="Device delivery binds the OTP to an approved attestation challenge and matching ios/android client_platform. Unknown numbers, invalid challenges and cooldowns receive the same acknowledgement.",
+        description="Archived phone-only accounts receive a restore OTP instead of a login OTP, redeemable at account/restore/phone. Device delivery binds the OTP to an approved attestation challenge and matching ios/android client_platform. Unknown numbers, invalid challenges and cooldowns receive the same acknowledgement.",
         auth=[],
         request=PhoneLoginStartSerializer,
         responses={

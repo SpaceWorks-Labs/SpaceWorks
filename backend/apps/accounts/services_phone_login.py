@@ -6,6 +6,7 @@ from rest_framework import serializers
 from apps.accounts import audit_events
 from apps.accounts.attestation import live_approved_challenge
 from apps.accounts.models import User
+from apps.accounts.account_restore import restorable
 from apps.accounts.models_phone import PhoneChallengePurpose, PhoneVerificationChallenge
 from apps.accounts.phone_numbers import normalize_or_none
 from apps.integrations.sms import sms_configured
@@ -38,14 +39,14 @@ def start_login(raw_phone, *, delivery="web", client_platform="web", challenge=N
         phone_e164=phone_e164,
         phone_verified_at__isnull=False,
         is_tenant_dump_stub=False,
-        is_active=True,
         access_status=User.AccessStatus.ACTIVE,
     ).first()
-    if user is None:
+    archived = bool(user and not user.email and restorable(user))
+    if user is None or (not archived and (not user.is_active or user.deletion_requested_at)):
         return None
     try:
         challenge, sent = _issue(
-            user, phone_e164, PhoneChallengePurpose.LOGIN,
+            user, phone_e164, PhoneChallengePurpose.RESTORE if archived else PhoneChallengePurpose.LOGIN,
             attestation_challenge=attestation_challenge,
         )
     except ChallengeCooldown:

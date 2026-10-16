@@ -140,6 +140,7 @@ class ForgotPasswordView(APIView):
     @extend_schema(
         tags=["Auth"],
         summary="Request an emailed password reset code",
+        description="Queues the same account-independent request for all addresses. The drain sends eligible archived accounts a single-use, 24-hour restore link instead of password-reset mail.",
         auth=[],
         request=ForgotPasswordRequestSerializer,
         responses={

@@ -24,11 +24,7 @@ class PublicWebsiteBase(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "public_read"
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        response = super().finalize_response(request, response, *args, **kwargs)
-        response["Cache-Control"] = "no-store"
-        return response
+    # Cache-Control: no-store is set by config.request_id (makerspaces.confirmation_privacy).
 
 
 class PublicBookingResourceView(PublicWebsiteBase):

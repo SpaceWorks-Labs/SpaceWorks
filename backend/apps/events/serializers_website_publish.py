@@ -8,8 +8,10 @@ class EventWebsitePublishInput(serializers.Serializer):
     website_revision = serializers.IntegerField(min_value=1, required=False)
 
     def to_internal_value(self, data):
-        if isinstance(data, Mapping) and set(data) - set(self.fields):
-            raise serializers.ValidationError("Unknown publication fields.")
+        unknown = set(data) - set(self.fields) if isinstance(data, Mapping) else set()
+        if unknown:
+            # Field-keyed: a bare list from a top-level to_internal_value breaks .errors.
+            raise serializers.ValidationError({key: ["Unknown publication field."] for key in sorted(unknown)})
         return super().to_internal_value(data)
 
     def validate(self, data):

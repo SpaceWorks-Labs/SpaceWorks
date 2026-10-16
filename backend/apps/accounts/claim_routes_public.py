@@ -65,6 +65,12 @@ PUBLIC_CLAIM_ROUTES = {
     **_anonymous("public-printer-service-status"),
     **_anonymous("public-event-list"),
     **_anonymous("public-event-detail"),
+    **_anonymous("public-event-website"),
+    **_anonymous("public-event-website-section"),
+    **_anonymous("public-event-website-speaker"),
+    **_anonymous("public-event-website-session"),
+    **_anonymous("public-event-website-schedule"),
+    **_anonymous("public-event-website-image"),
     **{("public-event-organization-eligibility", method): Refused(
         "organization eligibility requires an account session"
     ) for method in ("GET", "HEAD")},

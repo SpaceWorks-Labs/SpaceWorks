@@ -10,8 +10,11 @@ from .serializers_public import PublicBookableSpaceSerializer
 
 class StrictInput(serializers.Serializer):
     def to_internal_value(self, data):
-        if isinstance(data, Mapping) and set(data) - self.fields.keys():
-            raise serializers.ValidationError("Unknown fields.")
+        unknown = set(data) - self.fields.keys() if isinstance(data, Mapping) else set()
+        if unknown:
+            # A field-keyed map: DRF does not wrap errors raised from a top-level
+            # to_internal_value, and a bare list breaks serializer.errors.
+            raise serializers.ValidationError({key: ["Unknown field."] for key in sorted(unknown)})
         return super().to_internal_value(data)
 
 

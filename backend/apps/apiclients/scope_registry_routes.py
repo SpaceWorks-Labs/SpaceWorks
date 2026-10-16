@@ -35,7 +35,8 @@ _WRITE = ("POST",)
 # target mode, tenant-app admission, legacy-v1 admission). Legacy admission is explicit
 # so adding a route cannot silently widen the frozen cutover capability.
 _ROUTE_DEFINITIONS = (
-    ("website-discover", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, False),
+    # /api/v1/discover/ is outside HMAC_PROTECTED_PATH_PREFIXES, so "website-discover"
+    # must not be registered: an entry there is stale by construction.
     *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
         "public-booking-resource", "public-booking-website", "public-booking-website-image",
     )),

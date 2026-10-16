@@ -77,8 +77,13 @@ class ApiClientAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, 
             new_secret = secrets.token_urlsafe(32)
             obj.set_secret(new_secret)
         super().save_model(request, obj, form, change)
-        audit.record(request.user, "api_client.updated" if change else "api_client.created",
-                     makerspace=obj.makerspace, target=obj, meta={"surface": "control"})
+        # Literal actions keep both rows presentable (a conditional action is denied).
+        if change:
+            audit.record(request.user, "api_client.updated",
+                         makerspace=obj.makerspace, target=obj, meta={"surface": "control"})
+        else:
+            audit.record(request.user, "api_client.created",
+                         makerspace=obj.makerspace, target=obj, meta={"surface": "control"})
         self._save_makerspace_settings(obj, form)
         sync_makerspace_origins(obj.makerspace)
         if new_secret:

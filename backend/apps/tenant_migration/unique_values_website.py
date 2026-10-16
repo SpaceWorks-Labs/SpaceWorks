@@ -11,7 +11,6 @@ asset_key.refuses_collision = True
 
 
 WEBSITE_UNIQUE_RULES = {
-    ("bookings.BookingResourcePage", "field:space"): _policy(REMAP, "Typed owner follows the imported resource."),
     ("bookings.BookingResourcePageAsset", "field:object_key"): _policy(PRESERVE, "Verified object journal allocates collision-safe private keys.", field="object_key", generator=asset_key),
     ("events.EventPage", "field:event"): _policy(REMAP, "Typed owner follows the imported event."),
     ("events.EventPage", "field:series"): _policy(REMAP, "Typed owner follows the imported series."),

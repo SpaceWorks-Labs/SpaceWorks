@@ -7,11 +7,13 @@ text, secrets, object keys or before/after payloads)."""
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P("api_client.bookings_read", "Api client read bookings", ("attendance", "rows")),
     P("api_client.created", "Api client created", ("api_key_request_id", "scopes")),
     P("api_client.deleted", "Api client deleted"),
     P("api_client.scopes_changed", "Api client scopes changed", ("previous_scopes", "scopes")),
     P("api_client.secret_rotated", "Api client secret rotated",
       ("grace_window_opened", "previous_secret_valid_until")),
+    P("api_client.participants_read", "Api client read participants", ("attendance", "rows")),
     P("api_client.updated", "Api client updated"),
     P("api_integration.updated", "Api integration updated"),
     P("api_key_request.approved", "Api key request approved", ("api_client_id",)),
@@ -21,6 +23,7 @@ ENTRIES = (
     P("auth.oidc_browser_attempt_started", "Auth oidc browser attempt started"),
     P("auth.social_identity_linked", "Auth social identity linked"),
     P("auth.social_identity_unlinked", "Auth social identity unlinked"),
+    P("auth.reauthentication_proofs_purged", "Auth reauthentication proofs purged"),  # auth.* is denied: no meta.
     P("member.claim_code_issued", "Member claim code issued"),
     P("member.claim_code_revoked", "Member claim code revoked"),
     P("member.profile_image_cleared", "Member profile image cleared"),

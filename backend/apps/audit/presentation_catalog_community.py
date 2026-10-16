@@ -64,6 +64,8 @@ ENTRIES = (
     P("event.series_updated", "Event series updated"),
     P("event.ticket_downloaded", "Event ticket downloaded"),
     P("organization.created", "Organization created"),
+    P("organization.deleted", "Organization deleted", ("invitation_count", "membership_count")),
+    P("organization.self_created", "Organization created by its owner"),
     P("organization.invitation_created", "Organization invitation created",
       ("expires_at", "governance_actions", "granted_actions", "organization_id")),
     P("organization.invitation_redeemed", "Organization invitation redeemed",

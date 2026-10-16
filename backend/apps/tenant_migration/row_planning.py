@@ -100,6 +100,10 @@ def final_row(
                 target_event_id=row[model._meta.get_field("event").column],
             )
         )
+    if label == "makerspaces.PublicHandle":
+        from .catalog_profiles import prepare_import_handle
+        if not prepare_import_handle(row, fresh_values):
+            return None
     return row
 
 

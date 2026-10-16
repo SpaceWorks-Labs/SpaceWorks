@@ -151,6 +151,9 @@ TARGET_FIELD_PROJECTION = {
     ),
 }
 
+from .catalog_profiles import projections as profile_projections
+TARGET_FIELD_PROJECTION.update(profile_projections(TargetField))
+
 from .target_projection_devices import DEVICE_FIELD_RESETS  # noqa: E402
 
 TARGET_FIELD_PROJECTION.update({

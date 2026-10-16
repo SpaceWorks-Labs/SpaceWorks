@@ -82,6 +82,7 @@ AUTO_CREATED_M2M_TABLES = {
 # recipient payload; retaining it in the readable main would preserve platform
 # unwrap capability for sovereign mapped ciphertext.
 SPECIAL_TENANT_TABLES = {
+    "makerspaces.PublicHandleRedirect": TenantPredicate(("profile__membership__makerspace",)),
     "encryption.MakerspaceEncryptionKey": TenantPredicate(("makerspace",)),
 }
 

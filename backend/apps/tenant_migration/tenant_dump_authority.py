@@ -9,6 +9,8 @@ from .catalog_wp3 import wp3_authority
 from .authority_wp4 import AUTHORITY_ENTRIES as WP4_AUTHORITY_ENTRIES
 from .catalog_broadcasts import authority_entries as broadcast_authority
 
+from .catalog_profiles import authority_entries as profile_authority
+
 def _build(entries):
     result = {}
     for edge, rule in entries:
@@ -20,6 +22,7 @@ def _build(entries):
 
 AUTHORITY_FIELD_OVERRIDES = _build((
     *AUTHORITY_ENTRIES,
+    *profile_authority(authority, D),
     (("bookings.BookingResourcePage", "released"), authority(D.RESET, "Target staff explicitly release imported resource content.")),
     (("bookings.BookingResourcePageSection", "visibility"), authority(D.PRESERVE, "Editorial intent travels behind reset release.")),
     *((("bookings.Booking", field), authority(D.PRESERVE,

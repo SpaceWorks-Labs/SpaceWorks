@@ -35,6 +35,9 @@ _WRITE = ("POST",)
 # target mode, tenant-app admission, legacy-v1 admission). Legacy admission is explicit
 # so adding a route cannot silently widen the frozen cutover capability.
 _ROUTE_DEFINITIONS = (
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False) for name in (
+        "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects",
+    )),
     ("website-discover", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, False),
     *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
         "public-booking-resource", "public-booking-website", "public-booking-website-image",

@@ -23,6 +23,7 @@ from .presentation_catalog_payments import ENTRIES as _PAYMENTS
 from .presentation_catalog_platform import ENTRIES as _PLATFORM
 from .presentation_catalog_merged import ENTRIES as _MERGED
 from .presentation_catalog_types import AuditPresentation, P
+from .presentation_catalog_profiles import ENTRIES as _PROFILES
 
 # Closed name -> callable registry for target links. Phase 10 ships no resolver: a link
 # needs a real route and query-level tenant authorization, which no generic one has.
@@ -43,7 +44,7 @@ def _compose(*fragments):
 
 PRESENTATION_CATALOG = _compose(
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
-    _PLATFORM, _MEMBER_ACCOUNT, _MERGED,
+    _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES,
 )
 
 

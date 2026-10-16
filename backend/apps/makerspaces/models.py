@@ -78,6 +78,9 @@ from apps.makerspaces.models_roles import (  # noqa: E402,F401
 from apps.makerspaces.models_profiles import (  # noqa: E402,F401
     MemberProfile,
     MemberProject,
+    PublicHandle,
+    PublicHandleRedirect,
+    ProfileTimelineEntry,
 )
 from apps.makerspaces.models_member_cards import MemberCard  # noqa: E402,F401
 from apps.makerspaces.models_membership_plans import (  # noqa: E402,F401

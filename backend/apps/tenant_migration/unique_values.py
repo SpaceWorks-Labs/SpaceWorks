@@ -21,6 +21,10 @@ from .unique_values_policy import (  # noqa: F401 -- re-exported
 # One mapping over every rule set; a per-app extension module adds its own dict here.
 DEPLOYMENT_GLOBAL_UNIQUE_RULES = {
     **CORE_UNIQUE_RULES,
+    ("makerspaces.PublicHandle", "field:user"): _policy(REMAP,
+        "Keep only if the remapped account has no target claim; importer drops conflicts."),
+    ("makerspaces.PublicHandle", "public_handle_ci_unique"): _policy(REMAP,
+        "Shared namespace lock preserves a free handle; importer drops collisions."),
     **DEVICE_UNIQUE_RULES,
     **PRINTER_UNIQUE_RULES,
     **LABEL_UNIQUE_RULES,

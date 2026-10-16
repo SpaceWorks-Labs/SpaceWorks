@@ -18,6 +18,10 @@ class MakerspacesConfig(AppConfig):
 
         register_signal()
         self._register_separability()
+        from .public_profile_cache import register_signals
+        from .profile_activity_sources import register_builtin_sources
+        register_signals()
+        register_builtin_sources()
 
         def invalidate_hosting_cache(**kwargs):
             # Any write to frontend_domain / frontend_domain_status must drop the

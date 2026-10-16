@@ -13,6 +13,8 @@ from .datasets import DATASET_SPECS
 
 
 SUBJECT_PATHS = {
+    "makerspaces.PublicHandle": ("user",),
+    "makerspaces.ProfileTimelineEntry": ("profile__membership__user",),
     "operations.SavedView": ("owner",),
     "apiclients.ApiKeyRequest": ("requester",),
     "bookings.BookingCheckInEvent": ("booking__member",),

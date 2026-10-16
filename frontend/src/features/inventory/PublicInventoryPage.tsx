@@ -1,5 +1,6 @@
 import { plural } from "../../lib/plural";
 import { PublicLayout } from "../../components/layouts";
+import type { PublicActionCardProps } from "../../components/layouts/PublicActionCard";
 import { QueryContent } from "../../components/layouts/LayoutFrame";
 import { publicPageChrome } from "./PublicPageChrome";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -25,8 +26,9 @@ import { usePublicCategories, usePublicInventory, useTenantBootstrap } from "./u
 
 const PAGE_SIZE = 24;
 
-/** A host that supplies its own chrome (the public desk) places the catalogue body and request panel itself. */
-export type EmbeddedCatalogue = (parts: { body: ReactNode; request: ReactNode }) => ReactNode;
+/** A host that supplies its own chrome (the public desk, the makerspace page) places the catalogue body and
+ * request panel itself; `aside` is the same request card the standalone catalogue docks beside its body. */
+export type EmbeddedCatalogue = (parts: { body: ReactNode; request: ReactNode; aside: PublicActionCardProps }) => ReactNode;
 
 export function PublicInventoryPage({ embedded }: { embedded?: EmbeddedCatalogue }) {
   const { slug } = useParams();
@@ -101,13 +103,14 @@ export function PublicInventoryPage({ embedded }: { embedded?: EmbeddedCatalogue
   const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access}
     activeTab={requestTab} onActiveTabChange={setRequestTab} draft={requestDraft} />;
   const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
+  const aside: PublicActionCardProps = { title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),
+    secondary: requestEnabled ? { label: "Scan a tool", onOpen: () => setRequestTab("scan") } : undefined } };
   return <div style={brandStyle}>
     {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
-    {embedded ? embedded({ body, request })
+    {embedded ? embedded({ body, request, aside })
       : <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} width="wide" state={{ status: "ready" }}
         header={{ title: `Borrow tools from ${displayName}`, subtitle: `${plural(inventoryQuery.data?.count ?? 0, "tool")} and kits`, primary: { label: "Member area", href: tenantPath("member") } }}
-        isEmpty={false} aside={{ title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),
-          secondary: requestEnabled ? { label: "Scan a tool", onOpen: () => setRequestTab("scan") } : undefined } }}>
+        isEmpty={false} aside={aside}>
         {body}
       </PublicLayout>}
 

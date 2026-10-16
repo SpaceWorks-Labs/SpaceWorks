@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { Route, Routes, useLocation, useParams } from "react-router-dom";
-import { PublicInventoryPage } from "./features/inventory/PublicInventoryPage";
+import { Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { MakerspacePage } from "./features/public/MakerspacePage";
 import { useTenantBootstrap } from "./features/inventory/usePublicInventory";
 import { PublicDeskKioskPage } from "./features/kiosk/PublicDeskKioskPage";
 import { ScannerPage } from "./features/kiosk/ScannerPage";
@@ -8,8 +8,8 @@ import { SuperadminPage } from "./features/staff/PlatformApps";
 import { StaffApp } from "./features/staff/StaffApp";
 import { CenteredCardLayout, PublicLayout } from "./components/layouts";
 import { useTenant } from "./lib/tenant";
-import { publicHome } from "./lib/publicHome";
-// Every public surface below is its own chunk. The catalogue and the staff shell stay eager
+import { publicFamilies, publicHome } from "./lib/publicHome";
+// Every public surface below is its own chunk. The makerspace page (which holds the catalogue) and the staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
 // route is first visited, so a lending-only install never downloads events, bookings or
 // machines code. The staff panels inside StaffApp are already lazy (StaffTabContent.tsx).
@@ -53,18 +53,21 @@ function FamilyHome() {
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const homeHref = tenant.mode === "single" ? "/" : `/m/${slug}`;
   const memberHref = tenant.mode === "single" ? "/member" : `/m/${slug}/member`;
+  const [params] = useSearchParams();
   if (!bootstrap) {
     if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: "Couldn't load this space. Try again.", onRetry: () => void bootstrapQuery.refetch() }}
       makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: "Sign in", href: memberHref }} nav={[]} header={{ title: "We couldn't load this space" }}
       footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
     return <RouteFallback />;
   }
+  // Old home links that opened a space (?space=, ?confirmation=) still land on the bookings page.
+  if ((params.has("space") || params.has("confirmation")) && publicFamilies(bootstrap).includes("bookings")) return <PublicBookingsPage />;
   switch (publicHome(bootstrap)) {
+    case "makerspace": return <MakerspacePage />;
     case "events": return <PublicEventsPage />;
     case "bookings": return <PublicBookingsPage />;
     case "machines": return <PublicMachinesPage />;
     case "membership": return <MemberArea />;
-    case "inventory": return <PublicInventoryPage />;
     default: return <PublicLayout state={{ status: "ready" }} isEmpty empty={{ message: `${bootstrap.branding.display_name || bootstrap.makerspace.name} hasn't published anything yet. Check back soon.` }}
       makerspace={{ name: bootstrap.branding.display_name || bootstrap.makerspace.name, slug, homeHref }} headerAction={{ label: "Sign in", href: memberHref }} nav={[]}
       header={{ title: bootstrap.branding.display_name || bootstrap.makerspace.name }} footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;

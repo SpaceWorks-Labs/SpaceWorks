@@ -8,9 +8,10 @@ export type OrganizationCreationPolicy = {
   enabled: boolean; eligible: boolean; max_owned: number; max_per_day: number; reason: string;
 };
 
-export function useOrganizationCreationPolicy() {
+/** `enabled` lets a caller share this cache entry without fetching where self-service cannot exist. */
+export function useOrganizationCreationPolicy(enabled = true) {
   return useQuery({ queryKey: [...organizationSelfServiceKey, browserSessionIdentity(getAccessToken())],
-    queryFn: () => staffRequest<OrganizationCreationPolicy>("/auth/organizations/self-service/") });
+    queryFn: () => staffRequest<OrganizationCreationPolicy>("/auth/organizations/self-service/"), enabled });
 }
 
 export function useCreateOwnOrganization() {

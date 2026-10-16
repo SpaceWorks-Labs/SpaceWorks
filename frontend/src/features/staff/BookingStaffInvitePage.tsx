@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-import { Skeleton } from "../../components/ui";
+import { CenteredCardLayout } from "../../components/layouts";
 import { fetchMe, logout, refreshAccessToken, staffRequest, type StaffAuthUser } from "../../lib/api";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { bookingStaffGrantKeys, type BookingStaffGrant } from "./bookingStaffGrantsApi";
@@ -61,23 +61,30 @@ export function BookingStaffInvitePage() {
     try { setUser(await fetchMe()); setAuthError(""); }
     catch (error) { setAuthError(eventErrorText(error)); }
   };
-  if (!restoring && !user && (token || oidcCallback)) return <div className="desk-shell">
-    <div className="px-5 pt-6 text-center"><h1 className="title-page">Booking resource staff invitation</h1><p className="mt-2 text-sm text-muted">Sign in with the invited account to continue.</p>{authError ? <p className="text-danger" role="alert">{authError}</p> : null}</div>
+  // Signing in: the member sign-in screen owns the page heading; this strip says why it is asking.
+  if (!restoring && !user && (token || oidcCallback)) return <div className="min-h-dvh bg-bg text-ink">
+    <div className="border-b border-line bg-panel"><div className="mx-auto grid max-w-[1192px] gap-1 px-4 py-4 sm:px-6">
+      <p className="eyebrow">Booking resource staff invitation</p><p className="text-sm text-muted">Sign in with the invited account to continue.</p>
+      {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}
+    </div></div>
     <MemberAuthPanel onAuthenticated={() => { void authenticated(); }} />
-    <div className="px-5 pb-6 text-center"><button className="desk-button-secondary" type="button" onClick={cancel}>Cancel invitation</button></div>
+    <div className="flex justify-center px-4 pb-6"><button className="desk-button" type="button" onClick={cancel}>Cancel invitation</button></div>
   </div>;
-  return <main className="desk-shell grid min-h-screen place-items-center px-5 py-10">
-    <section className="desk-panel grid w-full max-w-lg gap-4 p-6" aria-labelledby="booking-invite-heading">
-      <h1 className="title-page" id="booking-invite-heading">Booking resource staff invitation</h1>
-      <p className="text-sm text-muted">Sign in with the invited account and verify its email before accepting. This invitation can be used once.</p>
-      {restoring ? <Skeleton className="h-32 w-full" /> : null}
-      {!token ? <p className="text-danger" role="alert">The invitation link is missing its token. Open the original invitation link again.</p> : null}
-      {user && !redeem.isSuccess ? <div className="grid gap-3"><p className="text-sm">Signed in as {user.username}.</p>
-        <button className="desk-button-primary" type="button" disabled={redeem.isPending || !token} onClick={() => redeem.mutate()}>{redeem.isPending ? "Accepting..." : "Accept staff invitation"}</button>
-      </div> : null}
-      {redeem.error ? <p className="text-danger" role="alert">{eventErrorText(redeem.error)}</p> : null}
-      {!redeem.isSuccess ? <button className="desk-button-secondary" type="button" disabled={redeem.isPending} onClick={cancel}>Cancel invitation</button> : null}
-      {redeem.isSuccess ? <div className="grid gap-3" role="status"><p>Your resource staff access is active. Sign in to the staff console to use it.</p><button className="desk-button-primary" type="button" disabled={openStaff.isPending} onClick={() => openStaff.mutate()}>{openStaff.isPending ? "Opening sign-in..." : "Sign in to staff console"}</button>{openStaff.error ? <p className="text-danger" role="alert">{eventErrorText(openStaff.error)}</p> : null}</div> : null}
-    </section>
-  </main>;
+  const cancelAction = { label: "Cancel invitation", onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish accepting." : undefined };
+  return <CenteredCardLayout width={480} state={{ status: restoring ? "loading" : "ready" }}
+    media={{ banner: redeem.isSuccess ? "success" : "accent" }}
+    title="Booking resource staff invitation"
+    body={redeem.isSuccess ? <p role="status">Your resource staff access is active. Sign in to the staff console to use it.</p>
+      : "Sign in with the invited account and verify its email before accepting. This invitation can be used once."}
+    content={<div className="grid gap-3 empty:hidden">
+      {!token ? <p className="text-sm text-danger" role="alert">The invitation link is missing its token. Open the original invitation link again.</p> : null}
+      {user && !redeem.isSuccess ? <p className="text-sm text-ink">Signed in as {user.username}.</p> : null}
+      {redeem.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(redeem.error)}</p> : null}
+      {openStaff.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(openStaff.error)}</p> : null}
+    </div>}
+    primary={redeem.isSuccess ? { label: "Sign in to staff console", pending: openStaff.isPending, pendingLabel: "Opening sign-in...", onClick: () => openStaff.mutate() }
+      : user ? { label: "Accept staff invitation", pending: redeem.isPending, pendingLabel: "Accepting...", onClick: () => redeem.mutate(),
+        disabled: !token, disabledReason: !token ? "Open the original invitation link again." : undefined }
+      : cancelAction}
+    escape={!redeem.isSuccess && user ? cancelAction : undefined} />;
 }

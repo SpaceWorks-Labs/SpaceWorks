@@ -8,7 +8,7 @@ import { MemberPortalTabs } from "./MemberPortalTabs";
 import { bootstrapTenant, refreshAccessToken, logout } from "../../lib/api";
 import { hasClaimSession } from "./MemberClaimSession";
 import { MemberAuthPanel } from "./MemberAuthPanel";
-import { OrganizationSelfCreation } from "../organizations/OrganizationSelfCreation";
+import { OrganizationSelfCreation, useOrganizationSelfCreationVisible } from "../organizations/OrganizationSelfCreation";
 import { MemberAccountProfile } from "./MemberAccountProfile";
 import { MemberAccountSessions } from "./MemberAccountSessions";
 import { MemberAccountMembership } from "./MemberAccountMembership";
@@ -45,9 +45,12 @@ export function MemberAccountPage() {
   const selfService = data?.modules?.includes("membership") && data.modules?.includes("member_accounts") && data.features?.includes("membership.self_service");
   const selfExport = data?.modules?.includes("membership") && data.modules?.includes("member_accounts") && data.features?.includes("membership.self_export");
   const home = slug ? `/m/${slug}/member` : "/member";
+  const selfCreationVisible = useOrganizationSelfCreationVisible(!restoring && !signIn && !hasClaimSession());
   if (signIn && !restoring) return <MemberAuthPanel tenantBrand={data ? { name: data.branding?.display_name || data.makerspace.name, logo: data.branding?.logo_url || data.makerspace.logo_url || undefined } : undefined} makerspaceSlug={slug} onAuthenticated={() => { void authenticated(); }} />;
   const tabs = [["profile", "Profile"], ["security", "Security"], ["membership", "Membership"], ["data", "Your data"]].filter(([key]) => key === "data" ? selfExport : selfService).map(([key, label]) => ({ key, label, href: `${location.pathname}?section=${key}` }));
   const section = tabs.some(tab => tab.key === requestedSection) ? requestedSection : tabs[0]?.key || "profile";
+  // Organization self-creation is account-wide, so it rides on the first section rather than a gated tab.
+  const showSelfCreation = selfCreationVisible && section === (tabs[0]?.key || "profile");
   return <MemberPortalTabs modules={data?.modules ?? []} active="account" user={{ name: "Your account", menu: [{ label: "Member area", href: home }], onSignOut: () => { void logout().catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); setSignIn(true); }); } }}
     workspace={data ? { name: data.makerspace.name || "Space Works", subtitle: "Your account", avatar: data.branding?.logo_url || data.makerspace.logo_url ? { kind: "image", src: data.branding?.logo_url || data.makerspace.logo_url || "" } : { kind: "avatar", name: data.makerspace.name || "Space Works", seed: slug }, locked: true } : undefined}>
     <MemberSectionNavigation><SettingsLayout header={{ title: "Account", subtitle: "Your personal profile and sign-in security.", secondary: { label: "Profile & card →", href: `${home}/account-portal` } }}
@@ -62,8 +65,6 @@ export function MemberAccountPage() {
           {selfService && section === "membership" ? <MemberAccountMembership key={`membership-${data.makerspace.id}`} makerspaceId={data.makerspace.id} onLeft={() => setLeft(true)} /> : null}
           {selfExport && section === "data" ? <MemberAccountExports key={`exports-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
         </> : null}
-        {/* Organization self-creation is account-wide, so it rides on the first section rather than a gated tab. */}
-        {!restoring && !hasClaimSession() && section === (tabs[0]?.key || "profile") ? <OrganizationSelfCreation /> : null}
-      </> }]} /></MemberSectionNavigation>
+      </> }, ...(showSelfCreation ? [{ id: "create-organization", title: "Create your organization", rows: <OrganizationSelfCreation /> }] : [])]} /></MemberSectionNavigation>
   </MemberPortalTabs>;
 }

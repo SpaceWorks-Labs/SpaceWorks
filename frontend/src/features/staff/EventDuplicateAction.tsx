@@ -15,9 +15,9 @@ export function EventDuplicateAction({ event, makerspaceId }: { event: StaffEven
     {createPortal(<Modal open={open} title="Duplicate event" onClose={() => { if (!duplicate.isPending) setOpen(false); }}>
       <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); duplicate.mutate(attachSeries, { onSuccess: () => setOpen(false) }); }}>
         <p className="text-sm text-muted">Create a draft copy of the event, ticket types, registration form and feedback questions. Review its dates before publishing.</p>
-        {event.series_summary ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={attachSeries} onChange={(e) => setAttachSeries(e.target.checked)} disabled={duplicate.isPending} />Attach to {event.series_summary.title} (requires series management permission)</label> : null}
+        {event.series_summary ? <label className="flex min-h-11 items-center gap-3 rounded-xl border border-line p-4 text-sm text-ink has-checked:border-accent has-checked:bg-accent-soft"><input type="checkbox" checked={attachSeries} onChange={(e) => setAttachSeries(e.target.checked)} disabled={duplicate.isPending} />Attach to {event.series_summary.title} (requires series management permission)</label> : null}
         {duplicate.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(duplicate.error)}</p> : null}
-        <button className="desk-button-primary" type="submit" disabled={duplicate.isPending}>{duplicate.isPending ? "Duplicating..." : "Create draft copy"}</button>
+        <div className="flex justify-end"><button className="desk-button-primary" type="submit" disabled={duplicate.isPending}>{duplicate.isPending ? "Duplicating…" : "Create draft copy"}</button></div>
       </form>
     </Modal>, document.body)}
   </>;

@@ -4,7 +4,7 @@ import { ErrorBlock, ListRow } from "../../../components/ui";
 import { DashboardLayout } from "../../../components/layouts/DashboardLayout";
 import { SettingsLayout } from "../../../components/layouts/SettingsLayout";
 import { useTenant } from "../../../lib/tenant";
-import { OrganizationSelfCreation } from "../../organizations/OrganizationSelfCreation";
+import { OrganizationSelfCreation, useOrganizationSelfCreationVisible } from "../../organizations/OrganizationSelfCreation";
 import { useDeleteOrganization } from "../../organizations/organizationSelfServiceApi";
 import { OrganizationInvitations } from "../OrganizationInvitations";
 import { OrganizationMemberships } from "../OrganizationMemberships";
@@ -39,8 +39,9 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
   // Deleting needs both governance actions; the server still re-checks recent identity verification.
   const canDelete = ["manage_organization_members", "manage_organization_profile"].every(action => detail.data?.governance_actions.includes(action));
   // Superadmins create through the platform flow; everyone else gets the rate-limited self-service flow,
-  // which only exists on the central origin (global organization operations are tenant-unbound).
-  const canSelfCreate = !isSuperadmin && tenant.mode === "central";
+  // which only exists on the central origin (global organization operations are tenant-unbound) and only
+  // while the platform policy allows it, so a switched-off policy never opens an empty create page.
+  const canSelfCreate = useOrganizationSelfCreationVisible(!isSuperadmin && tenant.mode === "central");
   const createAction = isSuperadmin || canSelfCreate ? { label: "Create organization", onClick: () => setCreating(true) } : undefined;
   if (creating && isSuperadmin) return <OrganizationCreate onClose={() => setCreating(false)} onCreated={id => { setCreating(false); select(id); }} />;
   if (creating) return <SettingsLayout

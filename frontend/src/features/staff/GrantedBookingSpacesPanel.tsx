@@ -1,19 +1,21 @@
 import { useState } from "react";
-import { EmptyState, Skeleton } from "../../components/ui";
+import { ListRow } from "../../components/ui";
+import { ListLayout } from "../../components/layouts";
 import { BookingDrawer } from "./BookingDrawer";
 import { useAccessibleBookingSpaces } from "./bookingStaffGrantsApi";
-import { Panel } from "./panels/shared";
 
+/** Resources this account holds a booking grant on. Opening one replaces the list with its page; Back returns. */
 export function GrantedBookingSpacesPanel({ makerspaceId }: { makerspaceId?: number }) {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<{ id: number; makerspace_id: number } | null>(null);
   const spaces = useAccessibleBookingSpaces(page, makerspaceId);
-  return <Panel title="Assigned booking resources">
-    {spaces.isLoading ? <Skeleton className="h-32 w-full" /> : null}
-    {spaces.error ? <EmptyState title="Unable to load resources" description={spaces.error.message} action={<button className="desk-button" type="button" onClick={() => spaces.refetch()}>Retry</button>} /> : null}
-    {spaces.data?.results.length === 0 ? <EmptyState title="No assigned resources" description="Your access may have been revoked." /> : null}
-    <div className="grid gap-2">{spaces.data?.results.map((space) => <button className="desk-button-ghost h-auto justify-start border border-line p-4 text-left" type="button" key={space.id} onClick={() => setSelected(space)}><span>{space.name}<span className="mt-1 block text-xs text-muted">{space.staff_permissions?.map((entry) => entry.replace(/_/g, " ")).join(", ")}</span></span></button>)}</div>
-    {spaces.data ? <div className="mt-4 flex gap-3"><button className="desk-button" disabled={!spaces.data.previous} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page}</span><button className="desk-button" disabled={!spaces.data.next} onClick={() => setPage(page + 1)}>Next</button></div> : null}
-    {selected ? <BookingDrawer spaceId={selected.id} makerspaceId={selected.makerspace_id} onClose={() => setSelected(null)} /> : null}
-  </Panel>;
+  if (selected) return <BookingDrawer key={selected.id} spaceId={selected.id} makerspaceId={selected.makerspace_id} onClose={() => setSelected(null)} />;
+  return <ListLayout header={{ title: "Assigned booking resources", subtitle: "Open a resource to use your assigned permissions." }}
+    state={spaces.isLoading ? { status: "loading" } : spaces.error
+      ? { status: "error", error: `Unable to load resources. ${spaces.error.message}`, onRetry: () => { void spaces.refetch(); } } : { status: "ready" }}
+    isEmpty={spaces.data?.results.length === 0} empty={{ message: "No assigned resources. Your access may have been revoked." }}
+    body={{ kind: "rows", rows: spaces.data?.results.map((space) => <ListRow key={space.id} title={space.name}
+      identity={{ kind: "icon", icon: "Calendar", tone: "info" }} onClick={() => setSelected(space)}
+      meta={space.staff_permissions?.map((entry) => entry.replace(/_/g, " ")).join(", ")} />) }}
+    pagination={spaces.data ? { page, pageSize: 24, count: spaces.data.count, onChange: setPage } : undefined} />;
 }

@@ -45,18 +45,19 @@ export function EventConsentRepairForm({ makerspaceSlug, publicToken, waiver, on
     setValidation("");
     if (!repair.isPending) repair.mutate();
   };
-  return <form className="mt-3 grid gap-3 rounded-lg border border-line p-4" onSubmit={submit}>
-    <h3 className="title-section">Renew registration consent</h3>
-    <p>Your existing registration keeps its place and saved answers.</p>
-    <fieldset><legend>Host waiver</legend><p className="whitespace-pre-wrap text-sm">{waiver.body}</p>
-      <label className="mt-2 flex gap-2"><input type="checkbox" checked={accepted}
+  return <form className="grid gap-4" onSubmit={submit}>
+    <div><h3 className="title-section">Renew registration consent</h3>
+      <p className="mt-1 text-sm text-muted">Your existing registration keeps its place and saved answers.</p></div>
+    <fieldset className="grid gap-2 rounded-xl border border-line bg-panel p-3"><legend className="px-1 text-sm font-semibold">Host waiver</legend>
+      <p className="whitespace-pre-wrap text-sm leading-6">{waiver.body}</p>
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={accepted}
         disabled={repair.isPending} onChange={e => setAccepted(e.target.checked)} />
         I accept this host waiver (version {waiver.version}).</label>
+      {validation ? <p role="alert" className="text-sm text-danger">{validation}</p> : null}
     </fieldset>
-    {validation ? <p role="alert">{validation}</p> : null}
-    {repair.error ? <p role="alert">{repair.error instanceof StructuredApiError
+    {repair.error ? <p role="alert" className="text-sm text-danger">{repair.error instanceof StructuredApiError
       ? repair.error.detail ?? repair.error.message : "Unable to renew consent. Please try again."}</p> : null}
-    <button className="desk-button-secondary" type="submit" disabled={repair.isPending}>
+    <button className="desk-button-brand w-full sm:w-auto sm:justify-self-start" type="submit" disabled={repair.isPending}>
       {repair.isPending ? "Saving consent..." : "Save consent"}
     </button>
   </form>;

@@ -1,3 +1,4 @@
+import { Skeleton, StatCard } from "../../components/ui";
 import { useEventAnalytics } from "./eventCommunicationsApi";
 import { eventErrorText } from "./eventUi";
 
@@ -15,15 +16,21 @@ export function EventAnalyticsPanel({ makerspaceId, eventId, endsAt, features }:
     const link = document.createElement("a"); link.href = url; link.download = `${key}.${format}`; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } });
-  return <section className="grid gap-3" aria-label="Event analytics">
+  const exports = features.includes("exports");
+  const pdf = features.includes("pdf");
+  return <section className="grid gap-4" aria-label="Event analytics">
     <h3 className="title-section">Analytics and exports</h3>
-    {query.isLoading ? <p role="status">Loading analytics…</p> : null}
-    {query.error || download.error ? <p role="alert" className="text-danger">{eventErrorText(query.error || download.error)}</p> : null}
-    {row ? <dl className="grid grid-cols-2 gap-3">{METRICS.map(([key, label]) => <div key={key}><dt className="text-sm text-muted">{label}</dt><dd className="font-semibold">{row[key] == null ? "—" : String(row[key])}</dd></div>)}</dl> : null}
-    <div className="flex flex-wrap gap-2">
-      {features.includes("exports") ? <><button className="desk-button" disabled={download.isPending} onClick={() => save("event-registrations", "csv")}>Registration CSV</button><button className="desk-button" disabled={download.isPending} onClick={() => save("event-feedback", "csv")}>Feedback CSV</button></> : null}
-      {features.includes("pdf") ? <button className="desk-button" disabled={download.isPending || new Date(endsAt).getTime() > Date.now()} onClick={() => save("event-attendance-pdf", "pdf")}>Post-event PDF</button> : null}
-    </div>
-    {download.isPending ? <p role="status">Preparing download…</p> : null}
+    {query.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">Loading analytics…</span>
+      <div className="sw-stats">{[0, 1, 2, 3].map((n) => <Skeleton key={n} className="h-28 w-full" />)}</div></div> : null}
+    {query.error || download.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error || download.error)}</p> : null}
+    {row ? <div className="sw-stats">{METRICS.map(([key, label]) => <StatCard key={key} label={label} value={row[key] == null ? "—" : String(row[key])} />)}</div> : null}
+    {exports || pdf ? <div className="grid gap-2">
+      <p className="text-sm text-muted">Download a report for this event.{pdf ? " The post-event PDF is available once the event has ended." : ""}</p>
+      <div className="flex flex-wrap gap-2">
+        {exports ? <><button className="desk-button" type="button" disabled={download.isPending} onClick={() => save("event-registrations", "csv")}>Registration CSV</button><button className="desk-button" type="button" disabled={download.isPending} onClick={() => save("event-feedback", "csv")}>Feedback CSV</button></> : null}
+        {pdf ? <button className="desk-button" type="button" disabled={download.isPending || new Date(endsAt).getTime() > Date.now()} onClick={() => save("event-attendance-pdf", "pdf")}>Post-event PDF</button> : null}
+      </div>
+    </div> : null}
+    {download.isPending ? <p role="status" className="text-sm text-muted">Preparing download…</p> : null}
   </section>;
 }

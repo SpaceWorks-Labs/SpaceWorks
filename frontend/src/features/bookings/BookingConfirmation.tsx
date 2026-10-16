@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { Card, ErrorText, Skeleton, TicketCard } from "../../components/ui";
 import { memberRequestBlob } from "../../lib/api";
 import { confirmationPath, downloadBookingFile, useBookingConfirmation } from "./bookingConfirmationApi";
 
@@ -16,8 +17,12 @@ function ConfirmationQr({ slug, token, revision }: { slug: string; token: string
     }).catch(() => { if (active) setError("Unable to load QR. Refresh the confirmation to retry."); });
     return () => { active = false; if (imageUrl) URL.revokeObjectURL(imageUrl); };
   }, [slug, token, revision]);
-  return error ? <p role="alert" className="text-danger">{error}</p> : url ? <img className="max-w-full" src={url} alt="Private booking QR for staff arrival scanning" referrerPolicy="no-referrer" /> : <p role="status">Loading private QR...</p>;
+  return error ? <p role="alert" className="grid h-full place-items-center text-center text-sm text-danger">{error}</p>
+    : url ? <img className="max-w-full" src={url} alt="Private booking QR for staff arrival scanning" referrerPolicy="no-referrer" />
+    : <div role="status" aria-label="Loading private QR..." className="h-full"><Skeleton className="h-full w-full" /></div>;
 }
+
+const statusWords = (status: string) => status.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
 
 export function BookingConfirmation({ slug, token, onClose }: { slug: string; token: string; onClose?: () => void }) {
   const { detail, rotate } = useBookingConfirmation(slug, token);
@@ -30,27 +35,34 @@ export function BookingConfirmation({ slug, token, onClose }: { slug: string; to
     setQrRefresh((value) => value + 1);
     void detail.refetch();
   }
-  return <section aria-label="Private booking confirmation" className="mt-3 grid gap-3 rounded-lg border border-line bg-panel p-4">
-    <h3 className="title-section">Booking confirmation</h3>
-    <p className="text-sm text-muted">Keep this QR private. Staff scan it to record arrival from 30 minutes before your booking until its end.</p>
-    {detail.isPending ? <p role="status">Loading confirmation...</p> : null}
-    {error ? <p role="alert" className="text-danger">{error.message}</p> : null}
-    <button type="button" className="desk-button-secondary w-fit" onClick={refreshConfirmation} disabled={detail.isFetching}>Refresh confirmation</button>
+  const when = booking ? `${new Date(booking.starts_at).toLocaleString(undefined, { timeZone: booking.timezone })} – ${new Date(booking.ends_at).toLocaleString(undefined, { timeZone: booking.timezone })} (${booking.timezone})` : "";
+  const fields = booking ? [{ label: "Status", value: statusWords(booking.status) }, { label: "When", value: when },
+    ...(booking.location ? [{ label: "Location", value: booking.location }] : [])] : [];
+  const caption = "Keep this QR private. Staff scan it to record arrival from 30 minutes before your booking until its end.";
+  return <section aria-label="Private booking confirmation" className="mt-3 grid min-w-0 gap-4">
+    {detail.isPending ? <p role="status" className="text-sm text-muted">Loading confirmation...</p> : null}
+    {error ? <ErrorText message={error.message} /> : null}
     {booking ? <>
-      <p>{booking.space_name} - {booking.status.replace(/_/g, " ")}</p>
-      <p>{new Date(booking.starts_at).toLocaleString(undefined, { timeZone: booking.timezone })} - {new Date(booking.ends_at).toLocaleString(undefined, { timeZone: booking.timezone })} ({booking.timezone})</p>
-      <p>{booking.location}</p><p className="whitespace-pre-wrap">{booking.description}</p>
-      {booking.arrived_at ? <p role="status">Arrival recorded. Completion is recorded separately by staff.</p> : null}
-      {booking.can_cancel ? <p className="text-sm">Cancel or reschedule in My bookings before {new Date(booking.cancellation_cutoff_at).toLocaleString(undefined, { timeZone: booking.timezone })}.</p> : null}
-      {booking.qr_value ? <ConfirmationQr key={`${booking.qr_value}:${qrRefresh}`} slug={slug} token={token} revision={booking.qr_value} /> : null}
+      {booking.qr_value ? <TicketCard organisation="Booking confirmation" title={booking.space_name} fields={fields} caption={caption}
+        qr={<ConfirmationQr key={`${booking.qr_value}:${qrRefresh}`} slug={slug} token={token} revision={booking.qr_value} />} />
+        : <Card className="grid gap-4"><div><p className="text-sm text-muted">Booking confirmation</p><h2 className="title-panel mt-1">{booking.space_name}</h2></div>
+          <dl className="grid grid-cols-2 gap-4">{fields.map((field) => <div key={field.label} className="min-w-0"><dt className="eyebrow">{field.label}</dt>
+            <dd className="mt-1 break-words text-sm font-semibold text-ink">{field.value}</dd></div>)}</dl>
+          <p className="text-sm text-muted">{caption}</p></Card>}
+      {booking.description ? <p className="whitespace-pre-wrap text-sm">{booking.description}</p> : null}
+      {booking.arrived_at ? <p role="status" className="text-sm text-success-ink">Arrival recorded. Completion is recorded separately by staff.</p> : null}
+      {booking.can_cancel ? <p className="text-sm text-muted">Cancel or reschedule in My bookings before {new Date(booking.cancellation_cutoff_at).toLocaleString(undefined, { timeZone: booking.timezone })}.</p> : null}
       <div className="flex flex-wrap gap-2">
-        <a className="desk-button-secondary" href={booking.google_calendar_url} target="_blank" rel="noreferrer">Google Calendar</a>
-        <button type="button" className="desk-button-secondary" disabled={download.isPending} onClick={() => download.mutate("ics")}>Download calendar</button>
-        {booking.pass_available ? <button type="button" className="desk-button-secondary" disabled={download.isPending} onClick={() => download.mutate("pdf")}>Download printable pass</button> : null}
-        {booking.qr_value ? <><button type="button" className="desk-button-secondary" disabled={download.isPending} onClick={() => download.mutate("png")}>Download QR PNG</button>
-          <button type="button" className="desk-button-secondary" disabled={rotate.isPending} onClick={() => rotate.mutate()}>Replace private QR</button></> : null}
+        <a className="desk-button" href={booking.google_calendar_url} target="_blank" rel="noreferrer">Google Calendar</a>
+        <button type="button" className="desk-button" disabled={download.isPending} onClick={() => download.mutate("ics")}>Download calendar</button>
+        {booking.pass_available ? <button type="button" className="desk-button" disabled={download.isPending} onClick={() => download.mutate("pdf")}>Download printable pass</button> : null}
+        {booking.qr_value ? <><button type="button" className="desk-button" disabled={download.isPending} onClick={() => download.mutate("png")}>Download QR PNG</button>
+          <button type="button" className="desk-button" disabled={rotate.isPending} onClick={() => rotate.mutate()}>Replace private QR</button></> : null}
       </div>
     </> : null}
-    {onClose ? <button className="desk-button-ghost w-fit" type="button" onClick={onClose}>Close confirmation</button> : null}
+    <div className="flex flex-wrap gap-2">
+      <button type="button" className="desk-button-ghost" onClick={refreshConfirmation} disabled={detail.isFetching}>Refresh confirmation</button>
+      {onClose ? <button className="desk-button-ghost" type="button" onClick={onClose}>Close confirmation</button> : null}
+    </div>
   </section>;
 }

@@ -1,12 +1,13 @@
 import { Suspense, type ReactNode } from "react";
 
+import { ListLayout } from "../../components/layouts";
 import { Skeleton } from "../../components/ui";
 import type { StaffAuthUser } from "../../lib/api";
 import { featureEnabled } from "../../lib/features";
 import { getStaffAccess } from "./staffAccess";
 import { filterTabsByEnabledModules } from "./staffTabs";
 import { StaffPlatformTabContent } from "./StaffPlatformTabContent";
-import { Panel, type Makerspace } from "./panels/shared";
+import type { Makerspace } from "./panels/shared";
 import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
 import { PlatformDashboardPanel, GrantedEventsPanel, GrantedBookingSpacesPanel } from "./StaffTabLoaders";
 
@@ -77,11 +78,13 @@ export function StaffTabContent({
     return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "granted" && (currentUser.event_grants?.length || currentUser.booking_grants?.length)) {
-    if (singleTenantLocked && lockedMakerspaceId === undefined) return <Panel title="No makerspace">Unable to resolve this makerspace.</Panel>;
+    if (singleTenantLocked && lockedMakerspaceId === undefined) return <ListLayout header={{ title: "Assigned resources" }} state={{ status: "ready" }}
+      isEmpty empty={{ message: "Unable to resolve this makerspace." }} body={{ kind: "rows", rows: null }} />;
     return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><div className="grid gap-6">{currentUser.event_grants?.length ? <GrantedEventsPanel grants={currentUser.event_grants} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /> : null}{currentUser.booking_grants?.length ? <GrantedBookingSpacesPanel makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /> : null}</div></Suspense></StaffPanelErrorBoundary>;
   }
   if (!activeMakerspace) {
-    return <Panel title="No makerspace">Assign a makerspace to this account.</Panel>;
+    return <ListLayout header={{ title: "No makerspace" }} state={{ status: "ready" }}
+      isEmpty empty={{ message: "Assign a makerspace to this account." }} body={{ kind: "rows", rows: null }} />;
   }
   const makerspaceKey = activeMakerspace.id;
   const actorActions = currentUser.makerspaces.find((space) => space.id === makerspaceKey)?.actions ?? [];

@@ -17,5 +17,5 @@ export function EventCountdown({ startsAt, endsAt }: { startsAt: string; endsAt:
     const timer = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(timer);
   }, []);
-  return <p className="mt-2 text-sm font-semibold text-secondary-ink">{countdownText(startsAt, endsAt, now)}</p>;
+  return <p className="text-sm font-semibold text-brand-ink">{countdownText(startsAt, endsAt, now)}</p>;
 }

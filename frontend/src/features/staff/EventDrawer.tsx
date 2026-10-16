@@ -116,11 +116,11 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
             { label: "Cancel event", confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
         banner={readOnly ? { size: "banner", tone: "warn", lead: `This event is ${event?.status}. It can’t be edited.` } : undefined}
         danger={tabs.active === "settings" && event?.status === "published" && access.publish ? [{ title: "Cancel event", consequence: "Registrants are notified and registration closes.", action: { label: "Cancel event", onClick: () => setConfirm("cancel") } }] : []}
-        aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={() => tabs.select("checkin")} /> : undefined}
+        aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={checkable && access.checkIn ? () => tabs.select("checkin") : undefined} /> : undefined}
         main={event ? <div className="grid gap-6">
           {tabs.active === "overview" ? <>
             <EventOrganizationAudience event={event} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} />
-            <EventOverview event={event} onRegistrations={() => tabs.select("registrations")} />
+            <EventOverview event={event} onRegistrations={access.registrations ? () => tabs.select("registrations") : undefined} />
           </> : null}
           {access.registrations ? <EventRegistrationRoster key={eventId} visible={tabs.active === "registrations"} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} showCheckIn={false} /> : null}
           {checkable && access.checkIn ? <>

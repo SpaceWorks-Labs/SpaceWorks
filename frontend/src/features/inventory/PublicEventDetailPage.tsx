@@ -49,6 +49,10 @@ export function PublicEventDetailPage() {
     ? publicErrorState(eventQuery.error, { noun: "Events" }, () => { void eventQuery.refetch(); }) : { status: "ready" as const };
   const organizationAudience = event?.registration_audience === "participating_organizations";
   const showCount = event?.show_registration_count !== false && event?.registration_count != null;
+  const cutoff = event?.effective_registration_cutoff_at ? `Closed ${new Date(event.effective_registration_cutoff_at).toLocaleString()}.` : "";
+  // A closed organization event keeps its admission form: an owned registration may still need its consent renewed.
+  // That form says "Registration is closed." itself, so the card note only adds when it closed.
+  const closedNote = organizationAudience ? cutoff || undefined : `Registration is closed.${cutoff ? ` ${cutoff}` : ""}`;
   if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title="Event not found" body="This event is no longer available." primary={{ label: "All events", href: tenantPath("events") }} />;
   return <div style={brandStyle}>
     {event ? <PageMetadata title={event.title} description={event.description.slice(0, 200)} path={location.pathname} image={event.image_url} /> : null}
@@ -64,14 +68,14 @@ export function PublicEventDetailPage() {
             links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
             image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : [])] : []}
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
-          state: event?.registration_open ? "open" : "closed", note: event?.registration_open ? undefined : `Registration is closed.${event?.effective_registration_cutoff_at ? ` Closed ${new Date(event.effective_registration_cutoff_at).toLocaleString()}.` : ""}`,
+          state: event?.registration_open || organizationAudience ? "open" : "closed", note: event?.registration_open ? undefined : closedNote,
           summary: event ? <div className="flex flex-wrap items-end gap-6">
             <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
             <dl><dt className="eyebrow">Capacity</dt><dd className="font-semibold tabular-nums text-ink">{eventCapacityLabel(event.capacity)}</dd></dl>
             {showCount ? <dl><dt className="eyebrow">Registered</dt><dd className="font-semibold tabular-nums text-ink">{event.registration_count}</dd></dl> : null}
             <StatusPill label={event.availability} tone={event.availability === "Full" ? "warn" : "success"} />
           </div> : null,
-          form: event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} />
+          form: event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} />
             : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} /> : null,
           secondary: event ? [{ label: "Add to calendar", pending: calendar.isPending, onClick: () => calendar.mutate(event) }, { label: "Share event", onClick: async () => {
             setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: window.location.href }); else await navigator.clipboard.writeText(window.location.href); } catch { setShareError("Could not share this event."); }

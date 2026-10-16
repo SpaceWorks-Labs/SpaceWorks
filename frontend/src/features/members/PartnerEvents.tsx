@@ -225,10 +225,10 @@ export function PartnerEvents({
               </Modal> : <EventPrice amount={event.payment_amount ?? "0"} currency={event.currency ?? ""} tickets={tickets} ticketRequired={event.ticket_selection_required} />}
               {/* Consent repair belongs to an existing registration, so it stays outside the register sheet. */}
               {repairedConsent.includes(consentKey) ? <p role="status" className="mt-2 text-sm text-success-ink">Your registration consent has been updated.</p> :
-                event.consent_repair_required && event.host_waiver ? <EventConsentRepairForm
+                event.consent_repair_required && event.host_waiver ? <div className="mt-3"><EventConsentRepairForm
                   key={consentKey} makerspaceSlug={event.host_slug} publicToken=""
                   waiver={event.host_waiver} partner={{ makerspaceId, eventId: event.id, slug }}
-                  onRepaired={() => setRepairedConsent(current => [...current, consentKey])} /> : null}
+                  onRepaired={() => setRepairedConsent(current => [...current, consentKey])} /></div> : null}
             </li>
           );
         })}</ul></section>)}

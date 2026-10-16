@@ -13,5 +13,7 @@ export function EventWebsitePublication({ target, onChange }: {
     if (!available) setChecked(false);
     onChange(checked && available ? { publish_website: true, website_revision: query.data?.revision } : undefined);
   }, [checked, available, query.data?.revision, onChange]);
-  return <label className="flex gap-2"><input type="checkbox" checked={checked && available} disabled={!available} onChange={(e) => setChecked(e.target.checked)} />Publish website with event</label>;
+  return <label className={`flex min-h-11 items-center gap-3 rounded-xl border border-line p-4 text-sm has-checked:border-accent has-checked:bg-accent-soft ${available ? "text-ink" : "text-muted"}`}>
+    <input type="checkbox" checked={checked && available} disabled={!available} onChange={(e) => setChecked(e.target.checked)} />Publish website with event
+  </label>;
 }

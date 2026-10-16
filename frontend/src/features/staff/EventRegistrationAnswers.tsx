@@ -32,7 +32,7 @@ export function EventRegistrationAnswers({ row, schema, makerspaceId, eventId }:
       }}>
         <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...errors }} disabled={edit.isPending} />
         {edit.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(edit.error)}</p> : null}
-        <button className="desk-button-primary" type="submit" disabled={edit.isPending}>{edit.isPending ? "Saving..." : "Save answers"}</button>
+        <div className="flex justify-end"><button className="desk-button-primary" type="submit" disabled={edit.isPending}>{edit.isPending ? "Saving…" : "Save answers"}</button></div>
       </form>
     </Modal>, document.body)}
   </>;

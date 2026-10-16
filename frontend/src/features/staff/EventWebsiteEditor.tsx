@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Field, SettingsSection, Skeleton, StatusPill } from "../../components/ui";
 import type { EventWebsite, WebsiteTarget } from "../events/websiteTypes";
 import { PublicEventWebsite } from "../events/PublicEventWebsite";
 import { EventWebsiteSections } from "./EventWebsiteSections";
@@ -41,38 +42,51 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps
   const dirty = Boolean(local && JSON.stringify(local.draft) !== JSON.stringify(local.base));
   const conflict = dirty && JSON.stringify(local?.base) !== JSON.stringify(query.data);
   const error = query.error || save.error || release.error || asset.error;
-  return <details className="rounded-xl border border-border p-4"><summary className="cursor-pointer font-semibold">Event website</summary>
-    {query.isLoading ? <p role="status">Loading website…</p> : null}
-    {error ? <p role="alert" className="mt-2 text-danger">{eventErrorText(error)}</p> : null}
-    {query.error ? <button className="desk-button" type="button" onClick={() => query.refetch()}>Retry website</button> : null}
-    {draft && !query.error ? <div className="mt-3 grid gap-4">
-      <p>{draft.released ? "Website released" : "Website unreleased"}{draft.inherited ? " · Inherited from series; saving creates a private occurrence override." : ""}</p>
-      <p className="text-sm text-muted">Only published sections on a released page appear publicly. Existing public event details and cover images remain visible independently.</p>
-      {conflict ? <div role="status">
+  return <section className="grid min-w-0 gap-6" aria-labelledby="event-website-title">
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="min-w-0 flex-1 basis-64"><div className="flex flex-wrap items-center gap-2"><h2 id="event-website-title" className="title-panel">Event website</h2>
+        {draft && !query.error ? <StatusPill label={draft.released ? "Released" : "Unreleased"} tone={draft.released ? "success" : "neutral"} /> : null}</div>
+        <p className="mt-1 text-sm text-muted">Only published sections on a released page appear publicly. Existing public event details and cover images remain visible independently.</p></div>
+      {draft && !query.error ? <button className="desk-button" type="button" aria-pressed={preview} onClick={() => setPreview(!preview)}>{preview ? "Hide released-content preview" : "Preview published sections"}</button> : null}
+    </div>
+    {query.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">Loading website…</span><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div> : null}
+    {error ? <p role="alert" className="text-sm text-danger">{eventErrorText(error)}</p> : null}
+    {query.error ? <button className="desk-button justify-self-start" type="button" onClick={() => query.refetch()}>Retry website</button> : null}
+    {draft && !query.error ? <div className="grid min-w-0 gap-6">
+      <p className="text-sm text-ink">{draft.released ? "Website released" : "Website unreleased"}{draft.inherited ? " · Inherited from series; saving creates a private occurrence override." : ""}</p>
+      {conflict ? <div role="status" className="grid gap-3 rounded-xl border border-warn bg-warn-soft p-4 text-sm text-warn-ink">
         <p>The website changed on the server. Your unsaved draft is retained with its original revision ({draft.revision}). Reload the latest version to resolve the conflict before saving.</p>
-        <button className="desk-button" type="button" disabled={pending || !query.data} onClick={() => {
+        <button className="desk-button justify-self-start" type="button" disabled={pending || !query.data} onClick={() => {
           if (query.data) setLocal({ base: query.data, draft: query.data });
         }}>Discard draft and reload latest</button>
       </div> : null}
-      <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); if (conflict) return; save.mutate(draft, {
+      {preview ? <div className="min-w-0 rounded-xl border border-dashed border-line bg-bg p-4">
+        <PublicEventWebsite website={{ ...draft, sessions: previewSessions(draft.sessions) }} image={(url, description) => <PrivateWebsiteImage url={url} alt={description} />} />
+      </div> : null}
+      <form className="grid min-w-0 gap-6" onSubmit={(e) => { e.preventDefault(); if (conflict) return; save.mutate(draft, {
         onSuccess: (saved) => setLocal({ base: saved, draft: saved }),
       }); }}>
         <EventWebsiteLayout page={draft} onChange={setDraft} disabled={!canEdit || pending || terminal} />
         <EventWebsiteSections page={draft} target={target} onChange={setDraft} disabled={!canEdit || pending || terminal} />
         <EventWebsiteSchedule page={draft} target={target} onChange={setDraft} disabled={!canPublish || pending || terminal} saved={!dirty && draft.revision > 0} />
-        <button className="desk-button-primary w-fit" disabled={pending || terminal || conflict || (!canEdit && !canPublish)}>{save.isPending ? "Saving…" : draft.inherited ? "Save occurrence override" : "Save website"}</button>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
+          {dirty ? <p className="mr-auto text-sm text-muted">Save the website before releasing it or changing images.</p> : null}
+          {canPublish && !terminal ? <button className="desk-button" type="button" disabled={pending || dirty || draft.inherited || !draft.revision || status !== "published"} onClick={() => release.mutate({ released: !draft.released, revision: draft.revision })}>{draft.released ? "Unrelease website" : "Release website"}</button> : null}
+          <button className="desk-button-primary" type="submit" disabled={pending || terminal || conflict || (!canEdit && !canPublish)}>{save.isPending ? "Saving…" : draft.inherited ? "Save occurrence override" : "Save website"}</button>
+        </div>
       </form>
-      {canEdit && !terminal ? <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (!file) return; const data = new FormData(); data.set("file", file); data.set("alt_text", alt); if (replaceId) data.set("replace_id", String(replaceId)); asset.mutate(data); }}>
-        <h4 className="font-semibold">Private website images</h4>
-        <label>Image description<input className="desk-input" required maxLength={200} value={alt} onChange={(e) => setAlt(e.target.value)} /></label>
-        <label>Image file<input className="desk-input" type="file" required accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
-        <label>Replace image<select className="desk-input" value={replaceId ?? ""} onChange={(e) => setReplaceId(e.target.value ? Number(e.target.value) : undefined)}><option value="">Upload new image</option>{draft.assets?.map((image) => <option key={image.id} value={image.id}>{image.alt_text}</option>)}</select></label>
-        <button className="desk-button w-fit" disabled={pending || dirty || Boolean(replaceId && draft.inherited)}>{asset.isPending ? "Uploading…" : "Upload image (up to 5 MB)"}</button>
-        {draft.assets?.map((image) => <div key={image.id} className="flex items-center gap-2"><span>{image.alt_text}</span><button className="desk-button-danger" type="button" disabled={pending || dirty || draft.inherited} onClick={() => asset.mutate(image.id)}>Delete {image.alt_text}</button></div>)}
-      </form> : null}
-      {canPublish && !terminal ? <button className="desk-button w-fit" type="button" disabled={pending || dirty || draft.inherited || !draft.revision || status !== "published"} onClick={() => release.mutate({ released: !draft.released, revision: draft.revision })}>{draft.released ? "Unrelease website" : "Release website"}</button> : null}
-      <button className="desk-button w-fit" type="button" onClick={() => setPreview(!preview)}>{preview ? "Hide released-content preview" : "Preview published sections"}</button>
-      {preview ? <PublicEventWebsite website={{ ...draft, sessions: previewSessions(draft.sessions) }} image={(url, description) => <PrivateWebsiteImage url={url} alt={description} />} /> : null}
+      {canEdit && !terminal ? <SettingsSection title="Private website images">
+        <form className="grid gap-4 py-5 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); if (!file) return; const data = new FormData(); data.set("file", file); data.set("alt_text", alt); if (replaceId) data.set("replace_id", String(replaceId)); asset.mutate(data); }}>
+          <Field label="Image description"><input className="desk-input w-full min-w-0" required maxLength={200} value={alt} onChange={(e) => setAlt(e.target.value)} /></Field>
+          <Field label="Replace image"><select className="desk-input w-full min-w-0" value={replaceId ?? ""} onChange={(e) => setReplaceId(e.target.value ? Number(e.target.value) : undefined)}><option value="">Upload new image</option>{draft.assets?.map((image) => <option key={image.id} value={image.id}>{image.alt_text}</option>)}</select></Field>
+          <Field label="Image file" className="sm:col-span-2"><input className="desk-input w-full min-w-0" type="file" required accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></Field>
+          <button className="desk-button justify-self-start sm:col-span-2" type="submit" disabled={pending || dirty || Boolean(replaceId && draft.inherited)}>{asset.isPending ? "Uploading…" : "Upload image (up to 5 MB)"}</button>
+          {draft.assets?.length ? <ul className="grid gap-2 sm:col-span-2" aria-label="Website images">{draft.assets.map((image) => <li key={image.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-line p-3">
+            <span className="min-w-0 break-words text-sm text-ink">{image.alt_text}</span>
+            <button className="desk-button-danger-outline" type="button" disabled={pending || dirty || draft.inherited} onClick={() => asset.mutate(image.id)}>Delete {image.alt_text}</button>
+          </li>)}</ul> : null}
+        </form>
+      </SettingsSection> : null}
     </div> : null}
-  </details>;
+  </section>;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { ConfirmDialog, ErrorBlock, Modal, StatusBadge } from "../../components/ui";
@@ -25,8 +25,9 @@ import { BookingBroadcastsPanel } from "./BookingBroadcastsPanel";
 import { bookingAccess } from "./bookingStaffPermissions";
 import { BookingResourceAnalytics } from "./BookingResourceAnalytics";
 import { BookingSpaceSettings } from "./BookingSpaceSettings";
-import type { BookingDrawerTab } from "./BookingDrawerTabs";
 
+/** Later lanes supply their separately authorized tab components through the `additionalTabs` slot. */
+export type BookingDrawerTab = { id: string; label: string; content: ReactNode };
 type PendingAction = { booking: Booking; action: BookingAction };
 
 function actionLabel(action: BookingAction) {

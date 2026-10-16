@@ -14,8 +14,8 @@ bash scripts/spaceworks-compose.sh bundled ps -a
 bash scripts/spaceworks-compose.sh bundled logs orchestration-init migrate orchestration-ready backend
 ```
 
-Use the installation's recorded layer through the wrapper; single-box logs use `app` instead of
-`backend`. Failed run-once containers remain for inspection. A successful application-image rollback
+Use the installation's recorded layer through the wrapper. Failed run-once containers remain for
+inspection. A successful application-image rollback
 leaves `.spaceworks-version` at the previous immutable release. If the previous release is healthy,
 no database restoration is normally needed.
 
@@ -24,6 +24,24 @@ records, the error names a `backups/host-config-*` directory. Keep application w
 install owner, restore the saved runtime files to their original relative paths, then run
 `bash scripts/init-host-orchestration.sh` with the installed version's backend image tag to recreate
 matching configuration proofs. This is host configuration recovery and does not restore the database.
+
+## Moving off a single-box install
+
+The single-box shape and its all-in-one image are no longer available. Before updating, run these
+commands from the install directory using the **CURRENTLY INSTALLED scripts**:
+
+```bash
+bash scripts/spaceworks-compose.sh bundled stop app
+bash scripts/spaceworks-compose.sh bundled rm -f app
+printf 'none\n' > .spaceworks-layer
+bash scripts/spaceworks-compose.sh bundled up -d
+```
+
+Then re-run the update. Data in the database and storage volumes is unchanged.
+
+An older updater on a single-box host takes the database backup and refreshes host topology records,
+then fails pulling the no-longer-published all-in-one image before replacing any container. Nothing
+was deployed — follow the switch steps above, then retry.
 
 ## Restore a pre-update SQL dump
 
@@ -78,5 +96,5 @@ restore enters quarantine: run the existing superadmin recovery workflow and ack
 before allowing normal writes. Interrupted destructive work uses its durable rollback journal.
 
 `restore.sh` is the legacy path and refuses compound envelopes, including envelopes without sovereign
-slices, and unsupported single-box restore. Compound archives require their supported host coordinator;
+slices. Compound archives require their supported host coordinator;
 do not force them through the legacy supervisor or treat a verified offsite copy as a proven restore.

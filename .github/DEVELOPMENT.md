@@ -62,9 +62,16 @@ npm run dev                     # http://localhost:5000
 
 ## Tests
 
+Run tests locally before pushing; Actions does not run the test suite:
+
 ```bash
-cd backend && pytest
+./scripts/dev.sh test
+./scripts/dev.sh e2e
 ```
+
+The release workflow builds/publishes backend/frontend images, creates the GitHub Release, promotes
+rolling tags and optionally deploys through the self-hosted runner. `security-audit.yml` runs
+`pip-audit` on PRs.
 
 ## Releases (maintainers)
 

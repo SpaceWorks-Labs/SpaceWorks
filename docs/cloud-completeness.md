@@ -49,17 +49,15 @@ for this continuation.
 `settings_policy.ENV_SURFACE` and `docs/environment-reference.md` both describe exactly
 247 backend names. No new environment setting or migration is needed. The three env
 examples expose the metrics/Sentry opt-ins and point to that complete reference.
-`test_env_surface_drift.py` covers cloud and all backend services, including cron and
-the single-box app. The overlay guard evaluates SaaS/TLS/single layers over the production
+`test_env_surface_drift.py` covers cloud and all backend services, including cron.
+The overlay guard evaluates SaaS/TLS layers over the production
 base and pins the managed suffix on migrate, worker and beat.
 
 The bundled updater follows the same environment/build/persisted-layer precedence as
-the Compose wrapper. Single-box readiness targets the running `app`, and image pulls
-include `app`. Management commands still run through the standard backend image and its
-explicit management-role entrypoint; the all-in-one image is a supervisor, so running
-management commands as its container command would start the supervisor instead.
+the Compose wrapper. Management commands run through the backend image and its
+explicit management-role entrypoint.
 Local behavioral tests pin success, provider/pull failures, rollback, marker recovery,
-no-op, persisted single-box choice and lock handling. GHCR tests pin bounded retries and
+no-op, persisted-layer choice and lock handling. GHCR tests pin bounded retries and
 deletion refusal after malformed or unavailable listings.
 
 ## Owner decisions and external validation still outstanding

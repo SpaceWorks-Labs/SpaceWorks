@@ -156,7 +156,7 @@ replace bucket policy or API authorization.
   renewal. Caddy may retain an already issued certificate in `caddy_data` until it expires; DNS must
   be removed or repointed to stop traffic immediately. Do not delete `caddy_data` during routine
   deploys.
-- This is a single-box architecture: Caddy, Django, workers, PostgreSQL, Redis, and MinIO share one
+- This is a single-server architecture: Caddy, Django, workers, PostgreSQL, Redis, and MinIO share one
   failure and capacity boundary. Scale vertically and monitor disk/backup/CPU pressure first. Moving
   to multiple VPS nodes requires shared database, object storage, cache, and coordinated Caddy
   certificate storage or a different edge design.

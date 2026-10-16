@@ -27,33 +27,20 @@ ask_setup_questions() {
     question TLS_EMAIL 'HTTPS certificate email' '' email || return 1
   else
     echo 'HTTPS:'
-    echo '  1) None - plain HTTP for a LAN or trial.'
+    [[ "$RUN_FRONTEND" == 2 ]] || echo '  1) None - plain HTTP for a LAN or trial.'
     echo '  2) Automatic HTTPS - built-in Caddy; point DNS at this server.'
     echo '  3) I already run a reverse proxy - forward HTTPS to this server.'
-    local https_default=1
-    [[ "$RUN_FRONTEND" != 2 ]] || https_default=2
-    while true; do
-      question HTTPS_MODE 'HTTPS' "$https_default" choices:1,2,3 || return 1
-      [[ "$RUN_FRONTEND" != 2 || "$HTTPS_MODE" != 1 ]] && break
-      echo 'API-only with an external website requires HTTPS. Choose automatic HTTPS or an existing proxy.'
-    done
+    # API-only with an external website requires HTTPS, so plain HTTP is not offered.
+    if [[ "$RUN_FRONTEND" == 2 ]]; then
+      question HTTPS_MODE 'HTTPS' 2 choices:2,3 || return 1
+    else
+      question HTTPS_MODE 'HTTPS' 1 choices:1,2,3 || return 1
+    fi
     if [[ "$HTTPS_MODE" != 1 ]]; then
       question PUBLIC_DOMAIN 'Public API/server domain' '' domain || return 1
       [[ "$HTTPS_MODE" != 2 ]] || question TLS_EMAIL 'HTTPS certificate email' '' email || return 1
     fi
   fi
-  echo 'How should it run?'
-  echo '  1) Standard containers - separate API, worker, scheduler and web server.'
-  echo '  2) Single box - one application container beside database and storage.'
-  while true; do
-    question SHAPE 'How it runs' 1 choices:1,2 || return 1
-    if [[ "$SHAPE" == 2 && "${BUILD_FROM_SOURCE:-0}" == 1 ]]; then
-      echo 'Single box requires the published all-in-one image. Choose standard containers for a source build.'
-      continue
-    fi
-    [[ "$SHAPE" != 2 || ( "$RUN_FRONTEND" == 1 && "$HOSTING_MODEL" != 3 && "$HTTPS_MODE" == 1 ) ]] && break
-    echo 'Single box cannot combine with API-only, hosted platform or HTTPS. Choose standard containers for these options.'
-  done
   echo 'File storage:'
   echo '  1) Bundled Silo object storage - private evidence and public images on this server.'
   echo '  2) External S3-compatible buckets - provision buckets, versioning, privacy and CORS yourself.'
@@ -149,14 +136,13 @@ ask_setup_questions() {
 setup_summary() {
   echo
   echo 'Deployment summary'
-  local hosting website https shape storage
+  local hosting website https storage
   case "$HOSTING_MODEL" in 1) hosting='one makerspace' ;; 2) hosting='several makerspaces at /m/<slug>' ;; 3) hosting='hosted platform with tenant subdomains' ;; esac
   [[ "$RUN_FRONTEND" == 1 ]] && website=yes || website='API only, website elsewhere'
   case "$HTTPS_MODE" in 1) https='plain HTTP' ;; 2) https='automatic Caddy HTTPS' ;; 3) https='existing reverse proxy' ;; esac
-  [[ "$SHAPE" == 1 ]] && shape='standard containers' || shape='single box'
   [[ "$STORAGE" == 1 ]] && storage='bundled Silo' || storage='external S3'
-  printf '  Hosting model: %s; website: %s; HTTPS: %s; shape: %s; storage: %s\n' \
-    "$hosting" "$website" "$https" "$shape" "$storage"
+  printf '  Hosting model: %s; website: %s; HTTPS: %s; storage: %s\n' \
+    "$hosting" "$website" "$https" "$storage"
   printf '  Server: %s; platform: %s; certificate email: %s; external sites: %s\n' \
     "$WEBHOST" "${PLATFORM_DOMAIN:-none}" "${TLS_EMAIL:-none}" "${SITE_ORIGINS:-none}"
   printf '  Makerspace: %s; URL slug/subdomain: %s; edition: %s; request access: %s\n' \
@@ -174,13 +160,9 @@ setup_summary() {
   echo "  orchestration is a start-up safety check. It runs once and stops. It's required."
   local services='database, Redis'
   [[ "$STORAGE" != 1 ]] || services+=', Silo storage (bucket initializer)'
-  if [[ "$SHAPE" == 2 ]]; then
-    services+=', single application (API, live events, worker, scheduler, website)'
-  else
-    services+=', API, live events, worker, scheduler'
-    [[ "$RUN_FRONTEND" == 2 ]] && services+=', API edge' || services+=', website'
-    [[ "$HTTPS_MODE" != 2 ]] || services+=', Caddy HTTPS edge'
-  fi
+  services+=', API, live events, worker, scheduler'
+  [[ "$RUN_FRONTEND" == 2 ]] && services+=', API edge' || services+=', website'
+  [[ "$HTTPS_MODE" != 2 ]] || services+=', Caddy HTTPS edge'
   echo "  Will run: $services; one-shot database/orchestration initialization and migrations."
   if [[ "$HOSTING_MODEL" == 3 ]]; then
     echo "  API origin: https://$MS_SUBDOMAIN.$PLATFORM_DOMAIN (also https://$PLATFORM_DOMAIN)."
@@ -191,6 +173,9 @@ setup_summary() {
   if [[ "$STORAGE" == 1 && "$HTTPS_MODE" != 1 ]]; then
     echo "  Storage DNS: files.${PLATFORM_DOMAIN:-$WEBHOST} must point at this server/proxy."
     [[ "$HTTPS_MODE" != 3 ]] || echo "  Existing proxy must forward files.$WEBHOST to 127.0.0.1:9000 and the API/site to 127.0.0.1:8080, preserving Host and X-Forwarded-Proto: https."
+  fi
+  if [[ "$HTTPS_MODE" == 3 ]]; then
+    echo '  Setup will write spaceworks-proxy.nginx.conf with these routes and print the nginx steps.'
   fi
   echo "  Will perform: ${SETUP_HOST_PLAN:-write private .env and topology, pull/build images, create your admin and makerspace, apply selected modules, start services and install the optional GitHub Actions runner}."
   echo '  Production contains no demo or example data. Secrets are saved privately, never printed here.'

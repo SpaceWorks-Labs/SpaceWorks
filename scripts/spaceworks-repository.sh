@@ -19,13 +19,12 @@ configure_release_repository() {
     return 1
   }
   owner="$(printf '%s' "${SPACEWORKS_REPOSITORY%%/*}" | tr '[:upper:]' '[:lower:]')"
-  for key in MAKERSPACE_BACKEND_IMAGE MAKERSPACE_FRONTEND_IMAGE MAKERSPACE_ALLINONE_IMAGE; do
+  for key in MAKERSPACE_BACKEND_IMAGE MAKERSPACE_FRONTEND_IMAGE; do
     value="${!key:-$(repository_env_value "$key")}"
     if [[ -z "$value" ]]; then
       case "$key" in
         MAKERSPACE_BACKEND_IMAGE) value="ghcr.io/$owner/spaceworks-backend" ;;
         MAKERSPACE_FRONTEND_IMAGE) value="ghcr.io/$owner/spaceworks-frontend" ;;
-        MAKERSPACE_ALLINONE_IMAGE) value="ghcr.io/$owner/spaceworks-allinone" ;;
       esac
     fi
     export "$key=$value"

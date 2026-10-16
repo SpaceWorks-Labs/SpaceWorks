@@ -24,7 +24,7 @@ What you need first
 What it does
   1. Checks everything above. Nothing on the machine changes until those checks pass.
   2. Downloads the pinned release into temporary storage and asks all deployment questions:
-     hosting model, website, HTTPS, shape, storage, identity, GitHub repository and optional Actions runner.
+     hosting model, website, HTTPS, storage, identity, GitHub repository and optional Actions runner.
   3. Shows answers, services and host actions; proceeds only after confirmation.
   4. Installs dependencies, copies the release into /opt/spaceworks (SPACEWORKS_DIR
      overrides it), writes private settings and starts the chosen services.

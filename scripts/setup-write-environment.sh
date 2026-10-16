@@ -19,7 +19,6 @@ write_setup_environment() {
   [[ -z "$SITE_ORIGINS" ]] || app_url="${SITE_ORIGINS%%,*}"
   [[ "$HTTPS_MODE" != 2 ]] || layer=tls
   [[ "$HOSTING_MODEL" != 3 ]] || layer=saas
-  [[ "$SHAPE" != 2 ]] || layer=single
   printf '%s\n' "$layer" > "$ROOT/.spaceworks-layer"
   export SPACEWORKS_COMPOSE_LAYER="$layer"
   # The database-pointer reader accepts literal assignments; generated alphanumerics
@@ -34,7 +33,6 @@ write_setup_environment() {
   env_setting SPACEWORKS_REPOSITORY "$SPACEWORKS_REPOSITORY"
   env_setting MAKERSPACE_BACKEND_IMAGE "$MAKERSPACE_BACKEND_IMAGE"
   env_setting MAKERSPACE_FRONTEND_IMAGE "$MAKERSPACE_FRONTEND_IMAGE"
-  env_setting MAKERSPACE_ALLINONE_IMAGE "$MAKERSPACE_ALLINONE_IMAGE"
   env_setting SPACEWORKS_OPS_HOST_DIR "${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}"
   env_setting SPACEWORKS_HOSTING_MODEL "$HOSTING_MODEL"
   env_setting SPACEWORKS_RUN_FRONTEND "$([[ "$RUN_FRONTEND" == 1 ]] && echo yes || echo no)"

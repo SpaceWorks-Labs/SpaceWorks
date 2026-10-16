@@ -36,6 +36,15 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
         log.save(update_fields=["status", "error", "attempts", "updated_at"])
         return log
 
+    # Equipment room summaries re-check their live source, scope and room match on
+    # every send, retry and release; other features' rows pass straight through.
+    from apps.hardware_requests.notifications_p2_rooms import eligible_room
+    if not eligible_room(log):
+        log.status = NotificationDeliveryStatus.SKIPPED
+        log.error = "equipment_source_no_longer_eligible"
+        log.save(update_fields=["status", "error", "updated_at"])
+        return log
+
     from apps.integrations.timing_dispatch import defer_log
     if defer_log(log, kind='channel'):
         return log

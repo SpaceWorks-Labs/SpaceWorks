@@ -5,15 +5,11 @@ from types import SimpleNamespace
 
 from django.conf import settings
 
-from apps.accounts import rbac
 from apps.integrations.email_templates import printing_context, render
-from apps.integrations.notify import EmailDelivery, LifecyclePayload, notify_lifecycle
-from apps.integrations.staff_notifications import staff_emails_for_feature
 from apps.machines.printer_capabilities import is_printer_type
-from apps.notifications.inbox import InboxDelivery
 
 logger = logging.getLogger(__name__)
-REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed"})
+REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed", "failed", "collected", "reprinted"})
 
 
 def _request_machine_type(request):
@@ -91,44 +87,5 @@ def notify_printer_service_status(request, event, *, sync=False):
     """Use the established printing template and mute matrix for kernel work."""
     if not _is_printer_request(request):
         return None
-    makerspace = request.makerspace
-    request_id = request.pk
-
-    def build():
-        from apps.machines.models import MachineServiceRequest
-        row = rbac.scope_notification_policy(
-            MachineServiceRequest.objects.all(), makerspace_id=makerspace.pk,
-        ).select_related(
-            "makerspace", "requester", "queue__machine_type", "bucket__machine__machine_type"
-        ).get(pk=request_id)
-        emails = []
-        if event in REQUESTER_EVENTS:
-            recipient, rendered = _requester_render(event, row)
-            if recipient:
-                emails.append(EmailDelivery(
-                    to_email=recipient, subject=rendered["subject"], text_body=rendered["text_body"],
-                    html_body=rendered["html_body"], audience="requester", target="requester",
-                    stream="printing", mute_event=event,
-                    user_id=row.member_id or row.requester_id,
-                ))
-        recipients = staff_emails_for_feature(makerspace, "printing", event=event)
-        if recipients:
-            rendered = _staff_render(event, row)
-            emails.extend(EmailDelivery(
-                to_email=recipient, subject=rendered["subject"], text_body=rendered["text_body"],
-                html_body=rendered["html_body"], audience="staff", stream="printing", mute_event=event,
-            ) for recipient in recipients)
-        return LifecyclePayload(
-            text=_staff_body(event, row), emails=tuple(emails),
-            data={"machine_service_request_id": row.pk},
-            inbox=(InboxDelivery(row.member_id or row.requester_id, f"Print request #{row.pk}",
-                                 f"Your print request: {event.replace('_', ' ')}.",
-                                 f"/m/{makerspace.slug}/member"),)
-            if event in REQUESTER_EVENTS and (row.member_id or row.requester_id) else (),
-        )
-
-    try:
-        return notify_lifecycle(makerspace, feature="printing", event=event, build=build, sync=sync)
-    except Exception:
-        logger.exception("machine_printer_email_send_failed", extra={"event": event, "request_id": request_id})
-        return None
+    from .notifications_p2_service import notify_service
+    return notify_service(request, event)

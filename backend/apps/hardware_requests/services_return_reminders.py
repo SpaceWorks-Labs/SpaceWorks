@@ -43,32 +43,30 @@ def _run_legacy_return_reminders(*, now=None, limit=200) -> dict:
             if hardware_request is None:
                 counts["skipped"] += 1
                 continue
+            # Claim and durable notification intent share a transaction. Broker
+            # failures are recovered by the outbox, never by re-sending a new intent.
             with transaction.atomic():
-                claimed = _legacy_rows(now).filter(
-                    pk=hardware_request.pk,
-                ).update(return_reminder_sent_at=now)
-            if not claimed:
-                continue
-            try:
-                sent = notifications.notify_return_due(hardware_request)
-            except Exception:
-                rbac.scope_for_scheduled_work(HardwareRequest.objects.all(), makerspace_id=hardware_request.makerspace_id).filter(pk=hardware_request.pk).update(
-                    return_reminder_sent_at=None
+                claimed = _legacy_rows(now).filter(pk=hardware_request.pk).update(
+                    return_reminder_sent_at=now,
                 )
-                raise
+                if not claimed:
+                    continue
+                sent = notifications.notify_return_due(hardware_request)
+                if not sent:
+                    rbac.scope_for_scheduled_work(HardwareRequest.objects.all(),
+                        makerspace_id=hardware_request.makerspace_id).filter(pk=hardware_request.pk).update(
+                        return_reminder_sent_at=None,
+                    )
             if sent:
                 counts["sent"] += 1
                 emit_notification(
                     hardware_request.makerspace,
                     level="warning",
                     event="loan.overdue",
-                    title="Overdue loan reminder sent",
-                    body=f"Request #{hardware_request.pk} is overdue; a reminder was sent.",
+                    title="Overdue loan reminder queued",
+                    body=f"Request #{hardware_request.pk} is overdue; a reminder was queued.",
                 )
                 continue
-            rbac.scope_for_scheduled_work(HardwareRequest.objects.all(), makerspace_id=hardware_request.makerspace_id).filter(pk=hardware_request.pk).update(
-                return_reminder_sent_at=None
-            )
             counts["skipped"] += 1
 
     return counts

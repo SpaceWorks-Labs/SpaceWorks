@@ -267,5 +267,5 @@ def create_reprint(service_request, actor):
             reprint_of=root,
         )
         _audit_transition(actor, child, "reprint_created", extra={"reprint_of_id": root.pk})
+        _notify_after_commit(child, "reprinted")
         return child
-

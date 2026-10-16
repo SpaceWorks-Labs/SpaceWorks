@@ -45,7 +45,9 @@ class PublicInventoryWatchView(APIView):
             InventoryProduct.objects.all(), space,
         ).filter(is_public=True, is_archived=False), pk=pk)
 
-    @extend_schema(request=WatchInputSerializer, parameters=PUBLIC_API_AUTH_PARAMETERS, responses={200: WatchResponseSerializer, **ERRORS})
+    @extend_schema(request=WatchInputSerializer, parameters=PUBLIC_API_AUTH_PARAMETERS,
+                   description="Subscribe once to a public, out-of-stock item with visible availability. Active membership required; no destination fields accepted.",
+                   responses={200: WatchResponseSerializer, **ERRORS})
     def post(self, request, makerspace_slug, pk):
         serializer = WatchInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

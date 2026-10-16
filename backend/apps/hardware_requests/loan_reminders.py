@@ -112,13 +112,15 @@ def dispatch_reminder(makerspace, reminder, message, now, local_tz):
     if reminder.kind == "escalation":
         emit_notification(makerspace, title=message.title, event=message.event,
                           body=message.body, level=message.level)
-    elif reminder.offset_seconds == 0 and result.delivered_counts.get("email"):
+    elif reminder.offset_seconds == 0 and result and result.scheduled:
         _rows(HardwareRequest, makerspace).filter(pk=loan.pk, return_due_at=reminder.due_at).update(
             return_reminder_sent_at=now,
         )
-    if result.failed_counts:
+    if result is None or result.failed_counts:
         # The claim remains permanent even when delivery fails. Preserve that
         # at-most-once rule, but expose the failure to F1 instead of recording success.
+        # None means the adapter itself failed (its savepoint rolled back); nobody
+        # reachable is NOT a failure, exactly as before.
         raise RuntimeError("Loan reminder delivery failed.")
 
 

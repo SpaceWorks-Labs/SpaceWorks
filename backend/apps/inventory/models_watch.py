@@ -13,6 +13,8 @@ class InventoryWatch(models.Model):
     notified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        indexes = [models.Index(fields=["makerspace", "ready_at"],
+            condition=models.Q(notified_at__isnull=True), name="inv_watch_pending_idx")]
         constraints = [models.UniqueConstraint(
             fields=["product", "user"], name="inventory_watch_product_user_unique",
         )]

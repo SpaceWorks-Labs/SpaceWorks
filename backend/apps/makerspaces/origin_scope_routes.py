@@ -92,10 +92,11 @@ MACHINE_SERVICE_ACTIONS = {
     'admin-machine-service-file-finalize',
 }
 from .origin_scope_routes_w7_events import EVENT_MODEL_LOOKUPS
+from .origin_scope_routes_p2_events import P2_EVENT_MODEL_LOOKUPS
 MAKERSPACE_KWARG_ROUTES["admin-event-categories"] = "makerspace_id"
 
 MODEL_LOOKUPS = {
-    **EVENT_MODEL_LOOKUPS,
+    **EVENT_MODEL_LOOKUPS, **P2_EVENT_MODEL_LOOKUPS,
     **BASE_MODEL_LOOKUPS,
     **{name: ('hardware_requests.HardwareRequest', 'makerspace_id') for name in REQUEST_ACTIONS},
     **{name: ('machines.MachineServiceRequest', 'makerspace_id') for name in MACHINE_SERVICE_ACTIONS},

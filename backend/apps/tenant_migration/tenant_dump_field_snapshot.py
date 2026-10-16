@@ -70,3 +70,5 @@ FIRST_PARTY_FIELD_NAMES = field_snapshot(FIRST_PARTY_FIELD_NAMES)
 FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= {"cancelled_at", "status_before_cancel"}
 from .catalog_notifications_contract import FIELD_NAMES as NOTIFICATION_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(NOTIFICATION_FIELDS)
+from .catalog_p2_events import FIELD_NAMES as P2_EVENT_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(P2_EVENT_FIELDS)

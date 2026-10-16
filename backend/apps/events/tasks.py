@@ -59,3 +59,7 @@ def extend_published_series():
 @shared_task
 def extend_event_series_task():
     extend_published_series()
+
+
+# Registered here so the worker knows the campaign channel fan-out task.
+from apps.events.broadcast_channels import event_broadcast_channels  # noqa: E402,F401

@@ -21,6 +21,8 @@ class EventsConfig(AppConfig):
             from .services_bulk_invites import register_invitations
             from .report_subject import register_subject
             register_broadcasts()
+            from .notification_sources import register_event_sources
+            register_event_sources()
             register_invitations()
             register_subject()
             from apps.makerspaces.resource_grant_sources import ResourceGrantSource, register

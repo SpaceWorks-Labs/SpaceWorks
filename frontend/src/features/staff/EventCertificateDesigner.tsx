@@ -4,6 +4,7 @@ import { PositionedLayoutEditor } from "../../components/print-layout/Positioned
 import { layoutFits } from "../../components/print-layout/positionedLayout";
 import { Card, Skeleton } from "../../components/ui";
 import { eventErrorText } from "./eventUi";
+import { CertificateArtworkPreview } from "./CertificateArtworkPreview";
 import {
   type CertificateTemplateInput, useEventCertificateTemplate, usePreviewEventCertificate,
   useSaveEventCertificateTemplate, useUploadCertificateArtwork,
@@ -21,9 +22,9 @@ export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspace
   const error = template.error || save.error || preview.error || upload.error;
   const pending = save.isPending || preview.isPending || upload.isPending;
   const fits = draft && layoutFits([draft.parameters.name_box], draft.parameters.page_width_mm, draft.parameters.page_height_mm);
-  return <section className="grid gap-4 border-t border-line pt-5" aria-label="Certificate designer">
-    <div><h3 className="title-section">Certificate designer</h3>
-      <p className="mt-1 text-sm text-muted">Every save creates an immutable revision. Certificates already issued or awaiting rendering keep their original layout and artwork.</p></div>
+  // The drawer frames this in a "Certificate designer" disclosure, which carries the title.
+  return <section className="grid gap-4" aria-label="Certificate designer">
+    <p className="text-sm text-muted">Every save creates an immutable revision. Certificates already issued or awaiting rendering keep their original layout and artwork.</p>
     {template.isLoading ? <div role="status"><span className="sr-only">Loading certificate template…</span><Skeleton className="h-48 w-full" /></div> : null}
     {template.isError ? <button className="desk-button justify-self-start" type="button" onClick={() => { void template.refetch(); }}>Retry certificate template</button> : null}
     {draft ? <Card><div className="grid gap-4">
@@ -45,7 +46,10 @@ export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspace
         }} />
       </label>
       {upload.isPending ? <p className="text-sm text-muted" role="status">Uploading and validating private artwork…</p> : null}
-      {draft.artwork_id ? <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-3"><p className="min-w-0 flex-1 text-sm text-ink">Private artwork attached. Preview it in the PDF.</p><button className="desk-button" type="button" disabled={pending} onClick={() => setDraft({ ...draft, artwork_id: null })}>Remove artwork from draft</button></div> : null}
+      {draft.artwork_id ? <div className="grid gap-3 rounded-xl border border-line bg-surface p-3">
+        <CertificateArtworkPreview key={draft.artwork_id} eventId={eventId} artworkId={draft.artwork_id} />
+        <div className="flex flex-wrap items-center gap-3"><p className="min-w-0 flex-1 text-sm text-ink">Private artwork attached. Preview the full layout in the PDF.</p><button className="desk-button" type="button" disabled={pending} onClick={() => setDraft({ ...draft, artwork_id: null })}>Remove artwork from draft</button></div>
+      </div> : null}
       <PositionedLayoutEditor widthMm={draft.parameters.page_width_mm} heightMm={draft.parameters.page_height_mm} gridMm={draft.parameters.grid_mm ?? 1}
         onGridChange={(grid_mm) => setDraft({ ...draft, parameters: { ...draft.parameters, grid_mm } })}
         elements={[draft.parameters.name_box]} labels={{ name: "Sample recipient name" }} disabled={pending}

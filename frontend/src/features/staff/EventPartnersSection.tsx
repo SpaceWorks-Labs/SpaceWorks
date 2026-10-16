@@ -40,7 +40,7 @@ export function EventPartnersSection({ values, setValues, hostId, audienceSelect
   return <section aria-labelledby="event-partners-title" className="mt-6 grid gap-5 border-t border-line pt-5">
     <div>
       <h3 id="event-partners-title" className="title-section">Organizers & partners</h3>
-      <p className="mt-1 text-sm text-muted">This space hosts the event. Add who organizes it and which makerspaces partner on it. You can change these later on the Team tab.</p>
+      <p className="mt-1 text-sm text-muted">This space hosts the event. Add who organizes it and which makerspaces partner on it. You can change these later under More › Team.</p>
     </div>
     <OrganizerPicker selected={values.organizers ?? []} onChange={(organizers) => setValues({ ...values, organizers })} />
     {audienceSelected ? <AudienceOrganizationPicker selected={values.audience} onChange={(audience) => setValues({ ...values, audience })} /> : null}

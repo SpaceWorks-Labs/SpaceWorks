@@ -15,7 +15,14 @@ export type CertificateTemplateInput = { parameters: CertificateParameters; artw
 export type CertificateTemplate = CertificateTemplateInput & { id: number | null; created_at: string | null };
 export const certificateDesignerKeys = {
   template: (eventId: number) => [...eventKeys.detail(eventId), "certificate-template"] as const,
+  artwork: (eventId: number, artworkId: number) => [...eventKeys.detail(eventId), "certificate-artwork", artworkId] as const,
 };
+
+/** The private artwork bytes, read with the staff session; artwork rows are immutable, so cache by id. */
+export function useCertificateArtwork(eventId: number, artworkId: number | null) {
+  return useQuery({ queryKey: certificateDesignerKeys.artwork(eventId, artworkId ?? 0), enabled: artworkId !== null,
+    queryFn: () => staffRequestBlob(`/admin/events/${eventId}/certificate-artwork/${artworkId}/`), retry: false, staleTime: Infinity });
+}
 
 export function useEventCertificateTemplate(eventId: number) {
   return useQuery({ queryKey: certificateDesignerKeys.template(eventId),

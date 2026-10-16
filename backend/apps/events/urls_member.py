@@ -24,8 +24,13 @@ from apps.events.views_member_events import (
 from apps.events.views_calendar import MemberEventCalendarFeedView, MemberEventCalendarView
 
 from .views_registration_calendar import MemberEventRegistrationCalendarView
+from .views_event_history import MemberEventHistoryView
+from .views_speakers import MemberSpeakerClaimView
 
 urlpatterns = [
+    path("makerspaces/<int:makerspace_id>/event-history/", MemberEventHistoryView.as_view(),
+         name="member-event-history"),
+    path("event-speaker-claims/", MemberSpeakerClaimView.as_view(), name="member-event-speaker-claim"),
     path("makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/calendar.ics",
          MemberEventRegistrationCalendarView.as_view(), name="member-event-registration-calendar"),
     path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/ticket/',

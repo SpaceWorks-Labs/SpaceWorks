@@ -1,31 +1,16 @@
 import { useEffect, useState } from "react";
 
-import { ConfirmDialog, StatCard, StatusBadge } from "../../components/ui";
+import { ConfirmDialog, StatusBadge } from "../../components/ui";
 import { DetailLayout } from "../../components/layouts";
 import { EventAtAGlance, EventOverview } from "./EventOverview";
-import { EventSettings } from "./EventSettings";
-import { opsQueryState, useOpsTabs, opsStatusLabel } from "./opsPresentation";
-import { EventWebsiteEditor } from "./EventWebsiteEditor";
-import { EventWebsitePublication } from "./EventWebsitePublication";
+import { opsQueryState, opsStatusLabel } from "./opsPresentation";
 import { EventOrganizationAudience } from "./EventOrganizationAudience";
-import { EventDuplicateAction } from "./EventDuplicateAction";
-import { EventInvitesPanel } from "./EventInvitesPanel";
-import { EventBroadcastsPanel } from "./EventBroadcastsPanel";
-import { EventAnalyticsPanel } from "./EventAnalyticsPanel";
-import { EventTicketsPanel } from "./EventTicketsPanel";
-import { EventPromosPanel } from "./EventPromosPanel";
-import { EventCollaborators } from "./EventCollaborators";
-import { EventOrganizers } from "./EventOrganizers";
 import { emptyEventForm, payloadFor, valuesFor } from "./EventFormFields";
-import { EventFeedbackPanel } from "./EventFeedbackPanel";
-import { EventFeedbackResponses } from "./EventFeedbackResponses";
 import { EventRegistrationRoster } from "./EventRegistrationRoster";
-import { EventCheckInOperator } from "./EventCheckInOperator";
-import { EventCheckInList } from "./EventCheckInList";
-import { EventAudienceOrganizations } from "./EventAudienceOrganizations";
-import { EventCertificateDesigner } from "./EventCertificateDesigner";
-import { EventBadgeActions } from "./EventBadgeActions";
-import { EventStaffAccess } from "./EventStaffAccess";
+import { EventCheckInTab } from "./EventCheckInTab";
+import { EventDrawerMore } from "./EventDrawerMore";
+import { EventEssentialsEditor } from "./EventEssentialsEditor";
+import { eventDrawerSurfaces, useEventDrawerTabs } from "./eventDrawerTabs";
 import { eventAccess } from "./eventStaffPermissions";
 import {
   useCancelEvent,
@@ -52,7 +37,6 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
   const access = eventAccess(event ?? { staff_permissions: [], can_manage_staff: false });
   const [values, setValues] = useState(emptyEventForm);
   const [websitePublication, setWebsitePublication] = useState<{ publish_website: boolean; website_revision?: number } | undefined>();
-  const websiteTarget = { kind: "events" as const, id: eventId, makerspaceId };
   const [confirm, setConfirm] = useState<Action | null>(null);
   const update = useUpdateEvent(makerspaceId, eventId);
   const publish = usePublishEvent(makerspaceId, eventId);
@@ -65,44 +49,31 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
   const lifecycle = confirm === "publish" ? publish : confirm === "cancel" ? cancel : complete;
   const readOnly = event?.status === "cancelled" || event?.status === "completed";
   const actionError = update.error || publish.error || cancel.error || complete.error;
-  const saveOccurrence = () => {
+  // Sends only the fields that changed, so a grant-limited editor never sends what they may not touch.
+  const saveOccurrence = (onSaved?: () => void) => {
     if (!event) return;
     const next = payloadFor(values);
     const current = payloadFor(valuesFor(event));
     const changed = Object.fromEntries(
       Object.entries(next).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(current[key as keyof typeof current])),
     ) as EventPatch;
-    update.mutate(changed);
+    if (!Object.keys(changed).length) { onSaved?.(); return; }
+    if (onSaved) update.mutate(changed, { onSuccess: onSaved }); else update.mutate(changed);
   };
 
-  const ticketing = event?.ticketing_features ?? [];
   const series = event?.series_summary;
   const seriesId = series?.id;
   const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="relative rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink before:absolute before:-inset-x-1 before:-inset-y-3 hover:bg-info-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" onClick={() => onOpenSeries(seriesId)}>Recurring · {series.title}</button>
     : <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">Recurring · {series.title}</span> : null;
-  // Every tab is gated on the same event staff grant the API enforces (eventStaffPermissions):
-  // a grant-only staffer sees only the tabs whose actions they actually hold.
-  const checkable = event?.status === "published" || event?.status === "completed";
-  const showInvites = access.invitations && ticketing.includes("events.invites");
-  const showTicketTypes = access.manager && ticketing.includes("events.ticket_types");
-  const showPromos = access.manager && ticketing.includes("events.promo_codes");
-  const showWebsite = ticketing.includes("events.website") && (access.edit || access.publish);
-  const showBroadcasts = access.registrations && Boolean(event?.broadcasts_enabled);
-  const showAnalytics = Boolean(event?.report_features?.includes("analytics"));
-  const showFeedback = access.edit || access.registrations;
-  const showSettings = access.edit || access.publish;
-  const tabs = useOpsTabs("eventTab", [
+  // Every tab and section is gated on the same event staff grant the API enforces (eventDrawerSurfaces).
+  const surfaces = eventDrawerSurfaces(event, access);
+  const { checkable, sections } = surfaces;
+  const tabs = useEventDrawerTabs([
     { key: "overview", label: "Overview" },
     ...(access.registrations ? [{ key: "registrations", label: "Registrations", count: event ? Object.values(event.registration_counts).reduce((sum, count) => sum + count, 0) : undefined }] : []),
-    ...(checkable && access.checkIn ? [{ key: "checkin", label: "Check-in" }] : []),
-    ...(showInvites || showTicketTypes || showPromos ? [{ key: "tickets", label: "Tickets & invites" }] : []),
-    ...(showFeedback ? [{ key: "feedback", label: "Feedback" }] : []),
-    ...(showBroadcasts ? [{ key: "broadcasts", label: "Broadcasts" }] : []),
-    ...(showAnalytics ? [{ key: "analytics", label: "Analytics" }] : []),
-    ...(showWebsite ? [{ key: "website", label: "Website" }] : []),
-    ...(access.manager ? [{ key: "team", label: "Team" }] : []),
-    ...(showSettings ? [{ key: "settings", label: "Settings" }] : []),
-  ], "overview");
+    ...(surfaces.checkInTab ? [{ key: "checkin", label: "Check-in" }] : []),
+  ], sections);
+  const canSaveEssentials = (access.edit || access.publish) && !readOnly;
   return <>
     <div onClickCapture={tabs.onClickCapture}>
       <DetailLayout title={event?.title ?? "Event details"} back={{ label: "All events", onClick: onClose }}
@@ -112,52 +83,24 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
         state={opsQueryState(eventQuery, "event")} tabs={tabs.tabs} activeTab={tabs.active}
         actions={{ primary: event?.status === "draft" && access.publish ? { label: "Publish", confirms: true, onClick: () => setConfirm("publish") }
           : event?.status === "published" && access.checkIn ? { label: "Open check-in", targetsTab: "checkin", onClick: () => tabs.select("checkin") }
-          : event?.status === "completed" && showFeedback ? { label: "View feedback", targetsTab: "feedback", onClick: () => tabs.select("feedback") } : undefined,
+          : event?.status === "completed" && sections.feedback && tabs.section !== "feedback" ? { label: "View feedback", onClick: () => tabs.select("feedback") } : undefined,
           // Ending an event is routine on event day, so it sits one click away in the header, not only in Settings.
           overflow: event?.status === "published" && access.publish ? [{ label: "Complete event", confirms: true, onClick: () => setConfirm("complete") },
             { label: "Cancel event", confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
         banner={readOnly ? { size: "banner", tone: "warn", lead: `This event is ${event?.status}. It can’t be edited.` } : undefined}
-        danger={tabs.active === "settings" && event?.status === "published" && access.publish ? [{ title: "Cancel event", consequence: "Registrants are notified and registration closes.", action: { label: "Cancel event", onClick: () => setConfirm("cancel") } }] : []}
+        danger={tabs.section === "settings" && event?.status === "published" && access.publish ? [{ title: "Cancel event", consequence: "Registrants are notified and registration closes.", action: { label: "Cancel event", onClick: () => setConfirm("cancel") } }] : []}
         aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={checkable && access.checkIn ? () => tabs.select("checkin") : undefined} /> : undefined}
         main={event ? <div className="grid gap-6">
           {tabs.active === "overview" ? <>
+            {canSaveEssentials ? <EventEssentialsEditor event={event} access={access} values={values} setValues={setValues} save={saveOccurrence} pending={update.isPending} /> : null}
             <EventOrganizationAudience event={event} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} />
             <EventOverview event={event} onRegistrations={access.registrations ? () => tabs.select("registrations") : undefined} />
           </> : null}
           {access.registrations ? <EventRegistrationRoster key={eventId} visible={tabs.active === "registrations"} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} showCheckIn={false} /> : null}
-          {checkable && access.checkIn ? <>
-            {tabs.active === "checkin" ? <StatCard label="Checked in" value={event.registration_counts.attended} of={event.registration_counts.registered + event.registration_counts.attended || undefined} /> : null}
-            {/* Stays mounted off-tab so an open scanner keeps its state. */}
-            <div className="grid gap-6 lg:grid-cols-2" hidden={tabs.active !== "checkin"}>
-              <EventCheckInOperator visible={tabs.active === "checkin"} makerspaceId={makerspaceId} eventId={eventId} offlineEnabled={event.offline_checkin_enabled} canManageStation={access.manager} />
-              <EventCheckInList eventId={eventId} visible={tabs.active === "checkin"} />
-            </div>
-          </> : null}
-          {showInvites ? <EventInvitesPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
-          {showTicketTypes ? <EventTicketsPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
-          {showPromos ? <EventPromosPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
-          {tabs.active === "feedback" ? access.edit ? <>
-            <EventFeedbackPanel eventId={eventId} makerspaceId={makerspaceId} canViewResponses={access.registrations} canManageCertificates={access.manager} />
-            {ticketing.includes("events.certificate_designer") ? <EventCertificateDesigner key={`certificate:${eventId}`} makerspaceId={makerspaceId} eventId={eventId} /> : null}
-          </> : access.registrations ? <EventFeedbackResponses eventId={eventId} makerspaceId={makerspaceId} responseCount={0} canManageCertificates={false} /> : null : null}
-          {showBroadcasts && tabs.active === "broadcasts" ? <EventBroadcastsPanel makerspaceId={makerspaceId} eventId={eventId} /> : null}
-          {showAnalytics && tabs.active === "analytics" ? <EventAnalyticsPanel makerspaceId={makerspaceId} eventId={eventId} endsAt={event.ends_at} features={event.report_features ?? []} /> : null}
-          {/* Kept mounted (hidden) so the "publish website with event" choice the Publish action reads never goes stale. */}
-          {showWebsite && access.publish && event.status === "draft" ? <div hidden={tabs.active !== "website"}><EventWebsitePublication key={eventId} target={websiteTarget} onChange={setWebsitePublication} /></div> : null}
-          {showWebsite && tabs.active === "website" ? <EventWebsiteEditor key={`event:${eventId}`} target={websiteTarget} canEdit={access.edit} canPublish={access.publish} status={event.status} /> : null}
-          {access.manager ? <>
-            <EventOrganizers visible={tabs.active === "team"} event={event} makerspaceId={makerspaceId} disabled={readOnly} />
-            <EventCollaborators visible={tabs.active === "team"} makerspaceId={makerspaceId} eventId={eventId} />
-            {tabs.active === "team" ? <EventStaffAccess target={{ kind: "event", id: eventId }} /> : null}
-          </> : null}
-          {showSettings && tabs.active === "settings" ? <>
-            {event.can_duplicate === true ? <div className="flex flex-wrap gap-2"><EventDuplicateAction event={event} makerspaceId={makerspaceId} /></div> : null}
-            <EventSettings event={event} makerspaceId={makerspaceId} values={values} setValues={setValues}
-              save={saveOccurrence} pending={update.isPending} invalidate={invalidateEvent} resetField={field => update.mutate({ inherit_fields: [field] })} complete={() => setConfirm("complete")} />
-            {access.edit ? <EventAudienceOrganizations event={event} makerspaceId={makerspaceId} disabled={readOnly} /> : null}
-            {/* Without the roster, an editor still owns the badge template; printing stays with check-in staff. */}
-            {!access.registrations && access.edit ? <EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={[]} includeAttended={false} onIncludeAttended={() => {}} canPrint={false} /> : null}
-          </> : null}
+          {surfaces.checkInTab ? <EventCheckInTab event={event} makerspaceId={makerspaceId} active={tabs.active === "checkin"} checkable={checkable} canManageStation={access.manager} /> : null}
+          <EventDrawerMore event={event} makerspaceId={makerspaceId} access={access} surfaces={surfaces} section={tabs.section} sectionTabs={tabs.sectionTabs}
+            readOnly={readOnly} onWebsitePublication={setWebsitePublication}
+            settings={{ values, setValues, save: () => saveOccurrence(), pending: update.isPending, invalidate: invalidateEvent, resetField: field => update.mutate({ inherit_fields: [field] }), complete: () => setConfirm("complete") }} />
           {actionError ? <p role="alert" className="text-sm text-danger">{eventErrorText(actionError)}</p> : null}
         </div> : null} />
     </div>

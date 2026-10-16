@@ -36,6 +36,7 @@ import { MemberAdmission, MemberVouch } from "./MemberAdmission";
 import { admissionKeys, publicAdmission, ownAdmission, type AdmissionRequest } from "./membershipAdmissionApi";
 import type { CustomAnswers } from "../forms/customFormTypes";
 import { MemberNotifications } from "../notifications/MemberNotifications";
+import { MemberEventHistoryLink } from "./MemberEventHistoryLink";
 
 type Membership = { makerspace: { slug: string; name: string }; membership_status: string; role: string; waiver_acceptance_required: boolean; can_refer: boolean; can_verify: boolean; verified_at: string | null; referrals_enabled: boolean };
 type Memberships = { memberships: Membership[]; requests: (Partial<AdmissionRequest> & { makerspace: { id?: number; slug: string; name: string }; state: string; kind: string })[] };
@@ -218,6 +219,8 @@ export function MemberArea() {
     {error ? <p className="text-sm text-danger" role="alert">{message(error)}</p> : null}
     {memberships.isError && !unauthenticated ? <Link className="desk-button-brand inline-flex" to="/admin">Sign in</Link> : null}
     {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} /> : null}
+    {/* Event history needs only an account: an attendee without a membership reaches it from Home. */}
+    {!unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("events") && (activeTab === "events" || activeTab === "overview" && membership?.membership_status !== "active") ? <MemberEventHistoryLink slug={slug} /> : null}
     {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>Sign in to your account</button> : null}
     {["loans", "events", "inbox"].includes(activeTab) && !memberships.isLoading && membership?.membership_status !== "active" ? <p className="text-sm text-muted">An active membership is required to view your activity.</p> : null}
     {activeTab === "inbox" && section === "notices" && memberActivity && !memberActivity.notices?.length ? <EmptyState message="No notices need your attention." /> : null}

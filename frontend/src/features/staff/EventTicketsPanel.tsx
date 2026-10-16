@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card } from "../../components/ui";
 import { useEventTicketing, type StaffTicket } from "./eventTicketingApi";
 import { EventPanelPager } from "./EventPanelPager";
-import { panelEmpty, panelField, panelInput, panelRow } from "./eventPanelStyles";
+import { panelEmpty, panelField, panelInput } from "./eventPanelStyles";
+import { EventTicketRow } from "./EventTicketRow";
 
 export function EventTicketsPanel({ visible = true,  eventId, disabled = false }: { visible?: boolean;  eventId: number; disabled?: boolean }) {
   const [page, setPage] = useState(1);
@@ -30,10 +31,7 @@ export function EventTicketsPanel({ visible = true,  eventId, disabled = false }
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
     {rows.isLoading ? <p role="status" className="text-sm text-muted">Loading ticket types…</p> : null}
     {rows.data?.results.length === 0 ? <p className={panelEmpty}>No ticket types yet.</p> : null}
-    {rows.data?.results.length ? <ul className="grid gap-3">{rows.data.results.map((row) => <li key={row.id} className={panelRow}>
-      <div className="min-w-0"><p className="title-section break-words">{row.name}</p>
-        <p className="mt-1 text-sm tabular-nums text-muted">{row.amount} · {row.audience} · {row.capacity || "Unlimited"} places</p></div>
-    </li>)}</ul> : null}
+    {rows.data?.results.length ? <ul className="grid gap-3">{rows.data.results.map((row) => <EventTicketRow key={row.id} row={row} eventId={eventId} disabled={disabled} />)}</ul> : null}
     <EventPanelPager page={page} setPage={setPage} previous={rows.data?.previous} next={rows.data?.next} />
   </section>;
 }

@@ -25,6 +25,12 @@ class CertificateArtworkThrottle(CredentialRenderThrottle):
     rate = "20/hour"
 
 
+class SpeakerClaimThrottle(CredentialRenderThrottle):
+    """Per account; claim tokens are 32 random bytes, this bounds guessing and replays."""
+    scope = "event_speaker_claim"
+    rate = "10/hour"
+
+
 class CollaborativeRegistrationThrottle(ClientTierRateThrottle):
     """New registrations share the create budget; repair retries get their own.
 

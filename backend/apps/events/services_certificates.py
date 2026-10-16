@@ -142,6 +142,7 @@ def revoke(certificate, *, actor, reason):
         target=locked,
         meta={"reason": reason, "revision": locked.revision},
     )
+    _notify_owner(locked, "certificate_revoked")
     return locked
 
 
@@ -206,6 +207,16 @@ def _claim_render(certificate_id):
     return row
 
 
+def _notify_owner(certificate, event_name):
+    from apps.events.notification_envelopes import certificate_envelope
+    try:
+        with transaction.atomic():
+            certificate_envelope(certificate, event_name)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("event_certificate_notice_failed", extra={"certificate_id": certificate.pk})
+
+
 @transaction.atomic
 def _activate(certificate_id, size, digest):
     identity = EventAttendanceCertificate.objects.values(
@@ -239,6 +250,7 @@ def _activate(certificate_id, size, digest):
         target=row,
         meta={"revision": row.revision, "size_bytes": size},
     )
+    _notify_owner(row, "certificate_ready")
     return row
 
 

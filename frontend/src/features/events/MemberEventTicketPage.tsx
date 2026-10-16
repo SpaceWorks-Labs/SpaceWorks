@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 
 import { CenteredCardLayout } from "../../components/layouts";
 import { ErrorText, Icon, StatusBadge, TicketCard } from "../../components/ui";
+import { RouteLink } from "../../components/ui/RouteLink";
 import { getAccessToken, memberRequest, memberRequestBlob, refreshAccessToken, StructuredApiError } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
@@ -79,6 +80,7 @@ export function MemberEventTicketPage() {
           {confirmed(current.status) && ["published", "completed"].includes(current.event.status) ? <a className="desk-button flex-1" href={googleCalendarUrl(current.event)} target="_blank" rel="noopener noreferrer">Add to Google Calendar</a> : null}
           <button className="desk-button flex-1" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>Download registration calendar</button>
         </div>
+        <RouteLink className="desk-button" href={tenantPath("member/events/history")}>Your event history</RouteLink>
         {calendar.error ? <ErrorText message="Could not download this calendar." /> : null}
         {download.error ? <ErrorText message={download.error.message} /> : null}
       </> : null}

@@ -72,6 +72,7 @@ urlpatterns = [
     path("", include("apps.events.urls_checkin_admin")),
     path("", include("apps.events.urls_partners")),
     path("", include("apps.events.urls_ticketing")),
+    path("", include("apps.events.urls_speakers")),
     path(
         'makerspaces/<int:makerspace_id>/event-series/',
         EventSeriesListCreateView.as_view(),

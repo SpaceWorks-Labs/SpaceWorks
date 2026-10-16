@@ -6,6 +6,7 @@ import type { AdmissionVouch } from "../members/membershipAdmissionApi";
 import { MembershipVouchers } from "./MembershipAdmissionReview";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
 import { MemberRolesControl } from "./panels/MemberRolesControl";
+import { MemberEventsSection } from "./MemberEventsSection";
 import type { MembershipRoles } from "./panels/roleSets";
 import type { StaffRole } from "./panels/rolesApi";
 
@@ -67,6 +68,8 @@ export function MemberRow({ makerspaceId, member, roles, onAuthRefresh, canManag
         <SettingsRow label="Waiver"><span>{member.waiver_required ? member.waiver_current ? "Current" : "Acceptance needed" : "Not required"}</span></SettingsRow>
         <MembershipVouchers vouches={(member as AdminMembership & { vouches?: AdmissionVouch[] }).vouches} />
         {canViewFinance && member.payment?.status !== "pending" ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={member.payment} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace} invalidateKeys={[["members", makerspaceId]]} /> : null}
+        {/* Mounted only while the drawer is open, so the roster never fetches one history per row. */}
+        {open ? <MemberEventsSection makerspaceId={makerspaceId} userId={member.user.id} /> : null}
       </div>}
       danger={active && manageable ? [{ title: "Revoke membership", consequence: "Remove this member's access to the space. A reason is required.", action: { label: "Revoke", onClick: () => { setOpen(false); onRevoke(); } } }] : []} />
   </>;

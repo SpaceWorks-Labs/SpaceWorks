@@ -113,10 +113,9 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
   if (selectedSeriesId !== null) return <EventSeriesDrawer key={selectedSeriesId} seriesId={selectedSeriesId} makerspaceId={makerspaceId} onClose={() => setSelectedSeriesId(null)} onSelectOccurrence={id => { setSelectedSeriesId(null); openEvent(id); }} />;
   if (creating) return <FormPageLayout state={{ status: "ready" }} header={{ title: creationMode === "single" ? "New event" : "New series", subtitle: "Start with a draft. Publish when every detail is ready." }}
     back={{ label: "All events", onClick: () => setCreating(false) }} cancel={{ label: "Cancel", onClick: () => setCreating(false) }}
-    form={<div data-create-event>{creationMode === "single" ? <EventFields organizationAudienceEnabled={organizationAudience} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }} />
+    form={<div data-create-event>{creationMode === "single" ? <EventFields layout="split" organizationAudienceEnabled={organizationAudience} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }}
+        moreExtras={<EventPartnersSection values={partners} setValues={setPartners} hostId={makerspaceId} audienceSelected={newValues.registration_audience === "participating_organizations"} />} />
       : <EventSeriesFields organizationAudienceEnabled={organizationAudience} values={newSeriesValues} setValues={(next) => { if (next.registration_audience !== newSeriesValues.registration_audience) setSeriesAudienceEdited(true); setSeriesValues(next); }} />}
-      {creationMode === "single" ? <EventPartnersSection values={partners} setValues={setPartners} hostId={makerspaceId}
-        audienceSelected={newValues.registration_audience === "participating_organizations"} /> : null}
       {create.error || createSeries.error ? <p className="mt-3 text-sm text-danger" role="alert">{eventErrorText(create.error || createSeries.error)}</p> : null}</div>}
     preview={{ label: "Event preview", content: <EventCreatePreview values={creationMode === "single" ? newValues : newSeriesValues} /> }}
     submit={{ label: creationMode === "single" ? "Create event" : "Create series", pending: create.isPending || createSeries.isPending, pendingLabel: "Creating…",

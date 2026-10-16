@@ -25,11 +25,12 @@ from .models_promos import EventPromoCode
 from .models_categories import EventCategory
 from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
 from .models_website import EventPage, EventPageAsset, EventPageSection, EventSession, EventSessionSpeaker
+from .speaker_identity_models import EventSpeaker
 
 __all__ = [
     "EventCertificateArtwork", "EventCertificateTemplateRevision",
     "EventPage", "EventPageAsset", "EventPageSection", "EventSession", "EventSessionSpeaker",
-    "EventBroadcast", "EventBroadcastDelivery",
+    "EventBroadcast", "EventBroadcastDelivery", "EventSpeaker",
     "EventStaffGrant", "EventStaffGrantInvite",
     "EventInvite", "EventTicketType", "EventPromoCode", "EventCategory",
     "Event",

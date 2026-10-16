@@ -9,6 +9,7 @@ import { SpaceDiscoveryCalendar } from "./SpaceDiscoveryCalendar";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 
 import { EmptyState, ListRow, StatusPill } from "../../components/ui";
+import { photosSection } from "./spacePhotosSection";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
@@ -53,7 +54,7 @@ export function PublicBookingsPage() {
       cover={selectedSpace.image_url ? { src: selectedSpace.image_url, alt: "" } : undefined}
       chips={[{ label: KIND_LABELS[selectedSpace.kind] }, { label: selectedSpace.approval_mode === "approve" ? "Needs approval" : "Instant when available", tone: selectedSpace.approval_mode === "approve" ? "warn" : "success" }]}
       facts={selectedSpace.location ? [{ identity: { kind: "icon", icon: "Info", tone: "neutral" }, primary: selectedSpace.location, secondary: selectedSpace.capacity ? `Capacity ${selectedSpace.capacity}` : "Capacity not specified" }] : []}
-      sections={[{ id: "about", label: "About this space", content: <p className="whitespace-pre-wrap leading-7">{selectedSpace.description}</p> },
+      sections={[...photosSection(selectedSpace), { id: "about", label: "About this space", content: <p className="whitespace-pre-wrap leading-7">{selectedSpace.description}</p> },
         { id: "availability", label: "Availability", content: <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={selectedSpace.public_token} /> }]}
       actionCard={{ title: "Choose a time", state: "open", form: <PublicBookingForm key={selectedSpace.public_token} makerspaceSlug={makerspaceSlug} space={selectedSpace} showCalendar={false} />,
         note: selectedSpace.approval_mode === "approve" ? "Your request stays pending until makerspace staff review it." : "A non-overlapping slot is confirmed immediately.",

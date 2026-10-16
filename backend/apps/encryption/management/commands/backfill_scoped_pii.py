@@ -26,6 +26,7 @@ FILTERS = {
     "events.EventRegistration": {"event__makerspace_id": None},
     "bookings.Booking": {"space__makerspace_id": None},
     "bookings.BookingBroadcast": {"makerspace_id": None},
+    "bookings.BookingDepartureEvent": {"makerspace_id": None},
     "machines.MachineServiceRequest": {"makerspace_id": None},
     "machines.MachineUsageEntry": {"machine__makerspace_id": None},
     "integrations.EmailLog": {"makerspace_id": None},

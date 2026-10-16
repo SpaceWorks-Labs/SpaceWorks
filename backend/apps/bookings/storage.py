@@ -159,7 +159,10 @@ def has_allowed_extension(object_key):
 
 
 def public_image_key_in_use(makerspace_id, object_key):
+    from apps.bookings.models_gallery import BookableSpacePhoto
     if BookableSpace.objects.filter(image_key=object_key).exists():
+        return True
+    if BookableSpacePhoto.objects.filter(object_key=object_key).exists():
         return True
     return shared.public_image_key_in_use(makerspace_id, object_key)
 

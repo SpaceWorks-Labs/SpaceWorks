@@ -59,7 +59,7 @@ class PublicBookableSpaceListView(APIView):
     def get(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, 'bookings')
-        spaces = _public_spaces(makerspace).order_by('name', 'id')
+        spaces = _public_spaces(makerspace).order_by('name', 'id').prefetch_related('photos')
         return Response(PublicBookableSpaceSerializer(spaces, many=True).data)
 
 

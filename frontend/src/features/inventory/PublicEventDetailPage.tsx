@@ -19,6 +19,7 @@ import { useTenant, useTenantPath } from "../../lib/tenant";
 import { EventRegistrationEntry } from "./EventRegistrationEntry";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
+import { useEventVenueSection } from "../bookings/EventVenueBlock";
 
 /** WP2 mounts this component on both central and tenant-domain event routes. */
 export function PublicEventDetailPage() {
@@ -43,6 +44,7 @@ export function PublicEventDetailPage() {
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
   });
   const event = eventQuery.error ? undefined : eventQuery.data;
+  const venueSection = useEventVenueSection(makerspaceSlug, event?.public_token, (token) => tenantPath(`bookings/${token}`));
   const error = eventQuery.error instanceof StructuredApiError ? eventQuery.error : null;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const state = eventQuery.isLoading ? { status: "loading" as const } : eventQuery.error
@@ -66,7 +68,7 @@ export function PublicEventDetailPage() {
         sections={event ? [{ id: "about", label: "About", content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> },
           ...(event.website ? [{ id: "website", label: "Event details", content: <PublicEventWebsite website={event.website}
             links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
-            image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : [])] : []}
+            image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : []), ...venueSection] : []}
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
           state: event?.registration_open || organizationAudience ? "open" : "closed", note: event?.registration_open ? undefined : closedNote,
           summary: event ? <div className="flex flex-wrap items-end gap-6">

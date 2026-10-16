@@ -7,3 +7,5 @@ from .models_staff_grants import BookingSpaceStaffGrant, BookingSpaceStaffGrantI
 from .models_arrival import BookingCheckInEvent
 from .models_broadcasts import BookingBroadcast, BookingBroadcastDelivery
 from .models_website import BookingResourcePage, BookingResourcePageAsset, BookingResourcePageSection
+from .models_gallery import BookableSpacePhoto
+from .models_departure import BookingDepartureEvent, BookingIssue

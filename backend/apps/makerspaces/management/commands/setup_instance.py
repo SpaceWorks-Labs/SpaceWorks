@@ -3,6 +3,7 @@ import secrets
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
+from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 
 from apps.backup.custody import initialize_custody_state
@@ -64,6 +65,13 @@ class Command(BaseCommand):
                 changed = True
             if changed:
                 user.save(update_fields=["is_superuser", "is_staff", "role"])
+
+        from apps.accounts.login_methods_services import setup_login_methods_from_environment
+
+        try:
+            setup_login_methods_from_environment(user)
+        except ValidationError as exc:
+            raise CommandError("; ".join(exc.messages)) from exc
 
         slug = options["makerspace_slug"] or slugify(options["makerspace_name"])
         makerspace, space_created = Makerspace.objects.get_or_create(

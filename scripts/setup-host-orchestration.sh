@@ -6,8 +6,8 @@ record_compose_config() {
   local layer="${record#compose-topology}" file
   layer="${layer%.json}"; layer="${layer#-}"; layer="${layer:-none}"
   local COMPOSE_FILES=()
-  source "$ROOT/scripts/compose-deployment.sh"
-  append_deployment_layers "$layer" /repo
+  source "$ROOT/scripts/compose-deployment.sh" || return
+  append_deployment_layers "$layer" /repo || return
   for file in "${COMPOSE_FILES[@]}"; do set -- "$@" --compose-file "$file"; done
   record="${record%.json}${DEPLOYMENT_SUFFIX}.json"
   docker run --rm --user 0:0 --entrypoint python \
@@ -19,16 +19,16 @@ record_compose_config() {
 }
 
 refresh_compose_config() {
-  record_compose_config compose-topology.json
+  record_compose_config compose-topology.json || return
   record_compose_config compose-topology-build.json \
-    --compose-file /repo/docker/compose.build.yml
+    --compose-file /repo/docker/compose.build.yml || return
   record_compose_config compose-topology-tls.json \
-    --compose-file /repo/docker/compose.tls.yml
+    --compose-file /repo/docker/compose.tls.yml || return
   record_compose_config compose-topology-build-tls.json \
     --compose-file /repo/docker/compose.build.yml \
-    --compose-file /repo/docker/compose.tls.yml
+    --compose-file /repo/docker/compose.tls.yml || return
   record_compose_config compose-topology-saas.json \
-    --compose-file /repo/docker/compose.saas.yml
+    --compose-file /repo/docker/compose.saas.yml || return
   record_compose_config compose-topology-build-saas.json \
     --compose-file /repo/docker/compose.build.yml \
     --compose-file /repo/docker/compose.saas.yml
@@ -77,6 +77,16 @@ install_producer_capability() {
     --marker /state/public/producer-capability.json \
     --scripts-dir /installed-scripts --entrypoint /app/scripts/spaceworks_entrypoint.py \
     --migrations-dir /app/apps
+}
+
+configure_setup_instance() {
+  SETUP_MFA_ENABLED="${SETUP_MFA_ENABLED:-Y}" SETUP_SOCIAL_PROVIDERS="${SETUP_SOCIAL_PROVIDERS:-google}" \
+  SETUP_SUPERADMIN_PASSWORD="$ADMINPASS" SETUP_SUPERADMIN_USERNAME="$ADMINUSER" \
+  SETUP_SUPERADMIN_EMAIL="$ADMINEMAIL" SETUP_MAKERSPACE_NAME="$MSNAME" SETUP_MAKERSPACE_SLUG="$MS_SUBDOMAIN" \
+  ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T -e SETUP_SUPERADMIN_PASSWORD -e SETUP_SUPERADMIN_USERNAME \
+    -e SETUP_SUPERADMIN_EMAIL -e SETUP_MAKERSPACE_NAME -e SETUP_MAKERSPACE_SLUG \
+    -e SETUP_MFA_ENABLED -e SETUP_SOCIAL_PROVIDERS \
+    backend --role management python manage.py setup_instance
 }
 
 configure_setup_stripe() {

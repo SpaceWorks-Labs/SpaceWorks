@@ -42,6 +42,7 @@ from apps.accounts.views_oidc_browser import (
     OidcBrowserStartView,
 )
 from apps.accounts.views_claim import ClaimRedemptionView
+from apps.accounts.views_github import GithubBrowserCallbackView, GithubBrowserStartView
 from apps.organizations.views_redeem import OrganizationInvitationRedeemView
 from apps.organizations.views_self_service import OrganizationSelfServiceView
 
@@ -53,6 +54,8 @@ urlpatterns = [
     path("social/nonce", SocialNonceView.as_view(), name="social-nonce"),
     path("social/google", GoogleSocialLoginView.as_view(), name="social-google"),
     path("social/apple", AppleSocialLoginView.as_view(), name="social-apple"),
+    path("social/github/authorize", GithubBrowserStartView.as_view(), name="social-github-browser-start"),
+    path("social/github/callback", GithubBrowserCallbackView.as_view(), name="social-github-browser-callback"),
     path(
         "social/oidc/callback",
         OidcBrowserCallbackView.as_view(),

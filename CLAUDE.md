@@ -391,7 +391,7 @@ because none are quoted here — this index is a router, not a summary.
 | **Backup, restore and tenant migration** | `apps/backup/`, `apps/data_export/`, `apps/tenant_migration/`, the deployment recovery gate, the source gate lock protocol, archive projection |
 | **Organization accounts and organization-derived authority** | `apps/organizations/`, `OrganizationMembership`, the rbac org branch, `resolve_scope` vs `scope_by_action`, the auth payload `source` field, `EventOrganizer`, org purge scoping |
 | **API client scopes and the protected-route registry** | `apps/apiclients/scope_registry*.py`, `legacy:v1`, unknown-route denial, target resolution, the system check, the HMAC signed message and nonce namespace. The client-facing protocol is written up in `docs/api-client-protocol.md` |
-| **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults |
+| **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults, the opt-in `/control/` proxy route and SSH-tunnel listener (`CONTROL_PLANE_*`, `scripts/apply-settings.sh`) |
 
 Two rules are repeated here because they bite outside their own area: **a new model must be classified in
 `apps/data_export` and have its `accounts.User` FKs decided, or the drift guards refuse the build**, and

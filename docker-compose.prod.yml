@@ -243,6 +243,9 @@ services:
       WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
       WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
     logging: *default-logging
+    environment:
+      CONTROL_PLANE_PROXY: ${CONTROL_PLANE_PROXY:-false}
+      CONTROL_PLANE_ALLOW_CIDRS: ${CONTROL_PLANE_ALLOW_CIDRS:-}
     ports:
       - "${HTTP_PORT_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
     healthcheck:

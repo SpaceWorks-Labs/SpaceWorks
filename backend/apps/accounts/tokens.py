@@ -43,16 +43,18 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         # NO KEY UPDATE remains compatible with FK inserts by concurrent native
         # logins; FOR UPDATE here could deadlock their shared FK-lock upgrades.
         locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
-        if hasattr(user, "_mfa_verified_version"):
-            locked._mfa_verified_version = user._mfa_verified_version
+        for attr in ("_mfa_verified_version", "_mfa_provider_verified", "_mfa_source"):
+            if hasattr(user, attr):
+                setattr(locked, attr, getattr(user, attr))
         user = locked
         if getattr(user, "is_tenant_dump_stub", False):
             from rest_framework.exceptions import AuthenticationFailed
 
             raise AuthenticationFailed("Account is not available.")
-        from apps.accounts.mfa_policy import assert_verified, credential
+        from apps.accounts.mfa_policy import assert_verified, credential, source_for
         assert_verified(user)
         token = super().for_user(user)
+        token["mfa_source"] = source_for(user)
         row = credential(user)
         if row:
             token["mfa_version"] = str(row.version)

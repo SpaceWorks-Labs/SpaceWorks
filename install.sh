@@ -176,13 +176,16 @@ What do you want to do?
   3) Update, then change modules - option 1 followed by option 2.
   4) Cancel - exit without changing anything.
   5) Install or re-register the GitHub Actions runner only.
-Choose 1-5 [4]: ")"
+  6) Turn web access to the control plane (/control/) on or off - no new version is
+     downloaded.
+Choose 1-6 [4]: ")"
   ACTION="${ACTION:-4}"
   case "$ACTION" in
     1) ACTION=update ;;
     2) ACTION=modules ;;
     3) ACTION=both ;;
     5) ACTION=runner ;;
+    6) ACTION=controlplane ;;
     4) say "Cancelled; existing deployment was not changed."; exit 0 ;;
     *) die "Invalid menu choice; existing deployment was not changed." ;;
   esac
@@ -206,6 +209,15 @@ if [[ "$ACTION" == runner ]]; then
   ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} test -f "$INSTALL_DIR/scripts/install-runner.sh" \
     || die 'This installation needs a release update before installing its runner.'
   ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} bash "$INSTALL_DIR/scripts/install-runner.sh"
+  exit 0
+fi
+if [[ "$ACTION" == controlplane ]]; then
+  ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} test -f "$INSTALL_DIR/scripts/control-plane-settings.sh" \
+    || die 'This installation needs a release update (option 1) before it can change control-plane access.'
+  # RUN_ROOT may only mean "the parent is unwritable"; a user-owned install must run as its owner.
+  cp_runner=()
+  [[ "$RUN_INSTALLED_AS_ROOT" != 1 ]] || cp_runner=(${RUN_ROOT[@]+"${RUN_ROOT[@]}"})
+  ${cp_runner[@]+"${cp_runner[@]}"} bash "$INSTALL_DIR/scripts/control-plane-settings.sh" </dev/tty || exit $?
   exit 0
 fi
 port_in_use() {
@@ -290,6 +302,12 @@ if [[ "$ACTION" == fresh ]]; then
   elif [[ "$HTTPS_MODE" == 3 ]]; then ports+=(8080)
   else ports+=(80); fi
   [[ "$STORAGE" != 1 || "$HOSTING_MODEL" == 3 ]] || ports+=(9000 9001)
+  if [[ "$HTTPS_MODE" == 2 && -n "${CONTROL_PLANE_TUNNEL_PORT:-}" ]]; then
+    for port in "${ports[@]}"; do
+      [[ "$port" != "$CONTROL_PLANE_TUNNEL_PORT" ]] || die "TCP port $port is already selected for another service. Choose a different SSH-tunnel port."
+    done
+    ports+=("$CONTROL_PLANE_TUNNEL_PORT")
+  fi
   for port in "${ports[@]}"; do
     port_in_use "$port" && die "TCP port $port is already in use. Free it before installing."
   done
@@ -372,6 +390,18 @@ if ! docker info >/dev/null 2>&1; then
   fi
 fi
 docker compose version >/dev/null 2>&1 || die "Docker Compose V2 is still unavailable after dependency setup."
+# Only now is Docker installed, running and reachable; read the engine as setup will use it.
+if [[ "$ACTION" == fresh && "$HTTPS_MODE" == 2 && -n "${CONTROL_PLANE_TUNNEL_PORT:-}" ]]; then
+  if [[ "$RUN_INSTALLED_AS_ROOT" == 1 ]]; then
+    engine="$(${RUN_ROOT[@]+"${RUN_ROOT[@]}"} docker version --format '{{.Server.Version}}' 2>/dev/null || true)"
+  elif [[ "$USE_DOCKER_GROUP" == 1 ]]; then
+    engine="$(sg docker -c "docker version --format '{{.Server.Version}}'" 2>/dev/null || true)"
+  else
+    engine="$(docker version --format '{{.Server.Version}}' 2>/dev/null || true)"
+  fi
+  source "$STAGE_DIR/scripts/compose-deployment.sh"
+  require_tunnel_engine "$engine" || die 'Cannot install the control-plane SSH tunnel with this Docker Engine.'
+fi
 run_installed() {
   local command="$1"
   if [[ "$RUN_INSTALLED_AS_ROOT" == 1 ]]; then

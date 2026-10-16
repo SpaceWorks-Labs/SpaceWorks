@@ -89,6 +89,9 @@ if [[ "$LAYER" != "none" ]]; then
 fi
 if [[ "$TOPOLOGY" == bundled ]]; then
   append_deployment_layers "$LAYER" "$ROOT"
+  if [[ "$DEPLOYMENT_SUFFIX" == *-control-tunnel* ]]; then
+    require_tunnel_engine || exit 64
+  fi
   RECORD="${RECORD%.json}${DEPLOYMENT_SUFFIX}.json"
   if [[ "$LAYER" == *tls ]]; then
     export COMPOSE_PROFILES="tls${COMPOSE_PROFILES:+,$COMPOSE_PROFILES}"
@@ -129,4 +132,8 @@ fi
 # names before Docker Compose starts so only the final pointer file can define them.
 unset DATABASE_URL
 unset SPACEWORKS_DB_POINTER_GENERATION
+# The control-plane selectors and the ports they are checked against were validated from .env
+# above; a shell export would otherwise reach Compose unvalidated (e.g. a Caddy import glob).
+unset CONTROL_PLANE_PROXY CONTROL_PLANE_ALLOW_CIDRS CONTROL_PLANE_TUNNEL_PORT
+unset TLS_HTTP_PORT TLS_HTTPS_PORT MINIO_API_PORT MINIO_CONSOLE_PORT
 exec docker compose ${COMPOSE_ARGS[@]+"${COMPOSE_ARGS[@]}"} "$@"

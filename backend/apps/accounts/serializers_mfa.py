@@ -41,6 +41,7 @@ class MFAEnrollmentStartSerializer(serializers.Serializer):
 
 
 class MFAStatusSerializer(serializers.Serializer):
+    available = serializers.BooleanField()
     password_available = serializers.BooleanField(required=False)
     enabled = serializers.BooleanField()
     required = serializers.BooleanField()

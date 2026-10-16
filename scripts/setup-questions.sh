@@ -4,6 +4,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/setup-question-input.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/setup-area-questions.sh"
 
 ask_setup_questions() {
+  CONTROL_PLANE_PROXY=false; CONTROL_PLANE_ALLOW_CIDRS=''; CONTROL_PLANE_TUNNEL_PORT=''
   exec 3</dev/tty
   echo 'SpaceWorks deployment questions. Enter accepts the [default].'
   echo 'Hosting model:'
@@ -68,22 +69,40 @@ ask_setup_questions() {
     question IMAGE_BASE_URL 'Public image base URL (includes bucket/path)' '' "$storage_url_rule" || return 1
     question PRESIGN_METHOD 'Presign method' post choices:put,post || return 1
   fi
+  if [[ "$HOSTING_MODEL" != 3 && ! ( "$RUN_FRONTEND" == 2 && "$HTTPS_MODE" == 3 ) ]]; then
+    echo 'The Django control plane is for superadmin operations; website access is off by default.'
+    if [[ "$HTTPS_MODE" == 1 ]]; then
+      echo 'Warning: over plain HTTP, the superadmin password and MFA code cross the network unencrypted.'
+    fi
+    local CP_ANSWER
+    question CP_ANSWER 'Reach the Django control plane (/control/) through the website?' N choices:Y,y,yes,YES,N,n,no,NO || return 1
+    [[ ! "$CP_ANSWER" =~ ^[Yy] ]] || CONTROL_PLANE_PROXY=true
+    if [[ "$CONTROL_PLANE_PROXY" == true && "$HTTPS_MODE" != 3 ]]; then
+      question CONTROL_PLANE_ALLOW_CIDRS 'Allowed client IPs/CIDRs, space-separated (blank = any)' '' cidrs || return 1
+    fi
+    if [[ "$HTTPS_MODE" == 2 ]]; then
+      while true; do
+        question CONTROL_PLANE_TUNNEL_PORT 'Loopback port for an SSH-tunnel fallback (blank = off)' '' port || return 1
+        case "$CONTROL_PLANE_TUNNEL_PORT" in
+          80|443|9000|9001) echo 'That port is reserved for the website or bundled storage. Choose another port.' ;;
+          *) break ;;
+        esac
+      done
+    fi
+  fi
   WEBHOST="$PUBLIC_DOMAIN"
   if [[ "$HOSTING_MODEL" == 3 ]]; then WEBHOST="$PLATFORM_DOMAIN"; fi
   [[ -n "$WEBHOST" ]] || question WEBHOST 'Web address (host name or IP, no http://)' localhost host || return 1
   question MSNAME 'Name of your makerspace' 'My Makerspace' name || return 1
   [[ "$HOSTING_MODEL" != 3 ]] || question MS_SUBDOMAIN 'First makerspace subdomain' makerspace slug || return 1
+  question SETUP_MFA_ENABLED 'Turn on two-step sign-in (authenticator app)?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
+  question SETUP_SOCIAL_PROVIDERS 'Which sign-in options besides email + password? Google, Apple, GitHub — comma list, or none' google providers || return 1
   ask_setup_areas || return 1
   question ADMINUSER 'Admin login username' admin username || return 1
   question ADMINEMAIL 'Admin email' '' email || return 1
   question ADMINPASS 'Admin password (blank generates one)' '' secret || return 1
   GEN_PASS=0
   if [[ -z "$ADMINPASS" ]]; then ADMINPASS="$(rand_key 24)"; GEN_PASS=1; fi
-  echo "Optional Google sign-in: create a Web OAuth client at https://console.cloud.google.com/apis/credentials."
-  local google_origin="$([[ "$HTTPS_MODE" == 1 ]] && echo http || echo https)://$WEBHOST"
-  [[ "$HOSTING_MODEL" != 3 ]] || google_origin="https://$MS_SUBDOMAIN.$PLATFORM_DOMAIN"
-  echo "Authorised JavaScript origin: ${SITE_ORIGINS:-$google_origin}"
-  question GOOGLE_WEB_CLIENT_ID 'Google Web client ID' '' google || return 1
   STRIPE_SECRET_KEY=''; STRIPE_WEBHOOK_SECRET=''; STRIPE_DEFAULT_CURRENCY="${AREA_root_currency:-usd}"
   if [[ ",${SETUP_SELECTED_AREAS}," == *,payments,* ]]; then
     while true; do
@@ -126,12 +145,19 @@ setup_summary() {
     "$hosting" "$website" "$https" "$storage"
   printf '  Server: %s; platform: %s; certificate email: %s; external sites: %s\n' \
     "$WEBHOST" "${PLATFORM_DOMAIN:-none}" "${TLS_EMAIL:-none}" "${SITE_ORIGINS:-none}"
+  local control_plane=off tunnel=off scheme=https
+  [[ "$HTTPS_MODE" != 1 ]] || scheme=http
+  [[ "${CONTROL_PLANE_PROXY:-false}" != true ]] || control_plane="$scheme://$WEBHOST/control/ (allowed: ${CONTROL_PLANE_ALLOW_CIDRS:-any})"
+  [[ -z "${CONTROL_PLANE_TUNNEL_PORT:-}" ]] || tunnel="127.0.0.1:$CONTROL_PLANE_TUNNEL_PORT"
+  printf '  Control plane: %s ; SSH tunnel: %s\n' "$control_plane" "$tunnel"
   printf '  Makerspace: %s; URL slug/subdomain: %s; edition: %s; request access: %s\n' \
     "$MSNAME" "${MS_SUBDOMAIN:-none}" "$SPACEWORKS_EDITION" "$([[ ",${SETUP_SELECTED_AREAS}," == *,inventory,* ]] && echo "$REQUEST_ACCESS" || echo 'lending disabled')"
   setup_areas_summary
   printf '  Admin: %s <%s>; password: %s (hidden)\n' "$ADMINUSER" "$ADMINEMAIL" "$([[ "$GEN_PASS" == 1 ]] && echo generated || echo entered)"
-  printf '  Google: %s; Stripe: %s; currency: %s; install GitHub Actions runner: %s\n' \
-    "${GOOGLE_WEB_CLIENT_ID:-skipped}" "$([[ -n "$STRIPE_SECRET_KEY" ]] && echo 'configured (secrets hidden)' || echo skipped)" "$STRIPE_DEFAULT_CURRENCY" "$INSTALL_RUNNER"
+  printf '  Two-step sign-in: %s; sign-in providers: %s (keys configured later in the console)\n' \
+    "$SETUP_MFA_ENABLED" "$SETUP_SOCIAL_PROVIDERS"
+  printf '  Stripe: %s; currency: %s; install GitHub Actions runner: %s\n' \
+    "$([[ -n "$STRIPE_SECRET_KEY" ]] && echo 'configured (secrets hidden)' || echo skipped)" "$STRIPE_DEFAULT_CURRENCY" "$INSTALL_RUNNER"
   if [[ "$STORAGE" == 2 ]]; then
     printf '  S3: %s; region: %s; private bucket: %s; public bucket: %s\n' "$S3_ENDPOINT" "$S3_REGION" "$PRIVATE_BUCKET" "$IMAGE_BUCKET"
     printf '  Images: %s; presign: %s; access/secret keys: entered (hidden)\n' "$IMAGE_BASE_URL" "$PRESIGN_METHOD"

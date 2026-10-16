@@ -194,23 +194,70 @@ See `docs/api-client-protocol.md`.
 | `THROTTLE_CLIENT_STANDARD` | `'120/min'` |  |
 | `THROTTLE_CLIENT_TRUSTED` | `'600/min'` |  |
 
+## Install-time sign-in choices
+
+Accounts and authentication are always installed by the guided installer. It asks which built-in
+providers to offer and whether to enable two-step sign-in; provider credentials are entered later
+in the platform console. Provider switches are read-only in `/control/` and compose with the social
+master switch and configured credentials. OIDC keeps its per-provider `is_enabled`.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SETUP_MFA_ENABLED` | unset (preserve model default: on) | First `setup_instance` creation only: `y` or `n`. Guided setup defaults to `Y`. |
+| `SETUP_SOCIAL_PROVIDERS` | unset (preserve model defaults: all on) | First creation only: comma list of `google,apple,github`, or literal `none`. Guided setup defaults to `google`. |
+
+Both are one-shot setup inputs, excluded from backup compatibility requirements; do not add them to
+runtime service settings. Reruns never rewrite an existing login-methods row. Use
+`manage.py set_login_methods --mfa on|off --providers google,apple,github` (or `--providers none`) for
+later changes; the command validates the full state and records an audit event in the same transaction.
+
 ## Two-step sign-in
 
-Superadmins must enroll TOTP; staff enrollment is required when a space enables
-`security.staff_mfa_required`. Members can opt in at `/mfa`. Secrets use the
+Superadmins sign in with a password and may opt in to TOTP; staff enrollment is required
+when a space enables `security.staff_mfa_required`. Members can opt in at `/mfa`. Secrets use the
 existing `API_CLIENT_ENC_KEY` encryption; recovery codes are hashed. No separate key is needed.
+
+`Platform login methods` in `/control/` shows `mfa_enabled` read-only (existing deployments
+default on). Setup chooses it at install; change it later with `manage.py set_login_methods --mfa on|off`. Turning it off overrides staff-MFA-required spaces, pauses challenges,
+enrollment and recovery-code regeneration, and keeps existing authenticators; disable remains
+available. Sessions issued while bypassing required/enrolled MFA cannot continue after re-enabling,
+even after refresh rotation. Identity-provider sign-ins skip local TOTP by owner decision and
+carry provider proof; credential resets/disable still revoke them. Django control sessions also
+carry source and credential version, so host recovery requires a fresh password login.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `MFA_CHALLENGE_TTL_SECONDS` | `300` | Lifetime of the opaque first-factor proof (60–600 seconds); no JWT exists until verification. |
 | `MFA_MAX_ATTEMPTS` | `5` | Failed second-factor attempts per challenge before refusal (1–10). |
 
+### GitHub member sign-in
+
+In GitHub **Settings → Developer settings → OAuth Apps → New OAuth App**, set the
+homepage to the public SpaceWorks site. Register the **Authorization callback URL**
+as the exact member sign-in page, for example `https://space.example/member` or
+`https://platform.example/m/makerspace/member`. Locally, use
+`http://localhost:5000/member` (or the corresponding `/m/<slug>/member` page).
+The browser returns to that same page, which posts the code, state and its tab-held
+nonce to `/api/v1/auth/social/github/callback`; the API URL is not the registered
+callback. Use an OAuth App registration matching the public sign-in URL being used.
+
+Copy the **Client ID** and generate a **Client secret**. Paste them into
+**Platform → Social sign-in → GitHub OAuth App (members)** in the staff console, or
+the platform social-auth settings in `/control/`. The secret uses `API_CLIENT_ENC_KEY`,
+is write-only, and a blank field keeps the saved value; use **Clear saved GitHub secret**
+to remove it. Keep social sign-in and member accounts enabled. Members must have a
+primary verified email on GitHub. New accounts also require self-registration enabled.
+GitHub does not sign into the staff console. No new environment variables are needed.
+
+See [GitHub's OAuth App flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+for the authorization-code and PKCE contract.
+
 ### Staff invitations
 
 Staff invitation links use `PUBLIC_APP_BASE_URL` or the verified tenant frontend domain.
 The email module may be off; staff still receive a copyable link. Links expire in seven
 days by default, contain a fragment token, and are single use. Existing accounts must
-supply their password and enrolled second factor; an invitation cannot reset passwords.
+supply their password and, while platform MFA is on, enrolled second factor; an invitation cannot reset passwords.
 
 
 ## Installer topology selectors
@@ -236,6 +283,9 @@ documented under managed SaaS mode above.
 | `CADDY_SAAS_CONFIG` | Defaults to existing `./deploy/Caddyfile.saas`; new guided platforms use `./deploy/Caddyfile.saas-install` for public ACME. Existing deployments keep their origin-certificate configuration. |
 | `STORAGE_DOMAIN` | Bundled HTTPS storage hostname (`files.<server/platform-domain>`). Requires DNS; an existing proxy forwards to loopback Silo port 9000. |
 | `STORAGE_CADDY_CONFIG` | Defaults to `/etc/caddy/storage-disabled.caddy`; guided bundled HTTPS storage selects `/etc/caddy/storage.caddy`. External storage has no local route. |
+| `CONTROL_PLANE_PROXY` | `false`. `true` makes the bundled proxy (Caddy, the website nginx or the single-box nginx) forward `/control/` and `/mfa/control/` to Django on the site's own host. Only `true`/`false` are valid; anything else stops the proxy from starting. Apply a change with `bash scripts/apply-settings.sh`. |
+| `CONTROL_PLANE_ALLOW_CIDRS` | Empty (any address). Space-separated IPv4/IPv6 addresses or CIDRs allowed to reach the control plane; others get 403. Only meaningful where the proxy sees the real client address — not behind your own reverse proxy. |
+| `CONTROL_PLANE_TUNNEL_PORT` | Empty (off). Automatic-HTTPS installs only: a `127.0.0.1`-only HTTPS port serving just the control plane, for `ssh -L`. Needs Docker Engine 28 or newer. |
 
 External storage also writes existing `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
 `AWS_S3_ENDPOINT_URL`, `AWS_S3_PUBLIC_ENDPOINT_URL`, `AWS_S3_REGION_NAME`, `AWS_STORAGE_BUCKET_NAME`,

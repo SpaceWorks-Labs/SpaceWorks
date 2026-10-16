@@ -42,7 +42,7 @@ source "$ROOT/scripts/setup-proxy-config.sh"
 # Questionnaire precedes Docker checks, image pulls and writes to the checkout.
 source "$ROOT/scripts/setup-questions.sh"
 if [[ "${ANSWERS_CONFIRMED:-}" == yes ]]; then
-  : # Confirmed answers inherited by native Windows through process environment.
+  validate_setup_login_answers || die 'Invalid sign-in choices.'
 elif [[ -f .spaceworks-answers ]]; then
   load_setup_answers "$ROOT/.spaceworks-answers" || die 'Invalid private answers file.'
 elif [[ ! -f .env ]]; then
@@ -124,11 +124,7 @@ done
 
 if [ "$FIRST_RUN" = 1 ]; then
   say "Creating your admin account and makerspace..."
-  SETUP_SUPERADMIN_PASSWORD="$ADMINPASS" SETUP_SUPERADMIN_USERNAME="$ADMINUSER" \
-  SETUP_SUPERADMIN_EMAIL="$ADMINEMAIL" SETUP_MAKERSPACE_NAME="$MSNAME" SETUP_MAKERSPACE_SLUG="$MS_SUBDOMAIN" \
-  ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T -e SETUP_SUPERADMIN_PASSWORD -e SETUP_SUPERADMIN_USERNAME \
-    -e SETUP_SUPERADMIN_EMAIL -e SETUP_MAKERSPACE_NAME -e SETUP_MAKERSPACE_SLUG \
-    backend --role management python manage.py setup_instance
+  configure_setup_instance
 
   configure_setup_domain
 
@@ -136,14 +132,6 @@ if [ "$FIRST_RUN" = 1 ]; then
     python manage.py apply_setup_areas --makerspace "$MS_SUBDOMAIN" --actor "$ADMINUSER" --answers-json - \
     || die 'Could not apply confirmed areas and settings. The private answers are retained for retry.'
   echo 'Areas and settings applied. Change them later with scripts/update.sh --modules-only or staff settings.'
-
-  if [ -n "$GOOGLE_WEB_CLIENT_ID" ]; then
-    say "Enabling Google sign-in..."
-    if ! ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management python manage.py configure_social_auth \
-      --google-web-client-id "$GOOGLE_WEB_CLIENT_ID"; then
-      warn "Could not save the Google client ID. Add it later in Platform settings; password login is unaffected."
-    fi
-  fi
 
   if [ -n "$STRIPE_SECRET_KEY" ]; then
     configure_setup_stripe || die 'Could not safely save the online-payment credentials. Private answers are retained; resolve the settings error and retry setup.'
@@ -162,7 +150,15 @@ if [ "$FIRST_RUN" = 1 ]; then
     echo "  Website: $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
   fi
   echo "  API: $([[ "$HTTPS_MODE" == 1 ]] && echo http || echo https)://$WEBHOST/api"
-  echo "  Control plane: /control/ on the backend only, through a private connection."
+  if [[ "$(deployment_value CONTROL_PLANE_PROXY)" == true ]]; then
+    echo "  Control plane: $(deployment_value PUBLIC_APP_BASE_URL)/control/"
+  else
+    echo "  Control plane: off (see docs/self-hosting.md, 'Reaching the control plane')"
+  fi
+  tunnel_port="$(deployment_value CONTROL_PLANE_TUNNEL_PORT)"
+  if [[ -n "$tunnel_port" ]]; then
+    echo "  SSH tunnel: ssh -L 8443:127.0.0.1:$tunnel_port <you>@<this server>, then https://localhost:8443/control/"
+  fi
   [ "$GEN_PASS" = 1 ] && warn "  Generated admin password: ${ADMINPASS}   (save this now)"
   echo
   if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then

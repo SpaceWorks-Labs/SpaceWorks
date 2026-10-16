@@ -31,6 +31,8 @@ AUTH_CLAIM_ROUTES = {
     **_refused("social-google", ("POST",), "claim sessions cannot change identity"),
     **_refused("social-apple", ("POST",), "claim sessions cannot change identity"),
     **_refused("social-oidc", ("POST",), "claim sessions cannot change identity"),
+    **_refused("social-github-browser-start", ("POST",), "claim sessions cannot change identity"),
+    **_refused("social-github-browser-callback", ("POST",), "claim sessions cannot change identity"),
     ("social-oidc-browser-start", "POST"): ControlRoute(),
     ("social-oidc-browser-start", "OPTIONS"): AnonymousRead(),
     ("social-oidc-browser-callback", "POST"): ControlRoute(),

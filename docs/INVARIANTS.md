@@ -1134,14 +1134,45 @@ off the capability registry: each resolves before a makerspace is selected. All 
 are additive `AND`s in front of the readiness each method already had, so switching one on can never
 make an unconfigured method work. `load()` deliberately does **not** `get_or_create` — this is read on
 every unauthenticated login attempt, and a read path that writes is a write per login attempt.
-- **The `social` switch covers the built-ins AND every OIDC provider**, because they share one endpoint,
-  one nonce contract and one config entry. Disabling one provider is what `is_enabled` is for.
-- **`login_methods.py` has two halves with opposite failure directions**: the reads fail OPEN, the
-  lockout guards refuse whenever they cannot prove the change is survivable. `users_stranded_without_social`
-  is the platform-wide twin of `social_lockout` (someone holding Google *and* Apple survives either being
-  cleared and is stranded by social being switched off), and `superadmins_without_social` is the floor
-  that keeps `/control/` reachable. Password + social both off is refused outright: **phone issues member
-  sessions only** (the refresh claim is a hardcoded `"member"`), so it can never rescue an administrator.
+- **The `social` master covers built-ins AND OIDC**. The built-ins additionally require
+  `google_enabled`, `apple_enabled` or `github_enabled` AND configured keys; OIDC retains each
+  row's `is_enabled`. New provider flags default on so existing deployments are unchanged.
+- **MFA and built-in provider choices belong to installation**. `/control/` displays all four
+  read-only, with `manage.py set_login_methods` as the recovery/change path. The guided installer
+  asks platform MFA before areas, defaults providers to Google on Enter, and transports explicit
+  `none` unchanged. With MFA off, it skips the staff-MFA prompt and writes no such feature.
+  Provider keys are collected later in the console, never by the installer.
+- **`login_methods_validation.validate_login_methods(proposed)` checks the complete state**,
+  including credential readiness, all simultaneous provider removals and enabled OIDC providers.
+  The admin form, operator command and setup service share it. Social-only users must retain
+  a usable enabled credential; superadmins require an enabled usable password or a configured,
+  enabled staff-capable identity. Phone and GitHub cannot rescue staff access. Password + social
+  both off is refused outright. Reads fail open with last-known-good switch values; writes fail
+  closed when validation cannot prove survival.
+- **Setup applies `SETUP_MFA_ENABLED` and `SETUP_SOCIAL_PROVIDERS` only on first row creation**,
+  independently of whether the makerspace already exists. Reruns preserve later operator choices.
+  `set_login_methods --mfa on|off --providers google,apple,github` (empty/`none` = none)
+  saves the singleton and its audit event in one transaction. Both setup env names are one-shot
+  excluded backup settings, registered in the backend env surface because setup reads them.
+
+`PlatformLoginMethods.mfa_enabled` (default on) is the authenticator master switch and overrides
+staff-MFA-required spaces while off, without clearing credentials. Shared policy governs JWTs and
+Django control sessions: `bypass` proof is refused after re-enabling; `verified` proof records local
+TOTP/recovery verification, `provider` proof skips local TOTP by owner decision for Google, Apple
+and configured OIDC, and `none` records an ordinary password session without a factor requirement.
+Refresh rotation preserves proof rather than upgrading bypass to verified; credential-version
+changes still revoke verified/provider tokens and control sessions. Enrollment, verification and
+recovery regeneration refuse while off; disable and password-only invitation acceptance remain available.
+
+**GitHub sign-in delivers member sessions only.** Its browser OAuth flow reuses the
+single-use attempt ledger, binds state to origin and a browser-held nonce, uses PKCE
+S256, and requires a primary verified email. The platform client secret is encrypted
+and write-only; provider access tokens never persist or enter audit metadata. Google,
+Apple and OIDC are the staff-capable providers: GitHub cannot count as a surviving
+credential when disabling passwords for superadmins, disabling a provider, or unlinking
+their last staff-capable identity. Both settings surfaces refuse clearing either GitHub
+credential when it would strand GitHub-only accounts. Provider-issued GitHub sessions
+use the same version-bound MFA provider proof as other social sign-ins.
 
 **Maker profiles hang off `MakerspaceMembership`, and are deliberately NOT PII-encrypted (phase 12).**
 `User` is platform-global and scoped encryption is per-makerspace, which is why `accounts.User` is
@@ -4082,6 +4113,33 @@ object key or purge ownership is introduced by these adapters.
   across secrets. Never clear nonces on rotation.
 
 ## Container / deployment invariants
+
+**The control plane reaches the bundled proxy only by operator opt-in.** `CONTROL_PLANE_PROXY` (default
+`false`) is the only switch that routes `/control`, `/control/*` and `/mfa/control/*` through Caddy or the
+website nginx; `CONTROL_PLANE_TUNNEL_PORT` (default empty, TLS layer only) is the only
+way to publish the `127.0.0.1` HTTPS tunnel listener. Rules that must not regress:
+- Values fail closed. Caddy imports `control-plane-{$CONTROL_PLANE_PROXY}.caddy`, so anything but
+  `true`/`false` is a missing file and Caddy will not start; the nginx generator
+  (`frontend/docker-entrypoint.d/40-control-plane.sh`) exits non-zero and so does the container. Compose must
+  always pass a non-empty value: a Caddy placeholder default applies only to an UNSET variable.
+- The browser's authority is never rewritten: Caddy keeps the incoming `Host` (no `header_up Host` /
+  `X-Forwarded-Host` on these routes) and nginx sends `$http_host`. The MFA challenge binds its origin to
+  `scheme://Host`, and Django's CSRF origin check compares the same, so dropping the port breaks the tunnel.
+- `CONTROL_PLANE_ALLOW_CIDRS` matches the socket peer only (Caddy `remote_ip`, nginx `$remote_addr`, no
+  `trusted_proxies`/realip), so a forged `X-Forwarded-For` cannot pass it. Both proxies answer 403.
+- The tunnel listener terminates real TLS (Caddy internal CA) so Secure cookies, `SECURE_SSL_REDIRECT` and
+  CSRF behave as on the public domain, strips `Strict-Transport-Security`, and serves nothing but the control
+  plane and `/static/`. Its overlay is selected only for TLS layers, and the wrapper refuses it on Docker
+  Engine < 28 (older engines expose `127.0.0.1`-published ports to neighbouring hosts); enumerating the
+  alternative topology records never consults the engine.
+- `.env` changes to these keys are applied with `scripts/apply-settings.sh`, which holds the update lock and
+  `operation.lock`, pins every running application container's image ID before refreshing records, never
+  pulls, and refuses build/SaaS layers and API-only behind an own proxy (`api-edge` has no route).
+- `apply-settings.sh --control-plane on|off` (driven by installer option 6 /
+  `scripts/control-plane-settings.sh`) rewrites those keys only AFTER taking both locks, and its rollback runs
+  before releasing them: restore `.env`, then (once applying started) `refresh_compose_config` and Compose up,
+  so the topology records never keep the failed `.env`'s digest. `refresh_compose_config` must therefore
+  fail on the first failed record write, not report only the last one.
 
 **The H1 host marker is a process boundary, and PostgreSQL grants are a separate authority
 boundary.** Every application-image start must enter through

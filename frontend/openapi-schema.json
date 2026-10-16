@@ -51349,7 +51349,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SocialLoginResult"
+                                    "$ref": "#/components/schemas/SocialLoginResponse"
                                 }
                             }
                         },
@@ -51376,6 +51376,116 @@
                             }
                         },
                         "description": "Includes `social_device_restart_required` when burned pre-grant inputs must be replaced."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/social/github/authorize": {
+            "post": {
+                "operationId": "api_v1_auth_social_github_authorize_create",
+                "tags": [
+                    "Social auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubBrowserStart"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubBrowserStart"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubBrowserStart"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GithubBrowserStartResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/social/github/callback": {
+            "post": {
+                "operationId": "api_v1_auth_social_github_callback_create",
+                "tags": [
+                    "Social auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OidcBrowserCallback"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OidcBrowserCallback"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OidcBrowserCallback"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OidcBrowserLoginResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
                     },
                     "429": {
                         "description": "Rate limit exceeded; retry after the interval in Retry-After."
@@ -51417,7 +51527,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SocialLoginResult"
+                                    "$ref": "#/components/schemas/SocialLoginResponse"
                                 }
                             }
                         },
@@ -51548,7 +51658,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SocialLoginResult"
+                                    "$ref": "#/components/schemas/SocialLoginResponse"
                                 }
                             }
                         },
@@ -51709,7 +51819,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/OidcBrowserLoginResult"
+                                    "$ref": "#/components/schemas/OidcBrowserLoginResponse"
                                 }
                             }
                         },
@@ -77248,6 +77358,45 @@
                     }
                 }
             },
+            "GithubBrowserStart": {
+                "type": "object",
+                "properties": {
+                    "redirect_uri": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2048
+                    },
+                    "nonce": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "pattern": "^[A-Za-z0-9_-]{43,128}$"
+                    }
+                },
+                "required": [
+                    "nonce",
+                    "redirect_uri"
+                ]
+            },
+            "GithubBrowserStartResponse": {
+                "type": "object",
+                "properties": {
+                    "authorization_url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "expires_in": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "authorization_url",
+                    "expires_in",
+                    "state"
+                ]
+            },
             "HardwareRequestError": {
                 "type": "object",
                 "properties": {
@@ -80598,6 +80747,9 @@
             "MFAStatus": {
                 "type": "object",
                 "properties": {
+                    "available": {
+                        "type": "boolean"
+                    },
                     "enabled": {
                         "type": "boolean"
                     },
@@ -80606,6 +80758,7 @@
                     }
                 },
                 "required": [
+                    "available",
                     "enabled",
                     "required"
                 ]
@@ -87279,16 +87432,6 @@
                     "user"
                 ]
             },
-            "OidcBrowserLoginResult": {
-                "oneOf": [
-                    {
-                        "$ref": "#/components/schemas/OidcBrowserLoginResponse"
-                    },
-                    {
-                        "$ref": "#/components/schemas/MFAChallengeResponse"
-                    }
-                ]
-            },
             "OidcBrowserStart": {
                 "type": "object",
                 "properties": {
@@ -92971,6 +93114,18 @@
             "PatchedPlatformSocialAuthSettings": {
                 "type": "object",
                 "properties": {
+                    "google_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "apple_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "github_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "google_web_client_id": {
                         "type": "string",
                         "maxLength": 255
@@ -93003,6 +93158,23 @@
                     "apple_private_key_set": {
                         "type": "boolean",
                         "readOnly": true
+                    },
+                    "github_client_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "github_client_secret": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 4096
+                    },
+                    "github_client_secret_set": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "clear_github_client_secret": {
+                        "type": "boolean",
+                        "writeOnly": true
                     },
                     "updated_at": {
                         "type": "string",
@@ -94433,6 +94605,18 @@
             "PlatformSocialAuthSettings": {
                 "type": "object",
                 "properties": {
+                    "google_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "apple_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "github_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "google_web_client_id": {
                         "type": "string",
                         "maxLength": 255
@@ -94466,6 +94650,23 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "github_client_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "github_client_secret": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 4096
+                    },
+                    "github_client_secret_set": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "clear_github_client_secret": {
+                        "type": "boolean",
+                        "writeOnly": true
+                    },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time",
@@ -94473,7 +94674,11 @@
                     }
                 },
                 "required": [
+                    "apple_enabled",
                     "apple_private_key_set",
+                    "github_client_secret_set",
+                    "github_enabled",
+                    "google_enabled",
                     "updated_at"
                 ]
             },
@@ -102083,16 +102288,6 @@
                     "access",
                     "outcome",
                     "user"
-                ]
-            },
-            "SocialLoginResult": {
-                "oneOf": [
-                    {
-                        "$ref": "#/components/schemas/SocialLoginResponse"
-                    },
-                    {
-                        "$ref": "#/components/schemas/MFAChallengeResponse"
-                    }
                 ]
             },
             "SocialNonce": {

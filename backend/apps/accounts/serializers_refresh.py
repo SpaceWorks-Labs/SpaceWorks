@@ -65,6 +65,9 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
             return user
 
         def mint_replacement(refresh, _user):
+            from apps.accounts.mfa_policy import restore_proof, source_for
+            restore_proof(_user, refresh)
+            refresh["mfa_source"] = source_for(_user)
             refresh.set_jti()
             refresh.set_exp()
             refresh.set_iat()

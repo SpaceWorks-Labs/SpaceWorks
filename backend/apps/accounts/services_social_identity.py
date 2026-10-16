@@ -6,6 +6,7 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.accounts.models_social import SocialIdentity, SocialSurface
 from apps.accounts.principal_guards import is_anonymous_requester
+from apps.accounts.social_staff_providers import surviving_identities
 
 
 class SocialResolutionError(Exception):
@@ -127,6 +128,8 @@ def _explicit_link(identity, user, provider, subject):
 
 
 def unlink_social_identity(user, provider):
+    from apps.accounts.login_methods import password_login_enabled
+
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
         identity = SocialIdentity.objects.select_for_update().filter(
@@ -134,10 +137,10 @@ def unlink_social_identity(user, provider):
         ).first()
         if identity is None:
             raise SocialResolutionError("identity_not_found", 404)
-        other_exists = SocialIdentity.objects.filter(user=locked).exclude(
-            pk=identity.pk
+        other_exists = surviving_identities(
+            locked, SocialIdentity.objects.filter(user=locked).exclude(pk=identity.pk)
         ).exists()
-        if not locked.has_usable_password() and not other_exists:
+        if not (password_login_enabled() and locked.has_usable_password()) and not other_exists:
             raise SocialResolutionError("last_credential", 409)
         identity.delete()
 

@@ -1,5 +1,7 @@
 # SpaceWorks project status — what exists today
 
+GitHub member sign-in is available through browser OAuth with PKCE, verified primary email, encrypted platform credentials and lockout guards; it does not issue staff sessions.
+
 > **This is the what-exists-today half of `CLAUDE.md` / `AGENTS.md`.** It was split out when that
 > file crossed the harness's memory-file size warning; nothing was dropped in the move. It has no
 > `AGENTS.md`-style twin — both names of that document point at this one path, so edit it in place.
@@ -29,18 +31,27 @@ a `pip-audit` CI job. The global CSP `script-src` omits `'unsafe-eval'`; a tiny
 origin to `img-src` **only for `/control/` responses** (django-unfold ships eval-requiring Alpine.js; the
 JSON API + public docs stay on the strict policy).
 
-**Staff MFA and invitations (Wave 1).** TOTP is mandatory for superadmins, required for
-staff when a makerspace enables `security.staff_mfa_required`, and optional for members.
-Password, social/OIDC, phone and native sign-in return an opaque five-minute challenge
-before issuing any session tokens. Current provider adapters do not parse an MFA
-assertion, so social/OIDC always require SpaceWorks verification. A locked credential
+**Staff MFA and invitations (Wave 1).** TOTP is optional for superadmins (password-only
+until they enroll; changed 2026-10-16), required for staff when a makerspace enables
+`security.staff_mfa_required`, and optional for members.
+When MFA is available, enrolled password, phone and native password sign-ins return an
+opaque five-minute challenge before issuing tokens. Identity-provider sign-ins (Google,
+Apple and configured OIDC) skip local TOTP by owner decision and carry provider proof.
+The platform login-method setting `mfa_enabled` defaults on; switching it off overrides
+staff requirements and pauses enrollment/recovery regeneration without clearing credentials.
+Sessions minted while bypassing a challenge are refused when MFA is re-enabled, including
+rotated native sessions and Django control sessions; verified and provider sessions retain
+credential-version revocation. A locked credential
 accepts a +/-1 time-step window and refuses replay. Ten recovery codes are hashed and
 shown once; regeneration and optional disable require password reauthentication.
 Secrets and enrollment keys use the existing Fernet mechanism. Credential versions
 invalidate older access, refresh, device and control-panel sessions. `/mfa/control/`
-finishes the Django password session before `/control/` becomes accessible. Operators
-can recover a lost superadmin authenticator with host-only `recover_superadmin --reset-mfa`;
-this clears credentials and sessions and forces fresh enrollment, rather than bypassing MFA.
+finishes the Django password session of an enrolled superadmin before `/control/` becomes
+accessible. Operators can recover a lost superadmin authenticator with host-only
+`recover_superadmin --reset-mfa`; this clears the credential and sessions and returns the
+account to password sign-in until it enrolls again. A superadmin's password is likewise
+reset only on the host (`changepassword` / `recover_superadmin`): the email-OTP
+forgot-password flow discards superadmin accounts at issuance and re-checks at confirmation.
 Spent MFA challenges join the existing 30-day auth-challenge cleanup.
 
 `staff.invitations` defaults on. Staff with makerspace-management authority invite an
@@ -48,7 +59,7 @@ address to a permitted local role, list/revoke/resend invitations in Users, and 
 a copyable link even when tenant email delivery is unavailable. Email addresses are
 encrypted, tokens are stored as digests, resend rotates the bearer and rechecks the
 current sender's authority, and acceptance is
-single use. Existing accounts prove their current password and enrolled MFA; new
+single use. Existing accounts prove their current password and, while platform MFA is on, enrolled MFA; new
 accounts receive a verified address. Both get the same response with no session tokens.
 Acceptance rechecks tenant servability, role grants and the inviter's current ceiling;
 revoked, restricted, walk-in and imported-stub principals cannot regain authority.

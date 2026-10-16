@@ -1,5 +1,6 @@
 """Django admin's session bridge: password session has no control authority until MFA."""
 
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
@@ -23,10 +24,21 @@ class ControlMFAThrottle(SimpleRateThrottle):
 
 def session_verified(request):
     try:
-        mfa_policy.assert_verified(request.user, {"mfa_version": request.session.get("mfa_version")})
+        mfa_policy.assert_verified(request.user, {
+            "mfa_version": request.session.get("mfa_version"),
+            "mfa_source": request.session.get("mfa_source"),
+        })
         return True
     except APIException:
         return False
+
+
+def stamp_password_session(sender, request, user, **kwargs):
+    """Version even password-only admin sessions so host MFA resets revoke them."""
+    if user.is_superuser and not mfa_policy.needs_challenge(user):
+        row = mfa_policy.credential(user)
+        request.session["mfa_version"] = str(row.version) if row else ""
+        request.session["mfa_source"] = mfa_policy.source_for(user)
 
 
 @login_required(login_url="/control/login/")
@@ -39,6 +51,9 @@ def control_mfa(request):
         return HttpResponseForbidden()
     if session_verified(request):
         return redirect("/control/")
+    if not mfa_policy.needs_challenge(user):
+        logout(request)
+        return redirect("/control/login/")
     if not ControlMFAThrottle().allow_request(request, None):
         return render(request, "accounts/control_mfa.html", {"error": "Too many attempts. Try again later."}, status=429)
     challenge = request.session.get("mfa_challenge")
@@ -54,6 +69,7 @@ def control_mfa(request):
             result = mfa_challenges.finish(challenge, code, request, enrolling=enrolling)
             request.session.cycle_key()
             request.session["mfa_version"] = result["mfa_version"]
+            request.session["mfa_source"] = mfa_policy.VERIFIED
             request.session.pop("mfa_challenge", None)
             if result.get("recovery_codes"):
                 return render(request, "accounts/control_mfa.html", {"recovery_codes": result["recovery_codes"]})

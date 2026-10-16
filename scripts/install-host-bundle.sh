@@ -11,11 +11,15 @@ install_staged_host_bundle() {
     docker-compose.prod.yml docker-compose.cloud.yml
     docker/compose.build.yml docker/compose.tls.yml docker/compose.saas.yml
     docker/compose.api-only.yml docker/compose.api-only-edge.yml docker/compose.external-storage.yml
+    docker/compose.control-tunnel.yml
     deploy/Caddyfile deploy/Caddyfile.saas deploy/Caddyfile.saas-install frontend/nginx.conf
     deploy/nginx.api-only.conf deploy/storage.caddy deploy/storage-disabled.caddy
+    deploy/control-plane-false.caddy deploy/control-plane-true.caddy
+    deploy/control-tunnel-off.caddy deploy/control-tunnel-on.caddy
+    frontend/docker/control-plane-allowlist.sh frontend/docker-entrypoint.d/40-control-plane.sh
     scripts/compose-deployment.sh scripts/setup-question-input.sh scripts/setup-questions.sh
     scripts/setup-area-questions.sh scripts/setup-areas-json.sh scripts/module-area-selection.sh scripts/module-legacy-selection.sh
-    scripts/setup-write-environment.sh scripts/setup-proxy-config.sh scripts/update-rollback.sh
+    scripts/setup-write-environment.sh scripts/setup-proxy-config.sh scripts/update-rollback.sh scripts/apply-settings.sh scripts/control-plane-settings.sh
     scripts/bundled-database-url.py scripts/cleanup-run-once.sh scripts/configure-compose-wrapper.py
     scripts/host-capability.py scripts/import-backup.sh
     scripts/init-host-orchestration.sh scripts/install-runner.sh scripts/runner-release.py scripts/install-host-bundle.sh

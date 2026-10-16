@@ -74,6 +74,8 @@ def issue_social_session(
     verified_attestation=None,
 ):
     assert_social_user_active(user)
+    # Provider authentication is sufficient by platform policy, on web and native alike.
+    user._mfa_provider_verified = True
     from apps.backup.recovery import assert_token_issuance_allowed
 
     try:

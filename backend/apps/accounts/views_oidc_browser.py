@@ -1,7 +1,6 @@
 from django.conf import settings
 from apps.openapi_errors import errors
-from drf_spectacular.utils import OpenApiResponse, extend_schema, PolymorphicProxySerializer
-from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -106,7 +105,7 @@ class OidcBrowserCallbackView(APIView):
         auth=[],
         request=OidcBrowserCallbackSerializer,
         responses={
-            200: PolymorphicProxySerializer(component_name="OidcBrowserLoginResult", serializers=[OidcBrowserLoginResponseSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None),
+            200: OidcBrowserLoginResponseSerializer,
             400: OpenApiResponse(ErrorSerializer),
             401: OpenApiResponse(ErrorSerializer),
             403: OpenApiResponse(ErrorSerializer),

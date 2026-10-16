@@ -84,8 +84,8 @@ class AdminSuperuserOnlyMiddleware:
 
         The consequence is stated rather than hidden: with `password_enabled=False` a
         superadmin can still sign in at `/control/`. That surface is superadmin-only,
-        rate-limited by django-axes, and deliberately not proxied on the public frontend
-        port, so it is the platform's break-glass entry — the same role Platform Email
+        rate-limited by django-axes, and not proxied on the public port unless the operator
+        opts in (`CONTROL_PLANE_PROXY`), so it is the platform's break-glass entry — the same role Platform Email
         plays for the superadmin-access toggle.
         """
         if request.method != "POST" or request.path != self.admin_login_path:

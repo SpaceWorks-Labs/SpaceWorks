@@ -26,6 +26,7 @@ from .presentation_catalog_types import AuditPresentation, P
 from .presentation_catalog_profiles import ENTRIES as _PROFILES
 from .presentation_catalog_p2_wa_twilio import ENTRIES as _WA_TWILIO
 from .presentation_catalog_wa_meta import ENTRIES as _WA_META
+from .presentation_catalog_p2_p_chat import ENTRIES as _P2_P_CHAT
 
 # Closed name -> callable registry for target links. Phase 10 ships no resolver: a link
 # needs a real route and query-level tenant authorization, which no generic one has.
@@ -46,7 +47,7 @@ def _compose(*fragments):
 
 PRESENTATION_CATALOG = _compose(
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
-    _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META,
+    _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT,
 )
 
 

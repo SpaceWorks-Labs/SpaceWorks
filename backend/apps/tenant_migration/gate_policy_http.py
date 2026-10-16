@@ -134,3 +134,6 @@ ADMIN_ACTION_EXEMPTIONS = {
         "Tenant purge is expressly excluded from source quiescence."
     ),
 }
+
+from .gate_policy_p2_p_chat import HTTP_ANONYMOUS_PARTICIPANTS as chat_participants
+HTTP_ANONYMOUS_PARTICIPANTS.update(chat_participants)

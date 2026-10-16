@@ -14,3 +14,9 @@ class IntegrationsConfig(AppConfig):
         register_email_source()
         from .notification_wa_twilio import register as register_wa_twilio
         register_wa_twilio()
+        from .notification_slack import register as register_slack
+        from .notification_mattermost import register as register_mattermost
+        from .notification_discord import register as register_discord
+        register_slack()
+        register_mattermost()
+        register_discord()

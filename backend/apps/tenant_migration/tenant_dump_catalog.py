@@ -101,7 +101,8 @@ class TenantDumpCatalogError(AssertionError):
 # digest from the frozen graph with schema_digest's canonical JSON encoding.
 # Phase 1 merge (notification + profile contracts) and feature/async-tenant-import:
 # re-pinned from schema_digest() over the merged live graph.
-CATALOG_SCHEMA_SHA256 = "9393dfb7f73e4efb9f1f473fe7ddbb9a560616ebe046042646b1c4294e302d5c"
+# Phase 2+3 merge (all 14 lanes + p3 wiring): re-pinned from schema_digest() over the merged live graph.
+CATALOG_SCHEMA_SHA256 = "f901052b4954bfc5bdb36b76a6dca33ca1258e2afd817842de75b229d73d681e"
 # int-events: DROP-only EventAudienceOrganization, display-only staff-grant role_label and
 # Organization.is_discoverable; the runtime guard reproduced 7a7132b9 before these fields.
 # Phase 0 merge: re-pinned again by the catalog guard test after merging int-events.

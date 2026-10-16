@@ -30,9 +30,12 @@ keys, mapped to Twilio variables `1`, `2`, etc. Missing, nested, blank or oversi
 refuse with `template_required`; rendered bodies never supply template variables.
 Inside the window only, bounded free-form `rendered.text` is allowed. Outbound messages
 never open/extend a session. A future inbound timestamp also refuses free-form sending.
+Phase 3 shares `notification_wa_window.in_session_window` with Meta, resolution and delivery;
+exactly 24 hours is outside the window. Twilio timestamp parsing is unchanged.
 
-Two reserved bindings support setup: `opt_in/member/en`, with `variables=["code"]`,
-and `test/member/en`, with `variables=[]`. Both need provider approval. Challenge codes
+Two reserved bindings support setup: `notification_opt_in/member/en`, with `variables=["code"]`,
+and `notification_test/member/en`, with `variables=[]` (aligned with Meta in Phase 3).
+Both need provider approval. Challenge codes
 are sent to the encrypted E.164 candidate; only a matching signed inbound reply consumes
 the challenge and creates the endpoint. The code is not returned to the browser.
 Tests always use the test template, even inside a session, and require a verified,

@@ -59,20 +59,24 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   has a substantive report or an explicitly gated row.
 - **Notifications.** Transactional personal outboxes, verified Telegram, Slack, Mattermost, Discord
   and WhatsApp connections, per-category channel selection and email fallback; staff rooms retain
-  their delivery matrix. Space Managers configure encrypted channel credentials. WhatsApp Twilio is
-  registered; Meta and browser OAuth integration limits are recorded in the
+  their delivery matrix. Space Managers configure encrypted channel credentials. Member JWTs reach
+  personal routes; browser OAuth completes through authenticated challenge verification. WhatsApp
+  Twilio and Meta are registered/mounted; remaining delivery limits are recorded in the
   [delivery contract](docs/notification-contract.md#integration-limits-in-this-tree).
 - **Accounts and profiles.** Password, Google, Apple, member-only GitHub, OIDC (Keycloak, Authentik,
   Azure AD, Okta) and member phone/SMS sign-in. Methods are switchable; external identity and
   staff-created walk-ins support spaces without the member-account ecosystem. Opt-in maker profiles
   include projects, interests, education, optional GitHub counts and a consent-based member directory.
   Public pages at `/<handle>` add fresh publication consent, separate activity-family opt-ins,
-  counts-only activity and GitHub calendars, and HOSTED/SPOKE event badges.
+  counts-only activity and GitHub calendars, and HOSTED/SPOKE event badges. Public reads expose
+  `viewer_is_owner`; the member profile exposes this membership's `verified` flag.
 - **Presence.** Time-limited member and guest check-in with project/visitor/event statuses, renewal
   prompts, a hard location check for self check-in and a staff alternative. Privacy controls govern
-  the public TV display at `/m/<slug>/now`; browser GPS remains spoofable.
+  the public TV display at `/m/<slug>/now`; browser GPS remains spoofable. Presence is installed on
+  existing spaces by migration 0096; new spaces opt in. Defaults are 1/2/3/4 h.
 - **Space management.** Task-grouped Space Manager navigation, a searchable settings hub and setup
-  checklist; domain managers reach their own settings from their consoles.
+  checklist; domain managers reach their own settings from their consoles. The dashboard counts
+  unresolved booking issues under current booking authority and links to the issues view.
 - **Modules and editions.** Install only the areas you use; uninstall hides surfaces and retains data.
   Events-only and bookings-only editions hide unused lending surfaces through `SPACEWORKS_EDITION`.
 - **Operations.** `X-Request-ID` connects JSON request logs and Celery; a token-protected Prometheus

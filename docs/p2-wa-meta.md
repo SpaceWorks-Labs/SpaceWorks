@@ -2,7 +2,9 @@
 
 Branch: `lane/p2-wa-meta`, based on `9cc3c9cc`. All changes are new files in this worktree.
 Nothing was staged or committed. Frozen contracts, frontend, shared barrels and integrator-owned
-documentation were left unchanged. The provider becomes active after the wiring below is applied.
+documentation were left unchanged in that lane. Phase 3 registered/mounted Meta and wired its
+gate/origin declarations and environment setting. Its readiness still requires an unregistered
+whatsapp module, blocking ordinary send/start/test; wiring is not an operational delivery claim.
 
 ## Files changed
 
@@ -85,7 +87,8 @@ the user instead receives instructions to message the business number with the c
 no outbound request. Only a signed matching inbound reply consumes the single-use challenge and creates
 the endpoint. User-initiated proof can bootstrap linking before a diagnostic approval refresh.
 For diagnostics outside the session window, bind `notification_test/member/en` with no variables.
-Both the notifications and WhatsApp modules must be enabled for proof/send/test operations.
+The adapter requires notifications plus module_enabled(..., "whatsapp") for proof/send/test.
+There is no registered whatsapp module key; this remains a blocking readiness limit after Phase 3.
 
 Sent/delivered/read/terminal-failed updates use the frozen monotonic callback service. Transient error
 callbacks are authenticated through `verified_callback` with state `retrying`, then a small tenant-locked
@@ -108,44 +111,14 @@ continues to work while delivery switches are off; proofs still require the modu
 
 ## Integrator requests
 
-The approved v2 ownership table assigns these shared files to the integrator. Apply before runtime checks:
+Phase 3 status (2026-10-17), verified in the merged code:
 
-1. In `backend/apps/integrations/apps.py`, add inside `IntegrationsConfig.ready()`:
-
-   ```python
-   from .notification_wa_meta import register_meta_provider
-   register_meta_provider()
-   ```
-
-2. In `backend/apps/integrations/urls.py`, compose the new URL sibling:
-
-   ```python
-   from .notification_wa_meta_urls import urlpatterns as wa_meta_urls
-   urlpatterns += wa_meta_urls
-   ```
-
-3. Add to `HTTP_ANONYMOUS_PARTICIPANTS` in `backend/apps/tenant_migration/gate_policy_http.py`:
-
-   ```python
-   "apps.integrations.notification_wa_meta_views.MetaWebhookView.post": (
-       "Raw Meta HMAC and URL generation bind one tenant; batch application, "
-       "proofs, consent revocation and delivery updates commit under tenant_write."
-   ),
-   ```
-
-   Do not put this mutating route in `HTTP_EXEMPTIONS` or `HTTP_ANONYMOUS_EXEMPTIONS`.
-   No task declaration is needed: retries use the existing notification outbox sweeper.
-
-4. Add to `MAKERSPACE_KWARG_ROUTES` in `backend/apps/makerspaces/origin_scope_routes.py`:
-
-   ```python
-   "whatsapp-meta-webhook": "makerspace_id",
-   ```
-
-   The generic `makerspace_id` rule already resolves this path; this explicit entry records ownership.
-   The API-client HMAC registry and claim-route matrix need **no entries**: the integrations prefix is
-   outside their protected/reachable prefixes, and this view has no claim authenticator. Adding entries
-   to those registries would create stale declarations. Recheck this classification if prefixes change.
+1. **DONE:** `IntegrationsConfig.ready()` calls `register_meta_provider()`.
+2. **DONE:** `integrations/urls.py` composes `notification_wa_meta_urls.urlpatterns`.
+3. **DONE:** `gate_policy_http.HTTP_ANONYMOUS_PARTICIPANTS` declares `MetaWebhookView.post`
+   with the signed tenant/batch/tenant_write rationale; it is not a quiescence exemption.
+4. **DONE:** `origin_scope_routes.MAKERSPACE_KWARG_ROUTES` binds whatsapp-meta-webhook to
+   makerspace_id. No API-client HMAC/claim registry widening is introduced.
 
 5. Audit presentation (done in-lane by the Claude verifier): `apps/audit/presentation_catalog_wa_meta.py`
    holds `notification.whatsapp_inbound` and `notification.whatsapp_delivery_updated`, composed by one
@@ -157,9 +130,11 @@ The approved v2 ownership table assigns these shared files to the integrator. Ap
    bindings before starting a candidate-number challenge, or use user-initiated inbound proof followed
    by a diagnostic test. Diagnostics and outbound challenges refresh all configured Meta approvals.
 
-7. Dedupe `notification_wa_window.py` with the Twilio lane. Its exported helpers are
-   `in_session_window(endpoint, *, now=None)` and `inbound_time(value, *, now=None)`.
-   Use signed event timestamps for both providers; do not reopen a session from delivery callbacks.
+7. **Shared window DONE:** both providers, resolver and delivery use
+   `notification_wa_window.in_session_window`; exactly 24 h and future timestamps refuse.
+   Twilio timestamp parsing is unchanged; Meta retains bounded signed inbound event-time parsing.
+   Both providers use notification_opt_in/notification_test member/en bindings.
+   `WHATSAPP_META_GRAPH_VERSION` is environment-backed, default v25.0.
 
 8. Regenerate the merged OpenAPI snapshot/client on the Django host; this lane adds spectacular
    annotations only and does not edit frontend artifacts. Run the tests below plus notification contract,

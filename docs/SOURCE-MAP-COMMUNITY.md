@@ -10,6 +10,8 @@ PublicHandleRedirect and ProfileTimelineEntry; migration 0094 adds the public co
 `public_profile_handles.py` owns locked claim/rename/release, `public_profile_reserved.py` and
 `public_profile_route_inventory.py` the reserved namespace and drift inputs. `public_profile_access.py`
 owns the single public/tenant predicate; projection/serializers/views own the allow-list response.
+public_profile_views.py optionally authenticates the main read for viewer_is_owner;
+profile_services.py/profile_serializers.py expose verified from the selected membership.
 `public_profile_validation.py` owns fresh publication consent and bounded timeline/link fields;
 `profile_services.py`/`profile_projects.py` apply member-owned audited writes. Contract routes/views
 own handles and timeline. `public_profile_cache.py` owns generation/cache invalidation.
@@ -42,13 +44,17 @@ post-commit event-ticket adapter, called by events/services_checkin.py.
 `schedule.py` supplies the common beat/beat-less cadence. `purge.py` owns presence purge.
 `serializers.py`/`schema.py`, views.py/views_public.py/views_staff.py and urls.py/urls_admin.py
 split member, TV and staff APIs. `makerspaces/module_registry_p2_presence.py` declares the module.
+makerspaces/0096_enable_existing_presence installs it for existing rows; new spaces opt in.
+makerspaces/validators.py shares the 60/120/180/240-minute service defaults. Current-session and
+staff roster serializers expose personal_opt_out_allowed/names_displayed even on empty responses.
 
 `features/presence/api.ts` owns typed requests, query keys, polling and invalidation.
 PresenceCheckInSheet/location/presenceCopy own the self-check-in interaction;
 PresencePanel/PresenceRenewPrompt/renewReminder/webNotify own session/renewal prompts.
 PresenceRoster/StaffCheckInDialog own the staff roster; PresenceNowPage/PresenceNowBoard own
-/m/:slug/now and the single-space /now alias. PresencePrivacySettings is a standalone tenant
-editor, currently unmounted. See INVARIANTS.md for rollout/default/editor limitations.
+/m/:slug/now and the single-space /now alias. PresencePrivacySettings is mounted by
+MakerspaceSettingsPanel for Space Managers with presence enabled. The notification feature-enum
+editor limit remains in INVARIANTS.md.
 
 ## Events and bookings
 
@@ -65,6 +71,8 @@ issues/departure routes, serializers_departure.py their wire shape, member_notic
 models_gallery.py/services_gallery.py/views_gallery.py own public resource photos; views_venue.py
 derives Hosted at from public space/location matches. urls_p2.py composes these routes.
 notification_sources.py/reminder_envelopes.py/broadcasts_personal.py own booking personal delivery;
+notification_owner_mailbox.py registers the email-only same-owner contact compatibility source,
+rechecks live gates and reserves/hands off its envelope email leg without parallel delivery.
 purge_p2.py removes departures/issues/photo objects. Migrations bookings/0020 and makerspaces/0095
 own schema/immutability fences and the audit-aware requester-notification default.
 
@@ -89,6 +97,9 @@ links and checklist. MakerspaceSettingsPanel composes the sections; useDomainSet
 domain consoles mount local settings. admin_api/views_loan_policy.py and
 makerspaces/loan_policy_settings.py share EDIT_INVENTORY-or-MANAGE_MAKERSPACE authorization.
 Fixed roles remain in makerspaces/role_catalog.py; menu grouping adds no authority.
+operations/dashboard_programmes.py counts unresolved BookingIssue rows as open_booking_issues with
+MANAGE_BOOKINGS scoping; serializers_dashboard.py exposes it. DashboardStats.ts and dashboardLinks.ts
+render the Booking issues action and route it to the issues view.
 
 ## File inventory by owner
 

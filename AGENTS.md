@@ -79,7 +79,10 @@ verified private account-link proofs, never workflow decisions. Two architectura
 - **Notifications v2** — transactional personal envelopes/outbox, per-makerspace channel configuration
   with encrypted credentials, provider-proven endpoints and per-category channel selections with email
   fallback. Space Managers configure channels; personal choices cannot grant tenant authority. Mandatory
-  mail and email-only authentication proofs keep their rules. Contract and integration limits:
+  mail and email-only authentication proofs keep their rules. Member JWTs reach exactly six personal
+  route shapes; chat OAuth completes only through authenticated challenge verification. Both WhatsApp
+  factories/webhooks are wired, but Meta's readiness still requires an unregistered module. Contract
+  and remaining integration limits:
   `docs/notification-contract.md`; actual adapter coverage: `docs/notification-coverage.md`.
 - **Telegram Integration** — sends per-makerspace room alerts and verified personal messages.
   **Outbound for decisions.** The secret-authenticated webhook accepts only private `/start` account-link
@@ -88,7 +91,10 @@ verified private account-link proofs, never workflow decisions. Two architectura
 - **Public profiles and presence** — opt-in `/<handle>` publication is separate from the member
   directory. The `presence` module owns member/guest check-in and the privacy-controlled `/m/<slug>/now`
   display. Self check-in requires an enabled, configured geofence and an in-range reading; staff can
-  check people in without GPS. Long-form consent, display and lifecycle rules: `docs/INVARIANTS.md`.
+  check people in without GPS. Migration `makerspaces/0096` installs presence on existing spaces;
+  new spaces opt in. Shared presets are 60/120/180/240 minutes. Current-session reads expose name/
+  opt-out policy even when empty; public profiles expose `viewer_is_owner`, member profiles `verified`.
+  Long-form consent, display and lifecycle rules: `docs/INVARIANTS.md`.
 
 ## Request State Machine
 

@@ -147,52 +147,24 @@ portable catalog digest was not changed.
 
 ## Integrator requests
 
-1. **Wire maintenance's existing notification entry point.** In
-   `backend/apps/maintenance/notifications.py`, retain the existing public signature
-   and delegate its function body to
-   `apps.machines.notifications_p2_maintenance.notify(instance, event_name,
-   log_id=log_id, sync=sync, due_reason=due_reason)`. This covers all schedule/log,
-   calendar and usage-meter call sites without editing their workflows.
-2. **Wire procurement's existing notification entry point.** In
-   `backend/apps/procurement/notifications.py`, retain `notify_stock(item, event)`
-   and delegate to `apps.machines.notifications_p2_stock.notify(item, event)`.
-   The automatic consumable restock path in `machines/low_stock.py` is already wired;
-   this second edit covers procurement-received and any other callers of the barrel.
-3. **Wire the live room guard.** In the integrator-owned
-   `backend/apps/integrations/dispatch_channels_delivery.py`, before timing/provider
-   delivery in `_deliver_notification(log)`, add the following. The module-level
-   alias is also the installation marker checked by this lane; room queuing fails
-   closed while it is absent.
+Phase 3 status (2026-10-17), verified in the merged code; no runtime test claim:
 
-   ```python
-   # Module-level import:
-   from apps.hardware_requests.notifications_p2_rooms import eligible_room as EQUIPMENT_SOURCE_GUARD
-
-   # Inside _deliver_notification, before timing/provider delivery:
-   if not EQUIPMENT_SOURCE_GUARD(log):
-       log.status = NotificationDeliveryStatus.SKIPPED
-       log.error = "equipment_source_no_longer_eligible"
-       log.save(update_fields=["status", "error", "updated_at"])
-       return log
-   ```
-
-   The hook is a no-op for other lanes' logs. It rechecks source revision/ownership,
-   module/matrix state and the room's current machine/type/category matching.
-   **This lane's room delivery remains disabled until this is wired.**
-4. **Apply the shared-policy contract requests below.** Their adapter-side hooks
-   already exist in `hardware_requests/notifications_p2_email.py`.
-5. **Coordinate financial dedup with the payments lane.** The owner charge envelope
-   uses feature/stream `payments`, event `charge_raised`, and this exact key:
-   `payment:{payment.pk}:charge_raised:{revision}:requester:{payment.member_id}`,
-   where `revision = sha256('|'.join(str(v) for v in
-   (payment.created_at, payment.subject_type, payment.subject_id)).encode()).hexdigest()`.
-   The payment lane must use this same key/revision for loan charge creation; first
-   writer wins. This lane registers `hardware.charge`, so the payment adapter can
-   keep its own source kind: it must not attempt to re-register ours. Domain staff
-   summaries retain `deposit_raised` / `late_fee_raised` and contain no amounts.
-6. In `integrations/notification_catalog.py`, append `problem_report.filed` to
-   `FEATURE_EVENTS[HARDWARE_REQUESTS]` so editors and provider template bindings can
-   configure the new envelope event. No new feature/module key is proposed.
+1. **DONE:** `maintenance/notifications.py` explicitly re-exports
+   `machines.notifications_p2_maintenance.notify` as `notify_maintenance_lifecycle`.
+   Schedule/log, calendar and usage-meter callers reach the source-backed adapter.
+2. **DONE:** `procurement/notifications.py` explicitly re-exports
+   `machines.notifications_p2_stock.notify` as `notify_stock`; automatic low-stock and
+   procurement-received paths now reach the adapter.
+3. **DONE:** `integrations/dispatch_channels_delivery._deliver_notification` calls
+   `hardware_requests.notifications_p2_rooms.eligible_room` before timing/provider delivery.
+   Equipment room queuing no longer waits for an installation marker.
+4. **OPEN:** shared machine-module eligibility and equipment email policy/render hooks below.
+   `hardware.owner_mailbox` separately preserves the same owner's verified contact email.
+5. **DONE:** hardware charge summaries are staff-only. The ledger's `payments.ledger`
+   charge_raised intent owns the single borrower notice; the earlier proposed shared hardware
+   owner key is superseded, not an additional dedup contract.
+6. **DONE:** `notification_catalog.FEATURE_EVENTS[HARDWARE_REQUESTS]` includes
+   `problem_report.filed` for editor/provider bindings; no new feature/module key.
 7. Regenerate OpenAPI and the frontend client on the Django host after integration
    (the only lane schema wording change is watch eligibility). Update
    `SOURCE-MAP.md` with the adapter/source modules, `INVARIANTS.md` with transactional
@@ -233,8 +205,8 @@ shared seams that prevent signing off all rows on this tree:
    with a blocking legacy email rule refuse the whole personal intent, preventing
    an unwanted email. After wiring, chosen chat can continue while email is refused.
 3. **Existing proof of the owner's mailbox.** The same resolver currently insists
-   on `User.email_verified_at`, losing reminders that previously accepted an equal,
-   verified loan contact. Accept `user.email_verified_at OR
+   on `User.email_verified_at`; `hardware.owner_mailbox` separately preserves reminders
+   for an equal, verified loan contact. The shared-resolver request remains: accept `user.email_verified_at OR
    notifications_p2_email.proven_address(envelope)` while retaining nonempty address,
    suppression and module checks. The hook only recognizes proof of the SAME
    explicitly owned account mailbox. A legacy verified contact differing from the

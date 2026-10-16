@@ -5,10 +5,11 @@ tests have not run**. Nothing was staged, committed, merged or pushed. The index
 is empty. Frozen contract files, profile contracts, frontend and integrator-owned
 documentation were not edited.
 
-**Integration is still required before calling this lane complete.** In particular,
-the legacy direct-mail defaults cannot be preserved by the frozen resolver, and
-the member-broadcast producer lives outside the assigned directories. See the
-exact requests below. No runtime pass is claimed for existing notification tests.
+**Phase 3 status (2026-10-17):** member broadcasts, source-intent legacy inbox dedup and catalog
+strings are wired. Direct-mail compatibility is preserved by `direct_mail_unless_routed`; the
+source-bound resolver default itself is still absent. Stocktake's procurement gate, revoked
+application owners, non-equipment room retries and report sent-status limits remain. The lane
+validation below is historical; no runtime pass is claimed by this documentation refresh.
 
 ## Implemented behavior
 
@@ -39,8 +40,8 @@ exact requests below. No runtime pass is claimed for existing notification tests
   availability and expiry. Raw recipient email addresses never establish chat
   identities. Existing external email remains; room content no longer contains
   storage download grants. Staff links name the source makerspace.
-- A member-broadcast adapter is implemented, including live sender/segment checks,
-  but its existing producer needs the integration edit below.
+- The member-broadcast adapter includes live sender/segment checks; Phase 3 wires its existing
+  producer in `notifications/broadcasts.py` inside the audited transaction.
 - Personal deliveries use the frozen outbox. Separate staff-room summaries retain
   the existing destination/scoping/quota/template dispatcher, with transactional
   room logs and stable intent metadata. Native push is not also sent as a room.
@@ -81,9 +82,8 @@ signal. It ignores raw fixture loads and its own alert's transport.
 
 ## Integrator requests
 
-1. **Wire member broadcasts.** In `backend/apps/notifications/broadcasts.py`, in
-   `send_broadcast`, replace the per-user legacy builder/`notify_lifecycle` loop
-   with the following, inside its existing atomic transaction:
+1. **Member broadcasts — DONE in Phase 3.** `backend/apps/notifications/broadcasts.py`, in
+   `send_broadcast`, uses the following inside its existing atomic transaction:
 
    ```python
    from apps.makerspaces.notifications_p2_broadcasts import notify_broadcast
@@ -95,13 +95,11 @@ signal. It ignores raw fixture loads and its own alert's transport.
    audit. The adapter stores safe segment selectors on each envelope, so no
    MemberBroadcast model migration is required.
 
-2. **Deduplicate the existing personal legacy mirrors.** The legacy shared feed
-   is intentionally retained. `notifications/legacy_inbox.py` still independently
-   mirrors `stocktake.scheduled`, `stocktake.completed` and `email.failed` with a
-   random UUID. Add an optional source intent identity to `emit_notification` and
-   pass it from the stocktake producers and first-failure producer in
-   `integrations/dispatch_delivery.py`. Use `get_or_create` and the same per-user
-   event UUID as `notification_builtin`: `uuid5(NAMESPACE_URL, envelope.dedup_key)`.
+2. **Personal legacy mirrors — DONE in Phase 3.** The legacy shared feed is intentionally
+   retained. `emit_notification` now carries source intent from the stocktake producers and
+   `integrations/dispatch_delivery.py` first-failure producer. `notifications/legacy_inbox.py`
+   uses `get_or_create` and the same per-user event UUID as `notification_builtin`:
+   `uuid5(NAMESPACE_URL, envelope.dedup_key)`.
    The adapter's key is `p2:{identity(space_id, source_kind, source_id, revision,
    event)}:u:{user_id}`. Preserve the shared Notification row and independent
    failure in-app visibility. Merely removing all legacy mirrors loses that
@@ -114,7 +112,7 @@ signal. It ignores raw fixture loads and its own alert's transport.
    from both domain and payment seams reserve the same intent. Domain staff-only
    summaries can retain their separate event names.
 
-4. **Catalog entries.** Add these strings to `integrations/notification_catalog.py`
+4. **Catalog entries — DONE in Phase 3.** These strings are in `integrations/notification_catalog.py`
    `FEATURE_EVENTS`: members = `joined`, `verified`, `invitation`, `vouched`;
    payments = `document_issued`; api_access = `subdomain_request_resolved`,
    `email.failed`, `scheduled_report`; stock = `scheduled`, `completed`.
@@ -137,16 +135,16 @@ signal. It ignores raw fixture loads and its own alert's transport.
 
 ## Contract change requests
 
-1. **Preserve existing direct-mail defaults.** Frozen
+1. **Preserve existing direct-mail defaults (mitigated by the compatibility leg below).** Frozen
    `notification_resolution.target_eligible` currently grants an email default
    only to `payments/payment_received`. Add an equivalent, source-bound default
    for `(membership.lifecycle, joined|approved|verified)`,
    `(membership.application, invitation)` and
    `(payments.document, document_issued)`. Apply existing verified-address,
    suppression, module and personal-selection gates; these are not new mandatory
-   mail exemptions. Without this, these formerly direct emails disappear when
-   the members/payments matrix email cell has its default OFF. Envelopes and
-   explicitly selected/enabled chat work now, but default-email parity is pending.
+   mail exemptions. Envelope email alone still omits these formerly direct notices when
+   the members/payments matrix defaults OFF. The compatibility leg described below preserves
+   that mail; migrating its defaults into the shared resolver remains pending.
 
 2. **Stocktake's domain gate.** Frozen `notification_resolution.eligible` calls
    `feature_available(space, "stock")`, which requires procurement. For

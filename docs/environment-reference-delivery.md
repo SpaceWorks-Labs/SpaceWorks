@@ -16,12 +16,22 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `EMAIL_PORT` | `587` |  |
 | `EMAIL_USE_TLS` | `True` |  |
 | `GITHUB_API_TOKEN` | `''` | Optional; raises the GitHub rate limit for maker-profile contribution refresh. |
+| `NOTIFICATION_SLACK_REDIRECT_URI` | `''` | HTTPS frontend notification-settings return; blank refuses personal linking. Supports `{makerspace_id}` / `{challenge_id}`; appends `notify_challenge`. |
+| `NOTIFICATION_MATTERMOST_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
+| `NOTIFICATION_DISCORD_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
+| `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | `False` | Only boolean true allows private self-hosted Mattermost addresses. |
 | `OTP_SMS_DAILY_CAP` | `200` | Platform-wide daily cap on SMS sign-in codes. |
 | `PUSH_TOKEN_HMAC_KEY` | `''` | Keys the device-token digest; push registration answers 503 while unset. |
 | `STRIPE_CONNECT_REDIRECT_URI` | `''` |  |
 | `TELEGRAM_API_URL` | `'https://api.telegram.org'` |  |
 | `TELEGRAM_BOT_TOKEN` | `''` |  |
 | `TELEGRAM_WEBHOOK_SECRET` | `''` | The webhook answers 403 while unset; callbacks are acknowledged and ignored. |
+| `WHATSAPP_META_GRAPH_VERSION` | `'v25.0'` | Version used by Meta HTTP requests; factory/webhook are wired, but the remaining readiness gate is documented in the delivery contract. |
+
+These notification settings are loaded from the environment and forwarded by deployment manifests.
+OAuth returns `?notify_challenge=<id>&code=...&state=...`; the frontend posts to authenticated personal
+challenge verification. Authorization and exchange must use the identical provider-registered URI.
+See the [delivery contract](notification-contract.md#provider-connection-and-deployment) for setup.
 
 ## Sign-in: social, OIDC, native devices, member claims
 

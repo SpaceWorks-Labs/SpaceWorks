@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiPath } from "../../generated/api";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import type { CustomAnswers, CustomFormSchema } from "../forms/customFormTypes";
+import type { GalleryPhoto } from "../../components/ui/Gallery";
 
 export type PublicBookableSpace = {
   public_token: string;
@@ -12,6 +13,8 @@ export type PublicBookableSpace = {
   capacity: number;
   location: string;
   image_url: string;
+  /** Ordered place photos (Phase 2 gallery); absent on older servers. */
+  photos?: GalleryPhoto[];
   approval_mode: "instant" | "approve";
   custom_form: CustomFormSchema;
   show_public_availability: boolean;

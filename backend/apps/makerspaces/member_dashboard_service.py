@@ -248,4 +248,8 @@ def notices(membership, activity):
             "title": f"You have {owed} outstanding",
             "body": "Pay online where available, or settle it at the space.",
         })
+    from apps.separability.tombstones import app_is_tombstoned
+    if not app_is_tombstoned("bookings"):
+        from apps.bookings.member_notices import booking_notices
+        feed.extend(booking_notices(membership, now))
     return feed

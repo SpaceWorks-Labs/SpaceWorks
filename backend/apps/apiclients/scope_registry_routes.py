@@ -55,6 +55,8 @@ _ROUTE_DEFINITIONS = (
     ("public-booking-feed", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ('member-booking-list', _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ('member-booking-cancel', _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ('member-booking-checkout', _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ('public-event-venue', _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-makerspaces", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
     ("v1:public-makerspaces", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
     ("public-inventory", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),

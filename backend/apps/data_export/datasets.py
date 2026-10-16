@@ -187,6 +187,8 @@ def _columns(fidelity, label):
 
 from .datasets_w7_events import EVENT_DATASET_SPECS
 DATASET_SPECS.update(EVENT_DATASET_SPECS)
+from apps.tenant_migration.catalog_p2_bookings import DATASETS as P2_BOOKING_DATASETS
+DATASET_SPECS.update({label: (path, P(paths)) for label, (path, paths) in P2_BOOKING_DATASETS.items()})
 
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs

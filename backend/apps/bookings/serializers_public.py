@@ -17,11 +17,18 @@ PUBLIC_BOOKABLE_SPACE_FIELDS = (
     'capacity',
     'location',
     'image_url',
+    'photos',
     'approval_mode',
     'custom_form',
     'show_public_availability',
     'show_public_booker_names',
 )
+
+
+class PublicSpacePhotoSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    url = serializers.CharField(read_only=True)
+    caption = serializers.CharField(read_only=True, allow_blank=True)
 
 
 class PublicBookableSpaceSerializer(serializers.Serializer):
@@ -35,6 +42,7 @@ class PublicBookableSpaceSerializer(serializers.Serializer):
     capacity = serializers.IntegerField(min_value=0, read_only=True)
     location = serializers.CharField(read_only=True)
     image_url = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
     approval_mode = serializers.ChoiceField(
         choices=BookableSpace.ApprovalMode.choices,
         read_only=True,
@@ -46,6 +54,11 @@ class PublicBookableSpaceSerializer(serializers.Serializer):
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_image_url(self, obj):
         return storage.public_url(obj.image_key)
+
+    @extend_schema_field(PublicSpacePhotoSerializer(many=True))
+    def get_photos(self, obj):
+        from .services_gallery import public_photos
+        return public_photos(obj)
 
 
 class PublicSpaceAvailabilityQuerySerializer(serializers.Serializer):

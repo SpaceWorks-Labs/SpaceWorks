@@ -51,9 +51,11 @@ def restore_booking(booking, *, actor):
     limits.check_quota(space.makerspace, "bookings", adding=1)
     locked.cancelled_at = None
     locked.status_before_cancel = ""
+    # The cancellation reason stays in the audit history; the live booking no longer has one.
+    locked.decision_reason = ""
     locked.calendar_sequence += 1
     locked.calendar_updated_at = now
-    locked.save(update_fields=["status", "cancelled_at", "status_before_cancel",
+    locked.save(update_fields=["status", "cancelled_at", "status_before_cancel", "decision_reason",
                                "calendar_sequence", "calendar_updated_at"])
     _audit(space, actor, "booking.restored", locked, {"booking_id": locked.pk, "status": admitted})
     from .notifications import notify_booking_status

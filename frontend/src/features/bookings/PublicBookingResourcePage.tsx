@@ -14,6 +14,7 @@ import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { PublicBookingForm } from "./PublicBookingForm";
 import { BookingResourceWebsite } from "./BookingResourceWebsite";
 import { usePublicBookingResource } from "./bookingWebsiteApi";
+import { photosSection } from "./spacePhotosSection";
 
 export function PublicBookingResourcePage() {
   const { slug = "", resourceToken = "" } = useParams();
@@ -55,6 +56,7 @@ export function PublicBookingResourcePage() {
         facts={resource?.location ? [{ identity: { kind: "icon", icon: "Info", tone: "neutral" }, primary: resource.location,
           secondary: resource.capacity ? `Capacity ${resource.capacity}` : "Capacity not specified" }] : []}
         sections={resource ? [
+          ...photosSection(resource),
           { id: "about", label: "About this resource", content: <p className="whitespace-pre-wrap leading-7">{resource.description}</p> },
           { id: "rules", label: "Booking rules", content: <div className="grid gap-2 leading-7">
             <p>{resource.rules.minimum_minutes}–{resource.rules.maximum_minutes} minutes; request at least {resource.rules.lead_minutes} minutes ahead, up to {resource.rules.advance_days} days ahead.</p>

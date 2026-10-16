@@ -37,6 +37,9 @@ EXPORTED_MODEL_FIELDS["events.EventRegistration"] += " cancelled_at status_befor
 EXPORTED_MODEL_FIELDS["makerspaces.Makerspace"] += " event_default_registration_audience"
 EXPORTED_MODEL_FIELDS["bookings.Booking"] += " calendar_sequence calendar_updated_at cancelled_at status_before_cancel checkin_token arrived_at"
 EXPORTED_MODEL_FIELDS["bookings.BookingCheckInEvent"] = "id booking actor action source recorded_at"
+from apps.tenant_migration.catalog_p2_bookings import EXPORTED_FIELDS as P2_BOOKING_FIELDS, BOOKING_EXTRA_FIELDS
+EXPORTED_MODEL_FIELDS.update(P2_BOOKING_FIELDS)
+EXPORTED_MODEL_FIELDS["bookings.Booking"] += " " + " ".join(sorted(BOOKING_EXTRA_FIELDS))
 EXPORTED_MODEL_FIELDS["notifications.MemberNotificationPreference"] += " daily_digest"
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {

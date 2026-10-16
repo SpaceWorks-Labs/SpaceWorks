@@ -60,13 +60,16 @@ def bookings_delete(makerspace, cursor):
 
     from apps.bookings.models_arrival import BookingCheckInEvent
     arrivals, arrival_labels = _delete(BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace))
+    from apps.bookings.purge_p2 import delete_departure_history
+    departures, departure_labels = delete_departure_history(makerspace)
     bookings, booking_labels = _delete(
         rbac.scope_notification_policy(Booking.objects.all(), makerspace_id=makerspace.pk, field='space__makerspace_id')
     )
     spaces, space_labels = _delete(rbac.scope_notification_policy(BookableSpace.objects.all(), makerspace_id=makerspace.pk))
     return _counts(
-        model_labels=booking_labels | space_labels | feed_labels | grant_labels | invite_labels | arrival_labels | campaign_labels,
-        arrivals=arrivals,
+        model_labels=(booking_labels | space_labels | feed_labels | grant_labels | invite_labels | arrival_labels
+                      | campaign_labels | departure_labels),
+        arrivals=arrivals, departures=departures,
         broadcasts=campaigns,
         staff_grants=grants, staff_invites=invites,
         calendar_feeds=feeds,
@@ -78,11 +81,12 @@ def bookings_delete(makerspace, cursor):
 def bookings_public_images(makerspace):
     from apps.bookings.models import BookableSpace
 
+    from apps.bookings.purge_p2 import photo_keys
     return list(
         BookableSpace.objects.filter(makerspace=makerspace).values_list(
             "image_key", flat=True
         )
-    )
+    ) + photo_keys(makerspace)
 
 
 def machine_service_private_keys(makerspace, add):

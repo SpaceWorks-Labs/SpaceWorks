@@ -25,6 +25,9 @@ import { BookingBroadcastsPanel } from "./BookingBroadcastsPanel";
 import { bookingAccess } from "./bookingStaffPermissions";
 import { BookingResourceAnalytics } from "./BookingResourceAnalytics";
 import { BookingSpaceSettings } from "./BookingSpaceSettings";
+import { BookingDecisionDialog } from "./BookingDecisionDialog";
+import { BookingIssuesList } from "./BookingIssuesList";
+import { SpacePhotosSection } from "./SpacePhotosSection";
 
 /** Later lanes supply their separately authorized tab components through the `additionalTabs` slot. */
 export type BookingDrawerTab = { id: string; label: string; content: ReactNode };
@@ -85,10 +88,13 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
     ...additionalTabs,
   ] : additionalTabs;
   const tabs = useOpsTabs("bookingTab", [
-    ...(access.reservations ? [{ key: "calendar", label: "Calendar" }, { key: "requests", label: "Requests", count: bookings.data?.count }] : []),
+    ...(access.reservations ? [{ key: "requests", label: "Requests", count: bookings.data?.count }, { key: "calendar", label: "Calendar" }] : []),
     ...optionalTabs.map(tab => ({ key: tab.id, label: tab.label })),
+    ...(access.reservations ? [{ key: "issues", label: "Issues" }] : []),
+    ...(access.manager || access.edit ? [{ key: "photos", label: "Photos" }] : []),
     { key: "settings", label: access.manager || access.edit ? "Settings" : "Details" }],
-    !access.reservations ? optionalTabs[0]?.id ?? "settings" : params.get("booking") ? "requests" : "calendar");
+    // Requests first: the basic path is apply -> review -> notify.
+    !access.reservations ? optionalTabs[0]?.id ?? "settings" : "requests");
   const [createOpen, setCreateOpen] = useState(initialCreateOpen);
   const openBooking = (bookingId: number) => setParams(current => {
     const next = new URLSearchParams(current);
@@ -116,6 +122,8 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
             {tabs.active === "settings" ? <BookingSpaceSettings makerspaceId={makerspaceId} space={space} access={access} update={update} />
               : optional ? optional.content
               : tabs.active === "calendar" ? <BookingAgenda spaceId={spaceId} onOpen={openBooking} />
+              : tabs.active === "issues" ? <BookingIssuesList makerspaceId={makerspaceId} spaceId={spaceId} />
+              : tabs.active === "photos" ? <SpacePhotosSection spaceId={spaceId} active={space.is_active} />
               : <BookingRequests makerspaceId={makerspaceId} spaceId={spaceId} space={space} canReconcile={access.manager} bookings={bookings} list={list}
                 filters={filters} setFilter={setFilter} page={page} setPage={setPage}
                 onAction={(booking, nextAction) => setPendingAction({ booking, action: nextAction })} />}
@@ -125,8 +133,14 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
       <Modal open={createOpen && access.reservations} onClose={() => setCreateOpen(false)} title="New booking">
         {space && createOpen && access.reservations ? <StaffBookingForm recurringEnabled={recurringEnabled || Boolean(space.recurring_enabled)} makerspaceId={makerspaceId} space={space} /> : null}
       </Modal>
+      <BookingDecisionDialog key={pendingAction ? `${pendingAction.booking.id}-${pendingAction.action}` : "none"}
+        open={pendingAction?.action === "reject" || pendingAction?.action === "cancel"}
+        action={pendingAction?.action === "reject" ? "reject" : "cancel"} bookerName={pendingAction?.booking.name ?? ""}
+        pending={action.isPending} onCancel={() => setPendingAction(null)}
+        onConfirm={reason => pendingAction && action.mutate({ bookingId: pendingAction.booking.id, action: pendingAction.action, reason },
+          { onSuccess: () => setPendingAction(null), onError: () => setPendingAction(null) })} />
       <ConfirmDialog
-        open={pendingAction !== null}
+        open={pendingAction !== null && pendingAction.action !== "reject" && pendingAction.action !== "cancel"}
         title={pendingAction ? actionLabel(pendingAction.action) : "Update booking"}
         message={pendingAction ? actionLabel(pendingAction.action) + " for " + pendingAction.booking.name + "?" : ""}
         confirmLabel={pendingAction ? actionLabel(pendingAction.action) : "Confirm"}

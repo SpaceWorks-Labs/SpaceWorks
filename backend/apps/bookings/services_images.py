@@ -48,8 +48,10 @@ def _assert_active(space):
 
 @transaction.atomic
 def cleanup_unattached_space_image(space, *, object_key, storage):
+    from .models_gallery import BookableSpacePhoto
     _locked_space(space.pk)
-    if not BookableSpace.objects.filter(image_key=object_key).exists():
+    if not (BookableSpace.objects.filter(image_key=object_key).exists()
+            or BookableSpacePhoto.objects.filter(object_key=object_key).exists()):
         storage.delete_object(object_key)
     staging_key = storage.staging_key(object_key)
     if staging_key != object_key:

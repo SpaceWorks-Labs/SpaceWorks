@@ -193,6 +193,7 @@ def module_for_model(label):
         "events.EventAttendanceCertificate": "events",
         "events.EventCertificateArtwork": "events",
         "bookings.BookableSpace": "bookings",
+        "bookings.BookableSpacePhoto": "bookings",
         "maintenance.MaintenanceLogDocument": "maintenance",
         "procurement.ToBuyReceipt": "procurement",
         "makerspaces.MemberProfile": "membership",

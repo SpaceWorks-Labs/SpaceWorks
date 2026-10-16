@@ -10,13 +10,13 @@ from apps.accounts import rbac
 from apps.integrations.notify import NotificationResult
 from apps.makerspaces.reminder_policy import reminder_offsets
 from apps.operations.models import ReminderSchedule
-from apps.operations.reminder_members import dispatch_member_reminder, occurrence_subject, unfinished_subjects
+from apps.operations.reminder_members import occurrence_subject, unfinished_subjects
 from apps.operations.reminder_services import _reminder_write
 from apps.operations.reminder_types import ReminderMessage, ReminderSource, ReminderSubject
 from .communication_recipients import notification_account
 from .models import Booking
 from .notifications import _effective_toggle
-from .reminder_delivery import SOURCE_KEY, context_for, identity, snapshot
+from .reminder_delivery import SOURCE_KEY, identity
 
 
 def _bookings(makerspace):
@@ -115,11 +115,12 @@ def dispatch_booking_reminder(makerspace, schedule, message, now, local_tz):
     account = notification_account(row.space.makerspace, row.member_id, "reminder")
     if account is None:
         return NotificationResult(False)
-    return dispatch_member_reminder(
-        row.space.makerspace, feature="bookings", member=account, context=context_for(row),
-        data={"booking_id": row.pk, "space_id": row.space_id}, source_kind=SOURCE_KEY,
-        source_id=row.pk, source_metadata=snapshot(row, schedule),
-    )
+    from .reminder_envelopes import emit_reminder
+    # One personal envelope per reminder step; the owner's chosen channels deliver it and
+    # `notification_sources.reminder_eligible` re-checks the booking at every attempt.
+    if emit_reminder(row, schedule, account):
+        return NotificationResult(True, {"envelope": 1})
+    return NotificationResult(False, {}, {"envelope": 1})
 
 
 BOOKING_REMINDER_SOURCE = ReminderSource(

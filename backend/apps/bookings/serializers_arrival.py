@@ -28,6 +28,8 @@ class BookingArrivalSerializer(serializers.Serializer):
     can_arrive = serializers.BooleanField()
     can_reverse = serializers.BooleanField()
     can_print_pass = serializers.BooleanField(read_only=True)
+    departed_at = serializers.DateTimeField(allow_null=True, required=False)
+    can_depart = serializers.BooleanField(required=False)
     waiver_state = serializers.ChoiceField(choices=("not_required", "current", "missing"))
 
 

@@ -49,6 +49,7 @@ FIELD_OBJECT_RULES = (
                     coordination_path="makerspace_id",
                     coordination_reason="recursive_tenant_exit_artifact"),
     FieldObjectRule("bookings.BookableSpace", "image_key", BucketRule.PUBLIC_IMAGE),
+    FieldObjectRule("bookings.BookableSpacePhoto", "object_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("data_export.DataExportJob", "object_key", BucketRule.PRIVATE,
                     coordination_path="makerspace_id",
                     coordination_reason="data_export_coordination"),

@@ -288,4 +288,6 @@ def _delete_object_graph(makerspace):
         ExternalTenantReference.objects.filter(makerspace=makerspace).delete()
         from apps.bookings.models_arrival import BookingCheckInEvent
         BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace).delete()
+        from apps.bookings.purge_p2 import delete_departure_history
+        delete_departure_history(makerspace)
         makerspace.delete()

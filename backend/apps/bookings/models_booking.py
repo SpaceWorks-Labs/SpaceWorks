@@ -9,9 +9,10 @@ from apps.encryption.mappers import ScopedPiiModelMixin
 from django.utils import timezone
 from .models_spaces import BookableSpace
 from .models_arrival import BookingArrivalFields
+from .models_departure import BookingDepartureFields
 
 
-class Booking(ScopedPiiModelMixin, BookingArrivalFields):
+class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         CONFIRMED = "confirmed", "Confirmed"

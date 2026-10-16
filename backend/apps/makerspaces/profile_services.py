@@ -42,6 +42,7 @@ def read_profile(membership, *, include_activity=True, local_activity_only=False
     projects = profile.projects.all() if profile is not None else ()
     profile = profile or MemberProfile(membership=membership)
     payload = {
+        "verified": membership.verified_at is not None,
         "membership_id": membership.pk,
         "display_name": display_name_for(membership),
         "is_visible": profile.is_visible,

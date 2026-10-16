@@ -16,6 +16,7 @@ toggle, grant) before every send, retry and deferred release.
 """
 
 import logging
+from django.db import transaction
 
 from apps.accounts import rbac
 from apps.bookings.models import Booking
@@ -109,12 +110,17 @@ def _emit(row, event, recipient_id, audience, source_kind, rendered):
     from apps.accounts.models import User
     from apps.integrations.notification_outbox import emit
     try:
-        emit(makerspace=row.space.makerspace, recipient=User.objects.get(pk=recipient_id), feature="bookings",
-             stream="bookings", event=event, audience=audience,
-             dedup_key=f"bookings:{row.pk}:{event}:{row.calendar_sequence}:{audience}:{recipient_id}",
-             source_kind=source_kind, source_id=str(row.pk), revision=str(row.calendar_sequence), subject=row,
-             scope=scope_for(row, event), context={"booking_id": row.pk, "space_id": row.space_id, "status": row.status},
-             rendered=rendered)
+        with transaction.atomic():
+            envelope = emit(makerspace=row.space.makerspace, recipient=User.objects.get(pk=recipient_id), feature="bookings",
+                 stream="bookings", event=event, audience=audience,
+                 dedup_key=f"bookings:{row.pk}:{event}:{row.calendar_sequence}:{audience}:{recipient_id}",
+                 source_kind=source_kind, source_id=str(row.pk), revision=str(row.calendar_sequence), subject=row,
+                 scope=scope_for(row, event), context={"booking_id": row.pk, "space_id": row.space_id, "status": row.status},
+                 rendered=rendered)
+            if audience == "requester":
+                from .notification_owner_mailbox import notify_owner
+                notify_owner(envelope)
+        return envelope
     except Exception:
         # Notification failure must never undo or block the booking decision itself.
         logger.warning("booking_envelope_emit_failed", extra={"booking_id": row.pk, "event": event, "audience": audience})

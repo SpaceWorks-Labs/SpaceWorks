@@ -6,6 +6,8 @@ class IntegrationsConfig(AppConfig):
     name = "apps.integrations"
 
     def ready(self):
+        from .notification_wa_meta import register_meta_provider
+        register_meta_provider()
         from .notification_telegram import register_telegram_provider
         register_telegram_provider()
         from .delivery_digest import register_digest

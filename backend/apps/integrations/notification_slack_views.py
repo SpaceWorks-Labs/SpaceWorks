@@ -49,21 +49,20 @@ def provider_error():
 
 
 class ChatOAuthCallbackView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    throttle_classes = [ChatAnonThrottle]
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ChatUserThrottle]
     channel = ""
     http_method_names = ["get", "post", "options"]
 
     @extend_schema(tags=["Chat notifications"], parameters=[OpenApiParameter("state", str, required=True),
         OpenApiParameter("code", str, required=True)],
-        responses={200: CallbackStatusSerializer, **errors(400, 403, 404, 429, 423, 503)}, auth=[])
+        responses={200: CallbackStatusSerializer, **errors(400, 401, 403, 404, 429, 423, 503)})
     def get(self, request, makerspace_id):
         return self.complete(request, makerspace_id, request.query_params)
 
     @extend_schema(tags=["Chat notifications"], request=OAuthCallbackSerializer,
-        responses={200: CallbackStatusSerializer, **errors(400, 403, 404, 429, 423, 503)}, auth=[],
-        description="Provider form_post response with code and single-use state; accepts no destination IDs.")
+        responses={200: CallbackStatusSerializer, **errors(400, 401, 403, 404, 429, 423, 503)},
+        description="Authenticated Slack installation completion only. Personal OAuth uses the personal challenge verify route.")
     def post(self, request, makerspace_id):
         return self.complete(request, makerspace_id, request.data)
 
@@ -76,13 +75,14 @@ class ChatOAuthCallbackView(APIView):
         try:
             if self.channel == "slack":
                 from .notification_slack_oauth import SALT
+                from .notification_slack_oauth import read_state
                 value = signing.loads(data["state"], salt=SALT, max_age=600)
                 if value.get("purpose") == "install":
+                    read_state(config, data["state"], purpose="install", user_id=request.user.pk)
                     from .notification_slack import complete_install
                     complete_install(config, data)
                     return self.success()
-            from .notification_proofs import verified_callback
-            verified_callback(config, request)
+            raise ValidationError({"proof": "Complete personal linking through the authenticated challenge verify route."})
         except (ProviderFailure, KeyError, TypeError, ValueError, AttributeError):
             return provider_error()
         except signing.BadSignature:
@@ -161,7 +161,7 @@ class SlackInstallStartView(APIView):
             raise ValidationError({"channel": "Configure Slack app credentials first."})
         from .notification_slack_oauth import install_challenge, redirect_uri
         from .notification_slack import install_url
-        redirect_uri("slack", config.makerspace_id)
+        redirect_uri("slack", config.makerspace_id, 1)
         challenge, code = install_challenge(request.user, config)
         response = Response({"connect_url": install_url(config, challenge, code),
                              "expires_at": challenge.expires_at}, status=201)

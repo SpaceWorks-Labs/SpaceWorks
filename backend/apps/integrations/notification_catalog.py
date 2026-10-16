@@ -24,7 +24,7 @@ FEATURE_EVENTS = {
         "submitted", "accepted", "rejected", "issued", "partially_returned",
         "returned", "closed_with_issue", "return_reminder",
         "deposit_raised", "late_fee_raised",
-        "overdue_escalated", "back_available",
+        "overdue_escalated", "back_available", "problem_report.filed",
     ),
     F.PRINTING: (
         "submitted", "accepted", "started", "rejected", "completed", "failed",
@@ -51,12 +51,12 @@ FEATURE_EVENTS = {
     # request_pending is the existing application-received event; keep its stable key.
     F.MEMBERS: ("request_pending", "member_joined", "approved", "declined",
                 "renewal_due", "lapsed", "renewal_failed", "awaiting_payment", "payment_due",
-                "renewed", "grace_started", "cancelled", "broadcast"),
-    F.API_ACCESS: ("api_key_request_resolved",),
+                "renewed", "grace_started", "cancelled", "broadcast", "joined", "verified", "invitation", "vouched"),
+    F.API_ACCESS: ("api_key_request_resolved", "subdomain_request_resolved", "email.failed", "scheduled_report"),
     F.DEVICES: ("offline", "recovered"),
     F.PAYMENTS: ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
-                 "payment_received", "refund_issued", "payment_failed"),
-    F.STOCK: ("low_stock", "procurement_received"),
+                 "payment_received", "refund_issued", "payment_failed", "document_issued"),
+    F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }
 

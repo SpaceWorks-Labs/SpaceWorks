@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils.cache import patch_vary_headers
 from apps.apiclients.throttling import ClientTierRateThrottle
+from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from apps.hardware_requests.exceptions import ErrorSerializer
 from .public_profile_access import resolve_public_profile
 from .public_profile_projection import public_profile_payload, public_project, public_projects, public_events, public_event
@@ -43,12 +44,16 @@ class PublicProfileBase(APIView):
 
 
 class PublicProfileView(PublicProfileBase):
-    @extend_schema(tags=["Public profiles"], auth=[], responses={200: PublicProfileSerializer, **REDIRECT, **ERRORS})
+    authentication_classes = [SpaceWorksJWTAuthentication]
+
+    @extend_schema(tags=["Public profiles"], responses={200: PublicProfileSerializer, 401: ErrorSerializer, **REDIRECT, **ERRORS})
     def get(self, request, handle):
         claim, redirect = self.resolve(request, handle)
         if redirect is not None:
             return redirect
-        return Response(PublicProfileSerializer(public_profile_payload(claim)).data)
+        payload = public_profile_payload(claim)
+        payload["viewer_is_owner"] = bool(request.user.is_authenticated and request.user.pk == claim.user_id)
+        return Response(PublicProfileSerializer(payload).data)
 
 
 class PublicProfileActivityView(PublicProfileBase):

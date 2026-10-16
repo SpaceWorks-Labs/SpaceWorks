@@ -64,12 +64,16 @@ class EndpointVerifyView(APIView):
     throttle_classes = [ProofThrottle]
 
     @extend_schema(tags=["Personal notification contract"], request=ProofVerifySerializer,
-                   responses={200: EndpointSerializer, **errors(400, 401, 403, 404, 429, 423, 503)})
+                   responses={200: EndpointSerializer, **errors(400, 401, 403, 404, 429, 423, 503)},
+                   description="OAuth providers require code and state from the frontend redirect, bound to this signed-in account and challenge. OAuth completion is single-use; destination IDs are never accepted.")
     def post(self, request, makerspace_id, challenge_id):
         space = contract_space(request.user, makerspace_id)
         serializer = ProofVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         challenge = get_object_or_404(policy_rows(NotificationEndpointChallenge, space), pk=challenge_id, user=request.user)
+        from .notification_oauth_verification import OAUTH_CHANNELS, verify_oauth
+        if challenge.configuration.channel in OAUTH_CHANNELS:
+            return Response(EndpointSerializer(verify_oauth(challenge, request)).data)
         if challenge.consumed_at and challenge.endpoint_id:
             endpoint = challenge.endpoint
             config = challenge.configuration

@@ -94,6 +94,10 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
 
 
 HTTP_ANONYMOUS_PARTICIPANTS = {
+    "apps.integrations.notification_wa_meta_views.MetaWebhookView.post": (
+        "Raw Meta HMAC and URL generation bind one tenant; batch application, "
+        "proofs, consent revocation and delivery updates commit under tenant_write."
+    ),
     **WA_TWILIO_PARTICIPANTS,
     "apps.integrations.views.TelegramWebhookView.post": (
         "Verified secret and single-use private proof resolve one configuration; endpoint "

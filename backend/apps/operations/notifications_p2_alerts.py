@@ -2,7 +2,7 @@
 from apps.accounts import rbac
 from apps.integrations.models import EmailLog
 from apps.integrations.notification_sources import NotificationSource, register_source
-from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, scoped, staff_link
+from apps.operations.notifications_p2 import body, fanout, identity, revision, safe_notification, scoped, staff_link
 from apps.makerspaces.platform import module_enabled
 from .models import StocktakeSession
 
@@ -12,6 +12,14 @@ MAIL_FAILURE = "operations.email_failure"
 
 def stocktake_revision(row, event):
     return revision(row.pk, row.completed_at if event == "completed" else row.started_at)
+
+
+def stocktake_intent(row, event):
+    return identity(row.makerspace_id, STOCKTAKE, row.pk, stocktake_revision(row, event), event)
+
+
+def email_failure_intent(log):
+    return identity(log.makerspace_id, MAIL_FAILURE, log.pk, revision(log.pk, "first_failure"), "email.failed")
 
 
 def stocktake_eligible(envelope):

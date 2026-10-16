@@ -12,7 +12,7 @@ GOOGLE_MAPS_HOSTS = {
     "g.co",
 }
 GOOGLE_MAPS_ERROR = "Enter a valid Google Maps link."
-DEFAULT_PRESENCE_PRESETS = [60, 120, 240]
+DEFAULT_PRESENCE_PRESETS = [60, 120, 180, 240]
 
 
 def validate_presence_presets(value):

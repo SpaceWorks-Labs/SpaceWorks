@@ -124,8 +124,8 @@ def send(delivery_id):
         if row.channel == "whatsapp":
             from .notification_resolution import whatsapp_template
             template = whatsapp_template(row)
-            from datetime import timedelta
-            in_window = row.endpoint.last_inbound_at and row.endpoint.last_inbound_at > timezone.now() - timedelta(hours=24)
+            from .notification_wa_window import in_session_window
+            in_window = in_session_window(row.endpoint)
             if not in_window and template is None:
                 return record_result(row, ProviderResult(False, error_code="template_required"))
             rendered["whatsapp_template"] = ({"name": template.template_name, "variables": template.variables,

@@ -110,11 +110,13 @@ def _deliver(log):
         # row per retry. Fully fail-safe; never affects delivery.
         if log.attempts == 0 and log.makerspace_id:
             from apps.notifications.emit import emit_notification
+            from apps.operations.notifications_p2_alerts import email_failure_intent
 
             emit_notification(
                 log.makerspace,
                 level="warning",
                 event="email.failed",
+                source_intent=email_failure_intent(log),
                 title="Email delivery failed",
                 body=f"Email log #{log.pk} delivery failed.",
             )

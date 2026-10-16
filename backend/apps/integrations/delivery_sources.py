@@ -42,7 +42,10 @@ def prepare(log):
     # Reusing an instance for a retry must never reuse an earlier rendering.
     log.__dict__.pop("_rendered_email", None)
     required = REQUIRED_SOURCES.get((getattr(log, "stream", ""), getattr(log, "event", "")))
-    if required and log.source_kind not in {required, "notification.envelope"}:
+    accepted = {required, "notification.envelope"}
+    if required == "bookings.booking":
+        accepted.add("bookings.owner_mailbox")
+    if required and log.source_kind not in accepted:
         return False
     if not getattr(log, "source_kind", ""):
         return True

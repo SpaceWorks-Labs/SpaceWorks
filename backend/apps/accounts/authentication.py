@@ -1,3 +1,5 @@
+import re
+
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import PermissionDenied
@@ -179,6 +181,10 @@ class SpaceWorksJWTScheme(SimpleJWTScheme):
 # registering a phone for push -- starts 403ing. Anything added here must be an action the
 # member performs on their OWN records; staff APIs never belong.
 MEMBER_SURFACE_PREFIXES = CLAIM_REACHABLE_PREFIXES + ("/api/v1/integrations/push/",)
+PERSONAL_NOTIFICATION_PATH = re.compile(
+    r"/api/v1/integrations/makerspace/[0-9]+/personal/"
+    r"(?:endpoints(?:/start|/[0-9]+)?|challenges/[0-9]+/verify|preferences|deliveries)/?"
+)
 
 
 def _member_surface_path_allowed(path):
@@ -187,7 +193,7 @@ def _member_surface_path_allowed(path):
     return path.rstrip("/") in {
         "/api/v1/admin/event-staff-invites/redeem",
         "/api/v1/admin/booking-staff-invites/redeem",
-    } or path.startswith(MEMBER_SURFACE_PREFIXES)
+    } or bool(PERSONAL_NOTIFICATION_PATH.fullmatch(path)) or path.startswith(MEMBER_SURFACE_PREFIXES)
 
 
 def _verification_path_allowed(path):

@@ -31,10 +31,9 @@ HTTP_EXEMPTIONS = {
     "backup-recovery-state": "Deployment recovery must be able to quarantine/recover the deployment.",
     "stripe-connect-webhook": "Connect account events are platform routing state, not one source tenant.",
     "telegram-webhook": (
-        "Acknowledge-and-discard: the callback route was removed when chat stopped being an "
-        "action surface, so this writes nothing and cannot break quiescence. It must keep "
-        "answering 200 even mid-migration, or Telegram retries an already-registered webhook "
-        "for hours against a tenant that is being moved."
+        "Authenticate before opaque proof lookup. Private account linking resolves its tenant "
+        "and consumes under notification_proofs.tenant_write; closed gates refuse linking. "
+        "Other updates and every decision callback are acknowledged without writes."
     ),
     "auth-login": "Global user session state is excluded from tenant quiescence.",
     "auth-mfa": "Global MFA credential state is excluded from tenant quiescence.",
@@ -91,16 +90,15 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
     "apps.accounts.views_social_login.SocialNonceView.post": "Global social-login nonce state.",
     "apps.accounts.views_social_login.SocialLoginView.post": "Global social identity and session state.",
     "apps.payments_rail.views_connect.StripeConnectWebhookView.post": "Platform Connect routing state.",
-    "apps.integrations.views.TelegramWebhookView.post": (
-        "Writes nothing at all: the callback route was removed when chat stopped being an "
-        "action surface, and the view only acknowledges so an already-registered webhook "
-        "stops retrying. No tenant state is reachable from it to quiesce."
-    ),
 }
 
 
 HTTP_ANONYMOUS_PARTICIPANTS = {
     **WA_TWILIO_PARTICIPANTS,
+    "apps.integrations.views.TelegramWebhookView.post": (
+        "Verified secret and single-use private proof resolve one configuration; endpoint "
+        "and audit writes take tenant_write in notification_proofs.verified_callback."
+    ),
     "apps.integrations.views_bounce.BounceWebhookView.post": (
         "Verified tenant HMAC resolves one makerspace; suppression and audit commit under tenant_write."
     ),

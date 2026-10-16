@@ -1,6 +1,11 @@
+import type { FamilyFlags, ProfileLink, ProfileSkill } from "../../profile/publicProfileApi";
+
 export type MemberProject = {
   id: number;
   title: string;
+  subtitle?: string;
+  tags?: string[];
+  public_visible?: boolean;
   description: string;
   links: { label: string; url: string }[];
   image_url: string | null;
@@ -12,7 +17,17 @@ export interface MemberProfileActivity {
   recent_attended_events?: { id: number; title: string; starts_at: string }[];
 }
 
-export type MemberProfile = {
+/** Public-page publication fields from the Phase 1b contract. Optional so older payloads still type-check. */
+export type MemberPublication = Partial<FamilyFlags> & {
+  handle?: string | null;
+  public_visible?: boolean;
+  public_consented_at?: string | null;
+  domains?: string[];
+  skills?: ProfileSkill[];
+  links?: ProfileLink[];
+};
+
+export type MemberProfile = MemberPublication & {
   membership_id: number;
   display_name: string;
   is_visible: boolean;
@@ -33,6 +48,9 @@ export type MemberProfile = {
 export type ProjectDraft = {
   id?: number;
   title: string;
+  subtitle?: string;
+  tags?: string[];
+  public_visible?: boolean;
   description: string;
   links: { label: string; url: string }[];
 };

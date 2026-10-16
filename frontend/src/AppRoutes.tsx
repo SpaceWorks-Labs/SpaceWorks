@@ -9,6 +9,7 @@ import { StaffApp } from "./features/staff/StaffApp";
 import { CenteredCardLayout, PublicLayout } from "./components/layouts";
 import { useTenant } from "./lib/tenant";
 import { publicHome } from "./lib/publicHome";
+import { NotFoundPage } from "./features/NotFoundPage";
 // Every public surface below is its own chunk. The catalogue and the staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
 // route is first visited, so a lending-only install never downloads events, bookings or
@@ -35,15 +36,9 @@ const ResetPasswordPage = lazy(() => import("./features/staff/ResetPasswordPage"
 const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
+const PublicProfilePage = lazy(() => import("./features/profile/PublicProfilePage").then((m) => ({ default: m.PublicProfilePage })));
 const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsiteDetailPage").then((m) => ({ default: m.PublicWebsiteDetailPage })));
 
-function NotFoundPage() {
-  const { pathname } = useLocation();
-  return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Compass", tone: "accent" }}
-    eyebrow="404" title="We couldn't find that page" body="The link may be old, or the page moved."
-    primary={{ label: "Go to home", href: "/" }}
-    escape={pathname.startsWith("/admin") ? { label: "Staff sign-in", href: "/admin" } : undefined} />;
-}
 // Tenant capabilities choose the home independently of the deployment edition.
 
 function FamilyHome() {
@@ -139,6 +134,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/guest-admin/*" element={<StaffApp guestOnly />} />
       <Route path="/scanner" element={<ScannerPage />} />
       <Route path="/kiosk/:stationToken" element={<KioskStationPage />} />
+      {/* Public profiles: after every explicit route, before the catch-all. */}
+      <Route path="/:handle" element={<PublicProfilePage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>;
   } else {
@@ -177,6 +174,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/guest-admin/*" element={<StaffApp guestOnly />} />
       <Route path="/scanner" element={<ScannerPage />} />
       <Route path="/superadmin" element={<SuperadminPage />} />
+      {/* Public profiles: after every explicit route, before the catch-all. */}
+      <Route path="/:handle" element={<PublicProfilePage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>;
   }

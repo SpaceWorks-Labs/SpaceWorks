@@ -2,15 +2,6 @@ export type GeolocationReading = { latitude: number; longitude: number; accuracy
 
 type NavigatorLike = Pick<Navigator, "geolocation">;
 
-export async function presenceStartLocation(geofenceEnabled: boolean, browser?: NavigatorLike): Promise<Partial<GeolocationReading>> {
-  if (!geofenceEnabled) return {};
-  try {
-    return await requestGeolocation(browser);
-  } catch {
-    return {};
-  }
-}
-
 export function requestGeolocation(browser: NavigatorLike | undefined = typeof navigator === "undefined" ? undefined : navigator): Promise<GeolocationReading> {
   if (!browser?.geolocation) return Promise.reject(new Error("Location is unavailable in this browser. Use a device with location services enabled and retry."));
   return new Promise((resolve, reject) => {

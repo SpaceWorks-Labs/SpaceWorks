@@ -9,7 +9,8 @@ import { apiError } from "./errors";
 import { memberRequest, publicV1Request } from "./requests";
 import type { TenantBootstrap } from "./types";
 
-export async function bootstrapTenant(params: { tenant?: string; slug?: string }) {
+/** Discovery may cache a tenant's key without changing the current page's ambient tenant. */
+export async function bootstrapTenant(params: { tenant?: string; slug?: string }, { activate = true } = {}) {
   const search = new URLSearchParams();
   if (params.tenant) search.set("tenant", params.tenant);
   if (params.slug) search.set("slug", params.slug);
@@ -19,6 +20,7 @@ export async function bootstrapTenant(params: { tenant?: string; slug?: string }
   cacheTenantPublishableKey(
     bootstrap.makerspace.slug,
     bootstrap.public_api.publishable_key,
+    activate,
   );
   return bootstrap;
 }

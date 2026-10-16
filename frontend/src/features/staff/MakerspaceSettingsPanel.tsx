@@ -42,6 +42,7 @@ import { SettingsHub } from "./SettingsHub";
 import { staffTabPath } from "./staffTabs";
 import { ChannelSetupPanel } from "../notifications/ChannelSetupPanel";
 import { ChannelDeliveryLog } from "../notifications/ChannelDeliveryLog";
+import { PresencePrivacySettings } from "../presence/PresencePrivacySettings";
 
 type Props = {
   makerspace: Makerspace;
@@ -186,6 +187,8 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     { id: "membership", title: "Membership", rows: <>
       <MakerspaceMembershipSettings {...shared} /><MakerspaceGeofenceSettings {...shared} />
     </> },
+    ...(canManageMakerspace && enabledModules.includes("presence") ? [{ id: "presence", title: "Presence privacy",
+      rows: <PresencePrivacySettings key={makerspace.id} makerspaceId={makerspace.id} slug={makerspace.slug} /> }] : []),
     { id: "bookings", title: "Bookings", rows: <>
       <MakerspaceBookingSettings {...shared} />
       {enabledModules.includes("bookings") ? <MakerspaceBookingRulesSettings makerspace={makerspace} /> : null}

@@ -10,6 +10,7 @@ const SECTION_ENTRIES: HubEntry[] = [
   ["features", "Features", "Switch optional features on or off.", "feature switches toggles packs import capabilities"],
   ["lending", "Lending & loan policy", "Loan period, renewals, borrow limits and reminders.", "loan days default return window renewals borrow limits reminders kiosk station anonymous requests overdue escalation"],
   ["membership", "Membership", "Joining policy, dues and the check-in area.", "members join policy dues fee referrals geofence check in presence gps location radius"],
+  ["presence", "Presence privacy", "Show names on the public display and let people hide their name.", "presence privacy display names anonymous opt out hide me now screen"],
   ["bookings", "Bookings", "Booking rules and requester messages.", "bookings rooms spaces rules reminders requester notifications"],
   ["events", "Events", "Default audience and reminders for new events.", "events default audience registration reminders"],
   ["materials", "Machines & materials", "Low-stock threshold for filament.", "machines materials filament low stock threshold 3d printing"],

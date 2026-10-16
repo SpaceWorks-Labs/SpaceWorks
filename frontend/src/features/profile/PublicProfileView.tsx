@@ -3,7 +3,8 @@ import type { Tab } from "../../components/ui/types";
 import { ProfileEventsTab } from "./ProfileEventsTab";
 import { ProfileHeader } from "./ProfileHeader";
 import { ProfileOverviewTab } from "./ProfileOverviewTab";
-import { ProfileProjectsTab, ProfileTimelineTab, TIMELINE_COPY } from "./ProfileSectionTabs";
+import { ProfileTimelineTab, TIMELINE_COPY } from "./ProfileSectionTabs";
+import { ProfileProjectsPage } from "./ProfileProjectsPage";
 import type { PublicProfile, TimelineKind } from "./publicProfileApi";
 
 const TIMELINE_KINDS: TimelineKind[] = ["experience", "education", "volunteering"];
@@ -25,14 +26,15 @@ export function profileTabs(profile: PublicProfile, owner: boolean): Tab[] {
 export function PublicProfileView({ profile, tab, onTab, editHref, preview = false }: {
   profile: PublicProfile; tab: string; onTab: (key: string) => void; editHref?: string; preview?: boolean;
 }) {
-  const tabs = profileTabs(profile, Boolean(editHref));
+  const tabs = profileTabs(profile, !preview && profile.viewer_is_owner);
   const active = tabs.some(row => row.key === tab) ? tab : "profile";
   return <div className="grid min-w-0 gap-8">
     <ProfileHeader profile={profile} editHref={editHref} preview={preview} />
     <Tabs label="Profile sections" tabs={tabs} activeKey={active} onChange={onTab}>
       {active === "profile" ? <ProfileOverviewTab profile={profile} preview={preview} /> : null}
       {active === "activities" ? <ProfileEventsTab handle={profile.handle} preview={preview} /> : null}
-      {active === "projects" ? <ProfileProjectsTab projects={profile.projects} addHref={editHref} /> : null}
+      {active === "projects" ? <ProfileProjectsPage handle={profile.handle} preview={preview}
+        projects={profile.projects} visible={profile.show_projects} addHref={editHref} /> : null}
       {TIMELINE_KINDS.includes(active as TimelineKind)
         ? <ProfileTimelineTab kind={active as TimelineKind} entries={profile.timeline} addHref={editHref} /> : null}
     </Tabs>

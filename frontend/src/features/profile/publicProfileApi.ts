@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { publicV1Request, StructuredApiError } from "../../lib/api";
+import { personalRecipientKey } from "../notifications/personalQueryKeys";
 
 /** Shapes of the frozen Phase 1b anonymous profile contract (public_profile_serializers.py). */
 export type ProfileSkill = { name: string; level: number };
@@ -19,6 +20,7 @@ export type FamilyFlags = {
   show_machine_activity: boolean; show_bookings: boolean; show_loans: boolean;
 };
 export type PublicProfile = FamilyFlags & {
+  viewer_is_owner: boolean;
   handle: string; display_name: string; avatar_url: string | null; verified: boolean;
   headline: string; institution: string; bio: string; domains: string[]; skills: ProfileSkill[];
   links: ProfileLink[]; timeline: PublicTimelineEntry[]; projects: PublicProject[];
@@ -36,15 +38,14 @@ export type PublicActivity = { from: string; to: string; timezone: string; days:
 export type GithubCalendar = { days: { date: string; count: number }[]; total?: number };
 type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 
-/** Written by the member's own profile editor in this browser; a convenience, not an authority. */
-export const ownerEditKey = (handle: string) => `sw.profile.edit.${handle}`;
-
 export const HANDLE_PATTERN = /^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])$/;
 
 export const publicProfileKeys = {
-  root: (handle: string) => ["public-profile", handle] as const,
+  // Ownership is personalized; never reuse an owner's response for another viewer.
+  root: (handle: string) => ["public-profile", handle, "viewer", personalRecipientKey()] as const,
   activity: (handle: string) => ["public-profile", handle, "activity"] as const,
   events: (handle: string, page: number) => ["public-profile", handle, "events", page] as const,
+  projects: (handle: string, page: number) => ["public-profile", handle, "projects", page] as const,
   github: (handle: string) => ["public-profile", handle, "github"] as const,
 };
 
@@ -57,11 +58,11 @@ export function isProfileMissing(error: unknown) {
   return notFound(error);
 }
 
-export function usePublicProfile(handle: string) {
+export function usePublicProfile(handle: string, sessionReady = true) {
   return useQuery({
     queryKey: publicProfileKeys.root(handle),
     queryFn: () => publicV1Request<PublicProfile>(base(handle)),
-    enabled: HANDLE_PATTERN.test(handle),
+    enabled: sessionReady && HANDLE_PATTERN.test(handle),
     retry: retryUnlessMissing,
   });
 }
@@ -78,6 +79,14 @@ export function usePublicProfileEvents(handle: string, page: number, enabled: bo
   return useQuery({
     queryKey: publicProfileKeys.events(handle, page),
     queryFn: () => publicV1Request<Page<PublicProfileEvent>>(`${base(handle)}events?page=${page}`),
+    enabled, retry: retryUnlessMissing,
+  });
+}
+
+export function usePublicProfileProjects(handle: string, page: number, enabled: boolean) {
+  return useQuery({
+    queryKey: publicProfileKeys.projects(handle, page),
+    queryFn: () => publicV1Request<Page<PublicProject>>(`${base(handle)}projects?page=${page}`),
     enabled, retry: retryUnlessMissing,
   });
 }

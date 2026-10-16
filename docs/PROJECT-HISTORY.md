@@ -6,6 +6,38 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-17 — personal notification delivery.** Transactional envelopes/outbox, encrypted
+  per-space channel configuration, provider-proven connections, multi-select category choices and
+  email fallback; Telegram private /start linking and contract-token room sender, Slack/Mattermost/
+  Discord OAuth adapters and Twilio WhatsApp. Meta source is present but unmounted/unregistered;
+  OAuth/member-token and remaining adapter limits are recorded in the delivery contract/coverage.
+  Equipment/watch/certification and membership/ledger/API/device/operations sources reserve personal
+  intents; maintenance/procurement and member-broadcast producer conversion remains incomplete.
+  Mandatory mail and email-only security proofs keep their existing policy.
+- **2026-10-17 — public maker pages.** Global handles with 30-day rename/retirement rules,
+  independent publication and family consent, counts-only local-day activity, cache-only GitHub
+  calendar and SPOKE/HOSTED/ATTENDED history. Member publication/timeline editor, live-gated share
+  cards, sitemap and reserved-segment crawler routing; no directory-consent backfill into public pages.
+- **2026-10-17 — presence programme.** Hard-geofenced self check-in with staff alternative,
+  account-only guests, project/visitor/live-event statuses, expiry and revision-bound renewals,
+  privacy settings and anonymous TV endpoint plus /m/<slug>/now. Independent opt-in presence key;
+  existing-space installation backfill and shared preset/editor wiring are absent in this tree.
+- **2026-10-17 — event operations.** Account-linked speakers, single-use claim links and scoped
+  speaking history; ticket/category edit with refused referenced deletes; account-only attendee
+  history. Simpler create/drawer, separate staff/owner/delegate envelopes, reminders, certificates
+  and campaign channel delivery; invitation mail/share paths retained.
+- **2026-10-17 — booking operations and place galleries.** Resource-scoped requests queue,
+  decision reasons, append-only encrypted departure remarks and issue resolution; public galleries,
+  shared keyboard Gallery and Hosted at venue block. Personal lifecycle/reminder/campaign adapters;
+  requester alerts default on with audit-aware preservation of explicit tenant choices.
+- **2026-10-17 — Space Manager navigation and settings.** Task groups, Staff & roles under People,
+  settings hub/search/checklist, domain-console settings and communication-channel controls. Loan
+  policy admits EDIT_INVENTORY or MANAGE_MAKERSPACE; fixed Event/Booking Manager actions retained.
+- **2026-10-17 — composed public makerspace page.** Header, Featured activities rail, inventory,
+  machines, spaces, membership and contact reuse public module/projection rules. Automatic
+  multi-family tenants now get the combined page even without a catalogue; explicit non-inventory
+  landing and single-family pages retain their routing.
+
 - **2026-10-16 — events/bookings programme integration (Yuyu).** Typed resource staff grants,
   registration/reservation tools and cancellation undo, draft cloning, private tickets and booking
   confirmations/arrival, public resource websites, shared email campaigns, signed integration

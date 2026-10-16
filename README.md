@@ -37,12 +37,14 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   filament usage, slicer estimates and optional staff-private cash charges at collection; maintenance,
   certification and usage records.
 - **Events.** One-off events and recurring series, approval/waitlists, ticket types, invitations,
-  promo codes, collaborative hosts and participating-organization audiences. QR door check-in includes
+  promo codes, account-linked speakers and claim links, collaborative hosts and participating-organization
+  audiences. A simpler create form and drawer keep advanced controls under More. QR door check-in includes
   an expiring offline roster and event-scoped PIN stations. Feedback, attendance certificates,
   printable badges, owned ticket downloads and member calendar feeds complete the attendee workflow.
 - **Bookings.** Bookable resources and public self-booking, recurrence, rescheduling, private
-  confirmations, arrival scanning and printable passes. Both Events and Bookings support resource
-  staff grants, draft cloning, answer edits, cancellation undo, curated websites, email campaigns,
+  confirmations, arrival scanning and printable passes. A requests queue, decision reasons, place-photo
+  galleries and check-out remarks with issue follow-up complete the resource workflow. Public events
+  show a Hosted at venue block. Both Events and Bookings support resource staff grants, draft cloning, answer edits, cancellation undo, curated websites, email campaigns,
   signed server reads and scoped reports through shared infrastructure.
 - **People and access.** Seven fixed built-in roles, combinable staff assignments and per-person
   machine-type scope. Organizations can link spaces, publish profiles and cross-space event catalogues,
@@ -55,12 +57,22 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   checkout. Overdue tracking, CSV/XLSX exports and accessible charts with table fallbacks cover
   operations. Historical metric rollups are append-only: corrections add revisions. Every module
   has a substantive report or an explicitly gated row.
-- **Notifications.** Celery email plus per-space Telegram, Slack, Mattermost, Discord and signed
-  webhooks, each an independent module with a feature/channel delivery matrix.
+- **Notifications.** Transactional personal outboxes, verified Telegram, Slack, Mattermost, Discord
+  and WhatsApp connections, per-category channel selection and email fallback; staff rooms retain
+  their delivery matrix. Space Managers configure encrypted channel credentials. WhatsApp Twilio is
+  registered; Meta and browser OAuth integration limits are recorded in the
+  [delivery contract](docs/notification-contract.md#integration-limits-in-this-tree).
 - **Accounts and profiles.** Password, Google, Apple, member-only GitHub, OIDC (Keycloak, Authentik,
   Azure AD, Okta) and member phone/SMS sign-in. Methods are switchable; external identity and
   staff-created walk-ins support spaces without the member-account ecosystem. Opt-in maker profiles
   include projects, interests, education, optional GitHub counts and a consent-based member directory.
+  Public pages at `/<handle>` add fresh publication consent, separate activity-family opt-ins,
+  counts-only activity and GitHub calendars, and HOSTED/SPOKE event badges.
+- **Presence.** Time-limited member and guest check-in with project/visitor/event statuses, renewal
+  prompts, a hard location check for self check-in and a staff alternative. Privacy controls govern
+  the public TV display at `/m/<slug>/now`; browser GPS remains spoofable.
+- **Space management.** Task-grouped Space Manager navigation, a searchable settings hub and setup
+  checklist; domain managers reach their own settings from their consoles.
 - **Modules and editions.** Install only the areas you use; uninstall hides surfaces and retains data.
   Events-only and bookings-only editions hide unused lending surfaces through `SPACEWORKS_EDITION`.
 - **Operations.** `X-Request-ID` connects JSON request logs and Celery; a token-protected Prometheus
@@ -353,7 +365,7 @@ and on-disk format, so nothing changes in your `.env`.
 
 ## Modules
 
-A makerspace only carries the parts it uses. Space Works ships **34 modules**; **6 are core** and
+A makerspace only carries the parts it uses. Space Works ships **35 modules**; **6 are core** and
 always on (the public catalogue, request workflow, staff admin, evidence uploads, QR management and
 the scanner). The rest are **opt-in**.
 
@@ -363,7 +375,7 @@ QR scan *and* a photo, so a machines-only workshop still carries the request/QR/
 Per-module detail — what each key is and what you lose without it — is in
 [**docs/MODULES.md**](docs/MODULES.md).
 
-You do not have to think in 34 switches. They are grouped into **twelve areas**, which is what the
+You do not have to think in 35 switches. They are grouped into **twelve areas**, which is what the
 console shows you:
 
 | Area | Covers |
@@ -385,7 +397,7 @@ console shows you:
 Setup first asks whether to enable every area (default no); yes still asks the normal follow-ups.
 Inventory & lending, Machines and Reports default on; the other five areas default off. Core, backup,
 notifications, email and the per-person accounts module stay installed, as do charge tracking, receipt
-documents, billing reminders, staff invitations and advisory geofence. Accounts supplies self sign-up,
+documents, billing reminders, staff invitations and self-check-in geofence. Accounts supplies self sign-up,
 password/social/phone sign-in and the member area; platform login-method/provider choices still apply.
 Membership adds plans, vouching, renewals and the mobile app. Inventory off
 hides lending through `loans.enabled` and retains all data.
@@ -465,9 +477,10 @@ cannot be removed. **Default** means it is on when you install outside the guide
 | **Bookings** | [`bookings`](docs/MODULES.md#bookings) | | | Resource booking and public self-booking |
 | **Membership** | [`membership`](docs/MODULES.md#membership) | | | Join requests, waivers, referrals, maker profiles |
 | | [`member_accounts`](docs/MODULES.md#member_accounts) | | | Member sign-up and member sign-in |
+| | [`presence`](docs/MODULES.md#presence) | | | Member/guest check-in and privacy-controlled TV display |
 | **Notifications** | [`notifications`](docs/MODULES.md#notifications) | | | The in-app inbox |
 | | [`email`](docs/MODULES.md#email) | | | Outbound email |
-| | [`telegram`](docs/MODULES.md#telegram) | | | Telegram group alerts (outbound only) |
+| | [`telegram`](docs/MODULES.md#telegram) | | | Telegram room/verified personal alerts; private account linking |
 | | [`slack`](docs/MODULES.md#slack) | | | Slack alerts |
 | | [`mattermost`](docs/MODULES.md#mattermost) | | | Mattermost alerts |
 | | [`discord`](docs/MODULES.md#discord) | | | Discord alerts |
@@ -482,7 +495,7 @@ cannot be removed. **Default** means it is on when you install outside the guide
 what it needs. `membership` deliberately does **not** require `member_accounts` — identity can come
 from an external identity provider or a staff-created walk-in record instead.
 
-**Every module has a page.** [**docs/MODULES.md**](docs/MODULES.md) covers each of the 34 keys in turn:
+**Every module has a page.** [**docs/MODULES.md**](docs/MODULES.md) covers each of the 35 keys in turn:
 what it is, what it puts on screen, **what happens if you do not install it**, and what becomes of its
 data if you later purge it.
 
@@ -511,7 +524,7 @@ while superadmins install modules.
 | `machines.certifications` | `machines` | | Members need an unexpired certification per machine type to book a linked space or request work; overrides need machine-type authority and are audited |
 | `notifications.delegated_recipients` | `notifications` | | Machine-scoped maintainers manage maintenance recipients for their own machines (also needs `maintenance` and `machines`) |
 | `inventory.self_checkout` | — | ● | Member self-checkout and staff direct handouts |
-| `presence.geofence` | — | ● | Advisory location check at check-in (never blocks) |
+| `presence.geofence` | — | ● | Required location check for self check-in; staff alternative |
 | `inventory.kiosk` | — | | Scanner and handover Stations whose online handovers are attributed to a signed-in staff operator |
 
 Debt recording checks **`charges.enabled` and `charges.<domain>`**, plus the domain's ordinary
@@ -621,8 +634,10 @@ Two things worth knowing before you set this up:
 - **Webhook URLs are write-only.** They are stored encrypted and never shown again, so an edit that
   only renames a room can leave the field blank.
 - **Telegram rooms share the makerspace's bot** — add the same bot to each group and paste each
-  group's chat ID. Delivery is outbound only: chat is not a decision surface, so no alert carries
-  accept/reject buttons and decisions are made in the staff console or `/control/`.
+  group's chat ID. Rooms use the Communication channels bot token when configured, then the legacy
+  tenant/platform fallback. Decisions remain in the staff console or `/control/`; every decision
+  callback is ignored and no alert carries a keyboard. The webhook accepts verified private `/start`
+  account-link proofs only; setWebhook must include `message` in allowed_updates.
 
 A makerspace that has added no rooms keeps using the single webhook under **Chat webhooks**, exactly
 as before. Nothing changes until you add your first room.
@@ -696,7 +711,7 @@ request improvements are tracked separately:
 
 - **Hardware integration** — Connected devices already supplies signed device identity, printer
   reports and label commands. Broader CNC/controller and door/access-control integrations remain
-  further work; geofenced check-in is advisory. Device-reported state still needs authenticated,
+  further work; self check-in requires an in-range browser location, which remains spoofable. Device-reported state still needs authenticated,
   scoped workflow enforcement.
 - **Invitation requests** — prospective members can already request invitations as well as receive
   staff invitations or apply to join. Further work belongs in the issue tracker, not as an unbuilt

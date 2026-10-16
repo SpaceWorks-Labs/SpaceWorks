@@ -11,7 +11,9 @@ exclusions applied in SQL rather than queried per tenant.
   `PublicToolLoan`, `PublicProblemReport`. `workflow.py` is the **single source of truth** for state
   transitions (atomic + row-locked + audited; also `assign_box`/`issue_request`/`return_items`);
   `permissions.py`, `exceptions.py` (workflow→HTTP map + `ErrorSerializer._EXCEPTION_MAP`),
-  `notifications.py` (Telegram seam), public submit/verify/status views, `send_return_reminders` command.
+  `notifications.py` (equipment envelope adapter barrel), public submit/verify/status views,
+  `send_return_reminders` command. Equipment source/room/contact helpers are indexed in
+  [SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md).
   `self_checkout_workflow.py` re-exports the issue and return services from `self_checkout_issue.py`
   and `self_checkout_returns.py`, with shared evidence checks in `self_checkout_evidence.py`.
   All return paths use `return_helpers.finalize_return_status`, which schedules the post-commit

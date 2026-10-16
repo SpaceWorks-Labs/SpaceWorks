@@ -1,6 +1,6 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **34 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
+Space Works ships **35 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
 default** (`backup`), and the rest opt-in. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
@@ -90,7 +90,7 @@ core modules cannot be uninstalled at all.
 **Stocktake**: [stocktake](#stocktake) — **Machines**: [machines](#machines) ·
 [machine_service](#machine_service) · [printing](#printing) · [maintenance](#maintenance) —
 **Events**: [events](#events) — **Bookings**: [bookings](#bookings) —
-**Membership**: [membership](#membership)
+**Membership**: [membership](#membership) · [presence](#presence)
 **Notifications**: [notifications](#notifications) · [email](#email) · [telegram](#telegram) ·
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) —
 **Payments**: [payments](#payments) — **Accounts**: [member_accounts](#member_accounts) —
@@ -227,7 +227,9 @@ module rather than a new feature switch.
 Opt-in `events.broadcasts` requires Notifications and Email. Staff with event registration
 authority compose email campaigns filtered by registration status and attendance, review
 drafts, send and cancel from the Events drawer. Only verified eligible accounts receive
-mail; preferences, suppression and quiet hours apply. Delivery history survives uninstall;
+mail; preferences, suppression and quiet hours apply. Personal channel envelopes supplement the
+existing campaign email worker, with email pre-skipped there to avoid duplicate mail. Staff rooms
+never receive campaign bodies. Delivery history survives uninstall;
 events purge removes campaigns and their event-source outboxes. Imported unfinished
 campaigns are cancelled and cannot resume. Bulk email-bound invitations reuse Events
 invites and email only an event link; the signed-in participant verifies their email to
@@ -288,9 +290,11 @@ review; deployment backups preserve the original graph.
 Opt-in `bookings.broadcasts` requires Notifications and Email and defaults off. Resource
 reservation managers can compose, preview, queue and cancel email campaigns for pending
 and/or confirmed bookings starting in a bounded future window (maximum 366 days). Each
-account receives at most one campaign email, using its verified live address. Requester
+account receives a personal envelope when a bookings-category selection exists; otherwise the
+batch worker retains verified-address email, never both. Requester
 settings, membership consent where present, personal preferences, suppression, quotas and
-quiet hours apply. Campaigns never enter digests or staff chat. Import preserves history
+quiet hours apply. Campaign bodies never enter staff rooms; the legacy email path remains outside
+digests. Import preserves history
 but cancels unfinished campaigns and removes source outbox authority.
 
 Booking reminders also reach eligible account-only bookers, with no Membership, Events,
@@ -301,6 +305,13 @@ removes campaign/delivery history and booking-source outboxes; the core ledger r
 
 
 ### bookings
+
+The Requests queue spans only resources the actor manages. Reject requires a reason; cancel accepts
+one. Place galleries hold up to 12 public photos; Hosted at uses public venue matches/host-cover
+fallback. Staff or the exact account owner can record one check-out with typed outcome and an
+append-only encrypted remark; non-all_good outcomes require a remark and open an issue for triage.
+Requester notifications now default on; the upgrade preserves audit-recorded tenant choices and
+resource overrides. Bookings purge includes departure/issue rows and gallery objects.
 
 Bookings accepts authenticated active accounts without installing `membership`. Existing
 memberships retain their waiver requirement; booking in advance never requires presence.
@@ -358,6 +369,24 @@ history and their owned cover images while preserving the core payment ledger.
 
 [Read the membership module reference](MODULES-WORKSHOPS.md#membership).
 
+### presence
+
+Time-limited member and guest check-in and the public current-presence TV display. Independent,
+opt-in and dependency-free; self check-in needs an enabled/configured geofence and an in-range
+browser reading. GPS remains spoofable; authorized staff can check in members/walk-ins without it.
+The presence service offers 1/2/3/4 h defaults (configured presets win); bootstrap still has the
+older 1/2/4 h default. Status is working, visiting, attending_event or guest. Names and personal
+opt-out are controlled separately; public project/event titles need their own live visibility.
+Expiry produces a personal renewal notice, default in-app/push. `/m/<slug>/now` displays current
+rows only; it publishes no account IDs, contacts, coordinates or history.
+
+Without it: session, roster, privacy and TV routes refuse and the module-gated UI disappears.
+Uninstall retains history; purge deletes `PresenceSession`, `PresenceSettings` and
+`PresencePreference`; portable import drops them. The migration backfills account identity,
+**not installation on existing makerspaces** — enable the module explicitly in this tree.
+The privacy component and expiry category exist but their settings-shell/enum integration is
+incomplete; see the presence rule in [INVARIANTS.md](INVARIANTS.md).
+
 ### member_accounts
 
 [Read the member_accounts module reference](MODULES-WORKSHOPS.md#member_accounts).
@@ -368,11 +397,25 @@ history and their owned cover images while preserving the core payment ledger.
 
 [Read the notifications module reference](MODULES-PLATFORM.md#notifications).
 
+Personal delivery uses explicit-recipient envelopes and verified provider endpoints, with
+multi-select category preferences and email fallback. Space Managers configure encrypted channel
+credentials under Communication channels; staff manage their own connections under My channels,
+and a member Channels tab exists. Manager defaults prefer verified Telegram, otherwise email;
+other accounts default email/in-app. Tenant matrix/module/suppression rules still apply. WhatsApp
+is a personal channel with `twilio|meta` provider configuration, **not a separate module key**;
+Twilio is wired, Meta integration is incomplete. Member-token/OAuth limits are recorded in the
+[delivery contract](notification-contract.md#integration-limits-in-this-tree). Security mail and
+mandatory-mail exemptions keep their own delivery rules.
+
 ### email
 
 [Read the email module reference](MODULES-PLATFORM.md#email).
 
 ### telegram
+
+Room alerts plus provider-proven private account messages. The webhook accepts only secret-checked
+private `/start` linking; every decision callback is acknowledged and ignored, no keyboard is sent.
+Rooms prefer the contract bot token; personal delivery requires it and current endpoint consent.
 
 [Read the telegram module reference](MODULES-PLATFORM.md#telegram).
 
@@ -484,7 +527,7 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 
 | `events.website` | `events` | | Curated released pages with private assets and programmes | Enhanced routes and images disappear; core event details remain |
 | `events.embed` | `events` | `events.website` feature | Exact-origin backend HTML cards | Embed route refuses |
-| `events.broadcasts` | `events` | `notifications`, `email` | Durable email campaigns with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
+| `events.broadcasts` | `events` | `notifications`, `email` | Email campaigns plus selected personal-channel notices, with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
 | `reports.event_pdf` | `reports` | `events` | Post-event PDF from the report registry | PDF refuses; event analytics/history retained |
 | `reports.event_exports` | `reports` | `events` | Tenant-local registration/feedback previews and CSV/XLSX | Detail exports refuse; event history retained |
 | `events.account_registration` | `events` | | Authenticated accounts can register for account-audience events | Events keep their members-only default |
@@ -495,7 +538,7 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `machines.certifications` | `machines` | | Members need an unexpired certification per machine type to book a linked space or request work; overrides need machine-type authority and are audited | Training is tracked out of band; nothing gates a request or booking |
 | `notifications.delegated_recipients` | `notifications` | | Machine-scoped maintainers manage maintenance alert recipients for their own machines. Needs `maintenance` and `machines` too | Only makerspace-level staff manage recipients |
 | `inventory.self_checkout` | — | ● | Member self-checkout and staff direct handouts | Every handover goes through a staff-issued request |
-| `presence.geofence` | — | ● | Advisory location check at check-in | Check-in records no location. It is advisory either way — it never blocks |
+| `presence.geofence` | — | ● | Required location check for self check-in | Self check-in refuses when disabled/unconfigured; authorized staff check-in remains available. Coordinates are not stored |
 | `inventory.kiosk` | — | | Scanner and handover Stations at `/m/<slug>/kiosk/<station>`: a Station PIN opens the channel, and a signed-in staff operator lease attributes every online handover to a real person | No Station sessions, operator leases, work packages or kiosk commands; the public desk at `/kiosk/<slug>` is unaffected |
 
 The `payments.<area>` switches are **off by default and stay inert until credentials resolve** —

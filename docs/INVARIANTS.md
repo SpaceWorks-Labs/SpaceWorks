@@ -777,8 +777,9 @@ BK-B must join the same transaction.
 check each capability already had — `online_payments_enabled` still requires the per-domain
 `payments.<domain>` feature *and* resolved credentials; `deliver_native_push` still requires platform
 FCM/APNs; `evaluate_geofence` still requires `geofence_effective`. Turning a master switch **on** can
-therefore never make an unconfigured capability start working, and turning `presence.geofence` **off**
-returns `None` ("not checked") — the geofence stays **advisory** and gains no power to block. They must
+therefore never make an unconfigured capability start working. `evaluate_geofence` returns `None`
+when disabled; `require_inside` treats that as unavailable and refuses self check-in with staff
+guidance. Authorized staff check-in remains available without location. They must
 stay **independently switchable**: do *not* express the coupling as `requires_features` on the domain
 features, because that would make the kill switch un-flippable until every domain was unticked first.
 All three **default enabled** so their introduction changed nothing, and migration `makerspaces/0051`
@@ -1226,8 +1227,9 @@ asked to have shown, so encrypting it buys nothing and drags in the envelope/dua
   `membership__makerspace`, since the row carries no makerspace column.
 - **Profiles go with a `membership` purge; the membership itself still does not** (plan A7 unchanged).
 - **Link URLs are restricted to http/https**, because they render as an `href` on a page other members
-  read — a stored `javascript:` URL is stored XSS and escaping the text does nothing for an href. Every
-  member-writable list is length-capped.
+  read — a stored `javascript:` URL is stored XSS and escaping the text does nothing for an href.
+  The separate public `links` field requires HTTPS without credentials. Every member-writable list
+  is length-capped.
 - **GitHub is never fetched on a read path.** `refresh_github_contributions` (command + Celery) does it;
   a failure keeps the last known count and still stamps `github_synced_at` so a throttled API backs off.
   Unset `GITHUB_API_TOKEN` = dormant, count stays `None`, section omitted. Changing the handle clears the
@@ -1275,6 +1277,43 @@ visibility transition and the project counts — never the bio, the education en
 key. The audit log is append-only, so anything written there is permanently undeletable member PII,
 and an object key logged there outlives the image and every row that could name it.
 
+**Public handles are separate publication consent (2026-10-17).** One `PublicHandle` per account
+selects one membership profile. Normalize lowercase; use 3–30 ASCII letters/digits/dots/underscores/
+hyphens, beginning and ending alphanumeric. Reserved top-level segments include `now`; keep
+`public_profile_reserved` and crawler exclusions aligned with the route inventory. Namespace writes
+lock the account and names; DB constraints enforce case-insensitive uniqueness and grammar.
+
+- Rename/repoint only after 30 days. Retired names remain reserved for 30 days; release also prevents
+  another claim during that window and clears publication consent. A retired URL redirects only to
+  a currently eligible public claim; otherwise every public surface gives the same 404.
+- `is_visible` is the member-directory opt-in. `public_visible` plus `public_consented_at` is the
+  independent public opt-in; false→true requires fresh `publication_consent=true`. Public visibility,
+  graph, events, speaking, projects, machine activity, bookings and loans all default off. Existing
+  directory consent grants none of them. Account/membership standing, Membership module, tenant
+  servability and both request Host and Origin/Referer constrain every public read and share card.
+- Activity is counts-only, at most 120 inclusive days in the selected makerspace's timezone. The
+  graph master, family consent and domain module must all pass before a source runs. Deduplicate
+  each source's record/day milestones; loan/booking identities are model-qualified. Exclude a direct
+  loan's backing request to avoid counting
+  it twice. No titles, links, source IDs, remarks or exact timestamps enter graph responses.
+- Event history has one row per event and badge priority **SPOKE > HOSTED > ATTENDED**. Hosting
+  needs creator/organizer authority or a live edit/publish grant, not a speaker-only grant; remote
+  hosting needs durable registration provenance through the selected space. Public speaking uses
+  `speaker_history.contributions_for` plus public/published/past-session predicates. Attendance and
+  hosting use `show_events`; speaking uses independent `show_speaking`. Current state is re-read.
+- `GET /api/v1/public/profiles/<handle>/github` returns `{source:"github",days:[{date,count}]}`,
+  separately from SpaceWorks families. Reads only cache after live public/graph consent checks.
+  The existing daily GitHub task refreshes with `GITHUB_API_TOKEN`; no token, cache miss/expiry or
+  failure yields empty days. Keys include handle/profile timestamps, username and generation so
+  raced workers cannot republish an old calendar. TTL 25 h, refresh due 23 h, failure backoff 1 h.
+  The older scalar contribution total retains its separate last-known-value behaviour.
+- `/<handle>` is the last named React route before `*` in both route tables. `/share/profiles/<handle>/`
+  serves live-gated OG/Twitter cards and public sitemap entries use the same predicate. Bundled nginx
+  and Caddy rewrite recognized crawlers on grammar-matching, nonreserved single segments to that share
+  route; ordinary navigation goes to the SPA. No crawler exception may bypass consent/tenant gates.
+  The owner's Edit link currently uses a browser-local hint, not an authenticated ownership lookup;
+  mutations still resolve the authenticated membership. Portable import resets public/family consent.
+
 **Notification channels are modules, one key each (phase 20).** `email`, `telegram`, `slack`,
 `mattermost` and `discord` each own a module key, so a space living in Discord ships no Slack
 surface. Each is an additive **AND** in front of the credential check that already existed:
@@ -1317,6 +1356,46 @@ or treat the new personal preference as the existing tenant matrix. Authenticati
 stay synchronous/redacted email; the five mandatory-mail module exemptions, separate
 closed-with-issue opt-out exception and bounce/complaint suppression remain independent.
 
+**Personal delivery (2026-10-17).** Domain transactions reserve explicit-recipient
+`NotificationEnvelope` intents; outbox enqueue waits for commit and a sweeper recovers broker loss.
+`NotificationSource` predicates reload ownership/resource state before delivery. Scoped bodies and
+endpoints are encrypted; an envelope snapshots installation identity/generation, so reconnecting
+cannot acquire an old private message. Acceptance is not delivery; retries/callbacks use bounded,
+monotonic delivery states. `notification-contract.md` owns the HTTP/provider details and current
+integration gaps; `notification-coverage.md` distinguishes converted producers from legacy paths.
+
+- Space Manager identity owns `ChannelConfiguration`: enabled/room/personal switches, write-only
+  encrypted credentials, quotas, provider and identity. Credential/provider/identity PATCH advances
+  generation; unrelated switch changes must not resend those fields. Module removal also invalidates
+  endpoints/generation. Personal choices are multi-select by category, constrained by the tenant
+  matrix, modules, available channels, verified endpoints and live consent. Manager defaults prefer
+  verified Telegram, otherwise email; other accounts default email/in-app. Email fallback needs both
+  tenant and recipient permission and retains suppression/module rules. Security mail stays email-only.
+- Telegram proves a private `/start`; Slack workspace OIDC, Mattermost configured-server OAuth and
+  Discord identify OAuth prove provider identities. The authenticated challenge verify endpoint
+  binds code/state to the signed-in account. This tree also retains anonymous OAuth completion and
+  lacks member-token admission for personal routes: do not describe authenticated-only completion
+  or working member Channels access as shipped. No typed destination ID establishes identity.
+- WhatsApp is a personal channel (`twilio|meta`), without rooms or a registry module key. Signed
+  matching inbound codes prove consent; SMS login proof is unrelated. STOP revokes, authenticated
+  inbound opens the 24 h service window; outside it an approved event/audience/locale template is
+  required. Twilio reserved bindings are `opt_in`/`test` (member/en), Meta uses
+  `notification_opt_in`/`notification_test` (member/en). Do not interchange those names. Twilio is
+  registered/mounted; Meta source exists but startup/URL wiring is absent, and its readiness check
+  asks for an unregistered `whatsapp` module. Neither provider promises exactly-once upstream send.
+- Provider settings are deployment-wide: `TELEGRAM_WEBHOOK_SECRET` is environment-backed.
+  OAuth reads `NOTIFICATION_SLACK_REDIRECT_URI`, `NOTIFICATION_MATTERMOST_REDIRECT_URI` and
+  `NOTIFICATION_DISCORD_REDIRECT_URI` from Django settings: HTTPS, optional `{makerspace_id}`,
+  blank refuses. Mattermost private hosts default refused unless
+  `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS is True`; Meta defaults
+  `WHATSAPP_META_GRAPH_VERSION` to `v25.0`. These latter names are adapter lookups only in this
+  tree; `config/settings.py` does not load their environment variables. Slack installation uses
+  PKCE; OAuth UI can consume `notify_challenge`/code/state at the authenticated verify route.
+- Hardware, machine, watch, certification, membership, ledger, API-access, device and operations
+  adapters reserve personal source-backed intents. Equipment rooms re-check their source/scope
+  before delivery. Maintenance/procurement barrels and member-broadcast producer still use legacy
+  dispatch here. Source adapters existing on disk do not prove their call sites were converted.
+
 The original v2 additions below remain additive and dormant until configured. Their default selection
 fails **OPEN** to the action-based default — a broken selection, scope, module or template lookup must
 never mute a makerspace. Deliberately the opposite of the *access* rules, which fail closed.
@@ -1346,16 +1425,13 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   reaches no *scoped* room. Credentials are typed per channel with a check constraint, never one overloaded
   column. One log row per destination (D13), quota charged per room, and `destination_label` is snapshotted
   so a queued row whose room was deleted goes terminal instead of falling through to the space-wide webhook.
-- **Telegram is the channel every "all four platforms" claim fails on.** It never went through
-  `send_webhook` (`telegram.send_message` reads the makerspace directly), so both senders take a
-  destination. **Telegram destinations carry NO bot token** (`resolve_bot_token` is makerspace →
-  `settings.TELEGRAM_BOT_TOKEN`): the accept/reject buttons post back to ONE webhook authenticated by a
-  single `TELEGRAM_WEBHOOK_SECRET`, so a second bot's callbacks could not be authenticated or routed and
-  its buttons would be dead. Per-bot destinations need per-bot secrets and inbound routing — its own phase.
-  Inbound routing resolves the actor from `from.id` and the request from the callback data, never a chat
-  id, so rooms cannot strand a callback. `notification_enums.MAX_MESSAGE_LENGTH` is one table for all four
-  (Telegram 4096, Slack 40000, Mattermost 16383, Discord 2000) because Telegram and Discord **reject** an
-  oversized body rather than clipping it.
+- **Telegram has one sender identity across a tenant's rooms.** Destinations carry no bot token.
+  `telegram.resolve_bot_token` selects the contract `ChannelConfiguration` token first, then the
+  makerspace/deployment fallback. Personal delivery requires the explicit contract token and current
+  integration generation. No accept/reject callback or keyboard is permitted. Secret-authenticated
+  private `/start` proofs are the sole accepted inbound action; see the Telegram rule below.
+  `notification_enums.MAX_MESSAGE_LENGTH` owns room limits (Telegram 4096, Slack 40000,
+  Mattermost 16383, Discord 2000); oversized room text is trimmed before transport.
 - **Templates extend `email_templates_registry`, never a second engine.** Four FabLab streams
   (`events`/`bookings`/`maintenance`/**`membership`**) × both audiences × 20 events = 40 entries with
   declared `fields`, `sample_context` and defaults reproducing what each adapter sent inline. The `members`
@@ -1386,12 +1462,47 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   secret, so uninstall-then-purge of `discord` must destroy it. Delivery history survives (`SET_NULL` +
   label).
 
-**Presence geofence is ADVISORY, not an access gate (C.7).** Browser coordinates are spoofable, so
-`presence.geofence.evaluate_geofence` only classifies a reading (in_range / distance+accuracy buckets, raw
-coords never stored) and records it in the `presence.started` audit — it **never blocks** session creation,
-and the client never hard-blocks check-in on a location error. Do **not** convert it into a fail-closed gate
-without an unforgeable proximity factor (owner decision). Dormant/self-host safe: no geo config ⇒ no check,
-and the `geofence_enabled` bootstrap flag is **omitted entirely** (byte-for-byte-unchanged invariant).
+**Presence self check-in fails closed on geofence (2026-10-17).** `presence.geofence.require_inside`
+requires an enabled, configured geofence and finite in-range browser coordinates; accuracy above
+50 m refuses, and accuracy never widens the radius. Missing/denied location, an outside reading or
+an unavailable geofence returns a typed refusal with staff guidance. **GPS remains spoofable**, a
+convenience control rather than proof of identity. Authorized `MANAGE_MEMBERS` staff can check a
+person in without location, including using a staffed kiosk principal; there is no client `staff`
+bypass. Coordinates are validated and discarded, never stored in sessions, audits or notifications.
+
+- **`presence` is an independent opt-in module.** `require_enabled` gates session, roster, privacy
+  and TV APIs on module/runtime/servability. Uninstall retains rows; purge removes sessions,
+  `PresencePreference` and `PresenceSettings`. Portable import drops all three, never reviving
+  source attendance or display consent. This tree has no migration installing it for existing spaces.
+- **Identity is an account, with optional membership.** An existing membership must be active;
+  an account-only guest cannot bypass a revoked membership. Staff use members or this space's
+  walk-ins; account-only guests self check in through the geofence. `account` and legacy `member`
+  reference the same user, enforced by a DB check. Presence-service defaults are 60/120/180/240
+  minutes; configured presets win. The older bootstrap validator still defaults to 60/120/240
+  in this tree — do not claim those defaults are synchronized.
+- **Statuses have provenance.** `working` requires an owned project here; private projects remain
+  selectable without publishing their titles. Members may be `visiting`; account-only visitors and
+  staff-recorded walk-ins are `guest`. Only the post-commit live event-ticket hook assigns
+  `attending_event`: it reloads current published/running attendance and fresh server evidence,
+  refuses historical/offline marks and binds once per registration. Hook failure cannot undo check-in.
+- **Expiry and renewal are revision-bound.** Renew from now, retaining claim deadlines and the event
+  end; an expired session can renew for ten minutes, otherwise start a new geofenced session. The
+  minute sweeper in both schedulers closes at actual expiry and retries failed reminder creation.
+  `presence.expiry` emits a personal renewal notice, default in-app/native push with no email fallback.
+  Old revisions and notices older than ten minutes refuse delivery. No advance reminder is enabled.
+  The notification feature enum still omits presence, so the shared category editor cannot offer it.
+- **Names and opt-out are separate settings, both default on.** `show_names=false` anonymizes all
+  rows and removes project/event titles. With names on and personal opt-out allowed, `hide_on_display`
+  does the same for that person. With opt-out disabled, the name remains visible despite the flag.
+  Labels are `A member`/`A guest`. Presence names do not depend on profile publication. Session
+  responses expose display policy; the current-session wrapper has only active/session/presets.
+- **TV is an allow-list projection.** Anonymous `GET /api/v1/public/makerspaces/<slug>/presence/now/`
+  and `/m/<slug>/now` expose display_name/status/since and optional public project/event titles,
+  no IDs, contacts, coordinates or history. Servability/module/origin checks precede the shared
+  30-second tenant/display-generation cache. Model saves invalidate by generation; bulk writes
+  bypassing signals are bounded by TTL. Public responses prevent intermediary retention;
+  authenticated previews bypass cache and return no-store. `PresencePrivacySettings` exists but is
+  not mounted in the settings shell in this tree.
 
 **One colour vocabulary.** `frontend/src/index.css` holds the literal light and dark RGB triplets
 from `docs/design-revamp/research/ui-brand-spec.md` section A. Keep `:root {` and `:root.dark {` literal:
@@ -1487,17 +1598,17 @@ prove nothing. This is the regression `9e496997` shipped: core `request_workflow
 `membership`, so a fresh self-host install 403'd every public borrow request. Do not weaken the claim in
 that file's docstring; it says what it proves and what it does not.
 
-**Telegram is an OUTBOUND channel. Chat is not a decision surface.** The inline accept/reject keyboard and
-the callback route that served it are gone: `LifecyclePayload` has no `telegram_reply_markup`,
-`telegram.send_message` has no `reply_markup` parameter, and `TelegramWebhookView` acknowledges and
-discards every callback. The webhook **route is kept on purpose** — a deployment that already ran
-`setWebhook` has the URL registered, we cannot call `deleteWebhook` for them, and Telegram retries a
-non-2xx for hours, so a 200 is the graceful retirement and a 404 would be a permanent error loop in
-someone else's infrastructure. The secret check stays even though nothing acts behind it, because an
-endpoint that had quietly stopped authenticating is exactly what would turn a reintroduced callback into a
-vulnerability. The one-bot-per-makerspace rule (D16) survives on its **outbound** half only — one sender
-identity across a tenant's rooms, one token secret — since its original inbound justification expired with
-the buttons. Reintroducing a button means per-bot webhook secrets and inbound routing first.
+**Telegram is outbound for decisions; private account-link proof is the only accepted inbound action.**
+`LifecyclePayload` has no `telegram_reply_markup`; `telegram.send_message` has no `reply_markup`.
+`TelegramWebhookView` verifies `X-Telegram-Bot-Api-Secret-Token` against the nonempty deployment
+`TELEGRAM_WEBHOOK_SECRET`, acknowledges every `callback_query` and takes no workflow action.
+A private, original, human `/start <opaque-code>` with matching positive `chat.id`/`from.id` may
+consume a live account/tenant/generation-bound challenge through `notification_proofs`. Group,
+forwarded, edited, expired and replayed proofs never establish a link. Browser-supplied chat IDs
+are never proof. No message carries a keyboard. Keep the route to avoid retry loops on existing
+`setWebhook` installs; register `allowed_updates` including `message` with the same webhook secret.
+Rooms post as the contract bot token when configured, otherwise the existing tenant/platform fallback.
+Rotation through channel PATCH advances generation: old endpoints and challenges cannot follow it.
 
 **Accepting and rejecting a borrow request are one-at-a-time acts.** The `/control/` bulk `accept_selected`
 and `reject_selected` actions were removed; `admin_request_review.RequestReviewAdminMixin` serves a
@@ -2348,6 +2459,70 @@ Load-bearing details that carried over unchanged:
   a separate opt-in from `is_visible`, and reach a printed card only when the template lists the
   `certifications` field.
 
+## Community workflow additions (2026-10-17)
+
+- **Loan policy belongs to lending authority.** `ReturnPolicyView` and
+  `loan_policy_settings.update_loan_policy` accept `EDIT_INVENTORY` or `MANAGE_MAKERSPACE`;
+  audit action stays `makerspace.return_policy_updated`. General settings no longer owns a
+  duplicate default-loan-days write. Inventory, Machine, Event and Booking Managers edit domain
+  settings from their console; this grants no makerspace/staff/payment-credential authority.
+- **Space Manager navigation is task-grouped, permission derivation unchanged.** Today, People,
+  Inventory & loans, Machines, Events, Bookings, Money and Space settings; Platform for superadmins.
+  Staff & roles leads People; less-used destinations live under More. The settings hub searches
+  sections/consoles and shows the setup checklist. Other roles retain their scoped sidebar.
+- **The public makerspace page composes existing gates.** Featured activities → inventory →
+  machines/bookable spaces/membership/contact; no new permission or projection. `publicHome`
+  chooses the composed page for Inventory or multi-family automatic landing, even with no catalogue.
+  Explicit non-inventory and single non-inventory-family landing stay on their family pages.
+  Old `?space=`/`?confirmation=` booking links retain routing. Featured events cap at six and use
+  the existing public events query; no room/QR/evidence/private inventory fields enter the page.
+
+### Event speakers, edits and envelopes
+
+- **Speaker credit is explicit account linkage.** `EventSpeaker` links a scoped member/staff/
+  registrant, or a signed-in claimant of a single-use 14-day HMAC-digested fragment link. Optional
+  speaker check-in access requires event-manager authority, rechecked for the inviter at claim.
+  Removal is soft/audited and does not revoke its separately created Team check-in grant.
+- `speaker_history.contributions_for(user, makerspace)` returns account-linked, not-removed
+  `SpeakerContribution(event, occurred_at, role="speaker", speaker_id)` rows for this live host,
+  events module on, published/completed events and past milestones. Time is earliest linked website
+  session start, otherwise event start. Callers separately enforce public title/consent rules.
+- Ticket/category edits are audited. Referenced ticket delete refuses 409 `ticket_type_referenced`;
+  referenced category delete refuses 409 `category_referenced`. Used ticket price/audience freeze;
+  capacity cannot fall below live registrations. Deactivate a used type rather than rewriting sales.
+- Private attendee history is exact-account-owned and does not require Membership; an existing
+  membership must be active. Staff member-drawer history needs `MANAGE_EVENTS` or `MANAGE_MEMBERS`.
+  Create shows essentials with More options; drawer uses Overview/Registrations/Check-in/More,
+  retaining old eventTab links and explaining draft check-in availability.
+- Event lifecycle/series/registration, reminders, certificates and campaigns have personal sources.
+  Staff rooms retain the summary; legacy staff in-app/push remain, so staff envelopes pre-skip those
+  legs. Delegates use audience `member` with live registration-grant checks. Event campaigns retain
+  batch-worker email and pre-skip envelope email; the additional channel fan-out has no periodic
+  lost-task resume. Staff email now requires a verified account mailbox. Invitations retain their
+  existing email/share paths; no optional account-linked invitation notice was added.
+
+### Booking queue, galleries and departure evidence
+
+- Requests queue is resource-authorized through `booking_authority`; issues are scoped the same way.
+  Reject requires a trimmed reason (max 1000); cancel accepts an optional reason. Reasons reach
+  requester notices/history and clear on restore. No other decision fields are accepted.
+- `BookingDepartureEvent` is append-only in model methods and Postgres; `remark` is scoped PII.
+  Audit carries facts/has_remark, never remark text. One departure per confirmed/completed booking,
+  from 30 minutes before start; exact-account owner has until 48 h after end. Staff need check_in
+  or manage_reservations. Outcomes are all_good/issue/damaged/left_early; every non-all_good outcome
+  requires a remark and opens one `BookingIssue`. Resolution is audited and never edits evidence.
+- `BookableSpacePhoto` is public place imagery, max 12/resource, separately accounted from private
+  evidence. Staging presign → size/sniff finalize → locked attach; writes need edit_details and
+  audit, delete releases bytes/quota after commit. Shared Gallery supplies keyboard viewing.
+  Hosted at matches event location text to a public space name/location, then host-cover fallback;
+  no venue FK or private resource disclosure is implied.
+- Booking lifecycle/reminders/campaigns reserve owner/staff/grant-holder personal envelopes;
+  sources recheck calendar revision, owner, requester toggle, grant and campaign sender/audience.
+  Rooms keep staff summaries; account-less guests retain contact email. Account envelopes need
+  verified account email. Saved booking-category campaign choices use envelopes; other recipients
+  keep batch email, never both. Requester notifications default on; migration makerspaces/0095
+  flips only false rows without an audit-recorded write to that setting. Resource overrides win.
+
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
 ### Event printable credentials (Lane E)
@@ -2503,7 +2678,9 @@ and its unique outbox relation in one transaction. The existing reminder task re
 unfinished batches and enqueue failures through per-tenant source-gate boundaries.
 This guarantees durable enqueue identity, not exactly-once SMTP acceptance.
 
-Every send passes through `integrations/delivery_sources.py` inside `dispatch_delivery`:
+Campaign email passes through `integrations/delivery_sources.py` inside `dispatch_delivery`;
+selected non-email legs use `events/broadcast_channels.py` personal envelopes, with email pre-skipped.
+The campaign channel task has no periodic lost-task recovery. On the email path:
 immediate, quiet-hours release and retry all reload campaign state, the original sender's
 current resource authority and live recipient eligibility. Unknown/tombstoned sources
 fail closed. Event recipients need matching registration status/attendance, a verified,
@@ -2518,8 +2695,9 @@ Campaign sources are excluded when assigning digests AND while collecting digest
 Digest summaries retain input outbox IDs; `delivery_digest.py` rebuilds them by rechecking
 each registered source before delivery and every retry, dropping stale entries and skipping
 empty summaries. Booking reminder adapters supply durable booking/window/revision/offset
-identity via `EmailDelivery`/`dispatch_email` source fields and register their own live
-predicate. No generic worker imports a separable domain to implement these checks.
+identity via personal envelope source fields; retained legacy email rows use their registered
+EmailDelivery/dispatch_email predicate. No generic worker imports a separable domain to implement
+these checks.
 
 Bulk event invitations accept at most 200 validated addresses per call and reuse
 `create_invite`. Emails contain only an event navigation link. Verified-email resolution
@@ -2702,13 +2880,17 @@ through `booking_authority`, `bookings.broadcasts`, Notifications and Email, plu
 servable, non-hidden tenant. Ten queues/hour/tenant are serialized by its row lock;
 API calls additionally have a per-user throttle. Sender revocation and matching booking
 loss stop unclaimed sends on immediate, quiet-hours and retry paths. Render-time loss
-also skips safely. Email only: no campaign body enters staff chat or a digest.
+also skips safely. The batch worker remains email-only; saved bookings-category choices use
+`broadcasts_personal.py` envelopes instead and are excluded from that email batch. No campaign body
+enters a staff room. Personal envelopes use the shared timing policy.
 
 `communication_recipients.py` preserves current account standing, optional membership
 status/notification consent, requester selection, matrix, personal preferences and
 suppression. Account-owned booking reminders do not require the Membership module.
 Email-only eligibility gates do not suppress independently enabled requester inbox delivery.
-`reminder_delivery.py` registers source `bookings.booking`: tenant/resource/booking/
+`reminders.py` now emits `bookings.reminder` personal envelopes through `reminder_envelopes.py`;
+`notification_sources.py` owns their live revision/owner/toggle check. The legacy email adapter
+`reminder_delivery.py` retains source `bookings.booking`: tenant/resource/booking/
 recipient IDs, exact UTC start/end, calendar sequence, reminder kind and offset are
 stored on the outbox. The claim subject includes the occurrence window and revision;
 an old revision's completed claim cannot suppress a moved or restored occurrence.

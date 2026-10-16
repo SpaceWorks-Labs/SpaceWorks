@@ -92,6 +92,8 @@ PROJECTED_MODEL_LABELS |= BOOKING_ARRIVAL_FIELDS.keys()
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
 EXPLICIT_DROP_MODEL_REASONS = {
+    "makerspaces.MembershipAdditionalRole": "Source additional roles must not grant target staff authority.",
+    "machines.MembershipMachineTypeScope": "Source membership scopes must not grant target machine authority.",
     "notifications.MemberNotificationPreference": "Target users re-establish personal communication preferences; no source disclosure controls become live.",
     "apiclients.ApiClient": "Source clients and their bearer secrets never become target authority.",
     "events.EventCollaborator": "Cross-tenant collaboration grants have no target counterpart.",
@@ -103,8 +105,6 @@ EXPLICIT_DROP_MODEL_REASONS = {
     "integrations.RecipientCategoryScope": "The owning disclosure recipient is dropped.",
     "integrations.RecipientMachineScope": "The owning disclosure recipient is dropped.",
     "integrations.RecipientMachineTypeScope": "The owning disclosure recipient is dropped.",
-    "machines.RoleMachineScope": "Source role scopes must not grant target machine authority.",
-    "machines.RoleMachineTypeScope": "Source role scopes must not grant target type authority.",
     "makerspaces.MakerspaceRole": "Source roles are replaced by target-seeded protected defaults.",
     "organizations.Organization": "Organizations are deployment-global and do not travel.",
 }

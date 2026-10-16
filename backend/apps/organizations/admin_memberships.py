@@ -25,7 +25,7 @@ class OrganizationMembershipForm(forms.ModelForm):
         `rbac._org_actions_for` filters unknown and forbidden values out before
         granting anything, so an unvalidated typo here would save cleanly and then
         confer nothing -- the operator has no way to tell a granted action from an
-        ignored one. Same three rules as `role_services._clean_actions`.
+        ignored one. Reject malformed lists, forbidden grants and unknown actions.
         """
         actions = self.cleaned_data.get("granted_actions")
         if not isinstance(actions, list) or any(

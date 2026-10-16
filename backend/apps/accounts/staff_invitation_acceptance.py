@@ -91,13 +91,19 @@ def accept(request, *, token, makerspace_slug, password, code=""):
                 if membership is None:
                     limits.check_quota(space, "staff", adding=1)
                     membership = MakerspaceMembership(user=user, makerspace=space)
-                membership.assigned_role = role
-                membership.role = role.legacy_role or MakerspaceMembership.Role.CUSTOM
-                membership.save()
+                if membership.pk is None:
+                    membership.save()
+                from apps.makerspaces.role_membership_writes import replace_membership_roles
+                changes = replace_membership_roles(
+                    membership=membership, roles=[role], actor=user,
+                    reason="staff.invitation_accepted", fresh_lifecycle=True,
+                )
                 row.accepted_at, row.accepted_by = timezone.now(), user
                 row.save(update_fields=["accepted_at", "accepted_by"])
                 record(user, "staff.invitation_accepted", makerspace=space, target=row,
-                       meta={"membership_id": membership.pk, "role_id": role.pk})
+                       meta={"membership_id": membership.pk, "role_id": role.pk,
+                             "before": changes["before"], "after": changes["after"],
+                             "removed_machine_type_ids": changes["removed_machine_type_ids"]})
                 ok = True
         except (APIException, DjangoValidationError, IntegrityError, ObjectDoesNotExist):
             if not password_checked:

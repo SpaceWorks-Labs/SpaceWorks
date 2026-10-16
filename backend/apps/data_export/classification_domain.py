@@ -5,6 +5,8 @@ literal: a new column must be classified here before it can export.
 """
 
 EXPORTED_MODEL_FIELDS = {
+    "makerspaces.MembershipAdditionalRole": "id membership role assigned_by assigned_at",
+    "machines.MembershipMachineTypeScope": "id membership machine_type created_at",
     "notifications.MemberNotificationPreference": "id makerspace user feature channel enabled updated_at",
     "operations.SavedView": "id makerspace owner name entity state shared created_at updated_at",
     "makerspaces.MakerspaceLoanPolicy": "id makerspace default_loan_days loan_renewal_mode loan_max_renewals loan_renewal_days loan_max_active loan_max_items loan_reminder_offsets_hours loan_escalate_overdue_days updated_at",
@@ -70,8 +72,6 @@ EXPORTED_MODEL_FIELDS = {
     "machines.MachineType": "id makerspace slug name icon is_builtin managing_action capability_config",
     "machines.MachineUsageEntry": "id machine hours source note service_request consumable_pool duration_minutes outcome percent_complete reason consumed_grams metering_unit consumed_quantity legacy_manual_print_log_id title requester_name contact_email contact_phone logged_by created_at",
     "machines.MakerspaceMachineTypePricing": "id makerspace machine_type rate_per_unit flat_fee payment_enabled created_by updated_by created_at updated_at",
-    "machines.RoleMachineScope": "id role machine created_at",
-    "machines.RoleMachineTypeScope": "id role machine_type created_at",
     "machines.ServiceBucket": "id machine name description is_active created_at updated_at",
     "machines.ServiceQueue": "id makerspace machine_type name description is_active capacity allocation_policy legacy_print_bucket_id created_at updated_at",
     "machines.ServiceRequestConsumption": "id service_request machine_consumable measurement product label quantity created_by created_at outcome",

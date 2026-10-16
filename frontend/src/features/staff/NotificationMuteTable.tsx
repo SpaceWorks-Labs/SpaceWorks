@@ -26,5 +26,6 @@ function humanize(value: string) {
 }
 function targetLabel(target: string) {
   return ({ requester: "Requesters", space_manager: "Space managers", inventory_manager: "Inventory managers",
-    machine_manager: "Machine managers" }[target] ?? humanize(target));
+    machine_manager: "Machine managers", event_manager: "Event managers", booking_manager: "Booking managers",
+    handover: "Handover" }[target] ?? humanize(target));
 }

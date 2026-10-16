@@ -31,9 +31,6 @@ class StrictFieldsMixin:
 
 def identity_for(spec, values):
     identity = tuple(values[key] for key in spec.identity)
-    # The role editor and its database constraint use case-insensitive names.
-    if spec.model == "makerspaces.MakerspaceRole":
-        return tuple(value.strip().casefold() for value in identity)
     return identity
 
 
@@ -75,9 +72,6 @@ def clean_row(spec, row):
         candidate.full_clean(exclude=excluded, validate_unique=False)
     except DjangoValidationError as exc:
         raise PackError("invalid_pack_configuration", str(exc)) from exc
-    if spec.model == "makerspaces.MakerspaceRole":
-        from .role_authority import _clean_actions
-        values["granted_actions"] = sorted(_clean_actions(values["granted_actions"]))
     if spec.model == "makerspaces.MakerspaceWaiver":
         if any(values[key] != values[key].strip() or not values[key].strip() for key in ("version", "body")):
             raise PackError("invalid_pack_configuration", "Waiver text and version must be nonblank and trimmed.")
@@ -143,6 +137,13 @@ def validate_profile_references(config):
 
 
 def validate_configuration(config):
+    # Callers open_pack() first, verifying the ORIGINAL envelope checksum before
+    # this compatibility normalization. Never mutate the checksummed input.
+    if isinstance(config, dict) and "roles" in config:
+        if config["roles"] != []:
+            raise PackError("pack_roles_removed",
+                            "custom roles no longer exist; packs cannot carry roles")
+        config = {key: value for key, value in config.items() if key != "roles"}
     expected = {"modules", "features", "settings", "opening_hours", *SECTIONS}
     if not isinstance(config, dict) or set(config) != expected:
         raise PackError("invalid_pack_fields", "Unknown or missing configuration sections.")

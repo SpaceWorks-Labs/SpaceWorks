@@ -18,7 +18,6 @@ from apps.makerspaces.limits_usage import (
     _assets,
     _bookings,
     _COUNTERS,
-    _custom_roles,
     _data_exports,
     _emails,
     _events,

@@ -10,6 +10,8 @@ ROW_POLICIES = {
         "Unpromoted upload reservations have no durable artwork or portable authority.",
         condition=("promoted_at", None),
     ),
+    "makerspaces.MembershipAdditionalRole": RowPolicy(RowDisposition.DROP, "Imported memberships are reduced to Member; additional authority is dropped."),
+    "machines.MembershipMachineTypeScope": RowPolicy(RowDisposition.DROP, "Imported memberships carry no machine-management authority."),
     **WP4_ROW_POLICIES,
     "makerspaces.MakerspaceLoanPolicy": RowPolicy(
         RowDisposition.PRESERVE_LIVE,
@@ -33,8 +35,6 @@ ROW_POLICIES = {
         "Owner decision 22: preserve the exact live machine grant and provenance.",
     ),
     "makerspaces.MakerspaceRole": RowPolicy(RowDisposition.KEEP_TARGET, "Target-seeded roles are authoritative; archived role rows are dropped."),
-    "machines.RoleMachineScope": RowPolicy(RowDisposition.DROP, "Archived role scope would rewrite target machine authority."),
-    "machines.RoleMachineTypeScope": RowPolicy(RowDisposition.DROP, "Archived scopes can both grant authority and collide with seeded scopes."),
     "integrations.NotificationRecipient": RowPolicy(RowDisposition.DROP, "Every explicit recipient kind is a live disclosure rule."),
     "integrations.RecipientMachineTypeScope": RowPolicy(RowDisposition.DROP, "A child of a dropped recipient cannot arrive live."),
     "integrations.RecipientMachineScope": RowPolicy(RowDisposition.DROP, "A child of a dropped recipient cannot arrive live."),

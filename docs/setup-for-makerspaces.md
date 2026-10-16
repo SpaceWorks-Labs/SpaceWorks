@@ -124,8 +124,9 @@ Log into the **staff console** address (`/admin`) and:
 1. **Add your inventory** — the tools and equipment people can borrow.
 2. **Turn on public visibility** — open your makerspace and enable **"public inventory"** so it
    shows on the public catalog.
-3. **Add your team** — create accounts for staff and assign one of the protected default or custom
-   action-based roles. Front-desk handover is a custom role, not a built-in Guest Admin role.
+3. **Add your team** — create accounts for staff and assign a set of fixed built-in roles.
+   Space Manager and Member each stand alone; use built-in Handover for front-desk work.
+   After assigning Machine Manager, choose that person's machine types (none means no machines).
 4. **Check enabled modules** - in makerspace settings, enable the workflows your space actually
    uses. Public self-checkout/direct handout, 3D printing, stocktake, containers, QR tools, reports,
    transfers, and procurement are shown or hidden from the public/staff screens based on these module

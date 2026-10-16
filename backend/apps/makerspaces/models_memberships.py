@@ -20,6 +20,9 @@ class MakerspaceMembership(models.Model):
         # {MANAGE_MACHINES}; every machine sub-feature already gates on machine access,
         # so no new RBAC action is needed. Delegable by a Space Manager (Part I).
         MACHINE_MANAGER = "machine_manager", "Machine Manager"
+        EVENT_MANAGER = "event_manager", "Event Manager"
+        BOOKING_MANAGER = "booking_manager", "Booking Manager"
+        HANDOVER = "handover", "Handover"
         CUSTOM = "custom", "Custom"
 
     makerspace = models.ForeignKey(

@@ -35503,6 +35503,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_makerspaces_memberships_create",
+                "description": "Requires manage_makerspace. Create or reattach staff with exactly one of role_id or role_ids (the complete set). Space Manager and Member are exclusive; unknown or foreign IDs return 404.",
                 "parameters": [
                     {
                         "in": "path",
@@ -35547,6 +35548,213 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/MembershipList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": "Field validation errors. Provide exactly one of role_id or role_ids; the set must be nonempty, and Space Manager and Member are exclusive."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/machine-scope": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_memberships_machine_scope_retrieve",
+                "description": "Requires manage_makerspace in this makerspace.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "membership_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin memberships"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberMachineScope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspaces_memberships_machine_scope_update",
+                "description": "Requires manage_makerspace. Replaces the member's complete type scope; exempt or non-Machine-Manager memberships return 409.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "membership_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin memberships"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MemberMachineScopeWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MemberMachineScopeWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MemberMachineScopeWrite"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberMachineScope"
                                 }
                             }
                         },
@@ -35608,6 +35816,7 @@
         "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/role": {
             "patch": {
                 "operationId": "api_v1_admin_makerspaces_memberships_role_partial_update",
+                "description": "Requires manage_makerspace. Replace the complete role set using exactly one of role_id or role_ids. Duplicate IDs are ignored; Space Manager and Member are exclusive. Unknown or foreign IDs return 404.",
                 "parameters": [
                     {
                         "in": "path",
@@ -35668,11 +35877,12 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                    "type": "object",
+                                    "additionalProperties": {}
                                 }
                             }
                         },
-                        "description": ""
+                        "description": "Field validation errors. Provide exactly one of role_id or role_ids; the set must be nonempty, and Space Manager and Member are exclusive."
                     },
                     "401": {
                         "content": {
@@ -35966,690 +36176,6 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Role"
-                                    }
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "post": {
-                "operationId": "api_v1_admin_makerspaces_roles_create",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Admin roles"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RoleCreate"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RoleCreate"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RoleCreate"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspaces/{makerspace_id}/roles/{role_id}": {
-            "get": {
-                "operationId": "api_v1_admin_makerspaces_roles_retrieve",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "role_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Admin roles"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "patch": {
-                "operationId": "api_v1_admin_makerspaces_roles_partial_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "role_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Admin roles"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PatchedRoleWrite"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PatchedRoleWrite"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PatchedRoleWrite"
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "api_v1_admin_makerspaces_roles_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "role_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Admin roles"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspaces/{makerspace_id}/roles/{role_id}/machine-scope": {
-            "get": {
-                "operationId": "api_v1_admin_makerspaces_roles_machine_scope_retrieve",
-                "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything — the capability would exist only in `/control/` and the shell.",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "role_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Admin roles"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/RoleMachineScope"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "api_v1_admin_makerspaces_roles_machine_scope_update",
-                "description": "Which machines a role's MANAGE_MACHINES grant reaches.\n\nConsole parity: machine scoping fails closed, so without this surface a Space Manager\ncould create a machine-managing role and have no way to make it able to manage\nanything — the capability would exist only in `/control/` and the shell.",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "role_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Admin roles"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RoleMachineScopeWrite"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RoleMachineScopeWrite"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RoleMachineScopeWrite"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/RoleMachineScope"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspaces/{makerspace_id}/roles/capabilities": {
-            "get": {
-                "operationId": "api_v1_admin_makerspaces_roles_capabilities_list",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Admin roles"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Capability"
                                     }
                                 }
                             }
@@ -40173,7 +39699,7 @@
         "/api/v1/admin/memberships/{id}/role": {
             "patch": {
                 "operationId": "api_v1_admin_memberships_role_partial_update",
-                "description": "Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.",
+                "description": "Requires manage_members; staff role changes require manage_makerspace. Replace the complete role set using exactly one of role_id or role_ids. Duplicate IDs are ignored; Space Manager and Member are exclusive. Unknown or foreign IDs return 404.",
                 "parameters": [
                     {
                         "in": "path",
@@ -40191,17 +39717,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedRoleId"
+                                "$ref": "#/components/schemas/PatchedRoleSetInput"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedRoleId"
+                                "$ref": "#/components/schemas/PatchedRoleSetInput"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedRoleId"
+                                "$ref": "#/components/schemas/PatchedRoleSetInput"
                             }
                         }
                     }
@@ -40226,11 +39752,12 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                    "type": "object",
+                                    "additionalProperties": {}
                                 }
                             }
                         },
-                        "description": ""
+                        "description": "Field validation errors. Provide exactly one of role_id or role_ids; the set must be nonempty, and Space Manager and Member are exclusive."
                     },
                     "401": {
                         "content": {
@@ -49133,6 +48660,249 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/booking-managers": {
+            "get": {
+                "operationId": "api_v1_admin_users_booking_managers_list",
+                "summary": "List or create staff memberships",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Admin users"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStaffMembershipList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_users_booking_managers_create",
+                "summary": "List or create staff memberships",
+                "tags": [
+                    "Admin users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffMembership"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/event-managers": {
+            "get": {
+                "operationId": "api_v1_admin_users_event_managers_list",
+                "summary": "List or create staff memberships",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Admin users"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStaffMembershipList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_users_event_managers_create",
+                "summary": "List or create staff memberships",
+                "tags": [
+                    "Admin users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffMembership"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/handover": {
+            "get": {
+                "operationId": "api_v1_admin_users_handover_list",
+                "summary": "List or create staff memberships",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Admin users"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStaffMembershipList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_users_handover_create",
+                "summary": "List or create staff memberships",
+                "tags": [
+                    "Admin users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMembership"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffMembership"
                                 }
                             }
                         },
@@ -67878,6 +67648,20 @@
                         "nullable": true,
                         "readOnly": true
                     },
+                    "role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "readOnly": true
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MembershipRole"
+                        },
+                        "readOnly": true
+                    },
                     "can_refer": {
                         "type": "boolean"
                     },
@@ -67941,6 +67725,8 @@
                     "assigned_role",
                     "id",
                     "payment",
+                    "role_ids",
+                    "roles",
                     "user",
                     "vouches",
                     "waiver_current",
@@ -69386,6 +69172,29 @@
                     "user_id"
                 ]
             },
+            "AssignableMachineType": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "is_global": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "is_global",
+                    "name",
+                    "slug"
+                ]
+            },
             "AttendanceCorrectionResponse": {
                 "type": "object",
                 "properties": {
@@ -69625,6 +69434,24 @@
                         "type": "integer",
                         "nullable": true
                     },
+                    "role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "role_slugs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "role_names": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "role_name": {
                         "type": "string"
                     },
@@ -69672,8 +69499,11 @@
                     "referrals_enabled",
                     "role",
                     "role_id",
+                    "role_ids",
                     "role_name",
+                    "role_names",
                     "role_slug",
+                    "role_slugs",
                     "slug",
                     "source",
                     "verified_at"
@@ -71481,38 +71311,6 @@
                 ],
                 "type": "string",
                 "description": "* `daily` - Daily\n* `weekly` - Weekly\n* `monthly` - Monthly"
-            },
-            "Capability": {
-                "type": "object",
-                "properties": {
-                    "value": {
-                        "type": "string"
-                    },
-                    "label": {
-                        "type": "string"
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "group": {
-                        "type": "string"
-                    },
-                    "grantable": {
-                        "type": "boolean"
-                    },
-                    "lock_reason": {
-                        "type": "string",
-                        "nullable": true
-                    }
-                },
-                "required": [
-                    "description",
-                    "grantable",
-                    "group",
-                    "label",
-                    "lock_reason",
-                    "value"
-                ]
             },
             "CashBookReport": {
                 "type": "object",
@@ -80359,10 +80157,13 @@
                     "space_manager",
                     "inventory_manager",
                     "print_manager",
-                    "machine_manager"
+                    "machine_manager",
+                    "event_manager",
+                    "booking_manager",
+                    "handover"
                 ],
                 "type": "string",
-                "description": "* `space_manager` - Space Manager\n* `inventory_manager` - Inventory Manager\n* `print_manager` - Print Manager\n* `machine_manager` - Machine Manager"
+                "description": "* `space_manager` - Space Manager\n* `inventory_manager` - Inventory Manager\n* `print_manager` - Print Manager\n* `machine_manager` - Machine Manager\n* `event_manager` - Event Manager\n* `booking_manager` - Booking Manager\n* `handover` - Handover"
             },
             "LendingHistoryActor": {
                 "type": "object",
@@ -81161,27 +80962,6 @@
                     "id",
                     "user",
                     "username"
-                ]
-            },
-            "MachineScopeOption": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "label": {
-                        "type": "string"
-                    },
-                    "is_builtin": {
-                        "type": "boolean"
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    }
-                },
-                "required": [
-                    "id",
-                    "label"
                 ]
             },
             "MachineServiceConsumption": {
@@ -84907,6 +84687,50 @@
                     "returned_late"
                 ]
             },
+            "MemberMachineScope": {
+                "type": "object",
+                "properties": {
+                    "membership_id": {
+                        "type": "integer"
+                    },
+                    "scoping_applies": {
+                        "type": "boolean"
+                    },
+                    "machine_type_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "available_machine_types": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssignableMachineType"
+                        }
+                    }
+                },
+                "required": [
+                    "available_machine_types",
+                    "machine_type_ids",
+                    "membership_id",
+                    "scoping_applies"
+                ]
+            },
+            "MemberMachineScopeWrite": {
+                "type": "object",
+                "properties": {
+                    "machine_type_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                },
+                "required": [
+                    "machine_type_ids"
+                ]
+            },
             "MemberMachineServiceActivity": {
                 "type": "object",
                 "properties": {
@@ -85508,6 +85332,17 @@
             "MembershipCreate": {
                 "type": "object",
                 "properties": {
+                    "role_id": {
+                        "type": "integer",
+                        "description": "Single-role set; omit role_ids."
+                    },
+                    "role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Complete role set. Space Manager and Member must each be assigned alone."
+                    },
                     "username": {
                         "type": "string",
                         "maxLength": 150
@@ -85536,13 +85371,9 @@
                     "password": {
                         "type": "string",
                         "writeOnly": true
-                    },
-                    "role_id": {
-                        "type": "integer"
                     }
                 },
                 "required": [
-                    "role_id",
                     "username"
                 ]
             },
@@ -85581,7 +85412,7 @@
                     "role": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/Role827Enum"
+                                "$ref": "#/components/schemas/RoleCddEnum"
                             }
                         ],
                         "readOnly": true
@@ -85594,6 +85425,20 @@
                         ],
                         "readOnly": true,
                         "nullable": true
+                    },
+                    "role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "readOnly": true
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MembershipRole"
+                        },
+                        "readOnly": true
                     },
                     "status": {
                         "allOf": [
@@ -85626,6 +85471,8 @@
                     "makerspace_slug",
                     "payment",
                     "role",
+                    "role_ids",
+                    "roles",
                     "status",
                     "user"
                 ]
@@ -86041,6 +85888,25 @@
                     "period",
                     "reactivated_members",
                     "recurring_members"
+                ]
+            },
+            "MembershipRole": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
                 ]
             },
             "MembershipRoleSummary": {
@@ -88573,12 +88439,6 @@
                     "opening_hours": {
                         "$ref": "#/components/schemas/PackOpeningHours"
                     },
-                    "roles": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/PackMakerspaceRole"
-                        }
-                    },
                     "active_waiver": {
                         "allOf": [
                             {
@@ -88667,7 +88527,6 @@
                     "modules",
                     "notification_defaults",
                     "opening_hours",
-                    "roles",
                     "settings"
                 ]
             },
@@ -88959,20 +88818,6 @@
                     "voucher_min_tenure_days",
                     "voucher_pending_limit",
                     "vouches_required"
-                ]
-            },
-            "PackMakerspaceRole": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 80
-                    },
-                    "granted_actions": {}
-                },
-                "required": [
-                    "granted_actions",
-                    "name"
                 ]
             },
             "PackMakerspaceWaiver": {
@@ -93008,7 +92853,15 @@
                 "type": "object",
                 "properties": {
                     "role_id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Single-role set; omit role_ids."
+                    },
+                    "role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Complete role set. Space Manager and Member must each be assigned alone."
                     }
                 }
             },
@@ -93456,26 +93309,19 @@
                     }
                 }
             },
-            "PatchedRoleId": {
+            "PatchedRoleSetInput": {
                 "type": "object",
                 "properties": {
                     "role_id": {
-                        "type": "integer"
-                    }
-                }
-            },
-            "PatchedRoleWrite": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 80
+                        "type": "integer",
+                        "description": "Single-role set; omit role_ids."
                     },
-                    "granted_actions": {
+                    "role_ids": {
                         "type": "array",
                         "items": {
-                            "type": "string"
-                        }
+                            "type": "integer"
+                        },
+                        "description": "Complete role set. Space Manager and Member must each be assigned alone."
                     }
                 }
             },
@@ -101196,6 +101042,14 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "combinable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "exclusive": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "member_count": {
                         "type": "integer",
                         "readOnly": true
@@ -101212,7 +101066,9 @@
                     }
                 },
                 "required": [
+                    "combinable",
                     "created_at",
+                    "exclusive",
                     "granted_actions",
                     "id",
                     "is_default",
@@ -101225,35 +101081,19 @@
                     "updated_at"
                 ]
             },
-            "Role827Enum": {
+            "RoleCddEnum": {
                 "enum": [
                     "space_manager",
                     "inventory_manager",
                     "print_manager",
                     "machine_manager",
+                    "event_manager",
+                    "booking_manager",
+                    "handover",
                     "custom"
                 ],
                 "type": "string",
-                "description": "* `space_manager` - Space Manager\n* `inventory_manager` - Inventory Manager\n* `print_manager` - Print Manager\n* `machine_manager` - Machine Manager\n* `custom` - Custom"
-            },
-            "RoleCreate": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 80
-                    },
-                    "granted_actions": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "required": [
-                    "granted_actions",
-                    "name"
-                ]
+                "description": "* `space_manager` - Space Manager\n* `inventory_manager` - Inventory Manager\n* `print_manager` - Print Manager\n* `machine_manager` - Machine Manager\n* `event_manager` - Event Manager\n* `booking_manager` - Booking Manager\n* `handover` - Handover\n* `custom` - Custom"
             },
             "RoleId": {
                 "type": "object",
@@ -101266,78 +101106,17 @@
                     "role_id"
                 ]
             },
-            "RoleMachineScope": {
-                "type": "object",
-                "description": "The role's links plus everything it could be linked to, in one round trip.",
-                "properties": {
-                    "machine_type_ids": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
-                    },
-                    "machine_ids": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
-                    },
-                    "available_machine_types": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/MachineScopeOption"
-                        },
-                        "readOnly": true
-                    },
-                    "available_machines": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/MachineScopeOption"
-                        },
-                        "readOnly": true
-                    },
-                    "scoping_applies": {
-                        "type": "boolean",
-                        "readOnly": true
-                    }
-                },
-                "required": [
-                    "available_machine_types",
-                    "available_machines",
-                    "machine_ids",
-                    "machine_type_ids",
-                    "scoping_applies"
-                ]
-            },
-            "RoleMachineScopeWrite": {
-                "type": "object",
-                "properties": {
-                    "machine_type_ids": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
-                    },
-                    "machine_ids": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "required": [
-                    "machine_ids",
-                    "machine_type_ids"
-                ]
-            },
             "RoleSlugEnum": {
                 "enum": [
                     "space_manager",
                     "inventory_manager",
-                    "machine_manager"
+                    "machine_manager",
+                    "event_manager",
+                    "booking_manager",
+                    "handover"
                 ],
                 "type": "string",
-                "description": "* `space_manager` - space_manager\n* `inventory_manager` - inventory_manager\n* `machine_manager` - machine_manager"
+                "description": "* `space_manager` - space_manager\n* `inventory_manager` - inventory_manager\n* `machine_manager` - machine_manager\n* `event_manager` - event_manager\n* `booking_manager` - booking_manager\n* `handover` - handover"
             },
             "SavedReportView": {
                 "type": "object",
@@ -102730,7 +102509,7 @@
                         "pattern": "^[-a-zA-Z0-9_]+$"
                     },
                     "role": {
-                        "$ref": "#/components/schemas/Role827Enum"
+                        "$ref": "#/components/schemas/RoleCddEnum"
                     },
                     "created_at": {
                         "type": "string",

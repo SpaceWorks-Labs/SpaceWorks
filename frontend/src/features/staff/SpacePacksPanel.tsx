@@ -36,9 +36,7 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
     onSuccess: () => { setMessage("Install profile saved."); void queries.invalidateQueries({ queryKey: ["space-pack-profiles"] }); } });
   const pending = exportPack.isPending || previewPack.isPending || applyPack.isPending || saveProfile.isPending;
   const error = inputError || exportPack.error?.message || previewPack.error?.message || applyPack.error?.message || saveProfile.error?.message;
-  return <SettingsRow label="Space packs" helper="Copy configuration between spaces. Packs contain policies, roles, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack."><div className="@container grid min-w-0 gap-4">
-
-
+  return <SettingsRow label="Space packs" helper="Copy configuration between spaces. Packs contain policies, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack."><div className="@container grid min-w-0 gap-4">
     <button type="button" className="desk-button justify-self-start" disabled={pending} onClick={() => exportPack.mutate()}>Export configuration</button>
     <Field label="Space pack JSON">
       <textarea className="desk-input min-h-48 w-full code-text text-base md:text-xs" value={source} disabled={pending}

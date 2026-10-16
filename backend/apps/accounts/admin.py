@@ -42,7 +42,7 @@ class RestrictAccessForm(forms.Form):
     reason = forms.CharField(required=True, widget=forms.Textarea)
 
 
-class MakerspaceMembershipInline(TabularInline):
+class MakerspaceMembershipInline(TabularInline):  # Intentionally legacy string only; null FK = frozen fallback.
     model = MakerspaceMembership
     fk_name = "user"
     fields = ("makerspace", "role")

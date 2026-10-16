@@ -31,6 +31,15 @@ carries the design rule each change introduced.
   Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
   and optionally deploys through the self-hosted runner; `pip-audit` still runs on PRs.
 
+## Unreleased
+
+- Seven fixed roles replace editable roles. Staff role sets combine except Space Manager and Member,
+  which stand alone; Machine Manager reach is assigned per person by machine type. The console now
+  provides role-set checkboxes, a read-only role reference and per-person type controls.
+- **Operator action required:** fixed-role migration is irreversible. Back up, stop writers, run the
+  new image's `python manage.py preview_fixed_roles` before `migrate`, and fix all “must fix before
+  upgrading” notification rules. Follow the [upgrade procedure](docs/update-recovery.md#fixed-role-upgrade-2026-10-16).
+
 ## 0.9.2 (2026-10-14)
 
 - **Deploys run on a self-hosted GitHub Actions runner** - after the release workflow publishes a main

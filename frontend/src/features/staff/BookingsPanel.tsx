@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { EmptyState, ListRow, Modal, StatusPill } from "../../components/ui";
 import { ListLayout } from "../../components/layouts";
 import { opsQueryState } from "./opsPresentation";
 import { StructuredApiError } from "../../lib/api";
 import { BookableSpaceForm } from "./BookableSpaceForm";
+import { MakerspaceBookingRulesSettings } from "./MakerspaceBookingRulesSettings";
 import { BookingDrawer } from "./BookingDrawer";
 import { useBookableSpaces, useCreateBookableSpace } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
@@ -13,11 +15,13 @@ import { useSearchParams } from "react-router-dom";
 import { useQuickCreate } from "./quickCreate";
 
 export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { makerspaceId: number; recurringEnabled?: boolean }) {
+  const queryClient = useQueryClient();
   const list = useUrlListState({ q: "", ordering: "name", page: "1" });
   const { page, setPage } = list;
   const [params, setParams] = useSearchParams();
   const [createOpen, setCreateOpen] = useState(false);
   const [choosingBooking, setChoosingBooking] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   useQuickCreate("booking", () => setChoosingBooking(true));
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("space")) || null);
   // "New booking" picks a space, then opens that space with its booking form already up.
@@ -29,19 +33,22 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const create = useCreateBookableSpace(makerspaceId);
   const apiError = spaces.error instanceof StructuredApiError ? spaces.error : null;
 
-  const unavailable = apiError?.status === 403 ? "Booking management requires an assigned role or resource permission."
+  const unavailable = apiError?.status === 403 ? "Booking management requires the Booking Manager role or a resource permission."
     : apiError?.status === 400 && apiError.body.module ? "The Bookings module is not enabled for this makerspace." : undefined;
   if (!unavailable && selectedId !== null) return <BookingDrawer recurringEnabled={recurringEnabled} key={selectedId}
     makerspaceId={makerspaceId} spaceId={selectedId} onClose={closeSelection} initialCreateOpen={bookingSpaceId === selectedId} />;
   if (!unavailable && createOpen) return <BookableSpaceForm mode="create" makerspaceId={makerspaceId}
-    onSubmit={payload => create.mutate(payload, { onSuccess: space => { setCreateOpen(false); setSelectedId(space.id); } })}
+    onSubmit={payload => create.mutate(payload, { onSuccess: space => { setCreateOpen(false); setSelectedId(space.id);
+      void queryClient.invalidateQueries({ queryKey: ["booking-rule-spaces", makerspaceId] }); } })}
     pending={create.isPending} error={create.error?.message} submitLabel="Create space" onCancel={() => setCreateOpen(false)} />;
   const activeSpaces = spaces.data?.results.filter(space => space.is_active) ?? [];
   const chooseSpace = (spaceId: number) => { setChoosingBooking(false); setBookingSpaceId(spaceId); setSelectedId(spaceId); };
   return <><ListLayout header={{ title: "Bookings",
     subtitle: "Manage spaces, booking requests and public availability.",
     primary: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) },
-    secondary: unavailable ? undefined : { label: "New booking", onClick: () => setChoosingBooking(true) } }}
+    secondary: unavailable ? undefined : { label: "New booking", onClick: () => setChoosingBooking(true) },
+    // Booking rules are keyed on manage_bookings, so a Booking Manager edits them here, not in space settings.
+    overflow: unavailable ? undefined : [{ label: "Booking rules", icon: "Settings", onClick: () => setRulesOpen(true) }] }}
     state={unavailable ? { status: "ready" } : opsQueryState(spaces, "bookable spaces")}
     stats={[{ label: "Spaces", value: spaces.data?.count ?? 0 }]}
     filters={unavailable ? undefined : { toolbar: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings" searchLabel="Search spaces"
@@ -68,6 +75,9 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
           right={<button className="desk-button" type="button" onClick={() => chooseSpace(space.id)}>Book this space</button>} />)
           : <EmptyState message="No active spaces on this page. Create a space before taking bookings." />}
       </div>
+    </Modal>
+    <Modal open={rulesOpen && !unavailable} title="Booking rules" size="xl" onClose={() => setRulesOpen(false)}>
+      <MakerspaceBookingRulesSettings makerspace={{ id: makerspaceId }} />
     </Modal>
   </>;
 }

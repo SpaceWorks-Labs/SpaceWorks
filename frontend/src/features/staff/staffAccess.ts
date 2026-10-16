@@ -99,8 +99,8 @@ export function getStaffAccess(
   const canRecordPayment = has("record_payment");
   // Mirrors the backend gate: the member-card endpoints check SCAN_MEMBER_CARDS /
   // MANAGE_MEMBER_CARDS, never MANAGE_MAKERSPACE. Space Manager holds the manage action by
-  // default, but a front-desk custom role may hold only the scan action -- and a
-  // manage_makerspace role that was never granted either must not be shown a tab that 403s.
+  // default. Organization-derived grants may hold only the scan action, so keep
+  // this gate action-based rather than assuming a local role's catalogue grants.
   const canUseMemberCards = canManageMembers || has("manage_member_cards") || has("scan_member_cards");
   const canIssueDirectLoan = has("issue_direct_loan");
   const canSeeHardware = isSuperadmin || ["accept_request", "reject_request", "assign_box", "issue_request", "issue_direct_loan", "return_request"].some((action) => actions.includes(action));
@@ -146,11 +146,11 @@ export function getStaffAccess(
     if (tabName === "scanner") return canManageQr;
     if (tabName === "audit") return canViewAudit;
     if (tabName === "accountability") return canViewAudit;
-    if (tabName === "reports") return canViewFinance || canViewAudit || canSeePrinting || canManageMachines;
+    if (tabName === "reports") return canViewFinance || canViewAudit || canSeePrinting || canManageMachines || canManageEvents || canManageBookings;
     if (tabName === "warranty") return canEditInventory || canSeePrinting;
     if (tabName === "users") return canManageMakerspace;
     if (tabName === "settings") return canManageMakerspace;
-    if (tabName === "emailtemplates") return canEditInventory || canSeePrinting || has("manage_devices");
+    if (tabName === "emailtemplates") return canEditInventory || canSeePrinting || has("manage_devices") || canManageEvents || canManageBookings;
     if (tabName === "email-logs") return canManageMakerspace;
     if (tabName === "platform") return isSuperadmin && !singleTenantLocked;
     // Superadmin-only, matching the backend: `enabled_modules` is superadmin-owned and a

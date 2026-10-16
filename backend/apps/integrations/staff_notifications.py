@@ -1,6 +1,7 @@
 import logging
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
 # Aliased: `staff_emails_for_feature` has a local list called `recipients`, and shadowing
 # the module makes every reference to it an UnboundLocalError inside that function.
@@ -31,6 +32,8 @@ _FEATURE_STREAMS = {
     "hardware_requests": "hardware",
     "printing": "printing",
     "devices": "devices",
+    "events": "events",
+    "bookings": "bookings",
 }
 _STREAM_FEATURES = {value: key for key, value in _FEATURE_STREAMS.items()}
 
@@ -82,7 +85,7 @@ def _staff_emails_for_feature(makerspace, feature, event=None, scope=None) -> li
             )
             .exclude(user__is_superuser=True)
             .exclude(user__role=User.Role.SUPERADMIN)
-            .select_related("user", "assigned_role")
+            .select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
             .order_by("id")
         )
 
@@ -96,8 +99,8 @@ def _staff_emails_for_feature(makerspace, feature, event=None, scope=None) -> li
                 continue
             if not admits(membership):
                 continue
-            if mutable_event and notification_rules.role_muted(
-                makerspace, stream, event, membership.role
+            if mutable_event and notification_rules.membership_muted(
+                makerspace, stream, event, membership, required_action
             ):
                 continue
             email = (membership.user.email or "").strip()
@@ -156,7 +159,7 @@ def _staff_user_ids_for_feature(makerspace, feature, event=None, scope=None) -> 
             user__is_active=True, user__access_status=User.AccessStatus.ACTIVE,
         ).exclude(user__is_superuser=True).exclude(
             user__role=User.Role.SUPERADMIN
-        ).select_related("assigned_role").order_by("id")
+        ).select_related("assigned_role").prefetch_related(additional_roles_prefetch()).order_by("id")
         result = []
         admits = recipient_selection.reach_filter_for(memberships, scope)
         for membership in memberships:
@@ -164,8 +167,8 @@ def _staff_user_ids_for_feature(makerspace, feature, event=None, scope=None) -> 
                 continue
             if not admits(membership):
                 continue
-            if mutable and notification_rules.role_muted(
-                makerspace, stream, event, membership.role
+            if mutable and notification_rules.membership_muted(
+                makerspace, stream, event, membership, required_action
             ):
                 continue
             result.append(membership.user_id)

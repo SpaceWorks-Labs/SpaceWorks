@@ -2,8 +2,6 @@
 
 import logging
 
-from django.db.models import Q
-
 from apps.makerspaces.models import MakerspaceMembership
 
 
@@ -145,12 +143,10 @@ ROLE_SUPERADMIN_ASSIGNABLE_ACTIONS = frozenset({Action.MANAGE_MAKERSPACE})
 # What counts as handover-only work: taking an accepted request or a finished machine job
 # to the counter, handing it over, taking it back, and photographing both ends of that.
 #
-# This is a DESCRIPTION, not a grant and no longer a ceiling. It is derived from no role --
-# the built-in that used to define it was retired, and `role_services._validate_actions`
-# dropped the cap that keyed on it, so any role may hold any subset of these alongside
-# anything else. Its only consumer is `is_handout_only`, which decides how narrow the staff
-# console renders for someone whose whole job is the front desk. Adding an action here
-# widens what still reads as "front desk"; it grants nothing to anyone.
+# This is a description, not a grant or ceiling. Handover is a built-in role;
+# its grants live in role_catalog. This set only tells `is_handout_only` how
+# narrow to render the console, including staff who also collect cash receipts.
+# Adding an action here grants nothing to anyone.
 HANDOUT_ACTIONS = frozenset({
     Action.VIEW_INVENTORY, Action.ASSIGN_BOX, Action.ISSUE_REQUEST,
     Action.ISSUE_DIRECT_LOAN, Action.RETURN_REQUEST, Action.UPLOAD_EVIDENCE,
@@ -168,17 +164,9 @@ def actions_for_membership(membership) -> set:
         role = membership.assigned_role
         if role.makerspace_id != membership.makerspace_id:
             return set()
-        value = role.granted_actions
-        if not isinstance(value, list):
-            logging.getLogger("apps.accounts.rbac").warning(
-                "Ignoring malformed granted actions on an assigned makerspace role."
-            )
-            return set()
-        return expand_implied_actions({
-            action
-            for action in value
-            if isinstance(action, str) and action in ROLE_GRANTABLE_ACTIONS
-        })
+        from .rbac_roles import stored_actions_for_membership
+
+        return expand_implied_actions(stored_actions_for_membership(membership))
     return expand_implied_actions(_MEMBERSHIP_ROLE_ACTIONS.get(membership.role, set()))
 
 
@@ -207,9 +195,9 @@ def actions_for_organization_membership(membership) -> set:
 def _action_scope_filters(action):
     """Build assigned-role and legacy-role filters for an action scope query."""
     satisfying = actions_satisfying(action)
-    assigned_filter = Q()
-    for granted_action in satisfying:
-        assigned_filter |= Q(assigned_role__granted_actions__contains=[granted_action])
+    from .rbac_roles import direct_role_filter
+
+    assigned_filter = direct_role_filter(satisfying)
     legacy_roles = [
         role
         for role, actions in _MEMBERSHIP_ROLE_ACTIONS.items()

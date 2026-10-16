@@ -31,6 +31,7 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("events.EventStaffGrant", "revoked_by"),
         ("events.EventStaffGrantInvite", "created_by"),
         ("events.EventStaffGrantInvite", "redeemed_by"),
+        ("makerspaces.MembershipAdditionalRole", "assigned_by"),
         ("notifications.NotificationInboxRow", "user"),
         ("notifications.MemberNotificationPreference", "user"),
         ("integrations.EmailSuppression", "created_by"),

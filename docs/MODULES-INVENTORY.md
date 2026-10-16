@@ -145,7 +145,7 @@ thirteen modules under it are optional.
 - **What it adds** — the `guest_issue` and `guest_return` workflows, and direct handouts at the counter.
 - **Without it** — handovers happen in the full staff console instead. Front-desk volunteers then need a
   role with wider access than they should have, which is the reason this module exists. The handover
-  **role** is a separate concept: a custom role holding the handout actions, editable per space.
+  **role** is a separate concept: the fixed built-in Handover, combinable with other staff roles.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately; the requests
   and evidence it produced belong to the core loan spine.
 

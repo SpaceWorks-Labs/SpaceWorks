@@ -34,13 +34,14 @@ from apps.makerspaces.servability import is_servable
 # guard). Creating/assigning SPACE_MANAGER and every restrict/restore/reset existential
 # guard stay superadmin-only.
 #
-# Only the roles still mounted as fixed-role routes. PRINT_MANAGER is absent because its
-# route is gone, and GUEST_ADMIN because the enum member itself is gone. This asks what a
-# Space Manager may *create*; `services_staff._is_superadmin_only_membership` asks what one
-# may modify over an existing membership, and answers it by action rather than by label.
+# The delegable built-ins mounted as fixed-role staff routes. Reattachment guards
+# inspect the existing membership's actions rather than its legacy label.
 _SM_DELEGABLE_ROLES = (
     MakerspaceMembership.Role.INVENTORY_MANAGER,
     MakerspaceMembership.Role.MACHINE_MANAGER,
+    MakerspaceMembership.Role.EVENT_MANAGER,
+    MakerspaceMembership.Role.BOOKING_MANAGER,
+    MakerspaceMembership.Role.HANDOVER,
 )
 
 
@@ -74,7 +75,13 @@ class StaffListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIVie
             )
         return queryset.none()
 
-    @extend_schema(request=StaffCreateSerializer, responses=StaffMembershipSerializer)
+    @extend_schema(
+        description="Create a fixed-role staff membership. Requires manage_makerspace; assigning Space Manager requires a global superadmin. The role must match this endpoint.",
+        request=StaffCreateSerializer,
+        responses={201: StaffMembershipSerializer, **{
+            code: ErrorSerializer for code in (400, 401, 403, 404)
+        }},
+    )
     def create(self, request, *args, **kwargs):
         serializer = StaffCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

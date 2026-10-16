@@ -14,6 +14,9 @@ AuthMembershipSerializer = inline_serializer(
         # role_name carries the organization's name.
         "role": serializers.CharField(allow_null=True),
         "role_id": serializers.IntegerField(allow_null=True),
+        "role_ids": serializers.ListField(child=serializers.IntegerField()),
+        "role_slugs": serializers.ListField(child=serializers.CharField()),
+        "role_names": serializers.ListField(child=serializers.CharField()),
         "role_name": serializers.CharField(),
         "role_slug": serializers.CharField(allow_null=True),
         "source": serializers.ChoiceField(choices=["membership", "organization"]),

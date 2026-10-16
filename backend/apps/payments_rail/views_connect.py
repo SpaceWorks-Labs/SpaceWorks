@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
 from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
@@ -74,7 +75,7 @@ def _lock_callback_authority(makerspace_id, actor_id):
     if membership_snapshot:
         MakerspaceRole.objects.select_for_update().get(pk=membership_snapshot)
     membership = (
-        MakerspaceMembership.objects.select_for_update(of=("self",))
+        MakerspaceMembership.objects.prefetch_related(additional_roles_prefetch()).select_for_update(of=("self",))
         .select_related("assigned_role")
         .filter(makerspace_id=makerspace_id, user_id=actor_id)
         .first()

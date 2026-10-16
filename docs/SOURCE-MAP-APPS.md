@@ -33,8 +33,10 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `station_throttles.py` own reusable rotation/reveal/disable, signing, PIN/origin and throttle mechanics
   without importing event policy.
   `role_services.py` re-exports `role_authority.py` (locked grant validation),
-  `role_crud.py` (audited role mutations), and `role_assignments.py` (staff and community
-  role assignment). The RBAC vocabulary remains in `accounts/rbac_actions.py`.
+  and `role_assignments.py` (staff and community role-set assignment); role CRUD is removed.
+  `role_catalog.py` fixes the seven built-ins; `role_membership_writes.py` owns complete-set writes.
+  `accounts/rbac_roles.py` shares valid-role union rules between object and SQL readers.
+  Per-person type scope lives in `machines/models_membership_scope.py` and `member_scope_services.py`. The RBAC vocabulary remains in `accounts/rbac_actions.py`.
   The tenant-migration authority guard scans the split role-authority/assignment modules.
   Phase 9b kiosk Stations: `models_station_leases.py` (`StationOperatorLease`, `StationSessionRevocation`),
   `kiosk_station_services.py` (scanner/handover lifecycle + PIN session), `station_operator_leases.py`
@@ -106,7 +108,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   (namespaced standalone SVG shared by QR-print + batch ZIP), QR rebind. Camera scanner at
   `frontend/src/components/ui/QrScanner.tsx` (native `BarcodeDetector` + `zxing-wasm` fallback).
 - `backend/apps/admin_api/` — staff REST surface: makerspaces, inventory CRUD + per-makerspace category CRUD
-  (`EDIT_INVENTORY`), bulk import, staff/membership + role management, user restrict/restore, API-client
+  (`EDIT_INVENTORY`), bulk import, staff/membership + role-set assignment, user restrict/restore, API-client
   issuance (`api_client_views.py`) and access requests (`api_key_request_views.py`), audit reads, warranty,
   email-log, notification-recipient, FabLab report views.
   `views_certifications.py` explicitly re-exports type endpoints from

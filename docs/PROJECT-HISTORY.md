@@ -29,6 +29,8 @@
   never newly rejected). Built in parallel Codex lanes; plan and specs in `docs/design-revamp/`.
 
 - **2026-10-15 — standard containers and local tests.** The all-in-one image is no longer built or published; the single-box shape is removed with refusal and switch steps for existing installs. Own-nginx HTTPS setup generates proxy configuration and prints certificate/install steps; API-only setup offers HTTPS only and points to the external website. CI runs no tests: use `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally; Actions builds/releases backend/frontend images, promotes rolling tags and optionally deploys, with `pip-audit` retained on PRs.
+- **2026-10-16 — seven fixed roles:** combinable membership role sets, exclusive Space Manager/Member, per-person machine-type scope, read-only role reference, refreshed console navigation and irreversible preview-first migration from editable roles.
+
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which
   presign rows no workflow ever consumed; a default-off deployment switch plus tenant opt-in lets a

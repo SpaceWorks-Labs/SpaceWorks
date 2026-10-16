@@ -2,11 +2,12 @@
 from rest_framework import serializers
 from apps.admin_api.serializers_makerspace_profile import MakerspaceProfileSerializer
 from apps.makerspaces.module_registry import MODULE_KEYS
+from apps.makerspaces.role_catalog import ROLE_CATALOG
 
 
 class FirstStaffInviteSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    role_slug = serializers.ChoiceField(choices=["space_manager", "inventory_manager", "machine_manager"])
+    role_slug = serializers.ChoiceField(choices=[role.slug for role in ROLE_CATALOG if role.granted_actions])
 
 
 class CreationProfileSerializer(MakerspaceProfileSerializer):

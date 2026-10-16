@@ -91,12 +91,6 @@ def _api_clients(makerspace) -> int:
     return ApiClient.objects.filter(makerspace=makerspace, is_active=True).count()
 
 
-def _custom_roles(makerspace) -> int:
-    from apps.makerspaces.models import MakerspaceRole
-
-    return MakerspaceRole.objects.filter(makerspace=makerspace, is_default=False).count()
-
-
 def _data_exports(makerspace) -> int:
     from apps.data_export.models import DataExportJob
 
@@ -229,7 +223,6 @@ _COUNTERS: dict[str, Callable[[object], int]] = {
     "staff": _staff,
     "members": _members,
     "api_clients": _api_clients,
-    "custom_roles": _custom_roles,
     "print": _print_requests,
     "machine_service_open": _machine_service_open,
     "machine_service_submit": _machine_service_submit,

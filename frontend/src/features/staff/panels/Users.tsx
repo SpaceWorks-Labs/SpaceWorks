@@ -5,7 +5,9 @@ import { ConfirmDialog } from "../../../components/ui";
 import { staffRequest, type StaffAuthUser } from "../../../lib/api";
 import { useStaffGet, type Makerspace } from "./shared";
 import { ListLayout } from "../../../components/layouts/ListLayout";
-import { RoleManager } from "./RoleManager";
+import { RolesReference } from "./RolesReference";
+import { MemberMachineTypes } from "./MemberMachineTypes";
+import { assignableRoles as grantableRoles, refreshMembershipAuthority } from "./roleSets";
 import { StaffInvitations } from "./StaffInvitations";
 import { UsersTable } from "./UsersTable";
 import {
@@ -42,6 +44,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
 }) {
   const queryClient = useQueryClient();
   const [msId, setMsId] = useState<number>(makerspaces[0]?.id ?? 0);
+  const [machineTarget, setMachineTarget] = useState<number | null>(null);
   const [roleFilter, setRoleFilter] = useState("all");
   const [tab, setTab] = useState("staff");
   const [addOpen, setAddOpen] = useState(false);
@@ -75,39 +78,36 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
   );
   const canManageRoles = isSuperadmin || actorActions.includes("manage_makerspace");
   const assignableRoles = useMemo(() => {
-    const all = rolesList.data ?? [];
-    if (isSuperadmin) return all;
-    const ceiling = new Set(actorActions.filter((action) => action !== "manage_makerspace"));
-    return all.filter(
-      (role) => !role.granted_actions.includes("manage_makerspace") && role.granted_actions.every((action) => ceiling.has(action)),
-    );
+    return grantableRoles(rolesList.data ?? [], actorActions, isSuperadmin);
   }, [rolesList.data, isSuperadmin, actorActions]);
 
   const roleFilterOptions = useMemo(() => {
     const names = new Set<string>();
-    (memberships.data ?? []).forEach((row) => names.add(row.assigned_role?.name ?? row.role));
+    (memberships.data ?? []).forEach((row) => row.roles.forEach((role) => names.add(role.name)));
     return Array.from(names).sort();
   }, [memberships.data]);
   const rows = useMemo(() => {
     const data = memberships.data ?? [];
-    return roleFilter === "all" ? data : data.filter((row) => (row.assigned_role?.name ?? row.role) === roleFilter);
+    return roleFilter === "all" ? data : data.filter((row) => row.roles.some((role) => role.name === roleFilter));
   }, [memberships.data, roleFilter]);
 
   // A role edit / assignment / revoke can change the CURRENT actor's own effective actions,
   // so refetch /auth/me (onAuthRefresh) in addition to invalidating the makerspace-scoped lists.
   const afterStaffChange = () => {
-    queryClient.invalidateQueries({ queryKey: ["staff", "memberships", msId] });
-    queryClient.invalidateQueries({ queryKey: ["staff", "roles", msId] });
+    void refreshMembershipAuthority(queryClient, msId);
     onAuthRefresh();
   };
 
   const createStaff = useMutation({
     mutationFn: () => createMembership(msId, staffPayload(staffForm)),
-    onSuccess: () => { setAddOpen(false); setStaffForm(emptyStaffForm); afterStaffChange(); },
+    onSuccess: (membership) => { setAddOpen(false); setStaffForm(emptyStaffForm); afterStaffChange(); if (membership.roles.some((role) => role.slug === "machine_manager")) setMachineTarget(membership.id); },
   });
   const changeRole = useMutation({
-    mutationFn: ({ membership, roleId }: { membership: StaffMembershipRow; roleId: number }) => assignRole(msId, membership.id, roleId),
-    onSuccess: afterStaffChange,
+    mutationFn: ({ membership, roleIds }: { membership: StaffMembershipRow; roleIds: number[] }) => assignRole(msId, membership.id, roleIds),
+    onSuccess: (updated, { membership }) => {
+      afterStaffChange();
+      if (updated.roles.some((role) => role.slug === "machine_manager") && !membership.roles.some((role) => role.slug === "machine_manager")) setMachineTarget(updated.id);
+    },
   });
   const restrict = useMutation({
     mutationFn: () =>
@@ -177,7 +177,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
   const activeTab = sectionTabs.some(item => item.key === tab) ? tab : "staff";
   const activeQuery = activeTab === "roles" ? rolesList : memberships;
   const panelError = memberships.error?.message ?? rolesList.error?.message ?? restore.error?.message ?? revoke.error?.message;
-  const chooseMakerspace = (id: number) => { setMsId(id); setRoleFilter("all"); setTab("staff"); };
+  const chooseMakerspace = (id: number) => { setMsId(id); setRoleFilter("all"); setTab("staff"); setMachineTarget(null); };
   // The space picker, filters and invite banner sit in `filters`, outside the query body, so a
   // failed list (e.g. a 403 on one space) never removes the way to switch to another space.
 
@@ -218,15 +218,16 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
           onRestore={setRestoreTarget}
           onResetPassword={openResetPassword}
           onRevoke={setRevokeTarget}
-          onChangeRole={(membership, roleId) => changeRole.mutateAsync({ membership, roleId })}
+          onChangeRole={(membership, roleIds) => changeRole.mutateAsync({ membership, roleIds })}
+          onMachineTypes={setMachineTarget}
         /> : null}
         {activeTab === "invitations" && canManageRoles && makerspaces.find((space) => space.id === msId)?.enabled_features?.includes("staff.invitations") ? <StaffInvitations key={msId} msId={msId} roles={assignableRoles} /> : null}
-        {canManageRoles && activeTab === "roles" ? (
-          <RoleManager msId={msId} actorActions={actorActions} isSuperadmin={isSuperadmin} onRolesChanged={afterStaffChange} />
-        ) : null}
+        {/* Roles are fixed: the tab is a read-only reference, assignment happens per person on the Staff tab. */}
+        {canManageRoles && activeTab === "roles" ? <RolesReference roles={rolesList.data ?? []} /> : null}
       </div>
 
     </> }} detail={<>
+      {machineTarget !== null ? <MemberMachineTypes key={`${msId}:${machineTarget}`} msId={msId} membershipId={machineTarget} onAuthRefresh={onAuthRefresh} onClose={() => setMachineTarget(null)} /> : null}
       <AddStaffModal
         open={addOpen}
         form={staffForm}
@@ -282,7 +283,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
         title="Revoke role"
         message={
           revokeTarget
-            ? `Remove ${revokeTarget.user.username}'s "${revokeTarget.assigned_role?.name ?? revokeTarget.role.replace(/_/g, " ")}" role in ${makerspaceNames.get(revokeTarget.makerspace_id) ?? revokeTarget.makerspace_slug}? Their account is not deleted.`
+            ? `Remove ${revokeTarget.user.username}'s "${revokeTarget.roles.map((role) => role.name).join(" + ")}" role in ${makerspaceNames.get(revokeTarget.makerspace_id) ?? revokeTarget.makerspace_slug}? Their account is not deleted.`
             : ""
         }
         confirmLabel="Revoke"

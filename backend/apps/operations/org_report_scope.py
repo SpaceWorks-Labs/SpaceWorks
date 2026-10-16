@@ -29,6 +29,10 @@ ORGANIZATION_REPORT_ACTIONS = frozenset({
     rbac.Action.VIEW_AUDIT,
     rbac.Action.MANAGE_MAKERSPACE,
     rbac.Action.VIEW_FINANCE,
+    # Event attendance and booking utilisation are keyed to the area actions, so an
+    # organization grant of that action (never a local role) is what admits them.
+    rbac.Action.MANAGE_EVENTS,
+    rbac.Action.MANAGE_BOOKINGS,
 })
 EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",

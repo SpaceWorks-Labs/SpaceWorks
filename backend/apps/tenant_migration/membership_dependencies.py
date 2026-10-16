@@ -33,6 +33,14 @@ MEMBERSHIP_DEPENDENT_MODELS = {
         retained_by_import=True,
         reason="A certification grant records that one membership was trained; it travels with the membership.",
     ),
+    "makerspaces.MembershipAdditionalRole": MembershipDependency(
+        retained_by_import=False,
+        reason="Staff authority is dropped on import; every imported membership becomes Member.",
+    ),
+    "machines.MembershipMachineTypeScope": MembershipDependency(
+        retained_by_import=False,
+        reason="A Machine Manager's per-person type reach is authority and is dropped on import.",
+    ),
     "presence.PresenceSession": MembershipDependency(
         retained_by_import=True,
         reason="Presence retains its non-null protected membership attribution.",

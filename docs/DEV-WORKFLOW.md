@@ -18,7 +18,7 @@ in `docs/PROJECT-HISTORY.md`** — do not maintain a second copy of that list he
 **Programs already shipped on `dev`**, each with its rules in `docs/INVARIANTS.md` and its dated entry in
 `docs/PROJECT-HISTORY.md`: the FabLab modules (Events, Bookings, Maintenance, Analytics/reports, Machine
 Manager role, public self-booking + shared custom forms, the notification matrix, scoped PII encryption
-H1–H4, custom editable roles L); **Phase C** (capabilities toggles, Stripe payments, advisory geofenced
+H1–H4, historical custom editable roles L, replaced by seven fixed built-ins on 2026-10-16); **Phase C** (capabilities toggles, Stripe payments, advisory geofenced
 check-in, custom machine-type config, per-space pricing, Stripe Connect, reconciliation, native device
 sessions + push + PaymentSheet, social sign-in); machine-scoped `MANAGE_MACHINES`; deployment-removable
 `payments` + install profiles + `suggest_tombstones`; generic OIDC providers; phone + SMS login;

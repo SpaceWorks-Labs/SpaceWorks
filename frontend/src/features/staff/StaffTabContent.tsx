@@ -157,6 +157,9 @@ export function StaffTabContent({
         <MembersPanel
           key={makerspaceKey}
           makerspaceId={activeMakerspace.id}
+          actorActions={actorActions}
+          isSuperadmin={isSuperadmin}
+          onAuthRefresh={onAuthRefresh}
           membershipEnabled={(activeMakerspace.enabled_modules ?? []).includes("membership")}
           canManageMakerspace={canManageMakerspace}
           canViewFinance={has("view_finance")}

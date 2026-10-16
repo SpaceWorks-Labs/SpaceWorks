@@ -29,7 +29,6 @@ default_loan_days presence_preset_minutes""".split())
 HOURS_FIELDS = ("timezone", "opening_hours")
 
 SECTIONS = {
-    "roles": section("makerspaces.MakerspaceRole", "name granted_actions", "name"),
     "active_waiver": section("makerspaces.MakerspaceWaiver", "version body"),
     "loan_policy": section("makerspaces.MakerspaceLoanPolicy", """default_loan_days
         loan_renewal_mode loan_max_renewals loan_renewal_days loan_max_active loan_max_items

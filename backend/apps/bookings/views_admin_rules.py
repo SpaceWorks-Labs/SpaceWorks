@@ -35,7 +35,7 @@ class BookableSpaceBookingRulesView(APIView):
         space = get_object_or_404(
             rbac.scope_by_action(
                 actor,
-                rbac.Action.MANAGE_MAKERSPACE,
+                rbac.Action.MANAGE_BOOKINGS,
                 BookableSpace.objects.select_related('makerspace'),
                 field='makerspace_id',
             ),

@@ -62,6 +62,9 @@ export type StaffAuthUser = {
     slug: string;
     role: string | null;
     role_id: number | null;
+    role_ids: number[];
+    role_slugs: string[];
+    role_names: string[];
     role_name: string;
     role_slug: string | null;
     source: "membership" | "organization";

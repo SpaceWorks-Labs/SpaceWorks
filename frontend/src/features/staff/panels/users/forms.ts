@@ -11,7 +11,7 @@ export const emptyStaffForm: StaffForm = {
   first_name: "",
   last_name: "",
   password: "",
-  role_id: "",
+  role_ids: [],
   makerspace_id: "",
 };
 export const emptyRestrictForm: RestrictForm = { status: "restricted", reason: "" };
@@ -31,7 +31,7 @@ export function staffPayload(form: StaffForm) {
     first_name: form.first_name.trim(),
     last_name: form.last_name.trim(),
     password: form.password,
-    role_id: Number(form.role_id),
+    role_ids: form.role_ids,
   };
 }
 

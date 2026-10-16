@@ -9,7 +9,7 @@
 - **What it is** — the machine registry: machines, their operators, usage and documents. Warranty
   records and consumable pools hang off it.
 - **What it adds** — the Machines console, machine detail, per-machine documents and images, consumables
-  and usage. `MANAGE_MACHINES` is scoped per role, so a maintainer can be narrowed to specific machines.
+  and usage. `MANAGE_MACHINES` is scoped per person by machine type; no type links means no machines.
   A consumable pool is scoped to **either** one machine or one machine type, never both, so a filament
   colour can be shared across every printer of a type instead of being re-entered per machine. Each pool
   also carries a hex swatch for the staff console and its own public/private flag. A public pool appears

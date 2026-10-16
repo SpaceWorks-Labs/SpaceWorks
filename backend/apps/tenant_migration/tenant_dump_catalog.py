@@ -106,6 +106,7 @@ CATALOG_SCHEMA_SHA256 = "7a7132b9cf5e6f6883e4c8c868cbb35219fcf86f8fbb8cfc46329c4
 # Re-blessed for encrypted GitHub OAuth credentials (platform-only, dropped on import).
 # Re-blessed for install-time built-in provider switches (platform-only, dropped on import).
 # Integration 2026-10-16: re-pinned after merging yuyu-parity + setup-areas (see the catalog guard test).
+# Fixed roles: MembershipAdditionalRole + MembershipMachineTypeScope added, role machine scopes removed.
 
 
 def catalog_models(apps_registry=apps):

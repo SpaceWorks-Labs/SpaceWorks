@@ -1,3 +1,5 @@
+from apps.accounts.rbac_roles import additional_roles_prefetch
+from apps.accounts.rbac_roles import membership_roles
 from apps.integrations.models_recipients import NotificationRecipientKind
 from apps.integrations.recipient_scope_matching import rule_covers as _rule_covers
 from apps.integrations.recipients_selection import logger, selection_rows
@@ -23,13 +25,13 @@ def _eligible_memberships(makerspace):
         )
         .exclude(user__is_superuser=True)
         .exclude(user__role=User.Role.SUPERADMIN)
-        .select_related("user", "assigned_role")
+        .select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
         .order_by("id")
     )
 
 
 def _role_scope_admits(membership_scopes, membership, scope) -> bool:
-    """Whether the recipient's ROLE could reach this alert's machine at all.
+    """Whether the selected recipient's membership reaches this alert's machine.
 
     D9's floor, and it applies to `kind=role` rows ONLY. Resolving it is asking "does this
     role's MANAGE_MACHINES grant reach this machine", which is a question about authority
@@ -45,8 +47,8 @@ def _role_scope_admits(membership_scopes, membership, scope) -> bool:
     resolved = membership_scopes.get(membership.pk, machine_role_scope.NOTHING)
     if resolved is machine_role_scope.EXEMPT:
         return True
-    type_ids, machine_ids = resolved
-    return (scope.machine_id is not None and scope.machine_id in machine_ids) or scope.machine_type_id in type_ids
+    type_ids, _ = resolved
+    return scope.machine_type_id in type_ids
 
 
 def reach_filter_for(memberships, scope):
@@ -81,11 +83,11 @@ def reach_filter_for(memberships, scope):
         resolved = scopes.get(membership.pk, machine_role_scope.EXEMPT)
         if resolved is machine_role_scope.EXEMPT:
             return True
-        type_ids, machine_ids = resolved
-        if not (type_ids or machine_ids):
+        type_ids, _ = resolved
+        if not type_ids:
             # Unconfigured, not narrowed -- fail open.
             return True
-        return (scope.machine_id is not None and scope.machine_id in machine_ids) or scope.machine_type_id in type_ids
+        return scope.machine_type_id in type_ids
 
     return admits
 
@@ -129,8 +131,9 @@ def _selected_memberships(makerspace, rows, scope=None):
         row = None
         if member_rows:
             row = member_rows[0]
-        elif membership.assigned_role_id in role_rows:
-            row = role_rows[membership.assigned_role_id]
+        elif any(role.pk in role_rows for role in membership_roles(membership)):
+            row = next(role_rows[role.pk] for role in membership_roles(membership)
+                       if role.pk in role_rows)
         elif membership.user_id in user_rows:
             row = user_rows[membership.user_id]
         if row is None:

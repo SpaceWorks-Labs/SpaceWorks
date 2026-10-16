@@ -35,11 +35,20 @@ append_deployment_layers() {
   fi
 }
 
+control_plane_port_reserved() {
+  local port="$1" reserved
+  for reserved in "$(deployment_value TLS_HTTP_PORT)" "$(deployment_value TLS_HTTPS_PORT)" \
+    "$(deployment_value MINIO_API_PORT)" "$(deployment_value MINIO_CONSOLE_PORT)" 80 443 9000 9001; do
+    [[ "$port" != "$reserved" ]] || return 0
+  done
+  return 1
+}
+
 # Caddy imports control-plane-<value>.caddy and import paths are globs, so `*` would load both
 # files: only the exact enum may reach Compose. A tunnel port that shadows a published edge or
 # storage port would take that listener down when Caddy is recreated.
 control_plane_settings_valid() {
-  local layer="$1" proxy port reserved
+  local layer="$1" proxy port
   proxy="$(deployment_value CONTROL_PLANE_PROXY)"
   [[ -z "$proxy" || "$proxy" == true || "$proxy" == false ]] || { echo 'CONTROL_PLANE_PROXY must be true or false.' >&2; return 64; }
   port="$(deployment_value CONTROL_PLANE_TUNNEL_PORT)"
@@ -48,10 +57,10 @@ control_plane_settings_valid() {
     echo 'CONTROL_PLANE_TUNNEL_PORT must be a port from 1 to 65535 without leading zeros.' >&2
     return 64
   fi
-  for reserved in "$(deployment_value TLS_HTTP_PORT)" "$(deployment_value TLS_HTTPS_PORT)" \
-    "$(deployment_value MINIO_API_PORT)" "$(deployment_value MINIO_CONSOLE_PORT)" 80 443 9000 9001; do
-    [[ "$port" != "$reserved" ]] || { echo "CONTROL_PLANE_TUNNEL_PORT $port is already a published HTTP, HTTPS or storage port." >&2; return 64; }
-  done
+  if control_plane_port_reserved "$port"; then
+    echo "CONTROL_PLANE_TUNNEL_PORT $port is already a published HTTP, HTTPS or storage port." >&2
+    return 64
+  fi
 }
 
 require_tunnel_engine() {

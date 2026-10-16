@@ -19,7 +19,7 @@ install_staged_host_bundle() {
     frontend/docker/control-plane-allowlist.sh frontend/docker-entrypoint.d/40-control-plane.sh
     scripts/compose-deployment.sh scripts/setup-question-input.sh scripts/setup-questions.sh
     scripts/setup-area-questions.sh scripts/setup-areas-json.sh scripts/module-area-selection.sh scripts/module-legacy-selection.sh
-    scripts/setup-write-environment.sh scripts/update-rollback.sh scripts/apply-settings.sh
+    scripts/setup-write-environment.sh scripts/update-rollback.sh scripts/apply-settings.sh scripts/control-plane-settings.sh
     scripts/bundled-database-url.py scripts/cleanup-run-once.sh scripts/configure-compose-wrapper.py
     scripts/host-capability.py scripts/import-backup.sh
     scripts/init-host-orchestration.sh scripts/install-runner.sh scripts/runner-release.py scripts/install-host-bundle.sh

@@ -3341,6 +3341,11 @@ way to publish the `127.0.0.1` HTTPS tunnel listener. Rules that must not regres
 - `.env` changes to these keys are applied with `scripts/apply-settings.sh`, which holds the update lock and
   `operation.lock`, pins every running application container's image ID before refreshing records, never
   pulls, and refuses build/SaaS layers and API-only behind an own proxy (`api-edge` has no route).
+- `apply-settings.sh --control-plane on|off` (driven by installer option 6 /
+  `scripts/control-plane-settings.sh`) rewrites those keys only AFTER taking both locks, and its rollback runs
+  before releasing them: restore `.env`, then (once applying started) `refresh_compose_config` and Compose up,
+  so the topology records never keep the failed `.env`'s digest. `refresh_compose_config` must therefore
+  fail on the first failed record write, not report only the last one.
 
 **The H1 host marker is a process boundary, and PostgreSQL grants are a separate authority
 boundary.** Every application-image start must enter through

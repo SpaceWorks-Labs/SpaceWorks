@@ -52,6 +52,25 @@ require_install_owner "$APPLY_SCRIPT_DIR/apply-settings.sh" "$@"
 say() { printf '[Space Works settings] %s\n' "$*"; }
 die() { printf '[Space Works settings] ERROR: %s\n' "$*" >&2; exit 1; }
 refuse() { printf '[Space Works settings] ERROR: %s\n' "$*" >&2; exit 64; }
+source "$APPLY_SCRIPT_DIR/../frontend/docker/control-plane-allowlist.sh"
+CP_MODE=''; NEW_CIDRS=''; NEW_PORT=''; CIDRS_GIVEN=0; PORT_GIVEN=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --control-plane|--allow-cidrs|--tunnel-port)
+      [[ $# -ge 2 ]] || refuse "Missing value for $1."
+      case "$1" in
+        --control-plane) CP_MODE="$2"; [[ "$CP_MODE" == on || "$CP_MODE" == off ]] || refuse '--control-plane must be on or off.' ;;
+        --allow-cidrs) NEW_CIDRS="$2"; CIDRS_GIVEN=1 ;;
+        --tunnel-port) NEW_PORT="$2"; PORT_GIVEN=1 ;;
+      esac
+      shift 2 ;;
+    *) refuse "Unknown argument: $1" ;;
+  esac
+done
+[[ -n "$CP_MODE" || ( "$CIDRS_GIVEN" == 0 && "$PORT_GIVEN" == 0 ) ]] || refuse '--allow-cidrs and --tunnel-port require --control-plane.'
+[[ "$CP_MODE" != off || "$CIDRS_GIVEN" == 0 ]] || refuse '--allow-cidrs cannot be used with --control-plane off.'
+[[ -z "$NEW_CIDRS" ]] || cp_valid_cidr_list "$NEW_CIDRS" || refuse 'Invalid --allow-cidrs.'
+[[ -z "$NEW_PORT" ]] || cp_valid_port "$NEW_PORT" || refuse 'Invalid --tunnel-port.'
 command -v flock >/dev/null 2>&1 || refuse 'Host flock is required; run this from Linux or WSL2.'
 source "$APPLY_SCRIPT_DIR/compose-deployment.sh"
 source "$APPLY_SCRIPT_DIR/spaceworks-repository.sh"
@@ -60,13 +79,36 @@ OPS_DIR="${OPS_DIR:-/var/lib/spaceworks/ops}"
 export SPACEWORKS_OPS_HOST_DIR="$OPS_DIR"
 LOCK_DIR="$ROOT/.spaceworks-update.lock"
 source "$APPLY_SCRIPT_DIR/update-lock.sh"
-APPLY_STARTED=0; PROBE_BODY=''
+APPLY_STARTED=0; ENV_REWRITTEN=0; PROBE_BODY=''; ENV_TEMP=''
+rollback_control_plane() {
+  ROLLBACK_STEP='restoring .env'
+  cp -p -- "$ROOT/.env.before-control-plane" "$ROOT/.env" || return
+  if [[ "$APPLY_STARTED" == 0 ]]; then
+    printf '%s\n' 'The previous .env was restored; nothing else changed.'
+    return 0
+  fi
+  ROLLBACK_STEP='refreshing topology records'
+  if ! declare -F refresh_compose_config >/dev/null; then source "$APPLY_SCRIPT_DIR/setup-host-orchestration.sh" || return; fi
+  refresh_compose_config || return
+  ROLLBACK_STEP='restarting services'
+  "$ROOT/scripts/spaceworks-compose.sh" bundled up -d --remove-orphans --pull never --wait --wait-timeout 300 || return
+  printf '%s\n' 'Rolled back to the previous control-plane settings.'
+}
 cleanup() {
   local status=$?
   trap - EXIT
   set +e
   [[ -z "$PROBE_BODY" ]] || rm -f -- "$PROBE_BODY"
-  if [[ "$status" != 0 && "$APPLY_STARTED" == 1 ]]; then
+  [[ -z "$ENV_TEMP" ]] || rm -f -- "$ENV_TEMP"
+  if [[ "$status" != 0 && "$ENV_REWRITTEN" == 1 ]]; then
+    if ! rollback_control_plane >&2; then
+      printf 'Rollback incomplete (%s failed).\n' "$ROLLBACK_STEP" >&2
+      printf '%s\n' 'The previous settings are kept at .env.before-control-plane.' \
+        'Copy it over .env if it is not already: cp -p .env.before-control-plane .env' \
+        'Then run: bash scripts/apply-settings.sh' \
+        'If that refuses because the app service is not running, first run: scripts/spaceworks-compose.sh bundled up -d --pull never' >&2
+    fi
+  elif [[ "$status" != 0 && "$APPLY_STARTED" == 1 ]]; then
     printf '%s\n' 'Applying failed. Restore the .env you had before editing (the docs suggest keeping `.env.before-control-plane`), then rerun bash scripts/apply-settings.sh. The database was not touched.' >&2
   fi
   release_update_lock
@@ -74,12 +116,29 @@ cleanup() {
 }
 trap cleanup EXIT
 acquire_update_lock
+if [[ -n "$CP_MODE" ]]; then
+  cp -p -- "$ROOT/.env" "$ROOT/.env.before-control-plane"
+  ENV_TEMP="$(umask 077; mktemp "$ROOT/.env.control-plane.XXXXXX")"
+  sed '/^[[:space:]]*\(export[[:space:]]\+\)\?CONTROL_PLANE_\(PROXY\|ALLOW_CIDRS\|TUNNEL_PORT\)=/d' "$ROOT/.env" > "$ENV_TEMP"
+  # A hand-edited .env may lack its final newline; appending would join two settings.
+  [[ ! -s "$ENV_TEMP" || -z "$(tail -c 1 "$ENV_TEMP")" ]] || printf '\n' >> "$ENV_TEMP"
+  proxy=false; [[ "$CP_MODE" != on ]] || proxy=true
+  printf "CONTROL_PLANE_PROXY='%s'\n" "$proxy" >> "$ENV_TEMP"
+  for key in ALLOW_CIDRS TUNNEL_PORT; do
+    if [[ "$key" == ALLOW_CIDRS ]]; then value="$NEW_CIDRS"; else value="$NEW_PORT"; fi
+    [[ -n "$value" ]] || continue
+    value="${value//\\/\\\\}"; value="${value//\'/\\\'}"
+    printf "CONTROL_PLANE_%s='%s'\n" "$key" "$value" >> "$ENV_TEMP"
+  done
+  chmod 600 "$ENV_TEMP"
+  mv -f -- "$ENV_TEMP" "$ROOT/.env"
+  ENV_REWRITTEN=1
+fi
 LAYER=none
 [[ ! -f "$ROOT/.spaceworks-layer" ]] || LAYER="$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")"
 case "$LAYER" in none|tls|single) ;; *) refuse 'Settings apply supports bundled release layers none, tls and single; build layers and saas are not supported.' ;; esac
 export SPACEWORKS_COMPOSE_LAYER="$LAYER"
 unset SPACEWORKS_COMPOSE_BUILD_LAYER
-source "$APPLY_SCRIPT_DIR/../frontend/docker/control-plane-allowlist.sh"
 CONTROL_PLANE_PROXY="$(deployment_value CONTROL_PLANE_PROXY)"
 CONTROL_PLANE_ALLOW_CIDRS="$(deployment_value CONTROL_PLANE_ALLOW_CIDRS)"
 CONTROL_PLANE_TUNNEL_PORT="$(deployment_value CONTROL_PLANE_TUNNEL_PORT)"
@@ -144,13 +203,13 @@ HOST_CONFIG_IMAGE="${identities[backend]:-}"
 if [[ -z "$HOST_CONFIG_IMAGE" ]]; then
   HOST_CONFIG_IMAGE="$(docker image inspect -f '{{.Id}}' "$MAKERSPACE_BACKEND_IMAGE:$tag")" || refuse 'The matching backend image must be available locally for host configuration.'
 fi
+OPS_HOST_DIR="$OPS_DIR"
+export HOST_CONFIG_IMAGE
 APPLY_STARTED=1
 mkdir -p "$ROOT/backups"
 env_backup="$ROOT/backups/env-applied-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 (umask 077; cp -- "$ROOT/.env" "$env_backup")
 chmod 600 "$env_backup"
-OPS_HOST_DIR="$OPS_DIR"
-export HOST_CONFIG_IMAGE
 source "$APPLY_SCRIPT_DIR/setup-host-orchestration.sh"
 refresh_compose_config
 "$ROOT/scripts/spaceworks-compose.sh" bundled up -d --remove-orphans --pull never --wait --wait-timeout 300

@@ -6,8 +6,8 @@ record_compose_config() {
   local layer="${record#compose-topology}" file
   layer="${layer%.json}"; layer="${layer#-}"; layer="${layer:-none}"
   local COMPOSE_FILES=()
-  source "$ROOT/scripts/compose-deployment.sh"
-  append_deployment_layers "$layer" /repo
+  source "$ROOT/scripts/compose-deployment.sh" || return
+  append_deployment_layers "$layer" /repo || return
   for file in "${COMPOSE_FILES[@]}"; do set -- "$@" --compose-file "$file"; done
   record="${record%.json}${DEPLOYMENT_SUFFIX}.json"
   docker run --rm --user 0:0 --entrypoint python \
@@ -19,21 +19,21 @@ record_compose_config() {
 }
 
 refresh_compose_config() {
-  record_compose_config compose-topology.json
+  record_compose_config compose-topology.json || return
   record_compose_config compose-topology-build.json \
-    --compose-file /repo/docker/compose.build.yml
+    --compose-file /repo/docker/compose.build.yml || return
   record_compose_config compose-topology-tls.json \
-    --compose-file /repo/docker/compose.tls.yml
+    --compose-file /repo/docker/compose.tls.yml || return
   record_compose_config compose-topology-build-tls.json \
     --compose-file /repo/docker/compose.build.yml \
-    --compose-file /repo/docker/compose.tls.yml
+    --compose-file /repo/docker/compose.tls.yml || return
   record_compose_config compose-topology-saas.json \
-    --compose-file /repo/docker/compose.saas.yml
+    --compose-file /repo/docker/compose.saas.yml || return
   record_compose_config compose-topology-build-saas.json \
     --compose-file /repo/docker/compose.build.yml \
-    --compose-file /repo/docker/compose.saas.yml
+    --compose-file /repo/docker/compose.saas.yml || return
   record_compose_config compose-topology-single.json \
-    --compose-file /repo/docker/compose.single.yml
+    --compose-file /repo/docker/compose.single.yml || return
 }
 
 prepare_compose_wrapper() {

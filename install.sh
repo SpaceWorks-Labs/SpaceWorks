@@ -176,13 +176,16 @@ What do you want to do?
   3) Update, then change modules - option 1 followed by option 2.
   4) Cancel - exit without changing anything.
   5) Install or re-register the GitHub Actions runner only.
-Choose 1-5 [4]: ")"
+  6) Turn web access to the control plane (/control/) on or off - no new version is
+     downloaded.
+Choose 1-6 [4]: ")"
   ACTION="${ACTION:-4}"
   case "$ACTION" in
     1) ACTION=update ;;
     2) ACTION=modules ;;
     3) ACTION=both ;;
     5) ACTION=runner ;;
+    6) ACTION=controlplane ;;
     4) say "Cancelled; existing deployment was not changed."; exit 0 ;;
     *) die "Invalid menu choice; existing deployment was not changed." ;;
   esac
@@ -206,6 +209,15 @@ if [[ "$ACTION" == runner ]]; then
   ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} test -f "$INSTALL_DIR/scripts/install-runner.sh" \
     || die 'This installation needs a release update before installing its runner.'
   ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} bash "$INSTALL_DIR/scripts/install-runner.sh"
+  exit 0
+fi
+if [[ "$ACTION" == controlplane ]]; then
+  ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} test -f "$INSTALL_DIR/scripts/control-plane-settings.sh" \
+    || die 'This installation needs a release update (option 1) before it can change control-plane access.'
+  # RUN_ROOT may only mean "the parent is unwritable"; a user-owned install must run as its owner.
+  cp_runner=()
+  [[ "$RUN_INSTALLED_AS_ROOT" != 1 ]] || cp_runner=(${RUN_ROOT[@]+"${RUN_ROOT[@]}"})
+  ${cp_runner[@]+"${cp_runner[@]}"} bash "$INSTALL_DIR/scripts/control-plane-settings.sh" </dev/tty || exit $?
   exit 0
 fi
 port_in_use() {

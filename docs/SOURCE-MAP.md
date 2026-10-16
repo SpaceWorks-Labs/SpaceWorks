@@ -441,7 +441,8 @@ and `machines/policy_settings.py` are shared with their existing staff editors.
 `compose-deployment.sh` appends the frontend/storage overlays (and, for TLS layers, the control-plane
 tunnel overlay) consistently for `spaceworks-compose.sh` and `setup-host-orchestration.sh` topology
 records. Update, rollback and restore use that wrapper. `apply-settings.sh` applies the `CONTROL_PLANE_*`
-keys on an installed host without changing the release; the opt-in route itself lives in
+keys on an installed host without changing the release (`control-plane-settings.sh`, installer option 6,
+asks the questions and calls it with `--control-plane`); the opt-in route itself lives in
 `deploy/control-*.caddy` and the nginx generator `frontend/docker-entrypoint.d/40-control-plane.sh`, whose
 address validation (`frontend/docker/control-plane-allowlist.sh`) the questionnaire shares.
 

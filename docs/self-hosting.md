@@ -407,8 +407,20 @@ on: the backend publishes no port, and Django answers a plain-HTTP request with 
 | `CONTROL_PLANE_ALLOW_CIDRS` | empty (anyone) | Space-separated addresses/CIDRs, e.g. `203.0.113.7 10.8.0.0/16`. Everyone else gets 403. |
 | `CONTROL_PLANE_TUNNEL_PORT` | empty (off) | Automatic HTTPS only: a `127.0.0.1`-only HTTPS port that serves nothing but the control plane, for an SSH tunnel. |
 
-`setup.sh` asks about these. On an existing install, keep a copy of `.env` (`cp -p .env
-.env.before-control-plane`), edit the values, then apply them without changing the release:
+`setup.sh` asks about these on a fresh install. On an existing install, rerun the one-line installer and
+choose **6) Turn web access to the control plane on or off**, or run `bash scripts/control-plane-settings.sh`
+in the install directory. It shows the current values, asks the same questions, then runs:
+
+```bash
+bash scripts/apply-settings.sh --control-plane on|off [--allow-cidrs "..."] [--tunnel-port N]
+```
+
+This keeps `.env.before-control-plane` and edits `.env` under the update lock. On failure it restores the
+old `.env`; if applying had started, it also refreshes the topology records and restarts the services. If
+rollback cannot finish, it prints the exact manual steps. The backup is kept either way.
+
+As an advanced alternative, keep a copy of `.env` (`cp -p .env .env.before-control-plane`), edit the values,
+then apply them without changing the release:
 
 ```bash
 bash scripts/apply-settings.sh
@@ -416,10 +428,10 @@ bash scripts/apply-settings.sh
 
 It takes the update lock, checks that every running container still matches its local image (it never pulls
 or changes the version), refreshes the Compose trust records, restarts what changed and probes the result. Run
-it from Linux or WSL2 (it needs `flock`). If it fails, restore `.env.before-control-plane` and run it again;
-the database is not touched. Updates keep these settings, because `.env` is preserved — but apply an edited
-`.env` with this script before the next update, or the updater refuses the changed file. This script is for
-these proxy settings; credential rotation and topology changes have their own procedures.
+it from Linux or WSL2 (it needs `flock`). After a failed manual edit, restore `.env.before-control-plane` and
+run it again; the database is not touched. Updates keep these settings, because `.env` is preserved — but
+apply an edited `.env` with this script before the next update, or the updater refuses the changed file.
+This script is for these proxy settings; credential rotation and topology changes have their own procedures.
 
 **Through the website (`CONTROL_PLANE_PROXY=true`).** Open `https://<your-domain>/control/`. Nothing extra is
 needed for DNS, certificates, `ALLOWED_HOSTS` or `CSRF_TRUSTED_ORIGINS`: it is the same host. Set

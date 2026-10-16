@@ -6,6 +6,7 @@ import { opsQueryState, opsStatusLabel } from "./opsPresentation";
 import { StructuredApiError } from "../../lib/api";
 import { useEventCollaborationReview } from "./EventCollaborationReview";
 import { EventCreatePreview } from "./EventCreatePreview";
+import { EventPartnersSection, emptyPartnerValues, partnerPayload } from "./EventPartnersSection";
 import { EventDrawer } from "./EventDrawer";
 import { EventSeriesDrawer } from "./EventSeriesDrawer";
 import { EventSeriesFields, emptySeriesForm, seriesPayload } from "./EventSeriesForm";
@@ -40,10 +41,11 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
   const createSeries = useCreateEventSeries(makerspaceId);
   const [values, setValues] = useState<EventFormValues>(emptyEventForm);
   const [seriesValues, setSeriesValues] = useState(emptySeriesForm);
+  const [partners, setPartners] = useState(emptyPartnerValues);
   const [audienceEdited, setAudienceEdited] = useState(false);
   const [seriesAudienceEdited, setSeriesAudienceEdited] = useState(false);
   useEffect(() => {
-    setValues(emptyEventForm); setSeriesValues(emptySeriesForm);
+    setValues(emptyEventForm); setSeriesValues(emptySeriesForm); setPartners(emptyPartnerValues);
     setAudienceEdited(false); setSeriesAudienceEdited(false);
   }, [makerspaceId]);
   const defaultAudience = events.data?.default_registration_audience;
@@ -61,10 +63,11 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
   function submit() {
     // Unknown default and untouched field: let the server apply the space's default audience.
     const { registration_audience: audience, ...rest } = payloadFor(newValues);
-    create.mutate(defaultAudience || audienceEdited ? { ...rest, registration_audience: audience } : rest, {
+    const extras = partnerPayload(partners, newValues.registration_audience === "participating_organizations");
+    create.mutate(defaultAudience || audienceEdited ? { ...rest, ...extras, registration_audience: audience } : { ...rest, ...extras }, {
       onSuccess: (created) => {
         setCreating(false);
-        setValues(emptyEventForm); setAudienceEdited(false);
+        setValues(emptyEventForm); setAudienceEdited(false); setPartners(emptyPartnerValues);
         openEvent(created.id);
       },
     });
@@ -109,6 +112,8 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
     back={{ label: "All events", onClick: () => setCreating(false) }} cancel={{ label: "Cancel", onClick: () => setCreating(false) }}
     form={<div data-create-event>{creationMode === "single" ? <EventFields organizationAudienceEnabled={organizationAudience} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }} />
       : <EventSeriesFields organizationAudienceEnabled={organizationAudience} values={newSeriesValues} setValues={(next) => { if (next.registration_audience !== newSeriesValues.registration_audience) setSeriesAudienceEdited(true); setSeriesValues(next); }} />}
+      {creationMode === "single" ? <EventPartnersSection values={partners} setValues={setPartners} hostId={makerspaceId}
+        audienceSelected={newValues.registration_audience === "participating_organizations"} /> : null}
       {create.error || createSeries.error ? <p className="mt-3 text-sm text-danger" role="alert">{eventErrorText(create.error || createSeries.error)}</p> : null}</div>}
     preview={{ label: "Event preview", content: <EventCreatePreview values={creationMode === "single" ? newValues : newSeriesValues} /> }}
     submit={{ label: creationMode === "single" ? "Create event" : "Create series", pending: create.isPending || createSeries.isPending, pendingLabel: "Creating…",

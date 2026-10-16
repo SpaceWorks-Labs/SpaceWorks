@@ -148,6 +148,11 @@ the owned registration. New model, serializer and route files are indexed in
 live in `frontend/src/features/inventory/PublicEventDetailPage.tsx` and
 `frontend/src/features/events/`; staff ticketing uses `eventTicketingApi.ts` and the
 `EventInvitesPanel`, `EventTicketsPanel` and `EventPromosPanel` components.
+Organizer, audience and partner pickers share `features/staff/AsyncSearchPicker.tsx` through
+`EventPartnerPickers.tsx`; `EventPartnersSection.tsx` is the create form's "Organizers & partners" step,
+`EventAudienceOrganizations.tsx` the Settings-tab audience editor, `EventCheckInList.tsx` the Check-in
+tab's live list, and `eventPartnersApi.ts` their queries/mutations. `EventAudienceOptions.tsx` owns the
+one wording of the registration-audience choices used by events, series and space defaults.
 
 [Module families and public-site settings](SOURCE-MAP-MODULE-FAMILIES.md) maps the
 WP2 loan/public-site gates, compatibility splits, family dashboards and routing.

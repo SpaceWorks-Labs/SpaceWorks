@@ -2896,8 +2896,9 @@ retention registration survives tombstoning even though discovery and routes dis
 
 `participating_organizations` requires `events.organization_audience` (Events parent,
 default off); it needs neither membership installation nor account-registration features.
-The live candidate set is the event's organizer organizations plus its venue's OWNER
-organization. Manager/affiliate links and accepted collaborators add no organization.
+The live candidate set is the event's selected audience organizations
+(`EventAudienceOrganization`, single events only) plus its organizer organizations plus its
+venue's OWNER organization. Manager/affiliate links and accepted collaborators add no organization.
 Active direct organization members qualify regardless of action grants; active members
 of the candidates' OWNER-linked spaces also qualify. Accounts must be persisted, active,
 unrestricted and non-stub. Organizations must be active; public-profile consent is not
@@ -2940,6 +2941,70 @@ staff audience reconfiguration clears the block; generated occurrences and clone
 it. Deployment backup preserves the original graph/marker. These booleans add no PII,
 User edge or object ownership. Existing event datasets and local purge predicates retain
 responsibility; local purges never delete shared global organizations or foreign organizers.
+
+### Organizers, partners and audience organizations (int-events, 2026-10-16)
+
+- **Audience is not authority.** `EventAudienceOrganization(event, organization, added_by,
+  created_at)` admits an organization's members to a `participating_organizations` event and
+  nothing else: no `event_authority`, `organizer_authority` or `staff_grant_locks` path reads
+  it. An organization that should co-manage an event is an ORGANIZER (`EventOrganizer`),
+  which grants its `MANAGE_EVENTS` members management of that one event.
+- **Organizers stay limited to the actor's own organizations** (active membership in every
+  newly assigned one; superadmin exempt) -- deliberately no consent/invitation flow for
+  external organizers, because attaching an organization as an organizer hands its event
+  managers authority over this event. Other organizations are added as AUDIENCE instead.
+- **`candidate_ids` is a union for back-compat**: audience rows + organizers + venue owner.
+  Events that chose this audience before audience rows existed keep exactly their audience;
+  series and occurrences have no audience rows and keep the organizer/owner set. Audience
+  writers hold the event lock first (`_locked_event`), the same order as organizer writers,
+  so the admission fence sees the old or the new set, never half. Writes need `edit_details`
+  (rechecked after `lock_authority`), refuse terminal events with 409, audit
+  `event.audience_organizations_updated` with old/new IDs only, and are a no-op (no audit)
+  when the set is unchanged.
+- **Discoverability is opt-in.** `Organization.is_discoverable` defaults to False for new
+  AND existing organizations; only `manage_organization_profile` governance toggles it
+  (profile PATCH, audited as `organization.profile_updated`). The staff directory
+  (`GET admin/organizations/directory/`) returns active organizations that are discoverable
+  or that the actor actively belongs to (superadmin: all active). A NEWLY added audience
+  organization must pass that same predicate server-side; an already-listed one may stay
+  after it stops being discoverable. The route lives in the events app so a tombstoned
+  `events` takes its only consumer's directory with it.
+- **Partner makerspaces are picked, not typed.** `GET admin/event-partner-makerspaces/`
+  returns servable spaces with the `events` module that are in the central public directory
+  (`public_site_enabled` and not `hidden_from_central_directory`) plus spaces the actor holds
+  `MANAGE_EVENTS` in -- nothing the public site does not already list. Invitation and
+  accept/decline consent are unchanged.
+- Both directories need an actor who runs events somewhere (tenant `MANAGE_EVENTS` or an
+  organization membership granting it; superadmin), are paginated at 24 and throttled
+  per user (`event_directory_search`, 120/min). They are global routes, so a custom staff
+  origin refuses them like every other unscoped admin route.
+- **Create applies everything in one transaction.** `create_event` takes optional
+  `organization_ids`, `audience_organization_ids` and `collaborator_slugs` (create-only
+  `EventCreateSerializer`; PATCH still refuses them) and calls `replace_organizers`,
+  `replace_audience_organizations` and `invite_collaborators` inside its atomic block, so any
+  refusal creates no event. It locks the host AND every partner space up front in PK order:
+  the new event is invisible to everyone else, so taking spaces before it cannot deadlock,
+  whereas acquiring a partner after the host could deadlock against a reciprocal create.
+- Retention: `EventAudienceOrganization` is OMITTED from tenant exports (it references a
+  deployment-global organization) and so `DROP` in tenant imports; its `added_by` is a
+  declared User edge; whole-tenant purge deletes it with organizer rows; events module purge
+  and event deletion cascade it.
+
+### Check-in list and staff role labels (int-events, 2026-10-16)
+
+- `GET admin/events/<pk>/check-ins/` needs only the `check_in` event permission, so a door
+  volunteer or speaker grantee can see who arrived beside the scanner. It lists ATTENDED
+  registrations (a corrected attendance leaves the list) with the latest
+  `EventCheckInEvent` per registration (served by `event_checkin_history_idx`), newest first,
+  paginated at 24. The projection is minimal on purpose: attendee name, ticket type name,
+  `attended_at`, source (`qr`/`manual`/`offline`/`station`/`legacy`) and the checking
+  actor's display name -- never email, phone, payment or custom answers.
+- `EventStaffGrant.role_label` / `EventStaffGrantInvite.role_label` (`speaker`,
+  `volunteer`, `check_in`, or blank) are DISPLAY ONLY. Permissions alone decide authority.
+  The shared resource-grant lifecycle carries it through `GrantAdapter.label_field`
+  (bookings passes none): invites store it, redemption copies it to a new grant and only
+  fills a blank label on a merged one, PATCH changes it only when sent, and audit metadata
+  includes it only when non-blank. The "Speaker" preset in the console is `check_in` only.
 
 ### Event access, ticketing and discovery (WP1, 2026-10-11)
 

@@ -18,6 +18,18 @@
 - **2026-10-16 — seven fixed roles:** combinable membership role sets, exclusive Space Manager/Member,
   per-person machine-type scope, read-only role reference, refreshed console navigation and irreversible
   preview-first migration from editable roles (`makerspaces/0091` schema, `0092` data, `0093` constraint).
+- **2026-10-16 — event organizers, partners and audiences (`lane/int-events`).** Event creation gains an
+  "Organizers & partners" section: organizer organizations (the actor's own, defaulted), partner makerspaces
+  picked from a search over the central directory, and, for the "Selected organizations" audience, audience
+  organizations from a new opt-in organization directory (`Organization.is_discoverable`, default off) --
+  all applied in the create transaction. `EventAudienceOrganization` separates who may register from who
+  manages: an audience organization gets no authority, and external organizations are audience, never
+  organizers (so no organizer-consent flow). Audience options are renamed "Anyone with an account / Our
+  members / Selected organizations / Invite only", with approval as "Organizer approves each registration".
+  The Check-in tab shows who has checked in (`GET admin/events/<pk>/check-ins/`, `check_in` permission only),
+  and event staff grants gain a display-only `role_label` with a "Speaker" (check-in only) preset.
+  Rules under **Organizers, partners and audience organizations** and **Check-in list and staff role labels**
+  in `docs/INVARIANTS.md`.
 - **2026-10-16 — owner organizations at makerspace creation.** Installer setup asks for the organization name as its own question, before the makerspace name; installer, API, staff console and `/control/` share atomic owner assignment. The console searches and paginates active organizations or accepts a new name. Existing ownerless spaces remain usable without a migration; tenant import and `seed_e2e` are exceptions.
 - **2026-10-16 — opt-in route to the control plane.** `/control/` had no working path on a bundled
   install: no proxy forwarded it, the backend publishes no port, and with HTTPS on Django redirects a

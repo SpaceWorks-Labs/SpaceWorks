@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SettingsRow } from "../../components/ui";
+import { AudienceOptions } from "./EventAudienceOptions";
 import { staffRequest } from "../../lib/api";
 
 type Audience = "members" | "accounts" | "invite" | "participating_organizations";
@@ -28,10 +29,9 @@ export function EventDefaultsSettings({ makerspaceId }: { makerspaceId: number }
     helper="New events and recurring series start with this audience. Existing events keep their audience. Ticket currency uses the default in Location & hours.">
     <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
       <select id={selectId} className="desk-input w-full min-w-0" value={audience} disabled={!query.data || save.isPending} onChange={(event) => { setDraft(event.target.value as Audience); save.reset(); }}>
-        <option value="members">Members</option><option value="accounts">Authenticated accounts</option><option value="invite">Invited accounts</option>
-        {organizationAudienceEnabled || audience === "participating_organizations" ? <option value="participating_organizations" disabled={!organizationAudienceEnabled}>Participating organizations</option> : null}
+        <AudienceOptions value={audience} organizationAudienceEnabled={organizationAudienceEnabled} />
       </select>
-      {audienceDisabled ? <p className="text-sm text-muted">Enable Participating organizations audience in Features to use this default, or choose another audience.</p> : null}
+      {audienceDisabled ? <p className="text-sm text-muted">Enable the Participating organizations audience in Features to use Selected organizations as the default, or choose another audience.</p> : null}
       {query.error || save.error ? <p role="alert" className="text-sm text-danger">{(save.error ?? query.error)?.message}</p> : null}
       <button className="desk-button-primary justify-self-start" type="submit" disabled={!draft || save.isPending || audienceDisabled}>Save event defaults</button>
       {save.isSuccess ? <p role="status" className="text-sm text-muted">Event defaults saved.</p> : null}

@@ -16,6 +16,10 @@ class Organization(models.Model):
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     public_profile_enabled = models.BooleanField(default=False)
+    # Opt-in listing in the staff-only organization directory that event organizers
+    # search when choosing an event's audience. Off by default: an organization that
+    # never asked to be findable must not appear in another tenant's picker.
+    is_discoverable = models.BooleanField(default=False)
     makerspaces = models.ManyToManyField(
         "makerspaces.Makerspace",
         through="OrganizationMakerspace",

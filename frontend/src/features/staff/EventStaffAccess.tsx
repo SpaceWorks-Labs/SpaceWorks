@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Card, Skeleton, StatusBadge } from "../../components/ui";
-import { EventPermissionFields } from "./EventPermissionFields";
+import { EventPermissionFields, RoleLabelField, roleLabelText, type RoleLabel } from "./EventPermissionFields";
 import { useEventStaffGrantActions, useEventStaffGrants, useEventStaffInvites, type EventStaffGrant, type StaffGrantTarget } from "./eventStaffGrantsApi";
 import type { EventPermission } from "./eventStaffPermissions";
 import { eventErrorText } from "./eventUi";
@@ -13,6 +13,7 @@ export function EventStaffAccess({ target }: { target: StaffGrantTarget }) {
   const [email, setEmail] = useState("");
   const [sendEmail, setSendEmail] = useState(true);
   const [permissions, setPermissions] = useState<EventPermission[]>([]);
+  const [role, setRole] = useState<RoleLabel>("");
   const [grantPage, setGrantPage] = useState(1);
   const [invitePage, setInvitePage] = useState(1);
   const [link, setLink] = useState("");
@@ -29,14 +30,16 @@ export function EventStaffAccess({ target }: { target: StaffGrantTarget }) {
     </div>
     <Card><form className="grid gap-4" onSubmit={(event) => {
       event.preventDefault(); setLink("");
-      invite.mutate({ email, send_email: sendEmail, permissions }, { onSuccess: (row) => {
+      invite.mutate({ email, send_email: sendEmail, permissions, ...(role ? { role_label: role } : {}) }, { onSuccess: (row) => {
         setLink(`${window.location.origin}/staff/event-invite#token=${encodeURIComponent(row.token)}`);
         // The raw token stays in this component's state, never in a query cache.
-        invite.reset(); setEmail(""); setPermissions([]);
+        invite.reset(); setEmail(""); setPermissions([]); setRole("");
       } });
     }}>
       <label className="grid gap-1 text-sm font-semibold text-ink">Invite email<input className="desk-input w-full min-w-0 font-normal" type="email" autoComplete="email" value={email} required disabled={pending} onChange={(event) => setEmail(event.target.value)} /></label>
-      <EventPermissionFields value={permissions} onChange={setPermissions} disabled={pending} />
+      <EventPermissionFields value={permissions} onChange={setPermissions} disabled={pending}
+        onSpeakerPreset={() => { setPermissions(["check_in"]); setRole("speaker"); }} />
+      <RoleLabelField value={role} onChange={setRole} disabled={pending} />
       <label className="flex min-h-11 items-center gap-3 text-sm text-ink"><input type="checkbox" checked={sendEmail} disabled={pending} onChange={(event) => setSendEmail(event.target.checked)} />Email the invitation link</label>
       <div className="flex justify-end"><button className="desk-button-primary" type="submit" disabled={pending || !permissions.length}>{invite.isPending ? "Creating invitation…" : "Invite staff"}</button></div>
     </form></Card>
@@ -51,11 +54,13 @@ export function EventStaffAccess({ target }: { target: StaffGrantTarget }) {
       {grants.data?.results.map((grant) => <article key={grant.id} className={`${rowCard} ${grant.revoked_at ? "border-dashed bg-surface" : ""}`}>
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <p className="title-section min-w-0 flex-1 break-words">Account #{grant.user}</p>
+          {roleLabelText(grant.role_label) ? <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">{roleLabelText(grant.role_label)}</span> : null}
           {grant.revoked_at ? <StatusBadge status="revoked" label="Revoked" /> : null}
         </div>
         {editing?.id === grant.id ? <form className="grid gap-3" onSubmit={(event) => {
-          event.preventDefault(); update.mutate({ id: grant.id, permissions: editing.permissions }, { onSuccess: () => setEditing(null) });
+          event.preventDefault(); update.mutate({ id: grant.id, permissions: editing.permissions, role_label: editing.role_label ?? "" }, { onSuccess: () => setEditing(null) });
         }}><EventPermissionFields legend={`Permissions for account #${grant.user}`} value={editing.permissions} disabled={pending} onChange={(next) => setEditing({ ...editing, permissions: next })} />
+          <RoleLabelField label={`Role label for account #${grant.user}`} value={editing.role_label ?? ""} disabled={pending} onChange={(next) => setEditing({ ...editing, role_label: next })} />
           <div className="flex flex-wrap gap-2"><button className="desk-button-primary" type="submit" disabled={pending || !editing.permissions.length}>Save permissions</button><button className="desk-button" type="button" onClick={() => setEditing(null)}>Cancel</button></div>
         </form> : <p className="text-sm text-muted">{permissionList(grant.permissions)}</p>}
         {!grant.revoked_at ? <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={pending} onClick={() => setEditing({ ...grant })}>Edit account #{grant.user}</button><button className="desk-button-danger-outline" type="button" disabled={pending} onClick={() => revoke.mutate(grant.id)}>Revoke account #{grant.user}</button></div> : null}

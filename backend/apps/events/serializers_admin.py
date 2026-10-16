@@ -108,6 +108,30 @@ class EventWriteSerializer(serializers.Serializer):
         return attrs
 
 
+class EventCreateSerializer(EventWriteSerializer):
+    """Create-only extras; PATCH keeps using the dedicated organizer/partner routes."""
+
+    organization_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), max_length=50, required=False,
+        help_text="Organizer organizations. Each must be one the actor actively belongs to.",
+    )
+    audience_organization_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), max_length=50, required=False,
+        help_text="Selected audience organizations, chosen from the organization directory.",
+    )
+    collaborator_slugs = serializers.ListField(
+        child=serializers.SlugField(), max_length=50, required=False,
+        help_text="Partner makerspaces to invite; each must accept before its members can register.",
+    )
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        for key in ("organization_ids", "audience_organization_ids", "collaborator_slugs"):
+            if len(attrs.get(key, ())) != len(set(attrs.get(key, ()))):
+                raise serializers.ValidationError({key: "Values must be unique."})
+        return attrs
+
+
 from .serializers_event_details import (
     EventAdminSerializer, EventRegistrationCountsSerializer, EventAttendanceMarkSerializer,
 )

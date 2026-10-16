@@ -33,7 +33,7 @@ class AccessibleEventListView(APIView):
                 raise ValidationError({"makerspace_id": "Choose a valid makerspace."})
             rows = rows.filter(makerspace_id=int(selected))
         rows = rows.filter(makerspace__enabled_modules__contains=["events"])
-        rows = _annotate_registration_counts(rows).select_related("makerspace", "series").prefetch_related("organizers__organization").order_by("starts_at", "id")
+        rows = _annotate_registration_counts(rows).select_related("makerspace", "series").prefetch_related("organizers__organization", "audience_organizations__organization").order_by("starts_at", "id")
         paginator = _EventPagination()
         page = paginator.paginate_queryset(rows, request, view=self)
         context = event_list_context(request, page)

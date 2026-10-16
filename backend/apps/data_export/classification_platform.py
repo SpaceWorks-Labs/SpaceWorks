@@ -122,6 +122,10 @@ OMITTED_MODELS = {
         "It references a deployment-global organization that does not travel with "
         "a tenant export."
     ),
+    "events.EventAudienceOrganization": (
+        "It references a deployment-global organization that does not travel with "
+        "a tenant export; the audience is re-chosen on the target."
+    ),
     "events.EventSeriesOrganizer": (
         "It references a deployment-global organization that does not travel with "
         "a tenant export."

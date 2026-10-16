@@ -11,10 +11,11 @@ export function OrganizationProfileForm({ organization }: { organization: Organi
     description: organization.description,
     website: organization.website,
     public_profile_enabled: organization.public_profile_enabled,
+    is_discoverable: organization.is_discoverable ?? false,
   });
   const update = useUpdateOrganization(organization.id, organization.slug);
   const allowed = organization.governance_actions.includes("manage_organization_profile");
-  const original = { name: organization.name, slug: organization.slug, description: organization.description, website: organization.website, public_profile_enabled: organization.public_profile_enabled };
+  const original = { name: organization.name, slug: organization.slug, description: organization.description, website: organization.website, public_profile_enabled: organization.public_profile_enabled, is_discoverable: organization.is_discoverable ?? false };
   const dirty = JSON.stringify(values) !== JSON.stringify(original);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export function OrganizationProfileForm({ organization }: { organization: Organi
       description: organization.description,
       website: organization.website,
       public_profile_enabled: organization.public_profile_enabled,
+      is_discoverable: organization.is_discoverable ?? false,
     });
   }, [organization]);
 
@@ -53,6 +55,10 @@ export function OrganizationProfileForm({ organization }: { organization: Organi
         <SettingsRow label="Listed publicly" helper="Show the organization profile and eligible event catalogue."><label className="flex min-h-11 items-center gap-3 text-sm text-ink">
           <input type="checkbox" disabled={!allowed} checked={values.public_profile_enabled} onChange={(event) => setValues({ ...values, public_profile_enabled: event.target.checked })} />
           Publish this organization profile and its eligible event catalogue
+        </label></SettingsRow>
+        <SettingsRow label="Findable by event organizers" helper="Off by default. When on, staff at other makerspaces can find this organization and invite its members to their events. It gives them no access to the organization."><label className="flex min-h-11 items-center gap-3 text-sm text-ink">
+          <input type="checkbox" disabled={!allowed} checked={values.is_discoverable} onChange={(event) => setValues({ ...values, is_discoverable: event.target.checked })} />
+          List this organization in the event organizer directory
         </label></SettingsRow>
       {allowed && dirty ? <div className="sticky bottom-0 z-10 bg-panel pb-[env(safe-area-inset-bottom)]"><SettingsActions onDiscard={() => setValues(original)} onSave={() => (document.getElementById("organization-name")?.closest("form") as HTMLFormElement)?.requestSubmit()} pending={update.isPending} /></div> : !allowed ? <p className="mt-4 text-sm text-muted">You have view-only access to this profile.</p> : null}
       {update.error ? <p className="mt-2 text-sm text-danger" role="alert">{update.error.message}</p> : null}

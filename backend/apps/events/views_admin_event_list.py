@@ -8,7 +8,7 @@ from apps.events import event_authority
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events import services
 from apps.events.models import Event
-from apps.events.serializers_admin import EventAdminSerializer, EventListWithDefaultsSerializer, EventWriteSerializer
+from apps.events.serializers_admin import EventAdminSerializer, EventCreateSerializer, EventListWithDefaultsSerializer
 from apps.events.serializers_event_authority import event_list_context
 from apps.inventory.search import apply_q
 from .views_admin_event_detail import (
@@ -45,7 +45,7 @@ class EventListCreateView(APIView):
         queryset = (
             _annotate_registration_counts(queryset)
             .select_related('series')
-            .prefetch_related('organizers__organization')
+            .prefetch_related('organizers__organization', 'audience_organizations__organization')
             .order_by('starts_at', 'id')
         )
         query = request.query_params.get('q', '')
@@ -68,7 +68,13 @@ class EventListCreateView(APIView):
     @extend_schema(
         tags=['Admin events'],
         summary='Create a draft event',
-        request=EventWriteSerializer,
+        description=(
+            "Optional organization_ids (the actor's own organizations), "
+            'audience_organization_ids (from the organization directory) and '
+            'collaborator_slugs (partner makerspaces to invite) are applied in the same '
+            'transaction as the event; any refusal creates nothing.'
+        ),
+        request=EventCreateSerializer,
         responses={
             201: EventAdminSerializer,
             400: EVENT_ERROR_400,
@@ -77,7 +83,7 @@ class EventListCreateView(APIView):
     )
     def post(self, request, makerspace_id, *args, **kwargs):
         makerspace = _visible_makerspace(request.user, makerspace_id)
-        serializer = EventWriteSerializer(data=request.data)
+        serializer = EventCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)
         values.pop('inherit_fields', None)

@@ -1,8 +1,6 @@
 """Observe availability edges while the availability service holds the product lock."""
 
-from apps.integrations.destinations import NotificationScope
-from apps.integrations.email_templates_registry_helpers import bag
-from apps.integrations.notifications_research import bounded, notify_family, safe_adapter
+from apps.integrations.notifications_research import safe_adapter
 
 
 def save_stock_change(product, *, update_fields):
@@ -22,12 +20,5 @@ def save_stock_change(product, *, update_fields):
 
 @safe_adapter
 def notify_low_stock(product):
-    # notify_family queues after commit and honors the F3 matrix, mutes and quotas.
-    # All labels/counts are snapshotted here; a later replenishment cannot rewrite it.
-    return notify_family(
-        product.makerspace, "stock", "low_stock",
-        bag(id=product.pk, name=bounded(product.name),
-            available=product.available_quantity, reorder_point=product.reorder_point),
-        data={"product_id": product.pk},
-        scope=NotificationScope(category=product.category_id),
-    )
+    from .notifications_p2 import notify_stock
+    return notify_stock(product)

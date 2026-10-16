@@ -112,6 +112,8 @@ def return_tool(
                 target=report,
                 meta={"loan_id": loan.pk, "request_id": loan.request_id},
             )
+            from .notifications_p2_reports import notify_report
+            notify_report(report)
             emit_notification(
                 makerspace,
                 level="warning",
@@ -120,4 +122,3 @@ def return_tool(
                 body=f"Problem report #{report.pk} filed for loan #{loan.pk}.",
             )
         return loan
-

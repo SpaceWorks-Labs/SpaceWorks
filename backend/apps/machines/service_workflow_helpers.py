@@ -145,5 +145,6 @@ def _audit_transition(actor, service_request, event, extra=None):
 
 
 def _notify_after_commit(service_request, event):
-    request_id = service_request.pk
-    transaction.on_commit(lambda: notify_service_status(MachineServiceRequest.objects.select_related("bucket__machine__makerspace", "queue__makerspace").get(pk=request_id), event))
+    # The outbox must commit atomically with the status transition. Only enqueue
+    # and provider I/O wait until commit; retaining this name preserves imports.
+    notify_service_status(service_request, event)

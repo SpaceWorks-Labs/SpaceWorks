@@ -200,6 +200,8 @@ MIDDLEWARE = [
     # Binds the per-request correlation id before any layer below can log. The two gates
     # above refuse without logging through it; that is the accepted cost of their position.
     "config.request_id.RequestIdMiddleware",
+    # Clears the per-request native-session marker (accounts.native_session).
+    "apps.accounts.native_session.NativeSessionContextMiddleware",
     "apps.tenant_migration.middleware.SourceMigrationGateMiddleware",
     "apps.makerspaces.middleware.TenantHostValidationMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -1126,6 +1128,9 @@ AUTH_COOKIE_SECURE = env.bool("AUTH_COOKIE_SECURE", default=True)
 # provider verifier URL and bearer credential are configured. Verifiers must perform
 # real Apple App Attest / Google Play Integrity validation and return bound claims.
 DEVICE_ATTESTATION_APPS = env.json("DEVICE_ATTESTATION_APPS", default={})
+DEVICE_ATTESTATION_DEV_INSECURE = env.bool("DEVICE_ATTESTATION_DEV_INSECURE", default=False)
+MOBILE_MIN_VERSION_ANDROID = env("MOBILE_MIN_VERSION_ANDROID", default="")
+MOBILE_MIN_VERSION_IOS = env("MOBILE_MIN_VERSION_IOS", default="")
 DEVICE_APPLE_ATTESTATION_VERIFY_URL = env("DEVICE_APPLE_ATTESTATION_VERIFY_URL", default="")
 DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN = env("DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN", default="")
 DEVICE_ANDROID_ATTESTATION_VERIFY_URL = env("DEVICE_ANDROID_ATTESTATION_VERIFY_URL", default="")

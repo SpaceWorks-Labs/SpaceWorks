@@ -15,6 +15,7 @@ GLOBAL_MODELS = {
 }
 
 OMITTED_MODELS = {
+    "accounts.PlatformAttestationSettings": "Platform attestation credentials; never tenant data.",
     "accounts.ReauthenticationSession": "Deployment-local browser step-up proof; never tenant authority.",
     "notifications.NotificationInboxRow": "Short-lived personal delivery text and read telemetry; target inbox starts empty.",
     "integrations.EmailSuppression": "Deployment-keyed address suppression must be re-established on the target.",
@@ -56,7 +57,7 @@ OMITTED_MODELS = {
     # digest and a credential fingerprint. Transient authentication state, and global
     # rather than tenant data.
     "accounts.PasswordResetEnvelope": "Transient authentication state.",
-    "accounts.PhoneVerificationChallenge": "Transient authentication state.",
+    "accounts.PhoneVerificationChallenge": "Transient OTP and attestation binding; never portable authentication authority.",
     "accounts.PlatformLoginMethods": "Platform identity configuration.",
     "accounts.PlatformSocialAuthSettings": "Platform credentials and identity configuration.",
     "accounts.SocialIdentity": "Verified platform login identity.",

@@ -1,7 +1,8 @@
 import hashlib
 import hmac
+import re
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from urllib.parse import urlsplit
 
@@ -26,6 +27,30 @@ class AttestationRejected(Exception):
 @dataclass(frozen=True)
 class VerifiedAttestation:
     subject: str
+    metadata: dict = field(default_factory=dict)
+
+
+def readiness_mode(platform, signing_identity=None):
+    """Select one verifier; a configured verifier's failure never enables a bypass."""
+    if platform not in {"apple", "android"}:
+        return "unavailable"
+    prefix = f"DEVICE_{platform.upper()}_ATTESTATION_VERIFY"
+    url = getattr(settings, f"{prefix}_URL", "")
+    token = getattr(settings, f"{prefix}_TOKEN", "")
+    if url and token:
+        return "external"
+    # App Attest uses public trust material; the per-app team ID is checked by
+    # configured_app, and no deployment-private Apple credential is required.
+    if platform == "apple" and isinstance(signing_identity, str) and re.fullmatch(r"[A-Z0-9]{10}", signing_identity):
+        return "in_process"
+    if platform == "android":
+        from apps.accounts.models_attestation import PlatformAttestationSettings
+        row = PlatformAttestationSettings.objects.filter(pk=1).first()
+        if row and row.play_integrity_service_account:
+            return "in_process"
+    if settings.DEVICE_ATTESTATION_DEV_INSECURE:
+        return "development_insecure"
+    return "unavailable"
 
 
 def challenge_digest(raw):
@@ -43,16 +68,13 @@ def configured_app(platform, verifier_config_key, environment):
     signing_identity = str(entry.get("signing_identity") or "")
     if not signing_identity or environment not in (entry.get("environments") or []):
         raise AttestationUnavailable("Device attestation is unavailable.")
-    if platform == 'apple':
-        provider_url = settings.DEVICE_APPLE_ATTESTATION_VERIFY_URL
-        provider_token = settings.DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN
-    elif platform == 'android':
-        provider_url = settings.DEVICE_ANDROID_ATTESTATION_VERIFY_URL
-        provider_token = settings.DEVICE_ANDROID_ATTESTATION_VERIFY_TOKEN
-    else:
-        raise AttestationUnavailable('Device attestation is unavailable.')
-    parsed = urlsplit(str(provider_url or ''))
-    if parsed.scheme != 'https' or not parsed.netloc or not provider_token:
+    mode = readiness_mode(platform, signing_identity)
+    if mode == "external":
+        url = getattr(settings, f"DEVICE_{platform.upper()}_ATTESTATION_VERIFY_URL")
+        parsed = urlsplit(str(url))
+        if parsed.scheme != "https" or not parsed.netloc:
+            raise AttestationUnavailable("Device attestation is unavailable.")
+    if mode == "unavailable":
         raise AttestationUnavailable('Device attestation is unavailable.')
     return signing_identity
 
@@ -172,6 +194,26 @@ def _authority_matches(challenge):
 
 
 def verify_attestation(challenge, raw_challenge, payload):
+    # Simulators/emulators cannot attest, and Apple's in-process mode is selected by the
+    # team ID alone, so the explicit development payload is honoured before mode dispatch
+    # -- still only with DEBUG on (checks.E001 refuses the flag otherwise) and only for a
+    # development registration.
+    if (settings.DEVICE_ATTESTATION_DEV_INSECURE and settings.DEBUG
+            and challenge.environment == "development" and payload == {"type": "development"}):
+        return VerifiedAttestation(subject="development")
+    mode = readiness_mode(challenge.platform, challenge.signing_identity)
+    if mode == "unavailable":
+        raise AttestationUnavailable("Device attestation is unavailable.")
+    if mode == "development_insecure":
+        if not settings.DEBUG or challenge.environment != "development" or payload != {"type": "development"}:
+            raise AttestationRejected("Attestation was rejected.")
+        return VerifiedAttestation(subject="development")
+    if mode == "in_process":
+        if challenge.platform == "apple":
+            from apps.accounts.attestation_app_attest import verify_app_attest
+            return verify_app_attest(challenge, raw_challenge, payload)
+        from apps.accounts.attestation_play_integrity import verify_play_integrity
+        return verify_play_integrity(challenge, raw_challenge, payload)
     if challenge.platform == "apple":
         from apps.accounts.attestation_apple import verify_apple_attestation
         subject = verify_apple_attestation(challenge, raw_challenge, payload)

@@ -19,11 +19,16 @@ from apps.accounts.services_tokens import blacklist_device_family
 from apps.accounts.tokens import SpaceWorksRefreshToken
 
 
-def assert_mobile_grant_creation_enabled():
-    """Refuse new grants while preserving already-issued device sessions."""
+def mobile_grant_creation_enabled():
+    """Discovery and enforcement share the same deployment-level module gate."""
     from apps.makerspaces.deployment_modules import mobile_module_enabled
 
-    if not mobile_module_enabled():
+    return bool(mobile_module_enabled())
+
+
+def assert_mobile_grant_creation_enabled():
+    """Refuse new grants while preserving already-issued device sessions."""
+    if not mobile_grant_creation_enabled():
         raise AuthenticationFailed("Mobile device sessions are not enabled.")
 
 
@@ -37,6 +42,7 @@ def issue_device_token_pair(user, grant, *, family=None):
     assert_token_issuance_allowed(user)
     family = family or DeviceRefreshFamily.objects.create(grant=grant, user=user)
     refresh = SpaceWorksRefreshToken.for_user(user, web_session=False)
+    refresh["surface"] = "native_staff" if grant.authority == "staff" else "member"
     refresh["device_grant_id"] = str(grant.pk)
     refresh["device_family_id"] = str(family.pk)
     raw = str(refresh)

@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.db.models import Exists
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -22,6 +23,7 @@ from apps.operations.views_reports import (
     _report_filters,
 )
 from apps.organizations.models import Organization, OrganizationMembership
+from apps.accounts.native_session import is_native_session
 
 
 class InvalidOrganizationReport(APIException):
@@ -54,6 +56,9 @@ def _organization_for_report(actor, organization_id, definition):
     resolve_organization_report_scope simply returns an empty scope, so "you may not" and
     "you own nothing" would look identical to the caller.
     """
+    if is_native_session(actor):
+        # Native device sessions are membership-only; same 404 as any non-qualifying actor.
+        raise Http404
     qualifying = OrganizationMembership.objects.filter(
         organization_id=organization_id,
         organization__is_active=True,

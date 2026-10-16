@@ -93,7 +93,9 @@ class TenantDumpCatalogError(AssertionError):
 # BK-B: nullable cancellation timestamp and prior reservation state.
 # BK-G: reconcile the integrated Lane E/BK-C graph plus the scalar pass template.
 # Literal reconstruction reproduces b90ce9de before the later merged model additions.
-CATALOG_SCHEMA_SHA256 = "7a7132b9cf5e6f6883e4c8c868cbb35219fcf86f8fbb8cfc46329c484e7e9dc2"
+CATALOG_SCHEMA_SHA256 = "008ddfef20f7254115ee460361f58d889f5fb76a7c7a790ba81ec6eafdd69eb9"
+# Native authority/attestation and phone challenge binding: literal reconstruction
+# reproduced preceding pins; credentials, grants and challenges remain DROP.
 # BK-D adds typed booking campaign/delivery history. Literal reconstruction
 # reproduced HEAD's complete graph before computing the new digest.
 # Lane F: platform-only, nonportable session reauthentication proof.

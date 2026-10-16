@@ -31,7 +31,10 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `DEVICE_ANDROID_ATTESTATION_VERIFY_URL` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_URL` | `''` |  |
-| `DEVICE_ATTESTATION_APPS` | `{}` |  |
+| `DEVICE_ATTESTATION_APPS` | `{}` | Per-platform verifier keys mapping to `signing_identity` and `environments`. In-process Apple identity is the 10-character team ID; Android identity is a SHA-256 signing-certificate digest (hex or base64). Apple uses the embedded public App Attest root; Android credentials are encrypted in `/control/` Platform attestation settings. |
+| `DEVICE_ATTESTATION_DEV_INSECURE` | `False` | Accept development attestation for development registrations only; requires `DEBUG=True`. External and configured in-process verifiers take priority. |
+| `MOBILE_MIN_VERSION_ANDROID` | `''` | Optional minimum Android app version published in native config. Empty means no minimum; otherwise dotted numeric (for example `1.4.0`), compared component by component by the app. Invalid formats fail the system check. |
+| `MOBILE_MIN_VERSION_IOS` | `''` | Optional minimum iOS app version; same dotted numeric format and empty/no-minimum behavior as Android. |
 | `DEVICE_ATTESTATION_CHALLENGE_TTL_SECONDS` | `180` |  |
 | `DEVICE_ATTESTATION_PROVIDER_TIMEOUT_SECONDS` | `10` |  |
 | `MEMBER_CLAIM_CODE_TTL_SECONDS` | `15 * 60` |  |

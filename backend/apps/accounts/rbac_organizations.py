@@ -17,6 +17,14 @@ def _organization_authority_memberships(actor, *, makerspace_ids=None):
     from apps.makerspaces.servability import servable_q
     from apps.organizations.models import OrganizationMembership
 
+    # Native device sessions are membership-only (INVARIANTS: "Native device payloads stay
+    # membership-only"). Cutting org authority here, the single source every org branch
+    # reads, closes body-targeted requests too -- not just the URL/header pinning that
+    # SpaceWorksJWTAuthentication can check.
+    from apps.accounts.native_session import is_native_session
+
+    if is_native_session(actor):
+        return OrganizationMembership.objects.none()
     filters = (
         Q(
             user=actor,

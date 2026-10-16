@@ -8,6 +8,7 @@ from apps.accounts.models_devices import DeviceAttestationChallenge, DeviceGrant
 from apps.accounts.serializers_device import DeviceGrantSerializer
 from apps.accounts.services_device_tokens import issue_device_token_pair, assert_mobile_grant_creation_enabled
 from apps.accounts.services_social_login import assert_staff_authority
+from apps.accounts.services_device_grants import assert_grant_user_allowed, authority_for_login
 from apps.accounts.tokens import SpaceWorksRefreshToken
 
 
@@ -20,10 +21,12 @@ def context(request, *, surface, staff_scope=None, device=None):
             "origin": origin, **({"device": device} if device else {})}
 
 
-def device_context(challenge, verified, grant=None):
+def device_context(challenge, verified, grant=None, *, login_method=None):
     return {"attestation_id": str(challenge.pk) if challenge else None,
             "subject_hash": audit_events.fingerprint(verified.subject) if verified else "",
-            "grant_id": str(grant.pk) if grant else None}
+            "attestation_metadata": verified.metadata if verified else {},
+            "grant_id": str(grant.pk) if grant else None,
+            "login_method": login_method}
 
 
 def issue_session(user, data, request):
@@ -48,6 +51,7 @@ def issue_session(user, data, request):
                 registration__status=NativeAppRegistration.Status.APPROVED,
             ).first()
         else:
+            assert_grant_user_allowed(user)
             attestation = DeviceAttestationChallenge.objects.get(pk=device["attestation_id"])
             registration = NativeAppRegistration.objects.select_for_update().filter(
                 pk=attestation.registration_id, status=NativeAppRegistration.Status.APPROVED,
@@ -56,21 +60,25 @@ def issue_session(user, data, request):
             if registration:
                 grant = DeviceGrant.objects.create(
                     registration=registration, user=user, platform=attestation.platform,
+                    authority=authority_for_login(user, login_method=device.get("login_method")),
                     app_id=attestation.app_id, environment=attestation.environment,
                     signing_identity=attestation.signing_identity,
                     attestation_subject_fingerprint=device["subject_hash"],
+                    attestation_key_id=device.get("attestation_metadata", {}).get("key_id"),
+                    attestation_public_key=device.get("attestation_metadata", {}).get("public_key"),
                     attested_at=timezone.now(), last_used_at=timezone.now(),
                 )
         if grant is None:
             raise AuthenticationFailed("Device authorization is no longer active.")
         access, refresh, _ = issue_device_token_pair(user, grant)
+        surface = "native_staff" if grant.authority == DeviceGrant.Authority.STAFF else "member"
         request.device_grant = grant
         audit_events.record_auth_event(user, "auth.device_login_succeeded", target=user)
         return {"access": access, "refresh": refresh, "surface": surface,
-                "user": user_payload(user, request=request), "device_grant": DeviceGrantSerializer(grant).data}
+                "user": user_payload(user, request=request, session_authority=surface), "device_grant": DeviceGrantSerializer(grant).data}
     refresh = SpaceWorksRefreshToken.for_user(user)
     refresh["surface"] = surface
     if surface == "staff":
         refresh["staff_scope"] = data.get("staff_scope") or "platform"
     return {"access": str(refresh.access_token), "refresh": str(refresh), "surface": surface,
-            "user": user_payload(user, request=request)}
+            "user": user_payload(user, request=request, session_authority=surface)}

@@ -9,6 +9,11 @@ PUBLIC_SLUG_ROUTES = {"public-booking-resource", "public-booking-website", "publ
 
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 
+# Scanner routes carry their tenant inside the scanned QR payload, not the path. The
+# target is the QR's makerspace, so a native staff session cannot scan another space's
+# QR under its selected header. An unknown payload adds no target; the view 404s.
+QR_PAYLOAD_ROUTES = {"qr-resolve", "qr-scan"}
+
 MAKERSPACE_KWARG_ROUTES = {
     "website-origins": "makerspace_id",
     'admin-booking-machine-types': 'makerspace_id',
@@ -163,7 +168,12 @@ def _authoritative_route_targets(request, view=None):
         or (url_name == 'admin-makerspace' and 'pk' in kwargs)
         or url_name in MODEL_LOOKUPS or url_name in TARGET_SET_LOOKUPS
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
-        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES)
+        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES
+        or url_name in QR_PAYLOAD_ROUTES)
+    if url_name in QR_PAYLOAD_ROUTES:
+        resolved = _qr_payload_makerspace_id(request)
+        if resolved is not None:
+            targets.add(resolved)
     if url_name in PUBLIC_SLUG_ROUTES:
         from .lookup import get_public_makerspace
         from django.http import Http404
@@ -206,6 +216,19 @@ def _authoritative_route_targets(request, view=None):
         if pk is not None:
             targets.update(_lookup_makerspace_ids(url_name, pk))
     return url_name, targets, invalid, route_recognized
+
+
+def _qr_payload_makerspace_id(request):
+    body = getattr(request, "data", None)
+    payload = body.get("payload") if hasattr(body, "get") else None
+    if not isinstance(payload, str) or not payload:
+        return None
+    from apps.boxes.access import inventory_qr_codes
+    from apps.boxes.models import QrCode
+
+    return inventory_qr_codes().filter(
+        payload=payload, status=QrCode.Status.ACTIVE,
+    ).values_list("makerspace_id", flat=True).first()
 
 
 def _positive_int(value):

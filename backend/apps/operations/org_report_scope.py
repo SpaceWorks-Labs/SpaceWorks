@@ -19,6 +19,7 @@ from apps.makerspaces.servability import servable_queryset
 from apps.operations.report_registry import ReportDefinition
 from apps.operations.report_scope import ReportScope, combined_report_scope
 from apps.organizations.models import (
+from apps.accounts.native_session import is_native_session
     Organization,
     OrganizationMakerspace,
     OrganizationMembership,
@@ -125,6 +126,8 @@ def resolve_organization_report_scope(
         actor is None
         or not getattr(actor, "is_authenticated", False)
         or getattr(actor, "pk", None) is None
+        # Native device sessions are membership-only: no organization report scope.
+        or is_native_session(actor)
     ):
         return combined_report_scope(Makerspace.objects.none())
 

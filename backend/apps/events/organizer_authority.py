@@ -3,6 +3,7 @@ from django.db.models import Q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.organizations.models import OrganizationMembership
+from apps.accounts.native_session import is_native_session
 
 
 def _is_superadmin(actor):
@@ -19,6 +20,8 @@ def organizer_event_q(actor, *, event_prefix=""):
         actor is None
         or not getattr(actor, "is_authenticated", False)
         or _is_superadmin(actor)
+        # Native device sessions are membership-only: no organizer authority.
+        or is_native_session(actor)
     ):
         return Q(pk__in=[])
 
@@ -56,7 +59,8 @@ def can_manage_event(actor, event) -> bool:
     """Authorize one event without widening authority over its venue."""
     if rbac.can(actor, rbac.Action.MANAGE_EVENTS, event.makerspace_id):
         return True
-    if _is_superadmin(actor) or event.makerspace_id in rbac.archived_makerspace_ids():
+    if (_is_superadmin(actor) or is_native_session(actor)
+            or event.makerspace_id in rbac.archived_makerspace_ids()):
         return False
     memberships = OrganizationMembership.objects.filter(
         user=actor,

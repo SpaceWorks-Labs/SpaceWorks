@@ -30,6 +30,9 @@ AuthMembershipSerializer = inline_serializer(
     },
 )
 class AuthUserPayload(serializers.Serializer):
+    session_authority = serializers.CharField(
+        help_text="Effective session surface: member, native_staff, staff, staff_api or verification_only. Native staff APIs require X-Makerspace-Id selecting an active local membership; URL and body targets must match.",
+    )
     id = serializers.IntegerField()
     username = serializers.CharField()
     email = serializers.EmailField()

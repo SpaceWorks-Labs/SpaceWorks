@@ -49,6 +49,7 @@ GLOBAL_ADMIN_MODELS = {
     "organizations.organization",
     "organizations.organizationmembership",
     "accounts.platformsocialauthsettings",
+    "accounts.platformattestationsettings",
     # The login-method switches govern credentials, and credentials resolve before a
     # makerspace is selected — the same reason social auth is platform-scoped.
     "accounts.platformloginmethods",

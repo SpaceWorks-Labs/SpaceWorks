@@ -6,6 +6,7 @@ override in tenant_dump_authority.py before the catalog guard will pass.
 """
 
 FIRST_PARTY_FIELD_NAMES = {
+    "accounts.PlatformAttestationSettings": frozenset("id play_integrity_service_account updated_at".split()),
     "accounts.ReauthenticationSession": frozenset("id user session_id surface auth_generation credential_fingerprint mfa_version auth_time social_verified_at enrollment_confirmed_at created_at updated_at".split()),
     "bookings.BookingSpaceStaffGrant": frozenset("id makerspace space permissions created_at revoked_at user granted_by revoked_by".split()),
     "bookings.BookingSpaceStaffGrantInvite": frozenset("id makerspace space permissions created_at revoked_at token_digest email_digest created_by expires_at redeemed_at redeemed_by".split()),
@@ -29,13 +30,13 @@ FIRST_PARTY_FIELD_NAMES = {
     'accounts.DailyOtpEmailCounter': frozenset('count day id'.split()),
     'accounts.NativeAppRegistration': frozenset('app_id approved_by created_at environment id makerspace platform revoked_at status updated_at verifier_config_key'.split()),
     'accounts.DeviceAttestationChallenge': frozenset('app_id challenge_digest consumed_at created_at environment expires_at id platform registration signing_identity'.split()),
-    'accounts.DeviceGrant': frozenset('app_id attestation_subject_fingerprint attested_at created_at environment id last_used_at platform registration revoked_at signing_identity status user'.split()),
+    'accounts.DeviceGrant': frozenset('app_id attestation_key_id attestation_public_key attestation_subject_fingerprint attested_at authority created_at environment id last_used_at platform registration revoked_at signing_identity status user'.split()),
     'accounts.DeviceRefreshFamily': frozenset('created_at grant id reuse_detected_at revoked_at user'.split()),
     'accounts.DeviceRefreshToken': frozenset('blacklisted_at created_at expires_at family id jti rotated_at token_fingerprint'.split()),
     'accounts.PlatformLoginMethods': frozenset('apple_enabled github_enabled google_enabled id mfa_enabled password_enabled phone_enabled self_registration_enabled social_enabled updated_at'.split()),
     'accounts.MemberClaimCode': frozenset('absolute_expires_at code_digest consumed_at consumed_ip expires_at failed_attempts id issued_at issued_by membership revoked_at revoked_by session_id'.split()),
     'accounts.OidcBrowserAttempt': frozenset('code_verifier consumed_at created_at expires_at id intended_membership intended_user nonce_digest origin provider redirect_uri state_digest surface'.split()),
-    'accounts.PhoneVerificationChallenge': frozenset('code_digest consumed_at created_at expires_at failed_attempts id last_sent_at phone_e164 purpose user'.split()),
+    'accounts.PhoneVerificationChallenge': frozenset('attestation_challenge code_digest consumed_at created_at expires_at failed_attempts id last_sent_at phone_e164 purpose user'.split()),
     'accounts.PasswordResetEnvelope': frozenset('attempts claim_expires_at claim_owner claimed_at consumed_at credential_fingerprint digest digest_is_live email_fingerprint email_normalized expires_at generation id requested_at status superseded_at terminal_at user'.split()),
     'accounts.SocialIdentity': frozenset('created_at id provider provider_sub updated_at user'.split()),
     'accounts.SocialLoginNonce': frozenset('attestation_challenge client_platform consumed_at created_at delivery device_grant expires_at id nonce_digest origin provider surface'.split()),

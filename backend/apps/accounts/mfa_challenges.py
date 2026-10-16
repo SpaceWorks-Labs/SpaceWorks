@@ -17,6 +17,7 @@ from apps.accounts.models_mfa import MFAChallenge, UserMFA
 from apps.accounts.password_reset_crypto import credential_fingerprint
 from apps.accounts.services_mfa import active, consume_code, enable
 from apps.accounts.tokens import current_auth_generation
+from apps.accounts.services_device_grants import DeviceSuperadminNotSupported, audit_grant_refusal
 from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 
@@ -93,6 +94,15 @@ def enroll(raw, request):
 
 
 def finish(raw, code, request, *, enrolling=False):
+    try:
+        return _finish(raw, code, request, enrolling=enrolling)
+    except DeviceSuperadminNotSupported as exc:
+        # _finish's transaction has rolled back, including any enrollment changes.
+        audit_grant_refusal(exc)
+        raise
+
+
+def _finish(raw, code, request, *, enrolling):
     assert_available()
     refusal = False
     result = None

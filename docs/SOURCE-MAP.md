@@ -246,7 +246,11 @@ entry points are indexed in `docs/SOURCE-MAP-CONSOLES.md`.
 
 Cloud surfaces: `accounts/views_social.py` explicitly exports the nonce/login views in
 `views_social_login.py` and identity management in `views_social_identities.py`, with shared
-verification/error helpers in `views_social_helpers.py`. `integrations/health.py` explicitly exports
+verification/error helpers in `views_social_helpers.py`. `accounts/services_device_grants.py`
+owns shared first-grant creation for social and phone sign-in; `services_phone_device.py`
+consumes the OTP-bound attestation and carries member-only phone provenance through MFA.
+`makerspaces/config_native.py` owns native provider/version discovery and its OpenAPI serializers.
+`integrations/health.py` explicitly exports
 `health_status.py` rollups and `health_chat.py` destination/legacy delivery summaries. The
 read-only scheduler control page lives in `operations/admin_scheduling.py`.
 The shared reminder foundation is `operations/models_reminders.py`,

@@ -12046,7 +12046,7 @@
         "/api/v1/admin/events/{id}/eligible-members/": {
             "get": {
                 "operationId": "api_v1_admin_events_eligible_members_list",
-                "description": "The roster the staff registration picker reads.\n\nHung off the EVENT rather than the makerspace, so it inherits `_manageable_event`\nand introduces no new authority question: whoever may manage this event may see who\nthey can register for it. A separate makerspace-level member list would have needed\nits own permission answer, and the obvious candidates were all wrong — the\ndirect-loan roster is gated on `ISSUE_DIRECT_LOAN` plus a self-checkout feature an\nevents manager need not hold, and the full membership list is `MANAGE_MAKERSPACE`.\n\nAlready-registered members are excluded: offering someone the picker can only reject\nas a duplicate is an error the interface should not have made available.",
+                "description": "The roster the staff registration picker reads.\n\nHung off the EVENT rather than the makerspace, so it inherits `_manageable_event`\nand introduces no new authority question: whoever may manage this event may see who\nthey can register for it. A separate makerspace-level member list would have needed\nits own permission answer, and the obvious candidates were all wrong â€” the\ndirect-loan roster is gated on `ISSUE_DIRECT_LOAN` plus a self-checkout feature an\nevents manager need not hold, and the full membership list is `MANAGE_MAKERSPACE`.\n\nAlready-registered members are excluded: offering someone the picker can only reject\nas a duplicate is an error the interface should not have made available.",
                 "summary": "List members who can be registered for an event",
                 "parameters": [
                     {
@@ -27031,7 +27031,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "Limit to the last 1–365 days."
+                        "description": "Limit to the last 1â€“365 days."
                     },
                     {
                         "in": "query",
@@ -58650,7 +58650,8 @@
                         },
                         "description": ""
                     }
-                }
+                },
+                "description": "Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge."
             }
         },
         "/api/v1/auth/device/grants": {
@@ -58743,6 +58744,7 @@
         "/api/v1/auth/device/login": {
             "post": {
                 "operationId": "api_v1_auth_device_login_create",
+                "description": "Attested password sign-in. Local staff receive native_staff authority after any required MFA. New superadmin grants are refused with device_superadmin_not_supported (403). Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge.",
                 "tags": [
                     "Device auth"
                 ],
@@ -59173,7 +59175,7 @@
         "/api/v1/auth/me": {
             "get": {
                 "operationId": "api_v1_auth_me_retrieve",
-                "summary": "Get current staff profile",
+                "summary": "Get current session profile",
                 "tags": [
                     "Auth"
                 ],
@@ -59354,6 +59356,7 @@
         "/api/v1/auth/mfa/confirm": {
             "post": {
                 "operationId": "api_v1_auth_mfa_confirm_create",
+                "description": "Complete the server-owned login context. New device grants retain login provenance and derive native_staff authority only for password/social local staff. New superadmin grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                 "tags": [
                     "MFA"
                 ],
@@ -59584,6 +59587,7 @@
         "/api/v1/auth/mfa/verify": {
             "post": {
                 "operationId": "api_v1_auth_mfa_verify_create",
+                "description": "Complete the server-owned login context. New device grants retain login provenance and derive native_staff authority only for password/social local staff. New superadmin grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                 "tags": [
                     "MFA"
                 ],
@@ -60107,7 +60111,7 @@
         "/api/v1/auth/phone/login/confirm": {
             "post": {
                 "operationId": "api_v1_auth_phone_login_confirm_create",
-                "description": "Exchange a valid code for a MEMBER session. Never mints a staff session.",
+                "description": "Device delivery creates a new member-only grant, or returns an MFA challenge when required, without setting cookies. Superadmins receive device_superadmin_not_supported (403). Rejected or consumed device challenges return phone_device_restart_required (409). Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge.",
                 "summary": "Sign in with a phone code",
                 "tags": [
                     "Auth"
@@ -60116,17 +60120,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/PhoneConfirm"
+                                "$ref": "#/components/schemas/PhoneLoginConfirm"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/PhoneConfirm"
+                                "$ref": "#/components/schemas/PhoneLoginConfirm"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/PhoneConfirm"
+                                "$ref": "#/components/schemas/PhoneLoginConfirm"
                             }
                         }
                     },
@@ -60143,20 +60147,47 @@
                         },
                         "description": ""
                     },
-                    "401": {
-                        "description": "The first-factor account is no longer available."
-                    },
                     "400": {
                         "description": "Invalid or expired code."
                     },
+                    "401": {
+                        "description": "The first-factor account is no longer available."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "device_superadmin_not_supported: superadmins cannot create grants."
+                    },
                     "404": {
                         "description": "Phone sign-in is not configured."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "phone_device_restart_required: restart with new one-time inputs."
                     },
                     "429": {
                         "description": "Request throttled."
                     },
                     "503": {
-                        "description": "Authentication write boundary unavailable."
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "attestation_unavailable or authentication write boundary unavailable."
                     }
                 }
             }
@@ -60164,7 +60195,7 @@
         "/api/v1/auth/phone/login/start": {
             "post": {
                 "operationId": "api_v1_auth_phone_login_start_create",
-                "description": "Request a login code for an already-verified number.",
+                "description": "Device delivery binds the OTP to an approved attestation challenge and matching ios/android client_platform. Unknown numbers, invalid challenges and cooldowns receive the same acknowledgement.",
                 "summary": "Request a phone sign-in code",
                 "tags": [
                     "Auth"
@@ -60173,17 +60204,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/PhoneStart"
+                                "$ref": "#/components/schemas/PhoneLoginStart"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/PhoneStart"
+                                "$ref": "#/components/schemas/PhoneLoginStart"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/PhoneStart"
+                                "$ref": "#/components/schemas/PhoneLoginStart"
                             }
                         }
                     },
@@ -60613,6 +60644,7 @@
         "/api/v1/auth/social/apple": {
             "post": {
                 "operationId": "api_v1_auth_social_apple_create",
+                "description": "Social sign-in with web or attested device delivery. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
                 "tags": [
                     "Social auth"
                 ],
@@ -60791,6 +60823,7 @@
         "/api/v1/auth/social/google": {
             "post": {
                 "operationId": "api_v1_auth_social_google_create",
+                "description": "Social sign-in with web or attested device delivery. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
                 "tags": [
                     "Social auth"
                 ],
@@ -60911,7 +60944,7 @@
         "/api/v1/auth/social/oidc/{slug}": {
             "post": {
                 "operationId": "api_v1_auth_social_oidc_create",
-                "description": "Login through a deployment-configured OIDC provider named in the URL.\n\nThe slug is resolved to a configured row on every request rather than captured at\nimport time, so disabling a provider takes effect immediately instead of at the next\nrestart -- the same reason `provider_for_slug` refuses disabled and half-filled rows.",
+                "description": "Social sign-in with web or attested device delivery. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
                 "parameters": [
                     {
                         "in": "path",
@@ -61455,7 +61488,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1â€“200; default 100."
                     }
                 ],
                 "tags": [
@@ -61742,7 +61775,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1â€“200; default 100."
                     }
                 ],
                 "tags": [
@@ -62037,7 +62070,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1â€“200; default 100."
                     }
                 ],
                 "tags": [
@@ -62205,7 +62238,8 @@
                     "503": {
                         "description": "A required dependency is unavailable."
                     }
-                }
+                },
+                "description": "Includes native minimum app versions and public provider settings only while the mobile module permits new grants."
             }
         },
         "/api/v1/data-exports/download/{job_id}/{token}": {
@@ -63743,7 +63777,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1â€“200; default 100."
                     }
                 ],
                 "tags": [
@@ -64020,7 +64054,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1â€“200; default 100."
                     }
                 ],
                 "tags": [
@@ -82253,6 +82287,10 @@
             "AuthUserPayload": {
                 "type": "object",
                 "properties": {
+                    "session_authority": {
+                        "type": "string",
+                        "description": "Effective session surface: member, native_staff, staff, staff_api or verification_only. Native staff APIs require X-Makerspace-Id selecting an active local membership; URL and body targets must match."
+                    },
                     "id": {
                         "type": "integer"
                     },
@@ -82310,6 +82348,7 @@
                     "must_change_password",
                     "phone",
                     "role",
+                    "session_authority",
                     "username"
                 ]
             },
@@ -88139,6 +88178,75 @@
                     "status"
                 ]
             },
+            "DeviceAttestationPayload": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "required": [
+                            "type",
+                            "token"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "play_integrity"
+                                ]
+                            },
+                            "token": {
+                                "type": "string",
+                                "maxLength": 65536
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": [
+                            "type",
+                            "key_id",
+                            "attestation"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "app_attest"
+                                ]
+                            },
+                            "key_id": {
+                                "type": "string",
+                                "format": "byte",
+                                "maxLength": 64
+                            },
+                            "attestation": {
+                                "type": "string",
+                                "format": "byte",
+                                "maxLength": 65536
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": [
+                            "type"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "development"
+                                ]
+                            }
+                        },
+                        "description": "Only with development-insecure mode and a development registration."
+                    },
+                    {
+                        "type": "object",
+                        "description": "Deployment-specific external verifier proof."
+                    }
+                ]
+            },
             "DeviceChallengeResponse": {
                 "type": "object",
                 "properties": {
@@ -88294,7 +88402,9 @@
                         "type": "string",
                         "maxLength": 512
                     },
-                    "attestation": {}
+                    "attestation": {
+                        "$ref": "#/components/schemas/DeviceAttestationPayload"
+                    }
                 },
                 "required": [
                     "app_id",
@@ -90192,7 +90302,7 @@
             },
             "EventEligibleMember": {
                 "type": "object",
-                "description": "A picker row. Name and id only — a roster is not a contact export.",
+                "description": "A picker row. Name and id only â€” a roster is not a contact export.",
                 "properties": {
                     "member_id": {
                         "type": "integer",
@@ -91085,7 +91195,7 @@
             },
             "EventStaffRegistration": {
                 "type": "object",
-                "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody — which is what makes the attendee list usable as an accountability record\nrather than free text.",
+                "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody â€” which is what makes the attendee list usable as an accountability record\nrather than free text.",
                 "properties": {
                     "member_id": {
                         "type": "integer",
@@ -91995,7 +92105,7 @@
                     "REDACTED"
                 ],
                 "type": "string",
-                "description": "* `REDACTED` - Readable — audit metadata and form answers redacted; member contact details included"
+                "description": "* `REDACTED` - Readable â€” audit metadata and form answers redacted; member contact details included"
             },
             "FieldEnum": {
                 "enum": [
@@ -102015,6 +102125,127 @@
                     "requests"
                 ]
             },
+            "NativeApple": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "enabled"
+                ]
+            },
+            "NativeConfig": {
+                "type": "object",
+                "properties": {
+                    "min_app_version": {
+                        "$ref": "#/components/schemas/NativeMinVersion"
+                    },
+                    "providers": {
+                        "$ref": "#/components/schemas/NativeProviders"
+                    }
+                },
+                "required": [
+                    "min_app_version",
+                    "providers"
+                ]
+            },
+            "NativeGoogle": {
+                "type": "object",
+                "properties": {
+                    "android_client_id": {
+                        "type": "string"
+                    },
+                    "ios_client_id": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "android_client_id",
+                    "ios_client_id"
+                ]
+            },
+            "NativeMinVersion": {
+                "type": "object",
+                "properties": {
+                    "android": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "ios": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "android",
+                    "ios"
+                ]
+            },
+            "NativeOidc": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "display_name": {
+                        "type": "string"
+                    },
+                    "client_id": {
+                        "type": "string"
+                    },
+                    "issuer": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "client_id",
+                    "display_name",
+                    "issuer",
+                    "key"
+                ]
+            },
+            "NativeProviders": {
+                "type": "object",
+                "properties": {
+                    "password": {
+                        "type": "boolean"
+                    },
+                    "phone": {
+                        "type": "boolean"
+                    },
+                    "google": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NativeGoogle"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "apple": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NativeApple"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "oidc": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NativeOidc"
+                        }
+                    }
+                },
+                "required": [
+                    "apple",
+                    "google",
+                    "oidc",
+                    "password",
+                    "phone"
+                ]
+            },
             "NeedsFixAction": {
                 "type": "object",
                 "properties": {
@@ -109812,6 +110043,53 @@
                     "phone"
                 ]
             },
+            "PhoneLoginConfirm": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "delivery": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DeliveryEnum"
+                            }
+                        ],
+                        "default": "web"
+                    },
+                    "client_platform": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ClientPlatformEnum"
+                            }
+                        ],
+                        "default": "web"
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 512
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 6,
+                        "minLength": 6
+                    },
+                    "attestation": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DeviceAttestationPayload"
+                            }
+                        ],
+                        "writeOnly": true
+                    }
+                },
+                "required": [
+                    "code",
+                    "phone"
+                ]
+            },
             "PhoneLoginResult": {
                 "oneOf": [
                     {
@@ -109819,7 +110097,43 @@
                     },
                     {
                         "$ref": "#/components/schemas/MFAChallengeResponse"
+                    },
+                    {
+                        "$ref": "#/components/schemas/DeviceTokenResponse"
                     }
+                ]
+            },
+            "PhoneLoginStart": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "delivery": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DeliveryEnum"
+                            }
+                        ],
+                        "default": "web"
+                    },
+                    "client_platform": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ClientPlatformEnum"
+                            }
+                        ],
+                        "default": "web"
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 512
+                    }
+                },
+                "required": [
+                    "phone"
                 ]
             },
             "PhoneStart": {
@@ -111707,6 +112021,9 @@
                     "member_accounts": {
                         "type": "object",
                         "additionalProperties": {}
+                    },
+                    "native": {
+                        "$ref": "#/components/schemas/NativeConfig"
                     }
                 },
                 "required": [
@@ -118130,6 +118447,11 @@
                         "maxLength": 512
                     },
                     "attestation": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DeviceAttestationPayload"
+                            }
+                        ],
                         "writeOnly": true
                     }
                 },
@@ -123016,7 +123338,8 @@
             "jwtAuth": {
                 "type": "http",
                 "scheme": "bearer",
-                "bearerFormat": "JWT"
+                "bearerFormat": "JWT",
+                "description": "Native staff sessions require a live device grant with staff authority. On non-member APIs, X-Makerspace-Id is mandatory and must select an active, servable local membership matching all URL/body targets. Member APIs may omit the header. Personal notification inbox, preferences and announcements accept member sessions; broadcasts and the makerspace-wide notification feed require staff authority."
             }
         }
     },

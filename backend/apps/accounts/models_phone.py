@@ -23,6 +23,14 @@ class PhoneVerificationChallenge(models.Model):
         "accounts.User", on_delete=models.CASCADE, related_name="phone_challenges"
     )
     purpose = models.CharField(max_length=16, choices=PhoneChallengePurpose.choices)
+    # NULL is browser delivery. A device OTP names one exact, one-time app proof.
+    attestation_challenge = models.ForeignKey(
+        "accounts.DeviceAttestationChallenge",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="phone_login_challenges",
+    )
     # The E.164 number this challenge was issued against, snapshotted. A later edit to
     # the user's number leaves this row unable to match, which is the intended lapse.
     phone_e164 = models.CharField(max_length=20)

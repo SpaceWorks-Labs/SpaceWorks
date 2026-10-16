@@ -4,6 +4,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.accounts import audit_events
+from apps.accounts.attestation import live_approved_challenge
 from apps.accounts.models import User
 from apps.accounts.models_phone import PhoneChallengePurpose, PhoneVerificationChallenge
 from apps.accounts.phone_numbers import normalize_or_none
@@ -18,10 +19,18 @@ from .services_phone import (
 )
 
 
-def start_login(raw_phone):
+def start_login(raw_phone, *, delivery="web", client_platform="web", challenge=None):
     """Send a login code without revealing whether the number is known."""
     if not sms_configured():
         raise SmsUnavailable
+    attestation_challenge = None
+    if delivery == "device":
+        attestation_challenge = live_approved_challenge(challenge)
+        if attestation_challenge is None:
+            return None
+        expected = "ios" if attestation_challenge.platform == "apple" else "android"
+        if client_platform != expected:
+            return None
     phone_e164 = normalize_or_none(raw_phone)
     if phone_e164 is None:
         return None
@@ -35,7 +44,10 @@ def start_login(raw_phone):
     if user is None:
         return None
     try:
-        challenge, sent = _issue(user, phone_e164, PhoneChallengePurpose.LOGIN)
+        challenge, sent = _issue(
+            user, phone_e164, PhoneChallengePurpose.LOGIN,
+            attestation_challenge=attestation_challenge,
+        )
     except ChallengeCooldown:
         return None
     audit_events.record_auth_event(
@@ -49,6 +61,12 @@ def start_login(raw_phone):
 
 def confirm_login(raw_phone, code):
     """Resolve the member behind a valid login code, or raise a generic 400."""
+    user, _challenge = confirm_login_challenge(raw_phone, code, delivery="web")
+    return user
+
+
+def confirm_login_challenge(raw_phone, code, *, delivery):
+    """Commit OTP consumption/failed attempts before any device verification can fail."""
     phone_e164 = normalize_or_none(raw_phone)
     if phone_e164 is None:
         raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
@@ -56,7 +74,8 @@ def confirm_login(raw_phone, code):
     with transaction.atomic():
         challenge = _confirm(
             PhoneVerificationChallenge.objects.filter(
-                purpose=PhoneChallengePurpose.LOGIN
+                purpose=PhoneChallengePurpose.LOGIN,
+                attestation_challenge__isnull=(delivery == "web"),
             ),
             code,
             phone_e164,
@@ -79,6 +98,12 @@ def confirm_login(raw_phone, code):
                 )
                 .first()
             )
+            if user is None:
+                audit_events.record_auth_event(
+                    challenge.user, "auth.phone_login_failed",
+                    meta={"phone_hash": audit_events.fingerprint(phone_e164),
+                          "reason": "account_unavailable"},
+                )
     if user is None:
         raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
-    return user
+    return user, challenge

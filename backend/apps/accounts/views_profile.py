@@ -77,7 +77,7 @@ class MeView(APIView):
 
     @extend_schema(
         tags=["Auth"],
-        summary="Get current staff profile",
+        summary="Get current session profile",
         request=None,
         responses={
             200: UserPayloadSerializer,

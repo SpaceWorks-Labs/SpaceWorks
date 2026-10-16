@@ -3,6 +3,7 @@ from django.db.models import Q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.organizations.models import OrganizationMembership
+from apps.accounts.native_session import is_native_session
 
 
 def _is_superadmin(actor):
@@ -13,7 +14,9 @@ def _is_superadmin(actor):
 
 
 def organizer_series_q(actor, *, prefix=""):
-    if actor is None or not getattr(actor, "is_authenticated", False) or _is_superadmin(actor):
+    if (actor is None or not getattr(actor, "is_authenticated", False) or _is_superadmin(actor)
+            # Native device sessions are membership-only: no organizer authority.
+            or is_native_session(actor)):
         return Q(pk__in=[])
     organization = f"{prefix}organizers__organization"
     membership = f"{organization}__memberships"
@@ -37,7 +40,8 @@ def organizer_series_q(actor, *, prefix=""):
 def can_manage_series(actor, series):
     if rbac.can(actor, rbac.Action.MANAGE_EVENTS, series.makerspace_id):
         return True
-    if _is_superadmin(actor) or series.makerspace_id in rbac.archived_makerspace_ids():
+    if (_is_superadmin(actor) or is_native_session(actor)
+            or series.makerspace_id in rbac.archived_makerspace_ids()):
         return False
     memberships = OrganizationMembership.objects.filter(
         user=actor,

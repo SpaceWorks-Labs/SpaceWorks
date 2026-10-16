@@ -74,7 +74,7 @@ def _digest(code, phone_e164):
     ).hexdigest()
 
 
-def _issue(user, phone_e164, purpose):
+def _issue(user, phone_e164, purpose, *, attestation_challenge=None):
     """Create a challenge and attempt delivery. Returns (challenge, sent)."""
     now = timezone.now()
     with transaction.atomic():
@@ -98,6 +98,7 @@ def _issue(user, phone_e164, purpose):
         challenge = PhoneVerificationChallenge.objects.create(
             user=user,
             purpose=purpose,
+            attestation_challenge=attestation_challenge,
             phone_e164=phone_e164,
             code_digest=_digest(code, phone_e164),
             expires_at=now + CHALLENGE_TTL,
@@ -260,4 +261,6 @@ def confirm_link(user, raw_phone, code):
     return locked_user
 
 
-from .services_phone_login import confirm_login, start_login  # noqa: E402,F401
+from .services_phone_login import (  # noqa: E402,F401
+    confirm_login, confirm_login_challenge, start_login,
+)

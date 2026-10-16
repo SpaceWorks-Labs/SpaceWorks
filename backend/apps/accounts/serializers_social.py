@@ -7,6 +7,7 @@ from apps.accounts.models_social import (
     SocialSurface,
 )
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
+from apps.accounts.serializers_attestation import AttestationPayloadField
 
 
 class SocialProviderKeyField(serializers.CharField):
@@ -62,7 +63,7 @@ class SocialLoginSerializer(serializers.Serializer):
     challenge = serializers.CharField(
         max_length=512, required=False, write_only=True, trim_whitespace=False
     )
-    attestation = serializers.JSONField(required=False, write_only=True)
+    attestation = AttestationPayloadField(required=False, write_only=True)
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:

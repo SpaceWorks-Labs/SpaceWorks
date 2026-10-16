@@ -89,6 +89,10 @@ class DeviceAttestationChallenge(models.Model):
 
 
 class DeviceGrant(models.Model):
+    class Authority(models.TextChoices):
+        MEMBER = 'member', 'Member'
+        STAFF = 'staff', 'Staff'
+
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
         REVOKED = 'revoked', 'Revoked'
@@ -105,11 +109,14 @@ class DeviceGrant(models.Model):
         related_name='device_grants',
     )
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    authority = models.CharField(max_length=16, choices=Authority.choices, default=Authority.MEMBER)
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     app_id = models.CharField(max_length=255)
     signing_identity = models.CharField(max_length=255)
     environment = models.CharField(max_length=16, choices=DeviceEnvironment.choices)
     attestation_subject_fingerprint = models.CharField(max_length=64)
+    attestation_key_id = models.CharField(max_length=512, null=True, blank=True)
+    attestation_public_key = models.TextField(null=True, blank=True)
     attested_at = models.DateTimeField()
     last_used_at = models.DateTimeField()
     revoked_at = models.DateTimeField(null=True, blank=True)

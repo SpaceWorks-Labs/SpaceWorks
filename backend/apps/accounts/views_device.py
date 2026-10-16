@@ -23,6 +23,7 @@ from apps.accounts.models_devices import (
     NativeAppRegistration,
 )
 from apps.accounts.serializers import user_payload
+from apps.accounts.serializers_attestation import ATTESTATION_DESCRIPTION
 from apps.accounts.serializers_device import (
     DeviceChallengeResponseSerializer, DeviceGrantSerializer,
     DeviceIdentitySerializer, DeviceLoginSerializer,
@@ -35,6 +36,10 @@ from apps.accounts.services_device_tokens import (
     rotate_device_refresh,
 )
 from apps.accounts.services_tokens import revoke_device_grant
+from apps.accounts.services_device_grants import (
+    DeviceSuperadminNotSupported, assert_grant_user_allowed,
+    audit_grant_refusal, authority_for_login,
+)
 from apps.accounts.throttles import DeviceLoginThrottle, DeviceLoginUserThrottle
 from apps.hardware_requests.exceptions import ErrorSerializer
 
@@ -75,6 +80,7 @@ class DeviceAttestationChallengeView(APIView):
     throttle_scope = "device_attestation_challenge"
 
     @extend_schema(tags=["Device auth"], auth=[], request=DeviceIdentitySerializer,
+        description=ATTESTATION_DESCRIPTION,
         responses={200: DeviceChallengeResponseSerializer, 400: OpenApiResponse(ErrorSerializer), 429: OpenApiResponse(ErrorSerializer), 503: OpenApiResponse(ErrorSerializer)})
     def post(self, request):
         _reject_browser_headers(request)
@@ -115,6 +121,7 @@ class DeviceLoginView(APIView):
     throttle_classes = [DeviceLoginThrottle, DeviceLoginUserThrottle]
 
     @extend_schema(tags=["Device auth"], auth=[], request=DeviceLoginSerializer,
+        description="Attested password sign-in. Local staff receive native_staff authority after any required MFA. New superadmin grants are refused with device_superadmin_not_supported (403). " + ATTESTATION_DESCRIPTION,
         responses={200: PolymorphicProxySerializer(component_name="DeviceLoginResult", serializers=[DeviceTokenResponseSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None), 401: OpenApiResponse(ErrorSerializer), 403: OpenApiResponse(ErrorSerializer), 503: OpenApiResponse(ErrorSerializer)})
     def post(self, request):
         _reject_browser_headers(request)
@@ -160,13 +167,19 @@ class DeviceLoginView(APIView):
         from apps.accounts.mfa_challenges import start
         from apps.accounts.mfa_sessions import context, device_context
         if needs_challenge(user):
+            try:
+                assert_grant_user_allowed(user)
+            except DeviceSuperadminNotSupported as exc:
+                audit_grant_refusal(exc)
+                raise
             response = Response(start(user, context=context(request, surface="member",
-                device=device_context(challenge, verified))))
+                device=device_context(challenge, verified, login_method="password"))))
             response["Cache-Control"] = "no-store"
             return response
         now = timezone.now()
         try:
             with transaction.atomic():
+                assert_grant_user_allowed(user)
                 registration = (
                     NativeAppRegistration.objects.select_for_update()
                     .filter(
@@ -183,11 +196,17 @@ class DeviceLoginView(APIView):
                 grant = DeviceGrant.objects.create(
                     registration=registration,
                     user=user, platform=challenge.platform, app_id=challenge.app_id,
+                    authority=authority_for_login(user, login_method="password"),
                     signing_identity=challenge.signing_identity, environment=challenge.environment,
                     attestation_subject_fingerprint=audit_events.fingerprint(verified.subject),
+                    attestation_key_id=verified.metadata.get("key_id"),
+                    attestation_public_key=verified.metadata.get("public_key"),
                     attested_at=now, last_used_at=now,
                 )
                 access, refresh, _ = issue_device_token_pair(user, grant)
+        except DeviceSuperadminNotSupported as exc:
+            audit_grant_refusal(exc)
+            raise
         except _RegistrationNotApproved:
             # Outside the rolled-back transaction, so this one survives.
             _audit_login_failure(data, 'registration_not_approved')
@@ -198,7 +217,11 @@ class DeviceLoginView(APIView):
         audit_events.record_auth_event(user, "auth.device_login_succeeded", target=user,
             meta={"grant_hash": audit_events.fingerprint(grant.pk)})
         return Response({"access": access, "refresh": refresh,
-            "user": user_payload(user, request=request),
+            # Explicit: an incoming bearer token's surface must never describe the grant
+            # this request just minted.
+            "user": user_payload(user, request=request, session_authority=(
+                "native_staff" if grant.authority == DeviceGrant.Authority.STAFF else "member"
+            )),
             "device_grant": DeviceGrantSerializer(grant).data})
 
 

@@ -1359,6 +1359,7 @@ export type AuthMembership = {
 export type AuthMembershipSourceEnum = "membership" | "organization";
 
 export type AuthUserPayload = {
+  "session_authority": string;
   "id": number;
   "username": string;
   "email": string;
@@ -2736,6 +2737,17 @@ export type Device = {
   "revoked_by": number | null;
 };
 
+export type DeviceAttestationPayload = {
+  "type": "play_integrity";
+  "token": string;
+} | {
+  "type": "app_attest";
+  "key_id": string;
+  "attestation": string;
+} | {
+  "type": "development";
+} | Record<string, unknown>;
+
 export type DeviceChallengeResponse = {
   "challenge": string;
   "expires_in": number;
@@ -2780,7 +2792,7 @@ export type DeviceLogin = {
   "username": string;
   "password": string;
   "challenge": string;
-  "attestation": unknown;
+  "attestation": DeviceAttestationPayload;
 };
 
 export type DeviceLoginResult = DeviceTokenResponse | MFAChallengeResponse;
@@ -6048,6 +6060,40 @@ export type MyMemberships = {
   "requests": Array<MyMembershipRequest>;
 };
 
+export type NativeApple = {
+  "enabled": boolean;
+};
+
+export type NativeConfig = {
+  "min_app_version": NativeMinVersion;
+  "providers": NativeProviders;
+};
+
+export type NativeGoogle = {
+  "android_client_id": string;
+  "ios_client_id": string;
+};
+
+export type NativeMinVersion = {
+  "android": string | null;
+  "ios": string | null;
+};
+
+export type NativeOidc = {
+  "key": string;
+  "display_name": string;
+  "client_id": string;
+  "issuer": string;
+};
+
+export type NativeProviders = {
+  "password": boolean;
+  "phone": boolean;
+  "google": NativeGoogle | null;
+  "apple": NativeApple | null;
+  "oidc": Array<NativeOidc>;
+};
+
 export type NeedsFixAction = {
   "action": NeedsFixActionActionEnum;
   "quantity": number;
@@ -7913,7 +7959,23 @@ export type PhoneConfirm = {
   "code": string;
 };
 
-export type PhoneLoginResult = MFACompleted | MFAChallengeResponse;
+export type PhoneLoginConfirm = {
+  "phone": string;
+  "delivery"?: DeliveryEnum;
+  "client_platform"?: ClientPlatformEnum;
+  "challenge"?: string;
+  "code": string;
+  "attestation"?: DeviceAttestationPayload;
+};
+
+export type PhoneLoginResult = MFACompleted | MFAChallengeResponse | DeviceTokenResponse;
+
+export type PhoneLoginStart = {
+  "phone": string;
+  "delivery"?: DeliveryEnum;
+  "client_platform"?: ClientPlatformEnum;
+  "challenge"?: string;
+};
 
 export type PhoneStart = {
   "phone": string;
@@ -8398,6 +8460,7 @@ export type PublicConfig = {
   "member_accounts"?: {
   [key: string]: unknown;
 };
+  "native"?: NativeConfig;
 };
 
 export type PublicEvent = {
@@ -9935,7 +9998,7 @@ export type SocialLogin = {
   "client_platform": ClientPlatformEnum;
   "apple_name"?: string;
   "challenge"?: string;
-  "attestation"?: unknown;
+  "attestation"?: DeviceAttestationPayload;
 };
 
 export type SocialLoginResponse = {

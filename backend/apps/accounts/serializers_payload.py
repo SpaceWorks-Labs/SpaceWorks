@@ -10,7 +10,7 @@ VERIFICATION_ONLY_SURFACE = "verification_only"
 DEVICE_REFRESH_CLAIMS = ("device_grant_id", "device_family_id")
 
 
-def user_payload(user, request=None):
+def user_payload(user, request=None, *, session_authority=None):
     from apps.accounts import rbac
     from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
 
@@ -137,6 +137,7 @@ def user_payload(user, request=None):
     )
     return {
         **resource_grants,
+        "session_authority": _session_authority(user, request, session_authority),
         "id": user.id,
         "username": user.username,
         "email": user.email,
@@ -149,3 +150,16 @@ def user_payload(user, request=None):
         "makerspaces": membership_entries + org_only_entries,
     }
 
+
+def _session_authority(user, request, issued_surface):
+    if user.self_registered_at is not None and user.email_verified_at is None:
+        return VERIFICATION_ONLY_SURFACE
+    surface = issued_surface or getattr(request, "session_authority", None)
+    if surface is None:
+        grant = getattr(request, "device_grant", None)
+        if grant is not None:
+            surface = "native_staff" if getattr(grant, "authority", None) == "staff" else "member"
+        else:
+            token = getattr(request, "auth", None)
+            surface = token.get("surface", "member") if token else "member"
+    return "member" if surface == VERIFICATION_ONLY_SURFACE else surface

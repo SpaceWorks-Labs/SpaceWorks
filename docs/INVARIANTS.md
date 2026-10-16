@@ -41,7 +41,7 @@ superadmin/active-account/control-MFA boundaries; hidden tenant names/counters a
 excluded, deployment database/table totals remain global. Optional route metrics use
 bounded compiled route/method/status labels and Prometheus multi-process files,
 never raw paths/queries/credentials. Per-master directories are cleared at master
-start; all-in-one clears shared files once before its two masters. Prometheus owns
+start, with a separate directory for each standard container or pod. Prometheus owns
 retention. The existing metrics token gate is unchanged. Optional analytics supports
 only trusted Plausible manual scripts, route-template URLs and empty referrers.
 Unknown/private/bearer routes never inject; credential-boundary navigation removes
@@ -506,7 +506,8 @@ is retained. Invitations remain single-role. Existing writers keep their lock or
 `FOR NO KEY UPDATE` before membership `FOR UPDATE OF self`; helpers add no role-row locks. Existing
 User/invitation/role locks in callers retain their established order and strength.
 
-**Fixed-role upgrade (`makerspaces/0089`) is irreversible and never widens except E1/E2.** Back up,
+**Fixed-role upgrade (`makerspaces/0091` schema, `0092` data, `0093` constraint) is irreversible
+and never widens except E1/E2.** Back up,
 stop all writers, run the new image's `python manage.py preview_fixed_roles` against the old schema,
 resolve every “must fix before upgrading” diagnostic, then migrate (see `update-recovery.md`). Mapping
 uses RAW grants, not implied actions: a combinable role qualifies only when all its grants were held;
@@ -1694,7 +1695,8 @@ both list and detail. Machine/QR-only adapter controls must wait for scoped sibl
 
 ## Handover roles and the retired Guest Admin
 
-**Handover is a fixed built-in again** (`makerspaces/0089`), combinable with Inventory, Machine,
+**Handover is a fixed built-in again** (`makerspaces/0092_fixed_roles_data`, after schema `0091`
+and before constraint `0093`), combinable with Inventory, Machine,
 Event and Booking Manager. Its grants are `view_inventory`, `assign_box`, `issue_request`,
 `issue_direct_loan`, `return_request`, `upload_evidence` and `collect_service_request`. On its own
 it cannot accept/reject requests, edit inventory or manage QR. Evidence, scans, remarks and audit
@@ -1885,9 +1887,9 @@ not module keys** (one app can own several keys — `printing`/`machines`/`machi
   no machines.** `RoleMachineTypeScope` and `RoleMachineScope` are gone; there is no membership-to-machine
   scope table. Space Manager remains exempt, including future types; null `assigned_role` keeps the
   frozen legacy exemption. Foreign-tenant roles or links never confer reach.
-  - **Migration 0089 never widens machine reach.** It copies old role TYPE links per person. Old
-    MACHINE links are dropped, never expanded to their types, and listed in preview/audit as
-    `machine_scope.dropped_machine_ids`. A nonempty machine-only old scope also drops Machine Manager
+  - **Data migration `makerspaces/0092_fixed_roles_data` never widens machine reach.** It copies old
+    role TYPE links per person. Old MACHINE links are dropped, never expanded to their types, and
+    listed in preview/audit as `machine_scope.dropped_machine_ids`. A nonempty machine-only old scope also drops Machine Manager
     from the mapped set (`machine_manager_dropped: machine-only scope`), avoiding the empty-scope
     notification fallback that would otherwise widen lifecycle alerts. An already empty old scope
     retains its existing behavior. Old EXEMPT authority mapping to Machine Manager enumerates all
@@ -1902,9 +1904,10 @@ not module keys** (one app can own several keys — `printing`/`machines`/`machi
     feature nearly worthless: `IMPLIED_ACTIONS[MANAGE_MACHINES]` contains `MANAGE_PRINTING`, and the
     built-in `3d_printer` type's `managing_action` **is** `manage_printing` — so a role scoped to
     lasers alone still satisfied the type-manager check for every 3D printer in the lab, straight
-    through tier 1's links. A real Print Manager holds `manage_printing` outright and keeps its
-    unscoped type authority; a `MANAGE_MACHINES` holder gets printer authority through tier 1, where
-    the links apply. `rbac.can` is untouched, so nothing outside `machines/` changes. The object
+    through tier 1's links. A valid direct `manage_printing` grant can supply type authority
+    (Space Manager holds it; Print Manager is retired). Machine Manager receives printing authority
+    through implication, so its per-person type links still apply. `rbac.can` is untouched, so nothing
+    outside `machines/` changes. The object
     check and the list filter **must stay in step** — disagreeing is how a row lists and then 403s
     on click, which is why `capabilities_for_machines`' `_type_mgr` carries the same check.
   - **Tier 3 (per-machine operators) is untouched** — an operator row already names one machine.
@@ -2409,7 +2412,7 @@ by SQL triggers as well as service validation. Planned session windows fit their
 all inheriting occurrences; owner edits refuse with typed validation, with SQL backstops.
 Series -> occurrence locks serialize programme/window writes. SQL wall-time conversion
 matches recurrence's ZoneInfo fold=0 at DST overlaps/gaps; duration arithmetic is elapsed UTC.
-A session delay of 0?1440 minutes leaves planned times intact and shifts that session and
+A session delay of 0–1440 minutes leaves planned times intact and shifts that session and
 later published sessions in its track by the running maximum delay. Other tracks do not
 move. Occurrences with differing programmes must first create their own overrides.
 
@@ -2724,7 +2727,7 @@ the opt-in capability disappear. Restored lifecycle notifications remain BK-B's 
 ### Booking resource staff grants (BK-A)
 
 `bookings/booking_authority.py` owns every booking staff predicate, including locked
-service mutations. Tenant `MANAGE_BOOKINGS` retains local custom-role and organization
+service mutations. Tenant `MANAGE_BOOKINGS` retains local fixed-role-set and organization
 action authority. A resource grant adds only its typed `BookableSpace`: `edit_details`
 allows name/kind/description/capacity/location/form and images; `manage_reservations`
 allows roster, purpose-limited member selection, ordinary on-behalf creation/recurrence

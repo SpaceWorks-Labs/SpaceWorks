@@ -6,6 +6,18 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — events/bookings programme integration (Yuyu).** Typed resource staff grants,
+  registration/reservation tools and cancellation undo, draft cloning, private tickets and booking
+  confirmations/arrival, public resource websites, shared email campaigns, signed integration
+  reads, printable credentials and scoped reporting; shared core mechanisms preserve domain isolation.
+- **2026-10-16 — installer, MFA and provider choices.** The questionnaire now asks control-plane
+  access after storage, organization before makerspace, and platform MFA plus Google/Apple/GitHub
+  selection before areas. Inventory, Machines and Reports default on; provider credentials come
+  later. GitHub browser OAuth is member-only; login-method writes use audited lockout validation
+  and a host recovery command. MFA can be paused without deleting enrollment; superadmins enroll optionally.
+- **2026-10-16 — seven fixed roles:** combinable membership role sets, exclusive Space Manager/Member,
+  per-person machine-type scope, read-only role reference, refreshed console navigation and irreversible
+  preview-first migration from editable roles (`makerspaces/0091` schema, `0092` data, `0093` constraint).
 - **2026-10-16 — owner organizations at makerspace creation.** Installer setup asks for the organization name as its own question, before the makerspace name; installer, API, staff console and `/control/` share atomic owner assignment. The console searches and paginates active organizations or accepts a new name. Existing ownerless spaces remain usable without a migration; tenant import and `seed_e2e` are exceptions.
 - **2026-10-16 — opt-in route to the control plane.** `/control/` had no working path on a bundled
   install: no proxy forwarded it, the backend publishes no port, and with HTTPS on Django redirects a
@@ -29,7 +41,6 @@
   never newly rejected). Built in parallel Codex lanes; plan and specs in `docs/design-revamp/`.
 
 - **2026-10-15 — standard containers and local tests.** The all-in-one image is no longer built or published; the single-box shape is removed with refusal and switch steps for existing installs. Own-nginx HTTPS setup generates proxy configuration and prints certificate/install steps; API-only setup offers HTTPS only and points to the external website. CI runs no tests: use `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally; Actions builds/releases backend/frontend images, promotes rolling tags and optionally deploys, with `pip-audit` retained on PRs.
-- **2026-10-16 — seven fixed roles:** combinable membership role sets, exclusive Space Manager/Member, per-person machine-type scope, read-only role reference, refreshed console navigation and irreversible preview-first migration from editable roles.
 
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which

@@ -95,6 +95,16 @@ envVarGroups:
         sync: false
       - key: TELEGRAM_WEBHOOK_SECRET
         sync: false
+      - key: NOTIFICATION_SLACK_REDIRECT_URI
+        sync: false
+      - key: NOTIFICATION_MATTERMOST_REDIRECT_URI
+        sync: false
+      - key: NOTIFICATION_DISCORD_REDIRECT_URI
+        sync: false
+      - key: NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS
+        value: "False"
+      - key: WHATSAPP_META_GRAPH_VERSION
+        value: "v25.0"
 
 services:
   - type: redis

@@ -440,6 +440,11 @@ PRINT_ALLOWED_SCREENSHOT_MIME = [
 GITHUB_API_TOKEN = env("GITHUB_API_TOKEN", default="")
 
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
+NOTIFICATION_SLACK_REDIRECT_URI = env("NOTIFICATION_SLACK_REDIRECT_URI", default="")
+NOTIFICATION_MATTERMOST_REDIRECT_URI = env("NOTIFICATION_MATTERMOST_REDIRECT_URI", default="")
+NOTIFICATION_DISCORD_REDIRECT_URI = env("NOTIFICATION_DISCORD_REDIRECT_URI", default="")
+NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS = env.bool("NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS", default=False)
+WHATSAPP_META_GRAPH_VERSION = env("WHATSAPP_META_GRAPH_VERSION", default="v25.0")
 TELEGRAM_API_URL = env("TELEGRAM_API_URL", default="https://api.telegram.org")
 # Secret passed to Telegram's setWebhook(secret_token=...); Telegram echoes it in
 # the X-Telegram-Bot-Api-Secret-Token header on every callback. The webhook fails

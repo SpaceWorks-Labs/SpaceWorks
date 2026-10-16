@@ -27,6 +27,8 @@ write_setup_environment() {
   env_setting MINIO_ROOT_USER "$(rand_key 24)"
   env_setting MINIO_ROOT_PASSWORD "$(rand_key 40)"
   env_setting SECRET_KEY "$(rand_key 50)"
+  # Deployment identity for PIN hashes: keep .env on updates; never rotate implicitly.
+  env_setting EVENT_STATION_PIN_PEPPER "$(rand_key 50)"
   env_setting API_CLIENT_ENC_KEY "$(fernet_key)"
   env_setting AUDIT_MAC_MASTER_KEY "$(fernet_key)"
   configure_release_repository || die 'Invalid GitHub repository.'

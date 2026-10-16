@@ -46,8 +46,8 @@ for this continuation.
 
 ## Environment and host operations
 
-`settings_policy.ENV_SURFACE` and `docs/environment-reference.md` both describe exactly
-247 backend names. No new environment setting or migration is needed. The three env
+`settings_policy.ENV_SURFACE` and the environment reference tables are pinned to the
+backend's discovered environment reads, including the extracted analytics settings helper. The three env
 examples expose the metrics/Sentry opt-ins and point to that complete reference.
 `test_env_surface_drift.py` covers cloud and all backend services, including cron.
 The overlay guard evaluates SaaS/TLS layers over the production
@@ -80,3 +80,18 @@ in the backend image. The earlier session reported that failure; it was not reru
 Codex CLI review is unavailable in this sandbox because `codex doctor` cannot resolve its
 configuration or reach the provider. The coordinator must complete review and execution
 of the test inventory recorded in `LANE-PROGRESS.md`.
+
+## Cloud live-stream topology
+
+Cloud Compose runs `backend`, `live` and `cron` as its declared writer set. The
+`live` process uses threaded Gunicorn with unlimited request timeout and no worker
+request-count recycling, so open SSE connections remain usable. All three processes
+share a required external `LIVE_REDIS_URL` for publication/subscription; the empty
+Celery broker remains independent. Provision a private Redis-compatible service and
+include its URL in the cloud environment initialization. Both the API and live processes
+wait for orchestration readiness; `live` receives the same read-only host marker as
+other writers. The website waits for the live service to start before nginx resolves it.
+
+Supply `EVENT_STATION_PIN_PEPPER` once (at least 32 random bytes) and preserve it on
+upgrades. `SPACEWORKS_EDITION` defaults to `makerspace` and is forwarded to every
+application process. See the environment reference for organization and analytics opt-ins.

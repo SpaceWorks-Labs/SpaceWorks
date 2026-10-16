@@ -283,7 +283,7 @@ documented under managed SaaS mode above.
 | `CADDY_SAAS_CONFIG` | Defaults to existing `./deploy/Caddyfile.saas`; new guided platforms use `./deploy/Caddyfile.saas-install` for public ACME. Existing deployments keep their origin-certificate configuration. |
 | `STORAGE_DOMAIN` | Bundled HTTPS storage hostname (`files.<server/platform-domain>`). Requires DNS; an existing proxy forwards to loopback Silo port 9000. |
 | `STORAGE_CADDY_CONFIG` | Defaults to `/etc/caddy/storage-disabled.caddy`; guided bundled HTTPS storage selects `/etc/caddy/storage.caddy`. External storage has no local route. |
-| `CONTROL_PLANE_PROXY` | `false`. `true` makes the bundled proxy (Caddy, the website nginx or the single-box nginx) forward `/control/` and `/mfa/control/` to Django on the site's own host. Only `true`/`false` are valid; anything else stops the proxy from starting. Apply a change with `bash scripts/apply-settings.sh`. |
+| `CONTROL_PLANE_PROXY` | `false`. `true` makes the bundled proxy (Caddy or the website nginx) forward `/control/` and `/mfa/control/` to Django on the site's own host. Only `true`/`false` are valid; anything else stops the proxy from starting. Apply a change with `bash scripts/apply-settings.sh`. |
 | `CONTROL_PLANE_ALLOW_CIDRS` | Empty (any address). Space-separated IPv4/IPv6 addresses or CIDRs allowed to reach the control plane; others get 403. Only meaningful where the proxy sees the real client address — not behind your own reverse proxy. |
 | `CONTROL_PLANE_TUNNEL_PORT` | Empty (off). Automatic-HTTPS installs only: a `127.0.0.1`-only HTTPS port serving just the control plane, for `ssh -L`. Needs Docker Engine 28 or newer. |
 
@@ -300,3 +300,18 @@ Shared multi-tenant staff sites also populate `PLATFORM_STAFF_ORIGINS`. Set exte
 `VITE_API_URL=https://<API-domain>/api`. The installer writes `ENABLE_HTTPS`,
 `TRUST_X_FORWARDED_PROTO`, `TRUSTED_PROXY_COUNT`, `PLATFORM_DOMAIN_SUFFIX`, `BEHIND_TRUSTED_PROXY`,
 `PLATFORM_ORIGIN_HOST` and `INFRA_HOSTS` to match the selected edge/proxy topology.
+
+## Metrics, organization creation and analytics
+
+See [the operations reference](environment-operations.md#route-metrics-organization-creation-and-web-analytics)
+for `ROUTE_METRICS_ENABLED` (default `False`), `PROMETHEUS_MULTIPROC_DIR` (empty;
+Compose uses `/tmp/spaceworks-prometheus`), `ORGANIZATION_SELF_CREATION_ENABLED`
+(default `False`), `ORGANIZATION_SELF_CREATION_MAX_OWNED` (3), and
+`ORGANIZATION_SELF_CREATION_MAX_PER_DAY` (1).
+
+`WEB_ANALYTICS_SCRIPT_URL`, `WEB_ANALYTICS_COLLECT_URL` and `WEB_ANALYTICS_DOMAIN`
+default to empty and must be configured together for manual Plausible analytics.
+`WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS` is a frontend-only CSP option (empty by default),
+not a Django setting. The operations reference describes their validation and backup policies.
+Station PINs also require the independent `EVENT_STATION_PIN_PEPPER` secret documented
+there; setup creates it once and upgrades must preserve it.

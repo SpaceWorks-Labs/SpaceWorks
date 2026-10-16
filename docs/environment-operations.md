@@ -93,7 +93,7 @@ Host-orchestration paths and timing knobs; see `docs/self-hosting.md` and the re
 | `EVENT_CHECKIN_SYNC_GRACE_HOURS` | `24` |  |
 | `EVENT_CHECKIN_WINDOW_AFTER_HOURS` | `2` |  |
 | `EVENT_CHECKIN_WINDOW_BEFORE_HOURS` | `24` |  |
-| `EVENT_STATION_PIN_PEPPER` | `''` |  |
+| `EVENT_STATION_PIN_PEPPER` | `''` | Independent secret of at least 32 bytes for station PIN hashing. Setup generates 50 random characters once; preserve across upgrades and backups. Changing it invalidates existing station PINs. |
 | `KIOSK_COMMAND_MAX_AGE_SECONDS` | `8 * 60 * 60` | Oldest offline kiosk command a replay still accepts. |
 | `KIOSK_OPERATOR_LEASE_RETENTION_SECONDS` | `7 * 24 * 60 * 60` | How long ended operator leases are kept before cleanup. |
 | `KIOSK_OPERATOR_LEASE_TTL_SECONDS` | `8 * 60 * 60` | Lifetime of one staff operator lease on a kiosk Station. |
@@ -121,3 +121,30 @@ Consumed by `setup_instance`, the image build, or the e2e seed; never needed at 
 | `SETUP_SUPERADMIN_EMAIL` | read outside `settings.py` |  |
 | `SETUP_SUPERADMIN_PASSWORD` | read outside `settings.py` |  |
 | `SETUP_SUPERADMIN_USERNAME` | read outside `settings.py` |  |
+
+## Route metrics, organization creation and web analytics
+
+These settings are runtime options. Metrics are excluded from backup compatibility;
+organization policy and backend analytics destinations use non-blocking value comparisons
+so restore preflight reports differences without preventing recovery.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `ROUTE_METRICS_ENABLED` | `False` | Opt in to route-level request metrics; metrics access still requires `METRICS_TOKEN`. |
+| `PROMETHEUS_MULTIPROC_DIR` | `''` | Process-local writable Prometheus scratch directory; Compose defaults to `/tmp/spaceworks-prometheus`. Do not share it across containers or persist it across boots. |
+| `ORGANIZATION_SELF_CREATION_ENABLED` | `False` | Allow authenticated users to create organizations; off retains administrator-controlled creation. |
+| `ORGANIZATION_SELF_CREATION_MAX_OWNED` | `3` | Maximum organizations owned by one account; integer from 1 to 100. |
+| `ORGANIZATION_SELF_CREATION_MAX_PER_DAY` | `1` | Maximum organizations an account may create per day; integer from 1 to 100. |
+| `WEB_ANALYTICS_SCRIPT_URL` | `''` | HTTPS Plausible manual-script URL. Supply all three backend analytics values together, or leave all empty. |
+| `WEB_ANALYTICS_COLLECT_URL` | `''` | HTTPS collection endpoint; added to backend and SPA connect-src policies. |
+| `WEB_ANALYTICS_DOMAIN` | `''` | Analytics hostname; no scheme or path. |
+| `WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS` | `''` | Frontend nginx only: space-separated HTTPS API/object-storage origins added to connect-src when analytics is enabled. Excluded from backend backup capture. |
+
+Analytics is disabled by default. The website runtime generator composes framing,
+referrer and optional analytics policies into the include used by SPA/static locations.
+Django owns `/embed/` response policies; nginx passes those headers through.
+
+For installations predating generated station secrets, set `EVENT_STATION_PIN_PEPPER`
+once in the private `.env` (for example, generate with
+`python -c "import secrets; print(secrets.token_urlsafe(48))"`) before enabling PIN
+stations. Keep the existing value on upgrades; the updater preserves `.env`.

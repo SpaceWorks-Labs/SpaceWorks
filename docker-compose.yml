@@ -60,6 +60,8 @@ services:
     container_name: spaceworks-backend
     environment: &backend-env
       SECRET_KEY: ${SECRET_KEY:-dev-insecure-change-me}
+      EVENT_STATION_PIN_PEPPER: ${EVENT_STATION_PIN_PEPPER:-}
+      SPACEWORKS_EDITION: ${SPACEWORKS_EDITION:-makerspace}
       WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
       WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
       WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}

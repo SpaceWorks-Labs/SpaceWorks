@@ -409,7 +409,7 @@ no update is active. Backup restore supervisors require Linux/WSL2 host trust an
 ## Publishing new images (maintainers)
 
 Every push to `main` runs `release.yml`, publishes matching backend and frontend images, and creates a
-GitHub Release titled `SpaceWorks vX.Y.Z-main.<run>.<12-hex sha>` using the version series from `VERSION`.
+GitHub Release titled `SpaceWorks X.Y.Z` using the version series from `VERSION`.
 Its tag identifies the exact build used by the updater. When both images succeed for the current branch
 head, the workflow promotes them to the rolling `:X.Y`, `:main`, and `:latest` tags, then prunes older GHCR
 image versions. GitHub releases and their tags remain permanently available.

@@ -71,8 +71,10 @@ plus their prior verdict returned both approvals in minutes.
 - **Parallel Codex via git worktree.** A second track runs in a sibling worktree (e.g. `../IM-nbuild` on its
   own branch) with a dedicated test DB, so two Codex builds don't collide on shared files (`rbac.py`,
   `origin_scope.py`, `admin_api/urls.py`, `openapi-schema.json`, `api.ts`). Worktrees are fresh checkouts →
-  **gitignored files (e.g. `backend/.env`) must be copied in**. Cap at 2 heavy builds. At the end: merge the
-  worktree branch → `dev`, `git worktree remove`, drop its DB.
+  **gitignored files (e.g. `backend/.env`) must be copied in**. Cap at 2 heavy builds. At the end, prepare
+  and verify the proposed merge, report exactly what would land, then hand it to the owner. **Only the
+  owner merges and pushes.** Keep the worktree until the owner has merged; remove it and its dedicated
+  test DB only after that handoff is complete.
 - **Codex gotchas.** Run Codex with skill-free prompts that skip reading this file, in the **background**
   (`run_in_background:true`) — the 10-min foreground ceiling is too short. Stage-4 = `codex exec review
   --uncommitted` (no `--sandbox`, no custom prompt; findings at the literal tail). If Codex dies with

@@ -15,6 +15,7 @@ export type EventRegistrationCounts = Record<EventRegistrationStatus, number>;
 export type StaffEvent = {
   staff_permissions?: import("./eventStaffPermissions").EventPermission[];
   can_manage_staff?: boolean;
+  can_duplicate?: boolean;
   ticketing_features?: string[];
   broadcasts_enabled?: boolean;
   badge_sensitive_fields_allowed?: boolean;
@@ -51,6 +52,8 @@ export type StaffEvent = {
   updated_at: string;
   registration_counts: EventRegistrationCounts;
   organizers: { id: number; slug: string; name: string }[];
+  /** Selected audience organizations: registration eligibility only, never authority. */
+  audience_organizations?: { id: number; slug: string; name: string }[];
   series_summary: {
     id: number; public_token: string; title: string; timezone: string;
   } | null;
@@ -92,6 +95,13 @@ export type EventPayload = {
   is_public: boolean;
   show_registration_count?: boolean;
   custom_form: CustomFormSchema;
+};
+
+/** Create-only extras, applied in the same transaction as the new draft. */
+export type EventCreatePayload = EventPayload & {
+  organization_ids?: number[];
+  audience_organization_ids?: number[];
+  collaborator_slugs?: string[];
 };
 
 export type EventPatch = Partial<EventPayload> & { inherit_fields?: string[] };

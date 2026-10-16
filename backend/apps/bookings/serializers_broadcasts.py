@@ -1,5 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.settings import api_settings
 
 from .models_broadcasts import BookingBroadcast
 
@@ -13,8 +14,10 @@ class BookingBroadcastInputSerializer(serializers.Serializer):
                                     min_length=1, max_length=2, default=["confirmed"])
 
     def to_internal_value(self, data):
-        if isinstance(data, dict) and set(data) - set(self.fields):
-            raise serializers.ValidationError("Unexpected fields.")
+        unknown = set(data) - set(self.fields) if isinstance(data, dict) else set()
+        if unknown:
+            # Field-keyed: a bare list from a top-level to_internal_value breaks .errors.
+            raise serializers.ValidationError({key: ["Unexpected field."] for key in sorted(unknown)})
         return super().to_internal_value(data)
 
 
@@ -41,5 +44,5 @@ class BookingBroadcastListSerializer(serializers.Serializer):
 class BookingBroadcastActionSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if data:
-            raise serializers.ValidationError("This action accepts no fields.")
+            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: ["This action accepts no fields."]})
         return super().to_internal_value(data)

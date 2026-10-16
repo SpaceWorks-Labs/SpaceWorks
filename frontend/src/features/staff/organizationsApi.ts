@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { publicOrganizationKeys } from "../organizations/publicOrganizationsApi";
+import { refreshOrganizationAuthority } from "../organizations/refreshOrganizationAuthority";
 
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 export type OrganizationSummary = {
@@ -17,6 +18,8 @@ export type OrganizationDetail = OrganizationSummary & {
   website: string;
   logo_url: string | null;
   public_profile_enabled: boolean;
+  /** Listed in the staff organization directory that event organizers search. */
+  is_discoverable?: boolean;
   legal_name?: string;
   registration_number?: string;
   contact_email?: string;
@@ -63,11 +66,7 @@ export function useChangeOrganizationLink(id: number) {
   const client = useQueryClient();
   return useMutation({ mutationFn: ({ makerspace_id, relationship }: { makerspace_id: number; relationship?: OrganizationLink["relationship"] }) =>
     staffRequest(`/admin/organizations/${id}/makerspaces/${relationship ? "" : `${makerspace_id}/`}`, { method: relationship ? "POST" : "DELETE", ...(relationship ? { body: JSON.stringify({ makerspace_id, relationship }) } : {}) }),
-    onSuccess: () => Promise.all([
-      client.invalidateQueries({ queryKey: organizationKeys.all }),
-      client.invalidateQueries({ queryKey: ["public-organization"] }),
-      client.invalidateQueries({ queryKey: ["staff", "me"] }),
-    ]) });
+    onSuccess: () => refreshOrganizationAuthority(client) });
 }
 
 type OrganizationFilters = { page?: number; search?: string; active?: boolean };
@@ -120,7 +119,7 @@ export function useOrganizationInvitations(id: number, page: number, enabled: bo
 export function useUpdateOrganization(id: number, slug: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Partial<Pick<OrganizationDetail, "name" | "slug" | "description" | "website" | "public_profile_enabled">>) =>
+    mutationFn: (payload: Partial<Pick<OrganizationDetail, "name" | "slug" | "description" | "website" | "public_profile_enabled" | "is_discoverable">>) =>
       staffRequest<OrganizationDetail>(`/admin/organizations/${id}/`, { method: "PATCH", body: JSON.stringify(payload) }),
     onSuccess: async (updated) => Promise.all([
       client.invalidateQueries({ queryKey: organizationKeys.all }),

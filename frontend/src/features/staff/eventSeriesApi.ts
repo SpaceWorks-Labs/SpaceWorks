@@ -70,10 +70,12 @@ function detail(seriesId: number) {
   return `/admin/event-series/${seriesId}/`;
 }
 
-export function useEventSeriesList(makerspaceId: number) {
+export const EVENT_SERIES_PAGE_SIZE = 50;
+
+export function useEventSeriesList(makerspaceId: number, page = 1) {
   return useQuery({
-    queryKey: eventSeriesKeys.list(makerspaceId),
-    queryFn: () => staffRequest<Paginated<EventSeries>>(base(makerspaceId)),
+    queryKey: [...eventSeriesKeys.list(makerspaceId), "list", page],
+    queryFn: () => staffRequest<Paginated<EventSeries>>(`${base(makerspaceId)}?page=${page}&page_size=${EVENT_SERIES_PAGE_SIZE}`),
   });
 }
 export function useEventSeries(seriesId: number) {
@@ -82,10 +84,10 @@ export function useEventSeries(seriesId: number) {
     queryFn: () => staffRequest<EventSeries>(detail(seriesId)),
   });
 }
-export function useEventSeriesOccurrences(seriesId: number) {
+export function useEventSeriesOccurrences(seriesId: number, page = 1) {
   return useQuery({
-    queryKey: eventSeriesKeys.occurrences(seriesId),
-    queryFn: () => staffRequest<Paginated<StaffEvent>>(`${detail(seriesId)}occurrences/`),
+    queryKey: [...eventSeriesKeys.occurrences(seriesId), page],
+    queryFn: () => staffRequest<Paginated<StaffEvent>>(`${detail(seriesId)}occurrences/?page=${page}&page_size=${EVENT_SERIES_PAGE_SIZE}`),
   });
 }
 

@@ -96,6 +96,9 @@ class TenantDumpCatalogError(AssertionError):
 # Integration of design-revamp, yuyu-parity, setup-areas, org-setup and fixed-roles:
 # re-pinned from Django's schema_digest() over the merged live graph.
 CATALOG_SCHEMA_SHA256 = "81b67d683bb62a62e5937031d29e4af43d7791945b189674026d2ba482bd6bbd"
+# int-events: DROP-only EventAudienceOrganization, display-only staff-grant role_label and
+# Organization.is_discoverable; the runtime guard reproduced 7a7132b9 before these fields.
+# Phase 0 merge: re-pinned again by the catalog guard test after merging int-events.
 # BK-D adds typed booking campaign/delivery history. Literal reconstruction
 # reproduced HEAD's complete graph before computing the new digest.
 # Lane F: platform-only, nonportable session reauthentication proof.

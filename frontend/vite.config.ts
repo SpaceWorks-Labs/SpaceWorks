@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { kioskPwa } from "./scripts/kiosk-pwa";
 import { memberPwa } from "./scripts/member-pwa";
 
@@ -37,5 +37,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // scripts/*.test.mjs are node:test suites (`node --test`), not vitest files.
+    exclude: [...configDefaults.exclude, "scripts/**/*.test.mjs"],
   },
 });

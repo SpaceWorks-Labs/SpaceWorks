@@ -30,6 +30,9 @@ def duplicate_event(event, *, actor, attach_series=False):
         source = _locked_event(event.pk)
         source.makerspace = require_module_locked(source.makerspace, "events")
         event_authority.require(actor, source, EDIT_DETAILS)
+        # Standalone copies inherit neither scoped grants nor organizers. Only
+        # tenant managers retain authority over the resulting draft.
+        event_authority.require_tenant(actor, source.makerspace)
         values = copy_fields(source, EVENT_FIELDS | {"badge_template", "timezone_name"})
         values["title"] = source.title[:193].rstrip() + " (copy)"
         clone = Event(makerspace=source.makerspace, created_by=actor,

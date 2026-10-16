@@ -1,5 +1,5 @@
 import { SettingsQueryState } from "./SettingsQueryState";
-import { ErrorBlock } from "../../components/ui";
+import { ErrorBlock, Pagination } from "../../components/ui";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import { StructuredApiError, staffRequest } from "../../lib/api";
 import { useStaffGet } from "./StaffPanels";
 import type { Makerspace } from "./panels/shared";
 import { bookingKeys } from "./bookingsApi";
+import type { Paginated } from "./eventsApiTypes";
 
 type SpaceRules = {
   id: number;
@@ -51,11 +52,12 @@ const NUMBER_FIELDS: Array<{ key: NumberRuleField; label: string; min: number }>
 const RULE_FIELDS: RuleField[] = [...NUMBER_FIELDS.map(({ key }) => key), "approval_mode"];
 
 export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pick<Makerspace, "id"> }) {
-  // page_size=200 is the backend max; a makerspace never has that many
-  // bookable spaces, so one page always covers the whole editable set.
-  const spaces = useStaffGet<{ count: number; results: SpaceRules[] }>(
-    ["booking-rule-spaces", makerspace.id],
-    `/admin/makerspaces/${makerspace.id}/spaces/?page_size=200`,
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [makerspace.id]);
+  const pageSize = 24;
+  const spaces = useStaffGet<Paginated<SpaceRules>>(
+    ["booking-rule-spaces", makerspace.id, page],
+    `/admin/makerspaces/${makerspace.id}/spaces/?page=${page}&page_size=${pageSize}`,
   );
   const activeSpaces = spaces.data?.results.filter((space) => space.is_active) ?? [];
 
@@ -65,7 +67,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
 
       {spaces.isLoading ? <p className="mt-3 text-sm text-muted">Loading bookable spaces…</p> : null}
       {!spaces.isLoading && activeSpaces.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">No active bookable spaces.</p>
+        <p className="mt-3 text-sm text-muted">No active bookable spaces on this page.</p>
       ) : null}
       {activeSpaces.length > 0 ? (
         <div className="mt-4 grid min-w-0 gap-4">
@@ -75,6 +77,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
         </div>
       ) : null}
       {spaces.error ? <ErrorBlock error={new Error("Couldn't load booking rules. Try again.")} onRetry={() => { void spaces.refetch(); }} /> : null}
+      {spaces.data ? <Pagination page={page} count={spaces.data.count} pageSize={pageSize} totalPages={Math.ceil(spaces.data.count / pageSize)} onChange={setPage} disabled={spaces.isFetching} /> : null}
     </div></SettingsRow></SettingsQueryState>
   );
 }

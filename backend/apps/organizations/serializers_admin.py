@@ -52,6 +52,7 @@ class OrganizationDetailSerializer(OrganizationSummarySerializer):
             "website",
             "logo_url",
             "public_profile_enabled",
+            "is_discoverable",
             "legal_name",
             "registration_number",
             "contact_email",
@@ -75,7 +76,7 @@ class OrganizationDetailSerializer(OrganizationSummarySerializer):
 class OrganizationProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ("name", "slug", "description", "website", "public_profile_enabled")
+        fields = ("name", "slug", "description", "website", "public_profile_enabled", "is_discoverable")
         extra_kwargs = {field: {"required": False} for field in fields}
 
 

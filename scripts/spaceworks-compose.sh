@@ -48,9 +48,6 @@ else
   COMPOSE_FILES=("$ROOT/docker-compose.cloud.yml")
 fi
 LAYER="${SPACEWORKS_COMPOSE_LAYER:-}"
-if [[ -z "$LAYER" && "${SPACEWORKS_COMPOSE_BUILD_LAYER:-0}" == "1" ]]; then
-  LAYER="build"
-fi
 # The Compose layer chosen at setup persists here across updates.
 if [[ -z "$LAYER" && -f "$ROOT/.spaceworks-layer" ]]; then
   LAYER="$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")"

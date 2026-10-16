@@ -10,6 +10,7 @@ from apps.events.models_feedback import EventFeedbackResponse, EventFeedbackSurv
 from apps.events.models_certificates import EventAttendanceCertificate
 from .models_certificate_templates import EventCertificateArtwork, EventCertificateTemplateRevision
 from apps.events.organizer_models import EventOrganizer
+from apps.events.audience_models import EventAudienceOrganization
 from apps.events.models_series import (
     EventSeries,
     EventSeriesCollaborator,
@@ -33,6 +34,7 @@ __all__ = [
     "EventInvite", "EventTicketType", "EventPromoCode", "EventCategory",
     "Event",
     "EventAttendanceCertificate",
+    "EventAudienceOrganization",
     "EventCheckInEvent",
     "EventStationBinding",
     "EventCollaborator",

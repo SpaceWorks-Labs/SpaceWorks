@@ -77,6 +77,7 @@ def _delete_object_graph(makerspace):
         EventCollaborator,
         EventFeedbackResponse,
         EventFeedbackSurvey,
+        EventAudienceOrganization,
         EventOrganizer,
         EventRegistration,
         EventSeries,
@@ -229,6 +230,7 @@ def _delete_object_graph(makerspace):
         # Organizer attribution is owned by the hosted event, never by whichever
         # makerspaces happen to be linked to its deployment-global organization.
         EventOrganizer.objects.filter(event__makerspace=makerspace).delete()
+        EventAudienceOrganization.objects.filter(event__makerspace=makerspace).delete()
         EventAttendanceCertificate.objects.filter(
             registration__event__makerspace=makerspace
         ).delete()

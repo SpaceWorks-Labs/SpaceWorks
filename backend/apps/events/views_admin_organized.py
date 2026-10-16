@@ -54,7 +54,7 @@ class OrganizedEventListView(APIView):
         ).select_related('makerspace')
         queryset = (
             _annotate_registration_counts(queryset)
-            .prefetch_related('organizers__organization')
+            .prefetch_related('organizers__organization', 'audience_organizations__organization')
             .order_by('starts_at', 'id')
         )
         paginator = _EventPagination()

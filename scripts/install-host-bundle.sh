@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 # A pinned installer stages new host tooling separately from private installation state.
 # Copy only the runtime bundle after the database backup; preserve every replaced file.
-install_staged_host_bundle() {
-  local source_root="$1" destination backup relative temporary
-  [[ "$source_root" != "$ROOT" ]] || return 0
-  backup="$ROOT/backups/host-config-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-  HOST_CONFIG_BACKUP_DIR="$backup"
-  local files=(
-    setup.sh install.sh setup.ps1
+host_bundle_files() {
+  HOST_BUNDLE_FILES=(
+    VERSION setup.sh install.sh setup.ps1
     docker-compose.prod.yml docker-compose.cloud.yml
     docker/compose.build.yml docker/compose.tls.yml docker/compose.saas.yml
     docker/compose.api-only.yml docker/compose.api-only-edge.yml docker/compose.external-storage.yml
@@ -27,14 +23,29 @@ install_staged_host_bundle() {
     scripts/select-main-release.py scripts/setup-first-run.sh
     scripts/setup-host-orchestration.sh scripts/spaceworks-compose.sh scripts/spaceworks-repository.sh
     scripts/update-lock.sh scripts/update.ps1 scripts/update.sh scripts/validate-compose-wrapper.py
+    scripts/update-release-bundle.sh scripts/release-host-bundle.py scripts/update-proxy-edges.sh
+    scripts/restore-database-identity.sh scripts/restore-database-identity.py
   )
+}
+
+validate_host_bundle() {
+  local source_root="$1" relative
+  host_bundle_files
   # Refuse incomplete archives before replacing any file.
-  for relative in "${files[@]}"; do
+  for relative in "${HOST_BUNDLE_FILES[@]}"; do
     [[ -f "$source_root/$relative" ]] || die "The pinned archive lacks $relative."
   done
+}
+
+install_staged_host_bundle() {
+  local source_root="$1" destination backup relative temporary
+  [[ "$source_root" != "$ROOT" ]] || die "Release tooling must be staged outside the existing install."
+  validate_host_bundle "$source_root"
+  backup="$ROOT/backups/host-config-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  HOST_CONFIG_BACKUP_DIR="$backup"
   mkdir -p "$ROOT/backups"
   chmod 700 "$ROOT/backups"
-  for relative in "${files[@]}"; do
+  for relative in "${HOST_BUNDLE_FILES[@]}"; do
     destination="$ROOT/$relative"
     mkdir -p "$(dirname "$destination")" "$(dirname "$backup/$relative")"
     [[ ! -f "$destination" ]] || cp -p "$destination" "$backup/$relative"

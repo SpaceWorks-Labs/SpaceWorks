@@ -19,6 +19,13 @@ from apps.encryption.registry import all_fields, fields_for_label, registered_la
 from apps.encryption.write_fence import fence_operation
 
 _FILTERS = {
+    "devices.PrinterJob": "makerspace_id",
+    "events.EventBroadcast": "makerspace_id",
+    "events.EventAttendanceCertificate": "registration__event__makerspace_id",
+    "events.EventFeedbackResponse": "survey__event__makerspace_id",
+    "makerspaces.InvitationRequest": "makerspace_id",
+    "makerspaces.MemberCard": "makerspace_id",
+    "makerspaces.MembershipRequest": "makerspace_id",
     "notifications.MemberBroadcast": "makerspace_id",
     "notifications.NotificationInboxRow": "makerspace_id",
     "hardware_requests.HardwareRequest": "makerspace_id",

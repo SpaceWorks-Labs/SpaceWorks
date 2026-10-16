@@ -30,6 +30,8 @@ class GrantAdapter:
     can: Callable
     active: Callable
     lock_authority: Callable
+    # Optional display-only label column (events' role_label). Never consulted for authority.
+    label_field: str | None = None
 
 
 def credential_digest(value, *, namespace, purpose):
@@ -57,12 +59,19 @@ def _require_subset(adapter, actor, target, permissions):
 
 
 def _audit(adapter, actor, action, row):
+    meta = {"permissions": row.permissions}
+    if adapter.label_field and getattr(row, adapter.label_field):
+        meta[adapter.label_field] = getattr(row, adapter.label_field)
     record(actor, f"{adapter.audit_prefix}_{action}", makerspace=row.makerspace,
-           target=row, meta={"permissions": row.permissions})
+           target=row, meta=meta)
+
+
+def _labels(adapter, label):
+    return {adapter.label_field: label} if adapter.label_field and label is not None else {}
 
 
 @transaction.atomic
-def create_invite(adapter, target, *, actor, permissions, email="", send=None):
+def create_invite(adapter, target, *, actor, permissions, email="", send=None, label=None):
     target = adapter.lock_target(target)
     permissions = _permissions(adapter, permissions)
     _require_subset(adapter, actor, target, permissions)
@@ -70,7 +79,7 @@ def create_invite(adapter, target, *, actor, permissions, email="", send=None):
         raise ValidationError({"email": "An email address is required for delivery."})
     token = secrets.token_urlsafe(32)
     row = adapter.invite_model.objects.create(
-        **adapter.scope(target), permissions=permissions, created_by=actor,
+        **adapter.scope(target), permissions=permissions, created_by=actor, **_labels(adapter, label),
         token_digest=credential_digest(token, namespace=adapter.namespace, purpose="invite"),
         email_digest=(credential_digest(email, namespace=adapter.namespace, purpose="email")
                       if email else ""),
@@ -82,7 +91,7 @@ def create_invite(adapter, target, *, actor, permissions, email="", send=None):
 
 
 @transaction.atomic
-def update_permissions(adapter, grant, *, actor, permissions):
+def update_permissions(adapter, grant, *, actor, permissions, label=None):
     target = adapter.lock_target(adapter.target(grant))
     row = adapter.grant_model.objects.select_for_update().get(pk=grant.pk)
     if row.revoked_at:
@@ -90,7 +99,10 @@ def update_permissions(adapter, grant, *, actor, permissions):
     permissions = _permissions(adapter, permissions)
     _require_subset(adapter, actor, target, permissions)
     row.permissions = permissions
-    row.save(update_fields=["permissions"])
+    labels = _labels(adapter, label)
+    for field, value in labels.items():
+        setattr(row, field, value)
+    row.save(update_fields=["permissions", *labels])
     _audit(adapter, actor, "updated", row)
     return row
 
@@ -157,11 +169,17 @@ def redeem_invite(adapter, token, *, actor, makerspace_id=None):
     if grant is None:
         grant = adapter.grant_model.objects.create(
             **adapter.scope(target), user=account, permissions=row.permissions, granted_by=creator,
+            **_labels(adapter, getattr(row, adapter.label_field or "", None)),
         )
         _audit(adapter, actor, "created", grant)
     else:
         grant.permissions = sorted(set(grant.permissions) | set(row.permissions))
-        grant.save(update_fields=["permissions"])
+        # A merged invitation only fills a missing label; it never relabels a person.
+        labels = {} if not adapter.label_field or getattr(grant, adapter.label_field) else _labels(
+            adapter, getattr(row, adapter.label_field))
+        for field, value in labels.items():
+            setattr(grant, field, value)
+        grant.save(update_fields=["permissions", *labels])
         _audit(adapter, actor, "updated", grant)
     row.redeemed_at, row.redeemed_by = timezone.now(), account
     row.save(update_fields=["redeemed_at", "redeemed_by"])

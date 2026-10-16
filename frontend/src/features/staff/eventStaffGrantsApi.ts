@@ -6,11 +6,11 @@ import type { EventPermission } from "./eventStaffPermissions";
 
 export type EventStaffGrant = {
   id: number; makerspace: number; event: number | null; series: number | null;
-  user: number; permissions: EventPermission[]; granted_by: number | null;
+  user: number; permissions: EventPermission[]; role_label?: string; granted_by: number | null;
   created_at: string; revoked_at: string | null; revoked_by: number | null;
 };
 export type EventStaffInvite = {
-  id: number; permissions: EventPermission[]; expires_at: string;
+  id: number; permissions: EventPermission[]; role_label?: string; expires_at: string;
   redeemed_at: string | null; revoked_at: string | null;
 };
 export type StaffGrantTarget = { kind: "event" | "series"; id: number };
@@ -35,13 +35,13 @@ export function useEventStaffGrantActions(target: StaffGrantTarget) {
     client.invalidateQueries({ queryKey: eventStaffGrantKeys.accessible }),
     client.invalidateQueries({ queryKey: target.kind === "event" ? ["event", target.id] : ["event-series", target.id, "detail"] }),
   ]); };
-  const invite = useMutation({ mutationFn: (payload: { email: string; send_email: boolean; permissions: EventPermission[] }) =>
+  const invite = useMutation({ mutationFn: (payload: { email: string; send_email: boolean; permissions: EventPermission[]; role_label?: string }) =>
     staffRequest<EventStaffInvite & { token: string }>(`${base(target)}/staff-invites/`, {
       method: "POST", body: JSON.stringify(payload),
     }), onSuccess: invalidate });
-  const update = useMutation({ mutationFn: ({ id, permissions }: { id: number; permissions: EventPermission[] }) =>
+  const update = useMutation({ mutationFn: ({ id, permissions, role_label }: { id: number; permissions: EventPermission[]; role_label?: string }) =>
     staffRequest<EventStaffGrant>(`/admin/event-staff-grants/${id}/`, {
-      method: "PATCH", body: JSON.stringify({ permissions }),
+      method: "PATCH", body: JSON.stringify(role_label === undefined ? { permissions } : { permissions, role_label }),
     }), onSuccess: invalidate });
   const revoke = useMutation({ mutationFn: (id: number) => staffRequest<EventStaffGrant>(`/admin/event-staff-grants/${id}/revoke/`, {
     method: "POST", body: JSON.stringify({}),

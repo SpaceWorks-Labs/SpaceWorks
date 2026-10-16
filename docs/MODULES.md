@@ -19,14 +19,15 @@ area plus Membership, Online payments and Reports, preserving plans, checkout an
 Inventory and Machines are off. Areas enable every child feature supported by the selected
 modules and its feature prerequisites. Follow-up answers may turn off self-checkout, kiosk or
 certification gating. Staff MFA is a separate question.
-Per-person accounts (self sign-up, password/Google/Apple/phone sign-in and the member area) are always
-on in setup. Membership adds plans, vouching, renewals and the mobile app.
+The per-person accounts module (self sign-up, password/Google/Apple/GitHub/phone sign-in and the member
+area) is always installed by setup; platform login-method switches and the provider selection still
+govern sign-in availability. Membership adds plans, vouching, renewals and the mobile app.
 
 | Area | Modules | Features |
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -187,8 +188,8 @@ Events can run with membership and the online payments rail off. Members-only re
 default audience; opt-in account registration, invitations, ticket types and promo codes
 support public workshops. Paid tickets still create core ledger charges for offline settlement.
 
-Opt-in `events.organization_audience` adds ?Participating organizations?: active members of
-this event?s organizer organizations and venue owner, directly or through their owned makerspaces,
+Opt-in `events.organization_audience` adds “Participating organizations”: active members of
+this event's organizer organizations and venue owner, directly or through their owned makerspaces,
 can register without joining the venue. Manager/affiliate links do not qualify. Public event
 labels name the usable organizations; membership loss leaves existing tickets readable.
 Portable imports block this audience until an authorized editor explicitly confirms the target
@@ -245,7 +246,7 @@ Opt-in `events.website` adds curated event and series pages: introductions and p
 speakers, tracks, rooms, sessions, sponsors, FAQs and links. Detail editors manage sections
 and private images; schedule publishers manage programme times, live delays and website
 release. Existing events start without a released website. Publishing an event releases its
-saved page only when ?Publish website with event? is selected; pages can then be released
+saved page only when “Publish website with event” is selected; pages can then be released
 or unreleased independently. An occurrence inherits its series page until an editor saves
 an independent, initially unreleased copy. Event duplication copies content and images to
 fresh private keys, with no copied release or live delays.

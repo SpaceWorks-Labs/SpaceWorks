@@ -1,4 +1,5 @@
 import { opsStatusLabel } from "./opsPresentation";
+import { AUDIENCE_LABELS } from "./EventAudienceOptions";
 import { Card, EmptyState, ListRow, RelativeTime, StatCard, StatusBadge } from "../../components/ui";
 import { useEventRegistrations, type StaffEvent } from "./eventsApi";
 import { eventAccess } from "./eventStaffPermissions";
@@ -29,10 +30,10 @@ export function EventOverview({ event, onRegistrations }: { event: StaffEvent; o
   </div>;
 }
 
-const AUDIENCE_LABEL = { members: "Members", accounts: "Account holders", invite: "Invited guests" } as const;
+const AUDIENCE_LABEL = { members: AUDIENCE_LABELS.members, accounts: AUDIENCE_LABELS.accounts, invite: AUDIENCE_LABELS.invite } as const;
 /** Participating-organization events name their organizations; the server's audience label already does. */
 const audienceLabel = (event: StaffEvent) => event.registration_audience === "participating_organizations"
-  ? event.audience_label || "Participating organizations" : AUDIENCE_LABEL[event.registration_audience ?? "members"];
+  ? event.audience_label || AUDIENCE_LABELS.participating_organizations : AUDIENCE_LABEL[event.registration_audience ?? "members"];
 
 export function EventAtAGlance({ event, onCheckIn }: { event: StaffEvent; onCheckIn?: () => void }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);

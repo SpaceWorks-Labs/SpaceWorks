@@ -136,7 +136,7 @@ if [[ -n "$CP_MODE" ]]; then
 fi
 LAYER=none
 [[ ! -f "$ROOT/.spaceworks-layer" ]] || LAYER="$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")"
-case "$LAYER" in none|tls|single) ;; *) refuse 'Settings apply supports bundled release layers none, tls and single; build layers and saas are not supported.' ;; esac
+case "$LAYER" in none|tls) ;; *) refuse 'Settings apply supports bundled release layers none and tls; build layers and saas are not supported.' ;; esac
 export SPACEWORKS_COMPOSE_LAYER="$LAYER"
 unset SPACEWORKS_COMPOSE_BUILD_LAYER
 CONTROL_PLANE_PROXY="$(deployment_value CONTROL_PLANE_PROXY)"
@@ -183,7 +183,7 @@ for service in "${IMAGE_SERVICES[@]}"; do
   current_tag="${last##*:}"; family="${reference%:*}"
   [[ -z "$tag" || "$tag" == "$current_tag" ]] || refuse "Service $service has a different release tag."
   tag="$current_tag"
-  case "$service" in app) key=MAKERSPACE_ALLINONE_IMAGE ;; frontend) key=MAKERSPACE_FRONTEND_IMAGE ;; *) key=MAKERSPACE_BACKEND_IMAGE ;; esac
+  case "$service" in frontend) key=MAKERSPACE_FRONTEND_IMAGE ;; *) key=MAKERSPACE_BACKEND_IMAGE ;; esac
   [[ -z "${families[$key]:-}" || "${families[$key]}" == "$family" ]] || refuse "Service $service has a different image family."
   families[$key]="$family"; export "$key=$family"
 done
@@ -191,7 +191,6 @@ export MAKERSPACE_IMAGE_TAG="$tag"
 for service in "${!references[@]}"; do
   case "$service" in
     api-edge) constructed=nginx:alpine ;;
-    app) constructed="$MAKERSPACE_ALLINONE_IMAGE:$tag" ;;
     frontend) constructed="$MAKERSPACE_FRONTEND_IMAGE:$tag" ;;
     *) constructed="$MAKERSPACE_BACKEND_IMAGE:$tag" ;;
   esac

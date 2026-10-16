@@ -36,10 +36,22 @@ export function useStaffSession(guestOnly: boolean) {
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
-  const [user, setUser] = useState<StaffAuthUser | null>(null);
+  const [restoring, setRestoring] = useState(true);
+  // Hydration seeds this query; invalidation after authority changes now refreshes
+  // the same user consumed by navigation and capability checks.
+  const authUser = useQuery<StaffAuthUser | null>({
+    queryKey: ["staff", "me"],
+    queryFn: fetchMe,
+    enabled: query => !restoring && Boolean(query.state.data),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const user = restoring ? null : authUser.data ?? null;
+  const setUser = useCallback((value: StaffAuthUser | null) => {
+    queryClient.setQueryData<StaffAuthUser | null>(["staff", "me"], value);
+  }, [queryClient]);
   const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge>();
   const [selected, setSelectedState] = useState<number | null>(() => readStoredMakerspace());
-  const [restoring, setRestoring] = useState(true);
   const [staffSignInRequested] = useState(() => new URLSearchParams(location.search).get("sign-in") === "staff");
   const [oidcCallback] = useState(() => {
     const query = new URLSearchParams(window.location.search);
@@ -74,7 +86,11 @@ export function useStaffSession(guestOnly: boolean) {
     const saved = readStoredMakerspace();
     const staffSaved = nextUser.makerspaces.some((item) => item.id === saved) ? saved : null;
     setSelected(superadmin ? saved : staffSaved ?? nextUser.makerspaces[0]?.id ?? null);
-  }, [setSelected, tenant.makerspaceId, tenant.mode]);
+  }, [setSelected, setUser, tenant.makerspaceId, tenant.mode]);
+
+  useEffect(() => {
+    if (authUser.data) hydrateUser(authUser.data);
+  }, [authUser.data, hydrateUser]);
 
   useEffect(() => {
     const query = new URLSearchParams(location.search);
@@ -86,8 +102,8 @@ export function useStaffSession(guestOnly: boolean) {
   // Refetch /auth/me and re-hydrate after a role edit/assignment may have changed the
   // current actor's own effective actions, so tabs/capabilities recompute immediately.
   const refreshAuthUser = useCallback(() => {
-    fetchMe().then(hydrateUser).catch(() => {});
-  }, [hydrateUser]);
+    void queryClient.invalidateQueries({ queryKey: ["staff", "me"] });
+  }, [queryClient]);
 
   const expireSession = useCallback(() => {
     void wipeOfflineScopes("staff:");
@@ -95,7 +111,7 @@ export function useStaffSession(guestOnly: boolean) {
     setSelected(null);
     setTab("");
     queryClient.clear();
-  }, [queryClient, setSelected, setTab]);
+  }, [queryClient, setSelected, setTab, setUser]);
 
   useEffect(() => addAuthExpiredListener(expireSession), [expireSession]);
 
@@ -103,10 +119,10 @@ export function useStaffSession(guestOnly: boolean) {
     let active = true;
 
     // Finish the pending provider login before consulting any previous cookie.
-    if (oidcCallback) { setRestoring(false); return; }
+    if (oidcCallback) { setUser(null); setRestoring(false); return; }
     // Member cookies retain their surface on refresh. This explicit handoff must
     // mint a staff session through the normal password/social/MFA login flow.
-    if (staffSignInRequested) { clearAccessToken(); setRestoring(false); return; }
+    if (staffSignInRequested) { clearAccessToken(); setUser(null); setRestoring(false); return; }
 
     async function restoreSession() {
       const refreshed = await refreshAccessToken();
@@ -122,6 +138,9 @@ export function useStaffSession(guestOnly: boolean) {
             setUser(null);
           }
         }
+      } else if (active) {
+        clearAccessToken();
+        setUser(null);
       }
       if (active) {
         setRestoring(false);
@@ -132,7 +151,7 @@ export function useStaffSession(guestOnly: boolean) {
     return () => {
       active = false;
     };
-  }, [hydrateUser, oidcCallback, staffSignInRequested]);
+  }, [hydrateUser, oidcCallback, staffSignInRequested, setUser]);
 
   const login = useMutation({
     mutationFn: (payload: { username: string; password: string }) =>
@@ -191,11 +210,18 @@ export function useStaffSession(guestOnly: boolean) {
   );
 
   const routeMakerspace = useMemo(() => {
-    if (!routeMakerspaceSlug || !makerspaces.data) {
+    if (!routeMakerspaceSlug || !makerspaces.data || !user) {
       return undefined;
     }
-    return makerspaces.data.find((item) => item.slug === routeMakerspaceSlug);
-  }, [makerspaces.data, routeMakerspaceSlug]);
+    const space = makerspaces.data.find((item) => item.slug === routeMakerspaceSlug);
+    // An old makerspace-list response must not restore a venue just removed by
+    // /auth/me. Event/booking grants remain valid routes without a membership.
+    const canReach = user.is_superuser || user.role === "superadmin"
+      || user.makerspaces.some(item => item.id === space?.id)
+      || user.event_grants?.some(item => item.makerspace_id === space?.id)
+      || user.booking_grants?.some(item => item.makerspace_id === space?.id);
+    return canReach ? space : undefined;
+  }, [makerspaces.data, routeMakerspaceSlug, user]);
 
   useEffect(() => {
     if (singleTenantLocked || !routeMakerspace || routeMakerspace.id === selected) {

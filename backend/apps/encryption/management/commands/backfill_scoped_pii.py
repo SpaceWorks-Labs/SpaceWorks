@@ -10,6 +10,13 @@ from apps.encryption.registry import all_fields, fields_for_label, makerspace_id
 
 
 FILTERS = {
+    "devices.PrinterJob": {"makerspace_id": None},
+    "events.EventBroadcast": {"makerspace_id": None},
+    "events.EventAttendanceCertificate": {"registration__event__makerspace_id": None},
+    "events.EventFeedbackResponse": {"survey__event__makerspace_id": None},
+    "makerspaces.InvitationRequest": {"makerspace_id": None},
+    "makerspaces.MemberCard": {"makerspace_id": None},
+    "makerspaces.MembershipRequest": {"makerspace_id": None},
     "notifications.MemberBroadcast": {"makerspace_id": None},
     "notifications.NotificationInboxRow": {"makerspace_id": None},
     "hardware_requests.HardwareRequest": {"makerspace_id": None},

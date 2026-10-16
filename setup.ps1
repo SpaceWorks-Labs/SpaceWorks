@@ -5,4 +5,4 @@
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 
-throw "Production host orchestration requires Linux flock and Unix-socket semantics. Run 'bash setup.sh' inside WSL2 instead."
+throw "Run 'bash setup.sh' from Git Bash, WSL2, or your Linux server. The Bash entry point checks the required host orchestration capabilities."

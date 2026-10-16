@@ -14,9 +14,15 @@ GitHub member sign-in is available through browser OAuth with PKCE, verified pri
 ## Admin control plane (superadmin-only)
 
 The **Unfold Django admin is the Super Admin's sole control plane**, mounted at **`/control/`** (NOT
-`/admin/` — that belongs to the React staff console SPA route), locked to superadmins, and **not exposed on
-the public frontend port** (`frontend/nginx.conf` does not proxy it, so makerspace staff on port 80 can
-never reach the Django console). Gated two ways: `config.admin_access.AdminSuperuserOnlyMiddleware` (denies
+`/admin/` — that belongs to the React staff console SPA route), locked to superadmins. **Website exposure
+is off by default.** On supported bundled topologies, `CONTROL_PLANE_PROXY=true` routes `/control/` and
+`/mfa/control/` through Caddy or the website nginx; `CONTROL_PLANE_ALLOW_CIDRS` restricts the socket peer
+IP (blank allows any peer), never a forwarded client-IP header. The optional TLS-layer
+`CONTROL_PLANE_TUNNEL_PORT` instead provides a loopback-only HTTPS listener for an SSH tunnel
+(Docker Engine 28+); it works with website exposure off. Apply changes with `scripts/apply-settings.sh`.
+SaaS and API-only behind an operator's proxy are excluded from this switch. See the
+[control-plane deployment rules](INVARIANTS.md#container--deployment-invariants).
+Gated two ways: `config.admin_access.AdminSuperuserOnlyMiddleware` (denies
 any authenticated non-superadmin; the `/api/v1/admin/...` React staff APIs are NOT gated) and
 `config.admin_access.SuperuserOnlyModelAdmin` (first base of every `ModelAdmin`). Superadmin operations are
 Django admin **actions that route through the existing services** (never mutating status directly);

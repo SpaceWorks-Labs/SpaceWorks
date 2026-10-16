@@ -27,7 +27,7 @@ control() {
     --role management python manage.py backup_control "$@"
 }
 reprovision_grants() {
-  local database_name="${1:-}"
+  local database_name="${1:-$RESTORE_DATABASE}"
   local command=(run --rm --no-deps -T -e SPACEWORKS_GRANTS_ONLY=1)
   if [[ -n "$database_name" ]]; then
     command+=(-e "SPACEWORKS_GRANT_DATABASE_NAME=$database_name")
@@ -44,6 +44,8 @@ command -v flock >/dev/null 2>&1 || die "In-place restore must run under WSL2 (n
 
 exec 9>"$OPS_DIR/operation.lock"
 flock -n 9 || die "Another backup, restore, verification, or update is running."
+source "$RESTORE_SCRIPT_DIR/restore-database-identity.sh"
+prove_restore_database
 
 WORK="$OPS_WORK_DIR/restore-$RESTORE_ID"
 ARCHIVE="$WORK/archive.tar.age"
@@ -86,8 +88,8 @@ cleanup() {
       control stage "$RESTORE_ID" rolling_back >/dev/null 2>&1 || true
       control rollback-objects "$RESTORE_ID" >/dev/null 2>&1 || true
       rollback_grants_ready=0
-      if ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-        'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+      if ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
+        'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
         < "$PRE_DB" >/dev/null 2>&1 && reprovision_grants >/dev/null 2>&1; then
         rollback_grants_ready=1
       fi
@@ -129,8 +131,8 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   "${COMPOSE[@]}" stop backend worker beat live >/dev/null
   backend_stopped=1
   workers_stopped=1
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-    'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
+    'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
     < "$PRE_DB"
   if ! reprovision_grants; then
     restart_allowed=0
@@ -206,23 +208,23 @@ say "Writers are excluded; draining presigned uploads for ${drain_seconds}s."
 sleep "$drain_seconds"
 
 say "Taking the mandatory pre-restore database snapshot."
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-  'pg_dump --format=custom --no-owner --no-acl -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
+  'pg_dump --format=custom --no-owner --no-acl -U "$POSTGRES_USER" "$SPACEWORKS_RESTORE_DATABASE"' \
   > "$PRE_DB"
 [[ -s "$PRE_DB" ]] || die "The pre-restore database snapshot is empty."
 
 if [[ "$kind" == "rollback_in_place" ]]; then
   temp_db="spaceworks_restore_${RESTORE_ID//-/}"
   temp_db="${temp_db:0:60}"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
+  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
     'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db"' && createdb -U "$POSTGRES_USER" '"$temp_db"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
+  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
     'pg_restore --no-owner --no-acl -U "$POSTGRES_USER" -d '"$temp_db" \
     < "$BUNDLE/database.dump"
   reprovision_grants "$temp_db"
   say "Computing every-table diff in one live snapshot; choose before the console countdown expires."
   decision="$(control diff-wait "$RESTORE_ID" --archive-database-name "$temp_db" | tail -n 1)"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
+  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
     'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db" >/dev/null 2>&1 || true
   [[ "$decision" != "abort" ]] || { finished=1; say "Restore aborted without destructive effect."; exit 0; }
 else
@@ -240,8 +242,8 @@ ${COMPOSE[@]+"${COMPOSE[@]}"} stop "$APP_SERVICE" >/dev/null
 backend_stopped=1
 destructive=1
 say "Replacing the database."
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T db sh -c \
-  'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()" >/dev/null && pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
+  'psql -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()" >/dev/null && pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
   < "$BUNDLE/database.dump"
 reprovision_grants
 

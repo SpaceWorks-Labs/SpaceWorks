@@ -66,7 +66,7 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 |---|---|
 | Hosting model | one space, several `/m/<slug>` spaces, or a subdomain platform |
 | Website here? | yes, or API only (enter your external HTTPS website origins) |
-| HTTPS | LAN HTTP, automatic Caddy (domain/email), or your existing proxy |
+| HTTPS | localhost-only HTTP, automatic Caddy (domain/email), or your existing HTTPS proxy |
 | File storage | bundled Silo, or your S3 buckets/credentials/public image URL |
 | Areas | Inventory & lending, Machines and Reports default yes; Events, Bookings, Membership, Online payments and Chat default no. Each yes immediately asks its settings. |
 | Web address people will type | `localhost` to start (you can change it later) |
@@ -109,10 +109,17 @@ When the script finishes it prints two web addresses. Open them in a browser:
 
 - **Public catalog** — what your community sees (browse + request).
 - **Staff console** (`…/admin`) — the React console where Space Managers, Inventory Managers,
-  custom handover staff, and the Super Admin do day-to-day work.
+  Handover staff, and the Super Admin do day-to-day work. Machine, Event and Booking Managers use
+  their assigned workflows; the seventh built-in role, Member, is for community members.
 
-The Django control plane is at `/control/` on the backend only. It is an operator-only tool and is
-not exposed on the public website/port.
+The Django control plane at `/control/` is for superadmins. Website access is **off by default**;
+on supported bundled installs, setup can enable `CONTROL_PLANE_PROXY` to route it and its MFA page
+through the website. `CONTROL_PLANE_ALLOW_CIDRS` can limit access to allowed peer IPs/networks
+(blank allows any peer; forwarded client-IP headers do not bypass it). With automatic HTTPS,
+`CONTROL_PLANE_TUNNEL_PORT` can provide a loopback-only HTTPS listener for an SSH tunnel instead
+(Docker Engine 28+). SaaS and API-only behind your own proxy do not offer this switch. Operators can
+change these choices later with installer option 6 or `scripts/apply-settings.sh`; see the
+[control-plane rules](INVARIANTS.md#container--deployment-invariants).
 
 **Write down the admin username and password it shows.** If you let it generate a password, that
 line is the only time it's displayed.
@@ -162,18 +169,15 @@ read their name.
 
 ## Letting people on your network reach it
 
-By default it's at `localhost` (only that computer). To let others at your space use it:
+Plain HTTP trials are restricted to `localhost` or `127.0.0.1` on that computer.
+To let people on your LAN reach it, choose automatic HTTPS with Caddy or an existing HTTPS
+reverse proxy during setup. Use a DNS name with a browser-trusted certificate, point it at
+this server, and open `https://<that-name>/`. LAN IPs and hostnames over plain HTTP are refused:
+sign-in cookies and browser security require a secure origin.
 
-1. Find that computer's address on your network (its local IP, like `192.168.1.50`, or its
-   hostname).
-2. Edit the
-   `ALLOWED_HOSTS` and `CORS_ALLOWED_ORIGINS` lines in the `.env` file to include it, then run
-   `scripts/spaceworks-compose.sh bundled up -d`.
-3. People then visit `http://<that-address>/` in their browser.
-
-> For a public website with a real domain and HTTPS, you'll want someone technical to put a
-> reverse proxy (e.g. Caddy or Nginx with a certificate) in front and set `ENABLE_HTTPS=true`.
-> See [self-hosting.md](self-hosting.md).
+For an existing local trial, have someone technical configure the HTTPS domain, trusted origins,
+proxy and storage URLs before opening it to the network. See
+[self-hosting.md](self-hosting.md#https--security-hardening).
 
 ## No spare computer?
 

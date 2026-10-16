@@ -21,6 +21,8 @@ import { EventFeedbackPanel } from "./EventFeedbackPanel";
 import { EventFeedbackResponses } from "./EventFeedbackResponses";
 import { EventRegistrationRoster } from "./EventRegistrationRoster";
 import { EventCheckInOperator } from "./EventCheckInOperator";
+import { EventCheckInList } from "./EventCheckInList";
+import { EventAudienceOrganizations } from "./EventAudienceOrganizations";
 import { EventCertificateDesigner } from "./EventCertificateDesigner";
 import { EventBadgeActions } from "./EventBadgeActions";
 import { EventStaffAccess } from "./EventStaffAccess";
@@ -125,7 +127,11 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
           {access.registrations ? <EventRegistrationRoster key={eventId} visible={tabs.active === "registrations"} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} showCheckIn={false} /> : null}
           {checkable && access.checkIn ? <>
             {tabs.active === "checkin" ? <StatCard label="Checked in" value={event.registration_counts.attended} of={event.registration_counts.registered + event.registration_counts.attended || undefined} /> : null}
-            <EventCheckInOperator visible={tabs.active === "checkin"} makerspaceId={makerspaceId} eventId={eventId} offlineEnabled={event.offline_checkin_enabled} canManageStation={access.manager} />
+            {/* Stays mounted off-tab so an open scanner keeps its state. */}
+            <div className="grid gap-6 lg:grid-cols-2" hidden={tabs.active !== "checkin"}>
+              <EventCheckInOperator visible={tabs.active === "checkin"} makerspaceId={makerspaceId} eventId={eventId} offlineEnabled={event.offline_checkin_enabled} canManageStation={access.manager} />
+              <EventCheckInList eventId={eventId} visible={tabs.active === "checkin"} />
+            </div>
           </> : null}
           {showInvites ? <EventInvitesPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
           {showTicketTypes ? <EventTicketsPanel key={eventId} visible={tabs.active === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
@@ -145,9 +151,10 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
             {tabs.active === "team" ? <EventStaffAccess target={{ kind: "event", id: eventId }} /> : null}
           </> : null}
           {showSettings && tabs.active === "settings" ? <>
-            {access.edit ? <div className="flex flex-wrap gap-2"><EventDuplicateAction event={event} makerspaceId={makerspaceId} /></div> : null}
+            {event.can_duplicate === true ? <div className="flex flex-wrap gap-2"><EventDuplicateAction event={event} makerspaceId={makerspaceId} /></div> : null}
             <EventSettings event={event} makerspaceId={makerspaceId} values={values} setValues={setValues}
               save={saveOccurrence} pending={update.isPending} invalidate={invalidateEvent} resetField={field => update.mutate({ inherit_fields: [field] })} complete={() => setConfirm("complete")} />
+            {access.edit ? <EventAudienceOrganizations event={event} makerspaceId={makerspaceId} disabled={readOnly} /> : null}
             {/* Without the roster, an editor still owns the badge template; printing stays with check-in staff. */}
             {!access.registrations && access.edit ? <EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={[]} includeAttended={false} onIncludeAttended={() => {}} canPrint={false} /> : null}
           </> : null}

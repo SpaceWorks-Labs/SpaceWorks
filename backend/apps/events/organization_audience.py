@@ -38,8 +38,26 @@ class AudienceChanged(APIException):
         super().__init__({"code": self.default_code, "detail": self.default_detail})
 
 
+def _has_audience_rows(event):
+    # Selected audience organizations exist on single events only; series and their
+    # occurrences keep the organizer + venue-owner audience they always had. Rows left
+    # behind after switching to another audience admit nobody and are not projected.
+    return (bool(event.pk) and event._meta.label == "events.Event"
+            and event.registration_audience == AUDIENCE)
+
+
 def candidate_ids(event):
+    """Selected audience organizations, plus the back-compat organizer/owner set.
+
+    Organizers and the venue's owning organization stay admitted so events that chose
+    this audience before ``EventAudienceOrganization`` existed keep exactly the audience
+    they had. The separation that matters is the other direction: an audience row grants
+    no management authority, so admitting an organization never makes it an organizer.
+    Audience writers hold the event lock, like organizer writers.
+    """
     organizer_ids = set(event.organizers.values_list("organization_id", flat=True)) if event.pk else set()
+    if _has_audience_rows(event):
+        organizer_ids |= set(event.audience_organizations.values_list("organization_id", flat=True))
     owners = OrganizationMakerspace.objects.filter(makerspace_id=event.makerspace_id, relationship="owner")
     return organizer_ids | set(owners.values_list("organization_id", flat=True))
 
@@ -83,12 +101,17 @@ def audience_projections(events, *, feature_flags=None):
             by_model.setdefault(type(event), []).append(event)
     for rows in by_model.values():
         prefetch_related_objects(rows, "organizers")
+        audience_rows = [event for event in rows if _has_audience_rows(event)]
+        if audience_rows:
+            prefetch_related_objects(audience_rows, "audience_organizations")
     ids_by_event = {}
     for event in events:
         ids = set()
         if event.makerspace_id in usable_hosts:
             if event.pk:
                 ids.update(row.organization_id for row in event.organizers.all())
+            if _has_audience_rows(event):
+                ids.update(row.organization_id for row in event.audience_organizations.all())
             if event.makerspace_id in owners:
                 ids.add(owners[event.makerspace_id])
         ids_by_event[(event._meta.label, event.pk)] = ids

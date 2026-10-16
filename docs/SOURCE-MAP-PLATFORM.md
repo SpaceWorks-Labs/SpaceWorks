@@ -14,6 +14,9 @@
   host Python 3.10+ when available, otherwise in the backend image under the caller's UID/groups.
   Successful runs remove completed migration, orchestration and bucket-creation containers; failures
   preserve them for inspection. Database recovery remains a separate operation.
+  `scripts/setup-proxy-config.sh` writes the operator-managed nginx configuration for own-proxy
+  HTTPS and prints DNS, Certbot, install and reload steps. `scripts/setup-questions.sh` owns
+  the hosting-to-runner questionnaire, including control-plane, MFA and provider choices.
 - `scripts/install-host-bundle.sh` - stages an explicit host runtime bundle on installer upgrades,
   retaining replaced files in `backups/host-config-*`. The updater first verifies its database dump
   and pulls the new backend image, then replaces the bundle and refreshes Compose trust records.

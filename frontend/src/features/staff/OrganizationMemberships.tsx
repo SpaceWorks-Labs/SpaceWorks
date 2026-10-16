@@ -32,11 +32,15 @@ export function OrganizationMemberships({ organization }: { organization: Organi
               { label: member.status === "active" ? "Suspend" : "Reactivate", tone: member.status === "active" ? "danger" : "default", pending: update.isPending,
                 onClick: () => update.mutate({ memberId: member.id, status: member.status === "active" ? "suspended" : "active" }),
                 ...(member.status === "active" ? { confirm: { title: "Suspend this member?", message: "They lose this organization's authority until reactivated.", confirmLabel: "Suspend" } } : {}) },
-              ...organization.governance_actions.map(action => ({
-                label: `${member.governance_actions.includes(action) ? "Revoke" : "Grant"} ${action === "manage_organization_members" ? "governor" : "profile editor"}`,
-                pending: update.isPending,
-                onClick: () => update.mutate({ memberId: member.id, governance_actions: member.governance_actions.includes(action) ? member.governance_actions.filter(value => value !== action) : [...member.governance_actions, action] }),
-              })),
+              ...(["governance_actions", "granted_actions"] as const).flatMap(field =>
+                [...new Set([...member[field], ...organization[field]])].map(action => ({
+                  label: `${member[field].includes(action) ? "Revoke" : "Grant"} ${action.replace(/_/g, " ")}`,
+                  pending: update.isPending,
+                  // Existing target actions stay revocable even when the actor
+                  // lacks them; only held actions appear as possible additions.
+                  onClick: () => update.mutate({ memberId: member.id, [field]: member[field].includes(action)
+                    ? member[field].filter(value => value !== action) : [...member[field], action] }),
+                }))),
             ]} /></div>} />)}</div>
       ) : null}
       {memberships.data ? (

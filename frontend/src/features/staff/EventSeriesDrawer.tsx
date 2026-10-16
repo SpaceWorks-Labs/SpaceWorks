@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 
-import { ConfirmDialog, ListRow, Skeleton, StatusBadge } from "../../components/ui";
+import { ConfirmDialog, EmptyState, ErrorText, ListRow, Pagination, Skeleton, StatusBadge } from "../../components/ui";
 import { DetailLayout } from "../../components/layouts";
 import { opsQueryState, useOpsTabs, opsStatusLabel } from "./opsPresentation";
 import { EventSeriesCollaborators } from "./EventSeriesCollaborators";
@@ -11,6 +11,7 @@ import { eventAccess } from "./eventStaffPermissions";
 import { ImageUploader } from "./ImageUploader";
 import { EventSeriesFields, emptySeriesForm, seriesPayload, valuesForSeries } from "./EventSeriesForm";
 import {
+  EVENT_SERIES_PAGE_SIZE,
   useEventSeries,
   useEventSeriesAction,
   useEventSeriesOccurrences,
@@ -27,7 +28,9 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
 }) {
   const query = useEventSeries(seriesId);
   const access = eventAccess(query.data ?? { staff_permissions: [], can_manage_staff: false });
-  const occurrences = useEventSeriesOccurrences(seriesId);
+  const [occurrencePage, setOccurrencePage] = useState(1);
+  const occurrences = useEventSeriesOccurrences(seriesId, occurrencePage);
+  useEffect(() => { setOccurrencePage(1); }, [seriesId]);
   const update = useUpdateEventSeries(makerspaceId, seriesId);
   const [values, setValues] = useState(emptySeriesForm);
   const [confirm, setConfirm] = useState<Action | null>(null);
@@ -76,7 +79,10 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}
         {tabs.active === "occurrences" ? <section><h2 className="title-panel">Occurrences</h2><p className="mt-1 text-sm text-muted">Choose a date to edit or cancel only that occurrence.</p>
           {occurrences.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
+          {occurrences.error ? <ErrorText resource="occurrences" onRetry={() => { void occurrences.refetch(); }} /> : null}
+          {occurrences.data && !occurrences.data.results.length ? <EmptyState message="No occurrences on this page." /> : null}
           <div className="mt-3 grid gap-3">{occurrences.data?.results.map(row => <ListRow key={row.id} title={new Date(row.starts_at).toLocaleString()} identity={{ kind: "date", date: row.starts_at }} draft={row.status === "draft"} onClick={() => onSelectOccurrence(row.id)} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />)}</div>
+          {occurrences.data ? <Pagination page={occurrencePage} count={occurrences.data.count} pageSize={EVENT_SERIES_PAGE_SIZE} totalPages={Math.ceil(occurrences.data.count / EVENT_SERIES_PAGE_SIZE)} onChange={setOccurrencePage} disabled={occurrences.isFetching} /> : null}
         </section> : null}
         {access.manager ? <>
           <EventSeriesCollaborators visible={tabs.active === "team"} seriesId={seriesId} makerspaceId={makerspaceId} />

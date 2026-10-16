@@ -81,6 +81,12 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
         queryset = queryset | rbac.scope_by_action(
             user, definition.required_action, spaces, field="id"
         )
+        from .report_subjects import subject_capable
+        if subject_capable(definition):
+            # The resource-grant path: tenant VIEW_AUDIT plus the subject's own grant.
+            queryset = queryset | rbac.scope_by_action(
+                user, rbac.Action.VIEW_AUDIT, spaces, field="id"
+            )
     queryset = rbac.hide_from_superadmin(user, queryset, field="id")
     return get_object_or_404(queryset.distinct(), pk=makerspace_id)
 

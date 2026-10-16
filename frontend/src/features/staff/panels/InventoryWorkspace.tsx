@@ -21,6 +21,7 @@ import { KitDefinitionEditor } from "../../inventory/KitChecklist";
 import { featureEnabled } from "../../../lib/features";
 import { useReorderSuggestions } from "./ReorderSuggestions";
 import { invalidateInventoryViews } from "../queryInvalidation";
+import { useDomainSettingsDialog } from "../useDomainSettingsDialog";
 import { categoryResults, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
 import {
   adjustPayload,
@@ -38,7 +39,7 @@ import {
   ItemModal,
 } from "./InventoryPanelParts";
 
-export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = false }: { makerspace: Makerspace; canViewAudit?: boolean; canUseToBuy?: boolean }) {
+export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = false, canEditInventory = false }: { makerspace: Makerspace; canViewAudit?: boolean; canUseToBuy?: boolean; canEditInventory?: boolean }) {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const kitEnabled = featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist");
@@ -52,6 +53,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const [toBuyQty, setToBuyQty] = useState("1");
   const [toBuyMessage, setToBuyMessage] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const domainSettings = useDomainSettingsDialog(makerspace.id, "inventory", canEditInventory);
   useQuickCreate("item", () => { setForm(emptyForm); setAddOpen(true); });
   const [fixTarget, setFixTarget] = useState<AdminProduct | null>(null);
   const [assetFixTarget, setAssetFixTarget] = useState<AdminProduct | null>(null);
@@ -213,7 +215,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   </ItemModal>;
   return (
     <ListLayout width="wide" header={{ title: "Inventory", subtitle: "Parts, tools and the stock ready for your next project.", primary: addItem,
-      secondary: { label: "Export", menu: [{ label: `Export CSV${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: `Export Excel${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, meta: plural(products.data?.count ?? 0, "item") }}
+      secondary: { label: "Export", menu: [{ label: `Export CSV${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: `Export Excel${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, overflow: domainSettings.actions.length ? domainSettings.actions : undefined, meta: plural(products.data?.count ?? 0, "item") }}
       callout={reorder.callout} state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id)}
       empty={{ message: "No parts added yet. Add your first item.", action: addItem }} filteredEmpty={{ message: showArchived ? "No archived items." : showLowStock ? "Nothing low on stock." : "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
       tabs={[{ key: "all", label: "All", href: href("false", "false", "false") }, { key: "low", label: "Low stock", href: href("false", "true", "false") }, { key: "out", label: "Out of stock", href: href("false", "false", "true") }, { key: "archived", label: "Archived", href: href("true", "false", "false") }]} activeTab={activeTab}
@@ -248,6 +250,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
       <Modal open={Boolean(assetFixTarget)} onClose={() => setAssetFixTarget(null)} title={assetFixTarget ? `Choose an asset to repair · ${assetFixTarget.name}` : "Choose an asset to repair"} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" onClick={() => setAssetFixTarget(null)}>Close</button></div>}>
         {assetFixTarget ? <IndividualAssets productId={assetFixTarget.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}
       </Modal>
+      {domainSettings.dialog}
       <ConfirmDialog open={qrConfirm !== null} title={qrConfirm ? "Enable public QR" : "Disable public QR"} message={`${qrConfirm ? "Enable" : "Disable"} public self-checkout QR for ${selectedIds.length} selected items?`} confirmLabel={qrConfirm ? "Enable" : "Disable"} pending={bulkQr.isPending} onCancel={() => setQrConfirm(null)} onConfirm={() => { if (qrConfirm !== null) bulkQr.mutate(qrConfirm); }} />
       </>} />
   );

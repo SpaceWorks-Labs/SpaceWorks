@@ -1,7 +1,9 @@
 """Stabilize action-derived delegation authority after domain and tenant locks."""
 
 from apps.accounts.models import User
-from apps.makerspaces.models import MakerspaceMembership, MakerspaceRole
+from apps.makerspaces.models import (
+    MakerspaceMembership, MakerspaceRole, MembershipAdditionalRole,
+)
 from apps.organizations.models import Organization, OrganizationMakerspace, OrganizationMembership
 
 
@@ -17,7 +19,12 @@ def lock_tenant_authority(actor, target, *, extra_organization_ids=(), extra_lin
     memberships = list(MakerspaceMembership.objects.select_for_update().filter(
         user=locked_actor, makerspace_id=target.makerspace_id,
     ).order_by("pk"))
-    role_ids = [row.assigned_role_id for row in memberships if row.assigned_role_id]
+    # The membership row lock already serializes role-set edits (every writer holds it
+    # before touching additional roles); lock the full union, primary + additional.
+    role_ids = {row.assigned_role_id for row in memberships if row.assigned_role_id}
+    role_ids.update(MembershipAdditionalRole.objects.filter(
+        membership__in=memberships,
+    ).values_list("role_id", flat=True))
     list(MakerspaceRole.objects.select_for_update().filter(pk__in=role_ids).order_by("pk"))
     list(links.select_for_update().order_by("pk"))
     for rows in extra_links:

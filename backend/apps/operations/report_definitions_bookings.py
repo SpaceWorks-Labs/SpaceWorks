@@ -1,4 +1,9 @@
-"""Tenant-local resource reports; legacy tenant utilisation stays unchanged."""
+"""Tenant-local resource reports; legacy tenant utilisation stays unchanged.
+
+Keyed to MANAGE_BOOKINGS so the built-in Booking Manager reaches every space's reports.
+"""
+
+from apps.accounts import rbac
 
 from .report_definitions_existing import EXISTING_REPORT_DEFINITIONS
 from .report_types import ReportDefinition
@@ -16,7 +21,8 @@ ANSWER_FIELDS = ("booking_id", "space_id", "starts_at", "ends_at", "status", "an
 def _definition(key, builder, fields, title, feature, **kwargs):
     return ReportDefinition(
         key, f"apps.operations.{builder}", fields, ("bookings",), title=title,
-        subject_kind="bookable_space", required_feature=f"bookings.{feature}",
+        subject_kind="bookable_space", required_action=rbac.Action.MANAGE_BOOKINGS,
+        required_feature=f"bookings.{feature}",
         schedulable=False, deployment_aggregate=False, **kwargs,
     )
 

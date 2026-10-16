@@ -83,7 +83,8 @@ class AnalyticsView(APIView):
         definition = reports.validate_report_key(report_key)
         if not definition.previewable:
             raise reports.ReportNotFound()
-        require_action(request.user, definition.required_action, makerspace.id)
+        from .report_subjects import require_report_action
+        require_report_action(request.user, definition, makerspace.id, request.query_params)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
         response = Response(reports.report_data(
@@ -213,7 +214,8 @@ class ReportExportView(APIView):
         # test_report_rbac_status_codes_match_inventory_first_resolution.
         makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key)
         definition = reports.validate_report_key(report_key, for_export=True)
-        require_action(request.user, definition.required_action, makerspace.id)
+        from .report_subjects import require_report_action
+        require_report_action(request.user, definition, makerspace.id, request.query_params)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
         return _export_response(request, definition, makerspace.id)

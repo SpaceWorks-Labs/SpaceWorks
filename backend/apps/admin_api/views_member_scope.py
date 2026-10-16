@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_member_scope import (
@@ -35,7 +36,7 @@ def _payload(makerspace, membership):
     }
 
 
-class MemberMachineScopeView(APIView):
+class MemberMachineScopeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin memberships"],

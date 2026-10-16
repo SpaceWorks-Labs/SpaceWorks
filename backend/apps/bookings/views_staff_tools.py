@@ -34,7 +34,7 @@ class BookingCloneView(APIView):
     throttle_classes = [BookingToolsThrottle]
 
     @extend_schema(tags=["Admin bookings"], summary="Clone a resource into a private copy",
-                   description="Requires tenant MANAGE_BOOKINGS and bookings.clone. Copying protected rules also requires MANAGE_MAKERSPACE.",
+                   description="Requires tenant MANAGE_BOOKINGS and bookings.clone. Copying booking rules needs no further action.",
                    request=BookingCloneInputSerializer, responses={201: BookableSpaceAdminSerializer, **ERRORS, 503: ERROR_503})
     def post(self, request, pk):
         space = booking_authority.get_space(request.user, pk, None)

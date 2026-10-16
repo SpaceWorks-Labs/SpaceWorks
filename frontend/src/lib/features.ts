@@ -79,6 +79,12 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "bookings.checkin", parent_module: "bookings", label: "Booking QR arrival" },
   { key: "bookings.staff_grants", parent_module: "bookings", label: "Resource staff grants" },
   { key: "events.certificate_designer", parent_module: "events", label: "Certificate designer" },
+  { key: "events.api_read", parent_module: "events", label: "Signed event integration reads" },
+  { key: "events.website", parent_module: "events", label: "Event websites" },
+  { key: "events.embed", parent_module: "events", label: "Event embeds" },
+  { key: "bookings.api_read", parent_module: "bookings", label: "Signed booking integration reads" },
+  { key: "bookings.website", parent_module: "bookings", label: "Resource websites" },
+  { key: "bookings.embed", parent_module: "bookings", label: "Resource embeds" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

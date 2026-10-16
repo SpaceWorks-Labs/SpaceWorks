@@ -102,17 +102,21 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.BooleanField())
     def get_badge_sensitive_fields_allowed(self, obj):
+        # Mirrors services_badges.prepare_badges: event-scoped manage_registrations
+        # (tenant managers receive every permission), no tenant VIEW_AUDIT.
         actor = getattr(self.context.get("request"), "user", None)
         _manager, permissions = self._authority(obj)
-        return bool(actor and "manage_registrations" in permissions
-                    and self._audit_allowed(actor, obj.makerspace_id))
+        return bool(actor and "manage_registrations" in permissions)
 
-    def _audit_allowed(self, actor, makerspace_id):
+    def _report_allowed(self, actor, makerspace_id):
+        # Event reports are keyed to MANAGE_EVENTS (the Event Manager's area action).
         from apps.accounts import rbac
-        audit = self.context.setdefault("event_report_audit", {})
-        if makerspace_id not in audit:
-            audit[makerspace_id] = rbac.can(actor, rbac.Action.VIEW_AUDIT, makerspace_id)
-        return audit[makerspace_id]
+        allowed = self.context.setdefault("event_report_allowed", {})
+        if makerspace_id not in allowed:
+            allowed[makerspace_id] = (
+                rbac.can(actor, rbac.Action.MANAGE_EVENTS, makerspace_id)
+                or rbac.can(actor, rbac.Action.VIEW_AUDIT, makerspace_id))
+        return allowed[makerspace_id]
 
     @extend_schema_field(serializers.BooleanField())
     def get_broadcasts_enabled(self, obj):
@@ -135,7 +139,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
             modules[obj.makerspace_id] = module_enabled(obj.makerspace, "reports")
         if not modules[obj.makerspace_id]:
             return []
-        if not self._audit_allowed(actor, obj.makerspace_id):
+        if not self._report_allowed(actor, obj.makerspace_id):
             return []
         keys = ["analytics"]
         if self._feature_enabled(obj, "reports.event_exports"):

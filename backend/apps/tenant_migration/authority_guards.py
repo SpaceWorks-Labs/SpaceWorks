@@ -25,6 +25,7 @@ from apps.data_export.models import EXPORTED_MODEL_FIELDS
 from .target_projection import TARGET_FIELD_PROJECTION
 from .tenant_dump_authority_loans import LOAN_AUTHORITY_FIELDS
 from .authority_wp4 import AUTHORITY_FIELDS as WP4_AUTHORITY_FIELDS
+from .authority_resource_fields import RESOURCE_AUTHORITY_FIELDS, RESOURCE_SCANNED_MODEL_LABELS
 
 
 class AuthorityRegistryError(AssertionError):
@@ -78,6 +79,7 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "makerspaces" / "role_assignments.py",
     APPS_DIR / "accounts" / "mfa_policy.py",
     APPS_DIR / "machines" / "access.py",
+    APPS_DIR / "bookings" / "booking_authority.py",
 )
 SCANNED_MODEL_LABELS = frozenset({
     "makerspaces.MembershipAdditionalRole",
@@ -88,7 +90,7 @@ SCANNED_MODEL_LABELS = frozenset({
     "machines.Machine",
     "machines.MachineOperator",
     "machines.MachineType",
-})
+}) | RESOURCE_SCANNED_MODEL_LABELS
 
 
 EXPLICIT_AUTHORITY_FIELDS = {
@@ -99,6 +101,7 @@ EXPLICIT_AUTHORITY_FIELDS = {
     ("machines.MembershipMachineTypeScope", "membership"): "Dropped membership machine authority.",
     ("machines.MembershipMachineTypeScope", "machine_type"): "Dropped membership type authority.",
     **WP4_AUTHORITY_FIELDS,
+    **RESOURCE_AUTHORITY_FIELDS,
     **LOAN_AUTHORITY_FIELDS,
     ("makerspaces.Makerspace", "location"): "AST over-approximation from broadcast rendering; portable location grants no authority.",
     ("machines.Machine", "location"): "AST over-approximation from broadcast rendering; portable location grants no authority.",

@@ -23,4 +23,5 @@ def authorize(actor, event, definition):
 
 
 def register_subject():
-    register("event", ReportSubject(KEYS, resolve, authorize))
+    from apps.accounts import rbac
+    register("event", ReportSubject(KEYS, resolve, authorize, rbac.Action.MANAGE_EVENTS))

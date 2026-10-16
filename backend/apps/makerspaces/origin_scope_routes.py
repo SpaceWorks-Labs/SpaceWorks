@@ -15,6 +15,7 @@ MAKERSPACE_KWARG_ROUTES = {
     'admin-makerspace-setup-state': 'makerspace_id',
     'admin-maintenance-overdue': 'makerspace_id',
     'admin-makerspace-profile': 'makerspace_id',
+    'admin-makerspace-domain-settings': 'makerspace_id',
     'admin-makerspace-usage': 'makerspace_id',
     'admin-kiosk-replay-list': 'makerspace_id',
     'admin-maintenance-schedule-list-create': 'makerspace_id',

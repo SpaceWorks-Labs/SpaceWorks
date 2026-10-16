@@ -15,6 +15,9 @@ class ReportSubject:
     report_keys: tuple[str, ...]
     resolve: Callable
     authorize: Callable
+    #: Tenant action of the domain's built-in manager (Event/Booking Manager). Holders
+    #: pass the tenant gate below without VIEW_AUDIT; everyone else still needs it.
+    tenant_action: str = ""
 
 
 SUBJECTS = {}
@@ -54,7 +57,8 @@ def authorize(actor, space, definition, filters):
     if definition.key not in adapter.report_keys:
         raise ValidationError({"subject_kind": "Unsupported subject for this report."})
     require_module(space, "reports")
-    require_action(actor, rbac.Action.VIEW_AUDIT, space.pk)
+    if not (adapter.tenant_action and rbac.can(actor, adapter.tenant_action, space.pk)):
+        require_action(actor, rbac.Action.VIEW_AUDIT, space.pk)
     subject = adapter.resolve(space, values["subject_id"])
     adapter.authorize(actor, subject, definition)
     return subject
@@ -63,3 +67,28 @@ def authorize(actor, space, definition, filters):
 def reject_aggregate(filters):
     if any(key in filters for key in ("subject_kind", "subject_id")):
         raise ValidationError("Subject filters cannot be scheduled or aggregated.")
+
+
+def subject_capable(definition):
+    return any(definition.key in adapter.report_keys for adapter in SUBJECTS.values())
+
+
+def report_action_allowed(actor, definition, makerspace_id, filters=None):
+    """Tenant gate in front of every report run.
+
+    Area reports are keyed to the domain manager's action. A subject-filtered run of a
+    subject-capable report also admits the resource-grant path: tenant VIEW_AUDIT here,
+    then the per-resource grant in `authorize` (the conjunction yuyu introduced).
+    """
+    if rbac.can(actor, definition.required_action, makerspace_id):
+        return True
+    filters = filters or {}
+    subject_request = bool(definition.subject_kind) or any(
+        key in filters for key in ("subject_kind", "subject_id"))
+    return (subject_request and subject_capable(definition)
+            and rbac.can(actor, rbac.Action.VIEW_AUDIT, makerspace_id))
+
+
+def require_report_action(actor, definition, makerspace_id, filters=None):
+    if not report_action_allowed(actor, definition, makerspace_id, filters):
+        require_action(actor, definition.required_action, makerspace_id)

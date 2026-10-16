@@ -120,6 +120,7 @@ export function StaffTabContent({
           makerspace={activeMakerspace}
           canViewAudit={canViewAudit}
           canUseToBuy={canUseToBuy}
+          canEditInventory={canEditInventory}
         />
       ) : null}
       {activeTab === "needsfix" && canEditInventory ? <NeedsFixShelf key={makerspaceKey} makerspace={activeMakerspace} /> : null}
@@ -169,7 +170,7 @@ export function StaffTabContent({
       {activeTab === "cards" && canUseMemberCards ? (
         <MemberCardsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} />
       ) : null}
-      {activeTab === "payments" && (has("view_finance") || has("record_payment")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} makerspaceName={activeMakerspace.name} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
+      {activeTab === "payments" && (has("view_finance") || has("record_payment") || has("manage_events")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} makerspaceName={activeMakerspace.name} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
       {activeTab === "tobuy" ? (
         <ProcurementPanel
           key={makerspaceKey}

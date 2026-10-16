@@ -14,6 +14,7 @@ import { poolPath, poolQueryKey } from "./machine/servicePools";
 import { useServiceDrafts } from "./machine/serviceDrafts";
 import { MachineTypesPanel } from "./MachineTypesPanel";
 import { NotificationRecipientPicker } from "../NotificationRecipientPicker";
+import { DomainSettingsDisclosure } from "../DomainSettingsSection";
 import { useStaffGet } from "./shared";
 import { ListLayout } from "../../../components/layouts";
 import { opsQueryState } from "../opsPresentation";
@@ -161,6 +162,7 @@ function MachinesWorkspace({
   const settings = !onTypePage ? <>
     <MachineTypesPanel visible={settingsVisible} makerspaceId={makerspaceId} canConfigureMachineTypes={canConfigureMachineTypes} />
     {maintenanceEnabled && delegatedRecipientRulesEnabled ? <NotificationRecipientPicker visible={settingsVisible} delegated makerspaceId={makerspaceId} /> : null}
+    {canManage && settingsVisible ? <DomainSettingsDisclosure makerspaceId={makerspaceId} domain="machines" /> : null}
     {canManage && machineServiceEnabled ? <SharedConsumablesSection visible={settingsVisible} makerspaceId={makerspaceId} pools={sharedPools} existingPools={pools} poolError={poolQuery.error} open={sharedOpen} onToggle={() => setSharedOpen(current => !current)} /> : null}
   </> : null;
   const detail = selectedId !== null ? <MachineDrawer enabledFeatures={enabledFeatures} key={selectedId} machineId={selectedId} makerspaceId={makerspaceId} canManageMachines={canManage} maintenanceEnabled={maintenanceEnabled} onClose={closeSelection} /> : null;

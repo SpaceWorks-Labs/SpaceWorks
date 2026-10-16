@@ -1,0 +1,58 @@
+"""Authority-discovery declarations for resource (event/booking) authority sources.
+
+Split from `authority_guards.py` to keep it under the size ceiling. The AST scan in
+`authority_guards` over-approximates: any attribute name read anywhere in an
+authorization source counts as a candidate input for every scanned model that exports
+a field of that name. Each entry below says whether the field really selects authority
+or is a harmless over-approximation (display, scheduling or provenance data).
+"""
+
+_DISPLAY = "AST over-approximation: display or notification content, never an authority selector."
+_PROVENANCE = "AST over-approximation: creator provenance is evidence, never a grant of authority."
+_SCHEDULE = "AST over-approximation: scheduling/calendar data gates timing, never actor authority."
+
+
+def _fields(label, names, reason):
+    return {(label, name): reason for name in names.split()}
+
+
+RESOURCE_AUTHORITY_FIELDS = {
+    **_fields("machines.Machine", "name", _DISPLAY),
+    **_fields("machines.Machine", "created_by", _PROVENANCE),
+    **_fields("machines.MachineType", "name", _DISPLAY),
+    **_fields("makerspaces.Makerspace", "name logo_key timezone", _DISPLAY),
+    **_fields("makerspaces.Makerspace", "created_by", _PROVENANCE),
+    ("makerspaces.Makerspace", "booking_requester_notifications_enabled"): (
+        "Portable tenant notification preference; delivery still requires live target recipients."
+    ),
+    ("makerspaces.MakerspaceMembership", "revoked_at"): (
+        "Revocation evidence; imported memberships are reduced to Member and target status rules apply."
+    ),
+    ("makerspaces.MakerspaceMembership", "revoked_by"): _PROVENANCE,
+    ("makerspaces.MakerspaceRole", "name"): "Archived role rows are dropped; target role names are kept.",
+    # Event and booking resources: their tenant/series/type relations bound resource
+    # authority; staff grants themselves are never portable and are reissued on the target.
+    ("events.Event", "makerspace"): "Tenant boundary for event authority; remapped to the target.",
+    ("events.Event", "series"): "Series grants reach occurrences through this remapped relation.",
+    ("events.Event", "status"): "Lifecycle state gates actions; target authority still decides who acts.",
+    ("events.Event", "registration_audience"): "Who may register; never staff authority.",
+    **_fields("events.Event", "title description location category tags", _DISPLAY),
+    **_fields("events.Event", "starts_at ends_at calendar_sequence", _SCHEDULE),
+    **_fields("events.Event", "created_by", _PROVENANCE),
+    ("events.EventSeries", "makerspace"): "Tenant boundary for series authority; remapped to the target.",
+    ("events.EventSeries", "status"): "Lifecycle state gates actions; target authority still decides who acts.",
+    ("events.EventSeries", "registration_audience"): "Who may register; never staff authority.",
+    **_fields("events.EventSeries", "title description location", _DISPLAY),
+    **_fields("events.EventSeries", "calendar_sequence", _SCHEDULE),
+    **_fields("events.EventSeries", "created_by", _PROVENANCE),
+    ("bookings.BookableSpace", "makerspace"): "Tenant boundary for booking authority; remapped to the target.",
+    ("bookings.BookableSpace", "machine_type"): "Remapped type relation; never a staff authority scope.",
+    ("bookings.BookableSpace", "is_active"): "Lifecycle state gates bookings; target authority decides who acts.",
+    ("bookings.BookableSpace", "requester_notifications_enabled"): (
+        "Portable notification preference; delivery still requires live target recipients."
+    ),
+    **_fields("bookings.BookableSpace", "name description kind location", _DISPLAY),
+    **_fields("bookings.BookableSpace", "created_by", _PROVENANCE),
+}
+
+RESOURCE_SCANNED_MODEL_LABELS = frozenset({"events.Event", "events.EventSeries", "bookings.BookableSpace"})

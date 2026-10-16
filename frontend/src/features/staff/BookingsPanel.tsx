@@ -13,6 +13,7 @@ import { useUrlListState } from "../../lib/useUrlListState";
 import { ListViewControls } from "./ListViewControls";
 import { useSearchParams } from "react-router-dom";
 import { useQuickCreate } from "./quickCreate";
+import { useDomainSettingsDialog } from "./useDomainSettingsDialog";
 
 export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { makerspaceId: number; recurringEnabled?: boolean }) {
   const queryClient = useQueryClient();
@@ -23,6 +24,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const [choosingBooking, setChoosingBooking] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   useQuickCreate("booking", () => setChoosingBooking(true));
+  const domainSettings = useDomainSettingsDialog(makerspaceId, "bookings");
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("space")) || null);
   // "New booking" picks a space, then opens that space with its booking form already up.
   const [bookingSpaceId, setBookingSpaceId] = useState<number | null>(null);
@@ -48,7 +50,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
     primary: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) },
     secondary: unavailable ? undefined : { label: "New booking", onClick: () => setChoosingBooking(true) },
     // Booking rules are keyed on manage_bookings, so a Booking Manager edits them here, not in space settings.
-    overflow: unavailable ? undefined : [{ label: "Booking rules", icon: "Settings", onClick: () => setRulesOpen(true) }] }}
+    overflow: unavailable ? undefined : [{ label: "Booking rules", icon: "Settings", onClick: () => setRulesOpen(true) }, ...domainSettings.actions] }}
     state={unavailable ? { status: "ready" } : opsQueryState(spaces, "bookable spaces")}
     stats={[{ label: "Spaces", value: spaces.data?.count ?? 0 }]}
     filters={unavailable ? undefined : { toolbar: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings" searchLabel="Search spaces"
@@ -79,5 +81,6 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
     <Modal open={rulesOpen && !unavailable} title="Booking rules" size="xl" onClose={() => setRulesOpen(false)}>
       <MakerspaceBookingRulesSettings makerspace={{ id: makerspaceId }} />
     </Modal>
+    {domainSettings.dialog}
   </>;
 }

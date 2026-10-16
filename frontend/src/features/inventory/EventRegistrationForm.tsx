@@ -37,13 +37,16 @@ function failureMessage(error: StructuredApiError | null) {
   return error.detail ?? error.message;
 }
 
-export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "", hostWaiver = null, organisation = "" }: {
+export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "", hostWaiver = null, organisation = "", paymentsHref = "" }: {
   makerspaceSlug: string; publicToken: string; waitlist: boolean; approvalRequired: boolean;
   customForm: CustomFormSchema; audience?: "members" | "accounts" | "invite" | "participating_organizations";
   hostWaiver?: { id: number; version: string; body: string } | null;
   tickets?: EventTicket[]; promoEnabled?: boolean; ticketRequired?: boolean; currency?: string;
   /** The hosting makerspace's name, printed on the confirmation ticket. */
   organisation?: string;
+  /** Member-area Payments link, set only for a paid event: the fee is paid there, online
+   * when the space has a rail, otherwise at the space against a staff receipt. */
+  paymentsHref?: string;
 }) {
   const queryClient = useQueryClient();
   const [waiverAccepted, setWaiverAccepted] = useState(false);
@@ -92,6 +95,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
         fields={[{ label: "Status", value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: "Next step", value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
         qr={<div className="grid h-full place-items-center rounded-xl bg-success-soft text-success-ink"><Icon name="CheckCircle" className="h-16 w-16" /></div>}
         caption={pending ? "You will only be charged if a place is confirmed." : waitlisted ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."} />
+      {paymentsHref && registration.data.status === "registered" ? <p className="mt-3 text-sm text-muted">Any fee for this event is listed under <a className="font-semibold text-ink underline" href={paymentsHref}>Payments</a> in your member area. Pay online there when it is offered, or pay at the space.</p> : null}
     </div>;
   }
 

@@ -80,7 +80,7 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
         <label className="text-sm">Card height (mm)<input className="desk-input mt-1 w-full" type="number" min="30" max="120" value={draft.card_height_mm} onChange={(e) => setDraft({ ...draft, card_height_mm: Number(e.target.value) })} /></label>
       </div>
       <fieldset className="mt-3"><legend className="font-semibold text-ink">Printed fields</legend><div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">{options.map(([value, label]) => <label key={value} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={draft.fields.includes(value)} onChange={() => toggleField(value)} />{label}</label>)}</div></fieldset>
-      {event.custom_form?.length && !event.badge_sensitive_fields_allowed ? <p className="mt-2 text-xs text-muted">Custom answers require registration management and tenant audit access.</p> : null}
+      {event.custom_form?.length && !event.badge_sensitive_fields_allowed ? <p className="mt-2 text-xs text-muted">Custom answers need permission to manage this event's registrations.</p> : null}
       <PositionedLayoutEditor widthMm={draft.card_width_mm} heightMm={draft.card_height_mm} gridMm={draft.grid_mm}
         elements={draft.elements} labels={Object.fromEntries(options)} disabled={save.isPending}
         onGridChange={(grid_mm) => setDraft({ ...draft, grid_mm })} onChange={(elements) => setDraft({ ...draft, elements })} />

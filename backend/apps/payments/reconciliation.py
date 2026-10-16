@@ -20,6 +20,7 @@ from apps.payments.reconciliation_authority import (  # noqa: F401
     _require_machine_scope,
     _require_record_authority,
     _require_subject_authority,
+    payment_list_action,
 )
 from apps.payments.reconciliation_rail import _expire_checkout_best_effort  # noqa: F401
 
@@ -38,9 +39,11 @@ class PaymentConflict(APIException):
 
 
 def list_payments(*, actor, makerspace_id, status=None, subject_type=None, for_recording=False, due_state=None):
+    # VIEW_FINANCE/RECORD_PAYMENT, or MANAGE_EVENTS for an event-registration listing.
+    action = payment_list_action(actor, makerspace_id, for_recording=for_recording, subject_type=subject_type)
     queryset = rbac.scope_by_action(
         actor,
-        rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE,
+        action,
         Payment.objects.select_related("makerspace"),
         field="makerspace_id",
     ).filter(makerspace_id=makerspace_id)
@@ -53,8 +56,7 @@ def list_payments(*, actor, makerspace_id, status=None, subject_type=None, for_r
     from apps.makerspaces.models import Makerspace
     from apps.payments.due_dates import filter_due, order_by_due
     makerspace = rbac.scope_by_action(
-        actor, rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE,
-        Makerspace.objects.all(), field="pk",
+        actor, action, Makerspace.objects.all(), field="pk",
     ).filter(pk=makerspace_id).first()
     if makerspace is None:
         raise NotFound("Makerspace not found.")

@@ -12,6 +12,7 @@ from apps.payments.models import ManualSettlement, Payment
 from apps.payments.reconciliation import (
     amend_settlement,
     list_payments,
+    payment_list_action,
     reconcile_payments,
 )
 from apps.payments.serializers_reconciliation import (
@@ -41,7 +42,13 @@ class PaymentListView(APIView):
     @extend_schema(
         tags=["Payments"],
         summary="List makerspace payments for reconciliation",
-        description="Requires view_finance. With for_recording=true, requires record_payment and returns only pending and offline-settled charges for counter receipt work.",
+        description=(
+            "Requires view_finance. With for_recording=true, requires record_payment and returns only "
+            "pending and offline-settled charges for counter receipt work. An actor holding neither but "
+            "holding manage_events in this makerspace may list with subject_type=event_registration: the "
+            "result is limited to that makerspace's event-registration charges. Without that filter, or "
+            "for any other subject type, such an actor receives 404."
+        ),
         request=None,
         parameters=[
             *ORDER_PAGE_PARAMETERS,
@@ -57,10 +64,14 @@ class PaymentListView(APIView):
         filters = PaymentListFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
         for_recording = filters.validated_data["for_recording"]
+        action = payment_list_action(
+            request.user, makerspace_id, for_recording=for_recording,
+            subject_type=filters.validated_data.get("subject_type"),
+        )
         get_object_or_404(
             rbac.scope_by_action(
                 request.user,
-                rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE,
+                action,
                 servable_queryset(),
                 field="id",
             ),

@@ -26,4 +26,5 @@ def authorize(actor, resource, definition):
 
 
 def register_subject():
-    register("bookable_space", ReportSubject(KEYS, resolve, authorize))
+    from apps.accounts import rbac
+    register("bookable_space", ReportSubject(KEYS, resolve, authorize, rbac.Action.MANAGE_BOOKINGS))

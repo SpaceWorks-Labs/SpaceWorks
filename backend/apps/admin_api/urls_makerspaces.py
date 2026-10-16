@@ -5,6 +5,7 @@ from apps.admin_api.views_hosting import MakerspaceProvisionSubdomainView
 from apps.admin_api.views_subdomain_requests import SubdomainRequestListCreateView
 from apps.admin_api.views_makerspace_profile import MakerspaceProfileView
 from apps.admin_api.views_setup_state import MakerspaceSetupStateView
+from apps.admin_api.views_domain_settings import MakerspaceDomainSettingsView
 from apps.admin_api.views_space_packs import SpacePackView, SpacePackProfileListView
 
 
@@ -13,6 +14,11 @@ urlpatterns = [
     path("space-pack-profiles", SpacePackProfileListView.as_view(), name="admin-space-pack-profiles"),
     path("makerspace/<int:makerspace_id>/setup-state", MakerspaceSetupStateView.as_view(), name="admin-makerspace-setup-state"),
     path("makerspace/<int:makerspace_id>/profile", MakerspaceProfileView.as_view(), name="admin-makerspace-profile"),
+    path(
+        "makerspace/<int:makerspace_id>/domain-settings/<slug:domain>",
+        MakerspaceDomainSettingsView.as_view(),
+        name="admin-makerspace-domain-settings",
+    ),
     path("makerspaces", views.MakerspaceListCreateView.as_view(), name="admin-makerspaces"),
     path("makerspaces/<int:pk>", views.MakerspaceDetailView.as_view(), name="admin-makerspace"),
     path(

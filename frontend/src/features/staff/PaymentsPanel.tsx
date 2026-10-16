@@ -33,13 +33,18 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
   const location = useLocation();
   const navigate = useNavigate();
   const [documentsOpen, setDocumentsOpen] = useState(false);
-  const forRecording = !isSuperadmin && !actorActions.includes("view_finance");
+  // An Event Manager holds manage_events but no finance action: the API admits them to
+  // event-registration charges only, so the panel pins that subject and drops the
+  // finance-only surfaces (receipts drawer, subject filter, saved views).
+  const eventOnly = !isSuperadmin && !actorActions.includes("view_finance") && !actorActions.includes("record_payment")
+    && actorActions.includes("manage_events");
+  const forRecording = !isSuperadmin && !actorActions.includes("view_finance") && !eventOnly;
   const access = (row: PaymentRow) => paymentAccess(actorActions, isSuperadmin, row);
-  useEffect(() => { setDocumentsOpen(false); }, [makerspaceId, forRecording]);
+  useEffect(() => { setDocumentsOpen(false); }, [makerspaceId, forRecording, eventOnly]);
   const queryClient = useQueryClient();
   const list = useUrlListState({ status: "pending", subject_type: "", due_state: "", ordering: "due_at", page: "1" });
   const status = list.values.status;
-  const subject = list.values.subject_type;
+  const subject = eventOnly ? "event_registration" : list.values.subject_type;
   const dueState = list.values.due_state;
   const [correctingRefund, setCorrectingRefund] = useState<{ paymentId: number; refund: RefundRow } | null>(null);
   const [selected, setSelected] = useState<number[]>([]);
@@ -109,21 +114,21 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     const destination = new URL((anchor as HTMLAnchorElement).href);
     navigate(destination.pathname + destination.search);
   }}><ListLayout
-    header={{ title: "Payments", subtitle: `Money owed to ${makerspaceName ?? "your makerspace"}, and how it was paid.`,
-      secondary: !forRecording ? { label: "Receipts & credit notes", onClick: () => setDocumentsOpen(true) } : undefined }}
+    header={{ title: "Payments", subtitle: eventOnly ? `Event registration fees owed to ${makerspaceName ?? "your makerspace"}, and how they were paid.` : `Money owed to ${makerspaceName ?? "your makerspace"}, and how it was paid.`,
+      secondary: !forRecording && !eventOnly ? { label: "Receipts & credit notes", onClick: () => setDocumentsOpen(true) } : undefined }}
     state={payments.isLoading ? { status: "loading" } : payments.error && !payments.data
       ? { status: "error", error: "Couldn't load payments. Try again.", onRetry: () => { void payments.refetch(); } } : { status: "ready" }}
     isEmpty={payments.data?.count === 0}
     empty={{ message: status === "pending" ? "Nothing to collect. Every charge here is paid or waived." : "No payments yet. Charges appear here when someone books, registers or borrows." }}
-    filtered={Boolean(subject || dueState)} filteredEmpty={{ message: "No matching payments. Try another filter.", action: { label: "Clear filters", onClick: () => list.update({ subject_type: "", due_state: "" }) } }}
+    filtered={Boolean(list.values.subject_type || dueState)} filteredEmpty={{ message: "No matching payments. Try another filter.", action: { label: "Clear filters", onClick: () => list.update({ subject_type: "", due_state: "" }) } }}
     tabs={tabs} activeTab={status || "all"}
-    filters={{ toolbar: <PaymentsFilters list={list} makerspaceId={makerspaceId} /> }}
+    filters={{ toolbar: <PaymentsFilters list={list} makerspaceId={makerspaceId} eventOnly={eventOnly} /> }}
     bulkBar={{ count: selected.length, actions: bulkActions, onClear: () => setSelected([]) }}
     pagination={{ page: list.page, count: payments.data?.count ?? 0, pageSize: 24, onChange: list.setPage }}
     body={{ kind: "table", table: <DataTable listState={list} columns={columns} data={payments.data?.results ?? []}
       selectedIds={selected} onSelectionChange={ids => setSelected(ids.map(Number))} emptyTitle="No matching payments" /> }}
     detail={<>
-      {!forRecording && documentsOpen ? <DetailLayout presentation="drawer" open onClose={() => setDocumentsOpen(false)}
+      {!forRecording && !eventOnly && documentsOpen ? <DetailLayout presentation="drawer" open onClose={() => setDocumentsOpen(false)}
         title="Receipts & credit notes" state={{ status: "ready" }}
         main={<PaymentDocuments key={makerspaceId} makerspaceId={makerspaceId} audience="staff" initiallyExpanded />} /> : null}
       {settling ? (

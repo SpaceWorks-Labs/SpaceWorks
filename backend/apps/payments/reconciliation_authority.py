@@ -28,6 +28,27 @@ SUBJECT_ACTIONS = {
 }
 
 
+def payment_list_action(actor, makerspace_id, *, for_recording=False, subject_type=None):
+    """The one action that admits a payment LISTING in one makerspace.
+
+    Finance staff keep their cross-domain view: VIEW_FINANCE, or RECORD_PAYMENT for the
+    counter (`for_recording`). An Event Manager holds neither, yet is the person who
+    settles registration fees by hand when the online rail is off -- so a listing
+    explicitly filtered to event registrations is also admitted by MANAGE_EVENTS. Only
+    that listing: every other subject stays finance money, and an unfiltered request
+    from the same actor still scopes to nothing (404). Used by both the view's
+    makerspace lookup and `list_payments`, so the two can never disagree.
+    """
+    finance = rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE
+    if (
+        subject_type == Payment.SubjectType.EVENT_REGISTRATION
+        and not rbac.can(actor, finance, makerspace_id)
+        and rbac.can(actor, rbac.Action.MANAGE_EVENTS, makerspace_id)
+    ):
+        return rbac.Action.MANAGE_EVENTS
+    return finance
+
+
 def _require_record_authority(actor, payments):
     """Finance staff record cash across domains; existing domain staff keep their scope.
 

@@ -2,7 +2,6 @@
 
 from django.conf import settings
 
-from apps.accounts import rbac
 from apps.makerspaces.resource_clone import OwnedImage, clone_transaction, copy_fields
 from apps.makerspaces.resource_clone_extensions import copy_extensions
 
@@ -31,7 +30,7 @@ def clone_space(space, *, actor, copy_booking_rules=False):
         values["name"] = source.name[:193].rstrip() + " (copy)"
         values["custom_form"] = _canonical_form(values["custom_form"])
         if copy_booking_rules:
-            booking_authority.require_tenant(actor, source.makerspace, action=rbac.Action.MANAGE_MAKERSPACE)
+            # Rules are MANAGE_BOOKINGS authority, already required above.
             values.update(copy_fields(source, RULE_FIELDS))
         clone = BookableSpace(
             makerspace=source.makerspace, created_by=actor, is_active=True, is_public=False,

@@ -35,7 +35,8 @@ def authorize_view(actor, space, state):
     definition = REPORT_REGISTRY.get(state.get("report_key"))
     if definition is None:
         raise PermissionDenied("The saved report is unavailable.")
-    require_action(actor, definition.required_action, space.pk)
+    from .report_subjects import require_report_action
+    require_report_action(actor, definition, space.pk, state.get("filters", {}))
     for module in definition.required_modules:
         require_module(space, module)
     from .report_subjects import authorize
@@ -43,9 +44,17 @@ def authorize_view(actor, space, state):
     return definition
 
 
+def _may_save(actor, definition, space):
+    from .report_subjects import report_action_allowed, subject_capable
+    return report_action_allowed(
+        actor, definition, space.pk,
+        {"subject_kind": True} if subject_capable(definition) else None,
+    )
+
+
 def accessible_report_views(actor, space):
     keys = [key for key, definition in REPORT_REGISTRY.items()
-            if definition.previewable and rbac.can(actor, definition.required_action, space.pk)]
+            if definition.previewable and _may_save(actor, definition, space)]
     rows = SavedView.objects.none()
     for action in {definition.required_action for definition in REPORT_REGISTRY.values()}:
         rows = rows | rbac.scope_by_action(actor, action, SavedView.objects.all())

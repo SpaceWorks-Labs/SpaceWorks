@@ -20,7 +20,6 @@ from apps.events.exceptions import EventInvalidTransition
 from apps.events.models import Event, EventRegistration
 from apps.events import event_authority
 from apps.events.event_permissions import MANAGE_REGISTRATIONS, CHECK_IN, EDIT_DETAILS
-from apps.accounts import rbac
 from rest_framework.exceptions import PermissionDenied
 from apps.makerspaces.guards import require_module_locked
 
@@ -125,10 +124,11 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
         locked,
     )
     # Check the effective, locked template before reading any registration PII.
+    # Event-scoped: the tenant Event Manager (MANAGE_EVENTS) or this event's
+    # manage_registrations grant -- the same people who already read these answers on
+    # the roster. Tenant VIEW_AUDIT is no longer required; the render stays audited below.
     if set(normalized["fields"]) - SAFE_FIELDS:
         event_authority.require(actor, locked, MANAGE_REGISTRATIONS)
-        if not rbac.can(actor, rbac.Action.VIEW_AUDIT, locked.makerspace_id):
-            raise PermissionDenied()
     _width, _height, columns, rows = page_layout(normalized)
     pages = (len(registration_ids) + columns * rows - 1) // (columns * rows)
     if pages > MAX_PAGES:

@@ -131,7 +131,7 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
             return False
         cache = self.context.setdefault("booking_rule_authority", {})
         if obj.makerspace_id not in cache:
-            cache[obj.makerspace_id] = rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, obj.makerspace_id)
+            cache[obj.makerspace_id] = rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, obj.makerspace_id)
         return cache[obj.makerspace_id]
 
     @extend_schema_field(serializers.BooleanField())

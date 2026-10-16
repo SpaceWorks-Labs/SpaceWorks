@@ -174,7 +174,9 @@ export function getStaffAccess(
     if (tabName === "bookings") return canManageBookings;
     if (tabName === "members") return canManageMembers;
     if (tabName === "cards") return canUseMemberCards;
-    if (tabName === "payments") return canViewFinance || canRecordPayment;
+    // Event Managers settle registration fees by hand when the online rail is off; the
+    // panel narrows them to event-registration charges (PaymentsPanel `eventOnly`).
+    if (tabName === "payments") return canViewFinance || canRecordPayment || canManageEvents;
     if (tabName === "exports") return canManageMakerspace;
     if (tabName === "backups") return canManageMakerspace;
     if (tabName === "migration") return isSuperadmin;

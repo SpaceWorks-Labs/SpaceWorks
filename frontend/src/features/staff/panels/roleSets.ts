@@ -17,6 +17,10 @@ export function refreshMembershipAuthority(client: QueryClient, msId: number) {
   return Promise.all([
     ["staff", "memberships", msId], ["staff", "roles", msId],
     ["members", msId], ["member-machine-scope", msId], ["staff", "me"],
+    // Role and machine-type changes narrow or widen what the machine, dashboard and
+    // to-buy views return, including the actor's own when they edit themselves.
+    ["machines"], ["machine-types"], ["machine-service-requests"], ["machine-service-handover"],
+    ["dashboard"], ["dashboard-print-queue"], ["dashboard-maintenance-queue"], ["procurement"],
   ].map((queryKey) => client.invalidateQueries({ queryKey })));
 }
 

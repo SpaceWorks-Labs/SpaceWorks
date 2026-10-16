@@ -12,7 +12,9 @@ def features_for_resource(actor, resource, authority, context):
     tenant = resource.makerspace
     if tenant.pk not in cache:
         enabled = []
-        if module_enabled(tenant, "reports") and rbac.can(actor, rbac.Action.VIEW_AUDIT, tenant.pk):
+        if module_enabled(tenant, "reports") and (
+                rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, tenant.pk)
+                or rbac.can(actor, rbac.Action.VIEW_AUDIT, tenant.pk)):
             enabled = [key for key, feature in (
                 ("analytics", "bookings.analytics"), ("exports", "bookings.exports"),
                 ("pdf", "bookings.utilization_pdf"),

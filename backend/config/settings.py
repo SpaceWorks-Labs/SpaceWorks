@@ -588,6 +588,10 @@ if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
 CELERY_BEAT_SCHEDULE = {
+    "notification-contract-outbox": {
+        "task": "apps.integrations.notification_tasks.sweep_notification_outbox",
+        "schedule": crontab(minute="*"),
+    },
     "reminder-sweep": {
         "task": "apps.operations.tasks_reminders.run_reminder_sweep_task",
         "schedule": crontab(minute="*/5"),

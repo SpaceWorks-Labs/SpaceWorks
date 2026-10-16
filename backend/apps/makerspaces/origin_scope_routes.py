@@ -42,6 +42,11 @@ from .origin_scope_routes_7b import PRINTER_MAKERSPACE_ROUTES
 MAKERSPACE_KWARG_ROUTES.update(PRINTER_MAKERSPACE_ROUTES)
 from .origin_scope_routes_wp4 import MAKERSPACE_ROUTES as WP4_ROUTES
 MAKERSPACE_KWARG_ROUTES.update(WP4_ROUTES)
+MAKERSPACE_KWARG_ROUTES.update({name: "makerspace_id" for name in (
+    "contract-channels", "contract-channel", "contract-endpoints", "contract-endpoint-start",
+    "contract-endpoint-verify", "contract-endpoint-revoke", "contract-preferences",
+    "contract-deliveries", "contract-test",
+)})
 
 # These routes have no tenant-bearing path segment by design: each is a listing whose
 # queryset is explicitly narrowed by the named makerspace query parameter.

@@ -19,6 +19,9 @@ from apps.encryption.registry import all_fields, fields_for_label, registered_la
 from apps.encryption.write_fence import fence_operation
 
 _FILTERS = {
+    "integrations.NotificationEnvelope": "makerspace_id",
+    "integrations.NotificationEndpoint": "makerspace_id",
+    "integrations.NotificationEndpointChallenge": "makerspace_id",
     "notifications.MemberBroadcast": "makerspace_id",
     "notifications.NotificationInboxRow": "makerspace_id",
     "hardware_requests.HardwareRequest": "makerspace_id",

@@ -10,6 +10,9 @@ from apps.encryption.registry import all_fields, fields_for_label, makerspace_id
 
 
 FILTERS = {
+    "integrations.NotificationEnvelope": {"makerspace_id": None},
+    "integrations.NotificationEndpoint": {"makerspace_id": None},
+    "integrations.NotificationEndpointChallenge": {"makerspace_id": None},
     "notifications.MemberBroadcast": {"makerspace_id": None},
     "notifications.NotificationInboxRow": {"makerspace_id": None},
     "hardware_requests.HardwareRequest": {"makerspace_id": None},

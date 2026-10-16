@@ -1307,8 +1307,16 @@ enabling a key cannot make an unconfigured channel send, and disabling it stops 
   tenant owns the destination channel and pays for it; identity resolves before a tenant exists.
   Do not re-propose per-makerspace auth credentials — that was considered and cancelled.
 
-**Notifications v2 — recipients, rooms, templates, scoping (phase 21).** Four additions on top of the
-per-feature×per-channel matrix, all additive and dormant until configured. The governing rule: this area
+**Notifications v2 — recipients, rooms, templates, scoping (phase 21).** The Phase-1a personal
+contract in `docs/notification-contract.md` complements the existing tenant matrix and room delivery.
+Personal delivery uses explicit-recipient transactional envelopes,
+proven integration-generation-bound endpoints, multi-select preferences and live source authority.
+Never infer a personal destination from an email/name, route requester/campaign bodies to a room,
+or treat the new personal preference as the existing tenant matrix. Authentication mailbox proofs
+stay synchronous/redacted email; the five mandatory-mail module exemptions, separate
+closed-with-issue opt-out exception and bounce/complaint suppression remain independent.
+
+The original v2 additions below remain additive and dormant until configured. Their default selection
 fails **OPEN** to the action-based default — a broken selection, scope, module or template lookup must
 never mute a makerspace. Deliberately the opposite of the *access* rules, which fail closed.
 - **`integrations/recipients.py` — per-event recipient selection, where NO ROWS MEANS TODAY'S BEHAVIOUR,

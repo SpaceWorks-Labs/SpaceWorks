@@ -123,9 +123,13 @@ def notifications_delete(makerspace, cursor):
     from apps.accounts import rbac
     from apps.notifications.models import MemberNotificationPreference, Notification, NotificationInboxRow, MemberBroadcast
     from apps.integrations.models_timing import NotificationTimingPolicy
+    from apps.integrations.models_contract import NotificationEnvelope
+    from apps.integrations.models_endpoints import ChannelConfiguration
+    from apps.notifications.models_preferences import NotificationPreference
 
     deleted, labels = 0, []
-    for model in (NotificationInboxRow, MemberNotificationPreference, Notification, MemberBroadcast, NotificationTimingPolicy):
+    for model in (NotificationEnvelope, ChannelConfiguration, NotificationPreference, NotificationInboxRow,
+                  MemberNotificationPreference, Notification, MemberBroadcast, NotificationTimingPolicy):
         count, model_labels = _delete(rbac.scope_notification_policy(
             model.objects.all(), makerspace_id=makerspace.pk,
         ))
@@ -145,6 +149,9 @@ def _chat_destinations_delete(makerspace, channel):
     history survives, the credential does not.
     """
     from apps.integrations.models_destinations import NotificationDestination
+    from apps.integrations.models_endpoints import ChannelConfiguration
+
+    ChannelConfiguration.objects.filter(makerspace=makerspace, channel=channel).delete()
 
     deleted, labels = _delete(
         NotificationDestination.objects.filter(makerspace=makerspace, channel=channel)

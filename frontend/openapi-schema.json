@@ -12046,7 +12046,7 @@
         "/api/v1/admin/events/{id}/eligible-members/": {
             "get": {
                 "operationId": "api_v1_admin_events_eligible_members_list",
-                "description": "The roster the staff registration picker reads.\n\nHung off the EVENT rather than the makerspace, so it inherits `_manageable_event`\nand introduces no new authority question: whoever may manage this event may see who\nthey can register for it. A separate makerspace-level member list would have needed\nits own permission answer, and the obvious candidates were all wrong — the\ndirect-loan roster is gated on `ISSUE_DIRECT_LOAN` plus a self-checkout feature an\nevents manager need not hold, and the full membership list is `MANAGE_MAKERSPACE`.\n\nAlready-registered members are excluded: offering someone the picker can only reject\nas a duplicate is an error the interface should not have made available.",
+                "description": "The roster the staff registration picker reads.\n\nHung off the EVENT rather than the makerspace, so it inherits `_manageable_event`\nand introduces no new authority question: whoever may manage this event may see who\nthey can register for it. A separate makerspace-level member list would have needed\nits own permission answer, and the obvious candidates were all wrong \u2014 the\ndirect-loan roster is gated on `ISSUE_DIRECT_LOAN` plus a self-checkout feature an\nevents manager need not hold, and the full membership list is `MANAGE_MAKERSPACE`.\n\nAlready-registered members are excluded: offering someone the picker can only reject\nas a duplicate is an error the interface should not have made available.",
                 "summary": "List members who can be registered for an event",
                 "parameters": [
                     {
@@ -27031,7 +27031,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "Limit to the last 1–365 days."
+                        "description": "Limit to the last 1\u2013365 days."
                     },
                     {
                         "in": "query",
@@ -61455,7 +61455,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1\u2013200; default 100."
                     }
                 ],
                 "tags": [
@@ -61742,7 +61742,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1\u2013200; default 100."
                     }
                 ],
                 "tags": [
@@ -62037,7 +62037,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1\u2013200; default 100."
                     }
                 ],
                 "tags": [
@@ -63743,7 +63743,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1\u2013200; default 100."
                     }
                 ],
                 "tags": [
@@ -64020,7 +64020,7 @@
                         "schema": {
                             "type": "integer"
                         },
-                        "description": "1–200; default 100."
+                        "description": "1\u2013200; default 100."
                     }
                 ],
                 "tags": [
@@ -80077,6 +80077,1155 @@
                     }
                 }
             }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/channels": {
+            "get": {
+                "operationId": "notification_contract_channels_get",
+                "tags": [
+                    "Notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractChannelPage"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/channels/{channel}": {
+            "get": {
+                "operationId": "notification_contract_channels_channel_get",
+                "tags": [
+                    "Notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "email",
+                                "in_app",
+                                "native_push",
+                                "telegram",
+                                "slack",
+                                "mattermost",
+                                "discord",
+                                "whatsapp",
+                                "webhook"
+                            ]
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractChannel"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "notification_contract_channels_channel_patch",
+                "tags": [
+                    "Notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "email",
+                                "in_app",
+                                "native_push",
+                                "telegram",
+                                "slack",
+                                "mattermost",
+                                "discord",
+                                "whatsapp",
+                                "webhook"
+                            ]
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractChannel"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "423": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractChannelPatch"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractChannelPatch"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractChannelPatch"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/personal/endpoints": {
+            "get": {
+                "operationId": "notification_contract_personal_endpoints_get",
+                "tags": [
+                    "Personal notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractEndpointPage"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/personal/endpoints/start": {
+            "post": {
+                "operationId": "notification_contract_personal_endpoints_start_post",
+                "tags": [
+                    "Personal notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractChallenge"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "423": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractChallengeStart"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractChallengeStart"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractChallengeStart"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/personal/challenges/{challenge_id}/verify": {
+            "post": {
+                "operationId": "notification_contract_personal_challenges_challenge_id_verify_post",
+                "tags": [
+                    "Personal notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "challenge_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractEndpoint"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "423": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractProofVerify"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractProofVerify"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractProofVerify"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/personal/endpoints/{id}": {
+            "delete": {
+                "operationId": "notification_contract_personal_endpoints_id_delete",
+                "tags": [
+                    "Personal notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractRevoked"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "423": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/personal/preferences": {
+            "get": {
+                "operationId": "notification_contract_personal_preferences_get",
+                "tags": [
+                    "Personal notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractPreferences"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "operationId": "notification_contract_personal_preferences_put",
+                "tags": [
+                    "Personal notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractPreferences"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "423": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractPreferences"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractPreferences"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractPreferences"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/personal/deliveries": {
+            "get": {
+                "operationId": "notification_contract_personal_deliveries_get",
+                "tags": [
+                    "Personal notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractDeliveryPage"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/integrations/makerspace/{makerspace_id}/channels-test": {
+            "post": {
+                "operationId": "notification_contract_channels_test_post",
+                "tags": [
+                    "Notification contract"
+                ],
+                "parameters": [
+                    {
+                        "name": "makerspace_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractProviderResult"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "423": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Validation/permission/dependency error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractTest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractTest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContractTest"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -86273,7 +87422,8 @@
                     "mattermost",
                     "discord",
                     "webhook",
-                    "native_push"
+                    "native_push",
+                    "whatsapp"
                 ],
                 "type": "string",
                 "description": "* `in_app` - Inbox\n* `email` - Email\n* `telegram` - Telegram\n* `slack` - Slack\n* `mattermost` - Mattermost\n* `discord` - Discord\n* `webhook` - Signed webhook\n* `native_push` - Native push"
@@ -86286,7 +87436,8 @@
                     "mattermost",
                     "discord",
                     "native_push",
-                    "webhook"
+                    "webhook",
+                    "whatsapp"
                 ],
                 "type": "string",
                 "description": "* `email` - email\n* `telegram` - telegram\n* `slack` - slack\n* `mattermost` - mattermost\n* `discord` - discord\n* `native_push` - native_push\n* `webhook` - webhook"
@@ -90192,7 +91343,7 @@
             },
             "EventEligibleMember": {
                 "type": "object",
-                "description": "A picker row. Name and id only — a roster is not a contact export.",
+                "description": "A picker row. Name and id only \u2014 a roster is not a contact export.",
                 "properties": {
                     "member_id": {
                         "type": "integer",
@@ -91085,7 +92236,7 @@
             },
             "EventStaffRegistration": {
                 "type": "object",
-                "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody — which is what makes the attendee list usable as an accountability record\nrather than free text.",
+                "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody \u2014 which is what makes the attendee list usable as an accountability record\nrather than free text.",
                 "properties": {
                     "member_id": {
                         "type": "integer",
@@ -91995,7 +93146,7 @@
                     "REDACTED"
                 ],
                 "type": "string",
-                "description": "* `REDACTED` - Readable — audit metadata and form answers redacted; member contact details included"
+                "description": "* `REDACTED` - Readable \u2014 audit metadata and form answers redacted; member contact details included"
             },
             "FieldEnum": {
                 "enum": [
@@ -94500,7 +95651,8 @@
                     "mattermost",
                     "discord",
                     "webhook",
-                    "native_push"
+                    "native_push",
+                    "whatsapp"
                 ],
                 "type": "string",
                 "description": "* `in_app` - Inbox\n* `email` - Email\n* `telegram` - Telegram\n* `slack` - Slack\n* `mattermost` - Mattermost\n* `discord` - Discord\n* `webhook` - Signed webhook\n* `native_push` - Native push"
@@ -101695,7 +102847,8 @@
                     "stock_transfers",
                     "stocktake",
                     "telegram",
-                    "webhook"
+                    "webhook",
+                    "whatsapp"
                 ],
                 "type": "string",
                 "description": "* `asset_units` - asset_units\n* `backup` - backup\n* `bookings` - bookings\n* `bulk_import` - bulk_import\n* `containers` - containers\n* `devices` - devices\n* `discord` - discord\n* `email` - email\n* `events` - events\n* `evidence_uploads` - evidence_uploads\n* `guest_handover` - guest_handover\n* `machine_service` - machine_service\n* `machines` - machines\n* `maintenance` - maintenance\n* `mattermost` - mattermost\n* `member_accounts` - member_accounts\n* `membership` - membership\n* `mobile` - mobile\n* `notifications` - notifications\n* `payments` - payments\n* `printing` - printing\n* `procurement` - procurement\n* `public_inventory` - public_inventory\n* `qr_management` - qr_management\n* `qr_print_batches` - qr_print_batches\n* `reports` - reports\n* `request_workflow` - request_workflow\n* `scanner` - scanner\n* `slack` - slack\n* `staff_admin` - staff_admin\n* `stock_transfers` - stock_transfers\n* `stocktake` - stocktake\n* `telegram` - telegram\n* `webhook` - webhook"
@@ -122985,6 +124138,643 @@
                     "id",
                     "kind",
                     "name"
+                ]
+            },
+            "ContractQuota": {
+                "type": "object",
+                "properties": {
+                    "daily_limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100000
+                    },
+                    "recipient_daily_limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10000
+                    }
+                }
+            },
+            "ContractWhatsAppTemplate": {
+                "type": "object",
+                "properties": {
+                    "event": {
+                        "type": "string"
+                    },
+                    "audience": {
+                        "type": "string"
+                    },
+                    "locale": {
+                        "type": "string"
+                    },
+                    "template_name": {
+                        "type": "string"
+                    },
+                    "variables": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "approved": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "event",
+                    "audience",
+                    "template_name",
+                    "variables"
+                ]
+            },
+            "ContractChannel": {
+                "type": "object",
+                "properties": {
+                    "channel": {
+                        "type": "string",
+                        "enum": [
+                            "email",
+                            "in_app",
+                            "native_push",
+                            "telegram",
+                            "slack",
+                            "mattermost",
+                            "discord",
+                            "whatsapp",
+                            "webhook"
+                        ]
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "room_enabled": {
+                        "type": "boolean"
+                    },
+                    "personal_enabled": {
+                        "type": "boolean"
+                    },
+                    "email_fallback": {
+                        "type": "boolean"
+                    },
+                    "provider": {
+                        "type": "string"
+                    },
+                    "integration_identity": {
+                        "type": "string"
+                    },
+                    "generation": {
+                        "type": "integer"
+                    },
+                    "quotas": {
+                        "$ref": "#/components/schemas/ContractQuota"
+                    },
+                    "credentials_set": {
+                        "type": "boolean"
+                    },
+                    "templates": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContractWhatsAppTemplate"
+                        }
+                    }
+                },
+                "required": [
+                    "channel",
+                    "enabled",
+                    "room_enabled",
+                    "personal_enabled",
+                    "email_fallback",
+                    "provider",
+                    "integration_identity",
+                    "generation",
+                    "quotas",
+                    "credentials_set",
+                    "templates"
+                ]
+            },
+            "ContractChannelPatch": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "room_enabled": {
+                        "type": "boolean"
+                    },
+                    "personal_enabled": {
+                        "type": "boolean"
+                    },
+                    "email_fallback": {
+                        "type": "boolean"
+                    },
+                    "provider": {
+                        "type": "string"
+                    },
+                    "integration_identity": {
+                        "type": "string"
+                    },
+                    "quotas": {
+                        "$ref": "#/components/schemas/ContractQuota"
+                    },
+                    "templates": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContractWhatsAppTemplate"
+                        }
+                    },
+                    "credentials": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "writeOnly": true
+                    }
+                }
+            },
+            "ContractEndpoint": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "channel": {
+                        "type": "string",
+                        "enum": [
+                            "email",
+                            "in_app",
+                            "native_push",
+                            "telegram",
+                            "slack",
+                            "mattermost",
+                            "discord",
+                            "whatsapp",
+                            "webhook"
+                        ]
+                    },
+                    "provider": {
+                        "type": "string"
+                    },
+                    "integration_generation": {
+                        "type": "integer"
+                    },
+                    "verification_state": {
+                        "type": "string",
+                        "enum": [
+                            "verified",
+                            "revoked"
+                        ]
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "consented_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "consent_version": {
+                        "type": "string"
+                    },
+                    "revoked_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "channel",
+                    "provider",
+                    "integration_generation",
+                    "verification_state",
+                    "verified_at",
+                    "consented_at",
+                    "consent_version",
+                    "revoked_at",
+                    "created_at"
+                ]
+            },
+            "ContractChallengeStart": {
+                "type": "object",
+                "properties": {
+                    "channel": {
+                        "type": "string",
+                        "enum": [
+                            "telegram",
+                            "slack",
+                            "mattermost",
+                            "discord",
+                            "whatsapp"
+                        ]
+                    },
+                    "consent": {
+                        "type": "boolean"
+                    },
+                    "consent_version": {
+                        "type": "string"
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "pattern": "^\\+[1-9][0-9]{6,14}$",
+                        "writeOnly": true
+                    }
+                },
+                "required": [
+                    "channel",
+                    "consent",
+                    "consent_version"
+                ]
+            },
+            "ContractChallenge": {
+                "type": "object",
+                "properties": {
+                    "challenge_id": {
+                        "type": "integer"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "connect_url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "instructions": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "challenge_id",
+                    "expires_at"
+                ]
+            },
+            "ContractProofVerify": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 2048
+                    },
+                    "state": {
+                        "type": "string",
+                        "maxLength": 512
+                    }
+                }
+            },
+            "ContractSelection": {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "hardware_requests",
+                            "printing",
+                            "events",
+                            "bookings",
+                            "maintenance",
+                            "members",
+                            "api_access",
+                            "devices",
+                            "payments",
+                            "stock",
+                            "certifications"
+                        ]
+                    },
+                    "channels": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "email",
+                                "in_app",
+                                "native_push",
+                                "telegram",
+                                "slack",
+                                "mattermost",
+                                "discord",
+                                "whatsapp"
+                            ]
+                        }
+                    },
+                    "email_fallback": {
+                        "type": "boolean"
+                    },
+                    "available_channels": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "category",
+                    "channels"
+                ]
+            },
+            "ContractPreferences": {
+                "type": "object",
+                "properties": {
+                    "preferences": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContractSelection"
+                        }
+                    }
+                },
+                "required": [
+                    "preferences"
+                ]
+            },
+            "ContractDelivery": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "envelope_id": {
+                        "type": "integer"
+                    },
+                    "channel": {
+                        "type": "string",
+                        "enum": [
+                            "email",
+                            "in_app",
+                            "native_push",
+                            "telegram",
+                            "slack",
+                            "mattermost",
+                            "discord",
+                            "whatsapp",
+                            "webhook"
+                        ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "accepted",
+                            "sent",
+                            "delivered",
+                            "read",
+                            "failed",
+                            "skipped",
+                            "retrying"
+                        ]
+                    },
+                    "attempt_count": {
+                        "type": "integer"
+                    },
+                    "next_attempt_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "last_error": {
+                        "type": "string"
+                    },
+                    "retryable": {
+                        "type": "boolean"
+                    },
+                    "event": {
+                        "type": "string"
+                    },
+                    "feature": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "envelope_id",
+                    "channel",
+                    "state",
+                    "attempt_count",
+                    "next_attempt_at",
+                    "last_error",
+                    "retryable",
+                    "event",
+                    "feature",
+                    "created_at",
+                    "updated_at"
+                ]
+            },
+            "ContractDeliveryPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContractDelivery"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "ContractTest": {
+                "type": "object",
+                "properties": {
+                    "channel": {
+                        "type": "string",
+                        "enum": [
+                            "email",
+                            "in_app",
+                            "native_push",
+                            "telegram",
+                            "slack",
+                            "mattermost",
+                            "discord",
+                            "whatsapp",
+                            "webhook"
+                        ]
+                    },
+                    "endpoint_id": {
+                        "type": "integer"
+                    },
+                    "room_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "channel"
+                ]
+            },
+            "ContractProviderResult": {
+                "type": "object",
+                "properties": {
+                    "accepted": {
+                        "type": "boolean"
+                    },
+                    "provider_id": {
+                        "type": "string"
+                    },
+                    "retryable": {
+                        "type": "boolean"
+                    },
+                    "error_code": {
+                        "type": "string"
+                    },
+                    "sanitized_error": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "accepted",
+                    "provider_id",
+                    "retryable",
+                    "error_code",
+                    "sanitized_error"
+                ]
+            },
+            "ContractRevoked": {
+                "type": "object",
+                "properties": {
+                    "revoked": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "revoked"
+                ]
+            },
+            "ContractError": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "detail"
+                ]
+            },
+            "ContractValidationError": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "detail": {
+                                "type": "string"
+                            },
+                            "code": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "detail"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": {
+                            "oneOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                {
+                                    "type": "object"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "ContractChannelPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContractChannel"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "ContractEndpointPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContractEndpoint"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
                 ]
             }
         },

@@ -20,6 +20,12 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
         log.save(update_fields=["status", "error", "updated_at"])
         return log
 
+    from .dispatch_channels import configuration_blocks
+    if configuration_blocks(log.makerspace, log.channel):
+        log.status, log.error = NotificationDeliveryStatus.SKIPPED, "notification_channel_configuration_disabled"
+        log.save(update_fields=["status", "error", "updated_at"])
+        return log
+
     if log.destination_id is None and log.destination_label:
         # The room was deleted while this row waited in the queue. Falling through would
         # send via the makerspace-wide credential, posting a room-scoped alert into the

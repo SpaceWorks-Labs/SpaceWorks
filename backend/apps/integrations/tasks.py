@@ -2,6 +2,7 @@ import random
 
 # Register the shared worker even when no separable domain adapter is installed.
 from .broadcasts_worker import broadcast_batch, resume_broadcasts  # noqa: F401
+from .notification_tasks import deliver_envelope, sweep_notification_outbox  # noqa: F401
 
 from celery import shared_task
 from django.db import transaction

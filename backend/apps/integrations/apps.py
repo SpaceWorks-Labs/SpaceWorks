@@ -8,3 +8,5 @@ class IntegrationsConfig(AppConfig):
     def ready(self):
         from .delivery_digest import register_digest
         register_digest()
+        from .notification_email_source import register_email_source
+        register_email_source()

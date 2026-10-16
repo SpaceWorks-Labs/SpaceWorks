@@ -24,6 +24,21 @@ def resolve_bot_token(makerspace):
     across all of its rooms is what makes per-machine rooms read as one sender rather
     than as a handful of unrelated bots, and it keeps the token surface to one secret.
     """
+    # A configured contract installation is also the sender for existing rooms.
+    # With no contract token, preserve the legacy makerspace -> deployment fallback.
+    pk = getattr(makerspace, "pk", None)
+    if hasattr(makerspace, "_meta") and type(pk) is int and pk > 0:
+        from apps.accounts import rbac
+        from .models_endpoints import ChannelConfiguration
+        config = rbac.scope_notification_policy(ChannelConfiguration.objects.all(),
+            makerspace_id=makerspace.pk).filter(channel="telegram").first()
+        if config:
+            try:
+                token = config.get_credentials().get("bot_token", "")
+            except Exception:
+                raise TelegramDeliveryError("Telegram credentials are unavailable.") from None
+            if isinstance(token, str) and token:
+                return token
     token = (
         makerspace.get_telegram_bot_token()
         if hasattr(makerspace, "get_telegram_bot_token")

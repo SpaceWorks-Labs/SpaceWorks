@@ -104,6 +104,11 @@ def mark_attended_with_event(
         },
     )
     services.notify_event_lifecycle(event, "registration_attended", locked.pk)
+    if (source in {EventCheckInEvent.Source.QR, EventCheckInEvent.Source.VENUE_STATION}
+            and attended_at is None):
+        from apps.presence.event_attendance import event_attendance
+
+        transaction.on_commit(lambda: event_attendance(locked), robust=True)
     return services._refresh(locked), check_in
 
 

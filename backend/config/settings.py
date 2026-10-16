@@ -723,6 +723,9 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/5"),
     },
 }
+from apps.presence.schedule import beat_entries as presence_beat_entries
+CELERY_BEAT_SCHEDULE.update(presence_beat_entries(TOMBSTONED_APPS))
+
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry

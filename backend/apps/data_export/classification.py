@@ -56,6 +56,8 @@ EXPORTED_MODEL_FIELDS.update(PROFILE_EXPORTED_FIELDS)
 EXPORTED_MODEL_FIELDS["makerspaces.MemberProfile"] += " " + PROFILE_FIELDS
 EXPORTED_MODEL_FIELDS["makerspaces.MemberProject"] += " " + PROJECT_FIELDS
 OMITTED_MODELS.update(PROFILE_OMITTED_MODELS)
+from apps.tenant_migration.catalog_p2_presence import classify as classify_presence
+classify_presence(EXPORTED_MODEL_FIELDS)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

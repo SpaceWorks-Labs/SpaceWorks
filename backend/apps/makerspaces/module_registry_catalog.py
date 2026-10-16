@@ -225,3 +225,6 @@ MODULES = (
         "devices", GUARD, group=GROUP_DEVICES,
     ),
 )
+
+from .module_registry_p2_presence import MODULES as PRESENCE_MODULES
+MODULES += PRESENCE_MODULES

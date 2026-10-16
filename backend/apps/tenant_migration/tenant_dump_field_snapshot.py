@@ -60,6 +60,9 @@ FIRST_PARTY_FIELD_NAMES.update(PROFILE_FIELD_NAMES)
 FIRST_PARTY_FIELD_NAMES["makerspaces.MemberProfile"] |= frozenset(PROFILE_FIELDS.split())
 FIRST_PARTY_FIELD_NAMES["makerspaces.MemberProject"] |= frozenset(PROJECT_FIELDS.split())
 
+from .catalog_p2_presence import FIELD_NAMES as PRESENCE_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(PRESENCE_FIELDS)
+
 UNMANAGED_FIELD_NAMES = {}
 
 from .tenant_dump_modules import MODULE_FIELD_NAMES

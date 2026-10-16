@@ -113,6 +113,11 @@ EXPLICIT_DROP_MODEL_REASONS = {
 }
 
 
+from .catalog_p2_presence import model_catalog, DROP_MODELS as PRESENCE_DROPS
+PROJECTED_MODEL_LABELS = model_catalog(PROJECTED_MODEL_LABELS)
+EXPLICIT_DROP_MODEL_REASONS.update(PRESENCE_DROPS)
+
+
 def _model_rules():
     rules = {}
 

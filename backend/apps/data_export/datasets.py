@@ -11,6 +11,8 @@ P = TenantPredicate
 # A dataset has one root model.  Relationship values are IDs/snapshots; a dataset may
 # never expand a routing relation into the related tenant's row.
 DATASET_SPECS = {
+    "presence.PresenceSettings": ("presence/settings.csv", P(("makerspace",))),
+    "presence.PresencePreference": ("presence/preferences.csv", P(("makerspace",))),
     "makerspaces.PublicHandle": ("members/public_handles.csv", P(("profile__membership__makerspace",))),
     "makerspaces.ProfileTimelineEntry": ("members/timeline.csv", P(("profile__membership__makerspace",))),
     "bookings.BookingResourcePage": ("bookings/pages.csv", P(("space__makerspace",))),
@@ -142,7 +144,7 @@ DATASET_SPECS = {
     "payments.MakerspaceBillingSettings": ("makerspace/billing_settings.csv", P(("makerspace",))),
     "payments.ManualSettlement": ("payments/manual_settlements.csv", P(("payment__makerspace",))),
     "payments.Refund": ("payments/refunds.csv", P(("payment__makerspace",))),
-    "presence.PresenceSession": ("presence/sessions.csv", P(("makerspace",), ("membership__makerspace",))),
+    "presence.PresenceSession": ("presence/sessions.csv", P(("makerspace",))),
     "procurement.ToBuyItem": ("procurement/to_buy_items.csv", P(("makerspace",))),
     "procurement.ToBuyReceipt": ("procurement/receipts.csv", P(("to_buy_item__makerspace",))),
     "tenant_migration.ExternalTenantReference": ("migration/external_references.csv", P(("makerspace",))),

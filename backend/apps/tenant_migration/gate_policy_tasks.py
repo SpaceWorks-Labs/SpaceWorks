@@ -169,3 +169,6 @@ FANOUT_GATE_PARTICIPANTS = {
         "Expired kiosk operator lease cleanup."
     ),
 }
+
+from .catalog_p2_presence import gate_tasks
+gate_tasks(TASK_INTERNAL_PARTICIPANTS, FANOUT_GATE_PARTICIPANTS)

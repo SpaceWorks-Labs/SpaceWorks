@@ -123,7 +123,8 @@ def require_active_member_presence(user, makerspace):
     is not.
     """
     active = require_active_member(user, makerspace)
-    if not runtime_active("presence"):
+    from apps.makerspaces.platform import module_enabled
+    if not runtime_active("presence") or not module_enabled(makerspace, "presence"):
         return active
     session = PresenceSession.objects.filter(
         member=user, makerspace=makerspace, ended_at__isnull=True,

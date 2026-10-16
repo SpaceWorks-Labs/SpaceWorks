@@ -195,6 +195,8 @@ def _delete_object_graph(makerspace):
         from apps.makerspaces.module_purge_collectors_membership import membership_delete
 
         membership_delete(makerspace, cursor)
+        from apps.presence.purge import delete as presence_delete
+        presence_delete(makerspace, cursor)
         MakerspaceMembership.objects.filter(makerspace=makerspace).delete()
         # AuditBatchLeaf.audit_log PROTECTs the audit rows deleted just below, and the
         # batch FK PROTECTs the makerspace itself, so both must go first. Attestation is

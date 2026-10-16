@@ -162,6 +162,7 @@ export function StaffTabContent({
           isSuperadmin={isSuperadmin}
           onAuthRefresh={onAuthRefresh}
           membershipEnabled={(activeMakerspace.enabled_modules ?? []).includes("membership")}
+          presenceEnabled={(activeMakerspace.enabled_modules ?? []).includes("presence")}
           canManageMakerspace={canManageMakerspace}
           canViewFinance={has("view_finance")}
           canRecordPayment={has("record_payment")}

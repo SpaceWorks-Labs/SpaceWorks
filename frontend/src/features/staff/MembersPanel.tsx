@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { DataTable, EmptyState, Field, IdentityChip } from "../../components/ui";
+import { EmptyState, Field } from "../../components/ui";
+import { PresenceRoster } from "../presence/PresenceRoster";
+import { presenceApi, presenceKeys } from "../presence/api";
 import type {
   AdminMembership,
   MembershipListResponse,
@@ -26,7 +28,6 @@ import { MemberRow } from "./MemberRow";
 import { assignableRoles, type MembershipRoles } from "./panels/roleSets";
 import type { StaffRole } from "./panels/rolesApi";
 
-type Presence = { display_name: string; role_label: string; started_at: string; expires_at: string };
 type RosterMember = AdminMembership & MembershipRoles;
 type RosterResponse = Omit<MembershipListResponse, "results"> & { results: RosterMember[] };
 
@@ -40,11 +41,11 @@ export const membershipErrorText = (error: unknown) =>
 // Waiver management and witnessed acceptance are core liability controls. Invitation stays,
 // because a STAFF invitation keeps working with
 // the module off (`invite_membership` discriminates on the role's granted actions).
-export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false, actorActions, isSuperadmin, onAuthRefresh }: { makerspaceId: number; membershipEnabled: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean; actorActions: string[]; isSuperadmin: boolean; onAuthRefresh: () => void }) {
+export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled = false, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false, actorActions, isSuperadmin, onAuthRefresh }: { makerspaceId: number; membershipEnabled: boolean; presenceEnabled?: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean; actorActions: string[]; isSuperadmin: boolean; onAuthRefresh: () => void }) {
   const client = useQueryClient();
   const [params, setParams] = useSearchParams();
   const requestedSection = params.get("section") ?? "members";
-  const availableSections = ["members", "requests", "presence", ...(membershipEnabled && canManageMakerspace ? ["plans"] : []), ...(canManageMakerspace ? ["waivers"] : [])];
+  const availableSections = ["members", "requests", ...(presenceEnabled ? ["presence"] : []), ...(membershipEnabled && canManageMakerspace ? ["plans"] : []), ...(canManageMakerspace ? ["waivers"] : [])];
   const tab = availableSections.includes(requestedSection) ? requestedSection : "members";
   const setTab = (section: string) => { const next = new URLSearchParams(params); next.set("section", section); setParams(next, { replace: true }); };
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -66,7 +67,8 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
     // (and only those), which staff must be able to approve or cancel.
     queryFn: () => staffRequest<{ results: ReviewMembershipRequest[]; count: number; next: string | null; previous: string | null }>(`/admin/membership-requests?makerspace_id=${makerspaceId}&page=${requestPage}&${new URLSearchParams({ state: list.values.requestState, ordering: list.values.requestOrdering })}`),
   });
-  const presence = useQuery({ queryKey: [...key, "presence"], queryFn: () => staffRequest<Presence[]>(`/admin/makerspace/${makerspaceId}/presence-sessions/current`) });
+  // Module off: no presence tab, no request. Page 1 is shared with the roster tab's own query.
+  const presence = useQuery({ queryKey: presenceKeys.roster(makerspaceId, 1), queryFn: () => presenceApi.roster(makerspaceId, 1), enabled: presenceEnabled });
   const roles = useQuery({ queryKey: [...key, "roles"], queryFn: () => staffRequest<StaffRole[]>(`/admin/makerspaces/${makerspaceId}/roles`) });
   const grantableRoles = assignableRoles(roles.data ?? [], actorActions, isSuperadmin);
   const [roleId, setRoleId] = useState<number | null>(null);
@@ -101,20 +103,21 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
   const error = revoke.error ?? revokeRequest.error ?? approve.error ?? capabilities.error ?? verify.error ?? invite.error ?? witnessWaiver.error;
   const rosterRows = roster.data?.results ?? [];
   const requestRows = requests.data?.results ?? [];
-  const activeQuery = tab === "requests" ? requests : tab === "presence" ? presence : roster;
-  const querySection = ["members", "requests", "presence"].includes(tab);
+  const activeQuery = tab === "requests" ? requests : roster;
+  // The presence tab owns its loading/error states inside PresenceRoster.
+  const querySection = ["members", "requests"].includes(tab);
 
   const sectionTabs = [
       { key: "members", label: "Members", href: "#members", count: roster.data?.count ?? 0 },
       { key: "requests", label: membershipEnabled ? "Requests" : "Invitations", href: "#requests", count: requests.data?.count ?? 0 },
-      { key: "presence", label: "Present now", href: "#presence", count: presence.data?.length ?? 0 },
+      ...(presenceEnabled ? [{ key: "presence", label: "Present now", href: "#presence", count: presence.data?.count ?? 0 }] : []),
       ...(membershipEnabled && canManageMakerspace ? [{ key: "plans", label: "Plans", href: "#plans" }] : []),
       ...(canManageMakerspace ? [{ key: "waivers", label: "Waivers", href: "#waivers" }] : []),
     ];
-  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: `Couldn't load ${tab === "requests" ? "requests" : tab === "presence" ? "presence" : "members"}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
+  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: `Couldn't load ${tab === "requests" ? "requests" : "members"}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
     tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
     header={{ title: "Members", subtitle: "Membership, permissions and the people making things here.", primary: { label: "Invite member", onClick: () => setInviteOpen(true) } }}
-    stats={[{ label: "Members", value: roster.data?.count ?? 0 }, { label: membershipEnabled ? "Membership requests" : "Invitations", value: requests.data?.count ?? 0 }, { label: "Currently present", value: presence.data?.length ?? 0 }]}
+    stats={[{ label: "Members", value: roster.data?.count ?? 0 }, { label: membershipEnabled ? "Membership requests" : "Invitations", value: requests.data?.count ?? 0 }, ...(presenceEnabled ? [{ label: "Currently present", value: presence.data?.count ?? 0 }] : [])]}
     empty={{ message: "No members yet. Invite someone to your space." }}
     body={{ kind: "rows", rows: <>
     {tab === "members" ? <section aria-label="Member roster" className="grid gap-3">
@@ -162,13 +165,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
       <MembershipPagination label="requests" page={requestPage} next={requests.data?.next} previous={requests.data?.previous} fetching={requests.isFetching} onPage={setRequestPage} /></Panel> : null}
     {membershipEnabled && tab === "requests" ? <InvitationRequestsSection makerspaceId={makerspaceId} roles={grantableRoles} /> : null}
     {membershipEnabled && canManageMakerspace && tab === "plans" ? <MembershipPlansSection makerspaceId={makerspaceId} /> : null}
-    {tab === "presence" ? <DataTable data={presence.data ?? []} getRowId={row => `${row.display_name}-${row.started_at}`}
-      emptyDescription="No one is present yet. Active member presence appears here."
-      columns={[
-        { key: "display_name", header: "Person", render: row => <div className="flex items-center gap-3"><IdentityChip identity={{ kind: "avatar", name: row.display_name, seed: row.display_name }} /><span>{row.display_name}</span></div> },
-        { key: "role_label", header: "Role" },
-        { key: "expires_at", header: "Until", render: row => <time dateTime={row.expires_at}>{new Date(row.expires_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</time> },
-      ]} /> : null}
+    {presenceEnabled && tab === "presence" ? <PresenceRoster makerspaceId={makerspaceId} /> : null}
     {canManageMakerspace && tab === "waivers" ? <MembershipWaiverPanel makerspaceId={makerspaceId} /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{membershipErrorText(error)}</p> : null}
   </> }} detail={<>

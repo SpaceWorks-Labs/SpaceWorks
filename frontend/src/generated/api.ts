@@ -6107,6 +6107,8 @@ export type NeedsFixAction = {
 
 export type NeedsFixActionActionEnum = "repair" | "scrap" | "shelve";
 
+export type NegativesEnum = "allow" | "clip";
+
 export type Notification = {
   "id": number;
   "level": LevelEnum;
@@ -7015,6 +7017,8 @@ export type ParticipatingOrganization = {
   "id": number;
   "name": string;
 };
+
+export type PartitionEnum = "tenant" | "currency" | "unit";
 
 export type PasswordLoginResult = LoginResponse | MFAChallengeResponse;
 
@@ -9471,11 +9475,41 @@ export type ReportCatalogItem = {
   "unavailable_reason": string | null;
   "grains": Array<string>;
   "chart_hint": string;
+  "chart_spec": ReportChartSpec | null;
+  "identity_bearing": boolean;
   "aggregate_supported": boolean;
   "allowed_formats": Array<AllowedFormatsEnum>;
   "schedulable": boolean;
   "previewable": boolean;
   "condition_metrics": Array<string>;
+};
+
+export type ReportChartAxis = {
+  "field": string;
+  "kind": ReportChartAxisKindEnum;
+};
+
+export type ReportChartAxisKindEnum = "time" | "category";
+
+export type ReportChartSpec = {
+  "series": Array<string>;
+  "x": ReportChartAxis;
+  "values": Array<ReportChartValue>;
+  "currency_field": string | null;
+  "partition": PartitionEnum | NullEnum | null;
+  "negatives": NegativesEnum;
+  "truncation": ReportChartTruncation | null;
+  "alt_template": string;
+};
+
+export type ReportChartTruncation = {
+  "top_n": number;
+  "other_label": string;
+};
+
+export type ReportChartValue = {
+  "field": string;
+  "unit": string;
 };
 
 export type ReportCondition = {

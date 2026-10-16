@@ -2,11 +2,13 @@ from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
 
 
-def _legacy(key, fields, *, exportable=True, summary=False, chart_hint="bar"):
+def _legacy(key, fields, *, exportable=True, summary=False, chart_hint="bar", identity_bearing=False):
     path = f"apps.operations.reports_inventory.build_{key.replace('-', '_')}"
     return ReportDefinition(
         key, path, fields, exportable=exportable, summary=summary,
         title=key.replace("-", " ").title(), chart_hint=chart_hint,
+        identity_bearing=identity_bearing,
+        deployment_aggregate=not identity_bearing, schedulable=not identity_bearing,
     )
 
 
@@ -16,15 +18,15 @@ EXISTING_REPORT_DEFINITIONS = (
         ("currency", "method", "collected_amount", "refunded_amount", "net_amount"),
         required_action=rbac.Action.VIEW_FINANCE, title="Cash book",
     ),
-    _legacy("summary", (), exportable=False, summary=True, chart_hint="stats"),
+    _legacy("summary", ("products", "assets", "active_loans", "available_quantity", "issued_quantity", "damaged_quantity", "missing_quantity"), exportable=False, summary=True, chart_hint="stats"),
     _legacy("taken-items", ("product", "issued_quantity")),
-    _legacy("active-loans", ("id", "requester", "status", "issued_at"), chart_hint="line"),
-    _legacy("returns", ("id", "requester", "status", "closed_at"), chart_hint="line"),
+    _legacy("active-loans", ("id", "requester", "status", "issued_at"), chart_hint="line", identity_bearing=True),
+    _legacy("returns", ("id", "requester", "status", "closed_at"), chart_hint="line", identity_bearing=True),
     _legacy("damaged-missing", ("product", "damaged_quantity", "missing_quantity"), chart_hint="grouped_bar"),
     _legacy("damaged-lost", ("product_name", "damaged_quantity", "lost_quantity"), chart_hint="grouped_bar"),
     _legacy("qr-scans", ("context", "count"), chart_hint="donut"),
     _legacy("most-lent", ("product_name", "times_lent", "total_quantity_lent")),
-    _legacy("top-borrowers", ("holder", "requests", "items_borrowed"), chart_hint="grouped_bar"),
+    _legacy("top-borrowers", ("holder", "requests", "items_borrowed"), chart_hint="grouped_bar", identity_bearing=True),
     _legacy("recently-added", ("product_name", "created_at", "total_quantity"), chart_hint="line"),
     ReportDefinition("machine-usage", "apps.operations.reports_machine_usage.build_machine_usage", ("machine_id", "machine_name", "machine_type", "is_active", "usage_entries", "usage_hours"), ("machines",), title="Machine usage", chart_hint="bar"),
     ReportDefinition("event-attendance", "apps.operations.reports_events.build_event_attendance", ("event_id", "series_id", "series_title", "series_occurrence_key", "title", "starts_at", "status", "capacity", "registrations", "confirmed", "pending_approval", "registered", "waitlisted", "rejected", "cancelled", "attended", "attendance_rate_percent", "feedback_responses", "active_certificates", "revoked_certificates", "organizers"), ("events",), required_action=rbac.Action.MANAGE_EVENTS, title="Event attendance", chart_hint="line"),

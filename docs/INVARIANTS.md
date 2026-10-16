@@ -440,6 +440,15 @@ holds canonical `ReportDefinition`s (module-gated, `report_scope.eligible_makers
 contract; **aggregate output groups by `makerspace_id` and never flattens cross-tenant data**. Per-makerspace
 report rows are gated by query-level scope (no per-row Python check → no N+1).
 
+**Platform-service metering has one anonymous exception to `makerspace_id` grouping.**
+Only `platform-services`, with a server-owned active-superadmin `PlatformContext`, may use
+`operations/platform_scope.hidden_platform_service_bucket`: hidden tenants' platform-provider usage
+is one `hidden_makerspaces` count per allowlisted service and calendar day, without tenant id, name,
+outcome or other breakdown. Own-provider usage is excluded. All other platform analytics (including
+activity, adoption and growth) use `platform_dashboard.platform_spaces()` and omit hidden tenants
+even when the operator has a local membership. Tenant-local reports instead apply
+`superadmin_hidden_block_applies` for the report's own action. `eligible_makerspaces()` is unchanged.
+
 **One narrow, deliberate exception to the no-flattening rule, added 2026-08-20 by owner decision** after a
 Stage-4 review correctly flagged the organization dashboard as a regression of it: **a single
 organization's server-resolved OWNER set may carry a combined total, and that total may only ACCOMPANY —

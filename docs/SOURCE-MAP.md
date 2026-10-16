@@ -347,6 +347,13 @@ Platform monitoring uses `admin_api/views_platform_monitoring.py` and its schema
 and `scheduler_telemetry.py` own scheduled checks and beat completion telemetry.
 Tenant counters and allowances are read by `makerspaces/usage_snapshot.py`.
 
+Report infrastructure: `operations/report_registry.py` composes `report_definitions_<area>.py`;
+`report_validation.py` validates privacy flags and chart specs (also a Django check),
+`report_output.py` projects public rows, and `platform_scope.py` separates platform context
+and service buckets from tenant authority. Organization builders register combine functions
+with `org_report_aggregate.register_combine`; `report_coverage_contract.py` is the phase-1f
+module-to-report acceptance table, separate from runtime prerequisites.
+
 Membership admission is described in [membership-admission.md](membership-admission.md).
 `makerspaces/models_admission.py` owns the settings and immutable vouch models.
 `membership_services.py` remains the explicit compatibility barrel over

@@ -4,6 +4,7 @@ from django.core import checks
 
 from apps.makerspaces.module_registry import MODULE_KEYS
 from apps.operations.report_registry import REPORT_REGISTRY
+from apps.operations.report_coverage_contract import REPORT_COVERAGE_AREAS
 
 
 @dataclass(frozen=True)
@@ -54,7 +55,7 @@ REPORT_MODULE_COVERAGE = {
 def check_report_module_coverage(app_configs=None, **kwargs):
     errors = []
     missing = MODULE_KEYS - REPORT_MODULE_COVERAGE.keys()
-    extra = REPORT_MODULE_COVERAGE.keys() - MODULE_KEYS
+    extra = REPORT_MODULE_COVERAGE.keys() - MODULE_KEYS - REPORT_COVERAGE_AREAS
     if missing or extra:
         errors.append(checks.Error(
             f"Report coverage differs from module registry; missing={sorted(missing)}, extra={sorted(extra)}.",
@@ -62,7 +63,7 @@ def check_report_module_coverage(app_configs=None, **kwargs):
         ))
     for module_key, coverage in REPORT_MODULE_COVERAGE.items():
         from apps.makerspaces.module_registry import module_available
-        if not module_available(module_key):
+        if module_key in MODULE_KEYS and not module_available(module_key):
             continue
         for report_key in coverage.reports:
             definition = REPORT_REGISTRY.get(report_key)

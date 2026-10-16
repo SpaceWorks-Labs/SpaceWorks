@@ -987,7 +987,6 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "active-loans",
                                 "booking-utilization",
                                 "cash-book",
                                 "certification-coverage",
@@ -1015,11 +1014,9 @@
                                 "procurement-performance",
                                 "qr-scans",
                                 "recently-added",
-                                "returns",
                                 "revenue-over-time",
                                 "summary",
-                                "taken-items",
-                                "top-borrowers"
+                                "taken-items"
                             ]
                         },
                         "required": true
@@ -46632,6 +46629,18 @@
                     },
                     {
                         "in": "query",
+                        "name": "grain",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "day",
+                                "month",
+                                "week"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
                         "name": "limit",
                         "schema": {
                             "type": "integer"
@@ -46651,7 +46660,6 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "active-loans",
                                 "booking-utilization",
                                 "damaged-lost",
                                 "damaged-missing",
@@ -46666,10 +46674,8 @@
                                 "payment-reconciliation",
                                 "qr-scans",
                                 "recently-added",
-                                "returns",
                                 "summary",
-                                "taken-items",
-                                "top-borrowers"
+                                "taken-items"
                             ]
                         },
                         "required": true
@@ -51962,7 +51968,6 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "active-loans",
                                 "booking-utilization",
                                 "cash-book",
                                 "certification-coverage",
@@ -51990,11 +51995,9 @@
                                 "procurement-performance",
                                 "qr-scans",
                                 "recently-added",
-                                "returns",
                                 "revenue-over-time",
                                 "summary",
-                                "taken-items",
-                                "top-borrowers"
+                                "taken-items"
                             ]
                         },
                         "required": true
@@ -102335,6 +102338,14 @@
                 "type": "string",
                 "description": "* `repair` - repair\n* `scrap` - scrap\n* `shelve` - shelve"
             },
+            "NegativesEnum": {
+                "enum": [
+                    "allow",
+                    "clip"
+                ],
+                "type": "string",
+                "description": "* `allow` - allow\n* `clip` - clip"
+            },
             "Notification": {
                 "type": "object",
                 "properties": {
@@ -106222,6 +106233,15 @@
                     "id",
                     "name"
                 ]
+            },
+            "PartitionEnum": {
+                "enum": [
+                    "tenant",
+                    "currency",
+                    "unit"
+                ],
+                "type": "string",
+                "description": "* `tenant` - tenant\n* `currency` - currency\n* `unit` - unit"
             },
             "PasswordLoginResult": {
                 "oneOf": [
@@ -116301,6 +116321,17 @@
                     "chart_hint": {
                         "type": "string"
                     },
+                    "chart_spec": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ReportChartSpec"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "identity_bearing": {
+                        "type": "boolean"
+                    },
                     "aggregate_supported": {
                         "type": "boolean"
                     },
@@ -116328,10 +116359,12 @@
                     "allowed_formats",
                     "available",
                     "chart_hint",
+                    "chart_spec",
                     "condition_metrics",
                     "exportable",
                     "fields",
                     "grains",
+                    "identity_bearing",
                     "key",
                     "previewable",
                     "required_modules",
@@ -116339,6 +116372,119 @@
                     "summary",
                     "title",
                     "unavailable_reason"
+                ]
+            },
+            "ReportChartAxis": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/ReportChartAxisKindEnum"
+                    }
+                },
+                "required": [
+                    "field",
+                    "kind"
+                ]
+            },
+            "ReportChartAxisKindEnum": {
+                "enum": [
+                    "time",
+                    "category"
+                ],
+                "type": "string",
+                "description": "* `time` - time\n* `category` - category"
+            },
+            "ReportChartSpec": {
+                "type": "object",
+                "properties": {
+                    "series": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "x": {
+                        "$ref": "#/components/schemas/ReportChartAxis"
+                    },
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ReportChartValue"
+                        }
+                    },
+                    "currency_field": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "partition": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PartitionEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "negatives": {
+                        "$ref": "#/components/schemas/NegativesEnum"
+                    },
+                    "truncation": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ReportChartTruncation"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "alt_template": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "alt_template",
+                    "currency_field",
+                    "negatives",
+                    "partition",
+                    "series",
+                    "truncation",
+                    "values",
+                    "x"
+                ]
+            },
+            "ReportChartTruncation": {
+                "type": "object",
+                "properties": {
+                    "top_n": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "other_label": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "other_label",
+                    "top_n"
+                ]
+            },
+            "ReportChartValue": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "field",
+                    "unit"
                 ]
             },
             "ReportCondition": {

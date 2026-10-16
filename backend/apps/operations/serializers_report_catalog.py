@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .serializers_report_chart import ReportChartSpecSerializer
 
 
 class ReportCatalogItemSerializer(serializers.Serializer):
@@ -12,6 +13,8 @@ class ReportCatalogItemSerializer(serializers.Serializer):
     unavailable_reason = serializers.CharField(allow_null=True)
     grains = serializers.ListField(child=serializers.CharField())
     chart_hint = serializers.CharField()
+    chart_spec = ReportChartSpecSerializer(allow_null=True)
+    identity_bearing = serializers.BooleanField()
     aggregate_supported = serializers.BooleanField()
     allowed_formats = serializers.ListField(child=serializers.ChoiceField(choices=["csv", "xlsx", "pdf"]))
     schedulable = serializers.BooleanField()

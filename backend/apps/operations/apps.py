@@ -7,3 +7,4 @@ class OperationsConfig(AppConfig):
 
     def ready(self):
         from apps.operations import report_coverage  # noqa: F401
+        from apps.operations import report_validation  # noqa: F401

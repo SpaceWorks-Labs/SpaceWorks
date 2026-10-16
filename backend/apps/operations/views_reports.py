@@ -112,7 +112,7 @@ class ReportCatalogView(APIView):
         for definition in REPORT_DEFINITIONS:
             # General report controls cannot supply an exact domain subject.
             # Subject-only reports remain available from their resource's UI.
-            if definition.subject_kind:
+            if definition.subject_kind or definition.platform_only:
                 continue
             if not rbac.can(request.user, definition.required_action, makerspace.id):
                 continue
@@ -138,6 +138,8 @@ class AggregateReportCatalogView(APIView):
     )
     def get(self, request, *args, **kwargs):
         _require_superadmin(request.user)
+        from .platform_scope import _platform_context_for_view
+        _platform_context_for_view(request)
         return Response({"results": [
             _catalog_entry(definition, available=None, reason=None)
             for definition in DEPLOYMENT_AGGREGATE_REPORT_DEFINITIONS
@@ -178,12 +180,15 @@ class AggregateAnalyticsView(APIView):
         from .report_subjects import reject_aggregate
         reject_aggregate(request.query_params)
         _require_superadmin(request.user)
-        definition = reports.validate_report_key(report_key, deployment_aggregate=True)
+        from .platform_scope import _platform_context_for_view
+        context = _platform_context_for_view(request)
+        definition = reports.validate_report_key(report_key, deployment_aggregate=True, platform_context=context)
         return Response(reports.report_data(
             report_key, limit=_limit_param(request), date_range=_date_range(request),
             actor=request.user,
             report_filters=_report_filters(request, report_key),
             grain=_grain_param(request, definition),
+            platform_context=context,
         ))
 
 
@@ -240,10 +245,12 @@ class AggregateReportExportView(APIView):
         from .report_subjects import reject_aggregate
         reject_aggregate(request.query_params)
         _require_superadmin(request.user)
+        from .platform_scope import _platform_context_for_view
+        context = _platform_context_for_view(request)
         definition = reports.validate_report_key(
-            report_key, for_export=True, deployment_aggregate=True
+            report_key, for_export=True, deployment_aggregate=True, platform_context=context,
         )
-        return _export_response(request, definition, None)
+        return _export_response(request, definition, None, platform_context=context)
 
 
 def report_data(makerspace_id, report_key):
@@ -261,6 +268,7 @@ def _catalog_entry(definition, *, available, reason):
         "summary": definition.summary, "required_modules": list(definition.required_modules),
         "available": available, "unavailable_reason": reason,
         "grains": list(definition.grains or ("day",)), "chart_hint": definition.chart_hint,
+        "chart_spec": definition.chart_spec, "identity_bearing": definition.identity_bearing,
         "aggregate_supported": definition.key in STRATEGIES,
         "allowed_formats": list(definition.allowed_formats),
         "schedulable": definition.schedulable, "previewable": definition.previewable,

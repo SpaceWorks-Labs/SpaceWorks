@@ -1,5 +1,7 @@
 """Canonical composition point for every report definition."""
 
+from dataclasses import replace
+
 from apps.operations.report_definitions_audit import AUDIT_REPORT_DEFINITIONS
 from apps.operations.report_definitions_coverage import COVERAGE_REPORT_DEFINITIONS
 from apps.operations.report_definitions_existing import EXISTING_REPORT_DEFINITIONS
@@ -26,6 +28,13 @@ REPORT_DEFINITIONS = (
 from apps.separability.tombstones import tombstoned_app_labels
 REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS
                            if not set(d.required_modules) & tombstoned_app_labels())
+# Declare infrastructure scope alongside data fields, without changing tenant
+# builders' column order or propagating scope into subject-only definitions.
+REPORT_DEFINITIONS = tuple(
+    replace(d, fields=("makerspace_id", *d.fields))
+    if d.deployment_aggregate and "makerspace_id" not in d.fields else d
+    for d in REPORT_DEFINITIONS
+)
 REPORT_REGISTRY = {definition.key: definition for definition in REPORT_DEFINITIONS}
 REPORT_KEYS = [definition.key for definition in REPORT_DEFINITIONS]
 # The only definitions any deployment-wide (all-makerspaces) surface may enumerate or run.
@@ -37,10 +46,17 @@ DEPLOYMENT_AGGREGATE_REPORT_KEYS = [
 ]
 
 
-def report_definition(report_key, *, for_export=False, deployment_aggregate=False):
+def report_definition(report_key, *, for_export=False, deployment_aggregate=False, platform_context=None):
     definition = REPORT_REGISTRY.get(report_key)
     if definition is None or (deployment_aggregate and not definition.deployment_aggregate):
         raise ReportNotFound()
+    if definition.platform_only:
+        if platform_context is None:
+            raise ReportNotFound()
+        from .platform_scope import require_platform_context
+        require_platform_context(platform_context)
+    from .report_validation import validate_report_definition
+    validate_report_definition(definition)
     if for_export and not definition.exportable:
         raise ReportNotExportable()
     return definition

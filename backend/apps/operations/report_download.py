@@ -9,7 +9,7 @@ from .report_exports_provenance import actor_label, build_provenance, export_fil
 from .views_report_helpers import _date_range, _makerspace_for_report_view
 
 
-def _export_response(request, definition, makerspace_id):
+def _export_response(request, definition, makerspace_id, *, platform_context=None):
     """Build the file through the canonical row path and stamp its provenance.
 
     Every input the builder saw is echoed into the provenance filters, so a reader of the
@@ -27,6 +27,7 @@ def _export_response(request, definition, makerspace_id):
         definition.key, makerspace_id, date_range=date_range,
         actor=request.user,
         report_filters=report_filters, grain=grain,
+        platform_context=platform_context,
     )
     provenance = build_provenance(
         definition.key, version=definition.version, makerspace_id=makerspace_id,

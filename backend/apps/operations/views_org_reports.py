@@ -22,6 +22,7 @@ from apps.operations.views_reports import (
     _limit_param,
     _report_filters,
 )
+from .report_request_contract import _grain_param
 from apps.organizations.models import Organization, OrganizationMembership
 from apps.accounts.native_session import is_native_session
 
@@ -106,6 +107,7 @@ class OrganizationAnalyticsView(APIView):
             OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
             *DATE_RANGE_PARAMETERS,
             *PAYMENT_FILTER_PARAMETERS,
+            OpenApiParameter("grain", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["day", "week", "month"]),
         ],
         responses={
             200: OrganizationReportResponseSerializer,
@@ -129,6 +131,7 @@ class OrganizationAnalyticsView(APIView):
                 limit=_limit_param(request),
                 date_range=_date_range(request),
                 report_filters=_report_filters(request, report_key),
+                grain=_grain_param(request, definition),
             )
         except (OrganizationReportScopeError, org_reports.OrganizationAggregationError) as exc:
             raise InvalidOrganizationReport(exc) from exc

@@ -60,16 +60,6 @@ STRATEGIES = {
         AggregationKind.GROUP_SUM, ("product_id",), ("product", "issued_quantity"),
         ordering=("-issued_quantity", "product"), text=(("product", "carry display label; distinct products are never merged by name"),),
     ),
-    "active-loans": _strategy(
-        AggregationKind.GROUP_SUM, ("request_id",), ("id", "requester", "status", "issued_at"),
-        ordering=("-issued_at", "id"),
-        text=(("requester", "carry"), ("status", "carry"), ("issued_at", "carry and order descending")),
-    ),
-    "returns": _strategy(
-        AggregationKind.GROUP_SUM, ("request_id",), ("id", "requester", "status", "closed_at"),
-        ordering=("-closed_at", "id"),
-        text=(("requester", "carry"), ("status", "carry"), ("closed_at", "carry and order descending")),
-    ),
     "damaged-missing": _strategy(
         AggregationKind.GROUP_SUM, ("product_id",), ("product", "damaged_quantity", "missing_quantity"),
         ordering=("product",), text=(("product", "carry; distinct products are never merged by name"),),
@@ -116,11 +106,6 @@ STRATEGIES = {
         ordering=("-times_lent", "-total_quantity_lent", "product_name"),
         limit=LimitSemantics.PER_SPACE_THEN_GLOBAL,
         text=(("product_name", "carry; products remain distinct even when labels match"),),
-    ),
-    "top-borrowers": _strategy(
-        AggregationKind.GLOBAL_RANK, ("requester_id",), ("holder", "requests", "items_borrowed"),
-        ordering=("-requests", "-items_borrowed", "requester_id"),
-        text=(("holder", "label from newest qualifying request after global regrouping"),),
     ),
     "member-activity": _strategy(
         AggregationKind.DISTINCT_PERSON, ("user_id",),

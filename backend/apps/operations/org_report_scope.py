@@ -36,6 +36,7 @@ ORGANIZATION_REPORT_ACTIONS = frozenset({
     rbac.Action.MANAGE_BOOKINGS,
 })
 EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
+    "active-loans", "returns", "top-borrowers",
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
     "event-registrations", "event-feedback", "event-attendance-pdf",
     # Financial detail and accounting custody stay tenant-local. Different local
@@ -72,6 +73,8 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "module-operational-health",
     "machine-service",
     "printer-service",
+    # Medians/percentiles cannot be reconstructed by averaging tenant summaries.
+    "service-queue-times", "booking-lead-time", "event-checkin-times",
 })
 
 
@@ -97,6 +100,11 @@ def _validate_inputs(
         raise ValueError("organization must be saved before resolving report scope.")
     if not isinstance(definition, ReportDefinition):
         raise TypeError("definition must be a ReportDefinition.")
+    if definition.platform_only:
+        from .report_types import ReportNotFound
+        raise ReportNotFound()
+    if definition.identity_bearing:
+        raise UnsupportedOrganizationReport("Identity-bearing reports are tenant-only.")
     if definition.key in EXCLUDED_ORGANIZATION_REPORT_KEYS:
         raise UnsupportedOrganizationReport(
             f"Report {definition.key!r} is unavailable to organization dashboards."

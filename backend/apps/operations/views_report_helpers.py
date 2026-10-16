@@ -77,17 +77,25 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
     spaces = Makerspace.objects.all()
     queryset = rbac.scope_by_action(user, rbac.Action.VIEW_INVENTORY, spaces, field="id")
     definition = REPORT_REGISTRY.get(report_key)
+    if definition is not None and definition.platform_only:
+        raise reports.ReportNotFound()
     if definition is not None:
         queryset = queryset | rbac.scope_by_action(
             user, definition.required_action, spaces, field="id"
         )
     queryset = rbac.hide_from_superadmin(user, queryset, field="id")
-    return get_object_or_404(queryset.distinct(), pk=makerspace_id)
+    space = get_object_or_404(queryset.distinct(), pk=makerspace_id)
+    if definition is not None:
+        from .platform_scope import tenant_local_hidden_block_applies
+        if tenant_local_hidden_block_applies(user, space, definition.required_action):
+            from django.http import Http404
+            raise Http404
+    return space
 
 
 def _makerspace_for_catalog(user, makerspace_id):
     queryset = Makerspace.objects.none()
-    for action in {definition.required_action for definition in REPORT_DEFINITIONS}:
+    for action in {definition.required_action for definition in REPORT_DEFINITIONS if not definition.platform_only}:
         queryset = queryset | rbac.scope_by_action(
             user, action, Makerspace.objects.all(), field="id"
         )

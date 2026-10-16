@@ -64,6 +64,10 @@ JSON_REFERENCE_FIELDS = frozenset(
         # Renewal automation stores bounded integer day offsets in JSON lists.
         ("makerspaces.MembershipPlan", "reminder_days_before"),
         ("makerspaces.MembershipPlan", "reminder_days_after"),
+        ("makerspaces.MemberProfile", "domains"),
+        ("makerspaces.MemberProfile", "skills"),
+        ("makerspaces.MemberProfile", "links"),
+        ("makerspaces.MemberProject", "tags"),
         ("makerspaces.MemberProfile", "interests"),
         ("makerspaces.MemberProfile", "languages"),
         ("makerspaces.MemberProfile", "education"),

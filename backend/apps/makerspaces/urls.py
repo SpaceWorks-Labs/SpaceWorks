@@ -29,7 +29,10 @@ from apps.makerspaces.profile_views import (
     MemberDirectoryView,
     MemberProfileView,
 )
+from .profile_contract_urls import urlpatterns as profile_contract_patterns
+
 urlpatterns = [
+    *profile_contract_patterns,
     *subject_export_patterns,
     path("member/makerspaces/<int:makerspace_id>/account/profile", AccountProfileView.as_view(), name="member-account-profile"),
     path("member/makerspaces/<int:makerspace_id>/account/sessions", AccountSessionListView.as_view(), name="member-account-sessions"),

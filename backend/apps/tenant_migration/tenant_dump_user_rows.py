@@ -59,6 +59,9 @@ def apply_user_closure(rows, closure):
         for row in result.get("makerspaces.MemberProject", ())
         if row["profile_id"] not in dropped_profiles
     )
+    for label in ("makerspaces.ProfileTimelineEntry", "makerspaces.PublicHandle"):
+        result[label] = tuple(row for row in result.get(label, ())
+                              if row["profile_id"] not in dropped_profiles)
     return result
 
 

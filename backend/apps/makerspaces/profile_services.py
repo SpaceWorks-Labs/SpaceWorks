@@ -61,6 +61,9 @@ def read_profile(membership, *, include_activity=True, local_activity_only=False
             {
                 "id": project.pk,
                 "title": project.title,
+                "subtitle": project.subtitle,
+                "tags": project.tags,
+                "public_visible": project.public_visible,
                 "description": project.description,
                 "links": project.links or [],
                 "image_url": public_image_storage.public_url(project.image_key) or None,
@@ -71,6 +74,11 @@ def read_profile(membership, *, include_activity=True, local_activity_only=False
             membership, local_only=local_activity_only
         ) if include_activity else {},
     }
+    from .public_profile_validation import PUBLICATION_FIELDS
+    payload.update({field: getattr(profile, field) for field in PUBLICATION_FIELDS})
+    payload["public_consented_at"] = profile.public_consented_at
+    from .models_profiles import PublicHandle
+    payload["handle"] = PublicHandle.objects.filter(profile=profile).values_list("handle", flat=True).first() if profile.pk else None
     return payload
 
 
@@ -135,6 +143,7 @@ def profile_activity(membership, *, local_only=False):
 @transaction.atomic
 def save_profile(membership, data):
     """Apply a partial profile update, replacing the project list when one is sent."""
+    MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
     profile = MemberProfile.objects.select_for_update().filter(
         membership=membership
     ).first() or profile_for(membership)
@@ -149,6 +158,10 @@ def save_profile(membership, data):
         if field in data:
             setattr(profile, field, data[field])
             fields.append(field)
+    from .public_profile_validation import apply_publication, PUBLICATION_FIELDS
+    if any(field in data for field in PUBLICATION_FIELDS):
+        apply_publication(profile, data)
+        fields.extend(field for field in PUBLICATION_FIELDS if field in data)
     if "github_username" in data:
         username = (data["github_username"] or "").strip()
         if username != profile.github_username:
@@ -210,52 +223,7 @@ def _audit_profile_saved(
     )
 
 
-def save_projects(profile, rows):
-    """Replace the project list.
-
-    Replace rather than merge, matching every other list-shaped save in this codebase
-    (role scopes, notification recipients, chat rooms): with a merge there is no way to
-    express deleting one, so the member could add projects forever and remove none.
-
-    An id the caller does not own is a **400, not a silent drop** — a save that quietly
-    discards part of the submission leaves the member believing it was stored.
-    """
-    from rest_framework.exceptions import ValidationError
-
-    existing = {project.pk: project for project in profile.projects.all()}
-    seen = set()
-    for position, row in enumerate(rows):
-        project_id = row.get("id")
-        if project_id is not None:
-            project = existing.get(project_id)
-            if project is None:
-                raise ValidationError({"projects": f"Unknown project id {project_id}."})
-            project.title = row["title"]
-            project.description = row.get("description", "")
-            project.links = row.get("links", [])
-            project.position = position
-            project.save(
-                update_fields=["title", "description", "links", "position", "updated_at"]
-            )
-            seen.add(project_id)
-            continue
-        MemberProject.objects.create(
-            profile=profile,
-            title=row["title"],
-            description=row.get("description", ""),
-            links=row.get("links", []),
-            position=position,
-        )
-    removed = [project for pk, project in existing.items() if pk not in seen]
-    for project in removed:
-        # Freed and deleted through the image service so the storage counter and the
-        # bucket stay in step with the row disappearing.
-        from apps.makerspaces import profile_images
-
-        profile_images.clear_project_image(profile, project)
-    MemberProject.objects.filter(
-        pk__in=[project.pk for project in removed]
-    ).delete()
+from .profile_projects import save_projects  # noqa: E402
 
 
 # The member-visible directory lives in its own module (file-size ceiling); re-exported so

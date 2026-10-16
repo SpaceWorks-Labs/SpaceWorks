@@ -238,6 +238,9 @@ def _insert_models(
                 object_key_map=object_key_map,
             )
             if row is None:
+                if label == "makerspaces.PublicHandle":
+                    pk_map.discard_unmaterialized(model, source[model._meta.pk.attname])
+                    accounting.increment("dropped", label)
                 continue
             for field_name, outcome in protect_carried_unique_values(
                 model, row, target, fresh_values

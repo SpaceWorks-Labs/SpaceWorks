@@ -37,6 +37,9 @@ _WRITE = ("POST",)
 _ROUTE_DEFINITIONS = (
     # /api/v1/discover/ is outside HMAC_PROTECTED_PATH_PREFIXES, so "website-discover"
     # must not be registered: an entry there is stale by construction.
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False) for name in (
+        "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects",
+    )),
     *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
         "public-booking-resource", "public-booking-website", "public-booking-website-image",
     )),

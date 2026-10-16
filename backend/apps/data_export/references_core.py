@@ -16,6 +16,7 @@ RAW_USER_REFERENCE_FIELDS = frozenset(  # Raw integers are not discoverable as F
 # SpacePackProfile has no accounts.User FKs; platform attribution lives in AuditLog.
 RELATIONAL_USER_FIELDS = frozenset(
     {
+        ("makerspaces.PublicHandle", "user"),
         ("bookings.BookingBroadcast", "created_by"),
         ("bookings.BookingBroadcastDelivery", "recipient"),
         ("events.EventBroadcast", "created_by"),

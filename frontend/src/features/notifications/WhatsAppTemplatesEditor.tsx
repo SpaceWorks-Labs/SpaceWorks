@@ -5,6 +5,10 @@ const AUDIENCES: { key: WhatsAppTemplate["audience"]; label: string }[] = [
   { key: "member", label: "Members" }, { key: "requester", label: "Requesters" }, { key: "staff", label: "Staff" },
 ];
 const blank: WhatsAppTemplate = { event: "", audience: "member", locale: "en", template_name: "", variables: [] };
+const CONNECTION_TEMPLATES = [
+  { event: "notification_opt_in", label: "Add opt-in template", variables: ["code"] },
+  { event: "notification_test", label: "Add test template", variables: [] },
+];
 
 /**
  * Event -> approved template bindings, shared by the Twilio and Meta providers. Outside the
@@ -19,6 +23,8 @@ export function WhatsAppTemplatesEditor({ templates, disabled, onChange }: {
   return <fieldset className="grid min-w-0 gap-3 rounded-lg border border-line p-3">
     <legend className="px-1 text-sm font-semibold text-ink">Message templates</legend>
     <p className="text-sm text-muted">Bind each notification event to a template your provider approved. Variables are filled in order.</p>
+    <p className="text-sm text-muted">For Twilio and Meta, connecting uses notification_opt_in (member, en) with the code variable.
+      Test sends use notification_test (member, en) with no variables.</p>
     {templates.length ? null : <p className="text-sm text-muted">No templates yet.</p>}
     {templates.map((row, index) => <div key={index} role="group" aria-label={`Template ${index + 1}`}
       className="grid min-w-0 gap-2 rounded-md border border-line p-3 sm:grid-cols-2">
@@ -39,7 +45,12 @@ export function WhatsAppTemplatesEditor({ templates, disabled, onChange }: {
           onClick={() => onChange(templates.filter((_, at) => at !== index))}>Remove template</button>
       </div>
     </div>)}
-    <div><button type="button" className="desk-button" disabled={disabled || templates.length >= 100}
-      onClick={() => onChange([...templates, { ...blank }])}>Add template</button></div>
+    <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={disabled || templates.length >= 100}
+      onClick={() => onChange([...templates, { ...blank }])}>Add template</button>
+      {CONNECTION_TEMPLATES.map(binding => <button key={binding.event} type="button" className="desk-button"
+        disabled={disabled || templates.length >= 100 || templates.some(row => row.event === binding.event && row.audience === "member" && row.locale === "en")}
+        onClick={() => onChange([...templates, { ...blank, event: binding.event, variables: [...binding.variables] }])}>
+        {binding.label}</button>)}
+    </div>
   </fieldset>;
 }

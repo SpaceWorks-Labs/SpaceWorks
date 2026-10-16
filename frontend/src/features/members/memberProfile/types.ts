@@ -28,6 +28,7 @@ export type MemberPublication = Partial<FamilyFlags> & {
 };
 
 export type MemberProfile = MemberPublication & {
+  verified: boolean;
   membership_id: number;
   display_name: string;
   is_visible: boolean;

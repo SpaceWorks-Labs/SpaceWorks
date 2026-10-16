@@ -3,6 +3,7 @@ export type DashboardCounts = {
   pending_event_registrations?: number;
   pending_bookings?: number;
   upcoming_bookings?: number;
+  open_booking_issues?: number;
   scope_mode: "machine" | "full";
   overdue_loans?: number;
   pending_requests?: number;
@@ -41,6 +42,7 @@ export const TILES: Tile[] = [
   { key: "pending_payments", label: "Pending payments", actionNeeded: true, tone: "emphasis" },
   { key: "pending_event_registrations", label: "Registrations awaiting approval", actionNeeded: true, tone: "warn" },
   { key: "pending_bookings", label: "Bookings awaiting approval", actionNeeded: true, tone: "warn" },
+  { key: "open_booking_issues", label: "Booking issues", actionNeeded: true, tone: "warn" },
   { key: "upcoming_events", label: "Upcoming events", actionNeeded: false, tone: "accent" },
   { key: "upcoming_bookings", label: "Upcoming bookings", actionNeeded: false, tone: "accent" },
   { key: "pending_prints", label: "Pending prints", actionNeeded: false, tone: "warn" },
@@ -59,4 +61,3 @@ export const MACHINE_TILE_KEYS = new Set<Tile["key"]>([
   "warranty_expiring",
   "maintenance_overdue",
 ]);
-

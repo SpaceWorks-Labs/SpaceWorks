@@ -4,6 +4,7 @@ const destinations: Record<string, { tab: string; filters: Record<string, string
   pending_event_registrations: { tab: "events", filters: {} },
   pending_bookings: { tab: "bookings", filters: { status: "pending" } },
   upcoming_bookings: { tab: "bookings", filters: { status: "confirmed" } },
+  open_booking_issues: { tab: "bookings", filters: { view: "issues" } },
   overdue_loans: { tab: "accountability", filters: { section: "overdue" } },
   pending_requests: { tab: "requests", filters: { queue: "pending" } },
   awaiting_issue: { tab: "requests", filters: { queue: "accepted" } },

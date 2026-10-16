@@ -9,8 +9,8 @@ const GRAMMAR = "3–30 lowercase letters, numbers, dots, underscores or hyphens
  * Claim, change or release the account's public handle. The server is the authority on
  * reserved names, collisions and the 30-day cooldown; the client check only spares a round trip.
  */
-export function HandleField({ makerspaceId, handle, onReleased }: {
-  makerspaceId: number; handle: string | null; onReleased: () => void;
+export function HandleField({ makerspaceId, handle }: {
+  makerspaceId: number; handle: string | null;
 }) {
   const claim = useClaimHandle(makerspaceId);
   const release = useReleaseHandle(makerspaceId);
@@ -52,6 +52,6 @@ export function HandleField({ makerspaceId, handle, onReleased }: {
     <ConfirmDialog open={confirmRelease} tone="danger" title="Release your handle?" confirmLabel="Release handle" pending={release.isPending}
       message="Your public page goes offline now. The name stays reserved for 30 days, you can't claim another handle until then, and publishing again needs your consent again."
       onCancel={() => setConfirmRelease(false)}
-      onConfirm={() => release.mutate(undefined, { onSuccess: () => { setConfirmRelease(false); setEditing(true); setValue(""); onReleased(); }, onError: () => setConfirmRelease(false) })} />
+      onConfirm={() => release.mutate(undefined, { onSuccess: () => { setConfirmRelease(false); setEditing(true); setValue(""); }, onError: () => setConfirmRelease(false) })} />
   </div>;
 }

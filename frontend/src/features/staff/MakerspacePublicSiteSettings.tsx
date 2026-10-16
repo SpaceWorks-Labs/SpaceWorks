@@ -27,7 +27,7 @@ export function MakerspacePublicSiteSettings({ makerspace, loading }: { makerspa
         {[["auto", "Automatic"], ["inventory", "Inventory"], ["events", "Events"], ["bookings", "Bookings"], ["machines", "Machines"], ["membership", "Membership"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
     </label>
-    <p className="text-xs text-muted">If the selected family is disabled, the home uses an available family.</p>
+    <p className="text-xs text-muted">Automatic and Inventory now show the combined makerspace page. If the selected family is disabled, the home uses an available family.</p>
     <details onToggle={(event) => setEmbedOpen(event.currentTarget.open)}><summary className="cursor-pointer font-semibold">Website embedding</summary>{embedOpen ? <WebsiteEmbedOrigins makerspaceId={makerspace.id} /> : null}</details>
     {update.error ? <p role="alert" className="text-sm text-danger">{update.error.message}</p> : null}
   </div>;

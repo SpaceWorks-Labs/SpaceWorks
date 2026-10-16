@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Eye } from "lucide-react";
 import { ConfirmDialog, SettingsRow, SettingsSection, StatusPill } from "../../../components/ui";
 import { RouteLink } from "../../../components/ui/RouteLink";
-import { removeStorage, writeStorage } from "../../../lib/safeStorage";
 import type { MemberProfile } from "../../members/memberProfile/types";
-import { ownerEditKey } from "../publicProfileApi";
 import { HandleField } from "./HandleField";
 import { fieldError, usePatchPublication, useTimeline } from "./profileEditApi";
 import { ProfilePreviewDialog } from "./ProfilePreviewDialog";
@@ -24,16 +22,11 @@ export function PublicPageSettings({ makerspaceId, profile }: { makerspaceId: nu
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
   const [previewing, setPreviewing] = useState(false);
 
-  // Lets the public page offer this owner an "Edit profile" link in this browser.
-  useEffect(() => {
-    if (handle) writeStorage(ownerEditKey(handle), `${window.location.pathname}${window.location.search}`);
-  }, [handle]);
-
   const publish = () => publication.mutate({ public_visible: true, publication_consent: true }, { onSuccess: () => setConsenting(false) });
   return <SettingsSection title="Public profile page"
     description="A page anyone can open at your own address. It is separate from the member directory and stays offline until you publish it.">
     <SettingsRow label="Handle" helper="Your public address. One per account." htmlFor={`profile-handle-${makerspaceId}`}>
-      <HandleField makerspaceId={makerspaceId} handle={handle} onReleased={() => { if (handle) removeStorage(ownerEditKey(handle)); }} />
+      <HandleField makerspaceId={makerspaceId} handle={handle} />
     </SettingsRow>
     <SettingsRow label="Publication" helper={published && profile.public_consented_at
       ? `Published with your consent on ${new Date(profile.public_consented_at).toLocaleDateString()}.` : "Only you can publish, and only after confirming."}>

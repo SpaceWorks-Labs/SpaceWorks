@@ -38,12 +38,12 @@ export function setRuntimePublishableKey(key: string) {
   runtimePublishableKey = key.trim();
 }
 
-export function cacheTenantPublishableKey(slug: string, key: string) {
+export function cacheTenantPublishableKey(slug: string, key: string, activate = true) {
   const normalized = slug.trim();
   const normalizedKey = key.trim();
   if (normalized && normalizedKey) {
     tenantPublishableKeys.set(normalized, normalizedKey);
-    activeTenantSlug = normalized;
+    if (activate) activeTenantSlug = normalized;
   }
 }
 

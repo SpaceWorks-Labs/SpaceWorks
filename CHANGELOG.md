@@ -11,6 +11,15 @@ generation stopped afterwards, so **0.3.0 through 0.5.1 were never recorded here
 window see `git log` and the condensed changelog in `CLAUDE.md`, which also carries the design
 rule each change introduced.
 
+## Unreleased
+
+- Seven fixed roles replace editable roles. Staff role sets combine except Space Manager and Member,
+  which stand alone; Machine Manager reach is assigned per person by machine type. The console now
+  provides role-set checkboxes, a read-only role reference and per-person type controls.
+- **Operator action required:** fixed-role migration is irreversible. Back up, stop writers, run the
+  new image's `python manage.py preview_fixed_roles` before `migrate`, and fix all “must fix before
+  upgrading” notification rules. Follow the [upgrade procedure](docs/update-recovery.md#fixed-role-upgrade-2026-10-16).
+
 ## 0.9.2 (2026-10-14)
 
 - **Deploys run on a self-hosted GitHub Actions runner** - after the release workflow publishes a main

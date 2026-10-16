@@ -18,10 +18,9 @@ from .models_certifications import CertificationGrant, CertificationType
 from .models_policy import MakerspaceMachineTypePolicy
 from .printing_cutover_models import PrintingCutoverRepair, PrintingCutoverState
 
-# Role -> machine/type scope links. Imported here so Django registers them with this app;
-# they use string FK references, so the import order relative to MachineType/Machine below
-# does not matter.
-from .models_role_scope import RoleMachineScope, RoleMachineTypeScope
+# Per-membership type scope links. String FK references make import order independent
+# of the MachineType/Machine declarations below.
+from .models_membership_scope import MembershipMachineTypeScope
 from .models_catalog import (
     Machine,
     MachineOperator,
@@ -48,14 +47,13 @@ __all__ = [
     "MachineOperator",
     "MachineServiceRequest",
     "MachineType",
+    "MembershipMachineTypeScope",
     "MachineUsageEntry",
     "MachineUsageEntryQuerySet",
     "MakerspaceMachineTypePricing",
     "MakerspaceMachineTypePolicy",
     "PrintingCutoverRepair",
     "PrintingCutoverState",
-    "RoleMachineScope",
-    "RoleMachineTypeScope",
     "ServiceBucket",
     "ServiceQueue",
     "ServiceRequestConsumption",

@@ -1,9 +1,8 @@
-"""Direct machine-role grants and default scope seeding."""
+"""Direct grants from valid membership role unions."""
 
 from apps.accounts import rbac
 from apps.accounts.rbac import Action
 
-from .models_role_scope import RoleMachineTypeScope
 from .role_scope_resolution import EXEMPT, manage_scope_for
 
 
@@ -48,18 +47,11 @@ def role_grants_directly(actor, makerspace_id, action):
     """
     if actor is None or not getattr(actor, "is_authenticated", False):
         return False
-    membership = actor.makerspace_memberships.select_related("assigned_role").filter(
-        status="active", makerspace_id=makerspace_id
-    ).first()
-    if membership is None:
-        return False
-    if membership.assigned_role_id is None:
-        return action in rbac._MEMBERSHIP_ROLE_ACTIONS.get(membership.role, ())
-    role = membership.assigned_role
-    if role.makerspace_id != membership.makerspace_id:
-        return False
-    granted = role.granted_actions if isinstance(role.granted_actions, list) else []
-    return action in granted
+    from apps.accounts.rbac_memberships import _membership_for
+    from apps.accounts.rbac_roles import stored_actions_for_membership
+
+    membership = _membership_for(actor, makerspace_id)
+    return action in stored_actions_for_membership(membership)
 
 
 def organization_grants_directly(actor, makerspace_id, action):
@@ -96,11 +88,10 @@ def makerspaces_granting_directly(actor, action):
         if action in actions
     ]
     memberships = actor.makerspace_memberships.filter(status="active")
+    from apps.accounts.rbac_roles import direct_role_filter
+
     scope = set(
-        memberships.filter(
-            assigned_role__isnull=False,
-            assigned_role__granted_actions__contains=[action],
-        ).values_list("makerspace_id", flat=True)
+        memberships.filter(direct_role_filter([action])).values_list("makerspace_id", flat=True)
     )
     if legacy_roles:
         scope |= set(
@@ -109,22 +100,3 @@ def makerspaces_granting_directly(actor, action):
             ).values_list("makerspace_id", flat=True)
         )
     return rbac._exclude_archived_ids(scope)
-
-
-def grant_builtin_type_scope(role):
-    """Link a freshly seeded ``MANAGE_MACHINES`` role to all built-in types."""
-    from .models import MachineType
-
-    granted = role.granted_actions if isinstance(role.granted_actions, list) else []
-    granted = {action for action in granted if isinstance(action, str)}
-    if Action.MANAGE_MACHINES not in granted or Action.MANAGE_MAKERSPACE in granted:
-        return
-    RoleMachineTypeScope.objects.bulk_create(
-        [
-            RoleMachineTypeScope(role=role, machine_type_id=type_id)
-            for type_id in MachineType.objects.filter(
-                makerspace__isnull=True
-            ).values_list("id", flat=True)
-        ],
-        ignore_conflicts=True,
-    )

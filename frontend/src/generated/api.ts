@@ -406,12 +406,10 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/membership-admission",
   "/api/v1/admin/makerspaces/{makerspace_id}/membership-plans",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships",
+  "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/machine-scope",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/role",
   "/api/v1/admin/makerspaces/{makerspace_id}/report-schedules",
   "/api/v1/admin/makerspaces/{makerspace_id}/roles",
-  "/api/v1/admin/makerspaces/{makerspace_id}/roles/capabilities",
-  "/api/v1/admin/makerspaces/{makerspace_id}/roles/{role_id}",
-  "/api/v1/admin/makerspaces/{makerspace_id}/roles/{role_id}/machine-scope",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-report-views",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-report-views/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views",
@@ -519,6 +517,9 @@ export const openApiPaths = [
   "/api/v1/admin/stocktakes/{id}/complete",
   "/api/v1/admin/stocktakes/{id}/count-lines",
   "/api/v1/admin/stocktakes/{id}/resolve-scan",
+  "/api/v1/admin/users/booking-managers",
+  "/api/v1/admin/users/event-managers",
+  "/api/v1/admin/users/handover",
   "/api/v1/admin/users/inventory-managers",
   "/api/v1/admin/users/machine-managers",
   "/api/v1/admin/users/space-managers",
@@ -816,6 +817,8 @@ export type AdminMembership = {
   "status"?: Status37fEnum;
   "user": AdminMembershipUser;
   "assigned_role": AdminMembershipRole | null;
+  "role_ids": Array<number>;
+  "roles": Array<MembershipRole>;
   "can_refer"?: boolean;
   "can_verify"?: boolean;
   "verified_at"?: string | null;
@@ -1152,6 +1155,13 @@ export type AssetQrHistory = {
   "scans": Array<QrHistoryItem>;
 };
 
+export type AssignableMachineType = {
+  "id": number;
+  "name": string;
+  "slug": string;
+  "is_global": boolean;
+};
+
 export type AssignBox = {
   "box_code": string;
 };
@@ -1223,6 +1233,9 @@ export type AuthMembership = {
   "slug": string;
   "role": string | null;
   "role_id": number | null;
+  "role_ids": Array<number>;
+  "role_slugs": Array<string>;
+  "role_names": Array<string>;
   "role_name": string;
   "role_slug": string | null;
   "source": AuthMembershipSourceEnum;
@@ -1647,15 +1660,6 @@ export type BulkImportPreview = {
 };
 
 export type CadenceEnum = "daily" | "weekly" | "monthly";
-
-export type Capability = {
-  "value": string;
-  "label": string;
-  "description": string;
-  "group": string;
-  "grantable": boolean;
-  "lock_reason": string | null;
-};
 
 export type CashBookReport = {
   "rows": Array<Array<unknown>>;
@@ -3789,7 +3793,7 @@ export type LegacyResetPasswordConfirm = {
   "new_password": string;
 };
 
-export type LegacyRoleEnum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager";
+export type LegacyRoleEnum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover";
 
 export type LendingHistoryActor = {
   "username": string;
@@ -3939,13 +3943,6 @@ export type MachineOperator = {
   "access_level": AccessLevelEnum;
   "assigned_by_username": string | null;
   "assigned_at": string;
-};
-
-export type MachineScopeOption = {
-  "id": number;
-  "label": string;
-  "is_builtin"?: boolean;
-  "is_active"?: boolean;
 };
 
 export type MachineServiceConsumption = {
@@ -4789,6 +4786,17 @@ export type MemberLoanHistory = {
   "returned_late": boolean;
 };
 
+export type MemberMachineScope = {
+  "membership_id": number;
+  "scoping_applies": boolean;
+  "machine_type_ids": Array<number>;
+  "available_machine_types": Array<AssignableMachineType>;
+};
+
+export type MemberMachineScopeWrite = {
+  "machine_type_ids": Array<number>;
+};
+
 export type MemberMachineServiceActivity = {
   "machine_type"?: string;
   "title": string;
@@ -4907,12 +4915,13 @@ export type MembershipAccountStatusEnum = "active" | "revoked";
 export type MembershipApprovalOutcome = AdminMembership | MembershipRequest;
 
 export type MembershipCreate = {
+  "role_id"?: number;
+  "role_ids"?: Array<number>;
   "username": string;
   "email"?: string;
   "first_name"?: string;
   "last_name"?: string;
   "password"?: string;
-  "role_id": number;
 };
 
 export type MembershipDispositionEnum = "import_membership" | "no_membership";
@@ -4922,8 +4931,10 @@ export type MembershipList = {
   "user": User;
   "makerspace_id": number;
   "makerspace_slug": string;
-  "role": Role827Enum;
+  "role": RoleCddEnum;
   "assigned_role": MembershipRoleSummary | null;
+  "role_ids": Array<number>;
+  "roles": Array<MembershipRole>;
   "status": Status37fEnum;
   "created_at": string;
   "payment": StaffPaymentSummary | null;
@@ -5031,6 +5042,12 @@ export type MembershipRevenueRow = {
   "arpu": string;
   "churned_members": number;
   "reactivated_members": number;
+};
+
+export type MembershipRole = {
+  "id": number;
+  "slug": string;
+  "name": string;
 };
 
 export type MembershipRoleSummary = {
@@ -5728,7 +5745,6 @@ export type PackConfiguration = {
   "features": Array<string>;
   "settings": PackSettings;
   "opening_hours": PackOpeningHours;
-  "roles": Array<PackMakerspaceRole>;
   "active_waiver": PackMakerspaceWaiver | null;
   "loan_policy": PackMakerspaceLoanPolicy | null;
   "membership_plans": Array<PackMembershipPlan>;
@@ -5814,11 +5830,6 @@ export type PackMakerspaceMembershipSettings = {
   "joining_fee_currency": string;
   "rejoin_dues_rule": RejoinDuesRuleEnum;
   "request_expiry_days": number;
-};
-
-export type PackMakerspaceRole = {
-  "name": string;
-  "granted_actions": unknown;
 };
 
 export type PackMakerspaceWaiver = {
@@ -6759,6 +6770,7 @@ export type PatchedMembershipPlan = {
 
 export type PatchedMembershipRoleAssign = {
   "role_id"?: number;
+  "role_ids"?: Array<number>;
 };
 
 export type PatchedNotificationRecipientsPatch = {
@@ -6871,13 +6883,9 @@ export type PatchedReturnPolicy = {
   "loan_escalate_overdue_days"?: number;
 };
 
-export type PatchedRoleId = {
+export type PatchedRoleSetInput = {
   "role_id"?: number;
-};
-
-export type PatchedRoleWrite = {
-  "name"?: string;
-  "granted_actions"?: Array<string>;
+  "role_ids"?: Array<number>;
 };
 
 export type PatchedSavedReportView = {
@@ -8743,36 +8751,20 @@ export type Role = {
   "legacy_role": LegacyRoleEnum | NullEnum | null;
   "is_default": boolean;
   "is_protected": boolean;
+  "combinable": boolean;
+  "exclusive": boolean;
   "member_count": number;
   "created_at": string;
   "updated_at": string;
 };
 
-export type Role827Enum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager" | "custom";
-
-export type RoleCreate = {
-  "name": string;
-  "granted_actions": Array<string>;
-};
+export type RoleCddEnum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "custom";
 
 export type RoleId = {
   "role_id": number;
 };
 
-export type RoleMachineScope = {
-  "machine_type_ids": Array<number>;
-  "machine_ids": Array<number>;
-  "available_machine_types": Array<MachineScopeOption>;
-  "available_machines": Array<MachineScopeOption>;
-  "scoping_applies": boolean;
-};
-
-export type RoleMachineScopeWrite = {
-  "machine_type_ids": Array<number>;
-  "machine_ids": Array<number>;
-};
-
-export type RoleSlugEnum = "space_manager" | "inventory_manager" | "machine_manager";
+export type RoleSlugEnum = "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover";
 
 export type SavedReportView = {
   "id": number;
@@ -9148,7 +9140,7 @@ export type StaffMembership = {
   "user": User;
   "makerspace_id": number;
   "makerspace_slug": string;
-  "role"?: Role827Enum;
+  "role"?: RoleCddEnum;
   "created_at": string;
 };
 

@@ -174,11 +174,9 @@ the button loses the space and any way to undo it.
   creation refuses a hidden space, and disabling superadmin access refuses while a request is
   pending. Do not remove either half.
 - **Authority is the `MANAGE_MAKERSPACE` ACTION, never `rbac.is_space_manager_identity`.** That
-  helper documents itself as deliberately not inferring identity from actions, so it refuses a
-  custom role granted the action — and editable custom roles are the Part L architecture this
-  project runs on. It was wrong in **two** places (view and service); fixing only the view left
-  the test still 403-ing, which is how the second one was found. Both gates must agree or one is
-  decorative.
+  helper deliberately does not infer identity from actions. Organization-derived authority can
+  carry the action without local Space Manager identity. Both view and service must check the
+  action and agree; changing the role catalogue must not replace either action gate.
 - **The requester must be emailed the outcome**, including auto-approval from a direct archive.
   Once archived they lose RBAC scope, the console, the request history and their tenant domain,
   so no in-app surface can ever tell them. Sends go through `transaction.on_commit`, catch and
@@ -451,14 +449,49 @@ distinct `vendor_contact` value into an encrypted vendor row, and a sweep test o
 and should be built only if the owner decides vendors can be named individuals. Until then, do not
 re-raise the question from a grep for "contact" columns; this entry is the answer.
 
-**Custom editable per-makerspace roles (Part L).** The 5 legacy roles are now editable protected default
-`Role` rows; authority is **action-based** via the assigned role (dual-read with legacy fallback:
-`rbac.actions_for_membership` resolves assigned-role-first, tenant-match-else-fail-closed, strips
-unknown/forbidden actions, null-FK → frozen legacy). `can()`/`makerspaces_for_action()`/hidden-block all
-route through it. `/auth/me` + `/auth/login` carry typed effective `actions` per membership; the frontend
-`staffAccess.ts` derives every capability from action strings, not role names. Role CRUD +
-membership/role-assignment APIs enforce non-escalation (can't grant a role you don't hold; can't touch a
-MANAGE_MAKERSPACE target/role) with makerspace-first lock ordering.
+**Seven fixed per-makerspace roles (replaces Part L).** `makerspaces/role_catalog.py` defines
+Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member.
+Names, slugs and grants are immutable; role CRUD and the capabilities editor/API are removed. Each
+membership has a primary `assigned_role` plus `MembershipAdditionalRole` rows. Space Manager and Member
+stand alone; the other five combine freely. `accounts/rbac_roles.py` shares the validity predicate
+between object and SQL readers: additional rows contribute only when the primary and additional role
+belong to the membership's tenant and both have combinable canonical slugs. Null primary keeps the
+frozen legacy fallback and ignores additional rows; foreign/obsolete roles fail closed. Authority is
+the union of valid roles' actions, with existing implication and active/tenant/origin fences unchanged.
+`/auth/me` and login expose `role_ids`, `role_slugs`, `role_names` and effective `actions`; navigation
+continues to use server authority, never role-name inference. Organizations have empty role arrays.
+
+`replace_membership_roles` is the complete-set writer. Both assignment routes accept `role_ids` (or
+compatibility `role_id`, never both), reject empty or incompatible sets, and enforce the actor's grant
+ceiling; only a global superadmin can grant Space Manager or modify its holders. Create/reattach,
+activation/reactivation/approval and invitation acceptance clear ALL additional roles and membership
+machine links before assigning afresh. In-life edits preserve type links only while Machine Manager
+is retained. Invitations remain single-role. Existing writers keep their lock order: Makerspace
+`FOR NO KEY UPDATE` before membership `FOR UPDATE OF self`; helpers add no role-row locks. Existing
+User/invitation/role locks in callers retain their established order and strength.
+
+**Fixed-role upgrade (`makerspaces/0089`) is irreversible and never widens except E1/E2.** Back up,
+stop all writers, run the new image's `python manage.py preview_fixed_roles` against the old schema,
+resolve every “must fix before upgrading” diagnostic, then migrate (see `update-recovery.md`). Mapping
+uses RAW grants, not implied actions: a combinable role qualifies only when all its grants were held;
+redundant subsets are removed, no match becomes Member, and Space Manager is never inferred. **E1**
+restores a narrowed canonical Space Manager rather than demoting the administrator. **E2** maps the
+legacy six handout actions to Handover, adding direct `collect_service_request`. Every gained/dropped
+action is reported. Foreign references become Member; null-primary legacy memberships stay untouched. Its reverse (`migration_support/fixed_roles_reverse.py`) is schema-only and runs only while nothing relies on the catalogue -- no additional role, no per-person machine link, and no membership, request, invitation, recipient rule or report schedule naming Event Manager, Booking Manager or Handover; it then deletes just those three unused rows. Anything else refuses, and the backup is the rollback.
+
+Migration refuses `NotificationRecipient(kind=role)` references to obsolete/custom roles: operators
+must repoint them to a built-in or named users, or remove them in the old console, then rerun preview.
+There is no automatic conversion to user rules. ReportSchedule pruning only narrows; empty schedules
+are deactivated and audited. Rejected pending staff invitations are revoked AND repointed to Member;
+accepted mappings preserve invitation history/expiry/attempt state. Colliding obsolete names/slugs
+are renamed first, all surviving defaults temporarily renamed second, new built-ins seeded third,
+and canonical defaults restored last. References are repointed before obsolete rows are deleted;
+`staff.roles_migrated` retains signed before/after role and machine-scope evidence.
+
+Mutes silence a membership only when EVERY stream-applicable role it holds is muted; an unrelated
+role does not count. Space packs no longer export roles: legacy empty `roles: []` is accepted and
+removed, while nonempty role sections are refused. Membership and per-person authority never travel
+in a pack; portable tenant imports reduce memberships to Member and drop additional roles/type links.
 
 **`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 34
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
@@ -1214,7 +1247,7 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   migration `0021` (one space-wide destination per configured webhook **and per Telegram chat id**) safe;
   the `Makerspace.*_webhook_url` columns stay readable for a release. The query is deliberately **not**
   filtered on `is_active` — that would make a deactivated sole room read as "no rooms" and fall back to the
-  credential underneath. **No scope links ⇒ space-wide**, the OPPOSITE default to role machine-scope (an
+  credential underneath. **No scope links ⇒ space-wide**, the OPPOSITE default to membership machine-type scope (an
   unscoped *role* must reach nothing; an unscoped *room* is not a permission); an alert naming no subject
   reaches no *scoped* room. Credentials are typed per channel with a check constraint, never one overloaded
   column. One log row per destination (D13), quota charged per room, and `destination_label` is snapshotted
@@ -1483,7 +1516,7 @@ Before that a card's `target_id` — a MemberCard pk — fell through to the box
 checked out whichever public box shared the number, and a `manage_qr` holder could revoke
 or rebind a card without `manage_member_cards`. Authority is by action, never role name: `manage_member_cards`
 implies `scan_member_cards`, is granted to the protected Space Manager default (migration 0069 backfills
-existing rows), and custom roles receive nothing until granted. `printed_name` is scoped source PII
+existing rows); the fixed catalogue now owns the grants. `printed_name` is scoped source PII
 (`encryption/registry.py`); `photo_object_key` is a PRIVATE object (`backup/object_ownership_registry.py`)
 whose final key is never client-writable (staging presign → single promotion in
 `member_card_storage.finalize_photo`) and whose bytes need recorded consent. **Revoke redacts
@@ -1578,27 +1611,21 @@ both list and detail. Machine/QR-only adapter controls must wait for scoped sibl
 
 ## Handover roles and the retired Guest Admin
 
-**Guest Admin is no longer a built-in role** (migration `makerspaces/0052`); handover staff get a **custom
-role** holding the handout actions. `rbac.HANDOUT_ACTIONS` is no longer a cap on what a role may hold
-(`role_services._validate_actions` dropped that branch) and now only defines what counts as handover-only
-for `rbac.is_handout_only`, which decides how narrow the console is. A handout role issues accepted
-requests, creates **direct handouts** (`ISSUE_DIRECT_LOAN` is in the set, pinned by
-`test_guest_admin_can_create_direct_loan`), processes scoped returns, and uploads evidence — through the
-same evidence/QR/remark/audit workflow as staff. It still cannot accept/reject requests, edit inventory,
-or manage QR unless granted those actions. **Both enum members are gone**: `makerspaces/0053` moved every
-remaining `role="guest_admin"` membership onto a real role row (reusing the space's untouched handover
-role only when its actions still equal the frozen six, else creating a collision-safe "Front Desk" role)
-and `0054` dropped the choice; `accounts/0009`/`0010` did the same for `User.Role.GUEST_ADMIN`. The
-`_MEMBERSHIP_ROLE_ACTIONS` fallback entry went with them, so `print_manager` is the only frozen legacy
-string left. Tests build a front-desk staffer through `tests/handout_roles.py`
-(`handout_role`/`grant_handout`/`make_handout_member`), whose default action set
-is deliberately the exact six the built-in granted. The `guest-admin/` **URL paths** in
-`hardware_requests/urls.py` are untouched: they are the handover API surface (module key
-`guest_handover`), not the role, and renaming them would break clients.
+**Handover is a fixed built-in again** (`makerspaces/0089`), combinable with Inventory, Machine,
+Event and Booking Manager. Its grants are `view_inventory`, `assign_box`, `issue_request`,
+`issue_direct_loan`, `return_request`, `upload_evidence` and `collect_service_request`. On its own
+it cannot accept/reject requests, edit inventory or manage QR. Evidence, scans, remarks and audit
+requirements are unchanged. `rbac.HANDOUT_ACTIONS`/`is_handout_only` decide narrow console presentation;
+they do not cap a combined membership's authority.
 
-**Print Manager is retired too** — migration `makerspaces/0046` reassigned its memberships to Machine
-Manager, whose `MANAGE_MACHINES` implies `MANAGE_PRINTING`. The string survives only in
-`_MEMBERSHIP_ROLE_ACTIONS` as the frozen legacy fallback for a null-FK membership.
+Historically `0052`–`0054` and `accounts/0009`–`0010` retired Guest Admin and converted it to editable
+handover roles. Fixed-role migration maps those rows to the canonical catalogue using the raw-grant
+rules and E2 above. Guest Admin remains retired; it is not a new enum or a second handover role.
+The `guest-admin/` **URL paths** in `hardware_requests/urls.py` remain the handover API surface
+(module key `guest_handover`); changing them would break clients.
+
+Print Manager remains retired (`makerspaces/0046` reassigned it to Machine Manager). Its string
+survives only in `_MEMBERSHIP_ROLE_ACTIONS` as the frozen null-primary legacy fallback.
 
 ## Separability and tombstoning
 
@@ -1767,29 +1794,26 @@ not module keys** (one app can own several keys — `printing`/`machines`/`machi
   after re-enrollment. Device purge deletes printer rows first; adapter purge nulls live links and
   retains device history.
 
-## Machine scoping — `MANAGE_MACHINES` is per role, and fails CLOSED
+## Machine scoping — `MANAGE_MACHINES` is per person by type, and fails CLOSED
 
-Moved here from "Hard Rules", where it had been appended and had grown to ~430 lines. Content is
-unchanged.
-
-- **`MANAGE_MACHINES` is scoped per role, and the scoping fails CLOSED.** `machines/role_scope.py`
-  narrows **tier 1** of `access.py` using two link tables (`RoleMachineTypeScope`,
-  `RoleMachineScope`, migration `0019`): a role holding `MANAGE_MACHINES` reaches a machine when
-  **its type is linked or the machine itself is linked** — a union, not a hierarchy, so "all
-  printers plus that one laser" needs no third concept. **No links ⇒ no machines.** Two exemptions,
-  both in `role_scope` and neither optional: a role holding `MANAGE_MAKERSPACE` covers everything
-  *including types created later* (making a space manager enumerate types to administer their own
-  lab is a worse failure than the broad grant this replaces), and a membership with a **null
-  `assigned_role`** resolves through the frozen legacy fallback, which is not a role row and has
-  nothing to link — scoping it would silently strip a legacy Machine Manager.
-  - **Two seeding paths keep it from being a regression.** Migration `0020` links every existing
-    `MANAGE_MACHINES` role to every type that existed at that moment — **types, not machines**, so
-    coverage keeps extending to hardware bought after the upgrade; freezing each role at that day's
-    fleet would make the first new printer unmanageable. And `roles.ensure_default_roles` calls
-    `role_scope.grant_builtin_type_scope` on **creation**, because the seeded Machine Manager
-    default would otherwise be born inert on every makerspace created after the upgrade — grant
-    without links, and a Machines tab that never appears. Space Manager gets no links (it is exempt;
-    rows would be dead data misrepresenting the role in the console).
+- **Tier 1 is per-person, type-only scope.** `machines/role_scope.py` resolves
+  `MembershipMachineTypeScope(membership, machine_type)`. A Machine Manager reaches machines whose
+  types are linked to that membership, including machines added to those types later. **No links means
+  no machines.** `RoleMachineTypeScope` and `RoleMachineScope` are gone; there is no membership-to-machine
+  scope table. Space Manager remains exempt, including future types; null `assigned_role` keeps the
+  frozen legacy exemption. Foreign-tenant roles or links never confer reach.
+  - **Migration 0089 never widens machine reach.** It copies old role TYPE links per person. Old
+    MACHINE links are dropped, never expanded to their types, and listed in preview/audit as
+    `machine_scope.dropped_machine_ids`. A nonempty machine-only old scope also drops Machine Manager
+    from the mapped set (`machine_manager_dropped: machine-only scope`), avoiding the empty-scope
+    notification fallback that would otherwise widen lifecycle alerts. An already empty old scope
+    retains its existing behavior. Old EXEMPT authority mapping to Machine Manager enumerates all
+    currently global/tenant types; future types need explicit assignment (a narrowing). Space Manager
+    needs no links. The E1/E2 action exceptions and stopped-writer preview requirements are above.
+  - **New assignments are deliberately inert until types are picked.** There is no automatic default
+    scope seeder. “All machine types” links the currently available set; it is not a grant to future
+    types. The internal resolver contract stays `EXEMPT` or `(type_ids, machine_ids)`, with
+    `machine_ids = frozenset()`; query/service consumers retain their signatures and type paths.
   - **Tier 2 now requires a DIRECTLY granted `managing_action`** (`role_scope.grants_directly`, and
     its query-level twin `makerspaces_granting_directly`). This is the hole that made the whole
     feature nearly worthless: `IMPLIED_ACTIONS[MANAGE_MACHINES]` contains `MANAGE_PRINTING`, and the
@@ -1903,10 +1927,10 @@ Load-bearing details that carried over unchanged:
   - **The machine-type list is scoped, and VISIBILITY IS NOT CREATION AUTHORITY.** It previously
     returned every global and tenant type once the actor could see any machine, so per-type sections
     would render headings a role cannot reach. "Reachable" is the union of linked types (**including
-    types with zero machines**), types of individually linked machines, types reached through direct
-    type-manager authority, and explicit operator machines; a **shared machine-less pool does NOT
-    make a type reachable**. `can_create_machine` needs a **type** link — a per-machine link exposes
-    the type without authorizing another machine of that kind — and the console must filter its
+    types with zero machines**), types reached through direct type-manager authority and explicit
+    operator machines; a **shared machine-less pool does NOT make a type reachable**.
+    `can_create_machine` needs type authority; an operator-reachable type alone does not authorize
+    another machine of that kind. The console must filter its
     creation selector by it, or it offers an action that can only 403. The field lives on a
     **dedicated** `serializers_machine_types.MachineTypeAccessSerializer`, never on the shared
     `MachineTypeSerializer`, which is nested inside machine responses and reused by create/update
@@ -1934,26 +1958,24 @@ Load-bearing details that carried over unchanged:
       selects who *receives* maintenance alerts — makerspace configuration, not machine data) and
       `reconciliation.list_payments` (already gated on `MANAGE_MAKERSPACE`, which is exempt anyway).
       The reconciliation **bulk** path is narrowed, via `_require_subject_authority`.
-  - **The console owns the links** (Phase 4): `PUT/GET /admin/makerspaces/<id>/roles/<role_id>/machine-scope`
-    (`RoleMachineScopeView` → `machines/role_scope_services.py`), rendered by
-    `RoleMachineScopeEditor.tsx` inside the role editor. Console parity is not optional here —
-    scoping fails closed, so without this surface a Space Manager could create a machine-managing
-    role and have **no way to make it manage anything** short of `/control/` (unreachable for staff)
-    or the shell. The service lives in `apps.machines`, not `makerspaces.role_services`, so it
-    disappears with a `machines` tombstone instead of lingering as a management surface for an app
-    with nothing to manage. It takes the **makerspace lock before the role lock**, matching
-    `role_services` exactly — a concurrent role edit and scope edit take both, and a different order
-    between them deadlocks. Saves **replace** rather than merge (a merge makes unticking impossible),
-    an unknown/foreign id is a **400 rather than a silent drop** (a save that quietly discards half
-    the selection leaves the administrator believing a team has access it does not), and a change
-    audits `role.machine_scope_changed` — `role.updated` covers the action list and would not show it.
-    The payload carries `scoping_applies:false` for an exempt or non-machine role so the editor
-    renders inert rather than offering ticks `role_scope` will ignore. A role being **created** has no
-    id to link to, so the editor appears on reopen and says so.
-  - `can_create_machine` needs a **type** link specifically: a machine link granted one machine, not
-    the right to add more of its kind. `can_see_machines` requires a link too, since a tab that
-    renders an empty list and 403s on every action is worse than no tab. Resolution always ANDs the
-    makerspace, so a link written across tenants is **inert, not a leak**.
+  - **The console owns per-person type links:**
+    `GET/PUT /admin/makerspaces/<id>/memberships/<membership_id>/machine-scope`, backed by
+    `MemberMachineScopeView` and `machines/member_scope_services.py`, accepts only
+    `{machine_type_ids}`. `MemberMachineTypes.tsx` edits server-provided `available_machine_types`
+    from the Users and Members rosters. First save Machine Manager, then pick types; an empty
+    selection grants no machines. Space Manager/null-primary/non-machine memberships return
+    `scoping_applies:false`; PUT refuses with 409, including “assign a role first” for null primary.
+    The editor must show that refusal instead of reporting a successful no-op.
+    Saves replace the full set, reject unknown/foreign IDs with 400 and audit
+    `staff.machine_scope_changed` only on change. The service requires the existing makerspace-first,
+    membership-second locks and revalidates authority; immutable roles need no new role locks.
+    Role/scope saves invalidate roster, membership, member-scope and auth/me caches and refresh the
+    session driving navigation. The service remains in `apps.machines` for tombstone separability.
+  - `can_create_machine` needs a type link (or existing exempt/direct-type authority).
+    `can_see_machines` uses assigned types, direct type authority or live operators. Type listings
+    include assigned types with zero machines and operator-reachable types without creation rights.
+    Machine-bound pools follow their machine's type; unbound shared pools keep existing visibility.
+    Resolution always ANDs the makerspace, so a cross-tenant link stays inert.
 - **`COLLECT_SERVICE_REQUEST` splits job handover out of `MANAGE_MACHINES`.** Collecting a finished machine job is a front-desk act; `MANAGE_MACHINES` is the whole machine lifecycle, so requiring it to hand someone their print forced a front-desk role to also be able to retire a printer. `IMPLIED_ACTIONS[MANAGE_MACHINES]` now includes it, which is why the split needed **no migration and caused no regression** — every Space Manager and Machine Manager already holds `MANAGE_MACHINES`. `_manageable_request(actor, pk, action)` in `views_machine_service` takes the required action per operation: **only** collect passes the narrow one; accept/reject/start/complete/fail/reprint/create keep `MANAGE_MACHINES`. A collect-only actor's queryset is narrowed to `COMPLETED` rows (`_collect_only`), so the queue, drafts and in-progress work stay invisible — the list and detail reads are allowed on the narrow action precisely so the narrowed view has something to show. The action was deliberately **not** granted to anyone by migration: widening real permissions on deployments that never asked is not a migration's job.
 - **Collection is CUMULATIVE with machine scope, and the two partitions must stay separate
   (phase 6a).** A role holding scoped `MANAGE_MACHINES` **and** a **directly** granted
@@ -1996,7 +2018,7 @@ Load-bearing details that carried over unchanged:
 - **The dashboard narrows machine counters and OMITS non-machine ones — two INDEPENDENT
   decisions (phase 6a).** `build_dashboard` takes `machine_scope` (narrows machine-derived
   counters) and `machine_only` (whether the non-machine counters appear at all). Conflating them
-  was wrong, because roles here are **editable and action-based**: a custom role can hold
+  was wrong, because authority is **action-based and cumulative**: a combined membership can hold
   `VIEW_INVENTORY` *and* a scoped `MANAGE_MACHINES`, and treating "has a machine scope" as "is a
   maintainer" silently removed hardware and stock counts that role is independently authorized
   for. Machine scoping must narrow machine data without revoking another granted action.
@@ -2170,9 +2192,9 @@ Load-bearing details that carried over unchanged:
     deliberately, and revoking it because the role also gained machine duties is the mixed-role
     mistake from the dashboard. EXEMPT is checked first, or a legacy null-role membership's frozen
     action set would answer that question instead. Read with `role_grants_directly`.
-  - **Use the linked TYPE ids only, never types derived from per-machine links.** A machine link
-    granted one machine, not authority to procure for its whole kind; a role holding only machine
-    links reaches no To Buy rows at all.
+  - **Use the person's linked TYPE ids only.** There are no per-machine membership scope links.
+    Type-assigned Machine Managers see those types' printing To Buy rows; Space Manager sees all.
+    A tier-3 operator grant does not confer procurement authority for the machine's whole kind.
   - **`kind` stays server-derived and orthogonal**, and the narrowing applies to PRINTING rows only
     — hardware rows survive for a role that independently holds `EDIT_INVENTORY`.
   - **Scoping the list is not enough; `procurement/access.py` is stream-based, so the object
@@ -3227,7 +3249,7 @@ encoder always emits canonical output, so stored envelopes are unaffected.
   second validation layer with an operator-facing error. `machines.role_scope.manage_scope_for`
   remains local-membership-derived; direct organization `manage_printing` is not type-manager
   authority.
-- **Action-specific organization reach preserves 404 vs 403.** Role management, machine-service
+- **Action-specific organization reach preserves 404 vs 403.** Role-set assignment, machine-service
   list/detail resolution, integration health, domain verification, asset warranty host/document
   resolution, the mixed warranty report, and procurement machine-type options resolve the union of
   local visibility and their explicitly accepted action scope. An unlinked or hidden/unservable

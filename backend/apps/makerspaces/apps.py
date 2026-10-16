@@ -45,8 +45,8 @@ class MakerspacesConfig(AppConfig):
             from apps.makerspaces.roles import ensure_default_roles
 
             # Seed in the SAME transaction as the makerspace insert (not on_commit)
-            # so a new makerspace is never observable without its five protected
-            # defaults, and a seeding failure rolls the creation back.
+            # so a new makerspace is never observable without its seven built-in
+            # roles, and a seeding failure rolls the creation back.
             ensure_default_roles(instance)
 
         def ensure_pii_write_fence_on_create(sender, instance, created, **kwargs):

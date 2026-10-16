@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge, DataTable, Modal, type DataTableColumn } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { BookableSpaceForm } from "./BookableSpaceForm";
+import { MakerspaceBookingRulesSettings } from "./MakerspaceBookingRulesSettings";
 import { BookingDrawer } from "./BookingDrawer";
 import { useBookableSpaces, useCreateBookableSpace, type BookableSpace } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
@@ -25,6 +27,7 @@ const columns = (onOpen: (id: number) => void): DataTableColumn<BookableSpace>[]
 ];
 
 export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { makerspaceId: number; recurringEnabled?: boolean }) {
+  const queryClient = useQueryClient();
   const list = useUrlListState({ q: "", ordering: "name", page: "1" });
   const { page, setPage } = list;
   const [params, setParams] = useSearchParams();
@@ -39,7 +42,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const create = useCreateBookableSpace(makerspaceId);
   const apiError = spaces.error instanceof StructuredApiError ? spaces.error : null;
 
-  if (apiError?.status === 403) return <Panel title="Bookings"><p className="text-sm text-muted">Only Space Managers can manage bookings.</p></Panel>;
+  if (apiError?.status === 403) return <Panel title="Bookings"><p className="text-sm text-muted">You do not have permission to manage bookings here.</p></Panel>;
   if (apiError?.status === 400 && apiError.body.module) return <Panel title="Bookings"><p className="text-sm text-muted">The Bookings module is not enabled for this makerspace.</p></Panel>;
 
   return (
@@ -53,10 +56,11 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
       {spaces.error ? <p className="mb-3 text-sm text-danger" role="alert">{spaces.error.message}</p> : null}
       <DataTable listState={list} ordering={list.values.ordering} onOrderingChange={(value) => list.setFilter("ordering", value)} columns={columns(setSelectedId)} data={spaces.data?.results ?? []} loading={spaces.isLoading} skeletonCols={5} emptyTitle="No bookable spaces" emptyDescription="Create a space to start accepting bookings." />
       {spaces.data ? <div className="mt-3 flex items-center justify-between gap-2"><span className="font-mono text-xs text-muted">Page {page} - {spaces.data.count} total</span><div className="flex gap-2"><button className="desk-button" type="button" disabled={!spaces.data.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!spaces.data.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div> : null}
+      <MakerspaceBookingRulesSettings makerspace={{ id: makerspaceId }} />
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create bookable space" size="xl">
         <BookableSpaceForm
           makerspaceId={makerspaceId}
-          onSubmit={(payload) => create.mutate(payload, { onSuccess: (space) => { setCreateOpen(false); setSelectedId(space.id); } })}
+          onSubmit={(payload) => create.mutate(payload, { onSuccess: (space) => { setCreateOpen(false); setSelectedId(space.id); void queryClient.invalidateQueries({ queryKey: ["booking-rule-spaces", makerspaceId] }); } })}
           pending={create.isPending}
           error={create.error?.message}
           submitLabel="Create space"

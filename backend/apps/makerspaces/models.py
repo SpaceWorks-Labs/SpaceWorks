@@ -68,6 +68,7 @@ def presence_presets(makerspace):
 
 from apps.makerspaces.models_makerspace import Makerspace  # noqa: E402,F401
 from apps.makerspaces.models_memberships import MakerspaceMembership  # noqa: E402,F401
+from apps.makerspaces.models_additional_roles import MembershipAdditionalRole  # noqa: E402,F401
 from apps.makerspaces.models_roles import (  # noqa: E402,F401
     MakerspaceRole,
     MakerspaceWaiver,

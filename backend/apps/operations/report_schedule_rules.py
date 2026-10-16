@@ -1,5 +1,6 @@
 """Validated delivery predicates and live, tenant-local staff recipient selectors."""
 
+
 from decimal import Decimal, InvalidOperation
 import operator
 
@@ -7,8 +8,10 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.admin_api.permissions import active_user
 from apps.makerspaces.models import MakerspaceMembership, MakerspaceRole
+from apps.makerspaces.role_catalog import BUILTIN_ROLE_SLUGS
 from apps.operations.report_condition_metrics import condition_metrics
 
 COMPARISONS = {"gt": operator.gt, "gte": operator.ge, "lt": operator.lt, "lte": operator.le, "eq": operator.eq}
@@ -89,7 +92,7 @@ def condition_matches(condition, rows):
 
 
 def validate_roles(actor, space, slugs, action):
-    roles = rbac.scope_by_action(actor, action, MakerspaceRole.objects.all()).filter(makerspace=space)
+    roles = rbac.scope_by_action(actor, action, MakerspaceRole.objects.all()).filter(makerspace=space, slug__in=BUILTIN_ROLE_SLUGS)
     if set(slugs) - set(roles.values_list("slug", flat=True)):
         raise serializers.ValidationError("Unknown recipient role in this makerspace.")
     return list(dict.fromkeys(slugs))
@@ -104,7 +107,7 @@ def recipient_emails(schedule, definition):
     candidates = rbac.scope_for_scheduled_work(
         MakerspaceMembership.objects.filter(makerspace=schedule.makerspace),
         makerspace_id=schedule.makerspace_id,
-    ).select_related("user", "assigned_role")
+    ).select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
     explicit = {email.strip().lower(): email.strip() for email in schedule.recipient_emails or []}
     emails = {}
     for member in candidates:
@@ -118,7 +121,9 @@ def recipient_emails(schedule, definition):
                 and rbac.can(user, definition.required_action, schedule.makerspace_id)):
             continue
         role = member.assigned_role
-        role_selected = bool(role and role.makerspace_id == schedule.makerspace_id and role.slug in schedule.recipient_roles)
+        from apps.accounts.rbac_roles import membership_roles
+        role_selected = any(role.slug in schedule.recipient_roles
+                            for role in membership_roles(member))
         if role is None and schedule.recipient_roles:
             role_selected = bool(rbac.scope_for_scheduled_work(MakerspaceRole.objects.all(),
                 makerspace_id=schedule.makerspace_id).filter(

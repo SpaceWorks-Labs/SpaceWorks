@@ -6,6 +6,7 @@ from django.db import connection
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
 from apps.makerspaces.servability import is_servable
@@ -46,7 +47,7 @@ def lock_and_validate_staff_authority(
         raise PermissionDenied()
 
     membership = (
-        MakerspaceMembership.objects.select_for_update()
+        MakerspaceMembership.objects.prefetch_related(additional_roles_prefetch()).select_for_update()
         .filter(user=locked_actor, makerspace=makerspace, status="active")
         .first()
     )

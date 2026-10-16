@@ -40,7 +40,7 @@ from apps.maintenance.exceptions import (
     MaintenanceStatusConflict,
     RetiredMachineMaintenance,
 )
-from apps.makerspaces.role_services import RoleConflict
+from apps.machines.member_scope_errors import MemberMachineScopeConflict
 from apps.encryption.crypto import PiiUnavailable
 from apps.encryption.write_fence import PiiWriteFenced
 from apps.presence.guard import (
@@ -57,6 +57,10 @@ class ErrorSerializer(serializers.Serializer):
 
 
 _EXCEPTION_MAP = {
+    MemberMachineScopeConflict: (
+        status.HTTP_409_CONFLICT, "member_machine_scope_conflict",
+        "Machine scope requires a non-exempt Machine Manager membership.",
+    ),
     AnonymousRequestIdempotencyConflict: (
         status.HTTP_409_CONFLICT,
         "anonymous_request_idempotency_conflict",
@@ -237,11 +241,6 @@ _EXCEPTION_MAP = {
         status.HTTP_503_SERVICE_UNAVAILABLE,
         "evidence_storage_unavailable",
         "Evidence storage is unavailable.",
-    ),
-    RoleConflict: (
-        status.HTTP_409_CONFLICT,
-        "role_conflict",
-        "This role cannot be deleted.",
     ),
 }
 

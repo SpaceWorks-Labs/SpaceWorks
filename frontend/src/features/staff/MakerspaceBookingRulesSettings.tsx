@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { StructuredApiError, staffRequest } from "../../lib/api";
 import { useStaffGet } from "./StaffPanels";
 import type { Makerspace } from "./panels/shared";
+import { bookingKeys } from "./bookingsApi";
 
 type SpaceRules = {
   id: number;
@@ -45,7 +46,7 @@ const NUMBER_FIELDS: Array<{ key: NumberRuleField; label: string; min: number }>
 ];
 const RULE_FIELDS: RuleField[] = [...NUMBER_FIELDS.map(({ key }) => key), "approval_mode"];
 
-export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Makerspace }) {
+export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pick<Makerspace, "id"> }) {
   // page_size=200 is the backend max; a makerspace never has that many
   // bookable spaces, so one page always covers the whole editable set.
   const spaces = useStaffGet<{ count: number; results: SpaceRules[] }>(
@@ -122,6 +123,8 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["booking-rule-spaces", makerspaceId] });
+      queryClient.invalidateQueries({ queryKey: bookingKeys.spaces(makerspaceId) });
+      queryClient.invalidateQueries({ queryKey: bookingKeys.detail(space.id) });
     },
   });
 

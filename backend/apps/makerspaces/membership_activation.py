@@ -63,15 +63,11 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
             membership = MakerspaceMembership.objects.create(
                 makerspace=makerspace,
                 user=user,
-                assigned_role=role,
-                role=role.legacy_role or MakerspaceMembership.Role.CUSTOM,
                 status="active",
                 activated_at=now,
                 activated_by=actor,
             )
         elif adding:
-            membership.assigned_role = role
-            membership.role = role.legacy_role or MakerspaceMembership.Role.CUSTOM
             membership.status = "active"
             membership.activated_at = now
             membership.activated_by = actor
@@ -86,10 +82,14 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
             membership.can_refer = False
             membership.can_verify = False
             membership.save()
-        elif source == "approval":
-            membership.assigned_role = role
-            membership.role = role.legacy_role or MakerspaceMembership.Role.CUSTOM
-            membership.save(update_fields=["assigned_role", "role"])
+
+        role_changes = {}
+        if adding or source == "approval":
+            from apps.makerspaces.role_membership_writes import replace_membership_roles
+            role_changes = replace_membership_roles(
+                membership=membership, roles=[role], actor=actor,
+                reason=source, fresh_lifecycle=True,
+            )
 
         open_requests = list(MembershipRequest.objects.select_for_update().filter(
             makerspace=makerspace,
@@ -109,7 +109,7 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
 
         if adding or source == "approval" or open_requests:
             action = "membership.approved" if source == "approval" else "membership.joined"
-            meta = {"role_id": role.id, "source": source}
+            meta = {"role_id": role.id, "source": source, **role_changes}
             if driving_request is not None:
                 meta["request_id"] = driving_request.pk
             audit.record(actor, action, makerspace=makerspace, target=membership, meta=meta)

@@ -8,6 +8,21 @@
 
 ## Current source map (real paths)
 
+Fixed membership roles live in `makerspaces/role_catalog.py`. `accounts/rbac_roles.py`
+shares the valid-role predicate between object resolution and SQL `Exists` filters;
+`makerspaces/role_membership_writes.py` is the complete-set writer used by lifecycle
+and staff assignment services. Machine authority links are per membership and type in
+`machines/models_membership_scope.py`, resolved by `role_scope_resolution.py` and
+written by `member_scope_services.py`. The console API lives in
+`admin_api/views_member_scope.py` and `serializers_member_scope.py`.
+Frontend `features/staff/panels/RoleSetPicker.tsx` owns exclusive/combinable checkbox selection;
+`roleSets.ts` owns assignment ceilings, handwritten membership role-set types and cache invalidation.
+`RolesReference.tsx` renders the read-only server role catalogue. `MemberRolesControl.tsx` saves
+community-roster role sets; `MemberMachineTypes.tsx` edits per-person type scope using `rolesApi.ts`.
+Users/AddStaffModal reuse the picker; UsersTable and MembersPanel display the whole role set.
+Role CRUD and RoleManager/RoleEditor/RoleMachineScopeEditor are removed. Booking rules reuse
+`MakerspaceBookingRulesSettings.tsx` in both Settings and Bookings.
+
 WP1 event access and ticketing lives in `events/registration_access.py`, `invites.py`,
 `ticketing.py` and `promos.py`; `participant_access.py` limits account ticket reads to
 the owned registration. New model, serializer and route files are indexed in
@@ -240,8 +255,8 @@ while pack application explicitly asserts the target source gate before writes.
   `station_throttles.py` own reusable rotation/reveal/disable, signing, PIN/origin and throttle mechanics
   without importing event policy.
   `role_services.py` re-exports `role_authority.py` (locked grant validation),
-  `role_crud.py` (audited role mutations), and `role_assignments.py` (staff and community
-  role assignment). The RBAC vocabulary remains in `accounts/rbac_actions.py`.
+  and `role_assignments.py` (staff and community role-set assignment); `role_crud.py` is removed.
+  `role_membership_writes.py` owns complete-set writes and lifecycle cleanup. The RBAC vocabulary remains in `accounts/rbac_actions.py`.
   The tenant-migration authority guard scans the split role-authority/assignment modules.
   Phase 9b kiosk Stations: `models_station_leases.py` (`StationOperatorLease`, `StationSessionRevocation`),
   `kiosk_station_services.py` (scanner/handover lifecycle + PIN session), `station_operator_leases.py`
@@ -307,7 +322,7 @@ while pack application explicitly asserts the target source gate before writes.
   (namespaced standalone SVG shared by QR-print + batch ZIP), QR rebind. Camera scanner at
   `frontend/src/components/ui/QrScanner.tsx` (native `BarcodeDetector` + `zxing-wasm` fallback).
 - `backend/apps/admin_api/` — staff REST surface: makerspaces, inventory CRUD + per-makerspace category CRUD
-  (`EDIT_INVENTORY`), bulk import, staff/membership + role management, user restrict/restore, API-client
+  (`EDIT_INVENTORY`), bulk import, staff/membership + role-set assignment, user restrict/restore, API-client
   issuance (`api_client_views.py`) and access requests (`api_key_request_views.py`), audit reads, warranty,
   email-log, notification-recipient, FabLab report views.
   `views_certifications.py` explicitly re-exports type endpoints from

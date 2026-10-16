@@ -227,6 +227,9 @@ function targetLabel(target: string) {
       space_manager: "Space managers",
       inventory_manager: "Inventory managers",
       machine_manager: "Machine managers",
+      event_manager: "Event managers",
+      booking_manager: "Booking managers",
+      handover: "Handover",
     }[target] ?? humanize(target)
   );
 }

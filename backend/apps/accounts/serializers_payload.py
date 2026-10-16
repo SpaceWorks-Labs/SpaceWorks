@@ -1,4 +1,4 @@
-
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
 from apps.accounts.org_payload import (
     membership_makerspace_entry,
@@ -14,7 +14,7 @@ def user_payload(user, request=None):
     from apps.accounts import rbac
     from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
 
-    memberships = user.makerspace_memberships.select_related("makerspace", "assigned_role")
+    memberships = user.makerspace_memberships.select_related("makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
     claim_context = getattr(user, "_claim_audit_context", None)
     if claim_context is not None:
         memberships = memberships.filter(pk=claim_context.membership_id)
@@ -110,15 +110,9 @@ def user_payload(user, request=None):
         )
 
     def _stores_printing(m):
-        if m.assigned_role_id is None:
-            return rbac.Action.MANAGE_PRINTING in rbac._MEMBERSHIP_ROLE_ACTIONS.get(
-                m.role, ()
-            )
-        role = m.assigned_role
-        if role is None or role.makerspace_id != m.makerspace_id:
-            return False
-        granted = role.granted_actions if isinstance(role.granted_actions, list) else []
-        return rbac.Action.MANAGE_PRINTING in granted
+        from apps.accounts.rbac_roles import stored_actions_for_membership
+
+        return rbac.Action.MANAGE_PRINTING in stored_actions_for_membership(m)
 
     membership_entries = [
         membership_makerspace_entry(

@@ -27,7 +27,7 @@ class BookableSpaceWriteSerializer(serializers.Serializer):
     show_public_availability = serializers.BooleanField(default=False, required=False)
     show_public_booker_names = serializers.BooleanField(default=False, required=False)
     # approval_mode is a booking rule; it is writable ONLY through the dedicated
-    # MANAGE_MAKERSPACE booking-rules endpoint, never this MANAGE_BOOKINGS path.
+    # MANAGE_BOOKINGS booking-rules endpoint, never this MANAGE_BOOKINGS path.
     custom_form = CustomFormSchemaField(
         allow_null=True,
         required=False,

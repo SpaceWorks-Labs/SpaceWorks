@@ -19,12 +19,19 @@ class MakerspaceMembershipAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     search_fields = ("user__username", "user__email")
     autocomplete_fields = ("user", "makerspace")
     readonly_fields = (
+        "assigned_role", "additional_role_names",  # Written by role_membership_writes.
         "can_refer", "can_verify", "verified_at", "verified_by", "verified_actor_snapshot",
         "activated_actor_snapshot", "revoked_actor_snapshot",
         "waiver_accepted_at", "waiver_version_accepted", "accepted_waiver",
         "witnessed_at", "witnessed_waiver_version", "witnessed_waiver",
         "witnessed_by", "witnessed_actor_snapshot", "created_at",
     )
+
+    @admin.display(description="Additional roles")
+    def additional_role_names(self, obj):
+        from apps.accounts.rbac_roles import membership_roles
+
+        return ", ".join(role.name for role in membership_roles(obj)[1:]) or "—"
 
 
 @admin.register(MakerspaceWaiver)

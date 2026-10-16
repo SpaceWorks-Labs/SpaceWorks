@@ -41,28 +41,4 @@ def seed_default_roles(using, makerspace_id):
             role_ids[slug] = cursor.fetchone()[0]
     if "member" not in role_ids:
         raise TenantDumpVerificationError("Target Member role was not seeded.")
-    _seed_machine_manager_scopes(using, role_ids.get("machine_manager"))
     return role_ids
-
-
-def _seed_machine_manager_scopes(using, role_id):
-    if role_id is None:
-        return
-    type_model = apps.get_model("machines.MachineType")
-    scope_model = apps.get_model("machines.RoleMachineTypeScope")
-    connection = connections[using]
-    quote = connection.ops.quote_name
-    now = timezone.now()
-    with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT {quote(type_model._meta.pk.column)} FROM "
-            f"{quote(type_model._meta.db_table)} WHERE makerspace_id IS NULL "
-            f"ORDER BY {quote(type_model._meta.pk.column)}"
-        )
-        type_ids = [row[0] for row in cursor.fetchall()]
-        for type_id in type_ids:
-            cursor.execute(
-                f"INSERT INTO {quote(scope_model._meta.db_table)} "
-                "(role_id, machine_type_id, created_at) VALUES (%s, %s, %s)",
-                [role_id, type_id, now],
-            )

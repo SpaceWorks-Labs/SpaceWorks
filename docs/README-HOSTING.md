@@ -3,40 +3,38 @@
 Access is scoped **per makerspace and per action**. Super Admin is global; every other role is a
 per-makerspace membership.
 
-Authority comes from **actions, not role names**. A role is a row owned by one makerspace holding a
-list of granted action strings (`view_inventory`, `accept_request`, `issue_direct_loan`,
-`manage_machines`, …), and every permission check asks whether the actor holds the action — never
-what their role is called. So a makerspace can rename, re-scope, or invent roles to match how it
-actually works, and nothing downstream has to learn the new name.
+Authority comes from **actions, not role names**. Each makerspace has seven fixed built-in role
+instances. Their names and grants cannot be edited, and roles cannot be created or deleted.
 
-Every makerspace starts with four protected default roles:
+| Role | What it can do |
+|---|---|
+| **Space Manager** | Administers the makerspace, staff, settings, inventory, machines, events, bookings, membership and finance |
+| **Inventory Manager** | Runs the full hardware lifecycle, inventory, QR, evidence and audit; no machines, staff or settings |
+| **Machine Manager** | Manages machines, service work, maintenance and usage within this person's assigned machine types |
+| **Event Manager** | Manages events, registrations, event reports and email templates |
+| **Booking Manager** | Manages bookable spaces, bookings, booking rules, reports and email templates |
+| **Handover** | Issues accepted requests/direct handouts, takes returns, uploads evidence and collects completed machine jobs |
+| **Member** | Uses community services without staff management actions |
 
-| Role | Granted actions | Notes |
-|---|---|---|
-| **Space Manager** | Everything grantable: full hardware lifecycle, inventory, QR, evidence, machines, events, bookings, audit, and makerspace settings | Must always keep `manage_makerspace` |
-| **Inventory Manager** | Full hardware lifecycle + inventory + QR + evidence + audit | No machines, staff or settings |
-| **Machine Manager** | `manage_machines` — every machine in the space, end to end: usage, warranty, maintenance, and handing finished jobs over | Implies `manage_printing` and `collect_service_request`, so it absorbed the old Print Manager |
-| **Member** | None | A role granting no actions *is* a community membership — that is how staff and member invitations are told apart |
+A membership has a primary role and optional additional roles. **Space Manager and Member must each
+stand alone**; the other five combine freely, such as Event Manager + Booking Manager. The console
+assigns the complete set with checkboxes. Invitations still carry one built-in role; add others after
+acceptance. Only a global superadmin can grant Space Manager or modify a membership holding it.
+Every other assignment must stay within the actor's own action ceiling.
 
-Beyond those, a Space Manager can **create custom roles** with any subset of actions they themselves
-hold, and can edit the defaults — including renaming them and narrowing what they grant. One limit
-protects the defaults from being edited into incoherence: Space Manager must retain
-`manage_makerspace`. Protected defaults cannot be deleted; custom roles can be, once nobody is
-assigned to them.
+Machine Manager types are assigned **per person**, not per role or individual machine. Save the role
+first, then choose types from the membership's **Machine types** control in Users or Members.
+No selected types means no machines. A type includes machines added to it later; **All machine types**
+selects today's available types, so newly created types need explicit assignment. Space Manager is
+exempt and covers future types too. Existing direct type authority and per-machine operator grants
+are unchanged.
 
-**Front-desk handover is a custom role, not a built-in.** Earlier versions shipped a protected
-"Guest Admin", which handed every makerspace a role it might not want and made the one role people
-most wanted to reshape the one they could not delete. Build the role your space actually has — call it
-Front Desk, Duty Volunteer, whatever — and give it the handout actions: `view_inventory`,
-`assign_box`, `issue_request`, `issue_direct_loan`, `return_request`, `upload_evidence`, and
-`collect_service_request` to hand finished machine jobs to their owners. A role holding only these
-gets a deliberately narrow console (Requests, Direct handout, Job handover) instead of the full staff
-surface. Existing Guest Admin roles were converted in place and kept their name, actions and people.
-
-Escalation is blocked in both directions: you cannot grant an action you do not hold, you cannot
-create or assign a role carrying `manage_makerspace` (superadmin only), and you cannot modify a
-membership that already holds it. `transfer_stock` and `manage_staff` are superadmin-only and are
-never grantable to any role.
+Handover alone uses the narrow Requests, Direct handout and Job handover console and cannot
+accept/reject requests, edit inventory or manage QR. Combining it with other built-ins adds their
+actions. Guest Admin and Print Manager remain retired. `transfer_stock` and `manage_staff` remain
+superadmin-only, outside the role catalogue. Upgrade from editable/custom roles requires an offline,
+irreversible migration: read [the fixed-role upgrade procedure](update-recovery.md#fixed-role-upgrade-2026-10-16)
+before running migrations.
 
 **Organizations reach across makerspaces.** A network, a university or a chain can be registered as an
 organization, linked to any number of makerspaces as owner, manager or affiliate, and given staff whose
@@ -49,9 +47,6 @@ routed in through an organization.
 
 Outside this system entirely: **Public** users browse, submit requests, and — where enabled —
 self-checkout and return eligible QR tools, gated on member presence and photo evidence.
-
-> Earlier versions shipped five fixed, code-defined roles. Roles are now editable data; the four
-> above are seeded defaults rather than the whole vocabulary.
 
 Staff work in the **React console** at `/admin`; the superadmin-only **Django control plane** lives at
 `/control/` (backend-only, never exposed on the public port). Two design rules are load-bearing — the

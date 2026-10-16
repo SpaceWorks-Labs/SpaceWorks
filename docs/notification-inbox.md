@@ -52,7 +52,7 @@ Writes emit audit entries with a User actor.
 | GET/POST | `/integrations/makerspace/{makerspace_id}/email-suppressions` | List hashes or add `{address,reason}` |
 | DELETE | `/integrations/makerspace/{makerspace_id}/email-suppressions/{id}` | Remove a scoped suppression |
 
-Delivery controls require `MANAGE_MAKERSPACE`, including delegated custom roles.
+Delivery controls require `MANAGE_MAKERSPACE`, including organization-derived action grants; local roles are fixed built-ins.
 Log filters: `channel`, `status`, `feature`, `event`, `destination`, `page`. Responses
 exclude rendered bodies, addresses, credentials and destination URLs. Retry locks the
 row, checks the submitted generation, advances it once and enqueues after commit. A

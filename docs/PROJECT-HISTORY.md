@@ -6,6 +6,8 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — seven fixed roles:** combinable membership role sets, exclusive Space Manager/Member, per-person machine-type scope, read-only role reference, refreshed console navigation and irreversible preview-first migration from editable roles.
+
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which
   presign rows no workflow ever consumed; a default-off deployment switch plus tenant opt-in lets a

@@ -57,16 +57,14 @@ channel only. Two architectural rules are load-bearing and easy to violate if yo
 ### Module responsibilities
 
 - **Auth & RBAC** — enforces the role/action matrix AND makerspace scoping on every query. Super Admin is
-  global; every other role is a per-makerspace membership resolved through an editable `MakerspaceRole` row,
-  action-based. `roles.DEFAULT_ROLE_DEFINITIONS` + `MEMBER_ROLE_DEFINITION` seed **four** protected defaults
-  per makerspace — Space Manager, Inventory Manager, Machine Manager, Member. **Guest Admin and Print
-  Manager are both retired** — handover is a custom role, and `print_manager` survives only as the frozen
-  legacy fallback in `_MEMBERSHIP_ROLE_ACTIONS` (migrations and enum archaeology under **Handover roles**
-  in `docs/INVARIANTS.md`). Inventory Manager is membership-only and covers the full hardware lifecycle but
-  not printing, staff, or makerspace settings. Also blocks restricted/suspended users. Interface:
-  `can(actor, action, resource)`, `scope_by_makerspace(actor, query)`. (It no longer verifies Telegram
-  actors — that went with the callback route. `assertTelegramActorCan` never existed in the code at all;
-  this line asserted it for months.)
+  global; each makerspace has seven fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
+  Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member. No custom roles or role
+  editing. A membership holds a primary role plus combinable additional roles; Space Manager and Member
+  must each stand alone. Authority is the union of the valid role set's actions. Machine Manager reach is
+  assigned per person by machine type; no type links means no machines, and a type covers machines added
+  later. Space Manager is exempt. Inventory Manager covers the full hardware lifecycle but not printing,
+  staff or makerspace settings. Also blocks restricted/suspended users. Interface:
+  `can(actor, action, resource)`, `scope_by_makerspace(actor, query)`.
 - **Request Workflow** — owns the state machine, emits audit logs, triggers Telegram alerts, coordinates
   inventory reservation/issue/return.
 - **Inventory Availability** — quantity math + asset status for QR-tracked tools.
@@ -96,7 +94,7 @@ accountability/access-restriction flow (PRD §6.5) are how lost/damaged hardware
 ## Multi-Tenancy (Makerspace Scoping)
 
 Every domain entity is scoped to a `makerspace_id`. A makerspace owns its inventory, public URL, Space
-Managers, Inventory Managers, its own custom roles (handover included), Telegram group chat ID, QR
+Managers, Inventory Managers, its seven built-in role instances, Telegram group chat ID, QR
 namespace, and audit-log scope. **Any list/query for makerspace-scoped staff actors must be scoped through
 the Auth module** — forgetting this is a cross-tenant data leak, not just a bug.
 
@@ -107,14 +105,13 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   eligible scanned/selected tool.
 - Hardware **cannot be returned** without a return photo and a return remark/notes.
 - Issued quantity cannot exceed accepted quantity without authorized workflow permission.
-- **Guest Admin is no longer a built-in role**; handover staff get a **custom role** holding the handout
-  actions. It issues accepted requests, creates **direct handouts**, processes scoped returns and uploads
-  evidence — through the same evidence/QR/remark/audit workflow as staff — and still cannot accept/reject
-  requests, edit inventory or manage QR unless granted those actions. `rbac.HANDOUT_ACTIONS` is no longer a
-  cap on what a role may hold; it only defines what counts as handover-only for `rbac.is_handout_only`,
-  which decides how narrow the console is. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
-  are the handover API surface (module key `guest_handover`), not the role — renaming them would break
-  clients. Full detail: **Handover roles** in `docs/INVARIANTS.md`.
+- **Handover is a built-in role again.** It issues accepted requests, creates **direct handouts**, processes
+  scoped returns, uploads evidence and collects completed machine jobs through the same evidence/QR/remark/
+  audit workflow as staff. It cannot accept/reject requests, edit inventory or manage QR on its own;
+  combining it with another built-in adds that role's actions. `rbac.HANDOUT_ACTIONS` defines handover-only
+  console narrowing, not a grant ceiling. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
+  remain the handover API surface (module key `guest_handover`); renaming them would break clients.
+  Full detail: **Handover roles** in `docs/INVARIANTS.md`.
 - Public request submission requires an **authenticated member** (`RequestSubmitView` → `IsAuthenticated`),
   and request lookup is scoped to that verified identity — it never matches free-text contact fields (no
   enumeration by known email/phone). Since the Check-In retirement (`73a480c`) this is enforced by member
@@ -163,7 +160,7 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   requester history, or hidden counts. Public visibility is governed per-item by `is_public`,
   `show_public_count`, and `public_availability_mode` (`exact_count | status_only | hidden`).
 
-> The machine-scoping program (`MANAGE_MACHINES` per role, the Machines console, procurement and dashboard
+> The machine-scoping program (`MANAGE_MACHINES` per person by machine type, the Machines console, procurement and dashboard
 > narrowing) is documentation of an invariant, not a workflow rule, and lives under **Machine scoping** in
 > `docs/INVARIANTS.md`.
 
@@ -375,8 +372,8 @@ because none are quoted here — this index is a router, not a summary.
 
 | Section of `docs/INVARIANTS.md` | Before you touch |
 | --- | --- |
-| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin hide/archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; custom roles; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles; staff event registration; notifications v2; presence geofence; the colour vocabulary; the accessibility floor; console parity |
-| **Handover roles and the retired Guest Admin** | handout/front-desk custom roles, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
+| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin hide/archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles; staff event registration; notifications v2; presence geofence; the colour vocabulary; the accessibility floor; console parity |
+| **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |
 | **Events program invariants** | `apps/events/`, registration vs presence, member history and provenance, collaborative events, host waivers, QR check-in |

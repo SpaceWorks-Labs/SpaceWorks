@@ -103,9 +103,10 @@ export function StaffWorkspace({
   // Super Admin is GLOBAL authority and must win over any local membership row: a superuser who
   // also holds a membership would otherwise be announced as "Member". The deleted sidebar
   // prioritised it the same way.
+  const activeMembership = user.makerspaces.find((item) => item.id === selected);
   const activeRoleName = isSuperadmin
     ? "Super Admin"
-    : user.makerspaces.find((item) => item.id === selected)?.role_name;
+    : activeMembership?.role_names?.join(" + ") || activeMembership?.role_name;
 
   // A stale hardware bookmark for a machine-only actor returns to their allowed tab.
   const normalizedDeniedTabs = new Set(["requests"]);

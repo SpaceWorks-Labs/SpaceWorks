@@ -1,10 +1,9 @@
 """Locked authority and validation for per-makerspace role mutations."""
 
-from rest_framework.exceptions import PermissionDenied, ValidationError
-
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
-from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
+from apps.makerspaces.models import MakerspaceMembership, MakerspaceRole
 from apps.organizations.models import (
     Organization,
     OrganizationMakerspace,
@@ -14,21 +13,13 @@ from apps.organizations.models import (
 MEMBER_ROLE_SLUG = "member"
 
 
-class RoleConflict(Exception):
-    """A role cannot be deleted (protected, or still assigned to a membership).
-
-    Plain exception (not a DRF APIException) so the project's
-    ``workflow_exception_handler`` maps it to the structured ``{detail, code}``
-    body via ``_EXCEPTION_MAP`` instead of DRF's bare ``{detail}`` default."""
-
-
 def _superadmin(actor):
     return actor.is_superuser or actor.role == User.Role.SUPERADMIN
 
 
 def _locked_actor_actions(actor, makerspace):
     membership = (
-        MakerspaceMembership.objects.select_for_update(of=("self",))
+        MakerspaceMembership.objects.prefetch_related(additional_roles_prefetch()).select_for_update(of=("self",))
         .select_related("assigned_role")
         .filter(makerspace=makerspace, user=actor, status="active")
         .first()
@@ -102,48 +93,5 @@ def _locked_organization_actions(actor, makerspace):
     for membership in memberships:
         actions.update(rbac.actions_for_organization_membership(membership))
     return actions
-
-
-def _clean_actions(actions):
-    if not isinstance(actions, list) or any(not isinstance(item, str) for item in actions):
-        raise ValidationError({"granted_actions": "Use a list of action values."})
-    values = set(actions)
-    if values & rbac.ROLE_FORBIDDEN_ACTIONS:
-        raise ValidationError(
-            {"granted_actions": "This action cannot be granted to a makerspace role."}
-        )
-    unknown = values - rbac.ALL_ACTIONS
-    if unknown:
-        raise ValidationError({"granted_actions": "Unknown action value."})
-    return values
-
-
-def _validate_actions(actor, makerspace, actions, role=None):
-    values = _clean_actions(actions)
-    is_superadmin = _superadmin(actor)
-    actor_actions = _locked_actor_actions(actor, makerspace)
-    if rbac.Action.MANAGE_MAKERSPACE not in actor_actions:
-        raise PermissionDenied()
-    if not is_superadmin:
-        ceiling = actor_actions - {rbac.Action.MANAGE_MAKERSPACE}
-        if not values <= ceiling:
-            raise PermissionDenied()
-    if role and role.legacy_role == MakerspaceMembership.Role.SPACE_MANAGER:
-        if rbac.Action.MANAGE_MAKERSPACE not in values:
-            raise ValidationError(
-                {"granted_actions": "The Space Manager role must retain manage_makerspace."}
-            )
-    if role and role.is_protected and role.slug == MEMBER_ROLE_SLUG and values:
-        # Every open join, referral claim, walk-in and imported adoption activates onto
-        # this role, and `invite_membership` reads "grants no actions" as "community
-        # invitation". An action here would hand staff authority to all of them and turn
-        # the module gate on community invitations into a bypass.
-        raise ValidationError({"granted_actions": "The Member role grants no staff actions."})
-    # No Guest Admin ceiling any more: migration 0052 retired it as a built-in, so the
-    # handover role is an ordinary custom role and is bounded by the general rule above --
-    # you cannot grant an action you do not hold yourself. `rbac.HANDOUT_ACTIONS` survives
-    # as the definition of "handover-only" for `is_handout_only`, which decides what the
-    # console shows such a staffer; it is no longer a cap on what any role may hold.
-    return sorted(values)
 
 

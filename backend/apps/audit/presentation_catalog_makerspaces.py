@@ -83,8 +83,5 @@ ENTRIES = (
       ("membership_id", "version", "waiver_id")),
     P("membership_plan.created", "Membership plan created", ("plan_id",)),
     P("membership_plan.updated", "Membership plan updated", ("fields", "plan_id")),
-    P("role.created", "Role created", ("id", "slug")),
-    P("role.deleted", "Role deleted"),
-    P("role.machine_scope_changed", "Role machine scope changed"),
-    P("role.updated", "Role updated", ("added_actions", "changed_fields", "removed_actions")),
+    P("report_schedule.recipients_pruned_by_migration", "Report schedule recipients pruned by role migration"),
 )

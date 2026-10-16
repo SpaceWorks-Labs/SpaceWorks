@@ -9,10 +9,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_member_memberships import (AdminMembershipSerializer, ApproveRequestSerializer,
-    InvitationSerializer, MembershipRequestSerializer, RevokeSerializer, RoleIdSerializer)
+    InvitationSerializer, MembershipRequestSerializer, RevokeSerializer)
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
+from apps.admin_api.serializers_role_sets import (
+    ROLE_SET_VALIDATION_ERROR, RoleSetInputSerializer, resolve_role_set,
+)
 from apps.admin_api.views_roles import ERRORS as ROLE_ERRORS
 from apps.makerspaces import membership_services, waiver_services
 from apps.makerspaces.guards import require_module
@@ -72,7 +76,7 @@ class AdminMembershipRosterView(APIView):
     def get(self, request):
         makerspace = _makerspace(request.user, request.query_params.get("makerspace_id"))
         active = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceWaiver.objects.filter(makerspace=makerspace, is_active=True)).first()
-        queryset = MakerspaceMembership.objects.filter(makerspace=makerspace).select_related("user", "assigned_role").order_by("user__username")
+        queryset = MakerspaceMembership.objects.filter(makerspace=makerspace).select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch()).order_by("user__username")
         queryset = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, queryset)
         selected_id = identity_filter(request.query_params)
         if selected_id is not None:
@@ -201,15 +205,20 @@ class AdminMembershipRevokeM2View(APIView):
 class AdminMembershipRoleM2View(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(description="Requires manage_members in this makerspace; staff role administration and waiver publishing require manage_makerspace.", tags=["Admin memberships"], request=RoleIdSerializer, responses={200: AdminMembershipSerializer, **ERRORS})
+    @extend_schema(
+        description="Requires manage_members; staff role changes require manage_makerspace. Replace the complete role set using exactly one of role_id or role_ids. Duplicate IDs are ignored; Space Manager and Member are exclusive. Unknown or foreign IDs return 404.",
+        tags=["Admin memberships"], request=RoleSetInputSerializer,
+        responses={200: AdminMembershipSerializer, **ERRORS, 400: ROLE_SET_VALIDATION_ERROR},
+    )
     def patch(self, request, pk):
         membership = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.select_related("makerspace")), pk=pk)
         makerspace = _makerspace(request.user, membership.makerspace_id)
-        serializer = RoleIdSerializer(data=request.data); serializer.is_valid(raise_exception=True)
-        membership = membership_services.change_role(request.user, membership, _role(makerspace, serializer.validated_data["role_id"]))
+        serializer = RoleSetInputSerializer(data=request.data); serializer.is_valid(raise_exception=True)
+        roles = resolve_role_set(makerspace, serializer.validated_data)
+        membership = membership_services.change_role(request.user, membership, roles)
         membership = MakerspaceMembership.objects.select_related(
             "user", "assigned_role"
-        ).get(pk=membership.pk)
+        ).prefetch_related(additional_roles_prefetch()).get(pk=membership.pk)
         return Response(
             AdminMembershipSerializer(
                 membership,

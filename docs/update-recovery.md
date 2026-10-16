@@ -5,6 +5,40 @@
 Forward migrations remain applied; the dump is never restored automatically. Restoring a database
 loses database changes made since the dump. The dump contains no uploaded object bytes.
 
+## Fixed-role upgrade (2026-10-16)
+
+The fixed-role data migration (`makerspaces/0089_fixed_roles_data`) is **irreversible**. It replaces
+editable roles with seven built-ins and moves Machine Manager type assignments to each person.
+Plan this as a stopped-writer upgrade, before invoking any updater that automatically runs migrations.
+
+1. Suspend automatic deployments. Take and verify a database backup, retain the old image/version,
+   encryption keys and deployment configuration, and preserve uploaded objects through the normal backup
+   procedure. An application-image rollback cannot undo this data conversion.
+2. Stop every application writer: web/API, workers, scheduled jobs, live processes and external clients.
+   Keep the database available. Use a one-off management process from the **new image**, against the
+   still-unmigrated database; do not start its web/worker processes or automatic migration entrypoint.
+3. Run `python manage.py preview_fixed_roles` in that new-image management process **before `migrate`**.
+   It reads the old schema without writes. `--json` and `--makerspace ID` are available for inspection;
+   review an unfiltered preview before upgrading the deployment. Check each membership's mapped role
+   set, dropped actions, E1/E2 gains, revoked invitations, pruned schedules and machine reach.
+4. Resolve every **“must fix before upgrading”** notification rule. A `NotificationRecipient` with
+   `kind=role` referencing an obsolete/custom role makes migration refuse and roll back. Repoint it
+   to a surviving built-in or named users, or remove it using the old console. If the console is
+   needed, reopen the old image briefly for those controlled edits, then stop all writers again,
+   take a fresh backup and rerun the preview. There is no automatic role-to-user conversion.
+5. With a clean, reviewed preview and writers still stopped, run `python manage.py migrate` using
+   the new image and the installation's normal management/migration authority. Start the new release
+   through its existing readiness gates. Verify role sets, notifications and per-person machine types
+   in Users/Members before reopening access or resuming scheduled jobs and automatic deployments.
+
+Mapping normally only narrows raw grants. E1 restores the canonical grants of a narrowed Space Manager;
+E2 turns the legacy six handout actions into Handover, adding direct job collection. Preview reports
+these exceptions. Machine links are dropped, never widened to whole types. A nonempty machine-only
+scope loses Machine Manager to avoid widening notification fallback. Former exempt managers mapped
+to Machine Manager receive only the types present at migration time; future types need assignment.
+Space Manager remains exempt. Reversing the conversion requires a coordinated database restore and
+old image, with the data-loss and object-continuity limits described below.
+
 ## Inspect a failed deployment
 
 As the install owner, inspect logs before restarting anything:

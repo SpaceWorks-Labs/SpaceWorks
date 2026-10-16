@@ -20,10 +20,14 @@ import { MembershipPagination } from "./MembershipPagination";
 import { MembershipPlanPicker } from "./MembershipPlanPicker";
 import { MembershipWaiverPanel } from "./MembershipWaiverPanel";
 import { MembershipAdmissionReview, MembershipVouchers, type ReviewMembershipRequest } from "./MembershipAdmissionReview";
+import { MemberRolesControl } from "./panels/MemberRolesControl";
+import { assignableRoles, type MembershipRoles } from "./panels/roleSets";
+import type { StaffRole } from "./panels/rolesApi";
 import type { AdmissionVouch } from "../members/membershipAdmissionApi";
 
 type Presence = { display_name: string; role_label: string; started_at: string; expires_at: string };
-type Role = { id: number; name: string };
+type RosterMember = AdminMembership & MembershipRoles;
+type RosterResponse = Omit<MembershipListResponse, "results"> & { results: RosterMember[] };
 
 export const membershipErrorText = (error: unknown) =>
   error instanceof StructuredApiError ? error.detail ?? error.message : "Unable to update membership.";
@@ -35,7 +39,7 @@ export const membershipErrorText = (error: unknown) =>
 // Waiver management and witnessed acceptance are core liability controls. Invitation stays,
 // because a STAFF invitation keeps working with
 // the module off (`invite_membership` discriminates on the role's granted actions).
-export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false }: { makerspaceId: number; membershipEnabled: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean }) {
+export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false, actorActions, isSuperadmin, onAuthRefresh }: { makerspaceId: number; membershipEnabled: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean; actorActions: string[]; isSuperadmin: boolean; onAuthRefresh: () => void }) {
   const client = useQueryClient();
   const key = ["members", makerspaceId];
   const list = useUrlListState({ id: "", q: "", status: "", ordering: "user__username", page: "1", requestPage: "1", requestState: "", requestOrdering: "-created_at" });
@@ -47,7 +51,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
   const [decision, setDecision] = useState<{ id: number; kind: "member" | "request"; title: string } | null>(null);
   const roster = useQuery({
     queryKey: [...key, "roster", list.query],
-    queryFn: () => staffRequest<MembershipListResponse>(`/admin/memberships?makerspace_id=${makerspaceId}&page=${rosterPage}&${new URLSearchParams({ q: list.values.q, status: list.values.status, ordering: list.values.ordering, id: list.values.id })}`),
+    queryFn: () => staffRequest<RosterResponse>(`/admin/memberships?makerspace_id=${makerspaceId}&page=${rosterPage}&${new URLSearchParams({ q: list.values.q, status: list.values.status, ordering: list.values.ordering, id: list.values.id })}`),
   });
   const requests = useQuery({
     queryKey: [...key, "requests", requestPage, membershipEnabled, list.values.requestState, list.values.requestOrdering],
@@ -56,12 +60,13 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
     queryFn: () => staffRequest<{ results: ReviewMembershipRequest[]; count: number; next: string | null; previous: string | null }>(`/admin/membership-requests?makerspace_id=${makerspaceId}&page=${requestPage}&${new URLSearchParams({ state: list.values.requestState, ordering: list.values.requestOrdering })}`),
   });
   const presence = useQuery({ queryKey: [...key, "presence"], queryFn: () => staffRequest<Presence[]>(`/admin/makerspace/${makerspaceId}/presence-sessions/current`) });
-  const roles = useQuery({ queryKey: [...key, "roles"], queryFn: () => staffRequest<Role[]>(`/admin/makerspaces/${makerspaceId}/roles`) });
+  const roles = useQuery({ queryKey: [...key, "roles"], queryFn: () => staffRequest<StaffRole[]>(`/admin/makerspaces/${makerspaceId}/roles`) });
+  const grantableRoles = assignableRoles(roles.data ?? [], actorActions, isSuperadmin);
   const [roleId, setRoleId] = useState<number | null>(null);
   // What the dropdown SHOWS: the first role until staff pick another. Approve and Invite
   // must post this, not `roleId` -- that stays null until a change event, so with one role
   // (or the default left alone) both used to send `role_id: null` and fail.
-  const selectedRole = roleId ?? roles.data?.[0]?.id ?? null;
+  const selectedRole = (grantableRoles.some((role) => role.id === roleId) ? roleId : grantableRoles[0]?.id) ?? null;
   const [inviteEmail, setInviteEmail] = useState("");
   const [termsMember, setTermsMember] = useState<AdminMembership | null>(null);
   const refresh = () => client.invalidateQueries({ queryKey: key });
@@ -69,7 +74,6 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
   const revoke = useMutation({ mutationFn: ({ id, reason }: { id: number; reason: string }) => staffRequest(`/admin/memberships/${id}/revoke`, { method: "POST", body: JSON.stringify({ reason }) }), onSuccess: decisionSaved });
   const revokeRequest = useMutation({ mutationFn: ({ id, reason }: { id: number; reason: string }) => staffRequest(`/admin/membership-requests/${id}/revoke`, { method: "POST", body: JSON.stringify({ reason }) }), onSuccess: decisionSaved });
   const approve = useMutation({ mutationFn: (id: number) => staffRequest(`/admin/membership-requests/${id}/approve`, { method: "POST", body: JSON.stringify({ role_id: selectedRole, ...(membershipEnabled && planId ? { plan_id: planId } : {}) }) }), onSuccess: refresh });
-  const changeRole = useMutation({ mutationFn: ({ id, nextRoleId }: { id: number; nextRoleId: number }) => staffRequest(`/admin/memberships/${id}/role`, { method: "PATCH", body: JSON.stringify({ role_id: nextRoleId }) }), onSuccess: refresh });
   const capabilities = useMutation({
     mutationFn: ({ id, next }: { id: number; next: PatchedMembershipCapabilities }) =>
       staffRequest<AdminMembership>(`/admin/memberships/${id}/capabilities`, {
@@ -87,7 +91,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
   });
   const invite = useMutation({ mutationFn: () => staffRequest(`/admin/makerspace/${makerspaceId}/membership-invitations`, { method: "POST", body: JSON.stringify({ invite_email: inviteEmail, role_id: selectedRole }) }), onSuccess: () => { setInviteEmail(""); refresh(); } });
   const witnessWaiver = useMutation({ mutationFn: (id: number) => staffRequest(`/admin/memberships/${id}/waiver/witness`, { method: "POST", body: JSON.stringify({}) }), onSuccess: refresh });
-  const error = revoke.error ?? revokeRequest.error ?? approve.error ?? changeRole.error ?? capabilities.error ?? verify.error ?? invite.error ?? witnessWaiver.error;
+  const error = revoke.error ?? revokeRequest.error ?? approve.error ?? capabilities.error ?? verify.error ?? invite.error ?? witnessWaiver.error;
   const rosterRows = roster.data?.results ?? [];
   const requestRows = requests.data?.results ?? [];
 
@@ -100,15 +104,14 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
         key={row.id}
         makerspaceId={makerspaceId}
         member={row}
-        roles={roles.data ?? []}
+        roles={grantableRoles}
+        onAuthRefresh={onAuthRefresh}
         canManageMakerspace={canManageMakerspace}
         canViewFinance={canViewFinance}
         canRecordPayment={canRecordPayment}
-        changingRole={changeRole.isPending}
         changingCapabilities={capabilities.isPending}
         changingVerification={verify.isPending}
         changingWitness={witnessWaiver.isPending}
-        onChangeRole={(nextRoleId) => changeRole.mutate({ id: row.id, nextRoleId })}
         membershipEnabled={membershipEnabled}
         onCapability={(next) => capabilities.mutate({ id: row.id, next })}
         onVerify={() => verify.mutate({ id: row.id, verified: !Boolean(row.verified_at) })}
@@ -121,7 +124,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
       {roster.isSuccess && !rosterRows.length ? <p className="text-sm text-muted">No members on this page.</p> : null}
       <MembershipPagination label="members" page={rosterPage} next={roster.data?.next} previous={roster.data?.previous} fetching={roster.isFetching} onPage={setRosterPage} />
     </Panel>
-    <Panel title={membershipEnabled ? "Membership requests" : "Invitations"}><div className="mb-3 flex flex-wrap gap-2"><Field label="Invite role"><select className="desk-input" value={selectedRole ?? ""} onChange={(event) => setRoleId(Number(event.target.value))}>{roles.data?.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></Field><Field label="Invite email"><input className="desk-input" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} /></Field><button className="desk-button" disabled={!inviteEmail || !selectedRole || invite.isPending} onClick={() => invite.mutate()}>Invite</button></div>
+    <Panel title={membershipEnabled ? "Membership requests" : "Invitations"}><div className="mb-3 flex flex-wrap gap-2"><Field label="Invite role"><select className="desk-input" value={selectedRole ?? ""} onChange={(event) => setRoleId(Number(event.target.value))}>{grantableRoles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></Field><Field label="Invite email"><input className="desk-input" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} /></Field><button className="desk-button" disabled={!inviteEmail || !selectedRole || invite.isPending} onClick={() => invite.mutate()}>Invite</button></div>
       <div className="mb-3 flex flex-wrap gap-3">
         <label className="text-xs text-muted">Request state<select className="desk-input" value={list.values.requestState} onChange={(event) => list.update({ requestState: event.target.value, requestPage: "1" }, false)}><option value="">All</option>{["requested", "invited", "awaiting_vouches", "awaiting_payment", "expired", "canceled", "active", "revoked"].map((value) => <option key={value}>{value}</option>)}</select></label>
         <label className="text-xs text-muted">Request sort<select className="desk-input" value={list.values.requestOrdering} onChange={(event) => list.update({ requestOrdering: event.target.value, requestPage: "1" }, false)}><option value="-created_at">Newest</option><option value="created_at">Oldest</option><option value="state">State</option></select></label>
@@ -137,7 +140,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
       {requests.isError ? <p role="alert" className="text-sm text-danger">{membershipErrorText(requests.error)}</p> : null}
       {requests.isSuccess && !requestRows.length ? <p className="text-sm text-muted">No membership requests on this page.</p> : null}
       <MembershipPagination label="requests" page={requestPage} next={requests.data?.next} previous={requests.data?.previous} fetching={requests.isFetching} onPage={setRequestPage} /></Panel>
-    {membershipEnabled ? <InvitationRequestsSection makerspaceId={makerspaceId} roles={roles.data ?? []} /> : null}
+    {membershipEnabled ? <InvitationRequestsSection makerspaceId={makerspaceId} roles={grantableRoles} /> : null}
     {membershipEnabled && canManageMakerspace ? <MembershipPlansSection makerspaceId={makerspaceId} /> : null}
     <Panel title="Currently present">{presence.data?.length ? presence.data.map((row) => <p className="border-t border-line py-2 text-sm text-ink" key={`${row.display_name}-${row.started_at}`}>{row.display_name} <span className="text-muted">· {row.role_label} · until {new Date(row.expires_at).toLocaleTimeString()}</span></p>) : <p className="text-sm text-muted">No active member presence sessions.</p>}</Panel>
     {canManageMakerspace ? <MembershipWaiverPanel makerspaceId={makerspaceId} /> : null}
@@ -147,19 +150,18 @@ export function MembersPanel({ makerspaceId, membershipEnabled, canManageMakersp
   </div>;
 }
 
-function MemberRow({ makerspaceId, member, roles, canManageMakerspace, canViewFinance, canRecordPayment, membershipEnabled, changingRole, changingCapabilities, changingVerification, changingWitness, onChangeRole, onCapability, onVerify, onWitness, onRevoke, onTerms }: {
+function MemberRow({ makerspaceId, member, roles, onAuthRefresh, canManageMakerspace, canViewFinance, canRecordPayment, membershipEnabled, changingCapabilities, changingVerification, changingWitness, onCapability, onVerify, onWitness, onRevoke, onTerms }: {
   makerspaceId: number;
-  member: AdminMembership;
-  roles: Role[];
+  member: RosterMember;
+  roles: StaffRole[];
+  onAuthRefresh: () => void;
   canManageMakerspace: boolean;
   canViewFinance: boolean;
   canRecordPayment: boolean;
   membershipEnabled: boolean;
-  changingRole: boolean;
   changingCapabilities: boolean;
   changingVerification: boolean;
   changingWitness: boolean;
-  onChangeRole: (roleId: number) => void;
   onCapability: (next: PatchedMembershipCapabilities) => void;
   onVerify: () => void;
   onWitness: () => void;
@@ -170,10 +172,10 @@ function MemberRow({ makerspaceId, member, roles, canManageMakerspace, canViewFi
   const manageable = canManageMakerspace || roles.some((role) => role.id === member.assigned_role?.id);
   const displayName = member.user.display_name || member.user.username;
   return <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line py-3">
-    <div><p className="font-semibold text-ink">{displayName}</p><p className="text-xs text-muted">{member.assigned_role?.name ?? "Member"} · {member.status} · waiver {member.waiver_required ? (member.waiver_current ? "current" : "needed") : "not required"}</p><MembershipVouchers vouches={(member as AdminMembership & { vouches?: AdmissionVouch[] }).vouches} />{canViewFinance ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={member.payment} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace} invalidateKeys={[["members", makerspaceId]]} /> : null}</div>
+    <div><p className="font-semibold text-ink">{displayName}</p><p className="text-xs text-muted">{member.roles.map((role) => role.name).join(" + ") || "Member"} · {member.status} · waiver {member.waiver_required ? (member.waiver_current ? "current" : "needed") : "not required"}</p><MembershipVouchers vouches={(member as AdminMembership & { vouches?: AdmissionVouch[] }).vouches} />{canViewFinance ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={member.payment} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace} invalidateKeys={[["members", makerspaceId]]} /> : null}</div>
     <div className="flex flex-wrap items-center gap-2">
       {membershipEnabled ? <Badge tone={member.verified_at ? "success" : "neutral"}>{member.verified_at ? "Verified" : "Not verified"}</Badge> : null}
-      {active ? <>{member.waiver_required && !member.waiver_current ? <button className="desk-button" type="button" disabled={changingWitness} onClick={onWitness}>Record witnessed acceptance</button> : null}{membershipEnabled ? <><label className="flex items-center gap-1 text-xs text-muted"><input type="checkbox" checked={member.can_refer} disabled={changingCapabilities} onChange={(event) => onCapability({ can_refer: event.target.checked })} />Can refer</label><label className="flex items-center gap-1 text-xs text-muted"><input type="checkbox" checked={member.can_verify} disabled={changingCapabilities} onChange={(event) => onCapability({ can_verify: event.target.checked })} />Can verify</label><button className="desk-button" type="button" disabled={changingVerification} onClick={onVerify}>{member.verified_at ? "Unverify" : "Verify"}</button><button className="desk-button" type="button" onClick={onTerms}>Terms</button></> : null}{manageable ? <><select aria-label={`Role for ${displayName}`} className="desk-input" defaultValue={member.assigned_role?.id ?? ""} onChange={(event) => onChangeRole(Number(event.target.value))} disabled={changingRole}>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select><button className="desk-button" type="button" onClick={onRevoke}>Revoke</button></> : null}</> : null}
+      {active ? <>{member.waiver_required && !member.waiver_current ? <button className="desk-button" type="button" disabled={changingWitness} onClick={onWitness}>Record witnessed acceptance</button> : null}{membershipEnabled ? <><label className="flex items-center gap-1 text-xs text-muted"><input type="checkbox" checked={member.can_refer} disabled={changingCapabilities} onChange={(event) => onCapability({ can_refer: event.target.checked })} />Can refer</label><label className="flex items-center gap-1 text-xs text-muted"><input type="checkbox" checked={member.can_verify} disabled={changingCapabilities} onChange={(event) => onCapability({ can_verify: event.target.checked })} />Can verify</label><button className="desk-button" type="button" disabled={changingVerification} onClick={onVerify}>{member.verified_at ? "Unverify" : "Verify"}</button><button className="desk-button" type="button" onClick={onTerms}>Terms</button></> : null}{manageable ? <>{canManageMakerspace ? <MemberRolesControl msId={makerspaceId} membershipId={member.id} membership={member} roles={roles} onAuthRefresh={onAuthRefresh} /> : null}<button className="desk-button" type="button" onClick={onRevoke}>Revoke</button></> : null}</> : null}
     </div>
   </div>;
 }

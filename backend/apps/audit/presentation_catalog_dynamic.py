@@ -51,7 +51,6 @@ NON_LITERAL_META_ACTIONS = frozenset({
     "notification.recipients_selected",
     "presence.started",
     "qr.rebound",
-    "role.deleted",
 })
 
 # Every constant a resolvable dynamic action (``a if x else b``) can produce.

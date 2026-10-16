@@ -2,6 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts import audit_events, rbac
 from apps.accounts.models import User
 from apps.accounts.models_devices import DeviceGrant, NativeAppRegistration
@@ -44,7 +45,7 @@ def assert_staff_authority(user, request):
     memberships = servable_queryset(
         MakerspaceMembership.objects.filter(user=user, status="active"),
         relation="makerspace",
-    ).select_related("assigned_role")
+    ).select_related("assigned_role").prefetch_related(additional_roles_prefetch())
     memberships = rbac.hide_from_superadmin(user, memberships, field="makerspace_id")
     if scope is not NO_STAFF_ORIGIN_SCOPE:
         memberships = memberships.filter(makerspace_id=scope)

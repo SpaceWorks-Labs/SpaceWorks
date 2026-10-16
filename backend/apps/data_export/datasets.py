@@ -11,6 +11,8 @@ P = TenantPredicate
 # A dataset has one root model.  Relationship values are IDs/snapshots; a dataset may
 # never expand a routing relation into the related tenant's row.
 DATASET_SPECS = {
+    "makerspaces.MembershipAdditionalRole": ("members/additional_roles.csv", P(("membership__makerspace",), ("role__makerspace",))),
+    "machines.MembershipMachineTypeScope": ("members/member_machine_type_scopes.csv", P(("membership__makerspace",), ("machine_type__makerspace",))),
     "notifications.MemberNotificationPreference": ("notifications/member_preferences.csv", P(("makerspace",))),
     "operations.SavedView": ("preferences/saved_views.csv", P(("makerspace",))),
     "makerspaces.MakerspaceLoanPolicy": ("makerspace/loan_policy.csv", P(("makerspace",))),
@@ -85,8 +87,6 @@ DATASET_SPECS = {
     "machines.MachineType": ("machines/types.csv", P(("makerspace",), include_global_if_unowned=True)),
     "machines.MachineUsageEntry": ("machines/usage_entries.csv", P(("machine__makerspace",))),
     "machines.MakerspaceMachineTypePricing": ("machines/type_pricing.csv", P(("makerspace",), ("machine_type__makerspace",))),
-    "machines.RoleMachineScope": ("members/role_machine_scopes.csv", P(("role__makerspace",), ("machine__makerspace",))),
-    "machines.RoleMachineTypeScope": ("members/role_machine_type_scopes.csv", P(("role__makerspace",), ("machine_type__makerspace",))),
     "machines.ServiceBucket": ("machine_service/buckets.csv", P(("machine__makerspace",))),
     "machines.ServiceQueue": ("machine_service/queues.csv", P(("makerspace",), ("machine_type__makerspace",))),
     "machines.ServiceRequestConsumption": ("machine_service/request_consumptions.csv", P(("service_request__makerspace",), ("machine_consumable__machine__makerspace",))),

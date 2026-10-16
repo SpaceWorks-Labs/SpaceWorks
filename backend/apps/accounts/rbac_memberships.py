@@ -1,5 +1,7 @@
 """Membership-only RBAC identity helpers."""
 
+
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.makerspaces.models import MakerspaceMembership
 
 
@@ -13,7 +15,7 @@ def membership_role(actor, makerspace_id):
 
 
 def _membership_for(actor, makerspace_id) -> MakerspaceMembership | None:
-    return actor.makerspace_memberships.select_related("assigned_role").filter(
+    return actor.makerspace_memberships.select_related("assigned_role").prefetch_related(additional_roles_prefetch()).filter(
         status="active",
         makerspace_id=makerspace_id,
     ).first()

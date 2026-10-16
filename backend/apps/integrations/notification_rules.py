@@ -6,6 +6,7 @@ from apps.integrations.email_templates_registry import (
     PRINTING_REQUESTER_KEYS,
     PRINTING_STAFF_KEYS,
 )
+from apps.integrations.email_templates_registry_fablab import EVENTS_KEYS, BOOKINGS_KEYS
 from apps.integrations.models import EmailNotificationMute
 from apps.makerspaces.models import MakerspaceMembership
 
@@ -19,6 +20,8 @@ def _mutable_events(keys):
 
 
 EVENT_CATALOG = {
+    ("events", "staff"): _mutable_events(EVENTS_KEYS),
+    ("bookings", "staff"): _mutable_events(BOOKINGS_KEYS),
     ("hardware", "requester"): _mutable_events(HARDWARE_REQUESTER_KEYS),
     ("hardware", "staff"): _mutable_events(HARDWARE_STAFF_KEYS),
     ("printing", "requester"): _mutable_events(PRINTING_REQUESTER_KEYS),
@@ -29,6 +32,9 @@ TARGETS = {
     MakerspaceMembership.Role.SPACE_MANAGER.value: "staff",
     MakerspaceMembership.Role.INVENTORY_MANAGER.value: "staff",
     MakerspaceMembership.Role.MACHINE_MANAGER.value: "staff",
+    "event_manager": "staff",
+    "booking_manager": "staff",
+    "handover": "staff",
     "requester": "requester",
 }
 
@@ -36,11 +42,15 @@ _STREAM_ROLES = {
     "hardware": (
         MakerspaceMembership.Role.SPACE_MANAGER.value,
         MakerspaceMembership.Role.INVENTORY_MANAGER.value,
+        "handover",
     ),
     "printing": (
         MakerspaceMembership.Role.SPACE_MANAGER.value,
         MakerspaceMembership.Role.MACHINE_MANAGER.value,
+        "handover",
     ),
+    "events": ("space_manager", "event_manager"),
+    "bookings": ("space_manager", "booking_manager"),
 }
 
 
@@ -149,3 +159,23 @@ def _fail_closed_targets(stream, event) -> set[str]:
     return targets
 
 
+def membership_muted(makerspace, stream, event, membership, required_action):
+    """Only the roles applicable to this stream participate in the all-muted test."""
+    from apps.accounts import rbac
+    from apps.accounts.rbac_roles import membership_roles
+
+    required = set(required_action if isinstance(required_action, tuple) else (required_action,))
+    applicable = [
+        role.slug for role in membership_roles(membership)
+        if isinstance(role.granted_actions, list)
+        and required.intersection(rbac.expand_implied_actions(
+            action for action in role.granted_actions if isinstance(action, str)
+        ))
+    ]
+    if membership.assigned_role_id is None and required.intersection(
+        rbac.actions_for_membership(membership)
+    ):
+        applicable = [membership.role]
+    return bool(applicable) and all(
+        role_muted(makerspace, stream, event, slug) for slug in applicable
+    )

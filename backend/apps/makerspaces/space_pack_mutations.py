@@ -9,11 +9,6 @@ def write_section(actor, makerspace, section, row, values):
     if section == "active_waiver":
         from .waiver_services import publish_waiver
         return publish_waiver(actor, makerspace, **values)
-    if section == "roles":
-        from .role_services import create_role, update_role
-        if row:
-            return update_role(makerspace=makerspace, role=row, actor=actor, **values)
-        return create_role(makerspace=makerspace, actor=actor, **values)
     if section == "admission_policy":
         from .membership_admission_settings import update_settings
         return update_settings(actor, makerspace, values)

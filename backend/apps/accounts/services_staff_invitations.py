@@ -15,6 +15,7 @@ from apps.accounts.models_staff_invitations import StaffInvitation
 from apps.audit.services import record
 from apps.makerspaces.models import Makerspace, MakerspaceRole
 from apps.makerspaces.role_services import can_assign_role
+from apps.makerspaces.role_catalog import BUILTIN_ROLE_SLUGS
 from apps.makerspaces.secrets import encrypt_value
 from apps.makerspaces.platform import feature_enabled
 from apps.tenant_migration.gate_runtime import tenant_write
@@ -34,8 +35,8 @@ def authority(actor, space, role=None):
     if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk):
         raise PermissionDenied()
     if role is not None:
-        if not role.granted_actions:
-            raise ValidationError("Choose a staff role with actions.")
+        if role.slug not in BUILTIN_ROLE_SLUGS or not role.granted_actions:
+            raise ValidationError("Choose a built-in staff role with actions.")
         can_assign_role(actor, space, role)
 
 

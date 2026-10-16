@@ -6,6 +6,8 @@ override in tenant_dump_authority.py before the catalog guard will pass.
 """
 
 FIRST_PARTY_FIELD_NAMES = {
+    'makerspaces.MembershipAdditionalRole': frozenset('id membership role assigned_by assigned_at'.split()),
+    'machines.MembershipMachineTypeScope': frozenset('id membership machine_type created_at'.split()),
     "makerspaces.SpacePackProfile": frozenset("id name pack created_at updated_at".split()),
     "makerspaces.MakerspaceLoanPolicy": frozenset("id makerspace default_loan_days loan_renewal_mode loan_max_renewals loan_renewal_days loan_max_active loan_max_items loan_reminder_offsets_hours loan_escalate_overdue_days updated_at".split()),
     'notifications.NotificationInboxRow': frozenset('id makerspace user feature event event_key title summary link read_at created_at'.split()),
@@ -185,8 +187,6 @@ FIRST_PARTY_FIELD_NAMES = {
     'machines.ServiceRequestConsumption': frozenset('created_at created_by id label machine_consumable measurement outcome product quantity service_request'.split()),
     'machines.PrintingCutoverState': frozenset('created_at id kernel_authoritative_at makerspace reconciled_at updated_at'.split()),
     'machines.PrintingCutoverRepair': frozenset('created_at detail id kind legacy_id legacy_model makerspace resolved_at resolved_by'.split()),
-    'machines.RoleMachineTypeScope': frozenset('created_at id machine_type role'.split()),
-    'machines.RoleMachineScope': frozenset('created_at id machine role'.split()),
     'machines.CertificationGrant': frozenset('certification_type expires_at granted_at granted_by id membership notes revoked_at revoked_by'.split()),
     'machines.MakerspaceMachineTypePolicy': frozenset('id makerspace machine_type cert_reminder_days reminder_lead_days grace_days'.split()),
     'machines.CertificationType': frozenset('created_at description id is_active is_required_for_booking is_required_for_service machine_type makerspace name updated_at validity_days'.split()),

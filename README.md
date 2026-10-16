@@ -55,8 +55,8 @@ Telegram group, QR namespace, and audit scope — fully isolated from the others
 - **Operable in production** — every request carries an `X-Request-ID` through JSON logs and Celery,
   a token-protected Prometheus endpoint reports queue depth, delivery failures and storage, and CI runs
   the whole suite before an image is published.
-- **Action-based staff console** — editable per-makerspace roles over a fixed action set, four seeded
-  defaults, and a superadmin-only Django control plane.
+- **Action-based staff console** — seven fixed built-in roles per makerspace, combinable staff assignments,
+  per-person machine-type scope, and a superadmin-only Django control plane.
 - **Reports & ledger** — what's out, who has it, overdue tracking, CSV/XLSX export, plus accessible
   charts with table fallbacks and append-only metric rollups where a correction adds a revision rather
   than rewriting history. Every module is covered either by a substantive report or an explicitly
@@ -676,7 +676,7 @@ product intentionally does not expose a separate roadmap page.
 
 ## Roles & access
 
-See [roles and access](docs/README-HOSTING.md#roles--access) for custom roles, action grants,
+See [roles and access](docs/README-HOSTING.md#roles--access) for the seven built-ins, combined role assignments, action grants,
 and makerspace scoping.
 
 ## Hosting

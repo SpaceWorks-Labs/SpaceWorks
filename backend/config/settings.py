@@ -93,7 +93,6 @@ MANAGED_RESOURCE_LIMITS = {
     "discord": 100,
     "native_push": 500,
     "api_clients": 1,
-    "custom_roles": 20,
     # Tenant exports retain a long-lived database snapshot while running. This is an
     # active-job ceiling, independent of the byte quota charged when an archive lands.
     "data_exports": 1,

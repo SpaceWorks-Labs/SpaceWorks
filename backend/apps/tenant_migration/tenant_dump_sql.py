@@ -21,7 +21,6 @@ _TARGET_DERIVED_LABELS = frozenset(
     {
         "encryption.PiiMakerspaceWriteFence",
         "makerspaces.MakerspaceRole",
-        "machines.RoleMachineTypeScope",
     }
 )
 

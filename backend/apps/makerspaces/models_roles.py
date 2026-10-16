@@ -8,6 +8,7 @@ from django.db.models.functions import Lower
 from apps.makerspaces.models_makerspace import Makerspace
 from apps.makerspaces.models_memberships import MakerspaceMembership
 from apps.encryption.mappers import ScopedPiiModelMixin
+from apps.makerspaces.role_catalog import BUILTIN_ROLE_SLUGS
 
 
 class MakerspaceRole(models.Model):
@@ -37,6 +38,10 @@ class MakerspaceRole(models.Model):
     class Meta:
         ordering = ["name", "id"]
         constraints = [
+            models.CheckConstraint(
+                condition=Q(is_default=True, is_protected=True, slug__in=BUILTIN_ROLE_SLUGS),
+                name="makerspacerole_fixed_catalogue",
+            ),
             models.UniqueConstraint(
                 Lower("name"), "makerspace", name="makerspacerole_ci_name_uniq"
             ),

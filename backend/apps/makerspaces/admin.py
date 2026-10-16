@@ -40,6 +40,7 @@ class ArchivedFilter(admin.SimpleListFilter):
 
 
 class MakerspaceMembershipInline(TabularInline):
+    # Compatibility: intentionally writes only the legacy string; null FK = frozen fallback.
     model = MakerspaceMembership
     fk_name = "makerspace"
     fields = ("user", "role")

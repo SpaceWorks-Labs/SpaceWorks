@@ -38,6 +38,15 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "accounts" / "rbac_notifications.py",
     APPS_DIR / "accounts" / "rbac_bookings.py",
     APPS_DIR / "accounts" / "rbac_actions.py",
+    APPS_DIR / "accounts" / "rbac_roles.py",
+    APPS_DIR / "makerspaces" / "role_membership_writes.py",
+    APPS_DIR / "makerspaces" / "staff_authority.py",
+    APPS_DIR / "machines" / "role_scope_resolution.py",
+    APPS_DIR / "machines" / "role_scope_grants.py",
+    APPS_DIR / "machines" / "member_scope_services.py",
+    APPS_DIR / "admin_api" / "recipient_rule_identities.py",
+    APPS_DIR / "admin_api" / "recipient_rule_common.py",
+    APPS_DIR / "makerspaces" / "role_catalog.py",
     APPS_DIR / "accounts" / "rbac_memberships.py",
     APPS_DIR / "accounts" / "rbac_borrowers.py",
     APPS_DIR / "accounts" / "rbac_organizations.py",
@@ -48,6 +57,8 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "machines" / "access.py",
 )
 SCANNED_MODEL_LABELS = frozenset({
+    "makerspaces.MembershipAdditionalRole",
+    "machines.MembershipMachineTypeScope",
     "makerspaces.Makerspace",
     "makerspaces.MakerspaceMembership",
     "makerspaces.MakerspaceRole",
@@ -58,6 +69,12 @@ SCANNED_MODEL_LABELS = frozenset({
 
 
 EXPLICIT_AUTHORITY_FIELDS = {
+    ("makerspaces.MembershipAdditionalRole", "membership"): "Dropped membership role authority.",
+    ("makerspaces.MembershipAdditionalRole", "role"): "Dropped additional role authority.",
+    ("makerspaces.MembershipAdditionalRole", "assigned_by"): "Dropped role assignment provenance.",
+    ("makerspaces.MembershipAdditionalRole", "assigned_at"): "Dropped role assignment time.",
+    ("machines.MembershipMachineTypeScope", "membership"): "Dropped membership machine authority.",
+    ("machines.MembershipMachineTypeScope", "machine_type"): "Dropped membership type authority.",
     **WP4_AUTHORITY_FIELDS,
     **LOAN_AUTHORITY_FIELDS,
     ("machines.MakerspaceMachineTypePolicy", "makerspace"): "Tenant boundary for reminder policy; preserved data does not grant staff authority.",
@@ -94,10 +111,6 @@ EXPLICIT_AUTHORITY_FIELDS = {
     ("machines.MachineOperator", "access_level"): "Owner decision 22 preserves the operate/manage/full grant.",
     ("machines.MachineOperator", "assigned_by"): "Owner decision 22 preserves assignment provenance with FK closure.",
     ("machines.MachineOperator", "assigned_at"): "Owner decision 22 preserves assignment-time provenance.",
-    ("machines.RoleMachineScope", "role"): "Dropped role authority scope.",
-    ("machines.RoleMachineScope", "machine"): "Dropped role authority scope.",
-    ("machines.RoleMachineTypeScope", "role"): "Dropped role authority scope.",
-    ("machines.RoleMachineTypeScope", "machine_type"): "Dropped role authority scope.",
     ("makerspaces.MembershipRequest", "assigned_role"): "Remapped to target Member, never a source role.",
     ("integrations.NotificationRecipient", "makerspace"): "Dropped disclosure-rule tenant boundary.",
     ("integrations.NotificationRecipient", "feature"): "Dropped disclosure-rule discriminator.",

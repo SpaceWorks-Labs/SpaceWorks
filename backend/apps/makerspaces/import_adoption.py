@@ -78,7 +78,7 @@ def _actor(snapshot, makerspace):
     return target_id, snapshot
 
 
-def _membership_values(pending, makerspace, user, member_role):
+def _membership_values(pending, makerspace, user):
     verified_by, verified_snapshot = _actor(
         pending.verified_actor_snapshot, makerspace
     )
@@ -95,8 +95,6 @@ def _membership_values(pending, makerspace, user, member_role):
     return {
         "makerspace": makerspace,
         "user": user,
-        "assigned_role": member_role,
-        "role": member_role.legacy_role or MakerspaceMembership.Role.CUSTOM,
         "receives_notifications": default("receives_notifications"),
         "can_refer": default("can_refer"),
         "can_verify": default("can_verify"),
@@ -169,10 +167,15 @@ def adopt_pending_membership(user, pending):
                 pending.save(update_fields=["unresolved_reason"])
                 return None
 
-        values = _membership_values(pending, makerspace, user, member_role)
+        values = _membership_values(pending, makerspace, user)
         try:
             with transaction.atomic():
                 membership = MakerspaceMembership.objects.create(**values)
+                from apps.makerspaces.role_membership_writes import replace_membership_roles
+                changes = replace_membership_roles(
+                    membership=membership, roles=[member_role], actor=user,
+                    reason="membership.adopted_from_import", fresh_lifecycle=True,
+                )
         except IntegrityError:
             if MakerspaceMembership.objects.filter(
                 makerspace=makerspace, user=user
@@ -192,7 +195,7 @@ def adopt_pending_membership(user, pending):
         pending.save(
             update_fields=["adopted_at", "adopted_membership", "unresolved_reason"]
         )
-        meta = {"source_membership_id": pending.source_membership_id}
+        meta = {"source_membership_id": pending.source_membership_id, **changes}
         if pending.accepted_waiver_id or pending.witnessed_waiver_id:
             meta["waiver_acceptance"] = "imported"
         audit.record(

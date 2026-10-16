@@ -43,18 +43,21 @@ ADAPTER = lifecycle.GrantAdapter(
     can_manage=event_authority.can_manage_grants, can=event_authority.can,
     active=event_authority._active,
     lock_authority=lock_authority,
+    label_field="role_label",
 )
 
 
-def create_invite(target, *, actor, permissions, email="", send_email=False):
+def create_invite(target, *, actor, permissions, email="", send_email=False, role_label=""):
     return lifecycle.create_invite(
         ADAPTER, target, actor=actor, permissions=permissions, email=email,
-        send=_send_invite if send_email else None,
+        send=_send_invite if send_email else None, label=role_label,
     )
 
 
-def update_permissions(grant, *, actor, permissions):
-    return lifecycle.update_permissions(ADAPTER, grant, actor=actor, permissions=permissions)
+def update_permissions(grant, *, actor, permissions, role_label=None):
+    return lifecycle.update_permissions(
+        ADAPTER, grant, actor=actor, permissions=permissions, label=role_label,
+    )
 
 
 def revoke_grant(grant, *, actor):

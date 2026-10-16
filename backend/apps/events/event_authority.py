@@ -155,7 +155,8 @@ def get_event(actor, pk, permission=None, *, series=False):
     model = EventSeries if series else Event
     rows = model.objects.select_related("makerspace")
     if not series:
-        rows = rows.select_related("series").prefetch_related("organizers__organization")
+        rows = rows.select_related("series").prefetch_related(
+            "organizers__organization", "audience_organizations__organization")
     event = get_object_or_404(visible_events(actor, rows), pk=pk)
     require(actor, event, permission)
     return event

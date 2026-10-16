@@ -56,7 +56,10 @@ exclusions applied in SQL rather than queried per tenant.
   certificate artifacts,
   recurring series, member feed credentials, makerspace collaboration and organization attribution.
   `organization_audience.py` adapts the core organization membership predicate and locks its
-  live proof; `host_waivers.py` owns transactional current consent and audited stamping.
+  live proof (its candidates read `audience_models.py`'s `EventAudienceOrganization`, written only by
+  `services_audience_organizations.py` via `views_audience_organizations.py`); `directories.py` /
+  `views_directories.py` serve the staff organization and partner-makerspace directories, and
+  `views_checkin_history.py` the check-in-only "who has checked in" list, all routed by `urls_partners.py`; `host_waivers.py` owns transactional current consent and audited stamping.
   `serializers_organization_audience.py` / `views_organization_audience.py` separate public
   attribution from private eligibility; `views_registration_calendar.py` serves exact-owner ICS.
   `registration_locks.py` shares the event/source fence and registration locks.

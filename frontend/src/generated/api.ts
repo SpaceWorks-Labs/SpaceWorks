@@ -154,6 +154,7 @@ export const openApiPaths = [
   "/api/v1/admin/event-collaborations/{id}/remove/",
   "/api/v1/admin/event-collaborations/{id}/respond/",
   "/api/v1/admin/event-invites/{id}/revoke/",
+  "/api/v1/admin/event-partner-makerspaces/",
   "/api/v1/admin/event-promos/{id}/revoke/",
   "/api/v1/admin/event-registrations/{id}/answers/",
   "/api/v1/admin/event-registrations/{id}/approve/",
@@ -185,6 +186,7 @@ export const openApiPaths = [
   "/api/v1/admin/event-staff-invites/redeem/",
   "/api/v1/admin/event-staff-invites/{id}/revoke/",
   "/api/v1/admin/events/{id}/",
+  "/api/v1/admin/events/{id}/audience-organizations/",
   "/api/v1/admin/events/{id}/badge-template/",
   "/api/v1/admin/events/{id}/badges.pdf",
   "/api/v1/admin/events/{id}/broadcasts/",
@@ -202,6 +204,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/check-in/station/",
   "/api/v1/admin/events/{id}/check-in/station/reveal/",
   "/api/v1/admin/events/{id}/check-in/station/rotate/",
+  "/api/v1/admin/events/{id}/check-ins/",
   "/api/v1/admin/events/{id}/collaborators/",
   "/api/v1/admin/events/{id}/complete/",
   "/api/v1/admin/events/{id}/duplicate/",
@@ -490,6 +493,7 @@ export const openApiPaths = [
   "/api/v1/admin/memberships/{id}/waiver/witness",
   "/api/v1/admin/organization-invitations/{id}/",
   "/api/v1/admin/organizations/",
+  "/api/v1/admin/organizations/directory/",
   "/api/v1/admin/organizations/{id}/",
   "/api/v1/admin/organizations/{id}/invitations/",
   "/api/v1/admin/organizations/{id}/makerspaces/",
@@ -2891,6 +2895,19 @@ export type DirectoryEntry = {
   "avatar_url": string | null;
 };
 
+export type DirectoryMakerspace = {
+  "id": number;
+  "name": string;
+  "slug": string;
+};
+
+export type DirectoryOrganization = {
+  "id": number;
+  "name": string;
+  "slug": string;
+  "logo_url": string | null;
+};
+
 export type Discovery = {
   "count": number;
   "next": string | null;
@@ -3090,6 +3107,7 @@ export type EventAdmin = {
   "updated_at": string;
   "registration_counts": EventRegistrationCounts;
   "organizers": Array<EventOrganizerSummary>;
+  "audience_organizations": Array<EventOrganizerSummary>;
 };
 
 export type EventAttendanceMark = {
@@ -3127,6 +3145,14 @@ export type EventAttendanceRow = {
   "organizers": string;
 };
 
+export type EventAudienceOrganizationList = {
+  "audience_organizations": Array<EventOrganizerSummary>;
+};
+
+export type EventAudienceOrganizationReplace = {
+  "organization_ids": Array<number>;
+};
+
 export type EventBroadcast = {
   "id": number;
   "event": number;
@@ -3158,6 +3184,13 @@ export type EventBroadcastList = {
   "results": Array<EventBroadcast>;
 };
 
+export type EventCheckInPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<EventCheckInRow>;
+};
+
 export type EventCheckInResolveRequest = {
   "checkin_token": string;
 };
@@ -3178,6 +3211,17 @@ export type EventCheckInResult = {
   "name": string;
   "status": string;
 };
+
+export type EventCheckInRow = {
+  "registration_id": number;
+  "attendee_name": string;
+  "ticket_type"?: string | null;
+  "attended_at": string | null;
+  "source": EventCheckInRowSourceEnum;
+  "checked_in_by": string | null;
+};
+
+export type EventCheckInRowSourceEnum = "legacy" | "manual" | "offline" | "qr" | "station";
 
 export type EventCollaborationInbox = {
   "id": number;
@@ -3211,6 +3255,32 @@ export type EventCollaborator = {
 
 export type EventCollaboratorReplace = {
   "slugs": Array<string>;
+};
+
+export type EventCreate = {
+  "registration_audience"?: EventDefaultRegistrationAudienceEnum;
+  "category_id"?: number | null;
+  "tags"?: Array<string>;
+  "title": string;
+  "description"?: string;
+  "starts_at": string;
+  "ends_at": string;
+  "timezone_name"?: string;
+  "location"?: string;
+  "location_kind"?: LocationKindEnum;
+  "custom_form"?: unknown | null;
+  "capacity"?: number;
+  "payment_amount"?: string;
+  "is_public"?: boolean;
+  "show_registration_count"?: boolean;
+  "registration_requires_approval"?: boolean;
+  "cancellation_cutoff_hours"?: number | null;
+  "registration_cutoff_at"?: string | null;
+  "registration_cutoff_lead_minutes"?: number | null;
+  "inherit_fields"?: Array<InheritFieldsEnum>;
+  "organization_ids"?: Array<number>;
+  "audience_organization_ids"?: Array<number>;
+  "collaborator_slugs"?: Array<string>;
 };
 
 export type EventDefaultRegistrationAudienceEnum = "members" | "accounts" | "invite" | "participating_organizations";
@@ -3434,29 +3504,6 @@ export type EventStaffRegistration = {
 export type EventWebsitePublishInput = {
   "publish_website"?: boolean;
   "website_revision"?: number;
-};
-
-export type EventWrite = {
-  "registration_audience"?: EventDefaultRegistrationAudienceEnum;
-  "category_id"?: number | null;
-  "tags"?: Array<string>;
-  "title": string;
-  "description"?: string;
-  "starts_at": string;
-  "ends_at": string;
-  "timezone_name"?: string;
-  "location"?: string;
-  "location_kind"?: LocationKindEnum;
-  "custom_form"?: unknown | null;
-  "capacity"?: number;
-  "payment_amount"?: string;
-  "is_public"?: boolean;
-  "show_registration_count"?: boolean;
-  "registration_requires_approval"?: boolean;
-  "cancellation_cutoff_hours"?: number | null;
-  "registration_cutoff_at"?: string | null;
-  "registration_cutoff_lead_minutes"?: number | null;
-  "inherit_fields"?: Array<InheritFieldsEnum>;
 };
 
 export type EvidenceGetResponse = {
@@ -5169,6 +5216,13 @@ export type MakerspaceCreationSetup = {
   "first_staff_invite"?: FirstStaffInvite;
 };
 
+export type MakerspaceDirectoryPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<DirectoryMakerspace>;
+};
+
 export type MakerspacePaymentSettings = {
   "default_currency"?: string;
   "stripe_publishable_key"?: string;
@@ -6298,10 +6352,18 @@ export type OrganizationDetail = {
   "website": string;
   "logo_url": string | null;
   "public_profile_enabled": boolean;
+  "is_discoverable": boolean;
   "legal_name": string;
   "registration_number": string;
   "contact_email": string;
   "billing_email": string;
+};
+
+export type OrganizationDirectoryPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<DirectoryOrganization>;
 };
 
 export type OrganizationEventHost = {
@@ -7589,6 +7651,7 @@ export type PatchedOrganizationProfileUpdate = {
   "description"?: string;
   "website"?: string;
   "public_profile_enabled"?: boolean;
+  "is_discoverable"?: boolean;
 };
 
 export type PatchedPlatformBackupSettings = {
@@ -7736,8 +7799,9 @@ export type PatchedSchedule = {
   "is_active"?: boolean;
 };
 
-export type PatchedStaffGrantPermissions = {
+export type PatchedStaffGrantUpdate = {
   "permissions"?: Array<Permissions5d1Enum>;
+  "role_label"?: RoleLabelEnum | BlankEnum;
 };
 
 export type PatchedTimingPolicy = {
@@ -9680,6 +9744,8 @@ export type RoleId = {
   "role_id": number;
 };
 
+export type RoleLabelEnum = "speaker" | "volunteer" | "check_in";
+
 export type RoleSlugEnum = "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover";
 
 export type SavedReportView = {
@@ -10017,6 +10083,7 @@ export type StaffGrant = {
   "series": number | null;
   "user": number;
   "permissions": unknown;
+  "role_label": RoleLabelEnum;
   "granted_by": number | null;
   "created_at": string;
   "revoked_at": string | null;
@@ -10029,6 +10096,7 @@ export type StaffGrantInvite = {
   "event": number | null;
   "series": number | null;
   "permissions": unknown;
+  "role_label": RoleLabelEnum;
   "created_by": number | null;
   "created_at": string;
   "expires_at": string;
@@ -10042,6 +10110,7 @@ export type StaffGrantInviteCreated = {
   "event": number | null;
   "series": number | null;
   "permissions": unknown;
+  "role_label": RoleLabelEnum;
   "created_by": number | null;
   "created_at": string;
   "expires_at": string;
@@ -10054,6 +10123,7 @@ export type StaffGrantInviteInput = {
   "permissions": Array<Permissions5d1Enum>;
   "email"?: string;
   "send_email"?: boolean;
+  "role_label"?: RoleLabelEnum | BlankEnum;
 };
 
 export type StaffGrantInviteList = {

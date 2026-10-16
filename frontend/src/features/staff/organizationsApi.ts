@@ -17,6 +17,8 @@ export type OrganizationDetail = OrganizationSummary & {
   website: string;
   logo_url: string | null;
   public_profile_enabled: boolean;
+  /** Listed in the staff organization directory that event organizers search. */
+  is_discoverable?: boolean;
   legal_name?: string;
   registration_number?: string;
   contact_email?: string;
@@ -120,7 +122,7 @@ export function useOrganizationInvitations(id: number, page: number, enabled: bo
 export function useUpdateOrganization(id: number, slug: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Partial<Pick<OrganizationDetail, "name" | "slug" | "description" | "website" | "public_profile_enabled">>) =>
+    mutationFn: (payload: Partial<Pick<OrganizationDetail, "name" | "slug" | "description" | "website" | "public_profile_enabled" | "is_discoverable">>) =>
       staffRequest<OrganizationDetail>(`/admin/organizations/${id}/`, { method: "PATCH", body: JSON.stringify(payload) }),
     onSuccess: async (updated) => Promise.all([
       client.invalidateQueries({ queryKey: organizationKeys.all }),

@@ -93,7 +93,9 @@ class TenantDumpCatalogError(AssertionError):
 # BK-B: nullable cancellation timestamp and prior reservation state.
 # BK-G: reconcile the integrated Lane E/BK-C graph plus the scalar pass template.
 # Literal reconstruction reproduces b90ce9de before the later merged model additions.
-CATALOG_SCHEMA_SHA256 = "7a7132b9cf5e6f6883e4c8c868cbb35219fcf86f8fbb8cfc46329c484e7e9dc2"
+# int-events: DROP-only EventAudienceOrganization, display-only staff-grant role_label and
+# Organization.is_discoverable; the runtime guard reproduced 7a7132b9 before these fields.
+CATALOG_SCHEMA_SHA256 = "beef2b40dcfcbc50a0d06847814aa3d0572b214e1300fa238efe26cab3c012f6"
 # BK-D adds typed booking campaign/delivery history. Literal reconstruction
 # reproduced HEAD's complete graph before computing the new digest.
 # Lane F: platform-only, nonportable session reauthentication proof.

@@ -70,6 +70,7 @@ urlpatterns = [
     path("", include("apps.events.urls_staff_tools")),
     path("", include("apps.events.urls_staff_grants")),
     path("", include("apps.events.urls_checkin_admin")),
+    path("", include("apps.events.urls_partners")),
     path("", include("apps.events.urls_ticketing")),
     path(
         'makerspaces/<int:makerspace_id>/event-series/',

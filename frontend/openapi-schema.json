@@ -5453,6 +5453,88 @@
                 }
             }
         },
+        "/api/v1/admin/event-partner-makerspaces/": {
+            "get": {
+                "operationId": "api_v1_admin_event_partner_makerspaces_retrieve",
+                "description": "Servable makerspaces running events that are listed in the central directory, plus spaces the actor manages events in.",
+                "summary": "Search makerspaces that can partner on an event",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "exclude",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Makerspace id to leave out, normally the host."
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Case-insensitive substring of the name or slug."
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MakerspaceDirectoryPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Event management access is required."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Directory search rate limit exceeded."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/event-promos/{id}/revoke/": {
             "post": {
                 "operationId": "api_v1_admin_event_promos_revoke_create",
@@ -8734,17 +8816,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedStaffGrantPermissions"
+                                "$ref": "#/components/schemas/PatchedStaffGrantUpdate"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedStaffGrantPermissions"
+                                "$ref": "#/components/schemas/PatchedStaffGrantUpdate"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedStaffGrantPermissions"
+                                "$ref": "#/components/schemas/PatchedStaffGrantUpdate"
                             }
                         }
                     }
@@ -9379,6 +9461,106 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/audience-organizations/": {
+            "put": {
+                "operationId": "api_v1_admin_events_audience_organizations_update",
+                "description": "Members of these organizations may register when the event's audience is 'participating_organizations'. Grants no event management authority. Newly added organizations must be findable in the organization directory.",
+                "summary": "Replace an event's selected audience organizations",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EventAudienceOrganizationReplace"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EventAudienceOrganizationReplace"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EventAudienceOrganizationReplace"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventAudienceOrganizationList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid or unavailable organization."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "The event is cancelled or completed."
                     }
                 }
             }
@@ -11682,6 +11864,87 @@
                             }
                         },
                         "description": "Credential secrets are unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/check-ins/": {
+            "get": {
+                "operationId": "api_v1_admin_events_check_ins_retrieve",
+                "description": "Newest first. Needs only the check_in event permission, so a door volunteer or speaker with a check-in grant can see the list beside the scanner. Carries names only: no email, phone, payment or custom answers.",
+                "summary": "List who has checked in to an event",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page_size",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventCheckInPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -37741,6 +38004,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_makerspaces_events_create",
+                "description": "Optional organization_ids (the actor's own organizations), audience_organization_ids (from the organization directory) and collaborator_slugs (partner makerspaces to invite) are applied in the same transaction as the event; any refusal creates nothing.",
                 "summary": "Create a draft event",
                 "parameters": [
                     {
@@ -37759,17 +38023,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/EventWrite"
+                                "$ref": "#/components/schemas/EventCreate"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/EventWrite"
+                                "$ref": "#/components/schemas/EventCreate"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/EventWrite"
+                                "$ref": "#/components/schemas/EventCreate"
                             }
                         }
                     },
@@ -47902,6 +48166,80 @@
                             }
                         },
                         "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/organizations/directory/": {
+            "get": {
+                "operationId": "api_v1_admin_organizations_directory_retrieve",
+                "description": "Active organizations that opted into discovery, plus the actor's own organizations. Used to pick an event's audience organizations.",
+                "summary": "Search the organization directory",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Case-insensitive substring of the name or slug."
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationDirectoryPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Event management access is required."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Directory search rate limit exceeded."
                     }
                 }
             }
@@ -88728,6 +89066,58 @@
                     "membership_id"
                 ]
             },
+            "DirectoryMakerspace": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ]
+            },
+            "DirectoryOrganization": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "logo_url": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "id",
+                    "logo_url",
+                    "name",
+                    "slug"
+                ]
+            },
             "Discovery": {
                 "type": "object",
                 "properties": {
@@ -89562,10 +89952,18 @@
                             "$ref": "#/components/schemas/EventOrganizerSummary"
                         },
                         "readOnly": true
+                    },
+                    "audience_organizations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EventOrganizerSummary"
+                        },
+                        "readOnly": true
                     }
                 },
                 "required": [
                     "audience_label",
+                    "audience_organizations",
                     "badge_sensitive_fields_allowed",
                     "broadcasts_enabled",
                     "can_manage_staff",
@@ -89749,6 +90147,37 @@
                     "waitlisted"
                 ]
             },
+            "EventAudienceOrganizationList": {
+                "type": "object",
+                "properties": {
+                    "audience_organizations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EventOrganizerSummary"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "audience_organizations"
+                ]
+            },
+            "EventAudienceOrganizationReplace": {
+                "type": "object",
+                "properties": {
+                    "organization_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 50
+                    }
+                },
+                "required": [
+                    "organization_ids"
+                ]
+            },
             "EventBroadcast": {
                 "type": "object",
                 "properties": {
@@ -89903,6 +90332,34 @@
                     "results"
                 ]
             },
+            "EventCheckInPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EventCheckInRow"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
             "EventCheckInResolveRequest": {
                 "type": "object",
                 "properties": {
@@ -89977,6 +90434,51 @@
                     "name",
                     "status"
                 ]
+            },
+            "EventCheckInRow": {
+                "type": "object",
+                "properties": {
+                    "registration_id": {
+                        "type": "integer"
+                    },
+                    "attendee_name": {
+                        "type": "string"
+                    },
+                    "ticket_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "attended_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "source": {
+                        "$ref": "#/components/schemas/EventCheckInRowSourceEnum"
+                    },
+                    "checked_in_by": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "attended_at",
+                    "attendee_name",
+                    "checked_in_by",
+                    "registration_id",
+                    "source"
+                ]
+            },
+            "EventCheckInRowSourceEnum": {
+                "enum": [
+                    "legacy",
+                    "manual",
+                    "offline",
+                    "qr",
+                    "station"
+                ],
+                "type": "string",
+                "description": "* `legacy` - legacy\n* `manual` - manual\n* `offline` - offline\n* `qr` - qr\n* `station` - station"
             },
             "EventCollaborationInbox": {
                 "type": "object",
@@ -90136,6 +90638,143 @@
                 },
                 "required": [
                     "slugs"
+                ]
+            },
+            "EventCreate": {
+                "type": "object",
+                "description": "Create-only extras; PATCH keeps using the dedicated organizer/partner routes.",
+                "properties": {
+                    "registration_audience": {
+                        "$ref": "#/components/schemas/EventDefaultRegistrationAudienceEnum"
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 50
+                        },
+                        "maxItems": 20
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": ""
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "timezone_name": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "location": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 255
+                    },
+                    "location_kind": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LocationKindEnum"
+                            }
+                        ],
+                        "default": "other"
+                    },
+                    "custom_form": {
+                        "nullable": true
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "payment_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "default": "0.00"
+                    },
+                    "is_public": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "show_registration_count": {
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "registration_requires_approval": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "cancellation_cutoff_hours": {
+                        "type": "integer",
+                        "maximum": 8760,
+                        "minimum": 0,
+                        "nullable": true,
+                        "description": "Member cancellation closes this many hours before start; null means start."
+                    },
+                    "registration_cutoff_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "registration_cutoff_lead_minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "inherit_fields": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/InheritFieldsEnum"
+                        },
+                        "writeOnly": true
+                    },
+                    "organization_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "description": "Organizer organizations. Each must be one the actor actively belongs to.",
+                        "maxItems": 50
+                    },
+                    "audience_organization_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "description": "Selected audience organizations, chosen from the organization directory.",
+                        "maxItems": 50
+                    },
+                    "collaborator_slugs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[-a-zA-Z0-9_]+$"
+                        },
+                        "description": "Partner makerspaces to invite; each must accept before its members can register.",
+                        "maxItems": 50
+                    }
+                },
+                "required": [
+                    "ends_at",
+                    "starts_at",
+                    "title"
                 ]
             },
             "EventDefaultRegistrationAudienceEnum": {
@@ -91143,115 +91782,6 @@
                         "minimum": 1
                     }
                 }
-            },
-            "EventWrite": {
-                "type": "object",
-                "properties": {
-                    "registration_audience": {
-                        "$ref": "#/components/schemas/EventDefaultRegistrationAudienceEnum"
-                    },
-                    "category_id": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "nullable": true
-                    },
-                    "tags": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "maxLength": 50
-                        },
-                        "maxItems": 20
-                    },
-                    "title": {
-                        "type": "string",
-                        "maxLength": 200
-                    },
-                    "description": {
-                        "type": "string",
-                        "default": ""
-                    },
-                    "starts_at": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "ends_at": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "timezone_name": {
-                        "type": "string",
-                        "maxLength": 64
-                    },
-                    "location": {
-                        "type": "string",
-                        "default": "",
-                        "maxLength": 255
-                    },
-                    "location_kind": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/LocationKindEnum"
-                            }
-                        ],
-                        "default": "other"
-                    },
-                    "custom_form": {
-                        "nullable": true
-                    },
-                    "capacity": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "default": 0
-                    },
-                    "payment_amount": {
-                        "type": "string",
-                        "format": "decimal",
-                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
-                        "default": "0.00"
-                    },
-                    "is_public": {
-                        "type": "boolean",
-                        "default": false
-                    },
-                    "show_registration_count": {
-                        "type": "boolean",
-                        "default": true
-                    },
-                    "registration_requires_approval": {
-                        "type": "boolean",
-                        "default": false
-                    },
-                    "cancellation_cutoff_hours": {
-                        "type": "integer",
-                        "maximum": 8760,
-                        "minimum": 0,
-                        "nullable": true,
-                        "description": "Member cancellation closes this many hours before start; null means start."
-                    },
-                    "registration_cutoff_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "registration_cutoff_lead_minutes": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "nullable": true
-                    },
-                    "inherit_fields": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/InheritFieldsEnum"
-                        },
-                        "writeOnly": true
-                    }
-                },
-                "required": [
-                    "ends_at",
-                    "starts_at",
-                    "title"
-                ]
             },
             "EvidenceGetResponse": {
                 "type": "object",
@@ -98595,6 +99125,34 @@
                     }
                 }
             },
+            "MakerspaceDirectoryPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DirectoryMakerspace"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
             "MakerspacePaymentSettings": {
                 "type": "object",
                 "properties": {
@@ -103018,6 +103576,10 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "is_discoverable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "legal_name": {
                         "type": "string",
                         "readOnly": true
@@ -103045,6 +103607,7 @@
                     "granted_actions",
                     "id",
                     "is_active",
+                    "is_discoverable",
                     "legal_name",
                     "logo_url",
                     "name",
@@ -103052,6 +103615,34 @@
                     "registration_number",
                     "slug",
                     "website"
+                ]
+            },
+            "OrganizationDirectoryPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DirectoryOrganization"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
                 ]
             },
             "OrganizationEventHost": {
@@ -108519,6 +109110,9 @@
                     },
                     "public_profile_enabled": {
                         "type": "boolean"
+                    },
+                    "is_discoverable": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -109045,7 +109639,7 @@
                     }
                 }
             },
-            "PatchedStaffGrantPermissions": {
+            "PatchedStaffGrantUpdate": {
                 "type": "object",
                 "properties": {
                     "permissions": {
@@ -109055,6 +109649,16 @@
                         },
                         "maxItems": 5,
                         "minItems": 1
+                    },
+                    "role_label": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/RoleLabelEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
                     }
                 }
             },
@@ -117140,6 +117744,15 @@
                     "role_id"
                 ]
             },
+            "RoleLabelEnum": {
+                "enum": [
+                    "speaker",
+                    "volunteer",
+                    "check_in"
+                ],
+                "type": "string",
+                "description": "* `speaker` - Speaker\n* `volunteer` - Volunteer\n* `check_in` - Check-in"
+            },
             "RoleSlugEnum": {
                 "enum": [
                     "space_manager",
@@ -118403,6 +119016,14 @@
                     "permissions": {
                         "readOnly": true
                     },
+                    "role_label": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RoleLabelEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
                     "granted_by": {
                         "type": "integer",
                         "readOnly": true,
@@ -118434,6 +119055,7 @@
                     "permissions",
                     "revoked_at",
                     "revoked_by",
+                    "role_label",
                     "series",
                     "user"
                 ]
@@ -118460,6 +119082,14 @@
                         "nullable": true
                     },
                     "permissions": {
+                        "readOnly": true
+                    },
+                    "role_label": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RoleLabelEnum"
+                            }
+                        ],
                         "readOnly": true
                     },
                     "created_by": {
@@ -118500,6 +119130,7 @@
                     "permissions",
                     "redeemed_at",
                     "revoked_at",
+                    "role_label",
                     "series"
                 ]
             },
@@ -118525,6 +119156,14 @@
                         "nullable": true
                     },
                     "permissions": {
+                        "readOnly": true
+                    },
+                    "role_label": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RoleLabelEnum"
+                            }
+                        ],
                         "readOnly": true
                     },
                     "created_by": {
@@ -118569,6 +119208,7 @@
                     "permissions",
                     "redeemed_at",
                     "revoked_at",
+                    "role_label",
                     "series",
                     "token"
                 ]
@@ -118600,6 +119240,17 @@
                     "send_email": {
                         "type": "boolean",
                         "default": false
+                    },
+                    "role_label": {
+                        "default": "",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/RoleLabelEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
                     }
                 },
                 "required": [

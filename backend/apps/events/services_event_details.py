@@ -23,8 +23,19 @@ def create_event(
     registration_cutoff_at=None, registration_cutoff_lead_minutes=None,
     timezone_name=None, cancellation_cutoff_hours=None,
     registration_audience=None, category_id=None, tags=None, show_registration_count=True,
+    organization_ids=None, collaborator_slugs=None, audience_organization_ids=None,
 ):
-    locked_space = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+    """Create a draft; organizers, partners and audience land in the SAME transaction.
+
+    Every partner space is locked here, with the host, in primary-key order. The later
+    ``invite_collaborators`` locks the brand-new event first and those spaces second;
+    nobody else can see the uncommitted event, so taking the spaces up front cannot
+    deadlock against it, while acquiring a partner AFTER the host (as the event-first
+    path would) could deadlock against a reciprocal create in the partner space.
+    """
+    partner_ids = set(Makerspace.objects.filter(slug__in=set(collaborator_slugs or ())).values_list("pk", flat=True))
+    locked_spaces = list(Makerspace.objects.select_for_update().filter(pk__in={makerspace.pk, *partner_ids}).order_by("pk"))
+    locked_space = next(row for row in locked_spaces if row.pk == makerspace.pk)
     require_module_locked(locked_space, "events")
     event = Event(
         makerspace=locked_space,
@@ -52,6 +63,15 @@ def create_event(
     _validate(event)
     event.save()
     _audit(event, actor, "event.created", event)
+    if organization_ids:
+        from .services_organizers import replace_organizers
+        replace_organizers(event, actor=actor, organization_ids=organization_ids)
+    if audience_organization_ids:
+        from .services_audience_organizations import replace_audience_organizations
+        replace_audience_organizations(event, actor=actor, organization_ids=audience_organization_ids)
+    if collaborator_slugs:
+        from .collaborator_services import invite_collaborators
+        invite_collaborators(event, actor=actor, slugs=collaborator_slugs)
     return _refresh(event)
 
 

@@ -13,8 +13,8 @@ import {
   EVENT_PUBLISH_PATH,
   eventKeys,
   staffPath,
+  type EventCreatePayload,
   type EventPatch,
-  type EventPayload,
   type EventRegistrationStatus,
   type Paginated,
   type StaffEvent,
@@ -23,6 +23,7 @@ import {
 export {
   eligibleMemberKey,
   eventKeys,
+  type EventCreatePayload,
   type EventPatch,
   type EventPayload,
   type EventRegistration,
@@ -80,7 +81,7 @@ export function useEventInvalidation(makerspaceId: number, eventId?: number) {
 export function useCreateEvent(makerspaceId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: EventPayload) => staffRequest<StaffEvent>(
+    mutationFn: (payload: EventCreatePayload) => staffRequest<StaffEvent>(
       staffPath(EVENT_LIST_PATH, { makerspace_id: makerspaceId }),
       { method: "POST", body: JSON.stringify(payload) },
     ), onSuccess: async (created) => { await Promise.all([

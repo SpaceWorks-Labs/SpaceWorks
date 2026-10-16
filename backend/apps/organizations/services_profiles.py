@@ -8,7 +8,7 @@ from apps.organizations.models import Organization
 
 
 PUBLIC_PROFILE_FIELDS = frozenset(
-    {"name", "slug", "description", "website", "public_profile_enabled"}
+    {"name", "slug", "description", "website", "public_profile_enabled", "is_discoverable"}
 )
 
 

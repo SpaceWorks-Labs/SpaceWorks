@@ -80,6 +80,8 @@ BASE_MODEL_LOOKUPS = {
     'admin-event-series-collaboration-remove': ('events.EventSeriesCollaborator', 'series__makerspace_id'),
     'admin-event-series-collaboration-respond': ('events.EventSeriesCollaborator', 'makerspace_id'),
     'admin-event-organizers': ('events.Event', 'makerspace_id'),
+    'admin-event-audience-organizations': ('events.Event', 'makerspace_id'),
+    'admin-event-check-ins': ('events.Event', 'makerspace_id'),
     'admin-event-publish': ('events.Event', 'makerspace_id'),
     'admin-event-cancel': ('events.Event', 'makerspace_id'),
     'admin-event-complete': ('events.Event', 'makerspace_id'),

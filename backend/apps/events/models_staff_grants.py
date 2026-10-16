@@ -10,10 +10,24 @@ from apps.makerspaces.resource_grants_models import ResourceStaffGrant, Resource
 from .event_permissions import PERMISSIONS, validate_permissions
 
 
+class RoleLabel(models.TextChoices):
+    """Display-only name for what a delegated person does at the event.
+
+    It never widens or narrows authority -- ``permissions`` alone decides that. It exists
+    so the Team tab can say "Speaker" instead of listing raw permission keys, and so a
+    later contribution history can tell speakers from door volunteers.
+    """
+
+    SPEAKER = "speaker", "Speaker"
+    VOLUNTEER = "volunteer", "Volunteer"
+    CHECK_IN = "check_in", "Check-in"
+
+
 class _EventStaffScope(models.Model):
     event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.CASCADE, related_name="%(class)s_rows")
     series = models.ForeignKey("events.EventSeries", null=True, blank=True, on_delete=models.CASCADE, related_name="%(class)s_rows")
     permissions = models.JSONField(validators=[validate_permissions])
+    role_label = models.CharField(max_length=16, choices=RoleLabel.choices, blank=True, default="")
     permission_vocabulary = PERMISSIONS
 
     class Meta:

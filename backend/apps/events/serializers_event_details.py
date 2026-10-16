@@ -45,6 +45,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
     registration_counts = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
     organizers = EventOrganizerSummarySerializer(many=True, read_only=True)
+    audience_organizations = EventOrganizerSummarySerializer(many=True, read_only=True)
     effective_registration_cutoff_at = serializers.SerializerMethodField()
     registration_open = serializers.SerializerMethodField()
     series_summary = serializers.SerializerMethodField()
@@ -87,6 +88,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
             'updated_at',
             'registration_counts',
             'organizers',
+            'audience_organizations',
         )
         read_only_fields = fields
 

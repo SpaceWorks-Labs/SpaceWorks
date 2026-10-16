@@ -19,8 +19,8 @@ from .serializers_admin import EmptyActionSerializer
 from .serializers_staff_grants import (
     StaffGrantInviteCreatedSerializer, StaffGrantInviteInputSerializer,
     StaffGrantInviteListSerializer, StaffGrantInviteSerializer,
-    StaffGrantListSerializer, StaffGrantPermissionsSerializer,
-    StaffGrantRedeemSerializer, StaffGrantSerializer,
+    StaffGrantListSerializer,
+    StaffGrantRedeemSerializer, StaffGrantSerializer, StaffGrantUpdateSerializer,
 )
 from .views_invites import PAGE_PARAMETERS, paginated
 
@@ -86,11 +86,11 @@ def _manageable_row(actor, model, pk):
 class EventStaffGrantDetailView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=["Admin events"], request=StaffGrantPermissionsSerializer,
+    @extend_schema(tags=["Admin events"], request=StaffGrantUpdateSerializer,
                    responses={200: StaffGrantSerializer, **ERRORS})
     def patch(self, request, pk):
         row = _manageable_row(request.user, EventStaffGrant, pk)
-        serializer = StaffGrantPermissionsSerializer(data=request.data)
+        serializer = StaffGrantUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(StaffGrantSerializer(services.update_permissions(
             row, actor=request.user, **serializer.validated_data,

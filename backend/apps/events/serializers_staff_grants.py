@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .event_permissions import PERMISSIONS
 from .models import EventStaffGrant, EventStaffGrantInvite
+from .models_staff_grants import RoleLabel
 
 
 class GrantedEventEntrySerializer(serializers.Serializer):
@@ -25,15 +26,21 @@ class StaffGrantPermissionsSerializer(serializers.Serializer):
         return sorted(value)
 
 
+class StaffGrantUpdateSerializer(StaffGrantPermissionsSerializer):
+    # Omitted leaves the label alone; "" clears it. Display only, never authority.
+    role_label = serializers.ChoiceField(choices=RoleLabel.choices, allow_blank=True, required=False)
+
+
 class StaffGrantInviteInputSerializer(StaffGrantPermissionsSerializer):
     email = serializers.EmailField(required=False, allow_blank=True, default="")
     send_email = serializers.BooleanField(default=False)
+    role_label = serializers.ChoiceField(choices=RoleLabel.choices, allow_blank=True, default="")
 
 
 class StaffGrantSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventStaffGrant
-        fields = ("id", "makerspace", "event", "series", "user", "permissions",
+        fields = ("id", "makerspace", "event", "series", "user", "permissions", "role_label",
                   "granted_by", "created_at", "revoked_at", "revoked_by")
         read_only_fields = fields
 
@@ -41,7 +48,7 @@ class StaffGrantSerializer(serializers.ModelSerializer):
 class StaffGrantInviteSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventStaffGrantInvite
-        fields = ("id", "makerspace", "event", "series", "permissions", "created_by",
+        fields = ("id", "makerspace", "event", "series", "permissions", "role_label", "created_by",
                   "created_at", "expires_at", "redeemed_at", "revoked_at")
         read_only_fields = fields
 

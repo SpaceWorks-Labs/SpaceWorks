@@ -98,7 +98,7 @@ def resolve_target(request, entry):
             return None, False
         token = kwargs.get("public_token")
         view_name = getattr(match, "view_name", None)
-        if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects"}:
+        if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
             from apps.makerspaces.public_profile_access import resolve_public_profile
             claim, _ = resolve_public_profile(kwargs.get("handle"), request)
             return claim.profile.membership.makerspace, True

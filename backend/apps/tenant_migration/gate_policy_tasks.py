@@ -137,6 +137,9 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.makerspaces.profile_github_tasks.refresh_public_calendars": (
+        "Public calendars refresh under the existing per-tenant GitHub source boundary; cache only."
+    ),
     "apps.integrations.broadcasts_worker.recover_for_tenants": "Recover durable campaigns and outboxes only inside each tenant's source gate.",
     "apps.data_export.subject_tasks.sweep_subject_exports_task": "Personal export recovery gates each tenant.",
     "apps.makerspaces.membership_admission_payments.sweep_admissions": (

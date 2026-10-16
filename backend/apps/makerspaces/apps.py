@@ -22,6 +22,8 @@ class MakerspacesConfig(AppConfig):
         from .profile_activity_sources import register_builtin_sources
         register_signals()
         register_builtin_sources()
+        from .profile_activity_p2 import register_sources
+        register_sources()
 
         def invalidate_hosting_cache(**kwargs):
             # Any write to frontend_domain / frontend_domain_status must drop the

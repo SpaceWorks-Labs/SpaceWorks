@@ -3184,6 +3184,36 @@ bytes because the difference lives only in discarded padding bits — so roughly
 decoded cleanly and no rollback happened. The decoder now requires canonical base64url. Our own
 encoder always emits canonical output, so stored envelopes are unaffected.
 
+**Import staging is asynchronous; the request only receives bytes (2026-10-16).** `POST .../imports`
+streams the `archive` part through `import_upload.ImportArchiveUploadHandler` straight into
+`BACKUP_OPS_DIR/tenant-imports/` (one write, size-capped while streaming), creates a `PENDING` job with
+`tenant_migration.import_upload_received`, and answers 202. The handler is installed in
+`initialize_request()` because the superadmin permission can read `request.data` before `post()`, and
+`dispatch()` deletes every file the handler wrote that no committed job owns. Decryption, the digest check
+and manifest validation run in `stage_import_job_task`, which alone moves a job
+`PENDING → AWAITING_IDENTITY | READY | FAILED` and records `import_created` or `import_staging_failed`.
+Rules that must hold:
+
+- **One owner per staging run.** The task claims a 6-hour `PeriodicTaskRun` lease named
+  `tenant-import-staging:<job id>`; its `last_run_at` is the attempt token.
+- **Paths are fenced, content is not.** Every create, rename or unlink of the archive, its sidecar or the
+  fixed `.rows.age.part` happens inside one short transaction that locks the lease row, then the job row,
+  and re-checks token, existence, `PENDING` and expiry. Bytes go through an already-open descriptor. Expiry
+  cleanup keeps the same lease-then-job order, so a stale or out-raced attempt can never write, publish or
+  delete another attempt's file, and no file outlives its job.
+- **The identity endpoints read a rows-only sidecar.** Staging seals every decrypted member except
+  `objects/**` (carried DEKs are never on disk) to the target's own age recipient as
+  `<archive>.rows.age`. Identity GET/POST refuse a `PENDING` job before any archive I/O (409
+  `import_staging`). Only a job staged before this change, which has no sidecar, still reads the full archive.
+  `schedule_import_archive_unlink` removes the archive, the sidecar and the part together.
+- **Brokerless deployments never stage in a request.** With `CELERY_TASK_ALWAYS_EAGER` the view does not
+  dispatch; `resume_stale_pending_import_jobs` (run by the existing finalization-recovery task) stages
+  `PENDING` jobs older than two minutes with no live lease, so the cron service does the work. A failed
+  enqueue also leaves the job `PENDING` for that sweep. It never fails the job, because the error does not
+  prove the message was lost.
+- **Receiving the body is still inside the request.** One disk write of the upload must fit
+  `GUNICORN_TIMEOUT`; larger archives need that timeout raised until uploads are chunked.
+
 ## Organization accounts and organization-derived authority
 
 - **An `Organization` is a platform entity, not a module.** It is creatable before any makerspace

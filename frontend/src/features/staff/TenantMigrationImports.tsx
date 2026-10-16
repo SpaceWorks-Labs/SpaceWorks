@@ -125,6 +125,7 @@ function ImportJobCard({ job: listedJob, pairing }: { job: ImportJob; pairing?: 
         </div>
         <StatusPill tone={tone}>{lifecycle}</StatusPill>
       </div>
+      {job.status === "pending" ? <p className="mt-2 text-sm text-warn-ink">Decrypting and verifying the encrypted archive in the background. Identity decisions appear when it finishes.</p> : null}
       {lifecycle === "IMPORTING" ? <p className="mt-2 text-sm text-warn-ink">{importFinalizing ? "Import finalization is still running. The tenant is not active." : "Materialized and verified, but not activated. The tenant remains IMPORTING."}</p> : null}
       {lifecycle === "ACTIVE" ? <p className="mt-2 text-sm text-success-ink">Target is ACTIVE. The source cutover receipt was consumed.</p> : null}
       {lifecycle === "ABORTED" ? <p className="mt-2 text-sm text-danger">Target is ABORTED. Transfer its signed abort receipt to recover the archived source.</p> : null}

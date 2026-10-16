@@ -17,70 +17,16 @@ from .import_job_cleanup import (
 )
 
 
-def create_import_job(*, actor, archive, source_archive_digest, expires_at):
-    _require_superadmin(actor)
-    from apps.backup.digests import sha256_file
-    from .archive_stream import PortableArchive
-    from .import_staging import decrypted_archive, stage_encrypted_upload
-
-    archive_path = stage_encrypted_upload(archive)
-    try:
-        if sha256_file(archive_path) != source_archive_digest:
-            raise ValidationError({"detail": "The encrypted archive digest does not match."})
-        with decrypted_archive(archive_path) as (root, _carried):
-            portable = PortableArchive(root)
-            manifest = portable.json("migration-manifest.json")
-            from .archive_envelope import FORMAT, FORMAT_VERSION
-            from .pairing import _validated_identity
-
-            if (
-                manifest.get("format") != FORMAT
-                or manifest.get("format_version") != FORMAT_VERSION
-            ):
-                raise ValidationError({"detail": "The tenant migration format is unsupported."})
-            source = manifest.get("source", {}).get("makerspace", {})
-            source_identity = _validated_identity(
-                manifest.get("source", {}).get("deployment"), "source"
-            )
-            users = list(portable.rows("accounts.User"))
-    except Exception:
-        archive_path.unlink(missing_ok=True)
-        raise
-    try:
-        with transaction.atomic():
-            job = TenantImportJob.objects.create(
-                actor=actor,
-                source_archive_digest=source_archive_digest,
-                source_makerspace_id=str(source.get("id", "")),
-                source_makerspace_slug=str(source.get("slug", "")),
-                source_makerspace_name=str(source.get("name", "")),
-                source_deployment_id=str(source_identity["deployment_id"]),
-                source_deployment_identity=source_identity,
-                storage_mode=",".join(sorted(manifest.get("storage_mode", {}).values())),
-                status=(TenantImportJob.Status.AWAITING_IDENTITY if users else TenantImportJob.Status.READY),
-                archive_path=str(archive_path),
-                expires_at=expires_at,
-            )
-            audit.record(
-                actor, "tenant_migration.import_created", target=job,
-                meta={
-                    "import_id": str(job.pk), "identity_count": len(users),
-                    "format_version": manifest.get("format_version", 0),
-                    "source_archive_digest": source_archive_digest,
-                },
-            )
-    except Exception:
-        archive_path.unlink(missing_ok=True)
-        raise
-    return job
-
-
 def submit_identity_decisions(*, actor, job, decisions):
     _require_superadmin(actor)
     from .archive_stream import PortableArchive
     from .import_staging import decrypted_archive
+    from .services_import_staging import rows_archive_path
 
-    with decrypted_archive(job.archive_path) as (root, _carried):
+    rows_path = rows_archive_path(job)
+    with decrypted_archive(
+        rows_path, require_carried_keys=(str(rows_path) == job.archive_path),
+    ) as (root, _carried):
         portable = PortableArchive(root)
         source_rows = {
             str(row["id"]): row

@@ -6,6 +6,11 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — asynchronous tenant-import staging.** The import upload now only writes the archive to
+  the ops work dir and returns 202 with a `pending` job. A Celery task (or, without a broker, the
+  scheduled sweep) checks the digest, decrypts, validates, and seals a rows-only sidecar for the
+  identity-decision endpoints. Sync Gunicorn workers no longer time out decrypting large archives in a
+  request. Rules: "Import staging is asynchronous" in `docs/INVARIANTS.md`.
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which
   presign rows no workflow ever consumed; a default-off deployment switch plus tenant opt-in lets a

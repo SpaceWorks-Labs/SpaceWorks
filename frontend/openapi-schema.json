@@ -43402,7 +43402,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_platform_tenant_migrations_imports_create",
-                "summary": "Create an import job from an age-encrypted archive upload",
+                "summary": "Upload an age-encrypted archive and queue its staging",
                 "tags": [
                     "Tenant migration"
                 ],
@@ -43432,7 +43432,7 @@
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "202": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -43638,6 +43638,16 @@
                             }
                         },
                         "description": "Not found."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "State conflict."
                     },
                     "401": {
                         "content": {

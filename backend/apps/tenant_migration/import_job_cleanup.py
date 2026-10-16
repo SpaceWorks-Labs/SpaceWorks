@@ -4,7 +4,8 @@ import logging
 from datetime import timedelta
 
 from django.db import transaction
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import CharField, Exists, OuterRef, Q, Value
+from django.db.models.functions import Cast, Concat
 from django.utils import timezone
 
 from apps.operations.models import PeriodicTaskRun
@@ -18,6 +19,7 @@ from .object_promotion import PROMOTION_LEASE_DURATION
 CLEANUP_LEASE_NAME = "tenant-import-expiry-cleanup-work"
 CLEANUP_OBJECTS_LEASE_NAME = "tenant-import-object-cleanup-work"
 FINALIZATION_SWEEP_LEASE_NAME = "tenant-import-finalization-sweep-work"
+STAGING_SWEEP_LEASE_NAME = "tenant-import-staging-sweep-work"
 CLEANUP_LEASE_DURATION = timedelta(minutes=15)
 FINALIZATION_SWEEP_LEASE_DURATION = timedelta(minutes=5)
 DEFAULT_CLEANUP_BATCH_SIZE = 100
@@ -55,6 +57,13 @@ def cleanup_expired_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SI
             rollback_import_objects(job)
 
     with transaction.atomic():
+        from .services_import_staging import staging_lease_name
+
+        leases = PeriodicTaskRun.objects.select_for_update().filter(
+            name__in=[staging_lease_name(job_id) for job_id in delete_ids],
+        ).order_by("name")
+        lease_ids = [lease.pk for lease in leases]
+        PeriodicTaskRun.objects.filter(pk__in=lease_ids).delete()
         for row in retained:
             updated = TenantImportJob.objects.filter(
                 pk=row["pk"], archive_path=row["archive_path"]
@@ -133,6 +142,46 @@ def resume_expired_finalizing_import_jobs(
     if failures:
         logger.error(
             "tenant_import_finalization_recovery_batch_failed",
+            extra={"candidate_count": len(jobs), "failure_count": failures},
+        )
+    return len(jobs)
+
+
+def resume_stale_pending_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SIZE):
+    """Recover accepted uploads whose dispatch or staging worker was interrupted."""
+    from .services_import_staging import STAGING_LEASE_DURATION, staging_lease_name
+    from .tasks import stage_import_job_task
+
+    sweep_at = now or timezone.now()
+    if not _claim_named_cleanup_lease(
+        STAGING_SWEEP_LEASE_NAME, sweep_at,
+        lease_duration=FINALIZATION_SWEEP_LEASE_DURATION,
+    ):
+        return 0
+    live_claims = PeriodicTaskRun.objects.filter(
+        name=Concat(Value(staging_lease_name("")), Cast(OuterRef("pk"), CharField())),
+        last_run_at__gt=sweep_at - STAGING_LEASE_DURATION,
+    )
+    jobs = list(
+        TenantImportJob.objects.filter(
+            status=TenantImportJob.Status.PENDING, expires_at__gt=sweep_at,
+            actor_id__isnull=False, created_at__lt=sweep_at - timedelta(minutes=2),
+        ).annotate(has_live_claim=Exists(live_claims)).filter(has_live_claim=False)
+        .order_by("created_at", "pk").values("pk", "actor_id")[:batch_size]
+    )
+    failures = 0
+    for job in jobs:
+        try:
+            stage_import_job_task.delay(str(job["pk"]), job["actor_id"])
+        except Exception:
+            failures += 1
+            logger.exception(
+                "tenant_import_staging_recovery_failed",
+                extra={"tenant_import_job_id": str(job["pk"])},
+            )
+    if failures:
+        logger.error(
+            "tenant_import_staging_recovery_batch_failed",
             extra={"candidate_count": len(jobs), "failure_count": failures},
         )
     return len(jobs)

@@ -36,6 +36,9 @@ from .serializers_organization_audience import OrganizationAudienceFields
 
 
 class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, serializers.ModelSerializer):
+    can_duplicate = serializers.SerializerMethodField(
+        help_text="Whether the actor has tenant event-management authority to duplicate this event.",
+    )
     badge_sensitive_fields_allowed = serializers.SerializerMethodField()
     broadcasts_enabled = serializers.SerializerMethodField()
     report_features = serializers.SerializerMethodField()
@@ -54,7 +57,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
         model = Event
         fields = (
             'participating_organizations', 'audience_label', 'organization_admission_blocked',
-            'id', 'staff_permissions', 'can_manage_staff',
+            'id', 'staff_permissions', 'can_manage_staff', 'can_duplicate',
             'makerspace_id', 'ticketing_features',
             'broadcasts_enabled', 'report_features', 'badge_sensitive_fields_allowed',
             'series_summary',
@@ -89,6 +92,17 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
             'organizers',
         )
         read_only_fields = fields
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_can_duplicate(self, obj):
+        from apps.accounts import rbac
+        if not self._authority(obj)[0]:
+            return False
+        actor = getattr(self.context.get("request"), "user", None)
+        cache = self.context.setdefault("event_duplicate_authority", {})
+        if obj.makerspace_id not in cache:
+            cache[obj.makerspace_id] = rbac.can(actor, rbac.Action.MANAGE_EVENTS, obj.makerspace_id)
+        return cache[obj.makerspace_id]
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_ticketing_features(self, obj):

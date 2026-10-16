@@ -1,3 +1,5 @@
+import type { ChartSpec } from "./charts/chartSpec";
+
 export type ReportCatalogItem = {
   key: string; title: string; fields: string[]; exportable: boolean; summary: boolean;
   required_modules: string[]; available: boolean | null; unavailable_reason: string | null;
@@ -5,6 +7,7 @@ export type ReportCatalogItem = {
   // Server capabilities (phase 10). Absent on an older server: treat as unrestricted.
   allowed_formats?: Array<"csv" | "xlsx">; schedulable?: boolean; previewable?: boolean;
   condition_metrics?: string[];
+  chart_spec?: ChartSpec;
 };
 
 export function reportFormats(report: Pick<ReportCatalogItem, "allowed_formats">): Array<"csv" | "xlsx"> {

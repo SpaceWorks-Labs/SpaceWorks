@@ -1,0 +1,52 @@
+import { BarChart, LineChart, PieChart, StackedBarChart } from "../OperationsReportCharts";
+import { DataState } from "../OperationsReportState";
+import { ChartFrame, type ChartProps } from "./ChartFrame";
+import { chartSummary, toChartData, type ChartRecord, type ChartSpec } from "./chartSpec";
+import { FunnelChart } from "./FunnelChart";
+import { Heatmap } from "./Heatmap";
+import { Histogram } from "./Histogram";
+import { MultiLineChart } from "./MultiLineChart";
+
+function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
+  switch (spec.kind) {
+    case "multi_line": return <MultiLineChart {...props} />;
+    case "heatmap": return <Heatmap {...props} />;
+    case "funnel": return <FunnelChart {...props} />;
+    case "histogram": return <Histogram {...props} />;
+    case "line":
+      if (props.data.xKind === "time") return <MultiLineChart {...props} />;
+      break;
+    case "stacked_bar": {
+      const categories = [...new Set(props.data.series.flatMap((series) => series.points.map((point) => point.x)))];
+      return <StackedBarChart title={props.title} chartData={props.data} valueLabel={props.data.series[0]?.unit} rows={categories.map((x) => ({
+        label: props.data.series.flatMap((series) => series.points).find((point) => point.x === x)!.label,
+        segments: props.data.series.map((series) => ({ label: series.label, value: series.points.find((point) => point.x === x)?.value ?? 0 })),
+      }))} />;
+    }
+    case "bar": case "pie": break;
+    default: return <ChartFrame {...props}><p>Chart type unavailable. Show the table to explore this report.</p></ChartFrame>;
+  }
+  const Component = spec.kind === "pie" ? PieChart : spec.kind === "line" ? LineChart : BarChart;
+  return <div className="space-y-4">{props.data.series.map((series) => <Component key={series.id}
+    title={`${props.title} — ${series.label}`} chartData={{ ...props.data, series: [series], summary: chartSummary(spec, [series]) }}
+    valueLabel={[series.label, series.currency, series.unit].filter(Boolean).join(" · ")}
+    rows={series.points.map((point) => ({ label: point.label, value: point.value }))} />)}</div>;
+}
+
+export function CatalogChartPanel({ spec, rows, title, loading = false, error, onRetry }: {
+  spec: ChartSpec; rows: readonly ChartRecord[]; title: string; loading?: boolean; error?: unknown; onRetry?: () => void;
+}) {
+  let data;
+  let invalid = false;
+  try { data = toChartData(spec, rows); } catch { invalid = true; }
+  if (loading) return <div role="status" className="p-4 text-muted">Loading chart…</div>;
+  if (invalid && !error) return <p role="alert" className="text-danger">This report has an invalid chart specification.</p>;
+  const panels = [...new Set(data?.series.map((series) => series.panelKey))];
+  return <DataState loading={false} error={error} onRetry={onRetry} empty={!data?.series.length}>
+    <div className="space-y-6">{panels.map((key) => {
+      const series = data!.series.filter((series) => series.panelKey === key);
+      const partitionLabel = [...new Set([series[0].partition, series[0].currency, series[0].unit].filter(Boolean))].join(" · ");
+      return <Chart key={key} spec={spec} title={`${title} — ${partitionLabel}`} data={{ ...data!, series, summary: chartSummary(spec, series) }} />;
+    })}</div>
+  </DataState>;
+}

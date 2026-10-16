@@ -1,6 +1,7 @@
 """Explicit source-gate http participation declarations."""
 
 from .gate_policy_replay import REPLAY_HTTP_PARTICIPANTS
+from .gate_policy_p2_wa_twilio import HTTP_ANONYMOUS_PARTICIPANTS as WA_TWILIO_PARTICIPANTS
 
 
 HTTP_EXEMPTIONS = {
@@ -99,6 +100,7 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
 
 
 HTTP_ANONYMOUS_PARTICIPANTS = {
+    **WA_TWILIO_PARTICIPANTS,
     "apps.integrations.views_bounce.BounceWebhookView.post": (
         "Verified tenant HMAC resolves one makerspace; suppression and audit commit under tenant_write."
     ),

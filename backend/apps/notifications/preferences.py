@@ -32,9 +32,9 @@ def personal_enabled(makerspace, user_id, feature, channel, *, stream="", event=
 
 
 def channel_available(makerspace, feature, channel):
-    from apps.integrations.recipients import feature_available
+    from apps.integrations.recipients import category_available
 
-    if not feature_available(makerspace, feature):
+    if not category_available(makerspace, feature):
         return False
     if not is_notification_enabled(makerspace, feature, channel):
         return False
@@ -50,7 +50,7 @@ def preference_cells(makerspace, user):
     saved = {(row.feature, row.channel): row for row in rbac.scope_personal_notifications(
         user, model.objects.all(),
     ).filter(makerspace=makerspace)}
-    from apps.integrations.recipients import feature_available
+    from apps.integrations.recipients import category_available
 
     from apps.integrations.quiet_hours import timing_policy
     timing = timing_policy(makerspace)
@@ -64,5 +64,5 @@ def preference_cells(makerspace, user):
             "hardware" if feature == "hardware_requests" else "membership" if feature == "members" else feature,
             event,
         )],
-    } for feature, events in FEATURE_EVENTS.items() if feature_available(makerspace, feature)
+    } for feature, events in FEATURE_EVENTS.items() if category_available(makerspace, feature)
        for channel in PERSONAL_CHANNELS]

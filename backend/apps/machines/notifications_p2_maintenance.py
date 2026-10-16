@@ -71,6 +71,9 @@ def notify(instance, event_name, *, log_id=None, sync=False, due_reason=""):
         kind=KIND, source=instance.pk, version=version(instance), subject=instance,
         staff=content(rendered), scope=NotificationScope(machine=machine),
         context={"schedule": is_schedule, "meter": bool(due_reason),
+                 "machine_id": machine.pk,
+                 "schedule_id": instance.pk if is_schedule else None,
+                 "maintenance_log_id": log.pk if log else None,
                  "actor_id": (log.performed_by_id if log else getattr(instance, "created_by_id", None))})
 
 

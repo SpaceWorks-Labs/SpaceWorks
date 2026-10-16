@@ -21,6 +21,10 @@ from .unique_values_policy import (  # noqa: F401 -- re-exported
 # One mapping over every rule set; a per-app extension module adds its own dict here.
 DEPLOYMENT_GLOBAL_UNIQUE_RULES = {
     **CORE_UNIQUE_RULES,
+    ("presence.PresenceSession", "field:event_registration"): _policy(
+        UniqueValueDisposition.DROP_ROW,
+        "Live presence is source-local; its unique event attendance binding is dropped on import.",
+    ),
     ("makerspaces.PublicHandle", "field:user"): _policy(REMAP,
         "Keep only if the remapped account has no target claim; importer drops conflicts."),
     ("makerspaces.PublicHandle", "public_handle_ci_unique"): _policy(REMAP,

@@ -17,7 +17,8 @@ def prepare(log):
                 and not others.filter(state="retrying").exists())
     if not any(target.channel == "email" for target in resolve(row.envelope, fallback=fallback)):
         return False
-    content = render(row.envelope)
+    from apps.hardware_requests.notifications_p2_email import render_email as equipment_email
+    content = equipment_email(row.envelope, render(row.envelope))
     render_email(log, to_email=row.envelope.recipient.email, subject=content.get("subject", "Space Works"),
                  text_body=content.get("text", ""), html_body=content.get("html", ""))
     return True

@@ -37,8 +37,7 @@ def apply_item(configuration, request, index, item):
         event = callback_event(current, proxy)
         if event is None:
             return
-        if event.proof and not (module_enabled(current.makerspace, "notifications")
-                                and module_enabled(current.makerspace, "whatsapp")):
+        if event.proof and not module_enabled(current.makerspace, "notifications"):
             return
         try:
             # Re-verifies the original signature through the registered factory.

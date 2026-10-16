@@ -41,8 +41,4 @@ MEMBERSHIP_DEPENDENT_MODELS = {
         retained_by_import=False,
         reason="A Machine Manager's per-person type reach is authority and is dropped on import.",
     ),
-    "presence.PresenceSession": MembershipDependency(
-        retained_by_import=False,
-        reason="Live presence sessions are dropped; guest membership attribution is nullable.",
-    ),
 }

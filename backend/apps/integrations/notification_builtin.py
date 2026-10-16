@@ -7,6 +7,8 @@ from .notification_providers import ProviderResult
 def send_builtin(delivery, rendered):
     envelope = delivery.envelope
     if delivery.channel == "email":
+        from apps.hardware_requests.notifications_p2_email import render_email
+        rendered = render_email(envelope, rendered)
         from .dispatch import dispatch_email
         from .timing_dispatch import RELEASING
         # The envelope already handled quiet hours/digest and source eligibility.

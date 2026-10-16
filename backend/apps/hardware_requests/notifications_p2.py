@@ -63,7 +63,7 @@ def fanout(*, space, feature, stream, event, kind, source, version, subject,
             source_kind=kind, source_id=source, revision=version, subject=subject,
             scope=scope, context=context, rendered=own, timing_policy="immediate",
             dedup_key=f"{base}:requester:{owner.pk}"))
-        # Pre-Phase-2 mailbox proof the shared resolver does not accept yet.
+        # Compatibility path stays disabled when the shared owner-proof policy is installed.
         from .notifications_p2_contact import notify_owner
         notify_owner(envelopes[-1])
     if staff is not None:

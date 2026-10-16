@@ -23,7 +23,8 @@ def refresh_public_calendars():
             # Keep source migration's session fence across the external fetch, but
             # no database transaction/row lock across provider I/O.
             with fanout_tenant_write(makerspace_id, operation="github_contributions_refresh", counts=counts) as allowed:
-                if allowed:
-                    refresh_calendar(claim_id)
+                if not allowed:
+                    continue
+                refresh_calendar(claim_id)
         except Exception:
             logger.warning("public_profile.github_refresh_failed", extra={"claim_id": claim_id})

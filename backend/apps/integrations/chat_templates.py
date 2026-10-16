@@ -46,8 +46,10 @@ def chat_entry(feature, event):
     Deliberately the STAFF entry: a chat body may only ever be built from staff-audience
     variables, so the editor cannot offer a member-facing field it would then leak.
     """
-    from .chat_templates_catalog import chat_only_entry
+    from .chat_templates_catalog import PERSONAL_ONLY_EVENTS, chat_only_entry
 
+    if (feature, event) in PERSONAL_ONLY_EVENTS:
+        return None
     if feature == "hardware_requests" and event == "overdue_escalated":
         return get_entry("hardware", CHAT_AUDIENCE, "return_reminder")
     return get_entry(stream_for_feature(feature), CHAT_AUDIENCE, event) or chat_only_entry(feature, event)

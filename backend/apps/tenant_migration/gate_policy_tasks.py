@@ -54,6 +54,9 @@ TASK_EXEMPTIONS = {
 
 
 TASK_TENANT_RESOLVERS = {
+    "apps.events.broadcast_channels.event_broadcast_channels": (
+        "events.EventBroadcast", 0, "makerspace_id"
+    ),
     "apps.data_export.subject_tasks.run_subject_export_task": (
         "data_export.DataExportJob", 0, "makerspace_id"
     ),

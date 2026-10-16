@@ -1,7 +1,6 @@
-"""Legacy email policy/content hooks for the shared envelope transport.
+"""Equipment email policy/content hooks used by shared resolution and transport.
 
-The integrator wires these into email resolution and rendering (see lane report).
-Chat always keeps the credential-free body persisted on the personal envelope.
+Chat keeps the credential-free body persisted on the personal envelope.
 """
 from apps.accounts import rbac
 from apps.integrations.notification_rules import is_requester_muted
@@ -10,7 +9,7 @@ from .models import HardwareRequest
 
 
 def source_ready(envelope):
-    """Never bypass an existing email mute while the shared hook is unwired."""
+    """Keep chat independent once the resolver owns email-specific refusals."""
     if allowed(envelope) is not False:
         return True
     from apps.integrations import notification_resolution

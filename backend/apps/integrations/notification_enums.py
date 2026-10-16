@@ -26,6 +26,7 @@ class NotificationFeature(models.TextChoices):
     PAYMENTS = "payments", "Payments"
     STOCK = "stock", "Stock and procurement"
     CERTIFICATIONS = "certifications", "Certifications"
+    PRESENCE = "presence", "Presence"
 
 
 class NotificationChannel(models.TextChoices):

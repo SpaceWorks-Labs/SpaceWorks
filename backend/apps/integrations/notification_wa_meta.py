@@ -14,11 +14,12 @@ class MetaWhatsAppProvider:
 
     def _ready(self):
         from apps.makerspaces.platform import module_enabled
+        from apps.makerspaces.servability import is_servable
         config = self.configuration
         return bool(config.channel == "whatsapp" and config.provider == "meta"
                     and config.enabled and config.personal_enabled
+                    and is_servable(config.makerspace)
                     and module_enabled(config.makerspace, "notifications")
-                    and module_enabled(config.makerspace, "whatsapp")
                     and config.integration_identity and credentials(config))
 
     def _endpoint_valid(self, endpoint):

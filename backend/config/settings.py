@@ -747,6 +747,7 @@ CORS_ALLOWED_ORIGINS = env.list(
 )
 CORS_ALLOW_HEADERS = (
     *default_headers,
+    "upload-offset",
     "x-client-id",
     "x-nonce",
     "x-signature",
@@ -1028,6 +1029,9 @@ REST_FRAMEWORK = {
         ),
         "tenant_migration_write": env(
             "THROTTLE_TENANT_MIGRATION_WRITE", default="30/hour"
+        ),
+        "tenant_migration_upload": env(
+            "THROTTLE_TENANT_MIGRATION_UPLOAD", default="1200/min"
         ),
     },
     # Proxy-aware client IP for throttling. Production must declare its topology at

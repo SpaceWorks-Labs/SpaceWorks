@@ -37,6 +37,8 @@ def staging_lease_name(job_id):
 
 
 def rows_archive_path(job):
+    if job.status == TenantImportJob.Status.UPLOADING:
+        raise ImportStagingError("The encrypted archive is still being uploaded.")
     if job.status == TenantImportJob.Status.PENDING:
         raise ImportStagingError("The encrypted archive is still being staged.")
     sidecar = Path(f"{job.archive_path}.rows.age")

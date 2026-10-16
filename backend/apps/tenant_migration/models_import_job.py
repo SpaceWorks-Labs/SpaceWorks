@@ -8,6 +8,7 @@ from django.db.models import Q
 
 class TenantImportJob(models.Model):
     class Status(models.TextChoices):
+        UPLOADING = "uploading", "Uploading"
         PENDING = "pending", "Pending"
         AWAITING_IDENTITY = "awaiting_identity", "Awaiting identity decisions"
         READY = "ready", "Ready"
@@ -47,6 +48,8 @@ class TenantImportJob(models.Model):
     )
     aggregate_outcome = models.JSONField(default=dict, blank=True)
     archive_path = models.CharField(max_length=1024, blank=True)
+    upload_total_bytes = models.BigIntegerField(null=True, blank=True)
+    upload_received_bytes = models.BigIntegerField(default=0)
     materialization_report = models.JSONField(default=dict, blank=True)
     verification_report = models.JSONField(default=dict, blank=True)
     failure_code = models.CharField(max_length=64, blank=True)

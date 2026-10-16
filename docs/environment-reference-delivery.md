@@ -115,6 +115,7 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_TELEGRAM_WEBHOOK` | `'60/min'` |  |
 | `THROTTLE_TENANT_MIGRATION_READ` | `'120/min'` |  |
 | `THROTTLE_TENANT_MIGRATION_WRITE` | `'30/hour'` |  |
+| `THROTTLE_TENANT_MIGRATION_UPLOAD` | `'1200/min'` | Resumable tenant-archive chunks (up to 8 MiB per request). |
 | `THROTTLE_MFA_VERIFY` | `10/min` | Per-IP second-factor/enrollment budget; also controls control-panel verification. |
 | `THROTTLE_MFA_CHALLENGE` | `10/min` | Budget for one challenge token. |
 | `THROTTLE_MFA_USER` | `20/hour` | Account budget across challenges and IPs. |

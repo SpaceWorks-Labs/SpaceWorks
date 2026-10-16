@@ -69,7 +69,7 @@ class TenantImportListCreateView(MigrationAPIView):
         rows = TenantImportJob.objects.select_related("target_makerspace").filter(
             Q(target_makerspace__isnull=True)
             | Q(target_makerspace_id__in=visible_spaces)
-        )[:20]
+        ).order_by("-created_at", "-pk")[:20]
         audit.record(
             request.user, "tenant_migration.imports_read", target=request.user,
             meta={"import_count": len(rows), "format_version": 1},

@@ -23,6 +23,7 @@ class FieldValidationErrorSerializer(serializers.Serializer):
     approval_id = serializers.ListField(child=serializers.CharField(), required=False)
     target_age_recipient = serializers.ListField(child=serializers.CharField(), required=False)
     archive = serializers.ListField(child=serializers.CharField(), required=False)
+    archive_bytes = serializers.ListField(child=serializers.CharField(), required=False)
     source_archive_digest = serializers.ListField(child=serializers.CharField(), required=False)
     target_identity = serializers.ListField(child=serializers.CharField(), required=False)
     receipt = serializers.ListField(child=serializers.CharField(), required=False)
@@ -131,7 +132,9 @@ class ImportJobSerializer(serializers.ModelSerializer):
             "aggregate_outcome", "failure_code", "failure_detail", "created_at",
             "updated_at", "expires_at", "terminal_at", "scrubbed_at",
             "source_retention_notice",
+            "upload_total_bytes", "upload_received_bytes",
         )
+        read_only_fields = ("upload_total_bytes", "upload_received_bytes")
 
     def get_identity_count(self, obj):
         return obj.identity_decisions.count()

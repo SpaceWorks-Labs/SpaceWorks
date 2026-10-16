@@ -47,7 +47,6 @@ def cleanup_expired_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SI
         .values("pk", "target_makerspace_id", "archive_path")[:batch_size]
     )
     delete_ids = [row["pk"] for row in candidates if row["target_makerspace_id"] is None]
-    retained = [row for row in candidates if row["target_makerspace_id"] is not None]
 
     # Object-storage cleanup is external I/O and stays outside the deletion transaction.
     if delete_ids:
@@ -62,17 +61,31 @@ def cleanup_expired_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SI
         leases = PeriodicTaskRun.objects.select_for_update().filter(
             name__in=[staging_lease_name(job_id) for job_id in delete_ids],
         ).order_by("name")
-        lease_ids = [lease.pk for lease in leases]
-        PeriodicTaskRun.objects.filter(pk__in=lease_ids).delete()
-        for row in retained:
-            updated = TenantImportJob.objects.filter(
-                pk=row["pk"], archive_path=row["archive_path"]
-            ).update(archive_path="", updated_at=timezone.now())
-            if updated:
-                schedule_import_archive_unlink(row["archive_path"], row["pk"])
+        lease_ids = {lease.name: lease.pk for lease in leases}
+        # A chunk may have refreshed expiry while cleanup waited. Recheck the
+        # locked rows, rather than deleting the earlier candidate IDs blindly.
+        locked = list(TenantImportJob.objects.select_for_update().filter(
+            pk__in=[row["pk"] for row in candidates],
+        ).order_by("pk"))
+        delete_ids, cleared = [], 0
+        for job in locked:
+            if job.expires_at > cleanup_at:
+                continue
+            if job.target_makerspace_id is None:
+                delete_ids.append(job.pk)
+            elif job.status in TenantImportJob.TERMINAL_STATUSES and job.archive_path:
+                archive_path = job.archive_path
+                job.archive_path = ""
+                job.save(update_fields=("archive_path", "updated_at"))
+                schedule_import_archive_unlink(archive_path, job.pk)
+                cleared += 1
+        PeriodicTaskRun.objects.filter(pk__in=[
+            lease_ids[staging_lease_name(job_id)] for job_id in delete_ids
+            if staging_lease_name(job_id) in lease_ids
+        ]).delete()
         # The post_delete receiver schedules these paths only after this commit.
         TenantImportJob.objects.filter(pk__in=delete_ids).delete()
-    return len(candidates)
+    return len(delete_ids) + cleared
 
 
 def cleanup_abandoned_import_objects(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SIZE):

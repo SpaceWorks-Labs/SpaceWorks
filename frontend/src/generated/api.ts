@@ -468,7 +468,10 @@ export const openApiPaths = [
   "/api/v1/admin/platform/social-auth-settings",
   "/api/v1/admin/platform/tenant-migrations/deployment-identity",
   "/api/v1/admin/platform/tenant-migrations/imports",
+  "/api/v1/admin/platform/tenant-migrations/imports/uploads",
   "/api/v1/admin/platform/tenant-migrations/imports/{job_id}",
+  "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/archive",
+  "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/archive/complete",
   "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/identity-decisions",
   "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/pairings/{pairing_id}/abort",
   "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/pairings/{pairing_id}/activate",
@@ -3036,6 +3039,7 @@ export type FieldValidationError = {
   "approval_id"?: Array<string>;
   "target_age_recipient"?: Array<string>;
   "archive"?: Array<string>;
+  "archive_bytes"?: Array<string>;
   "source_archive_digest"?: Array<string>;
   "target_identity"?: Array<string>;
   "receipt"?: Array<string>;
@@ -3132,14 +3136,27 @@ export type ImportJob = {
   "terminal_at"?: string | null;
   "scrubbed_at"?: string | null;
   "source_retention_notice": string;
+  "upload_total_bytes": number | null;
+  "upload_received_bytes": number;
 };
 
-export type ImportJobStatusEnum = "pending" | "awaiting_identity" | "ready" | "materializing" | "finalizing" | "completed" | "failed" | "abandoned";
+export type ImportJobStatusEnum = "uploading" | "pending" | "awaiting_identity" | "ready" | "materializing" | "finalizing" | "completed" | "failed" | "abandoned";
 
 export type ImportRun = {
   "target_identity"?: {
   [key: string]: unknown;
 };
+};
+
+export type ImportUploadConflict = {
+  "detail": string;
+  "code": string;
+  "upload_received_bytes"?: number;
+};
+
+export type ImportUploadStart = {
+  "source_archive_digest": string;
+  "archive_bytes": number;
 };
 
 export type Inbox = {

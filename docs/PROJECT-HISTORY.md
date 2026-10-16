@@ -6,6 +6,10 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — resumable tenant-archive uploads.** The console sends audited 8 MiB chunks to an
+  `uploading` job, resumes from the server's offset after interruption, and completes idempotently
+  into asynchronous staging. Idle expiry slides by 24 hours; cleanup rechecks expiry under lock.
+  Requires the nginx `/api/` 10m limit from `c422fb1a`. Rules: "Import staging is asynchronous".
 - **2026-10-16 — asynchronous tenant-import staging.** The import upload now only writes the archive to
   the ops work dir and returns 202 with a `pending` job. A Celery task (or, without a broker, the
   scheduled sweep) checks the digest, decrypts, validates, and seals a rows-only sidecar for the

@@ -43592,6 +43592,248 @@
                 }
             }
         },
+        "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/archive": {
+            "patch": {
+                "operationId": "api_v1_admin_platform_tenant_migrations_imports_archive_partial_update",
+                "summary": "Append up to 8 MiB at the current upload offset",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Content-Length",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Chunk length in bytes, from 1 through 8388608.",
+                        "required": true
+                    },
+                    {
+                        "in": "header",
+                        "name": "Upload-Offset",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Nonnegative byte offset; must equal upload_received_bytes.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "job_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/offset+octet-stream": {
+                            "schema": {
+                                "type": "string",
+                                "format": "binary"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Invalid length, offset or size overflow."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Not found."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportUploadConflict"
+                                }
+                            }
+                        },
+                        "description": "State conflict or offset_mismatch with upload_received_bytes."
+                    },
+                    "415": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Requires application/offset+octet-stream."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Superadmin access required."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Throttle limit exceeded."
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Unexpected migration failure."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/archive/complete": {
+            "post": {
+                "operationId": "api_v1_admin_platform_tenant_migrations_imports_archive_complete_create",
+                "summary": "Complete an archive upload and queue staging",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "job_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Not found."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "State conflict."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Superadmin access required."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Throttle limit exceeded."
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Unexpected migration failure."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/identity-decisions": {
             "get": {
                 "operationId": "api_v1_admin_platform_tenant_migrations_imports_identity_decisions_list",
@@ -44241,6 +44483,102 @@
                             }
                         },
                         "description": "State conflict."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Superadmin access required."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Throttle limit exceeded."
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypedError"
+                                }
+                            }
+                        },
+                        "description": "Unexpected migration failure."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/tenant-migrations/imports/uploads": {
+            "post": {
+                "operationId": "api_v1_admin_platform_tenant_migrations_imports_uploads_create",
+                "summary": "Start a resumable encrypted archive upload",
+                "tags": [
+                    "Tenant migration"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportUploadStart"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportUploadStart"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportUploadStart"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FieldValidationError"
+                                }
+                            }
+                        },
+                        "description": "Field-keyed validation errors."
                     },
                     "401": {
                         "content": {
@@ -77164,6 +77502,12 @@
                             "type": "string"
                         }
                     },
+                    "archive_bytes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "source_archive_digest": {
                         "type": "array",
                         "items": {
@@ -77486,6 +77830,15 @@
                     "source_retention_notice": {
                         "type": "string",
                         "readOnly": true
+                    },
+                    "upload_total_bytes": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "upload_received_bytes": {
+                        "type": "integer",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -77496,11 +77849,14 @@
                     "source_archive_digest",
                     "source_retention_notice",
                     "target_lifecycle_state",
-                    "updated_at"
+                    "updated_at",
+                    "upload_received_bytes",
+                    "upload_total_bytes"
                 ]
             },
             "ImportJobStatusEnum": {
                 "enum": [
+                    "uploading",
                     "pending",
                     "awaiting_identity",
                     "ready",
@@ -77511,7 +77867,7 @@
                     "abandoned"
                 ],
                 "type": "string",
-                "description": "* `pending` - Pending\n* `awaiting_identity` - Awaiting identity decisions\n* `ready` - Ready\n* `materializing` - Materializing\n* `finalizing` - Finalizing\n* `completed` - Completed\n* `failed` - Failed\n* `abandoned` - Abandoned"
+                "description": "* `uploading` - Uploading\n* `pending` - Pending\n* `awaiting_identity` - Awaiting identity decisions\n* `ready` - Ready\n* `materializing` - Materializing\n* `finalizing` - Finalizing\n* `completed` - Completed\n* `failed` - Failed\n* `abandoned` - Abandoned"
             },
             "ImportRun": {
                 "type": "object",
@@ -77521,6 +77877,44 @@
                         "additionalProperties": {}
                     }
                 }
+            },
+            "ImportUploadConflict": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "upload_received_bytes": {
+                        "type": "integer",
+                        "description": "Authoritative next offset when code is offset_mismatch."
+                    }
+                },
+                "required": [
+                    "code",
+                    "detail"
+                ]
+            },
+            "ImportUploadStart": {
+                "type": "object",
+                "properties": {
+                    "source_archive_digest": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "archive_bytes": {
+                        "type": "integer",
+                        "maximum": 21474836480,
+                        "minimum": 1,
+                        "format": "int64"
+                    }
+                },
+                "required": [
+                    "archive_bytes",
+                    "source_archive_digest"
+                ]
             },
             "Inbox": {
                 "type": "object",

@@ -65,7 +65,7 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Pr
         <ul className="grid min-w-0 gap-1 sm:grid-cols-2">{checklist.map(item => <li key={item.id}>
           <Destination target={item.target} tabHref={tabHref}>
             {item.done ? <CheckCircle2 aria-hidden="true" size={20} className="shrink-0 text-success-ink" /> : <Circle aria-hidden="true" size={20} className="shrink-0 text-muted" />}
-            <span className={item.done ? "text-muted" : "font-semibold text-ink"}>{item.label}<span className="sr-only">{item.done ? " (done)" : " (to do)"}</span></span>
+            <span className={item.done ? "text-muted" : "font-semibold text-ink"}>{item.label}<span className="sr-only">{item.done ? ": done" : ": to do"}</span></span>
           </Destination></li>)}</ul>
       </section>
       {pages.length ? <section aria-label="More settings pages" className="grid min-w-0 gap-1">

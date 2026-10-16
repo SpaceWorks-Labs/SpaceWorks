@@ -2,6 +2,8 @@ import type { Channel, ChannelKey, ProviderKey } from "./channelsApi";
 
 export type CredentialField = { key: string; label: string; optional?: boolean; secret?: boolean; hint?: string };
 export type ProviderSpec = { key: ProviderKey; label: string; identityLabel?: string; identityHint?: string;
+  /** A credential the adapter reads that is the identity itself: filled from it, not typed twice. */
+  identityCredential?: string;
   credentials: CredentialField[] };
 export type ChannelSpec = { key: ChannelKey; label: string; description: string; rooms: boolean; personal: boolean;
   /** The module that must be installed for the channel to send (null: the notifications module alone). */
@@ -42,9 +44,9 @@ export const CHANNEL_SPECS: readonly ChannelSpec[] = [
           { ...secret("api_key_secret", "API key secret"), optional: true },
           plain("whatsapp_sender", "WhatsApp sender", "Leave empty when you use a Messaging Service.", true),
           plain("messaging_service_sid", "Messaging Service SID", undefined, true)] },
-      { key: "meta", label: "Meta WhatsApp Cloud", identityLabel: "Phone number ID",
+      { key: "meta", label: "Meta WhatsApp Cloud", identityLabel: "Phone number ID", identityCredential: "phone_number_id",
         credentials: [plain("app_id", "App ID"), secret("app_secret", "App secret"), plain("business_account_id", "WhatsApp Business Account ID"),
-          plain("phone_number_id", "Phone number ID"), secret("access_token", "Permanent access token"),
+          secret("access_token", "Permanent access token"),
           secret("webhook_verify_token", "Webhook verify token")] }] },
   { key: "native_push", label: "App push", description: "Notifications on people's phones through the Space Works app. Needs the mobile push feature.",
     rooms: false, personal: true, module: null, providers: [{ key: "builtin", label: "Space Works app", credentials: [] }] },

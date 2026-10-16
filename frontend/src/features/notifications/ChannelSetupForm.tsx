@@ -30,6 +30,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
 
   function submit() {
     const missing = provider.credentials.filter(field => !field.optional && !secrets[field.key]?.trim());
+    if (typed && provider.identityCredential && !draft.integration_identity.trim()) missing.push({ key: provider.identityCredential, label: provider.identityLabel ?? "Identity" });
     if (typed && missing.length) return setProblem(`Enter every required credential to replace them: ${missing.map(field => field.label).join(", ")}.`);
     if (draft.personal_enabled && chat && !draft.integration_identity.trim()) return setProblem(`Enter the ${provider.identityLabel?.toLowerCase()} before turning on personal messages.`);
     const body: ChannelWrite = { enabled: draft.enabled, personal_enabled: draft.personal_enabled };
@@ -38,7 +39,10 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
     // A new row is created with the server's default provider, so a non-default choice is sent.
     if (draft.provider !== initial.provider || (!row && draft.provider !== spec.providers[0].key)) body.provider = draft.provider;
     if (draft.integration_identity !== initial.integration_identity) body.integration_identity = draft.integration_identity.trim();
-    if (typed) body.credentials = Object.fromEntries(Object.entries(secrets).filter(([, value]) => value.trim()).map(([key, value]) => [key, value.trim()]));
+    if (typed) {
+      body.credentials = Object.fromEntries(Object.entries(secrets).filter(([, value]) => value.trim()).map(([key, value]) => [key, value.trim()]));
+      if (provider.identityCredential) body.credentials[provider.identityCredential] = draft.integration_identity.trim();
+    }
     if (!sameQuotas(draft.quotas, initial.quotas)) body.quotas = Object.fromEntries(Object.entries(draft.quotas).filter(([, value]) => value)) as Quotas;
     if (spec.key === "whatsapp" && !sameTemplates(draft.templates, initial.templates)) body.templates = draft.templates.map(strip);
     save.mutate(body, { onSuccess: saved => { setDraft(saved); setSecrets({}); } });

@@ -13,10 +13,12 @@ x-spaceworks-host-orchestration:
     path: /var/lib/spaceworks/ops/database-pointer.env
     static_environment: /etc/spaceworks/cloud.env
   database_identity: endpoint-plus-queried-uuid
-  writer_services: [backend, cron]
+  writer_services: [backend, live, cron]
   sibling_lifecycle: provider-isolated-database
 x-app-env: &app-env
   SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+  EVENT_STATION_PIN_PEPPER: ${EVENT_STATION_PIN_PEPPER:-}
+  SPACEWORKS_EDITION: ${SPACEWORKS_EDITION:-makerspace}
   WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
   WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
   WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
@@ -51,6 +53,8 @@ x-app-env: &app-env
   AUDIT_ATTESTATION_HTTP_URL: ${AUDIT_ATTESTATION_HTTP_URL:-}
   AUDIT_ATTESTATION_HTTP_BEARER_TOKEN: ${AUDIT_ATTESTATION_HTTP_BEARER_TOKEN:-}
   AUDIT_ATTESTATION_HTTP_TIMEOUT: ${AUDIT_ATTESTATION_HTTP_TIMEOUT:-10}
+  AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-True}
+  AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-None}
   ENABLE_HTTPS: ${ENABLE_HTTPS:-true}
   TRUST_X_FORWARDED_PROTO: ${TRUST_X_FORWARDED_PROTO:-true}
   TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
@@ -75,7 +79,6 @@ x-app-env: &app-env
   EVIDENCE_RETENTION_BATCH_SIZE: ${EVIDENCE_RETENTION_BATCH_SIZE:-100}
   EVIDENCE_ABANDONED_UPLOAD_CLEANUP_ENABLED: ${EVIDENCE_ABANDONED_UPLOAD_CLEANUP_ENABLED:-False}
   EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS: ${EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS:-7}
-  METRICS_TOKEN: ${METRICS_TOKEN:-}
   SENTRY_DSN: ${SENTRY_DSN:-}
   SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.0}
   SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
@@ -84,6 +87,8 @@ x-app-env: &app-env
   BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY: ${BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY:-}
   BACKUP_OPS_DIR: /var/lib/spaceworks/ops/work
   CELERY_BROKER_URL: ""
+  # Shared by publishers and SSE subscribers; cloud has no bundled Redis.
+  LIVE_REDIS_URL: ${LIVE_REDIS_URL:?set LIVE_REDIS_URL to a shared Redis bus}
   SPACEWORKS_HOST_MARKER_PATH: /run/spaceworks-host/restore-marker.json
   BACKUP_PRODUCER_CAPABILITY_MARKER_PATH: /run/spaceworks-host/producer-capability.json
   BACKUP_PRODUCER_PRIVILEGED_SCRIPTS_DIR: /run/spaceworks-privileged-scripts
@@ -151,6 +156,17 @@ services:
     depends_on:
       orchestration-ready:
         condition: service_completed_successfully
+  live:
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    restart: *default-restart
+    logging: *default-logging
+    environment: *app-env
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "${LIVE_THREADS:-32}", "--timeout", "0", "--access-logfile", "-", "--error-logfile", "-"]
+    volumes:
+      - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
+    depends_on:
+      orchestration-ready:
+        condition: service_completed_successfully
   cron:
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
@@ -193,3 +209,5 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      live:
+        condition: service_started

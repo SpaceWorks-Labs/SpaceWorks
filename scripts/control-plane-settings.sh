@@ -18,7 +18,7 @@ source "$SCRIPT_DIR/setup-question-input.sh"
 LAYER=none
 [[ ! -f .spaceworks-layer ]] || LAYER="$(tr -d '[:space:]' < .spaceworks-layer)"
 case "$LAYER" in
-  none|tls|single) ;;
+  none|tls) ;;
   *) refuse 'Control-plane access can be changed here for single-server installs only; build layers and saas are not supported.' ;;
 esac
 [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" != no || "$LAYER" == tls ]] || refuse 'API-only installs reach the control plane only with automatic HTTPS.'

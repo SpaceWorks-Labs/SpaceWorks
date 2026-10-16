@@ -15,7 +15,8 @@ import { MemberAuthPanel } from "./MemberAuthPanel";
 import { MyBookings } from "../bookings/MyBookings";
 import { InvitationRequestForm } from "./InvitationRequestForm";
 import { JoinMembershipCta } from "./JoinMembershipCta";
-import { presenceStartLocation } from "./geolocation";
+import { PresencePanel } from "../presence/PresencePanel";
+import { usePresenceCurrent } from "../presence/api";
 import { MemberCertifications } from "./MemberCertifications";
 import { MemberActivityPanel, type MemberActivity } from "./MemberActivity";
 import { MemberDues, MemberHistory, MemberNotices, MemberTerm } from "./MemberDashboardSections";
@@ -41,7 +42,6 @@ import { MemberEventHistoryLink } from "./MemberEventHistoryLink";
 type Membership = { makerspace: { slug: string; name: string }; membership_status: string; role: string; waiver_acceptance_required: boolean; can_refer: boolean; can_verify: boolean; verified_at: string | null; referrals_enabled: boolean };
 type Memberships = { memberships: Membership[]; requests: (Partial<AdmissionRequest> & { makerspace: { id?: number; slug: string; name: string }; state: string; kind: string })[] };
 type Waiver = { has_waiver: boolean; body?: string; version?: string };
-type Presence = { active: boolean; session: { expires_at: string } | null };
 type Invitations = { invitations: ClaimableInvitation[] };
 type Profile = { email_verified: boolean; username?: string };
 type ReferralOutcome = { state: "invited" };
@@ -101,7 +101,11 @@ export function MemberArea() {
   const profile = useQuery({ queryKey: ["member", "profile"], queryFn: () => memberRequest<Profile>("/auth/me"), enabled: !claimSession && Boolean(memberships.data), retry: false });
   const invitations = useQuery({ queryKey: ["member", "invitations"], queryFn: () => memberRequest<Invitations>("/memberships/invitations"), enabled: !claimSession && Boolean(memberships.data), retry: false });
   const waiver = useQuery({ queryKey: ["member", resolvedSlug, "waiver"], queryFn: () => memberRequest<Waiver>(`/member/makerspaces/${makerspaceId}/waiver`), enabled: makerspaceId >= 0 && membership?.membership_status === "active", retry: false });
-  const presence = useQuery({ queryKey: ["member", resolvedSlug, "presence"], queryFn: () => memberRequest<Presence>(`/public/${resolvedSlug}/presence-sessions/current`), enabled: Boolean(resolvedSlug) && membership?.membership_status === "active" && Boolean(bootstrap.data?.modules.includes("presence")), retry: false });
+  // Presence also admits account-only guests, so it is gated on the module and a signed-in
+  // account, not on membership; a non-active (revoked/suspended) membership is refused.
+  const presenceOn = Boolean(resolvedSlug && memberAccess && bootstrap.data?.modules.includes("presence")) && (!membership || membership.membership_status === "active");
+  const presence = usePresenceCurrent(resolvedSlug, presenceOn);
+  const [presenceSheet, setPresenceSheet] = useState(false);
   const activity = useQuery({ queryKey: ["member", resolvedSlug, "activity"], queryFn: () => memberRequest<MemberActivity>(`/member/makerspaces/${makerspaceId}/activity`), enabled: makerspaceId >= 0 && membership?.membership_status === "active" && membershipModuleOn, retry: false });
   useEffect(() => {
     if (activity.error instanceof StructuredApiError && [400, 401, 403, 404].includes(activity.error.status)) forgetOfflineMemberData();
@@ -126,21 +130,15 @@ export function MemberArea() {
   // The layout swaps its body for an error block when this holds, which would also swallow the sign-in controls.
   const bootstrapBlocked = bootstrap.isError && !archivedUnknown && !archivedPayments.data?.length;
   const refresh = () => client.invalidateQueries({ queryKey: ["member"] });
+  const presencePanel = activeTab === "overview" ? <PresencePanel enabled={presenceOn} slug={resolvedSlug} spaceName={spaceName} member={membership?.membership_status === "active"}
+    selfCheckIn={Boolean(bootstrap.data?.makerspace.geofence_enabled)} sheetOpen={presenceSheet} onSheetOpenChange={setPresenceSheet} /> : null;
   const request = useMutation({ mutationFn: (applicationAnswers: CustomAnswers) => memberRequest<{ outcome: string; state: string }>(`/public/${resolvedSlug}/membership-requests`, { method: "POST", body: JSON.stringify({ application_answers: applicationAnswers }) }), onSuccess: refresh });
   const accept = useMutation({ mutationFn: () => memberRequest(`/member/makerspaces/${makerspaceId}/waiver/accept`, { method: "POST" }), onSuccess: refresh });
-  const start = useMutation({ mutationFn: async () => {
-    const location = await presenceStartLocation(Boolean(bootstrap.data?.makerspace.geofence_enabled));
-    return memberRequest(`/public/${resolvedSlug}/presence-sessions`, {
-      method: "POST",
-      body: JSON.stringify({ duration_minutes: 120, ...(location ?? {}) }),
-    });
-  }, onSuccess: refresh });
-  const end = useMutation({ mutationFn: () => memberRequest(`/public/${resolvedSlug}/presence-sessions/current/end`, { method: "POST" }), onSuccess: refresh });
   const refer = useMutation({ mutationFn: (inviteEmail: string) => memberRequest<ReferralOutcome>(`/member/makerspaces/${makerspaceId}/referrals`, { method: "POST", body: JSON.stringify({ invite_email: inviteEmail }) }), onSuccess: refresh });
   const claim = useMutation({ mutationFn: ({ id, answers }: { id: number; answers: CustomAnswers }) => memberRequest<ClaimOutcome>(`/memberships/invitations/${id}/claim`, { method: "POST", body: JSON.stringify({ application_answers: answers }) }), onSuccess: refresh });
   const generatePaymentLink = useMutation({ mutationFn: (id: number) => memberRequest<{ checkout_url: string }>(`/member/makerspaces/${makerspaceId}/payments/${id}/checkout`, { method: "POST" }), onSuccess: (data) => { refresh(); window.location.assign(data.checkout_url); } });
   const spaceInvitations = invitations.data?.invitations.filter((item) => item.makerspace.slug === resolvedSlug && (membershipModuleOn || item.is_staff)) ?? [];
-  const error = bootstrap.error ?? (!unauthenticated ? memberships.error : null) ?? request.error ?? accept.error ?? start.error ?? end.error ?? activity.error ?? generatePaymentLink.error;
+  const error = bootstrap.error ?? (!unauthenticated ? memberships.error : null) ?? request.error ?? accept.error ?? activity.error ?? generatePaymentLink.error;
   const policy: MembershipPolicyEnum | undefined = bootstrap.data?.makerspace.membership_policy;
   // The card panel exists only where the `membership` module is installed -- the card is
   // hung off a membership, so every one of its endpoints refuses with 400 without it.
@@ -160,7 +158,7 @@ export function MemberArea() {
     <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
       activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: "Couldn't load your makerspace. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
-      primary={membership?.membership_status === "active" && bootstrap.data?.modules.includes("presence") ? { label: presence.data?.active ? "End presence" : "Start 2-hour presence", onClick: () => presence.data?.active ? end.mutate() : start.mutate(), pending: start.isPending || end.isPending } : undefined}>
+      primary={presenceOn && activeTab === "overview" && presence.isSuccess && !presence.data.active ? { label: "Check in", onClick: () => setPresenceSheet(true) } : undefined}>
     {membershipModuleOn ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
     {activeTab === "account" && profile.data ? <Link className="desk-button-brand inline-flex" to="/mfa">Manage two-step sign-in</Link> : null}
     {archivedPayments.data?.length ? <section className="desk-panel p-5"><h2 className="title-panel">Payments from closed makerspaces</h2><p className="mt-1 text-sm text-muted">Receipts and outstanding charges remain available after a makerspace closes.</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">View archived payments</Link></section> : null}
@@ -173,14 +171,14 @@ export function MemberArea() {
     {activeTab === "overview" && (membershipModuleOn && latestApplication?.id ? <MemberAdmission makerspaceId={makerspaceId} request={ownApplication.data?.id === latestApplication.id && ownApplication.data.state === latestApplication.state ? ownApplication.data : latestApplication as AdmissionRequest} /> : requested ? <section className="desk-panel p-5"><h2 className="title-panel">Membership request sent</h2><p className="mt-1 text-sm text-muted">Staff will review your request.</p></section> : null)}
     {activeTab === "overview" && canReadApplication && ownApplication.error ? <p className="text-sm text-danger" role="alert">{ownApplication.error.message}</p> : null}
     {unauthenticated && resolvedSlug ? <MemberClaimRedemption slug={resolvedSlug} onRedeemed={() => setClaimSession(true)} /> : null}
+    {!membership ? presencePanel : null}
     {membership ? <>{activeTab === "overview" ? <section className={`desk-panel ${membership.membership_status === "active" ? "border-success" : "border-warn"} p-5`}><h2 className="title-panel">Membership</h2><div className="mt-2 flex flex-wrap items-center gap-3"><StatusPill label={membership.membership_status} tone={membership.membership_status === "active" ? "success" : "warn"} /><p className="text-sm text-muted">{membership.makerspace.name} · {membership.role.replace(/_/g, " ")}</p></div></section> : null}
       {activeTab === "account" && membershipModuleOn && bootstrap.data?.modules.includes("member_accounts") && membership.membership_status === "active" && (bootstrap.data?.features?.includes("membership.self_service") || bootstrap.data?.features?.includes("membership.self_export")) ? <Link className="desk-button-brand inline-flex" to={`${slug ? `/m/${slug}/member` : "/member"}/account`}>Manage your account</Link> : null}
       {activeTab === "overview" && waiver.data?.has_waiver ? <section id="current-waiver" className="desk-panel p-5"><h2 className="title-panel">Current waiver (<span className="tabular-nums">{waiver.data.version}</span>)</h2><p className="mt-3 max-w-prose whitespace-pre-wrap break-words text-sm text-muted">{waiver.data.body}</p>{membership.waiver_acceptance_required ? <button className="desk-button-brand mt-4" disabled={accept.isPending} onClick={() => accept.mutate()}>Accept waiver</button> : <p className="mt-3 text-sm text-success-ink">Current waiver acceptance is on file.</p>}</section> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" && membership.can_verify ? <MemberVerifierPanel makerspaceId={makerspaceId} /> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" && admission.data?.join_mode === "vouch" ? <MemberVouch makerspaceId={makerspaceId} /> : null}
-      {activeTab === "overview" && membership.membership_status === "active" && bootstrap.data?.modules.includes("presence") ? <section className={`desk-panel ${presence.data?.active ? "border-success" : "border-brand"} p-5`}><h2 className="title-panel">Presence</h2><p className="mt-1 text-sm text-muted">{presence.data?.active ? <>Active until <span className="tabular-nums">{new Date(presence.data.session?.expires_at ?? "").toLocaleTimeString()}</span></> : "No active session."}</p>
-        {/* The check-in action lives with its status, so it survives on layouts whose header primary is something else. */}
-        <button type="button" className={`${presence.data?.active ? "desk-button" : "desk-button-brand"} mt-4`} disabled={start.isPending || end.isPending} onClick={() => presence.data?.active ? end.mutate() : start.mutate()}>{start.isPending || end.isPending ? "Updating…" : presence.data?.active ? "End presence" : "Start 2-hour presence"}</button></section> : null}
+      {/* The check-in action lives with its status, so it survives on layouts whose header primary is something else. */}
+      {presencePanel}
       {/* Notices first: they are the reason to open a dashboard at all. */}
       {(activeTab === "overview" || activeTab === "inbox" && section === "notices") && memberActivity ? <MemberNotices notices={memberActivity.notices} /> : null}
       {activeTab === "account" && section === "certifications" && membership?.membership_status === "active" && (bootstrap.data?.modules ?? []).includes("machines") ? <MemberCertifications key={makerspaceId} makerspaceId={makerspaceId} /> : null}

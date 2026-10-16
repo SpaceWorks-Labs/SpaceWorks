@@ -39,6 +39,7 @@ const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckI
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
 const PublicProfilePage = lazy(() => import("./features/profile/PublicProfilePage").then((m) => ({ default: m.PublicProfilePage })));
+const PresenceNowPage = lazy(() => import("./features/presence/PresenceNowPage").then((m) => ({ default: m.PresenceNowPage })));
 const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsiteDetailPage").then((m) => ({ default: m.PublicWebsiteDetailPage })));
 
 // Tenant capabilities choose the home independently of the deployment edition.
@@ -135,6 +136,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/speaker-claim" element={<SpeakerClaimPage />} />
       <Route path="/member/:memberTab" element={<MemberArea />} />
       <Route path="/stats" element={<PublicStatsPage />} />
+      <Route path="/now" element={<PresenceNowPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/admin/*" element={<StaffApp />} />
@@ -176,6 +178,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/member/:memberTab" element={<MemberArea />} />
       <Route path="/member/:memberTab" element={<MemberArea />} />
       <Route path="/m/:slug/stats" element={<PublicStatsPage />} />
+      <Route path="/m/:slug/now" element={<PresenceNowPage />} />
       <Route path="/m/:slug/kiosk/:stationToken" element={<KioskStationPage />} />
       <Route path="/kiosk/:slug" element={<PublicDeskKioskPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />

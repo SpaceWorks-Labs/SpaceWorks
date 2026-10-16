@@ -29,6 +29,7 @@ RESERVED_SEGMENTS = frozenset({
     'member',
     'member-sw.js',
     'mfa',
+    'now',
     'o',
     'organization-invitations',
     'print',

@@ -145,7 +145,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
             {tabs.active === "team" ? <EventStaffAccess target={{ kind: "event", id: eventId }} /> : null}
           </> : null}
           {showSettings && tabs.active === "settings" ? <>
-            {access.edit ? <div className="flex flex-wrap gap-2"><EventDuplicateAction event={event} makerspaceId={makerspaceId} /></div> : null}
+            {event.can_duplicate === true ? <div className="flex flex-wrap gap-2"><EventDuplicateAction event={event} makerspaceId={makerspaceId} /></div> : null}
             <EventSettings event={event} makerspaceId={makerspaceId} values={values} setValues={setValues}
               save={saveOccurrence} pending={update.isPending} invalidate={invalidateEvent} resetField={field => update.mutate({ inherit_fields: [field] })} complete={() => setConfirm("complete")} />
             {/* Without the roster, an editor still owns the badge template; printing stays with check-in staff. */}

@@ -78,7 +78,8 @@ export function expireStaffAuthSession() {
 
 async function canRefreshAfterUnauthorized(path: string, response: Response) {
   if (["/auth/login", "/auth/refresh", "/auth/logout"].includes(path)) return false;
-  if (!path.startsWith("/auth/reauth")) return true;
+  const factorRoute = path.startsWith("/auth/reauth") || /^\/auth\/mfa(?:\/|$)/.test(path);
+  if (!factorRoute) return true;
   // SimpleJWT rejects expired access tokens before the factor handler runs.
   // Factor failures also return 401, but refreshing cannot fix those or end the session.
   const body = await response.clone().json().catch(() => null) as { code?: string } | null;

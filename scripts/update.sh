@@ -2,6 +2,7 @@
 # Apply the newest fully-published Space Works release to a production Compose stack.
 set -euo pipefail
 
+UPDATE_ARGUMENTS=("$@")
 UPDATE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${SPACEWORKS_UPDATE_INSTALL_DIR:-$(cd "$UPDATE_SCRIPT_DIR/.." && pwd)}"
 cd "$ROOT"
@@ -41,6 +42,7 @@ MODULE_AREAS=""
 MODULE_CONFIRM_REMOVALS=0
 NO_MODULE_CHANGES=0
 REQUESTED_VERSION=""
+BUNDLE_STAGE=""
 
 say() { printf '[Space Works updater] %s\n' "$*"; }
 warn() { printf '[Space Works updater] WARNING: %s\n' "$*" >&2; }
@@ -49,6 +51,9 @@ source "$UPDATE_SCRIPT_DIR/update-lock.sh"
 source "$UPDATE_SCRIPT_DIR/module-selection.sh"
 source "$UPDATE_SCRIPT_DIR/cleanup-run-once.sh"
 source "$UPDATE_SCRIPT_DIR/update-rollback.sh"
+source "$UPDATE_SCRIPT_DIR/install-host-bundle.sh"
+source "$UPDATE_SCRIPT_DIR/update-release-bundle.sh"
+source "$UPDATE_SCRIPT_DIR/update-proxy-edges.sh"
 
 while (($# > 0)); do
   case "$1" in
@@ -143,6 +148,9 @@ cleanup() {
     say "Then retry bash scripts/update.sh --force --no-module-changes. Keep the database backup."
   fi
   release_update_lock
+  if [[ -n "$BUNDLE_STAGE" && "$BUNDLE_STAGE" == "$ROOT"/.spaceworks-update.* ]]; then
+    rm -rf -- "$BUNDLE_STAGE"
+  fi
   exit "$exit_code"
 }
 trap cleanup EXIT
@@ -185,6 +193,8 @@ if [[ "$current" == "$version" ]]; then
   exit 0
 fi
 
+refuse_release_downgrade
+handoff_release_bundle
 say "Updating ${current:-untracked installation} to $version."
 
 mkdir -p "$ROOT/backups"
@@ -211,7 +221,6 @@ docker pull "$MAKERSPACE_BACKEND_IMAGE:$version"
 host_configuration_started=1
 source "$UPDATE_SCRIPT_DIR/retire-update-tombstone.sh"
 retire_update_tombstone
-source "$UPDATE_SCRIPT_DIR/install-host-bundle.sh"
 install_staged_host_bundle "$(cd "$UPDATE_SCRIPT_DIR/.." && pwd)"
 # Keep future runner and manual runs on the same configured repository.
 if [[ -f "$ROOT/.env" ]]; then
@@ -236,8 +245,12 @@ HOST_CONFIG_IMAGE="$MAKERSPACE_BACKEND_IMAGE:$version"
 source "$UPDATE_SCRIPT_DIR/setup-host-orchestration.sh"
 install_producer_capability
 say "Running migrations and replacing application containers."
+# Always exclude every local writer before the migrate dependency can start.
+# This also covers irreversible data migrations; external writers must be fenced by the operator.
 deployment_started=1
+"${COMPOSE[@]}" stop backend worker beat live
 ${COMPOSE[@]+"${COMPOSE[@]}"} up -d --remove-orphans
+refresh_update_proxy_edges
 
 wait_for_backend || die "Release $version did not become ready. The backup is backups/$backup_name."
 

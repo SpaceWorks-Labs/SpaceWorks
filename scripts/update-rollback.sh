@@ -11,7 +11,7 @@ rollback_application_images() {
   HOST_CONFIG_IMAGE="$MAKERSPACE_BACKEND_IMAGE:$previous_version"
   install_producer_capability || say "Could not refresh the previous producer proof."
   # --no-deps prevents old migrations from being applied to the forward schema.
-  if "${COMPOSE[@]}" up -d --no-deps "${ROLLBACK_SERVICES[@]}" && wait_for_backend; then
+  if "${COMPOSE[@]}" up -d --no-deps "${ROLLBACK_SERVICES[@]}" && refresh_update_proxy_edges && wait_for_backend; then
     say "Rollback complete: $previous_version is healthy."
     cleanup_run_once_jobs || warn "Could not remove finished rollback jobs."
     say "Database changes remain; backup retained at backups/$backup_name."

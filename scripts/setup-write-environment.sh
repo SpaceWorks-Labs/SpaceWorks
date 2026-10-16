@@ -9,6 +9,12 @@ env_setting() {
 
 write_setup_environment() {
   [[ "${ANSWERS_CONFIRMED:-}" == yes ]] || die 'Confirm the deployment questions first.'
+  if [[ "$HTTPS_MODE" == 1 ]]; then
+    [[ "$WEBHOST" == localhost || "$WEBHOST" == 127.0.0.1 ]] \
+      || die 'Plain HTTP is restricted to loopback; LAN addresses require HTTPS.'
+    [[ "$HOSTING_MODEL" != 3 && "$RUN_FRONTEND" == 1 && -z "${SITE_ORIGINS:-}" ]] \
+      || die 'This topology requires HTTPS.'
+  fi
   (umask 077; set -o noclobber; : > .env)
   chmod 600 .env
   local scheme=http app_url origins proxy_count=1 layer=none
@@ -48,10 +54,19 @@ write_setup_environment() {
   env_setting PUBLIC_APP_BASE_URL "$app_url"
   env_setting HTTP_PORT "$([[ "$HTTPS_MODE" == 3 ]] && echo 8080 || echo 80)"
   env_setting ENABLE_HTTPS "$([[ "$HTTPS_MODE" == 1 ]] && echo false || echo true)"
+  # Insecure cookies are permitted only after the loopback-only check above.
+  env_setting AUTH_COOKIE_SECURE "$([[ "$HTTPS_MODE" == 1 ]] && echo false || echo true)"
+  env_setting AUTH_COOKIE_SAMESITE "$([[ "$HTTPS_MODE" == 1 ]] && echo Lax || echo None)"
   env_setting CONTROL_PLANE_PROXY "${CONTROL_PLANE_PROXY:-false}"
   [[ -z "${CONTROL_PLANE_ALLOW_CIDRS:-}" ]] || env_setting CONTROL_PLANE_ALLOW_CIDRS "$CONTROL_PLANE_ALLOW_CIDRS"
   [[ -z "${CONTROL_PLANE_TUNNEL_PORT:-}" ]] || env_setting CONTROL_PLANE_TUNNEL_PORT "$CONTROL_PLANE_TUNNEL_PORT"
   env_setting TRUST_X_FORWARDED_PROTO "$([[ "$HTTPS_MODE" == 1 ]] && echo false || echo true)"
+  if [[ "$HTTPS_MODE" == 1 ]]; then
+    env_setting HTTP_PORT_BIND 127.0.0.1
+    env_setting API_BIND 127.0.0.1
+    env_setting MINIO_API_BIND 127.0.0.1
+    env_setting MINIO_CONSOLE_BIND 127.0.0.1
+  fi
   if [[ "$HTTPS_MODE" == 3 ]]; then
     env_setting HTTP_PORT_BIND 127.0.0.1
     env_setting API_BIND 127.0.0.1

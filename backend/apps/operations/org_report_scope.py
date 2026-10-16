@@ -78,6 +78,10 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
 })
 
 
+# v2 communications exposes additive cohorts and both rate denominators.
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"communications-health"}
+
+
 class OrganizationReportScopeError(ValueError):
     """Base error for a report definition the organization dashboard cannot use."""
 

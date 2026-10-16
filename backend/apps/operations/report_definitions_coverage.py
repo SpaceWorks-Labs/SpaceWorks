@@ -1,5 +1,6 @@
 from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
+from apps.operations.report_definitions_hi import COMMUNICATIONS_REPORT_DEFINITION
 
 
 COVERAGE_REPORT_DEFINITIONS = (
@@ -31,12 +32,7 @@ COVERAGE_REPORT_DEFINITIONS = (
         ("procurement",), required_action=rbac.Action.EDIT_INVENTORY,
         title="Procurement performance", chart_hint="stacked_bar", grains=("day", "month"),
     ),
-    ReportDefinition(
-        "communications-health", "apps.integrations.reports_communications.build_communications_health",
-        ("module_key", "channel", "feature", "status", "delivery_count", "attempt_count", "destination_count", "success_rate_percent", "unread_count", "last_activity_at"),
-        required_action=rbac.Action.MANAGE_MAKERSPACE, title="Communications health",
-        chart_hint="stacked_bar", section_modules=("notifications", "email", "telegram", "slack", "mattermost", "discord", "webhook"),
-    ),
+    COMMUNICATIONS_REPORT_DEFINITION,
     ReportDefinition(
         "community-engagement", "apps.makerspaces.reports_community.build_community_engagement",
         ("period", "module_key", "enabled", "activations", "revocations", "active_accounts", "approved_apps", "active_grants", "revoked_grants", "reuse_detected"),

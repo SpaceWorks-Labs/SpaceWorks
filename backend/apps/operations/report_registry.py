@@ -9,6 +9,7 @@ from apps.operations.report_definitions_membership import MEMBERSHIP_REPORT_DEFI
 from apps.operations.report_definitions_finance import FINANCE_REPORT_DEFINITIONS
 from apps.operations.report_definitions_events import EVENT_REPORT_DEFINITIONS
 from apps.operations.report_definitions_bookings import BOOKING_REPORT_DEFINITIONS
+from apps.operations.report_definitions_hi import HI_REPORT_DEFINITIONS
 from apps.operations.report_types import (
     ReportDefinition,
     ReportNotExportable,
@@ -23,6 +24,7 @@ REPORT_DEFINITIONS = (
     *FINANCE_REPORT_DEFINITIONS,
     *EVENT_REPORT_DEFINITIONS,
     *BOOKING_REPORT_DEFINITIONS,
+    *HI_REPORT_DEFINITIONS,
 )
 # Runtime entries disappear on a deployment tombstone; retention stays registered.
 from apps.separability.tombstones import tombstoned_app_labels

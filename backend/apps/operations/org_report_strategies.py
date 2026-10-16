@@ -2,6 +2,10 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from .report_fields_hi import (
+    COMMUNICATION_FIELDS, COMMUNICATION_GROUPS, MOBILE_AUTH_FIELDS, MOBILE_AUTH_GROUPS,
+    MOBILE_DEVICE_FIELDS, MOBILE_DEVICE_GROUPS,
+)
 
 
 class AggregationKind(str, Enum):
@@ -50,6 +54,22 @@ def _strategy(kind, groups, totals, *, breakdown=(), ordering=(), limit=None, te
 
 
 STRATEGIES = {
+    "communications-health": _strategy(
+        AggregationKind.WEIGHTED_RATE, COMMUNICATION_GROUPS, COMMUNICATION_FIELDS,
+        ordering=COMMUNICATION_GROUPS, text=(
+            ("success_rate_percent", "summed sent over summed delivery cohorts"),
+            ("read_rate_percent", "summed read over summed created cohorts"),
+            ("last_activity_at", "latest value survives"),
+        ),
+    ),
+    "mobile-devices": _strategy(
+        AggregationKind.GROUP_SUM, MOBILE_DEVICE_GROUPS, MOBILE_DEVICE_FIELDS,
+        ordering=MOBILE_DEVICE_GROUPS,
+        text=(("count", "sum tenant-attributed observations; sessions may overlap across tenants"),),
+    ),
+    "mobile-auth": _strategy(
+        AggregationKind.GROUP_SUM, MOBILE_AUTH_GROUPS, MOBILE_AUTH_FIELDS, ordering=MOBILE_AUTH_GROUPS,
+    ),
     "payment-cash-book": _strategy(
         AggregationKind.GROUP_SUM, ("currency", "method"),
         ("currency", "method", "collected_amount", "refunded_amount", "net_amount"),

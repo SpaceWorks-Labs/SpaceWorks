@@ -376,6 +376,12 @@ and service buckets from tenant authority. Organization builders register combin
 with `org_report_aggregate.register_combine`; `report_coverage_contract.py` is the phase-1f
 module-to-report acceptance table, separate from runtime prerequisites.
 
+H/I analytics register in `operations/report_definitions_hi.py`: communications v2 stays in
+`integrations/reports_communications.py`; tenant mobile counts live in
+`operations/reports_mobile_devices.py` and `reports_mobile_auth.py`. Their shared allowlists
+are `report_fields_hi.py`; `reports_mobile_platform.py` exposes context-guarded global source
+projections for platform builders. Measurement and disclosure notes: [report-builders-hi.md](report-builders-hi.md).
+
 Membership admission is described in [membership-admission.md](membership-admission.md).
 `makerspaces/models_admission.py` owns the settings and immutable vouch models.
 `membership_services.py` remains the explicit compatibility barrel over

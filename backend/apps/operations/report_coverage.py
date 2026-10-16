@@ -49,6 +49,9 @@ REPORT_MODULE_COVERAGE = {
     "devices": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "backup": ModuleReportCoverage("health_row", ("module-operational-health",)),
 }
+REPORT_MODULE_COVERAGE["mobile"] = ModuleReportCoverage(
+    "substantive", ("community-engagement", "mobile-devices", "mobile-auth", "communications-health"),
+)
 
 
 @checks.register(checks.Tags.models)

@@ -14,6 +14,9 @@ NUMERIC_FIELDS = frozenset({
     "delivery_count", "attempt_count", "success_rate_percent", "activity_count", "failure_count",
     "cohort_members", "eligible_members", "retained_members", "retention_percent", "churned_members",
     "reactivated_members", "recurring_members", "mrr", "arr", "arpu",
+    "triggered_count", "sent_count", "failed_count", "skipped_count", "suppressed_count",
+    "bounced_count", "complained_count", "invalid_count", "inbox_created_count", "inbox_read_count",
+    "unread_count", "read_rate_percent",
 })
 
 

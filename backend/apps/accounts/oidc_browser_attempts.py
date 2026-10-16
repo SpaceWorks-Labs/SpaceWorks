@@ -84,7 +84,7 @@ def start_attempt(request, provider, document, *, redirect_uri, email="", makers
     )
 
 
-def consume_attempt(request, *, state, nonce):
+def consume_attempt(request, *, state, nonce, provider=None):
     now = timezone.now()
     failure = None
     resolved = None
@@ -99,6 +99,7 @@ def consume_attempt(request, *, state, nonce):
             and row.consumed_at is None
             and row.expires_at > now
             and row.origin == request_origin(request)
+            and (provider is None or row.provider == provider)
             and hmac.compare_digest(row.nonce_digest, _digest("nonce", nonce))
         )
         if row is not None and row.consumed_at is None:

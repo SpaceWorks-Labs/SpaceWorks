@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { publicV1Request } from "../../lib/api";
 import {
   beginOidcBrowser,
+  beginGithubBrowser,
   completeOidcBrowserCallback,
   mountGoogleButton,
   signInWithApple,
@@ -85,7 +86,7 @@ export function SocialSignInButtons({
   const oidcProviders = surface === "member"
     ? Object.entries(config ?? {}).filter(
         (entry): entry is [string, NonNullable<SocialConfig[`oidc:${string}`]>] =>
-          entry[0].startsWith("oidc:") && Boolean(entry[1]?.enabled),
+          entry[0].startsWith("oidc:") && typeof entry[1] === "object" && Boolean(entry[1]?.enabled),
       )
     : [];
   // Accounts-off hides only the built-in consumer ecosystem. Institution-owned OIDC
@@ -93,14 +94,29 @@ export function SocialSignInButtons({
   const showBuiltins = surface === "staff" || memberAccounts;
   const showGoogle = showBuiltins && Boolean(config?.google?.enabled);
   const showApple = showBuiltins && Boolean(config?.apple?.enabled);
+  const showGithub = surface === "member" && memberAccounts && config?.github === true;
   if (challenge) return <MfaFlow challenge={challenge} onCancel={() => setChallenge(undefined)}
     onComplete={(result) => { setChallenge(undefined); onSuccessRef.current({ access: result.access, user: result.user as unknown as Record<string, unknown>, outcome: "existing" }); }} />;
-  if (!showGoogle && !showApple && oidcProviders.length === 0) return null;
+  if (!showGoogle && !showApple && !showGithub && oidcProviders.length === 0) return null;
   return (
     <section className="mt-5 border-t border-line pt-5" aria-label="Social sign in">
       <p className="eyebrow mb-3 text-center">Or continue with</p>
       <div className="flex flex-col items-center gap-3">
         {showGoogle ? <div ref={googleHost} className="min-h-10 w-full text-center" /> : null}
+        {showGithub ? (
+          <button className="desk-button-secondary w-full max-w-[360px]" type="button"
+            disabled={Boolean(oidcPending)} onClick={async () => {
+              setOidcPending("github");
+              setError("");
+              try { await beginGithubBrowser(); }
+              catch (nextError) {
+                setOidcPending("");
+                setError(nextError instanceof Error ? nextError.message : "GitHub sign-in failed.");
+              }
+            }}>
+            {oidcPending === "github" ? "Connecting to GitHub…" : "Continue with GitHub"}
+          </button>
+        ) : null}
         {showApple ? (
           <button
             className="desk-button-secondary w-full max-w-[360px]"

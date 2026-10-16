@@ -236,6 +236,8 @@ def _recoverable(user):
         and user.access_status == User.AccessStatus.ACTIVE
         and not user.is_walk_in
         and not is_anonymous_requester(user)
+        # A superadmin resets on the host (`changepassword` / `recover_superadmin`), never by email.
+        and not (user.is_superuser or user.role == User.Role.SUPERADMIN)
     )
 
 

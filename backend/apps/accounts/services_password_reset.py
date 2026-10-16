@@ -234,6 +234,8 @@ def _credential_state_matches(user, envelope, normalized):
         and user.access_status == User.AccessStatus.ACTIVE
         and not user.is_walk_in
         and not is_anonymous_requester(user)
+        # Re-checked at confirmation in case the account was promoted after issuance.
+        and not (user.is_superuser or user.role == User.Role.SUPERADMIN)
         and current_email == normalized
         and hmac.compare_digest(
             envelope.credential_fingerprint,

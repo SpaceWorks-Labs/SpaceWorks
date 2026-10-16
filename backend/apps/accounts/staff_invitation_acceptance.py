@@ -11,7 +11,7 @@ import secrets
 from django.utils import timezone
 from rest_framework.exceptions import APIException, ValidationError
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, mfa_policy
 from apps.accounts.mfa_challenges import digest
 from apps.accounts.models import User
 from apps.accounts.models_mfa import UserMFA
@@ -71,7 +71,7 @@ def accept(request, *, token, makerspace_slug, password, code=""):
                     if authenticated is None:
                         raise ValidationError(GENERIC_ERROR)
                     mfa = UserMFA.objects.select_for_update().filter(user=user, enabled_at__isnull=False).first()
-                    if mfa and not consume_code(mfa, code):
+                    if mfa_policy.available() and mfa and not consume_code(mfa, code):
                         raise ValidationError(GENERIC_ERROR)
                 else:
                     # The invite proves email ownership, but cannot be used as a password reset.

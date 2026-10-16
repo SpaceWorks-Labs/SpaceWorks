@@ -5,6 +5,9 @@ import { staffRequest } from "../../lib/api";
 import { Panel, useStaffGet } from "./StaffPanels";
 
 type SocialSettings = {
+  google_enabled: boolean;
+  apple_enabled: boolean;
+  github_enabled: boolean;
   google_web_client_id: string;
   google_ios_client_id: string;
   google_android_client_id: string;
@@ -13,6 +16,8 @@ type SocialSettings = {
   apple_team_id: string;
   apple_key_id: string;
   apple_private_key_set: boolean;
+  github_client_id: string;
+  github_client_secret_set: boolean;
 };
 
 export function PlatformSocialAuthPanel() {
@@ -27,6 +32,9 @@ export function PlatformSocialAuthPanel() {
     apple_team_id: "",
     apple_key_id: "",
     apple_private_key: "",
+    github_client_id: "",
+    github_client_secret: "",
+    clear_github_client_secret: false,
   });
 
   useEffect(() => {
@@ -40,44 +48,64 @@ export function PlatformSocialAuthPanel() {
       apple_team_id: settings.data.apple_team_id,
       apple_key_id: settings.data.apple_key_id,
       apple_private_key: "",
+      github_client_id: settings.data.github_client_id,
+      github_client_secret: "",
+      clear_github_client_secret: false,
     });
   }, [settings.data]);
 
   const save = useMutation({
     mutationFn: () => staffRequest<SocialSettings>("/admin/platform/social-auth-settings", {
       method: "PATCH",
-      body: JSON.stringify({
+      body: JSON.stringify(Object.fromEntries(Object.entries({
         ...form,
         apple_native_app_ids: form.apple_native_app_ids.split(/[,\n]/).map((item) => item.trim()).filter(Boolean),
         ...(form.apple_private_key ? {} : { apple_private_key: undefined }),
-      }),
+        ...(form.github_client_secret ? {} : { github_client_secret: undefined }),
+      }).filter(([key]) => key.includes("github") ? settings.data?.github_enabled
+        : key.startsWith("google_") ? settings.data?.google_enabled : settings.data?.apple_enabled))),
     }),
     onSuccess: () => {
-      setForm((current) => ({ ...current, apple_private_key: "" }));
+      setForm((current) => ({ ...current, apple_private_key: "", github_client_secret: "", clear_github_client_secret: false }));
       void queryClient.invalidateQueries({ queryKey: ["platform-social-auth"] });
     },
   });
-  const disabled = settings.isLoading || save.isPending;
+  const disabled = !settings.data || save.isPending;
 
   return (
-    <Panel title="Google and Apple sign-in">
+    <Panel title="Social sign-in">
       <p className="text-sm text-muted">
         Platform-wide identities link to global accounts; makerspace permissions still come from each membership.
       </p>
       {settings.data ? <div className="mt-2 text-sm text-muted">
-        <p>Google: {[settings.data.google_web_client_id, settings.data.google_ios_client_id, settings.data.google_android_client_id].some((id) => id.trim()) ? "Client IDs configured" : "Not configured"}</p>
-        <p>Apple: {settings.data.apple_service_id.trim() || settings.data.apple_native_app_ids.length ? "Audiences configured" : "Not configured"}</p>
+        {settings.data.google_enabled ? <p>Google: {[settings.data.google_web_client_id, settings.data.google_ios_client_id, settings.data.google_android_client_id].some((id) => id.trim()) ? "Client IDs configured" : "Not configured"}</p> : null}
+        {settings.data.apple_enabled ? <p>Apple: {settings.data.apple_service_id.trim() || settings.data.apple_native_app_ids.length ? "Audiences configured" : "Not configured"}</p> : null}
       </div> : null}
       <div className="mt-4 space-y-5">
-        <fieldset disabled={disabled} className="space-y-3">
+        {settings.data?.github_enabled ? <fieldset disabled={disabled} className="space-y-3">
+          <legend className="font-semibold text-ink">GitHub OAuth App (members)</legend>
+          <LabeledInput label="GitHub client ID" value={form.github_client_id} onChange={(value) => setForm({ ...form, github_client_id: value })} />
+          <label className="block text-sm font-semibold text-ink">GitHub client secret
+            <input type="password" autoComplete="new-password" className="desk-input mt-1 w-full"
+              value={form.github_client_secret} disabled={form.clear_github_client_secret}
+              onChange={(event) => setForm({ ...form, github_client_secret: event.target.value })}
+              placeholder={settings.data?.github_client_secret_set ? "Secret set — leave blank to keep it" : "Paste the client secret"} />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={form.clear_github_client_secret}
+              onChange={(event) => setForm({ ...form, clear_github_client_secret: event.target.checked, github_client_secret: "" })} />
+            Clear saved GitHub secret
+          </label>
+        </fieldset> : null}
+        {settings.data?.google_enabled ? <fieldset disabled={disabled} className="space-y-3">
           <legend className="font-semibold text-ink">Google OAuth clients</legend>
           <LabeledInput label="Web client ID" value={form.google_web_client_id} onChange={(value) => setForm({ ...form, google_web_client_id: value })} />
           <div className="grid gap-3 sm:grid-cols-2">
             <LabeledInput label="iOS client ID" value={form.google_ios_client_id} onChange={(value) => setForm({ ...form, google_ios_client_id: value })} />
             <LabeledInput label="Android client ID" value={form.google_android_client_id} onChange={(value) => setForm({ ...form, google_android_client_id: value })} />
           </div>
-        </fieldset>
-        <fieldset disabled={disabled} className="space-y-3 border-t border-line pt-5">
+        </fieldset> : null}
+        {settings.data?.apple_enabled ? <fieldset disabled={disabled} className="space-y-3 border-t border-line pt-5">
           <legend className="font-semibold text-ink">Apple Sign in</legend>
           <LabeledInput label="Web Service ID" value={form.apple_service_id} onChange={(value) => setForm({ ...form, apple_service_id: value })} />
           <label className="block text-sm font-semibold text-ink">Native app audiences
@@ -90,7 +118,7 @@ export function PlatformSocialAuthPanel() {
           <label className="block text-sm font-semibold text-ink">Apple private key (.p8)
             <textarea className="desk-input mt-1 min-h-24 w-full font-mono text-xs" value={form.apple_private_key} onChange={(event) => setForm({ ...form, apple_private_key: event.target.value })} placeholder={settings.data?.apple_private_key_set ? "Private key set — leave blank to keep it" : "Paste the private key"} />
           </label>
-        </fieldset>
+        </fieldset> : null}
         <button className="desk-button-primary w-full" disabled={disabled} onClick={() => save.mutate()}>
           {save.isPending ? "Saving…" : "Save social sign-in settings"}
         </button>

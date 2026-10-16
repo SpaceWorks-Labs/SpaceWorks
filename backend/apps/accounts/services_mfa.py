@@ -9,7 +9,7 @@ from django.contrib.auth.hashers import check_password
 
 from apps.accounts import audit_events
 from apps.accounts.mfa_crypto import matching_step, recovery_codes
-from apps.accounts.mfa_policy import required, stamp
+from apps.accounts.mfa_policy import assert_available, required, stamp
 from apps.accounts.models import User
 from apps.accounts.models_mfa import UserMFA
 from apps.accounts.services_tokens import blacklist_outstanding_tokens
@@ -60,6 +60,8 @@ def enable(user, row, secret, code):
 
 @transaction.atomic
 def change(user, password, *, disable=False):
+    if not disable:
+        assert_available()
     user = User.objects.select_for_update().get(pk=user.pk)
     active(user)
     if not user.check_password(password):

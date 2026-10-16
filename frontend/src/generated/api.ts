@@ -559,6 +559,8 @@ export const openApiPaths = [
   "/api/v1/auth/refresh",
   "/api/v1/auth/reset-password",
   "/api/v1/auth/social/apple",
+  "/api/v1/auth/social/github/authorize",
+  "/api/v1/auth/social/github/callback",
   "/api/v1/auth/social/google",
   "/api/v1/auth/social/nonce",
   "/api/v1/auth/social/oidc/callback",
@@ -3077,6 +3079,17 @@ export type GenericObject = {
   "detail"?: string;
 };
 
+export type GithubBrowserStart = {
+  "redirect_uri": string;
+  "nonce": string;
+};
+
+export type GithubBrowserStartResponse = {
+  "authorization_url": string;
+  "state": string;
+  "expires_in": number;
+};
+
 export type HardwareRequestError = {
   "detail": string;
   "code": string;
@@ -5151,6 +5164,7 @@ export type MFARecovery = {
 };
 
 export type MFAStatus = {
+  "available": boolean;
   "enabled": boolean;
   "required": boolean;
 };
@@ -5482,8 +5496,6 @@ export type OidcBrowserLoginResponse = {
 };
   "outcome": string;
 };
-
-export type OidcBrowserLoginResult = OidcBrowserLoginResponse | MFAChallengeResponse;
 
 export type OidcBrowserStart = {
   "redirect_uri": string;
@@ -6817,6 +6829,9 @@ export type PatchedPlatformEmailSettings = {
 };
 
 export type PatchedPlatformSocialAuthSettings = {
+  "google_enabled"?: boolean;
+  "apple_enabled"?: boolean;
+  "github_enabled"?: boolean;
   "google_web_client_id"?: string;
   "google_ios_client_id"?: string;
   "google_android_client_id"?: string;
@@ -6826,6 +6841,10 @@ export type PatchedPlatformSocialAuthSettings = {
   "apple_key_id"?: string;
   "apple_private_key"?: string;
   "apple_private_key_set"?: boolean;
+  "github_client_id"?: string;
+  "github_client_secret"?: string;
+  "github_client_secret_set"?: boolean;
+  "clear_github_client_secret"?: boolean;
   "updated_at"?: string;
 };
 
@@ -7187,6 +7206,9 @@ export type PlatformProblems = {
 };
 
 export type PlatformSocialAuthSettings = {
+  "google_enabled": boolean;
+  "apple_enabled": boolean;
+  "github_enabled": boolean;
   "google_web_client_id"?: string;
   "google_ios_client_id"?: string;
   "google_android_client_id"?: string;
@@ -7196,6 +7218,10 @@ export type PlatformSocialAuthSettings = {
   "apple_key_id"?: string;
   "apple_private_key"?: string;
   "apple_private_key_set": boolean;
+  "github_client_id"?: string;
+  "github_client_secret"?: string;
+  "github_client_secret_set": boolean;
+  "clear_github_client_secret"?: boolean;
   "updated_at": string;
 };
 
@@ -9054,8 +9080,6 @@ export type SocialLoginResponse = {
 };
   "outcome": string;
 };
-
-export type SocialLoginResult = SocialLoginResponse | MFAChallengeResponse;
 
 export type SocialNonce = {
   "provider": string;

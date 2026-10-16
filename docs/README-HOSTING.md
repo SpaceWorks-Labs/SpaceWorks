@@ -76,7 +76,7 @@ Create the first superadmin + makerspace (the wizard does this for you; for a ma
 scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role management python manage.py setup_instance
 ```
 
-With no arguments it creates **`superadmin` with a generated password**, prints it once for you to save, and forces a password change on first login. Re-running setup keeps the existing password and does not print it. Supply `--password` or `SETUP_SUPERADMIN_PASSWORD` to choose your own credential.
+With no arguments it creates **`superadmin` with a generated password**, prints it once for you to save, and forces a password change on first login. Re-running setup keeps the existing password and does not print it. Supply `--password` or `SETUP_SUPERADMIN_PASSWORD` to choose your own credential. On first creation of the login-methods row, `SETUP_MFA_ENABLED=y|n` and `SETUP_SOCIAL_PROVIDERS=google,apple,github` (or literal `none`) choose the sign-in options. Reruns preserve them; later use `manage.py set_login_methods`. Provider keys are entered in the console.
 Guided installs pin the latest published main release from `SPACEWORKS_REPOSITORY`. Updates run through
 an optional server GitHub Actions runner after release publication, or `bash scripts/update.sh --force`
 as the install owner. Use `--version X.Y.Z-main.<run>.<12-hex sha>` for an exact published main release.

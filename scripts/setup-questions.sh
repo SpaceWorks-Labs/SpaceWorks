@@ -108,17 +108,14 @@ ask_setup_questions() {
   [[ -n "$WEBHOST" ]] || question WEBHOST 'Web address (host name or IP, no http://)' localhost host || return 1
   question MSNAME 'Name of your makerspace' 'My Makerspace' name || return 1
   [[ "$HOSTING_MODEL" != 3 ]] || question MS_SUBDOMAIN 'First makerspace subdomain' makerspace slug || return 1
+  question SETUP_MFA_ENABLED 'Turn on two-step sign-in (authenticator app)?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
+  question SETUP_SOCIAL_PROVIDERS 'Which sign-in options besides email + password? Google, Apple, GitHub — comma list, or none' google providers || return 1
   ask_setup_areas || return 1
   question ADMINUSER 'Admin login username' admin username || return 1
   question ADMINEMAIL 'Admin email' '' email || return 1
   question ADMINPASS 'Admin password (blank generates one)' '' secret || return 1
   GEN_PASS=0
   if [[ -z "$ADMINPASS" ]]; then ADMINPASS="$(rand_key 24)"; GEN_PASS=1; fi
-  echo "Optional Google sign-in: create a Web OAuth client at https://console.cloud.google.com/apis/credentials."
-  local google_origin="$([[ "$HTTPS_MODE" == 1 ]] && echo http || echo https)://$WEBHOST"
-  [[ "$HOSTING_MODEL" != 3 ]] || google_origin="https://$MS_SUBDOMAIN.$PLATFORM_DOMAIN"
-  echo "Authorised JavaScript origin: ${SITE_ORIGINS:-$google_origin}"
-  question GOOGLE_WEB_CLIENT_ID 'Google Web client ID' '' google || return 1
   STRIPE_SECRET_KEY=''; STRIPE_WEBHOOK_SECRET=''; STRIPE_DEFAULT_CURRENCY="${AREA_root_currency:-usd}"
   if [[ ",${SETUP_SELECTED_AREAS}," == *,payments,* ]]; then
     while true; do
@@ -171,8 +168,10 @@ setup_summary() {
     "$MSNAME" "${MS_SUBDOMAIN:-none}" "$SPACEWORKS_EDITION" "$([[ ",${SETUP_SELECTED_AREAS}," == *,inventory,* ]] && echo "$REQUEST_ACCESS" || echo 'lending disabled')"
   setup_areas_summary
   printf '  Admin: %s <%s>; password: %s (hidden)\n' "$ADMINUSER" "$ADMINEMAIL" "$([[ "$GEN_PASS" == 1 ]] && echo generated || echo entered)"
-  printf '  Google: %s; Stripe: %s; currency: %s; install GitHub Actions runner: %s\n' \
-    "${GOOGLE_WEB_CLIENT_ID:-skipped}" "$([[ -n "$STRIPE_SECRET_KEY" ]] && echo 'configured (secrets hidden)' || echo skipped)" "$STRIPE_DEFAULT_CURRENCY" "$INSTALL_RUNNER"
+  printf '  Two-step sign-in: %s; sign-in providers: %s (keys configured later in the console)\n' \
+    "$SETUP_MFA_ENABLED" "$SETUP_SOCIAL_PROVIDERS"
+  printf '  Stripe: %s; currency: %s; install GitHub Actions runner: %s\n' \
+    "$([[ -n "$STRIPE_SECRET_KEY" ]] && echo 'configured (secrets hidden)' || echo skipped)" "$STRIPE_DEFAULT_CURRENCY" "$INSTALL_RUNNER"
   if [[ "$STORAGE" == 2 ]]; then
     printf '  S3: %s; region: %s; private bucket: %s; public bucket: %s\n' "$S3_ENDPOINT" "$S3_REGION" "$PRIVATE_BUCKET" "$IMAGE_BUCKET"
     printf '  Images: %s; presign: %s; access/secret keys: entered (hidden)\n' "$IMAGE_BASE_URL" "$PRESIGN_METHOD"

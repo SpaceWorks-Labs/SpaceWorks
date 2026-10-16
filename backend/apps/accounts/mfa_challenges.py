@@ -11,7 +11,7 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from apps.accounts import audit_events
 from apps.accounts.mfa_crypto import new_secret, provisioning_uri
-from apps.accounts.mfa_policy import stamp
+from apps.accounts.mfa_policy import assert_available, stamp
 from apps.accounts.models import User
 from apps.accounts.models_mfa import MFAChallenge, UserMFA
 from apps.accounts.password_reset_crypto import credential_fingerprint
@@ -26,6 +26,7 @@ def digest(raw):
 
 @transaction.atomic
 def start(user, *, context):
+    assert_available()
     user = User.objects.select_for_update().get(pk=user.pk)
     active(user)
     row, _ = UserMFA.objects.get_or_create(user=user)
@@ -72,6 +73,7 @@ def _locked(raw, request):
 
 @transaction.atomic
 def enroll(raw, request):
+    assert_available()
     challenge, user, row = _locked(raw, request)
     if row.enabled_at:
         raise AuthenticationFailed("MFA is already enrolled.")
@@ -91,6 +93,7 @@ def enroll(raw, request):
 
 
 def finish(raw, code, request, *, enrolling=False):
+    assert_available()
     refusal = False
     result = None
     with transaction.atomic():

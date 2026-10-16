@@ -55,6 +55,7 @@ question() {
     value="${value%$'\r'}"
     value="${value:-$default}"
     case "$rule" in
+      providers) [[ "$value" == none || "$value" =~ ^(google|apple|github)(,(google|apple|github))*$ ]] || { echo 'Use google,apple,github as a comma list, or none.'; continue; } ;;
       cidrs) [[ -z "$value" ]] || cp_valid_cidr_list "$value" || { echo 'Use up to 32 valid IPv4/IPv6 addresses or CIDRs separated by single spaces (maximum 1024 characters), or leave blank for any address.'; continue; } ;;
       port) [[ -z "$value" ]] || cp_valid_port "$value" || { echo 'Use a port from 1 to 65535 without leading zeros, or leave blank for off.'; continue; } ;;
       choices:*) [[ ",${rule#choices:}," == *",$value,"* ]] || { echo 'Choose one of the listed options.'; continue; } ;;
@@ -124,7 +125,7 @@ question() {
 SETUP_ANSWER_KEYS=(HOSTING_MODEL RUN_FRONTEND SITE_ORIGINS PLATFORM_DOMAIN PUBLIC_DOMAIN
   TLS_EMAIL HTTPS_MODE SHAPE STORAGE WEBHOST MSNAME MS_SUBDOMAIN SPACEWORKS_EDITION
   CONTROL_PLANE_PROXY CONTROL_PLANE_ALLOW_CIDRS CONTROL_PLANE_TUNNEL_PORT
-  SETUP_SELECTED_AREAS AREA_SETTINGS_JSON AREA_ORGANIZATION AREA_CREATE_PLAN REQUEST_ACCESS ADMINUSER ADMINEMAIL ADMINPASS GEN_PASS GOOGLE_WEB_CLIENT_ID
+  SETUP_SELECTED_AREAS AREA_SETTINGS_JSON AREA_ORGANIZATION AREA_CREATE_PLAN REQUEST_ACCESS ADMINUSER ADMINEMAIL ADMINPASS GEN_PASS SETUP_MFA_ENABLED SETUP_SOCIAL_PROVIDERS
   STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_DEFAULT_CURRENCY SPACEWORKS_REPOSITORY INSTALL_RUNNER
   S3_ENDPOINT S3_REGION PRIVATE_BUCKET IMAGE_BUCKET S3_ACCESS_KEY S3_SECRET_KEY
   IMAGE_BASE_URL PRESIGN_METHOD ANSWERS_CONFIRMED)
@@ -156,5 +157,17 @@ load_setup_answers() {
   mode="$(stat -c %a "$target" 2>/dev/null || stat -f %Lp "$target")"
   [[ "$mode" == 600 ]] || { echo 'Answers file must have mode 600.' >&2; return 1; }
   source "$target"
+  validate_setup_login_answers || return 1
   [[ "${ANSWERS_CONFIRMED:-}" == yes ]] || { echo 'Deployment answers have not been confirmed.' >&2; return 1; }
+}
+
+validate_setup_login_answers() {
+  SETUP_MFA_ENABLED="${SETUP_MFA_ENABLED:-Y}"
+  SETUP_SOCIAL_PROVIDERS="${SETUP_SOCIAL_PROVIDERS:-google}"
+  [[ "$SETUP_MFA_ENABLED" =~ ^([Yy]|[Yy][Ee][Ss]|[Nn]|[Nn][Oo])$ ]] || {
+    echo 'SETUP_MFA_ENABLED must be y or n.' >&2; return 1;
+  }
+  [[ "$SETUP_SOCIAL_PROVIDERS" == none || "$SETUP_SOCIAL_PROVIDERS" =~ ^(google|apple|github)(,(google|apple|github))*$ ]] || {
+    echo 'Use google,apple,github as a comma list, or none.' >&2; return 1;
+  }
 }

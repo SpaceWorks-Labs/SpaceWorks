@@ -76,7 +76,8 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | Admin email | your email |
 | Admin password | type one, or leave blank and it makes a strong one for you |
 | Who can submit borrow requests? | members, signed-in accounts (default), or anyone |
-| Optional integrations | Google Web client ID; Stripe secret/webhook keys and currency |
+| Sign-in choices | Two-step sign-in [Y/n]; Google, Apple, GitHub comma list [google], or `none`; provider keys are entered later in the console |
+| Optional integrations | Stripe secret/webhook keys and currency |
 | GitHub repository | `SpaceWorks-HQ/SpaceWorks`, or your fork as `Owner/Repo` (asked before download by curl) |
 | Automatic deploys | optional GitHub Actions runner; press Enter for No. Linux with systemd only; setup prints the GitHub steps |
 
@@ -230,7 +231,7 @@ applicable follow-ups. Enter accepts the bracketed default. All answers appear i
 private answers file. Areas map to [modules and features](MODULES.md#areas-used-by-setup). An existing events/bookings edition
 preselects its corresponding area plus Membership, Online payments and Reports, keeping plans,
 checkout and reporting; Inventory and Machines default off. Core, backup, notifications, email and
-per-person accounts are always on. Accounts provide self sign-up, password/Google/Apple/phone
+per-person accounts are always on. Accounts provide self sign-up, password/Google/Apple/GitHub/phone
 sign-in and the member area. Membership adds plans, vouching, renewals and the mobile app.
 
 | Area question | Follow-ups in order (defaults) | Editable later |
@@ -244,14 +245,25 @@ sign-in and the member area. Membership adds plans, vouching, renewals and the m
 | Use Reports? [Y/n] | Reports and analytics for every installed module, saved views and scheduled exports; no numeric follow-ups. | Reports |
 | Use Chat alerts? [y/N] | All five channels enabled and idle until configured; no token/URL questions here. | Integration settings |
 
-Next, always asked:
+Before the area questions, setup asks:
+
+- `Turn on two-step sign-in (authenticator app)? [Y/n]`
+- `Which sign-in options besides email + password? Google, Apple, GitHub — comma list, or none [google]`
+
+Enter selects Google; `none` selects no built-in provider. OIDC remains configured separately.
+Provider keys are entered later in the platform console, never in the installer. These deployment
+choices are read-only in `/control/`; change them with `manage.py set_login_methods --mfa on|off
+--providers google,apple,github` (or `--providers none`). Setup applies them only when creating the
+platform login-methods row; rerunning setup preserves later changes.
+
+After the area questions:
 
 1. Label this as an organization instead of a makerspace? [y/N]
 2. Makerspace IANA timezone [UTC, or the host TZ value], then quiet hours start [22:00] and end [08:00], in the makerspace timezone. Equal times disable the window.
 3. Daily digests on by default? [y/N]; if yes, delivery time [08:00]. Members can override this default.
-4. Require two-step sign-in (MFA) for staff? [y/N]
+4. Require two-step sign-in (MFA) for staff? [y/N], only when platform two-step sign-in is on. When off, this question is skipped and no staff-MFA feature is written.
 5. Admin username [admin], email [required], password [auto-generate].
-6. Google client ID [skip]; Stripe secret/webhook keys [skip] only with Online payments; checkout reuses the shared currency.
+6. Stripe secret/webhook keys [skip] only with Online payments; checkout reuses the shared currency.
 7. Repository [SpaceWorks-HQ/SpaceWorks] unless selected before download; optional Linux/systemd runner [y/N].
 8. The summary lists areas, all settings and deployment actions, followed by Proceed? [Y/n].
 

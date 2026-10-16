@@ -52,6 +52,10 @@ def request_origin(request):
 
 
 def provider_settings(provider, client_platform):
+    from apps.accounts.login_methods import provider_login_enabled
+
+    if not provider_login_enabled(provider):
+        raise SocialAuthUnavailable
     # A generic OIDC provider carries its own configuration rather than living on the
     # platform singleton, so it is resolved before that row is even consulted -- a
     # deployment can run OIDC without ever configuring Google or Apple.

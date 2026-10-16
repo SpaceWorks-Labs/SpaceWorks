@@ -37,7 +37,7 @@ source "$ROOT/scripts/cleanup-run-once.sh"
 # Questionnaire precedes Docker checks, image pulls and writes to the checkout.
 source "$ROOT/scripts/setup-questions.sh"
 if [[ "${ANSWERS_CONFIRMED:-}" == yes ]]; then
-  : # Confirmed answers inherited by native Windows through process environment.
+  validate_setup_login_answers || die 'Invalid sign-in choices.'
 elif [[ -f .spaceworks-answers ]]; then
   load_setup_answers "$ROOT/.spaceworks-answers" || die 'Invalid private answers file.'
 elif [[ ! -f .env ]]; then
@@ -120,11 +120,7 @@ done
 
 if [ "$FIRST_RUN" = 1 ]; then
   say "Creating your admin account and makerspace..."
-  SETUP_SUPERADMIN_PASSWORD="$ADMINPASS" SETUP_SUPERADMIN_USERNAME="$ADMINUSER" \
-  SETUP_SUPERADMIN_EMAIL="$ADMINEMAIL" SETUP_MAKERSPACE_NAME="$MSNAME" SETUP_MAKERSPACE_SLUG="$MS_SUBDOMAIN" \
-  ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T -e SETUP_SUPERADMIN_PASSWORD -e SETUP_SUPERADMIN_USERNAME \
-    -e SETUP_SUPERADMIN_EMAIL -e SETUP_MAKERSPACE_NAME -e SETUP_MAKERSPACE_SLUG \
-    backend --role management python manage.py setup_instance
+  configure_setup_instance
 
   configure_setup_domain
 
@@ -132,14 +128,6 @@ if [ "$FIRST_RUN" = 1 ]; then
     python manage.py apply_setup_areas --makerspace "$MS_SUBDOMAIN" --actor "$ADMINUSER" --answers-json - \
     || die 'Could not apply confirmed areas and settings. The private answers are retained for retry.'
   echo 'Areas and settings applied. Change them later with scripts/update.sh --modules-only or staff settings.'
-
-  if [ -n "$GOOGLE_WEB_CLIENT_ID" ]; then
-    say "Enabling Google sign-in..."
-    if ! ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management python manage.py configure_social_auth \
-      --google-web-client-id "$GOOGLE_WEB_CLIENT_ID"; then
-      warn "Could not save the Google client ID. Add it later in Platform settings; password login is unaffected."
-    fi
-  fi
 
   if [ -n "$STRIPE_SECRET_KEY" ]; then
     configure_setup_stripe || die 'Could not safely save the online-payment credentials. Private answers are retained; resolve the settings error and retry setup.'

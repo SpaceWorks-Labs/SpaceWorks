@@ -31,12 +31,14 @@ class MFAStatusView(APIView):
     @extend_schema(tags=["MFA"], responses={200: MFAStatusSerializer, **errors(401, 403, 429)})
     def get(self, request):
         row = mfa_policy.credential(request.user)
-        return Response({"enabled": bool(row and row.enabled_at), "required": mfa_policy.required(request.user)})
+        return Response({"available": mfa_policy.available(), "enabled": bool(row and row.enabled_at),
+                         "required": mfa_policy.required(request.user)})
 
     @extend_schema(tags=["MFA"], request=MFAPasswordSerializer,
                    responses={200: MFAChallengeResponseSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         from rest_framework.exceptions import AuthenticationFailed
+        mfa_policy.assert_available()
         data = _validated(MFAPasswordSerializer, request)
         if not request.user.check_password(data["password"]):
             raise AuthenticationFailed("Password verification failed.")
@@ -104,4 +106,4 @@ class MFADisableView(MFAStatusView):
                    responses={200: MFAStatusSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         change(request.user, _validated(MFAPasswordSerializer, request)["password"], disable=True)
-        return Response({"enabled": False, "required": False})
+        return Response({"available": mfa_policy.available(), "enabled": False, "required": False})

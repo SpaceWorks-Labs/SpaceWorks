@@ -11,6 +11,7 @@ export type SocialLoginResult = {
 export type SocialConfig = {
   google?: { enabled: boolean; web_client_id: string };
   apple?: { enabled: boolean; service_id: string };
+  github?: boolean;
   [provider: `oidc:${string}`]:
     | { enabled: boolean; display_name: string; client_id: string; issuer: string }
     | undefined;
@@ -23,6 +24,7 @@ type OidcStartResult = {
 };
 
 const OIDC_NONCE_PREFIX = "spaceworks.oidc.nonce.";
+const GITHUB_NONCE_PREFIX = "spaceworks.github.nonce.";
 
 declare global {
   interface Window {
@@ -159,6 +161,23 @@ export async function beginOidcBrowser(
   window.location.assign(started.authorization_url);
 }
 
+export async function beginGithubBrowser() {
+  const bytes = window.crypto.getRandomValues(new Uint8Array(32));
+  const nonce = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const started = await publicV1Request<Omit<OidcStartResult, "nonce">>(
+    "/auth/social/github/authorize",
+    { method: "POST", body: JSON.stringify({
+      redirect_uri: `${window.location.origin}${window.location.pathname}`, nonce,
+    }) },
+  );
+  try {
+    window.sessionStorage.setItem(`${GITHUB_NONCE_PREFIX}${started.state}`, nonce);
+  } catch {
+    throw new Error("Browser storage is required for secure identity-provider sign-in.");
+  }
+  window.location.assign(started.authorization_url);
+}
+
 export async function completeOidcBrowserCallback(): Promise<SocialLoginResult | MfaChallenge | null> {
   const query = new URLSearchParams(window.location.search);
   const code = query.get("code")?.trim() ?? "";
@@ -169,15 +188,19 @@ export async function completeOidcBrowserCallback(): Promise<SocialLoginResult |
     throw new Error("Identity-provider sign-in was cancelled or refused.");
   }
   let nonce = "";
+  let provider = "oidc";
   try {
-    nonce = window.sessionStorage.getItem(`${OIDC_NONCE_PREFIX}${state}`) ?? "";
-    window.sessionStorage.removeItem(`${OIDC_NONCE_PREFIX}${state}`);
+    const githubNonce = window.sessionStorage.getItem(`${GITHUB_NONCE_PREFIX}${state}`);
+    const prefix = githubNonce ? GITHUB_NONCE_PREFIX : OIDC_NONCE_PREFIX;
+    provider = githubNonce ? "github" : "oidc";
+    nonce = window.sessionStorage.getItem(`${prefix}${state}`) ?? "";
+    window.sessionStorage.removeItem(`${prefix}${state}`);
   } catch {
     // The backend still refuses the callback because the nonce is mandatory.
   }
   clearOidcQuery();
   if (!nonce) throw new Error("Identity-provider sign-in expired. Please try again.");
-  return publicV1Request<SocialLoginResult | MfaChallenge>("/auth/social/oidc/callback", {
+  return publicV1Request<SocialLoginResult | MfaChallenge>(`/auth/social/${provider}/callback`, {
     method: "POST",
     credentials: "include",
     body: JSON.stringify({ code, state, nonce }),

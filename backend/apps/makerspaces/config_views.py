@@ -39,6 +39,7 @@ class PublicConfigView(APIView):
             phone_login_enabled,
             self_registration_enabled,
             social_login_enabled,
+            provider_login_enabled,
         )
         from apps.accounts.member_identity import member_accounts_enabled
 
@@ -51,12 +52,17 @@ class PublicConfigView(APIView):
         # screen must not render a provider whose endpoint 404s.
         if social_login_enabled():
             social = PlatformSocialAuthSettings.objects.filter(pk=1).first()
-            if social and social.google_web_client_id:
+            from apps.accounts.member_identity import member_login_allowed
+            from apps.accounts.social_lockout import provider_configured
+
+            if provider_configured(social, "github") and member_login_allowed("github"):
+                configured["github"] = True
+            if provider_login_enabled("google") and social and social.google_web_client_id:
                 configured["google"] = {
                     "enabled": True,
                     "web_client_id": social.google_web_client_id,
                 }
-            if social and social.apple_service_id:
+            if provider_login_enabled("apple") and social and social.apple_service_id:
                 configured["apple"] = {
                     "enabled": True,
                     "service_id": social.apple_service_id,

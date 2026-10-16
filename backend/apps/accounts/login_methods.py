@@ -10,9 +10,9 @@ Two halves that must not be confused with each other:
   the dangerous direction, and the accounts it strands are exactly the ones
   forgot-password cannot recover, because they have no usable password to reset.
 
-`social_lockout` already does this per built-in provider. These are the platform-wide
-twins: disabling *all* social sign-in strands somebody a single provider never would, and
-disabling passwords strands the administrators.
+`login_methods_validation` owns the complete proposed-state check shared by the admin
+form, installer and management command. The query helpers here retain their existing
+interfaces; configured provider availability includes the install-time choices.
 """
 
 import logging
@@ -22,6 +22,7 @@ from django.db.models import Exists, OuterRef
 
 from apps.accounts.models import PlatformLoginMethods, User
 from apps.accounts.models_social import SocialIdentity
+from apps.accounts.social_staff_providers import staff_capable_provider_filter
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,10 @@ _SWITCH_FIELDS = (
     "social_enabled",
     "phone_enabled",
     "self_registration_enabled",
+    "mfa_enabled",
+    "google_enabled",
+    "apple_enabled",
+    "github_enabled",
 )
 
 
@@ -67,16 +72,26 @@ def password_login_enabled():
     return bool(_switches().password_enabled)
 
 
+def mfa_login_enabled():
+    return bool(_switches().mfa_enabled)
+
+
 def social_login_enabled():
     """Covers the built-ins AND every configured OIDC provider.
 
-    They share `SocialLoginView`, one nonce contract and one entry in the public config,
-    so a switch that governed only some of them would be a switch an operator could not
-    reason about. A deployment that wants one provider and not another disables the
-    provider row, which is what `OidcProvider.is_enabled` and the built-in credential
-    fields already do.
+    Built-ins additionally need their install-time choice and configured credentials;
+    OIDC providers retain their own `is_enabled` and readiness checks.
     """
     return bool(_switches().social_enabled)
+
+
+def provider_login_enabled(provider):
+    """Install-time built-in choice AND social master; OIDC keeps its row switch."""
+    switches = _switches()
+    return bool(switches.social_enabled and (
+        getattr(switches, f"{provider}_enabled")
+        if provider in ("google", "apple", "github") else str(provider).startswith("oidc:")
+    ))
 
 
 def phone_login_enabled():
@@ -124,7 +139,12 @@ def superadmins_without_social():
     superadmins = User.objects.filter(is_active=True).filter(
         is_superuser=True
     ) | User.objects.filter(is_active=True, role=User.Role.SUPERADMIN)
+    from apps.accounts.login_methods_validation import available_providers
+
+    available = available_providers(PlatformLoginMethods.load())
     superadmins = superadmins.distinct().annotate(
-        has_social=Exists(SocialIdentity.objects.filter(user=OuterRef("pk")))
+        has_social=Exists(SocialIdentity.objects.filter(
+            staff_capable_provider_filter(), user=OuterRef("pk"), provider__in=available
+        ))
     )
     return [user for user in superadmins if not user.has_social]

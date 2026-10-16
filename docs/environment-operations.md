@@ -115,6 +115,8 @@ Consumed by `setup_instance`, the image build, or the e2e seed; never needed at 
 | `SETUP_MAKERSPACE_NAME` | read outside `settings.py` |  |
 | `SETUP_MAKERSPACE_SLUG` | read outside `settings.py` |  |
 | `SETUP_MODULE_PROFILE` | read outside `settings.py` |  |
+| `SETUP_MFA_ENABLED` | unset (on for a new row) | First-run two-step sign-in choice, `y`/`n`; later use `set_login_methods`. |
+| `SETUP_SOCIAL_PROVIDERS` | unset (all on for a new row) | First-run built-in comma list or literal `none`; guided setup defaults to Google. |
 | `SETUP_SUPERADMIN_EMAIL` | read outside `settings.py` |  |
 | `SETUP_SUPERADMIN_PASSWORD` | read outside `settings.py` |  |
 | `SETUP_SUPERADMIN_USERNAME` | read outside `settings.py` |  |

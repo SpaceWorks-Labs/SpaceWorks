@@ -42,8 +42,8 @@ The pinned archive is first unpacked in temporary storage. Its shared questionna
 (one space, several `/m/<slug>` spaces, or subdomain platform), whether to run the website here, HTTPS,
 standard/single-box containers, and bundled/external storage. It then asks the web address if needed,
 makerspace name/subdomain, eight yes/no areas with immediate follow-up settings, a derived edition,
-organization labels, quiet hours/digest defaults, staff MFA and admin identity/password,
-optional Google/Stripe credentials, the GitHub repository to follow, and
+organization labels, quiet hours/digest defaults, platform two-step sign-in, chosen providers,
+staff MFA (only if platform MFA is on), admin identity/password, optional Stripe credentials, the GitHub repository to follow, and
 "Install a GitHub Actions runner on this server for automatic deploys? [y/N]" (default No).
 Only Linux with systemd supports runner installation; other hosts skip it.
 The curl installer asks the repository before downloading that repository's questionnaire. Every prompt displays its
@@ -70,6 +70,22 @@ Existing `.env` installations retain their topology; updates never repeat the de
 Module-only reruns still use the live module selector without downloading a release.
 
 Only the superadmin and operator-named makerspace are provisioned, along with configuration defaults.
+Setup asks `Turn on two-step sign-in (authenticator app)? [Y/n]` before the area questions.
+The provider prompt defaults to Google on Enter; use `none` for no provider, or a comma list of
+`google,apple,github`. Provider keys are entered later in the platform console. Google/Apple/OIDC
+can sign staff in; GitHub is member-only. The install choices are read-only in `/control/`.
+To change them later, use the host management command, which validates the complete proposed policy
+and refuses to strand social-only users or superadmins:
+
+```bash
+scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role management python manage.py set_login_methods --mfa off --providers google,github
+```
+
+For non-interactive first setup, pass `SETUP_MFA_ENABLED=y|n` and
+`SETUP_SOCIAL_PROVIDERS=google,apple,github` (or literal `none`) to `setup_instance` using `-e`.
+These choices apply only on first creation of the platform login-methods row; later setup runs
+preserve the operator's choices. The private answers file also preserves literal `none`.
+
 Production setup never calls `seed_demo` or `seed_e2e`. The developer demo seeder refuses `DEBUG=False`
 unless explicitly invoked with `--allow-production-demo`.
 

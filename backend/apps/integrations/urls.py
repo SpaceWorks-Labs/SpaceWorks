@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 from apps.integrations import views
 from apps.integrations.views_push import PushDeviceDetailView, PushDeviceListCreateView
@@ -24,3 +24,4 @@ urlpatterns = [
 
 from .notification_contract_urls import urlpatterns as contract_urls
 urlpatterns += contract_urls
+urlpatterns += [path("", include("apps.integrations.notification_wa_twilio_urls"))]

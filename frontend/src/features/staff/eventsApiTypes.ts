@@ -15,6 +15,7 @@ export type EventRegistrationCounts = Record<EventRegistrationStatus, number>;
 export type StaffEvent = {
   staff_permissions?: import("./eventStaffPermissions").EventPermission[];
   can_manage_staff?: boolean;
+  can_duplicate?: boolean;
   ticketing_features?: string[];
   broadcasts_enabled?: boolean;
   badge_sensitive_fields_allowed?: boolean;

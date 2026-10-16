@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { publicOrganizationKeys } from "../organizations/publicOrganizationsApi";
+import { refreshOrganizationAuthority } from "../organizations/refreshOrganizationAuthority";
 
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 export type OrganizationSummary = {
@@ -63,11 +64,7 @@ export function useChangeOrganizationLink(id: number) {
   const client = useQueryClient();
   return useMutation({ mutationFn: ({ makerspace_id, relationship }: { makerspace_id: number; relationship?: OrganizationLink["relationship"] }) =>
     staffRequest(`/admin/organizations/${id}/makerspaces/${relationship ? "" : `${makerspace_id}/`}`, { method: relationship ? "POST" : "DELETE", ...(relationship ? { body: JSON.stringify({ makerspace_id, relationship }) } : {}) }),
-    onSuccess: () => Promise.all([
-      client.invalidateQueries({ queryKey: organizationKeys.all }),
-      client.invalidateQueries({ queryKey: ["public-organization"] }),
-      client.invalidateQueries({ queryKey: ["staff", "me"] }),
-    ]) });
+    onSuccess: () => refreshOrganizationAuthority(client) });
 }
 
 type OrganizationFilters = { page?: number; search?: string; active?: boolean };

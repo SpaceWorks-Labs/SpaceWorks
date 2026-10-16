@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest, getAccessToken } from "../../lib/api";
 import { browserSessionIdentity } from "../../lib/api/reauthentication";
-import { organizationKeys, type OrganizationDetail, type OrganizationMember } from "../staff/organizationsApi";
+import type { OrganizationDetail, OrganizationMember } from "../staff/organizationsApi";
+import { refreshOrganizationAuthority } from "./refreshOrganizationAuthority";
 
 export const organizationSelfServiceKey = ["organizations", "self-service"] as const;
 export type OrganizationCreationPolicy = {
@@ -19,21 +20,14 @@ export function useCreateOwnOrganization() {
   return useMutation({
     mutationFn: (payload: { name: string; slug: string }) => staffRequest<OrganizationDetail>(
       "/auth/organizations/self-service/", { method: "POST", body: JSON.stringify(payload) }),
-    onSuccess: () => Promise.all([
-      client.invalidateQueries({ queryKey: organizationKeys.all }),
-      client.invalidateQueries({ queryKey: ["staff", "me"] }),
-    ]),
+    onSuccess: () => refreshOrganizationAuthority(client),
   });
 }
 
 export function useDeleteOrganization(id: number) {
   const client = useQueryClient();
   return useMutation({ mutationFn: () => staffRequest<void>(`/admin/organizations/${id}/`, { method: "DELETE" }),
-    onSuccess: () => Promise.all([
-      client.invalidateQueries({ queryKey: organizationKeys.all }),
-      client.invalidateQueries({ queryKey: ["public-organization"] }),
-      client.invalidateQueries({ queryKey: ["staff", "me"] }),
-    ]) });
+    onSuccess: () => refreshOrganizationAuthority(client) });
 }
 
 export function useUpdateOrganizationMember(id: number) {
@@ -43,9 +37,6 @@ export function useUpdateOrganizationMember(id: number) {
       staffRequest<OrganizationMember>(`/admin/organizations/${id}/memberships/${memberId}/`, {
         method: "PATCH", body: JSON.stringify(payload),
       }),
-    onSuccess: () => Promise.all([
-      client.invalidateQueries({ queryKey: organizationKeys.all }),
-      client.invalidateQueries({ queryKey: ["staff", "me"] }),
-    ]),
+    onSuccess: () => refreshOrganizationAuthority(client),
   });
 }

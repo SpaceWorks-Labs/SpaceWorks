@@ -938,9 +938,24 @@ unpinned; each now has a test under `tests/payments/`:
   closed page, and `live_checkout_url` is the one reader (member list, checkout endpoint, service):
   a link counts only while `stripe_checkout_session_expired_at` is null. `stripe_payment_intent_id`
   is never cleared there — it is the refund anchor.
-- **The native PaymentSheet is Stripe-only and checks the vendor BEFORE any provider call.** A
-  Razorpay source carries the Razorpay key secret in `secret_key`; without the check it was sent to
-  Stripe as an API key.
+- **Native payments dispatch on the Payment's resolved vendor BEFORE any provider call.** Stripe
+  PaymentSheet keeps its PaymentIntent rail; Razorpay native Checkout uses an Order. A Razorpay
+  source carries its key secret in `secret_key` and must never be passed to Stripe. Both response
+  branches carry `vendor` and `payment_id`; hosted checkout and native rails remain mutually exclusive.
+  Razorpay recovery is lookup-first: fetch a stored order, otherwise search by deterministic
+  `sw-pay-<payment.pk>` receipt (at most 40 characters) before creating. Reuse requires an exact
+  receipt, matching payment/makerspace notes, integer minor-unit amount, currency, and
+  `created`/`attempted` state. A duplicate-receipt 400 repeats that lookup; incompatible provider
+  state fails closed with a logged 503. Provider error descriptions stay out of logs and responses.
+  Offline settlement/waiver marks native Orders closed locally; Orders never reach the Payment
+  Link cancellation API, and their IDs remain available for late-capture matching.
+- **Razorpay captures retain the refund anchor and deduplicate excess by provider payment ID.**
+  Pending or waived charges settling online store the capture's `external_payment_id`. Other
+  terminal rows are untouched. A different capture is audited once per provider payment ID as
+  `payment.double_paid_refund_required`, with `provider_payment_id`, `amount_minor` and `currency`.
+  `order.paid` and `payment.captured` for the same capture never flag excess. Staff refund excess
+  collections in the provider dashboard using that audit ID; no in-app refund action or change to
+  `Refund.counted_total` is involved, preserving the original charge's refundable balance.
 - **Provider amounts use the currency's ISO 4217 exponent** (`payments/money.to_minor_units`): zero
   for JPY/KRW and the rest of Stripe's zero-decimal list, three for BHD/JOD/KWD/OMR/TND. Checkout,
   the provider seam, native intents, refunds, the Connect fee and refund-webhook matching all use it;

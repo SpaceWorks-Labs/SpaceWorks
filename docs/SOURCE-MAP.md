@@ -183,6 +183,11 @@ encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, wh
 address-hash suppression. `notifications/models_broadcasts.py`, `broadcasts.py` and
 `views_broadcasts.py` own scoped member segments, matrix fan-out and personal announcements.
 `payments/failure_notifications.py` handles verified failed attempts without closing debt.
+`payments/services_mobile.py` coordinates native rail locks and vendor dispatch;
+`services_mobile_razorpay.py` validates and recovers native Orders through
+`providers/razorpay.py`. `serializers_mobile.py` defines the vendor-discriminated response.
+`terminal_settlement.py` retains late-capture refund anchors and deduplicates excess-collection
+audits; `reconciliation_rail.py` closes native Razorpay Orders locally without cancelling links.
 Booking models are explicitly exported from `bookings/models.py` over `models_spaces.py`,
 `models_booking.py` and `models_feed.py`; `services_reschedule.py` and `services_recurrence.py`
 reuse the ordinary space lock and booking policy. `views_feed.py` owns private booking ICS

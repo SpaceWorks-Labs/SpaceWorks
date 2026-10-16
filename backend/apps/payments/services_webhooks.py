@@ -161,15 +161,19 @@ def apply_razorpay_webhook_event(makerspace, event):
         if event.is_failed:
             from apps.payments.failure_notifications import record_payment_failure
             return record_payment_failure(payment, event_id=event.event_id, provider="razorpay")
+        provider_payment_id = event.payment_id
         if payment.status != Payment.Status.PENDING:
             return handle_razorpay_paid_after_terminal(
                 payment,
                 event_id=event.event_id,
+                payment_id=provider_payment_id,
+                amount_minor=event.amount_minor,
+                currency=event.currency,
             )
         payment.status = Payment.Status.PAID_ONLINE
         fields = ["status", "updated_at"]
-        if event.payment_id and not payment.external_payment_id:
-            payment.external_payment_id = event.payment_id
+        if provider_payment_id:
+            payment.external_payment_id = provider_payment_id
             fields.insert(1, "external_payment_id")
         payment.save(update_fields=fields)
         audit.record(

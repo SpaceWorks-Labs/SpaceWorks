@@ -22,6 +22,15 @@ def _expire_checkout_best_effort(payment):
     reconciliation that called this must succeed regardless of what the vendor says.
     """
     if (
+        payment.provider == Payment.Provider.RAZORPAY
+        and payment.online_rail == Payment.OnlineRail.NATIVE_PAYMENT_INTENT
+    ):
+        # Orders have no cancellation API. Mark closed locally, retain the order for
+        # late-capture matching, and let webhook settlement correct/flag real money.
+        if payment.external_order_id and not payment.stripe_checkout_session_expired_at:
+            payment.stripe_checkout_session_expired_at = timezone.now()
+        return
+    if (
         payment.online_rail == Payment.OnlineRail.NATIVE_PAYMENT_INTENT
         and payment.stripe_payment_intent_id
     ):

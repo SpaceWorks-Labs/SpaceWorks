@@ -1,7 +1,8 @@
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -77,11 +78,27 @@ class OrganizationListView(APIView):
         tags=["Admin organizations"],
         summary="List organizations visible to the actor",
         request=None,
-        responses={200: OrganizationListSerializer, **ERRORS},
+        parameters=[
+            OpenApiParameter("active", OpenApiTypes.BOOL, OpenApiParameter.QUERY,
+                             description="Filter by active status: true or false."),
+            OpenApiParameter("search", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                             description="Case-insensitive substring of organization name or slug."),
+        ],
+        responses={200: OrganizationListSerializer, **ERRORS,
+                   400: OpenApiResponse(description="Invalid active filter; use true or false.")},
     )
     def get(self, request):
+        queryset = _organizations_for(request.user)
+        active = request.query_params.get("active")
+        if active is not None:
+            if active not in ("true", "false"):
+                raise ValidationError({"active": "Use true or false."})
+            queryset = queryset.filter(is_active=active == "true")
+        search = request.query_params.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(slug__icontains=search))
         return _page(
-            _organizations_for(request.user).order_by("name", "id"),
+            queryset.order_by("name", "id"),
             request,
             self,
             OrganizationSummarySerializer,

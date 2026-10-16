@@ -37,6 +37,9 @@ export function staffPayload(form: StaffForm) {
 
 export function makerspacePayload(form: MakerspaceForm) {
   return {
+    ...(form.organization === "new"
+      ? { organization_name: (form.organization_name ?? form.name).trim() }
+      : form.organization ? { organization_id: form.organization.id } : {}),
     creation_setup: {
       ...(form.profile ? { profile: form.profile } : {}),
       ...(form.modules ? { modules: form.modules } : {}),

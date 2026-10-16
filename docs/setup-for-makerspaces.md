@@ -70,6 +70,7 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | File storage | bundled Silo, or your S3 buckets/credentials/public image URL |
 | Areas | Inventory & lending, Machines and Reports default yes; Events, Bookings, Membership, Online payments and Chat default no. Each yes immediately asks its settings. |
 | Web address people will type | `localhost` to start (you can change it later) |
+| Organization name | your network, university, company or community, e.g. `Riverside Community Trust` (required) |
 | Name of your makerspace | e.g. `Riverside Makerspace` |
 | Admin login username | `admin` is fine |
 | Admin email | your email |
@@ -79,6 +80,15 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | Optional integrations | Stripe secret/webhook keys and currency |
 | GitHub repository | `SpaceWorks-HQ/SpaceWorks`, or your fork as `Owner/Repo` (asked before download by curl) |
 | Automatic deploys | optional GitHub Actions runner; press Enter for No. Linux with systemd only; setup prints the GitHub steps |
+
+Setup creates an organization with that name and links it as the owner of your first makerspace. If you
+run only one space, you can type its name here too. The summary shows the organization and the
+makerspace it will own. Rerunning setup preserves an existing owner.
+
+When a Super Admin adds another makerspace in the staff console, they must search for and choose an
+active organization, or select **New organization** and enter a name (the makerspace name is suggested).
+The API and `/control/` also require an owner organization for new makerspaces. Existing spaces with no
+owner continue to work; importing a tenant and the development `seed_e2e` command are exceptions.
 
 The summary lists the selected services and whether the runner will be installed, and explains:
 "migrate builds the database tables. It runs once and stops. It's required."

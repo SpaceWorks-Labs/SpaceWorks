@@ -13,6 +13,11 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
+- **Owner organizations at setup** — the installer asks for the organization name as its own question,
+  before the makerspace name. New makerspaces created in the staff console, API or `/control/` require an existing
+  active owner organization or a new name; the console includes search and pagination. Creation and
+  owner assignment are atomic. Existing ownerless spaces remain usable; tenant import and `seed_e2e`
+  are exceptions to the creation requirement.
 - **Standard containers for every install** — the single-box shape is removed and the all-in-one image
   is no longer built or published. Existing single-box installs must switch to standard containers before updating;
   setup and update refuse the old choice and print [switch steps](docs/update-recovery.md#moving-off-a-single-box-install).

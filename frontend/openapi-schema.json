@@ -30899,7 +30899,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_makerspaces_create",
-                "description": "Optional install_profile_id applies a saved pack. creation_setup applies profile, hours, modules and first staff invitation in the same transaction; explicit setup overrides the pack. Invitation delivery follows commit and returns a private fallback link.",
+                "description": "Exactly one write-only organization_id (existing active owner organization) or organization_name (new owner organization) is required; both are refused on update. Owner assignment and makerspace creation are atomic. Optional install_profile_id applies a saved pack; an unknown profile returns 404 before owner assignment. creation_setup applies profile, hours, modules and first staff invitation in the same transaction; explicit setup overrides the pack. Invitation delivery follows commit and returns a private fallback link.",
                 "summary": "Create a makerspace (superadmin only)",
                 "tags": [
                     "Admin makerspaces"
@@ -40823,6 +40823,24 @@
             "get": {
                 "operationId": "admin_organizations_list",
                 "summary": "List organizations visible to the actor",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "active",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Filter by active status: true or false."
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Case-insensitive substring of organization name or slug."
+                    }
+                ],
                 "tags": [
                     "Admin organizations"
                 ],
@@ -40871,6 +40889,9 @@
                             }
                         },
                         "description": "Organization not found."
+                    },
+                    "400": {
+                        "description": "Invalid active filter; use true or false."
                     }
                 }
             },
@@ -82608,6 +82629,18 @@
             "Makerspace": {
                 "type": "object",
                 "properties": {
+                    "organization_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "writeOnly": true,
+                        "description": "Existing active owner organization ID. On create, supply this or organization_name, exactly one; refused on update."
+                    },
+                    "organization_name": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "Create a new owner organization with this name. On create, supply this or organization_id, exactly one; refused on update.",
+                        "maxLength": 200
+                    },
                     "creation_setup": {
                         "allOf": [
                             {
@@ -87579,6 +87612,10 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "is_active": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "governance_actions": {
                         "type": "array",
                         "items": {
@@ -87609,10 +87646,6 @@
                         "readOnly": true
                     },
                     "public_profile_enabled": {
-                        "type": "boolean",
-                        "readOnly": true
-                    },
-                    "is_active": {
                         "type": "boolean",
                         "readOnly": true
                     },
@@ -88184,6 +88217,10 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "is_active": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "governance_actions": {
                         "type": "array",
                         "items": {
@@ -88203,6 +88240,7 @@
                     "governance_actions",
                     "granted_actions",
                     "id",
+                    "is_active",
                     "name",
                     "slug"
                 ]
@@ -91887,6 +91925,18 @@
             "PatchedMakerspace": {
                 "type": "object",
                 "properties": {
+                    "organization_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "writeOnly": true,
+                        "description": "Existing active owner organization ID. On create, supply this or organization_name, exactly one; refused on update."
+                    },
+                    "organization_name": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "Create a new owner organization with this name. On create, supply this or organization_id, exactly one; refused on update.",
+                        "maxLength": 200
+                    },
                     "creation_setup": {
                         "allOf": [
                             {

@@ -91,6 +91,11 @@ question() {
         [[ ${#value} -le 200 && -n "$derived_slug" && ${#derived_slug} -le 50 ]] || { echo 'Use a name with a URL slug of 1-50 letters/digits/hyphens (include ASCII letters or digits).'; continue; }
         MS_SUBDOMAIN="$derived_slug"
         ;;
+      org_name)
+        local org_slug
+        org_slug="$(printf '%s' "$value" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C sed 's/[^a-z0-9 _-]//g; s/[ _-][ _-]*/-/g; s/^-//; s/-$//')"
+        [[ ${#value} -le 200 && -n "$org_slug" ]] || { echo 'Use up to 200 characters, including ASCII letters or digits for an organization slug.'; continue; }
+        ;;
       origins)
         local origin valid=1
         IFS=, read -ra origin_list <<< "$value"
@@ -123,7 +128,7 @@ question() {
 }
 
 SETUP_ANSWER_KEYS=(HOSTING_MODEL RUN_FRONTEND SITE_ORIGINS PLATFORM_DOMAIN PUBLIC_DOMAIN
-  TLS_EMAIL HTTPS_MODE STORAGE WEBHOST MSNAME MS_SUBDOMAIN SPACEWORKS_EDITION
+  TLS_EMAIL HTTPS_MODE STORAGE WEBHOST MSNAME ORG_NAME MS_SUBDOMAIN SPACEWORKS_EDITION
   CONTROL_PLANE_PROXY CONTROL_PLANE_ALLOW_CIDRS CONTROL_PLANE_TUNNEL_PORT
   SETUP_SELECTED_AREAS AREA_SETTINGS_JSON AREA_ORGANIZATION AREA_CREATE_PLAN REQUEST_ACCESS ADMINUSER ADMINEMAIL ADMINPASS GEN_PASS SETUP_MFA_ENABLED SETUP_SOCIAL_PROVIDERS
   STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_DEFAULT_CURRENCY SPACEWORKS_REPOSITORY INSTALL_RUNNER

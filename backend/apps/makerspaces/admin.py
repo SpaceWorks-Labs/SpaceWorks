@@ -3,6 +3,7 @@ from unfold.admin import ModelAdmin, TabularInline
 
 from apps.makerspaces.admin_capabilities import MakerspaceAdminForm, MakerspaceCapabilityAdminMixin
 from apps.makerspaces.admin_images import MakerspaceImageAdminMixin
+from apps.makerspaces.admin_owner import MakerspaceOwnerAdminMixin
 from apps.makerspaces.admin_lifecycle_actions import MakerspaceLifecycleActionsMixin
 from apps.makerspaces.admin_subdomains import SubdomainRequestAdmin
 from apps.makerspaces.admin_archive_requests import MakerspaceArchiveRequestAdmin
@@ -54,6 +55,7 @@ class MakerspaceMembershipInline(TabularInline):
 
 @admin.register(Makerspace)
 class MakerspaceAdmin(
+    MakerspaceOwnerAdminMixin,
     MakerspaceLifecycleActionsMixin,
     MakerspaceImageAdminMixin,
     MakerspaceCapabilityAdminMixin,
@@ -144,6 +146,7 @@ class MakerspaceAdmin(
             from apps.backup.custody import initialize_custody_state
 
             initialize_custody_state(obj.pk)
+            self.assign_owner(request, obj, form)
         record_control_save(request.user, obj, form.changed_data, created=not change)
         if domain_changed:
             record_domain_change(request.user, obj, previous_domain)

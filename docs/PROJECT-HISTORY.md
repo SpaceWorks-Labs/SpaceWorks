@@ -6,6 +6,7 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — owner organizations at makerspace creation.** Installer setup asks for the organization name as its own question, before the makerspace name; installer, API, staff console and `/control/` share atomic owner assignment. The console searches and paginates active organizations or accepts a new name. Existing ownerless spaces remain usable without a migration; tenant import and `seed_e2e` are exceptions.
 - **2026-10-16 — opt-in route to the control plane.** `/control/` had no working path on a bundled
   install: no proxy forwarded it, the backend publishes no port, and with HTTPS on Django redirects a
   plain-HTTP tunnel to `https://localhost:8000`. `CONTROL_PLANE_PROXY` (default off) now routes `/control/`

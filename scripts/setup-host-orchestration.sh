@@ -86,7 +86,7 @@ configure_setup_instance() {
   ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T -e SETUP_SUPERADMIN_PASSWORD -e SETUP_SUPERADMIN_USERNAME \
     -e SETUP_SUPERADMIN_EMAIL -e SETUP_MAKERSPACE_NAME -e SETUP_MAKERSPACE_SLUG \
     -e SETUP_MFA_ENABLED -e SETUP_SOCIAL_PROVIDERS \
-    backend --role management python manage.py setup_instance
+    backend --role management python manage.py setup_instance --organization-name "${ORG_NAME:-}"
 }
 
 configure_setup_stripe() {

@@ -125,15 +125,16 @@ All deployment decisions come first, in this order:
    existing reverse proxy. A hosted platform always uses automatic HTTPS; API-only requires HTTPS.
 4. **Storage:** bundled Silo (default), or external S3 endpoint, region, separate private/public buckets,
    access/secret keys, public image base URL and PUT/POST presigning.
-5. **Instance:** web address if not already known, makerspace name, platform subdomain if applicable,
-   then eight yes/no areas: Inventory & lending [Y/n], Machines [Y/n], Events, Bookings, Membership,
-   Online payments, Reports and Chat alerts [y/N]. Each yes immediately asks its settings (limits,
-   renewals, charges, certification/reminder leads, event audience/currency, admission/vouches, form
-   and optional plan/renewals). Then organization labels [y/N], local timezone [UTC], quiet hours [22:00?08:00], daily
-   digests [y/N] and staff MFA [y/N]. The edition is derived from the areas.
-   See [all questions and defaults](docs/setup-for-makerspaces.md#area-follow-up-questions).
+5. **Instance:** web address if not already known, **organization name** (asked on its own and created as
+   the owner of your makerspace), makerspace name, platform subdomain if applicable, platform two-step
+   sign-in and sign-in providers, then eight yes/no areas: Inventory & lending [Y/n], Machines [Y/n], Events,
+   Bookings, Membership, Online payments, Reports and Chat alerts [y/N]. Each yes immediately asks its
+   settings (limits, renewals, charges, certification/reminder leads, event audience/currency,
+   admission/vouches, form and optional plan/renewals). Then organization labels [y/N], local timezone
+   [UTC], quiet hours [22:00?08:00], daily digests [y/N] and staff MFA [y/N]. The edition is derived from
+   the areas. See [all questions and defaults](docs/setup-for-makerspaces.md#area-follow-up-questions).
 6. **Admin:** username, your email, and password (blank generates one).
-7. **Optional integrations:** Google Web client ID; Stripe secret/webhook keys only with Online payments. Checkout reuses the area currency.
+7. **Optional integrations:** Stripe secret/webhook keys only with Online payments. Checkout reuses the area currency. Sign-in provider keys are entered later in the console.
 8. **GitHub repository to follow** (`SpaceWorks-HQ/SpaceWorks`, or your fork) and
    **Install a GitHub Actions runner on this server for automatic deploys? [y/N]** No by default.
    Automatic deploys require Linux with systemd and the GitHub settings below.

@@ -9,6 +9,8 @@ export type StaffForm = {
 };
 export type RestrictForm = { status: "restricted" | "suspended"; reason: string };
 export type MakerspaceForm = {
+  organization?: { id: number; name: string } | "new";
+  organization_name?: string;
   profile?: Partial<{ timezone: string; country: string; default_currency: string; opening_hours: import("../../makerspaceProfileForm").OpeningHours }>;
   modules?: string[];
   first_staff_email?: string;

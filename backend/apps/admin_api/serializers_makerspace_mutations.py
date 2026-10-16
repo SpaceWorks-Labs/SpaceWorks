@@ -33,6 +33,8 @@ class MakerspaceMutationMixin:
 
     @transaction.atomic
     def create(self, validated_data):
+        organization_id = validated_data.pop("organization_id", None)
+        organization_name = validated_data.pop("organization_name", None)
         setup = validated_data.pop("creation_setup", None)
         install_profile_id = validated_data.pop("install_profile_id", None)
         public_display_name = validated_data.pop("public_display_name", None)
@@ -61,9 +63,18 @@ class MakerspaceMutationMixin:
         if setup is not None:
             from apps.makerspaces.creation_setup import configure_creation
             configure_creation(self.context["request"].user, instance, setup)
+        from apps.organizations.services_owner import assign_owner_organization
+        assign_owner_organization(
+            self.context["request"].user, instance.pk,
+            organization_id=organization_id, new_name=organization_name,
+        )
         return instance
 
     def update(self, instance, validated_data):
+        owner_fields = {field: "Choose an owner organization only when creating a makerspace."
+                        for field in ("organization_id", "organization_name") if field in validated_data}
+        if owner_fields:
+            raise serializers.ValidationError(owner_fields)
         if "creation_setup" in validated_data:
             raise serializers.ValidationError({"creation_setup": "Use setup only when creating a makerspace."})
         if "install_profile_id" in validated_data:

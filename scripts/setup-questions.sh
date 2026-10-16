@@ -93,6 +93,8 @@ ask_setup_questions() {
   WEBHOST="$PUBLIC_DOMAIN"
   if [[ "$HOSTING_MODEL" == 3 ]]; then WEBHOST="$PLATFORM_DOMAIN"; fi
   [[ -n "$WEBHOST" ]] || question WEBHOST 'Web address (host name or IP, no http://)' localhost host || return 1
+  echo 'Makerspaces belong to an organization (your network, university, company or community).'
+  question ORG_NAME 'Organization name' '' org_name || return 1
   question MSNAME 'Name of your makerspace' 'My Makerspace' name || return 1
   [[ "$HOSTING_MODEL" != 3 ]] || question MS_SUBDOMAIN 'First makerspace subdomain' makerspace slug || return 1
   question SETUP_MFA_ENABLED 'Turn on two-step sign-in (authenticator app)?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
@@ -152,6 +154,7 @@ setup_summary() {
   printf '  Control plane: %s ; SSH tunnel: %s\n' "$control_plane" "$tunnel"
   printf '  Makerspace: %s; URL slug/subdomain: %s; edition: %s; request access: %s\n' \
     "$MSNAME" "${MS_SUBDOMAIN:-none}" "$SPACEWORKS_EDITION" "$([[ ",${SETUP_SELECTED_AREAS}," == *,inventory,* ]] && echo "$REQUEST_ACCESS" || echo 'lending disabled')"
+  printf '  Organization: %s (owner of %s)\n' "$ORG_NAME" "$MSNAME"
   setup_areas_summary
   printf '  Admin: %s <%s>; password: %s (hidden)\n' "$ADMINUSER" "$ADMINEMAIL" "$([[ "$GEN_PASS" == 1 ]] && echo generated || echo entered)"
   printf '  Two-step sign-in: %s; sign-in providers: %s (keys configured later in the console)\n' \

@@ -48,7 +48,15 @@ _NOT_FOUND = OpenApiResponse(
     post=extend_schema(
         tags=["Admin makerspaces"],
         summary="Create a makerspace (superadmin only)",
-        description="Optional install_profile_id applies a saved pack. creation_setup applies profile, hours, modules and first staff invitation in the same transaction; explicit setup overrides the pack. Invitation delivery follows commit and returns a private fallback link.",
+        description=(
+            "Exactly one write-only organization_id (existing active owner organization) or "
+            "organization_name (new owner organization) is required; both are refused on update. "
+            "Owner assignment and makerspace creation are atomic. Optional install_profile_id "
+            "applies a saved pack; an unknown profile returns 404 before owner assignment. "
+            "creation_setup applies profile, hours, modules and first staff invitation in the "
+            "same transaction; explicit setup overrides the pack. Invitation delivery follows "
+            "commit and returns a private fallback link."
+        ),
         responses={
             201: MakerspaceSerializer,
             400: _INVALID,
@@ -63,6 +71,8 @@ class MakerspaceListCreateView(generics.ListCreateAPIView):
     pagination_class = None
 
     def create(self, request, *args, **kwargs):
+        if not (request.user.is_superuser or request.user.role == User.Role.SUPERADMIN):
+            raise PermissionDenied()
         response = super().create(request, *args, **kwargs)
         # First-staff delivery can return a private invitation fallback link.
         response["Cache-Control"] = "no-store"

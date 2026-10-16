@@ -145,6 +145,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
       setMakerspaceOpen(false);
       setMakerspaceForm(emptyMakerspaceForm);
       queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
   });
 
@@ -182,7 +183,7 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
 
   return (
     <ListLayout tabs={sectionTabs} activeTab={activeTab} onTabChange={setTab}
-    header={{ title: "Staff & roles", subtitle: "Give your team the access they need to run this space.", primary: { label: "Add staff", onClick: openAdd, disabled: !assignableRoles.length, disabledReason: "A role you can assign is needed first." }, secondary: isSuperadmin ? { label: "Create makerspace", onClick: () => setMakerspaceOpen(true) } : undefined }}
+    header={{ title: "Staff & roles", subtitle: "Give your team the access they need to run this space.", primary: { label: "Add staff", onClick: openAdd, disabled: !assignableRoles.length, disabledReason: "A role you can assign is needed first." }, secondary: isSuperadmin ? { label: "Create makerspace", onClick: () => { createMakerspace.reset(); setMakerspaceOpen(true); } } : undefined }}
       state={{ status: activeTab === "invitations" ? "ready" : activeQuery.isLoading ? "loading" : activeQuery.isError ? "error" : "ready", error: `Couldn't load staff and roles${activeQuery.error?.message ? ` (${activeQuery.error.message})` : ""}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
       empty={{ message: "No staff yet. Add someone to your team." }}
       stats={[{ label: "Staff", value: memberships.data?.length ?? 0 }, { label: "Roles", value: rolesList.data?.length ?? 0 }]}

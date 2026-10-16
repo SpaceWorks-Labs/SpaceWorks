@@ -22,6 +22,7 @@ import { featureEnabled } from "../../../lib/features";
 import { useReorderSuggestions } from "./ReorderSuggestions";
 import { invalidateInventoryViews } from "../queryInvalidation";
 import { useDomainSettingsDialog } from "../useDomainSettingsDialog";
+import { MakerspaceLoanPolicySettings } from "../MakerspaceLoanPolicySettings";
 import { categoryResults, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
 import {
   adjustPayload,
@@ -53,7 +54,9 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const [toBuyQty, setToBuyQty] = useState("1");
   const [toBuyMessage, setToBuyMessage] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const domainSettings = useDomainSettingsDialog(makerspace.id, "inventory", canEditInventory);
+  // The loan policy (loan period, renewals, limits) belongs to the Inventory Manager, not only the Space Manager.
+  const domainSettings = useDomainSettingsDialog(makerspace.id, "inventory", canEditInventory,
+    (makerspace.enabled_modules ?? []).includes("request_workflow") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : undefined);
   useQuickCreate("item", () => { setForm(emptyForm); setAddOpen(true); });
   const [fixTarget, setFixTarget] = useState<AdminProduct | null>(null);
   const [assetFixTarget, setAssetFixTarget] = useState<AdminProduct | null>(null);

@@ -14,8 +14,10 @@ from .models_loan_policy import MakerspaceLoanPolicy
 def update_loan_policy(actor, makerspace, values):
     assert_write_allowed(makerspace.pk)
     makerspace = require_module_locked(makerspace, "request_workflow")
-    require_action(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)
-    policy = MakerspaceLoanPolicy.for_makerspace(makerspace)
+    # The Inventory Manager owns lending; everyone else still needs MANAGE_MAKERSPACE.
+    if not rbac.can(actor, rbac.Action.EDIT_INVENTORY, makerspace.pk):
+        require_action(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)
+    policy =MakerspaceLoanPolicy.for_makerspace(makerspace)
     before = {key: value for key, value in ReturnPolicySerializer(policy).data.items() if key != "id"}
     serializer = ReturnPolicySerializer(policy, data=values, partial=True)
     serializer.is_valid(raise_exception=True)

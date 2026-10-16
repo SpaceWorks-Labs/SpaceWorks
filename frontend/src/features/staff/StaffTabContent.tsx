@@ -233,7 +233,7 @@ export function StaffTabContent({
           makerspaces={makerspaces}
         />
       ) : null}
-      <StaffPlatformTabContent activeTab={activeTab} activeMakerspace={activeMakerspace} makerspaces={makerspaces} isSuperadmin={isSuperadmin} canManageMakerspace={canManageMakerspace} currentUser={currentUser} onAuthRefresh={onAuthRefresh} />
+      <StaffPlatformTabContent activeTab={activeTab} activeMakerspace={activeMakerspace} makerspaces={makerspaces} isSuperadmin={isSuperadmin} canManageMakerspace={canManageMakerspace} currentUser={currentUser} onAuthRefresh={onAuthRefresh} allowedTabs={allowedTabs} singleTenantLocked={singleTenantLocked} />
       {activeTab === "audit" && canViewAudit ? <AuditLog makerspaceId={activeMakerspace?.id} /> : null}
       </Suspense>
     </StaffPanelErrorBoundary>

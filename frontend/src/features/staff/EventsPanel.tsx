@@ -23,6 +23,7 @@ import { useUrlListState } from "../../lib/useUrlListState";
 import { ListViewControls } from "./ListViewControls";
 import { useSearchParams } from "react-router-dom";
 import { useQuickCreate } from "./quickCreate";
+import { useDomainSettingsDialog } from "./useDomainSettingsDialog";
 
 export { EventDrawer };
 
@@ -59,6 +60,8 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
   const [selectedSeriesId, setSelectedSeriesId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   useQuickCreate("event", () => { setCreationMode("single"); setCreating(true); });
+  // The Event Manager owns the events.* switches and event defaults (domain-settings API).
+  const eventSettings = useDomainSettingsDialog(makerspaceId, "events");
 
   function submit() {
     // Unknown default and untouched field: let the server apply the space's default audience.
@@ -119,7 +122,7 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
     submit={{ label: creationMode === "single" ? "Create event" : "Create series", pending: create.isPending || createSeries.isPending, pendingLabel: "Creating…",
       disabled: events.isPending, disabledReason: events.isPending ? "Loading this space's default registration audience." : undefined, onClick: creationMode === "single" ? submit : submitSeries }} />;
   return <div><ListLayout
-    header={{ title: "Events", subtitle: "Bring people together. Make something happen.", primary: denied ? undefined : { label: "New event", onClick: () => { setCreationMode("single"); setCreating(true); } }, secondary: denied ? undefined : { label: "New series", onClick: () => { setCreationMode("series"); setCreating(true); } } }}
+    header={{ title: "Events", subtitle: "Bring people together. Make something happen.", primary: denied ? undefined : { label: "New event", onClick: () => { setCreationMode("single"); setCreating(true); } }, secondary: denied ? undefined : { label: "New series", onClick: () => { setCreationMode("series"); setCreating(true); } }, overflow: denied ? undefined : eventSettings.actions }}
     callout={denied ? undefined : collaborations.callout}
     state={denied ? { status: "ready" } : opsQueryState(view.active === "series" ? series : events, "events")}
     isEmpty={Boolean(denied) || (view.active === "series" ? !series.data?.results.length : !events.data?.count)}
@@ -131,5 +134,6 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
     body={{ kind: "rows", rows: view.active === "series" ? series.data?.results.map(row => <ListRow key={row.id} title={row.title} onClick={() => setSelectedSeriesId(row.id)} draft={row.status === "draft"} identity={row.next_occurrence_at ? { kind: "date", date: row.next_occurrence_at } : { kind: "icon", icon: "Calendar", tone: "accent" }} meta={`${row.future_occurrence_count} buffered · ${row.next_occurrence_at ? new Date(row.next_occurrence_at).toLocaleString() : "No future occurrence"}`} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />) : !shown.length ? <EmptyState message={view.active === "all" ? "No events match this search." : `No ${opsStatusLabel(view.active).toLowerCase()} events.`} /> : shown.map(item => <ListRow key={item.id} title={item.title} identity={{ kind: "date", date: item.starts_at }} draft={item.status === "draft"} onClick={() => openEvent(item.id)} meta={<>{dateRange(item)}{item.location ? ` · ${item.location}` : ""}<span className="block">{item.registration_counts.pending_approval} pending</span></>} right={<div className="grid justify-items-end gap-2"><StatusBadge domain="event" status={item.status} label={opsStatusLabel(item.status)} /><span className="text-sm tabular-nums">{item.registration_counts.registered + item.registration_counts.attended} / {item.capacity || "unlimited"} going</span>{item.capacity ? <progress className="h-1 w-28 accent-accent" value={item.registration_counts.registered + item.registration_counts.attended} max={item.capacity} aria-label={`${item.title} places filled`} /> : null}</div>} />) }}
     pagination={isSeries ? series.data ? { page, pageSize: EVENT_SERIES_PAGE_SIZE, count: series.data.count, onChange: setPage } : undefined : events.data ? { page, pageSize: 24, count: events.data.count, onChange: setPage } : undefined}
     detail={denied ? undefined : collaborations.detail} />
+    {eventSettings.dialog}
   </div>;
 }

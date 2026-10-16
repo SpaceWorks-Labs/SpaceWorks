@@ -35,7 +35,10 @@ export function StaffShell(props: Props) {
   // "granted" (Assigned resources) is a global tab: event/booking grant holders reach it with no workspace selected.
   const tabs = space ? allowedTabs.filter(key => key !== "requests" || !noQueues || !redirectTab)
     : allowedTabs.filter(key => ["organizations", "platform-dashboard", "granted"].includes(key));
-  const nav = sidebarSections(tabs, activeTab, path, props.setTab, props.handoutOnly);
+  // Full-access staff (Space Manager, superadmin) get the task-grouped menu; narrower roles
+  // keep their existing, already short one.
+  const spaceManager = !!space && (props.isSuperadmin || props.actions.includes("manage_makerspace"));
+  const nav = sidebarSections(tabs, activeTab, path, props.setTab, props.handoutOnly, spaceManager);
   let activeKey = activeTab;
   for (const section of nav) for (const item of [...section.items, ...section.more ?? []]) {
     if (item.key === "notifications") { item.badge = unread; item.badgeLabel = "unread"; }

@@ -44,8 +44,8 @@ function serverPageSize(data: Page<unknown>, page: number) {
   return Math.max(1, Math.round((data.count - length) / (page - 1)));
 }
 
-export function PersonalInbox({ makerspaceId, member = false, announcement }: {
-  makerspaceId: number; member?: boolean; announcement?: Action;
+export function PersonalInbox({ makerspaceId, member = false, announcement, overflow }: {
+  makerspaceId: number; member?: boolean; announcement?: Action; overflow?: Action[];
 }) {
   const client = useQueryClient();
   const send = member ? memberRequest : staffRequest;
@@ -79,7 +79,7 @@ export function PersonalInbox({ makerspaceId, member = false, announcement }: {
     <ListLayout header={{ title: member ? "Your inbox" : "Notifications", subtitle: "Activity from your Space Works community.",
       meta: <span aria-live="polite">({unreadCount} unread)</span>,
       primary: { label: "Mark all read", onClick: () => readAll.mutate(), pending: readAll.isPending, pendingLabel: "Marking read…",
-        disabled: !unreadCount, disabledReason: !unreadCount ? "You're all caught up." : undefined }, secondary: announcement }}
+        disabled: !unreadCount, disabledReason: !unreadCount ? "You're all caught up." : undefined }, secondary: announcement, overflow }}
       tabs={tabs.tabs.map(tab => tab.key === "unread" ? { ...tab, count: unreadCount } : tab)} activeTab={tabs.active}
       filters={{ controls: <label className="grid gap-1 text-sm">Family<select className="desk-input" value={feature}
         onChange={event => { setFeature(event.target.value); setPage({ page: 1, tab: tabs.active }); }}>

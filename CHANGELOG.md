@@ -13,6 +13,23 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
+- **Space Works design system** — brand v1 colours, approved Gilroy text and headings,
+  Unbounded accents and supplied logo masters; a sidebar shell and shared page layouts replace
+  the header/dock UI. The restoration pass restores existing workflow controls across consoles.
+- **Events and bookings programme** — resource-specific staff grants, answer editing and
+  cancellation undo, draft cloning, private ticket/booking confirmations and arrival tracking,
+  curated public websites, email campaigns, signed integration reads, printable credentials
+  and scoped reports. Shared mechanisms keep the two domains independently removable.
+- **Installer choices** — hosting, website, HTTPS and storage precede optional control-plane
+  proxy access, web/organization/makerspace identity, platform MFA and Google/Apple/GitHub
+  selection, then areas and follow-ups, admin, Stripe, repository and optional deploy runner.
+  Provider keys are configured later; Inventory, Machines and Reports default on.
+- **Platform sign-in** — GitHub browser OAuth with PKCE and verified email is member-only;
+  audited login-method settings and the host `set_login_methods` command prevent lockout.
+  Platform MFA can be paused without deleting credentials; superadmins enroll optionally.
+- **Optional control-plane access** — default-off `CONTROL_PLANE_PROXY`, a peer-IP allowlist
+  and an independent loopback HTTPS SSH-tunnel fallback on supported TLS installations.
+
 - **Owner organizations at setup** — the installer asks for the organization name as its own question,
   before the makerspace name. New makerspaces created in the staff console, API or `/control/` require an existing
   active owner organization or a new name; the console includes search and pagination. Creation and
@@ -30,8 +47,6 @@ carries the design rule each change introduced.
 - **Tests run locally only** — run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` before pushing.
   Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
   and optionally deploys through the self-hosted runner; `pip-audit` still runs on PRs.
-
-## Unreleased
 
 - Seven fixed roles replace editable roles. Staff role sets combine except Space Manager and Member,
   which stand alone; Machine Manager reach is assigned per person by machine type. The console now

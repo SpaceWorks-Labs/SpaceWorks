@@ -26,8 +26,11 @@ exclusions applied in SQL rather than queried per tenant.
   `frontend/src/features/kiosk/kioskReplayApi.ts` hand-writes typed prepare/execute calls using only
   Station cookie + human lease; `kioskReplayClient.ts` now owns encrypted foreground/SW replay.
   The staff recovery screen remains phase 9e.
-- `backend/apps/payments/` — immutable multi-subject Payment authority, per-space raw credentials + managed
-  Stripe Connect resolution, checkout/webhook settlement, reconciliation, native PaymentSheet intents.
+- `backend/apps/payments/` — permanently core Payment/ManualSettlement ledger, reconciliation,
+  member history and receipts. `availability.py` separates `charges.*` recording from online checkout.
+  `backend/apps/payments_rail/` owns removable provider-facing routes (checkout, native intents,
+  Connect, refunds and webhooks); shared provider services retain their established payments paths.
+  These include per-space credentials, managed Stripe Connect resolution and provider settlement.
   `services_checkout.py` is the explicit compatibility barrel over `checkout_coordination.py`
   (credential/payment locks) and `checkout_provider.py` (provider requests and currency helpers).
   `services_webhooks.py` re-exports Connect handling from `services_connect_webhooks.py`;
@@ -46,8 +49,9 @@ exclusions applied in SQL rather than queried per tenant.
   serializers, admin surface or frontend; `tests/roadmap/test_removed_surfaces.py` asserts they stay removed.
 - `backend/apps/machines/` — machine registry and service workflows. Machine-role authorization keeps a
   thin `role_scope.py` import surface over `role_scope_resolution.py` (including the identity-sensitive
-  `EXEMPT`/`NOTHING` sentinels), `role_scope_grants.py`, and `role_scope_queries.py`; scope mutations remain
-  in `role_scope_services.py`.
+  `EXEMPT`/`NOTHING` sentinels), `role_scope_grants.py`, and `role_scope_queries.py`.
+  `models_membership_scope.py` stores per-person machine-type links; `member_scope_services.py`
+  writes them. The removed `role_scope_services.py` no longer owns role-level scope.
 - `backend/apps/events/` — the separable events module. `models.py` is the stable explicit re-export barrel
   over `models_event.py`, `models_registration.py`, `models_attendance.py`, `models_feedback.py`,
   `models_station.py`, `models_certificates.py`, `models_series.py`, `models_calendar.py`, `models_collaborators.py` and
@@ -76,6 +80,12 @@ exclusions applied in SQL rather than queried per tenant.
   contains the registration contracts re-exported by `serializers_admin.py`;
   `serializers_ticketing_public.py` shares discovery fields between public and partner events.
   `views_public_detail.py` reuses the public contract; `urls_ticketing.py` owns staff ticketing routes.
+  `services_registration_tools.py` owns validated answer edits and exact cancellation undo;
+  `services_clone.py` copies draft configuration and independently owned covers without grants
+  or participation. `feedback_templates.py` supplies starter surveys and refuses replacement
+  after responses. `services_series_admission.py` locks the complete organization-audience
+  source set before a series update or waiter promotion. `views_ticket.py` serves exact-owner
+  ticket details/PNG downloads; `views_registration_calendar.py` serves the owned ICS file.
 - `backend/apps/warranty/`, `apps/maintenance/`, `apps/events/`, `apps/bookings/`, `apps/forms_schema/`,
   `apps/encryption/`, `apps/procurement/`, `apps/notifications/`, `apps/operations/report_registry.py` — the
   remaining FabLab + governance modules.

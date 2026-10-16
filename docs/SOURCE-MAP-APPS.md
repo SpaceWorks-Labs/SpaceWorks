@@ -10,7 +10,12 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   Auth & RBAC module: thin `rbac.py` import surface/coordinator over `rbac_actions.py`,
   `rbac_memberships.py`, `rbac_organizations.py`, and `rbac_superadmin.py` (`can(...)`, action-based
   `actions_for_membership`/`makerspaces_for_action`/`scope_by_action`, makerspace scoping, superadmin
-  hide/archive exclusion).
+  hide/archive exclusion). GitHub member-only OAuth lives in `github_browser.py` (PKCE attempts),
+  `github_http.py` (bounded token/profile/email exchange), `serializers_github.py` and
+  `views_github.py` (browser start/callback). It reuses the browser-attempt ledger and never issues
+  staff sessions. `login_methods.py` reads platform policy; `login_methods_services.py` applies
+  audited setup/command changes and `login_methods_validation.py` prevents account lockout.
+  `management/commands/set_login_methods.py` is the host recovery/configuration entry point.
 - `backend/apps/makerspaces/` — `Makerspace` model (tenant root; unique `slug`; `frontend_domain`, module
   flags, `resource_limit_overrides`, `archived_at`, `superadmin_access_enabled`), bootstrap views, dynamic
   CORS, module guards, `module_registry.py` (canonical module registry — all module lists derive from
@@ -26,7 +31,8 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `local_now`, `to_local`, `local_day_bounds`, `is_open` and `next_open_interval`
   (aware inputs, UTC half-open bounds; fold/gap policy in its docstring).
   `admin_api/views_makerspace_profile.py` serves audited, MANAGE_MAKERSPACE-scoped
-  `/admin/makerspace/<id>/profile`; currency uses `MakerspacePaymentSettings.default_currency`.
+  `/admin/makerspace/<id>/profile`; `profile_settings.py` shares its audited writer with setup.
+  Currency uses `MakerspacePaymentSettings.default_currency`.
   `origin_scope.py` (browser origin→tenant guard), `provisioning.py`/`hosting.py`, `secrets.py`.
   `models_stations.py` owns shared inert `Station` metadata plus the complete live
   `StationCredential` envelope; `station_credentials.py`, `station_sessions.py`, `station_security.py` and
@@ -45,11 +51,11 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   The handover side owns `hardware_requests/kiosk_command_policy.py` (the literal operation table),
   `kiosk_online_commands.py` (work package + dispatch into existing workflows) and `kiosk_views.py`;
   `evidence/services_upload.py` is the shared row+staging-presign service.
-- `backend/apps/organizations/audience.py` ? always-present explicit-organization account
+- `backend/apps/organizations/audience.py` — always-present explicit-organization account
   eligibility, batched SQL and membership-source locks. No separable-domain imports or RBAC
   grants. `admin_links.py` routes owner-link admin mutations through `services_console.change_link`;
   the original admin barrel preserves registration/import compatibility.
-- `backend/apps/makerspaces/capability_definitions_yuyu.py` ? parity feature definitions,
+- `backend/apps/makerspaces/capability_definitions_yuyu.py` — parity feature definitions,
   composed by the canonical capability catalogue and installer area discovery.
 - `backend/apps/organizations/` — `Organization` (platform entity, creatable before any makerspace, NOT a
   module_registry key), its opt-in public profile and cross-makerspace event catalogue,
@@ -143,6 +149,9 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `webhook_schema.py` owns v2 event schemas (`docs/webhooks-v2.md`).
   F3's bounded templates live in `email_templates_registry_research.py`; domain
   adapters use `notifications_research.py` for on-commit staff and owner email delivery.
+  `broadcasts_templates.py` validates bounded shared campaign placeholders and renders them
+  through the existing email engine. `delivery_content.py` holds transient rendered SMTP content
+  separately from encrypted mapped model attributes, preserving strict PII reads.
 - Production release deployment - see [deployment source map](SOURCE-MAP-PLATFORM.md).
 - `backend/apps/backup/` - see [recovery source map](SOURCE-MAP-RECOVERY.md) for ownership and entry points.
 - `backend/apps/devices/` — device identity (phase 7a, separable, module `devices`). `models_identity.py`
@@ -172,6 +181,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   are thin barrels: the exported field lists live in `classification_domain.py`, the global/omitted
   model reasons in `classification_platform.py`, and the declared `accounts.User` edges in
   `references_core.py`; adapter extensions compose `classification_7b.py`/`references_7b.py`.
+  `restore_hooks.py` clears copied download bearers during restore and slice staging.
   Credential omission checks live in `guards_credentials.py` behind the original `guards.py` exports. Its `guards._equal(subject, declared,
   actual)` is called with the *scanned* set passed as `declared`, so `extra=` in a failure means **scanned
   but not registered** — read the signature before deciding which side to fix.

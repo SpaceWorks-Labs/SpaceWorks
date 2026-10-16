@@ -121,8 +121,9 @@ cash needs none of this module and still keeps a full ledger of what members owe
   the charge, members see what they owe, and staff settle it in person and record how (cash, UPI,
   bank transfer, card machine, cheque) in the append-only manual-settlement ledger. What disappears
   is only the ability to pay by card online.
-- **Installed ≠ charging.** The module being on means the *surfaces* exist. No charge can be created
-  until a Space Manager turns on a `payments.<area>` feature **and** valid credentials resolve.
+- **Tracking and checkout are separate.** `charges.enabled` plus `charges.<domain>` records priced
+  debts without this module or gateway credentials. Online checkout additionally requires this module,
+  `payments.enabled`, the matching `payments.<domain>` feature and valid provider credentials.
 - **Data** — **payments are never purged by a module purge.** A charge is the record of money that really
   changed hands, so receipts stay readable and a pending charge stays payable, waivable and markable
   paid, keeping the description it was raised under. Only purging the whole makerspace removes them.

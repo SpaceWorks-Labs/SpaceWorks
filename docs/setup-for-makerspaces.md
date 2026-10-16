@@ -109,10 +109,17 @@ When the script finishes it prints two web addresses. Open them in a browser:
 
 - **Public catalog** — what your community sees (browse + request).
 - **Staff console** (`…/admin`) — the React console where Space Managers, Inventory Managers,
-  custom handover staff, and the Super Admin do day-to-day work.
+  Handover staff, and the Super Admin do day-to-day work. Machine, Event and Booking Managers use
+  their assigned workflows; the seventh built-in role, Member, is for community members.
 
-The Django control plane is at `/control/` on the backend only. It is an operator-only tool and is
-not exposed on the public website/port.
+The Django control plane at `/control/` is for superadmins. Website access is **off by default**;
+on supported bundled installs, setup can enable `CONTROL_PLANE_PROXY` to route it and its MFA page
+through the website. `CONTROL_PLANE_ALLOW_CIDRS` can limit access to allowed peer IPs/networks
+(blank allows any peer; forwarded client-IP headers do not bypass it). With automatic HTTPS,
+`CONTROL_PLANE_TUNNEL_PORT` can provide a loopback-only HTTPS listener for an SSH tunnel instead
+(Docker Engine 28+). SaaS and API-only behind your own proxy do not offer this switch. Operators can
+change these choices later with installer option 6 or `scripts/apply-settings.sh`; see the
+[control-plane rules](INVARIANTS.md#container--deployment-invariants).
 
 **Write down the admin username and password it shows.** If you let it generate a password, that
 line is the only time it's displayed.

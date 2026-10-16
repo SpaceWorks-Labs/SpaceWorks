@@ -15,8 +15,8 @@ method and status; latency buckets distinguish route and method. Labels use Djan
 templates, never raw URLs, query strings, user IDs or bearer values. Unknown routes/methods use fixed
 labels. The recovery gate remains first and can refuse traffic before instrumentation.
 
-Compose and Helm configure the worker directory and Gunicorn hooks automatically. The all-in-one
-supervisor clears a shared directory once before launching its two masters. For a custom Gunicorn deployment set `PROMETHEUS_MULTIPROC_DIR` to a process-writable directory dedicated to **one master**
+Standard Compose containers and Helm configure the worker directory and Gunicorn hooks automatically.
+For a custom Gunicorn deployment set `PROMETHEUS_MULTIPROC_DIR` to a process-writable directory dedicated to **one master**
 and `GUNICORN_CMD_ARGS=--config python:config.gunicorn_metrics`. Do not use `--preload`. The hook clears
 old worker files once before the WSGI app loads and marks dead workers on recycling. Counters and
 histograms aggregate across workers, including already-exited workers. Separate masters/pods need
@@ -67,4 +67,5 @@ after navigation. Run it against the real stack with `analytics-secrecy.spec.ts`
 
 Compose base, bundled production and Cloud forward the optional settings to all backend writers and
 the frontend. The existing installer questions/path are unchanged; operators opt in through the
-committed deployment environment. All-in-one uses the same runtime config/CSP writer.
+committed deployment environment. The all-in-one image is retired; existing single-box installations
+must follow the [standard-container switch steps](update-recovery.md#moving-off-a-single-box-install).

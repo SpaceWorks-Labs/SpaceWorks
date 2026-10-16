@@ -112,11 +112,16 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   console narrowing, not a grant ceiling. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
   remain the handover API surface (module key `guest_handover`); renaming them would break clients.
   Full detail: **Handover roles** in `docs/INVARIANTS.md`.
-- Public request submission requires an **authenticated member** (`RequestSubmitView` → `IsAuthenticated`),
-  and request lookup is scoped to that verified identity — it never matches free-text contact fields (no
-  enumeration by known email/phone). Since the Check-In retirement (`73a480c`) this is enforced by member
-  auth rather than an external verify call.
-- Sensitive browser changes (custom roles/staff grants, API-client management and organization
+- Public borrow-request access is derived by `makerspaces/request_access.py`: with **`membership` on**,
+  an active member must pass the applicable presence, waiver and current-term checks; with it **off**,
+  an active signed-in account may submit. A per-makerspace **account-less request opt-in** additionally
+  admits anonymous proposals only while `membership` is off. Installing membership clears that opt-in.
+  `RequestSubmitView` uses `AllowAny` and enforces these branches itself; anonymous submissions need
+  contact details, an `Idempotency-Key` and IP/email throttles. Staff acceptance still reserves stock.
+  Identity-based borrower history remains authenticated and owner-scoped — never match free-text
+  email/phone or expose the shared anonymous principal's history. Existing public request-status
+  links remain bearer-token reads.
+- Sensitive browser changes (staff role-set assignments/grants, API-client management and organization
   governance/deletion) require recent, server-owned session reauthentication. Refresh never renews
   that proof; `/control/` keeps its separate MFA and reauthentication surface.
 - Inventory Managers can run the full hardware lifecycle but **cannot** manage printing, staff, or

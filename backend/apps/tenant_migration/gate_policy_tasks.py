@@ -71,6 +71,12 @@ TASK_TENANT_RESOLVERS = {
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.notifications.tasks.deliver_member_push": (
+        "Resolves inbox_row.makerspace and holds its dedicated source boundary through delivery."
+    ),
+    "apps.notifications.tasks.sweep_member_push": (
+        "Recovery enqueues each tenant's rows inside a skip-and-count source boundary."
+    ),
     "apps.integrations.broadcasts_worker.broadcast_batch": "Typed adapter resolves one tenant; shared source and PII fences precede campaign/outbox locks.",
     "apps.integrations.broadcasts_worker.resume_broadcasts": "Campaign/outbox recovery uses per-tenant skip-and-count boundaries.",
     "apps.data_export.subject_tasks.sweep_subject_exports_task": (
@@ -129,6 +135,7 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.notifications.tasks.sweep_member_push": "Member push recovery gates each tenant separately.",
     "apps.integrations.broadcasts_worker.recover_for_tenants": "Recover durable campaigns and outboxes only inside each tenant's source gate.",
     "apps.data_export.subject_tasks.sweep_subject_exports_task": "Personal export recovery gates each tenant.",
     "apps.makerspaces.membership_admission_payments.sweep_admissions": (

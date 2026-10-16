@@ -590,6 +590,10 @@ if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
 CELERY_BEAT_SCHEDULE = {
+    "member-push-recovery": {
+        "task": "apps.notifications.tasks.sweep_member_push",
+        "schedule": crontab(minute="*/5"),
+    },
     "reminder-sweep": {
         "task": "apps.operations.tasks_reminders.run_reminder_sweep_task",
         "schedule": crontab(minute="*/5"),

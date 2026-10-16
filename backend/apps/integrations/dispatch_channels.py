@@ -1,5 +1,6 @@
 import logging
 import re
+from uuid import uuid4
 
 from django.db import transaction
 from django.utils import timezone
@@ -126,6 +127,8 @@ def dispatch_channel(
     # Push resolves its recipients at delivery time, so the alert's subject has to travel
     # on the row or a narrowed recipient rule would match nothing by then.
     stored_payload = dict(payload or {})
+    if channel == NonEmailNotificationChannel.NATIVE_PUSH:
+        stored_payload.setdefault("event_key", str(uuid4()))
     if scope is not None and hasattr(scope, "as_dict"):
         stored_payload["scope"] = scope.as_dict()
 

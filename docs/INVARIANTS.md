@@ -1355,6 +1355,41 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   stale rows for an uninstalled module fall back rather than mute. Native push is filtered by the same
   selection, which is why `dispatch_channel` stores the scope on the log — push resolves recipients at
   DELIVERY time and would otherwise match nothing.
+- **Member push is intentionally coupled to personal inbox rows.** Only newly created
+  `NotificationInboxRow.audience=member` rows enqueue `deliver_member_push` after commit;
+  the tenant and personal `in_app` switches must therefore have admitted the inbox row.
+  A requester who is also staff gets one member-audience row with requester wording.
+  Existing rows backfill to `staff`. Scope snapshots contain only validated positive
+  `machine_id`, `machine_type_id` and `category_id` values for requester-selection rechecks.
+  Delivery rechecks `mobile.push`, the tenant `(feature, native_push)` matrix cell,
+  platform credentials, tenant servability, source module availability, the notifications
+  module and `notifications.member_inbox`. These global gates leave delivery rows unchanged.
+  Recipient gates recheck `inbox.eligible_owner`, an **active local membership** (account-only
+  inbox readers do not qualify for push), `receives_notifications`, scoped requester
+  selection and personal `native_push`. Each device must be active in that makerspace,
+  owned by the recipient, with an active matching grant and approved global registration.
+  Recipient/device failures create or mark retryable per-device work `skipped`.
+  The title is the makerspace name (64 characters); the body is the normally decrypted
+  row summary (178 characters), never the staff `LifecyclePayload.text`.
+  `MemberPushDelivery` is unique per inbox row/device, omitted from portable exports like
+  inbox telemetry, and cascades with its inbox row/device; it has no direct User FK.
+  Claims atomically admit `pending`/`failed` or **expired `sending`**, require attempts < 5,
+  increment attempts and set a fresh UUID token plus a two-minute lease. Completion is
+  fenced by that token; stale workers cannot overwrite a newer attempt. Transient failures
+  back off; invalid tokens deactivate the device and exhaust the delivery budget. A
+  five-minute sweep recovers retryable and expired work in beat and the beat-less runner,
+  inside per-tenant source-gate boundaries. Provider calls never span an application DB
+  transaction. **Best-effort with possible duplicates**: provider acceptance can precede a
+  worker crash before `sent` is recorded. Enqueue failure or exhausted retries preserve
+  the readable inbox row. Staff retain their independent matrix push path.
+- **Native push payload v2 is shared by staff and member delivery.** String-valued data
+  carries `v=2`, stable `event_id`, `makerspace_id`, `feature`, `event`, and member-only
+  `inbox_row_id`. Member identity is the inbox event UUID; staff logs persist the lifecycle
+  event key in their payload (older logs fall back to their stable log ID). Both titles
+  name the makerspace. A `link` is included only after `inbox.safe_link` **and** the existing
+  `integrations.mobile_link_contract.is_supported_link` accept it; otherwise apps fall
+  back to the makerspace inbox. APNs adds `aps.thread-id=makerspace_id`; there are no
+  collapse semantics. Both paths use the same one-device FCM/APNs sender.
 - **`NotificationDestination` — one row per room, and `[None]` means the legacy column.**
   `destinations.resolve_destinations` returns rows **or the single sentinel `None`**, which every sender
   already handles. No rows for a channel ⇒ `[None]` ⇒ byte-for-byte the old behaviour, which is what makes
@@ -1385,7 +1420,8 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   falling back to `LifecyclePayload.text` when absent, inactive, unknown, empty or broken. **Chat is a
   STAFF surface, enforced in code**: `render_chat_text` raises on a requester audience and resolves only
   STAFF entries — a webhook is a room, so "your booking is confirmed" would expose that member's name to
-  everyone with channel access. Native push takes `payload.text`, not the chat body.
+  everyone with channel access. Staff native push takes `payload.text`; member native push
+  takes the addressed inbox row's member summary.
 - **Recipient object scoping composes as `role_scope AND (rule_scope OR all)` — narrowing only.** Rule
   links reuse the destination shape (`no links ⇒ everything`); the role floor reuses `machines/role_scope`
   via the batch `manage_scopes_for_memberships` (two queries, not an N+1), never a parallel resolver. **The

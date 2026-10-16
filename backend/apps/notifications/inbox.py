@@ -11,6 +11,7 @@ from apps.integrations.staff_notifications import staff_user_ids_for_feature
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.notifications.models_inbox import NotificationInboxRow
+from apps.notifications.inbox_scope import scope_snapshot
 from apps.notifications.preferences import personal_enabled
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,8 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
     if not is_servable(makerspace) or not module_enabled(makerspace, "notifications") or not feature_available(makerspace, feature):
         return
     recipients = {}
+    member_ids = set()
+    stored_scope = scope_snapshot(payload.scope)
     if payload.staff_channels_enabled:
         for user_id in staff_user_ids_for_feature(makerspace, feature, event, payload.scope):
             recipients[user_id] = InboxDelivery(
@@ -81,6 +84,7 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
             if eligible_owner(makerspace, delivery.user_id):
                 # Requester wording wins when an owner is also staff.
                 recipients[delivery.user_id] = delivery
+                member_ids.add(delivery.user_id)
     for user_id, delivery in recipients.items():
         if not personal_enabled(makerspace, user_id, feature, "in_app", event=event):
             continue
@@ -90,10 +94,15 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
             ).get_or_create(
                 makerspace=makerspace, user_id=user_id, event_key=event_key,
                 defaults={"feature": feature, "event": event, "title": delivery.title[:200],
+                          "audience": "member" if user_id in member_ids else "staff", "scope": stored_scope,
                           "summary": delivery.summary[:12000], "link": safe_link(delivery.link)},
             )
             if created:
                 transaction.on_commit(lambda uid=user_id: _hint(makerspace.pk, uid), robust=True)
+                if row.audience == "member":
+                    from apps.notifications.member_push import enqueue_member_push
+
+                    transaction.on_commit(lambda rid=row.pk: enqueue_member_push(rid), robust=True)
 
 
 def _hint(makerspace_id, user_id):

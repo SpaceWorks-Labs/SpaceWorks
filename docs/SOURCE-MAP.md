@@ -182,6 +182,12 @@ owns its durable release claims. `views_timing.py` configures tenant timing and 
 encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs and writes
 address-hash suppression. `notifications/models_broadcasts.py`, `broadcasts.py` and
 `views_broadcasts.py` own scoped member segments, matrix fan-out and personal announcements.
+`notifications/models_push.py` owns member push delivery leases; `member_push.py`,
+`member_push_policy.py` and `member_push_leases.py` separate sending, delivery-time gates
+and fenced claims. `notifications/tasks.py` queues delivery and five-minute recovery.
+`notifications/inbox_scope.py` validates persisted requester-selection subjects.
+`integrations/push.py` shares one-device provider sending; `push_payload.py` builds v2
+data through the existing `mobile_link_contract.py` routing contract.
 `payments/failure_notifications.py` handles verified failed attempts without closing debt.
 `payments/services_mobile.py` coordinates native rail locks and vendor dispatch;
 `services_mobile_razorpay.py` validates and recovers native Orders through

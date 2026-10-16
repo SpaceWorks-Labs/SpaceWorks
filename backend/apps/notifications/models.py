@@ -2,6 +2,7 @@ from django.db import models
 
 from .models_broadcasts import MemberBroadcast
 from .models_inbox import MemberNotificationPreference, NotificationInboxRow
+from .models_push import MemberPushDelivery
 
 
 class Notification(models.Model):

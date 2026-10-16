@@ -139,6 +139,9 @@ Requires `member_accounts`.
   payment sheet.
 - **What it adds** — device registration and revocation, push delivery (feature `mobile.push`), and
   PaymentSheet when `payments` is also on.
+  Member push requires a personal member-audience inbox row, `notifications.member_inbox`,
+  an active local membership, the tenant native-push matrix cell and personal preference;
+  staff push remains on its existing matrix channel. See [notification-inbox.md](notification-inbox.md).
 - **Without it** — native apps cannot hold a session for this space; the web app is unaffected.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
 

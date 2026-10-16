@@ -58,7 +58,7 @@ export function MfaAccountPage() {
         label: enabled ? "Regenerate recovery codes" : "Enroll authenticator", pending: busy, disabled: (needsPassword && !password) || status.isLoading,
         disabledReason: passwordAvailable ? "Confirm your current password to continue." : "Managing an enrolled authenticator requires a current password.",
         onClick: () => enabled ? change.mutate("recovery") : enroll.mutate() }}
-      footer={<div className="grid gap-4"><div className="flex flex-wrap gap-4"><Link to="/admin" className="desk-link min-h-11">Staff sign-in</Link><Link to="/member" className="desk-link min-h-11">Member sign-in</Link></div>
+      footer={<div className="grid gap-4"><div className="flex flex-wrap gap-4"><Link to="/admin" className="inline-flex min-h-11 items-center rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Staff sign-in</Link><Link to="/member" className="inline-flex min-h-11 items-center rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Member sign-in</Link></div>
         {ready && enabled && !status.data?.required ? <DangerZone title="Disable MFA" consequence="Your account will use password sign-in without an authenticator."
           action={{ label: "Disable MFA", disabled: !password || busy, onClick: () => setConfirmDisable(true) }} /> : null}</div>} />
     <ConfirmDialog open={confirmDisable} title="Disable MFA?" message="Your account will no longer require an authenticator." confirmLabel="Disable MFA" tone="danger" pending={change.isPending}

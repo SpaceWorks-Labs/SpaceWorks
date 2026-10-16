@@ -4,10 +4,10 @@ import { createPortal } from "react-dom";
 /** True inside an overlay that already lives at the top of the document. */
 export const OverlayPortalContext = createContext(false);
 
-// Page-scoped context an overlay must keep when it leaves its place in the tree: kiosk sizing, the
-// staff console's control boundaries and DetailLayout's drawer width/stacking rules (layouts.css).
+// Page-scoped context an overlay must keep when it leaves its place in the tree: kiosk sizing and
+// DetailLayout's drawer width/stacking rules (layouts.css).
 // Applied to a display:contents wrapper, so no box is added.
-const CARRIED_CLASSES = ["sw-kiosk", "desk-shell", "sw-detail-drawer", "sw-detail-drawer-640", "sw-detail-drawer-720"];
+const CARRIED_CLASSES = ["sw-kiosk", "sw-detail-drawer", "sw-detail-drawer-640", "sw-detail-drawer-720"];
 
 /**
  * Renders a fixed overlay (modal, drawer) at the end of <body>, so an ancestor that is a CSS

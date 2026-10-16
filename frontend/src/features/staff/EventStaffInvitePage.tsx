@@ -62,16 +62,12 @@ export function EventStaffInvitePage() {
     try { setUser(await fetchMe()); setAuthError(""); }
     catch (error) { setAuthError(eventErrorText(error)); }
   };
-  // MemberAuthPanel owns this screen's page heading and main landmark; the invitation context sits above it.
-  if (!restoring && !user && (token || oidcCallback)) return <div className="desk-shell">
-    <section aria-label="Event staff invitation" className="mx-auto grid w-full max-w-lg gap-1 px-4 pt-6 text-center">
-      <p className="eyebrow">Event staff invitation</p>
-      <p className="text-sm text-muted">Sign in with the invited account to continue.</p>
-      {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}
-    </section>
-    <MemberAuthPanel onAuthenticated={() => { void authenticated(); }} />
-    <div className="px-4 pb-6 text-center"><button className="desk-button" type="button" onClick={cancel}>Cancel invitation</button></div>
-  </div>;
+  // The member sign-in screen is this page while signing in; the invitation names itself in its eyebrow.
+  if (!restoring && !user && (token || oidcCallback)) return <MemberAuthPanel eyebrow="Event staff invitation"
+    context={<div className="grid gap-2"><p className="text-sm text-muted">Sign in with the invited account to continue.</p>
+      {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}</div>}
+    footer={<button className="desk-button w-full" type="button" onClick={cancel}>Cancel invitation</button>}
+    onAuthenticated={() => { void authenticated(); }} />;
   const cancelAction = { label: "Cancel invitation", onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish." : undefined };
   const primary = redeem.isSuccess
     ? { label: "Sign in to staff console", pending: openStaff.isPending, pendingLabel: "Opening sign-in…", onClick: () => openStaff.mutate() }

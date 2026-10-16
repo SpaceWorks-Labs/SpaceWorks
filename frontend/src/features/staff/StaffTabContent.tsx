@@ -9,7 +9,8 @@ import { filterTabsByEnabledModules } from "./staffTabs";
 import { StaffPlatformTabContent } from "./StaffPlatformTabContent";
 import type { Makerspace } from "./panels/shared";
 import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
-import { PlatformDashboardPanel, GrantedEventsPanel, GrantedBookingSpacesPanel } from "./StaffTabLoaders";
+import { PlatformDashboardPanel } from "./StaffTabLoaders";
+import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
 
 import { PaymentsPanel, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
@@ -80,7 +81,7 @@ export function StaffTabContent({
   if (activeTab === "granted" && (currentUser.event_grants?.length || currentUser.booking_grants?.length)) {
     if (singleTenantLocked && lockedMakerspaceId === undefined) return <ListLayout header={{ title: "Assigned resources" }} state={{ status: "ready" }}
       isEmpty empty={{ message: "Unable to resolve this makerspace." }} body={{ kind: "rows", rows: null }} />;
-    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><div className="grid gap-6">{currentUser.event_grants?.length ? <GrantedEventsPanel grants={currentUser.event_grants} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /> : null}{currentUser.booking_grants?.length ? <GrantedBookingSpacesPanel makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /> : null}</div></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><GrantedResourcesPanel eventGrants={currentUser.event_grants} bookingGrants={Boolean(currentUser.booking_grants?.length)} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /></Suspense></StaffPanelErrorBoundary>;
   }
   if (!activeMakerspace) {
     return <ListLayout header={{ title: "No makerspace" }} state={{ status: "ready" }}

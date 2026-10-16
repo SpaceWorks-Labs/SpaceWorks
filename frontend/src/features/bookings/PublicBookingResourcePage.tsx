@@ -69,8 +69,8 @@ export function PublicBookingResourcePage() {
             <dl><dt className="eyebrow">Flat price</dt><dd className="font-semibold tabular-nums text-ink">{resource.payment_amount} {resource.currency.toUpperCase()}</dd></dl>
           </div> : null,
           form: !resource ? null : session === "restoring" ? <p role="status" className="text-sm text-muted">Restoring your session...</p>
-            : session === "anonymous" ? <div className="grid gap-3"><p>Sign in to submit a booking.</p>
-              <MemberAuthPanel makerspaceSlug={tenantSlug} onAuthenticated={() => setSession("authenticated")} /></div>
+            : session === "anonymous" ? <MemberAuthPanel embedded context={<p className="text-sm text-muted">Sign in to submit a booking.</p>}
+              makerspaceSlug={tenantSlug} onAuthenticated={() => setSession("authenticated")} />
             : <PublicBookingForm key={resourceToken} makerspaceSlug={tenantSlug} space={resource} showCalendar={false} />,
           note: approval ? "Your request stays pending until makerspace staff review it." : "A non-overlapping slot is confirmed immediately.",
           mobileBar: { summary: resource?.name ?? "Resource", label: "Choose a time" } }} />

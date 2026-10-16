@@ -61,15 +61,12 @@ export function BookingStaffInvitePage() {
     try { setUser(await fetchMe()); setAuthError(""); }
     catch (error) { setAuthError(eventErrorText(error)); }
   };
-  // Signing in: the member sign-in screen owns the page heading; this strip says why it is asking.
-  if (!restoring && !user && (token || oidcCallback)) return <div className="min-h-dvh bg-bg text-ink">
-    <div className="border-b border-line bg-panel"><div className="mx-auto grid max-w-[1192px] gap-1 px-4 py-4 sm:px-6">
-      <p className="eyebrow">Booking resource staff invitation</p><p className="text-sm text-muted">Sign in with the invited account to continue.</p>
-      {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}
-    </div></div>
-    <MemberAuthPanel onAuthenticated={() => { void authenticated(); }} />
-    <div className="flex justify-center px-4 pb-6"><button className="desk-button" type="button" onClick={cancel}>Cancel invitation</button></div>
-  </div>;
+  // The member sign-in screen is this page while signing in; the invitation names itself in its eyebrow.
+  if (!restoring && !user && (token || oidcCallback)) return <MemberAuthPanel eyebrow="Booking resource staff invitation"
+    context={<div className="grid gap-2"><p className="text-sm text-muted">Sign in with the invited account to continue.</p>
+      {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}</div>}
+    footer={<button className="desk-button w-full" type="button" onClick={cancel}>Cancel invitation</button>}
+    onAuthenticated={() => { void authenticated(); }} />;
   const cancelAction = { label: "Cancel invitation", onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish accepting." : undefined };
   return <CenteredCardLayout width={480} state={{ status: restoring ? "loading" : "ready" }}
     media={{ banner: redeem.isSuccess ? "success" : "accent" }}

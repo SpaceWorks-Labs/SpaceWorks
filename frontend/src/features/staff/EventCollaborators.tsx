@@ -1,4 +1,4 @@
-import { EmptyState } from "../../components/ui/EmptyState";
+import { Card, EmptyState } from "../../components/ui";
 import { useState } from "react";
 
 import {
@@ -6,8 +6,7 @@ import {
   useRemoveEventCollaborator,
   useReplaceEventCollaborators,
 } from "./eventCollaborationsApi";
-
-const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+import { panelField, panelInput, panelRow } from "./eventPanelStyles";
 
 const STATUS_LABEL: Record<string, string> = {
   invited: "Invited — waiting for them to accept",
@@ -52,30 +51,30 @@ export function EventCollaborators({ visible = true,
 
   if (!visible) return null;
   return (
-    <section aria-labelledby="collaborators-title" className="mt-5">
-      <h3 id="collaborators-title" className="mb-1 font-semibold text-ink">
-        Partner makerspaces
-      </h3>
-      <p className="mb-3 text-sm text-muted">
-        Invite another makerspace by its slug and its members can register for this event,
-        even when the event is not public. They must accept the invitation first. You invite
-        by slug because makerspaces are not browsable from here.
-      </p>
+    <section aria-labelledby="collaborators-title" className="grid gap-4">
+      <div>
+        <h3 id="collaborators-title" className="title-section">Partner makerspaces</h3>
+        <p className="mt-1 text-sm text-muted">
+          Invite another makerspace by its slug and its members can register for this event,
+          even when the event is not public. They must accept the invitation first. You invite
+          by slug because makerspaces are not browsable from here.
+        </p>
+      </div>
 
       {rows.length ? (
-        <ul className="mb-3 space-y-2 text-sm">
+        <ul className="grid gap-3">
           {rows.map((row) => (
-            <li key={row.id} className="flex flex-wrap items-center justify-between gap-2">
-              <span>
-                <span className="font-medium text-ink">{row.makerspace_name}</span>{" "}
-                <span className="text-muted">({row.makerspace_slug})</span>
-                <span className="block text-muted">
-                  {STATUS_LABEL[row.status] ?? row.status}
-                </span>
-              </span>
+            <li key={row.id} className={panelRow}>
+              <div className="min-w-0">
+                <p className="title-section break-words">
+                  {row.makerspace_name}{" "}
+                  <span className="text-sm font-normal text-muted">({row.makerspace_slug})</span>
+                </p>
+                <p className="mt-1 text-sm text-muted">{STATUS_LABEL[row.status] ?? row.status}</p>
+              </div>
               <button
                 type="button"
-                className={`desk-button text-danger ${FOCUS}`}
+                className="desk-button-danger-outline"
                 disabled={remove.isPending}
                 onClick={() => remove.mutate(row.id)}
               >
@@ -88,28 +87,29 @@ export function EventCollaborators({ visible = true,
         <EmptyState message="No partner makerspaces yet." />
       )}
 
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="grid gap-1 text-sm font-semibold text-ink">
-          Makerspace slug
-          <input
-            className={`desk-input ${FOCUS}`}
-            value={slug}
-            onChange={(event) => setSlug(event.target.value)}
-            placeholder="partner-space"
-          />
-        </label>
-        <button
-          type="button"
-          className={`desk-button ${FOCUS}`}
-          disabled={!slug.trim() || replace.isPending}
-          onClick={invite}
-        >
-          {replace.isPending ? "Inviting…" : "Invite"}
-        </button>
-      </div>
+      <Card>
+        <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); invite(); }}>
+          <label className={`${panelField} min-w-0 flex-1 basis-56`}>
+            Makerspace slug
+            <input
+              className={panelInput}
+              value={slug}
+              onChange={(event) => setSlug(event.target.value)}
+              placeholder="partner-space"
+            />
+          </label>
+          <button
+            type="submit"
+            className="desk-button-primary"
+            disabled={!slug.trim() || replace.isPending}
+          >
+            {replace.isPending ? "Inviting…" : "Invite"}
+          </button>
+        </form>
+      </Card>
 
       {error ? (
-        <p className="mt-2 text-sm text-danger" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {error instanceof Error ? error.message : "Could not update partners."}
         </p>
       ) : null}

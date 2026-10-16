@@ -9,10 +9,11 @@ import type { StaffAuthUser } from "../../lib/api";
 import { useAccessibleEvents } from "./eventStaffGrantsApi";
 import { opsStatusLabel } from "./opsPresentation";
 import { eventErrorText } from "./eventUi";
+import type { GrantedListFrame } from "./GrantedResourcesPanel";
 
 const permissionList = (permissions: string[] = []) => permissions.map((permission) => permission.replace(/_/g, " ")).join(", ");
 
-export function GrantedEventsPanel({ makerspaceId, grants = [] }: { makerspaceId?: number; grants?: StaffAuthUser["event_grants"] }) {
+export function GrantedEventsPanel({ makerspaceId, grants = [], frame }: { makerspaceId?: number; grants?: StaffAuthUser["event_grants"]; frame?: GrantedListFrame }) {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<{ id: number; makerspace_id: number } | null>(null);
   const [selectedSeries, setSelectedSeries] = useState<{ id: number; makerspace_id: number } | null>(null);
@@ -27,7 +28,7 @@ export function GrantedEventsPanel({ makerspaceId, grants = [] }: { makerspaceId
   const state: QueryState = series.length ? { status: "ready" } : events.isLoading ? { status: "loading" }
     : events.error ? { status: "error", error: eventErrorText(events.error), onRetry: retry } : { status: "ready" };
   const rows = events.data?.results ?? [];
-  return <ListLayout header={{ title: "Assigned events", subtitle: "Open an event to use your assigned permissions." }}
+  return <ListLayout header={{ title: "Assigned events", subtitle: "Open an event to use your assigned permissions." }} {...frame}
     state={state} isEmpty={Boolean(events.data && !rows.length && !series.length)}
     empty={{ message: "No assigned events. Your staff access may have expired or been revoked." }}
     body={{ kind: "rows", rows: <>

@@ -13,16 +13,17 @@ function ProfileForm({ makerspaceId, profile }: { makerspaceId: number; profile:
     {(Object.keys(labels) as (keyof AccountProfile)[]).map(name => <SettingsRow key={name} label={labels[name]} htmlFor={`account-${name}`}><input id={`account-${name}`} className="desk-input w-full" maxLength={limits[name]} value={draft[name]} onChange={event => setDraft({ ...draft, [name]: event.target.value })} /></SettingsRow>)}
     <p className="text-sm text-muted">These contact fields do not change your verified sign-in methods.</p>
     {JSON.stringify(draft) !== JSON.stringify(profile) || save.isPending ? <SettingsActions pending={save.isPending} onSave={() => save.mutate()} onDiscard={() => { setDraft(profile); save.reset(); }} /> : null}
-    {save.error ? <p role="alert" className="text-danger">{save.error.message}</p> : null}
-    {save.isSuccess ? <p role="status">Profile saved.</p> : null}
+    {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
+    {save.isSuccess ? <p role="status" className="text-sm text-success-ink">Profile saved.</p> : null}
   </form>;
 }
 
 export function MemberAccountProfile({ makerspaceId }: { makerspaceId: number }) {
   const profile = useQuery({ queryKey: [...accountKey(makerspaceId), "profile"], queryFn: () => ownProfile(makerspaceId), retry: false });
-  return <section className="desk-panel p-5"><h2 className="title-panel mb-4">Your profile</h2>
-    {profile.isLoading ? <p role="status">Loading profile…</p> : null}
-    {profile.error ? <p role="alert" className="text-danger">{profile.error.message}</p> : null}
+  // Rendered inside the account page's Profile settings section, which owns the card and the heading.
+  return <div className="grid min-w-0 gap-3">
+    {profile.isLoading ? <p role="status" className="text-sm text-muted">Loading profile…</p> : null}
+    {profile.error ? <p role="alert" className="text-sm text-danger">{profile.error.message}</p> : null}
     {profile.data ? <ProfileForm key={JSON.stringify(profile.data)} makerspaceId={makerspaceId} profile={profile.data} /> : null}
-  </section>;
+  </div>;
 }

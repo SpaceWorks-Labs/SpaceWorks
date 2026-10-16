@@ -1,4 +1,5 @@
 import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
+import { Card } from "../../components/ui";
 import { ChangePasswordGate } from "./ChangePasswordGate";
 import { LoginPanel } from "./LoginPanel";
 import { MfaFlow } from "../auth/MfaFlow";
@@ -10,16 +11,14 @@ import { useStaffSession } from "./useStaffSession";
 import { tabFromStaffPath } from "./staffTabs";
 import { useLocation } from "react-router-dom";
 
+/** A whole-screen status between sign-in and the console: the shell is not up yet, so this owns the landmark. */
 function StaffLoading({ message, restoring = false }: { message: string; restoring?: boolean }) {
-  const panelClass = restoring
-    ? "desk-panel flex w-full max-w-md flex-col items-center gap-4 p-8 text-center text-sm font-semibold text-muted"
-    : "desk-panel w-full max-w-md p-6 text-sm font-semibold text-muted";
   return (
-    <main className="desk-shell grid place-items-center px-5">
-      <div className={panelClass}>
+    <main id="main-content" className="grid min-h-dvh min-w-0 place-items-center px-4 sm:px-5">
+      <Card className={`w-full max-w-md text-sm font-semibold text-muted ${restoring ? "flex flex-col items-center gap-4 p-8 text-center" : "p-6"}`}>
         <SpaceWorksBadge className={restoring ? undefined : "mb-5"} />
-        <span>{message}</span>
-      </div>
+        <p role="status">{message}</p>
+      </Card>
     </main>
   );
 }
@@ -53,7 +52,8 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
     return <StaffLoading message="Restoring session..." restoring />;
   }
 
-  if (mfaChallenge) return <main className="desk-shell p-6"><MfaFlow key={mfaChallenge.challenge} challenge={mfaChallenge} onComplete={mfaCompleted} onCancel={() => setMfaChallenge(undefined)} /></main>;
+  // MfaFlow is a whole page (CenteredCardLayout owns the main landmark and the h1).
+  if (mfaChallenge) return <MfaFlow key={mfaChallenge.challenge} challenge={mfaChallenge} onComplete={mfaCompleted} onCancel={() => setMfaChallenge(undefined)} />;
 
   if (!user) {
     return (

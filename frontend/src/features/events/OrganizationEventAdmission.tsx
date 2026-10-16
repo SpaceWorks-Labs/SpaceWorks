@@ -57,12 +57,12 @@ function OrganizationAdmissionCheck({ event, makerspaceSlug, organisation }: Adm
   });
   if (restoring || account.isLoading || eligibility.isLoading) return <p role="status" className={note}>Checking organization eligibility…</p>;
   const signIn = [account.error, eligibility.error].some(error => error instanceof StructuredApiError && error.status === 401);
-  if (signIn) return <div className="grid gap-3"><p className={note}>Sign in to check your membership in a participating organization.</p><MemberAuthPanel makerspaceSlug={makerspaceSlug} onAuthenticated={() => {
+  if (signIn) return <MemberAuthPanel embedded context={<p className={note}>Sign in to check your membership in a participating organization.</p>} makerspaceSlug={makerspaceSlug} onAuthenticated={() => {
     void account.refetch();
     void queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility", makerspaceSlug, event.public_token] });
     void queryClient.invalidateQueries({ queryKey: ["public-event", makerspaceSlug] });
     void queryClient.invalidateQueries({ queryKey: ["public-events", makerspaceSlug] });
-  }} /></div>;
+  }} />;
   if (account.error || eligibility.error) return <ErrorText message="Unable to check organization eligibility."
     onRetry={() => { void account.refetch(); void eligibility.refetch(); }} />;
   if (repaired) return <div role="status"><Callout size="inline" tone="success" lead="Your registration consent has been updated." /></div>;

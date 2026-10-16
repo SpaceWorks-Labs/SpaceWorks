@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { CenteredCardLayout } from "../../components/layouts";
+import { AuthStepCard } from "./AuthStepCard";
 
 import { mfaRequest, type Enrollment, type MfaChallenge, type MfaCompleted } from "./mfaApi";
 
-export function MfaFlow({ challenge, onComplete, onCancel }: {
+export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eyebrow, extra }: {
   challenge: MfaChallenge;
   onComplete: (result: MfaCompleted) => void;
   onCancel: () => void;
+  /** Inside another page's card: same steps, no page chrome. */
+  embedded?: boolean;
+  /** The host flow's context (e.g. an invitation) and its way out, kept visible through the code step. */
+  eyebrow?: string;
+  extra?: ReactNode;
 }) {
   const [code, setCode] = useState("");
   const [usingRecovery, setUsingRecovery] = useState(false);
@@ -27,10 +32,10 @@ export function MfaFlow({ challenge, onComplete, onCancel }: {
       { challenge: challenge.challenge, code }),
     onSuccess: (result) => result.recovery_codes ? setCompleted(result) : onComplete(result),
   });
-  if (completed) return <CenteredCardLayout state={{ status: "ready" }}
+  if (completed) return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }}
     media={{ icon: "CheckCircle", tone: "success" }} title="Save your recovery codes"
     body="Each code works once. Save these somewhere secure; they will not be shown again."
-    primary={{ label: "I saved my codes. Continue", onClick: () => onComplete(completed) }}
+    primary={{ label: "I saved my codes. Continue", onClick: () => onComplete(completed) }} footer={extra}
     content={<div className="grid gap-4">
       <ul className="grid grid-cols-2 gap-2">{completed.recovery_codes?.map((value) => <li className="min-w-0 break-all rounded-control border border-line bg-surface p-3 code-text text-sm" key={value}>{value}</li>)}</ul>
       <button type="button" className="desk-button" onClick={() => void copy(completed.recovery_codes?.join("\n") ?? "")}>Copy all codes</button>
@@ -39,7 +44,7 @@ export function MfaFlow({ challenge, onComplete, onCancel }: {
     </div>} />;
   const error = enroll.error ?? verify.error;
   const canVerify = !challenge.enrollment_required || Boolean(enrollment);
-  return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "CheckCircle", tone: "accent" }}
+  return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }} media={{ icon: "CheckCircle", tone: "accent" }}
     title={challenge.enrollment_required ? "Set up two-step sign-in" : usingRecovery ? "Use a recovery code" : "Enter your 6-digit code"}
     body={challenge.enrollment_required ? "Add Space Works to your authenticator app to secure this account."
       : "Enter the code from your authenticator app, or one of your recovery codes."}
@@ -47,7 +52,7 @@ export function MfaFlow({ challenge, onComplete, onCancel }: {
       onClick: () => (document.getElementById("mfa-verify-form") as HTMLFormElement)?.requestSubmit() }
       : { label: "Show enrollment QR and key", pending: enroll.isPending, onClick: () => enroll.mutate() }}
     escape={{ label: "Back to sign-in", onClick: onCancel }}
-    footer={`This sign-in expires in ${Math.ceil(challenge.expires_in / 60)} minutes. Restart sign-in if it expires.`}
+    footer={<><p>{`This sign-in expires in ${Math.ceil(challenge.expires_in / 60)} minutes. Restart sign-in if it expires.`}</p>{extra ? <div className="mt-4">{extra}</div> : null}</>}
     content={<div className="grid gap-4">
       {enrollment ? <>
         <img src={enrollment.qr_data_url} alt="Scan to add SpaceWorks to your authenticator" className="mx-auto w-56 rounded-xl bg-panel p-3" />

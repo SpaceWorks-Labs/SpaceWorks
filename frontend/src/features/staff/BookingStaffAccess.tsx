@@ -35,7 +35,7 @@ export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
       <button className="desk-button-primary justify-self-start" type="submit" disabled={pending || !permissions.length}>{invite.isPending ? "Creating invitation..." : "Invite staff"}</button>
     </form>
     {link ? <div className="grid gap-3 py-5" role="status">
-      <Field label="Invitation link (shown once)"><input className="desk-input w-full font-mono text-xs" readOnly value={link} onFocus={(event) => event.target.select()} /></Field>
+      <Field label="Invitation link (shown once)"><input className="desk-input code-text w-full min-w-0 text-xs" readOnly value={link} onFocus={(event) => event.target.select()} /></Field>
       <button className="desk-button justify-self-start" type="button" onClick={() => setLink("")}>Dismiss link</button>
     </div> : null}
     {grants.isLoading || invites.isLoading ? <div className="py-5"><Skeleton className="h-24 w-full" /></div> : null}

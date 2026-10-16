@@ -9,16 +9,17 @@ export function MemberAccountExports({ makerspaceId }: { makerspaceId: number })
     refetchInterval: (query) => query.state.data?.results.some((job) => ["pending", "running"].includes(job.status)) ? 5000 : false });
   const create = useMutation({ mutationFn: () => requestExport(makerspaceId), onSuccess: () => { setPage(1); void client.invalidateQueries({ queryKey: [...accountKey(makerspaceId), "exports"] }); } });
   const download = useMutation({ mutationFn: (id: string) => exportDownload(makerspaceId, id) });
-  return <section className="desk-panel p-5"><h2 className="title-panel">Export your data</h2>
-    <p className="mt-2 text-sm text-muted">Download your profile, membership, history and payment records held by this makerspace as JSON in a ZIP. Export requests are limited to one per day. Files expire automatically.</p>
-    <button className="desk-button-brand mt-3 w-full sm:w-auto" disabled={create.isPending} onClick={() => create.mutate()}>Request data export</button>
-    {rows.isLoading ? <p role="status">Loading exports…</p> : null}
-    {rows.error || create.error || download.error ? <p role="alert" className="text-danger">{(rows.error || create.error || download.error)?.message}</p> : null}
-    {rows.data?.results.map((job) => <div key={job.id} className="border-t border-line py-3 mt-3"><p className="break-words">Requested {new Date(job.created_at).toLocaleString()} · {job.status}</p>
-      {job.status === "failed" ? <p role="alert">{job.failure_detail}</p> : null}
-      {job.status === "available" && new Date(job.expires_at).getTime() > Date.now() ? <button className="desk-button mt-2" disabled={download.isPending} onClick={() => download.mutate(job.id)}>Prepare download link</button> : null}
+  // Rendered inside the account page's Your data settings section, which owns the card and the heading.
+  return <div className="grid min-w-0 gap-3">
+    <p className="text-sm text-muted">Download your profile, membership, history and payment records held by this makerspace as JSON in a ZIP. Export requests are limited to one per day. Files expire automatically.</p>
+    <button type="button" className="desk-button-brand w-full sm:w-auto" disabled={create.isPending} onClick={() => create.mutate()}>Request data export</button>
+    {rows.isLoading ? <p role="status" className="text-sm text-muted">Loading exports…</p> : null}
+    {rows.error || create.error || download.error ? <p role="alert" className="text-sm text-danger">{(rows.error || create.error || download.error)?.message}</p> : null}
+    {rows.data?.results.map((job) => <div key={job.id} className="border-t border-line pt-3"><p className="break-words text-sm text-ink">Requested {new Date(job.created_at).toLocaleString()} · {job.status}</p>
+      {job.status === "failed" ? <p role="alert" className="text-sm text-danger">{job.failure_detail}</p> : null}
+      {job.status === "available" && new Date(job.expires_at).getTime() > Date.now() ? <button type="button" className="desk-button mt-2" disabled={download.isPending} onClick={() => download.mutate(job.id)}>Prepare download link</button> : null}
     </div>)}
-    {download.data ? <p className="mt-3 flex flex-wrap items-center gap-3"><a className="desk-button-primary w-full sm:w-auto" href={download.data.url} rel="noreferrer">Download ZIP</a> Link expires {new Date(download.data.expires_at).toLocaleTimeString()}.</p> : null}
-    <div className="mt-3 flex flex-wrap gap-2"><button className="desk-button" disabled={!rows.data?.previous} onClick={() => setPage(page - 1)}>Previous exports</button><button className="desk-button" disabled={!rows.data?.next} onClick={() => setPage(page + 1)}>Next exports</button></div>
-  </section>;
+    {download.data ? <p className="flex flex-wrap items-center gap-3 text-sm text-muted"><a className="desk-button-primary w-full sm:w-auto" href={download.data.url} rel="noreferrer">Download ZIP</a> Link expires {new Date(download.data.expires_at).toLocaleTimeString()}.</p> : null}
+    <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={!rows.data?.previous} onClick={() => setPage(page - 1)}>Previous exports</button><button type="button" className="desk-button" disabled={!rows.data?.next} onClick={() => setPage(page + 1)}>Next exports</button></div>
+  </div>;
 }

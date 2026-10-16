@@ -89,7 +89,7 @@ function WebsiteForm({ space, saved, onReload }: { space: BookableSpace; saved: 
     {saved.public_url || (space.embed_enabled && embedUrl) ? <SettingsSection title="Sharing">
       {saved.public_url ? <div className="py-4"><a className="inline-flex min-h-11 items-center text-accent-ink underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" href={saved.public_url} target="_blank" rel="noopener noreferrer">Open public resource page</a></div> : null}
       {space.embed_enabled && embedUrl ? <div className="py-4"><Field label="Embed card" hint="Release the website first. A makerspace manager must allow your website's exact HTTPS origin in website settings.">
-        <textarea className="desk-input w-full font-mono text-xs" readOnly rows={3} value={`<iframe src="${embedUrl}" title="Resource booking" loading="lazy"></iframe>`} /></Field></div> : null}
+        <textarea className="desk-input code-text w-full min-w-0 text-xs" readOnly rows={3} value={`<iframe src="${embedUrl}" title="Resource booking" loading="lazy"></iframe>`} /></Field></div> : null}
     </SettingsSection> : null}
   </section>;
 }

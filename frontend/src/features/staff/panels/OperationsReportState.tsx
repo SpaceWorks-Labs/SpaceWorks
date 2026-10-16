@@ -38,7 +38,7 @@ export function chartRows(data: ReportRows | undefined, labelKey: string, valueK
 
 export function DataState(props: { loading: boolean; error: unknown; empty: boolean; onRetry?: () => void; children: React.ReactNode }) {
   if (props.loading) return <ReportSkeleton />;
-  if (props.error) return <div role="alert" className="mt-3 rounded-xl border border-danger bg-danger-soft p-4 text-sm text-danger">
+  if (props.error) return <div role="alert" className="mt-3 rounded-xl border border-danger-line bg-panel p-4 text-sm text-danger">
     <p>Couldn't load this report. Try again.</p>
     {props.onRetry ? <button type="button" className="desk-button mt-3" onClick={props.onRetry}>Retry</button> : null}
   </div>;

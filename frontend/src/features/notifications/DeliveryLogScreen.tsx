@@ -103,7 +103,7 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
           {row.status === "failed" ? <button className="desk-button" aria-label="Retry failed delivery" disabled={retry.isPending} onClick={() => retry.mutate(row)}>Retry</button> : null}</div>} />)}
     </> }} pagination={suppressed ? undefined : { page, pageSize: 24, count: logs.data?.count ?? 0, onChange: setPage }}
     detail={<><div className="mt-4 grid gap-3">
-      {test.data ? <p className="text-sm text-muted" role="status">Test {test.data.kind} #{test.data.id}: {dialogs ? words(test.data.status) : test.data.status}. <a className="desk-link" href={viewHref("deliveries")}>View in log</a></p> : null}
+      {test.data ? <p className="text-sm text-muted" role="status">Test {test.data.kind} #{test.data.id}: {dialogs ? words(test.data.status) : test.data.status}. <a className="rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" href={viewHref("deliveries")}>View in log</a></p> : null}
       {retry.error || (!testOpen && test.error) ? <ErrorBlock error={(retry.error ?? test.error)!} /> : null}
     </div>
     <Modal open={testOpen} title="Send a test to…" onClose={() => { if (!test.isPending) setTestOpen(false); }}>

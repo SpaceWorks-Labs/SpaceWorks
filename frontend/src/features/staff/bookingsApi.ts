@@ -4,6 +4,7 @@ import type { ApiPath } from "../../generated/api";
 import { staffRequest } from "../../lib/api";
 import type { CustomAnswerSnapshot, CustomFormSchema } from "../forms/customFormTypes";
 import type { PaymentSummary } from "./PaymentReconcileActions";
+import type { BookingDeparture } from "../bookings/DepartureForm";
 
 export type BookingStatus = "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
 export type BookableSpace = {
@@ -69,6 +70,12 @@ export type Booking = {
   status_before_cancel?: string;
   restore_until?: string | null;
   created_at: string;
+  /** Phase 2 (hand-typed until the client is regenerated). */
+  space_name?: string;
+  decision_reason?: string;
+  departed_at?: string | null;
+  departures?: BookingDeparture[];
+  open_issue_id?: number | null;
 };
 
 export type Paginated<T> = { count: number; next: string | null; previous: string | null; results: T[] };
@@ -187,13 +194,15 @@ export function useDeactivateBookableSpace(makerspaceId: number, spaceId: number
   });
 }
 
-export function useBookingAction(makerspaceId: number, spaceId: number) {
+export function useBookingAction(makerspaceId: number, spaceId?: number) {
+  const queryClient = useQueryClient();
   const invalidate = useSpaceInvalidation(makerspaceId, spaceId);
   return useMutation({
-    mutationFn: ({ bookingId, action }: { bookingId: number; action: BookingAction }) => staffRequest<Booking>(
+    // Reject requires a reason and cancel accepts one; both are shown to the requester.
+    mutationFn: ({ bookingId, action, reason }: { bookingId: number; action: BookingAction; reason?: string }) => staffRequest<Booking>(
       staffPath(ACTION_PATHS[action], { id: bookingId }),
-      { method: "POST", body: JSON.stringify({}) },
+      { method: "POST", body: JSON.stringify((action === "reject" || action === "cancel") && reason ? { reason } : {}) },
     ),
-    onSuccess: invalidate,
+    onSuccess: async () => { await invalidate(); await queryClient.invalidateQueries({ queryKey: ["booking-queue"] }); },
   });
 }

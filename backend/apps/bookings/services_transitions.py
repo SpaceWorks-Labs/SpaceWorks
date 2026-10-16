@@ -8,7 +8,7 @@ from apps.bookings.exceptions import BookingInvalidTransition
 from apps.bookings.models import Booking
 
 
-def _transition(booking, actor, new_status, action, event, *, require_ended=False, member_cancel=False):
+def _transition(booking, actor, new_status, action, event, *, require_ended=False, member_cancel=False, reason=""):
     from apps.bookings.services_bookings import _audit, _locked_booking, _refresh
 
     space, locked = _locked_booking(booking)
@@ -38,6 +38,8 @@ def _transition(booking, actor, new_status, action, event, *, require_ended=Fals
     if cancelling:
         from apps.operations.cancellation_restore import record_cancellation
         fields.extend(record_cancellation(locked, now=timezone.now()))
+        locked.decision_reason = reason
+        fields.append("decision_reason")
     locked.status = new_status
     locked.calendar_sequence += 1
     locked.calendar_updated_at = timezone.now()
@@ -51,6 +53,7 @@ def _transition(booking, actor, new_status, action, event, *, require_ended=Fals
             'booking_id': locked.pk,
             'old_status': old_status,
             'new_status': new_status,
+            **({'reason': reason} if cancelling else {}),
         },
     )
     notifications.notify_booking_status(locked, event)
@@ -58,10 +61,11 @@ def _transition(booking, actor, new_status, action, event, *, require_ended=Fals
 
 
 @transaction.atomic
-def cancel_booking(booking, *, actor, member_cancel=False):
+def cancel_booking(booking, *, actor, member_cancel=False, reason=""):
+    from .services_decisions import clean_reason
     cancelled = _transition(
         booking, actor, Booking.Status.CANCELLED, 'booking.cancelled', 'cancelled',
-        member_cancel=member_cancel,
+        member_cancel=member_cancel, reason=clean_reason(reason, required=False),
     )
     from apps.bookings.service_payments import cancel_for_booking
 

@@ -14,6 +14,12 @@ import { ListViewControls } from "./ListViewControls";
 import { useSearchParams } from "react-router-dom";
 import { useQuickCreate } from "./quickCreate";
 import { useDomainSettingsDialog } from "./useDomainSettingsDialog";
+import { BookingQueuePanel } from "./BookingQueuePanel";
+import { BookingIssuesList } from "./BookingIssuesList";
+import { useBookingIssues, type QueueStatus } from "./bookingQueueApi";
+
+type PanelView = "requests" | "spaces" | "issues";
+const QUEUE_STATUSES: QueueStatus[] = ["pending", "confirmed", "rejected", "cancelled", "completed", "no_show", "all"];
 
 export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { makerspaceId: number; recurringEnabled?: boolean }) {
   const queryClient = useQueryClient();
@@ -28,6 +34,13 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("space")) || null);
   // "New booking" picks a space, then opens that space with its booking form already up.
   const [bookingSpaceId, setBookingSpaceId] = useState<number | null>(null);
+  // The Requests queue is the landing view; a dashboard link `?status=pending` lands on it filtered.
+  const view: PanelView = (["spaces", "issues"] as const).find(value => value === params.get("view")) ?? "requests";
+  const queueStatus: QueueStatus = QUEUE_STATUSES.find(value => value === params.get("status")) ?? "pending";
+  const setParam = (key: string, value: string | null) => setParams(current => {
+    const next = new URLSearchParams(current); if (value) next.set(key, value); else next.delete(key); return next;
+  });
+  const openIssues = useBookingIssues(makerspaceId, "open");
   const linkedId = params.get("space");
   useEffect(() => { setSelectedId(Number(linkedId) || null); }, [linkedId]);
   const closeSelection = () => { setSelectedId(null); setBookingSpaceId(null); setParams((current) => { const next = new URLSearchParams(current); next.delete("space"); next.delete("booking"); return next; }); };
@@ -45,21 +58,37 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
     pending={create.isPending} error={create.error?.message} submitLabel="Create space" onCancel={() => setCreateOpen(false)} />;
   const activeSpaces = spaces.data?.results.filter(space => space.is_active) ?? [];
   const chooseSpace = (spaceId: number) => { setChoosingBooking(false); setBookingSpaceId(spaceId); setSelectedId(spaceId); };
+  const openBooking = (spaceId: number, bookingId: number) => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.set("space", String(spaceId)); next.set("booking", String(bookingId)); next.set("bookingTab", "requests");
+    return next;
+  });
+  const tabs = unavailable ? undefined : [
+    { key: "requests", label: "Requests" }, { key: "spaces", label: "Spaces", count: spaces.data?.count },
+    { key: "issues", label: "Issues", count: openIssues.data?.open_count },
+  ];
+  const queueBody = view === "requests" ? <BookingQueuePanel makerspaceId={makerspaceId} status={queueStatus}
+      onStatus={status => setParam("status", status === "pending" ? null : status)} onOpenBooking={booking => openBooking(booking.space_id, booking.id)} />
+    : view === "issues" ? <BookingIssuesList makerspaceId={makerspaceId} onOpenBooking={issue => openBooking(issue.space_id, issue.booking_id)} />
+    : null;
   return <><ListLayout header={{ title: "Bookings",
     subtitle: "Manage spaces, booking requests and public availability.",
     primary: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) },
     secondary: unavailable ? undefined : { label: "New booking", onClick: () => setChoosingBooking(true) },
     // Booking rules are keyed on manage_bookings, so a Booking Manager edits them here, not in space settings.
     overflow: unavailable ? undefined : [{ label: "Booking rules", icon: "Settings", onClick: () => setRulesOpen(true) }, ...domainSettings.actions] }}
-    state={unavailable ? { status: "ready" } : opsQueryState(spaces, "bookable spaces")}
+    tabs={tabs} activeTab={view} onTabChange={key => setParams(current => {
+      const next = new URLSearchParams(current); next.delete("status"); if (key === "requests") next.delete("view"); else next.set("view", key); return next;
+    })}
+    state={unavailable || queueBody ? { status: "ready" } : opsQueryState(spaces, "bookable spaces")}
     stats={[{ label: "Spaces", value: spaces.data?.count ?? 0 }]}
-    filters={unavailable ? undefined : { toolbar: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings" searchLabel="Search spaces"
+    filters={unavailable || queueBody ? undefined : { toolbar: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings" searchLabel="Search spaces"
       sorts={[["name", "Name"], ["-name", "Name descending"], ["kind", "Type"]]} /> }}
-    filtered={Boolean(list.values.q)} isEmpty={Boolean(unavailable) || spaces.data?.results.length === 0}
+    filtered={!queueBody && Boolean(list.values.q)} isEmpty={Boolean(unavailable) || (!queueBody && spaces.data?.results.length === 0)}
     empty={{ message: unavailable ?? "No bookable spaces yet. Create one to start taking bookings.",
       action: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) } }}
     filteredEmpty={{ message: "No spaces match your search. Try another name.", action: { label: "Clear filters", onClick: () => list.setFilter("q", "") } }}
-    body={{ kind: "rows", rows: spaces.data?.results.map(space => <ListRow key={space.id} title={space.name}
+    body={{ kind: "rows", rows: queueBody ?? spaces.data?.results.map(space => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Calendar", tone: "info" }} onClick={() => setSelectedId(space.id)}
       meta={<>{space.kind.replace(/_/g, " ")} · {space.location || "No location label"}</>}
       right={<div className="flex flex-wrap items-center gap-2">
@@ -68,7 +97,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
         <StatusPill label={space.is_active ? "Active" : "Inactive"} tone={space.is_active ? "success" : "neutral"} />
         <button className="desk-button" type="button" onClick={() => setSelectedId(space.id)}>View bookings</button>
       </div>} />) }}
-    pagination={spaces.data ? { page, pageSize: 24, count: spaces.data.count, onChange: setPage } : undefined} />
+    pagination={spaces.data && !queueBody ? { page, pageSize: 24, count: spaces.data.count, onChange: setPage } : undefined} />
     <Modal open={choosingBooking && !unavailable} title="New booking" onClose={() => setChoosingBooking(false)}>
       <div className="grid gap-3">
         <p className="text-sm text-muted">Choose the space to book.{spaces.data?.next ? " Search the list to find a space on another page." : ""}</p>

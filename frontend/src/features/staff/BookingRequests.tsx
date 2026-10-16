@@ -9,6 +9,7 @@ import { BookingReservationEditor } from "./BookingReservationEditor";
 import { opsQueryState, opsStatusLabel } from "./opsPresentation";
 import { useSpaceBookings, type BookableSpace, type Booking, type BookingAction, type BookingFilters } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
+import { BookingCheckout } from "./BookingCheckout";
 
 type Props = { makerspaceId: number; spaceId: number; space: BookableSpace;
   /** Payment reconciliation is a space-manager power; a resource grant alone does not carry it. */
@@ -51,6 +52,7 @@ export function BookingRequests({ makerspaceId, spaceId, space, canReconcile, bo
           <div className="text-sm"><a className="flex min-h-11 items-center break-all hover:underline" href={"mailto:" + booking.email}>{booking.email}</a>
             <a className="flex min-h-11 items-center text-muted hover:underline" href={"tel:" + booking.phone}>{booking.phone}</a></div>
           <BookingAnswers booking={booking} />
+          <BookingCheckout makerspaceId={makerspaceId} spaceId={spaceId} booking={booking} />
           {canReconcile ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={booking.payment}
             invalidateKeys={[["booking-space", spaceId, "bookings"], ["booking-space", spaceId]]} /> : null}
           {space.staff_tools_enabled ? <BookingReservationEditor key={`${booking.id}-${booking.starts_at}-${JSON.stringify(booking.custom_answers)}-${booking.note}`} space={space} booking={booking} /> : null}

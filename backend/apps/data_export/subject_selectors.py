@@ -55,6 +55,8 @@ SUBJECT_PATHS = {
     "payments.Refund": ("payment__member",),
     "presence.PresenceSession": ("member",),
 }
+from apps.tenant_migration.catalog_p2_bookings import SUBJECT_PATHS as _P2_BOOKING_SUBJECTS
+SUBJECT_PATHS.update(_P2_BOOKING_SUBJECTS)
 
 
 def subject_query(model, user, makerspace_id):

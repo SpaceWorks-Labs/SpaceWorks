@@ -186,7 +186,9 @@ def approve_booking(booking, *, actor):
 
 
 @transaction.atomic
-def reject_booking(booking, *, actor):
+def reject_booking(booking, *, actor, reason=""):
+    from .services_decisions import clean_reason
+    reason = clean_reason(reason, required=True)
     space, locked = _locked_booking(booking)
     from .booking_authority import require
     require(actor, space, "manage_reservations")
@@ -195,9 +197,10 @@ def reject_booking(booking, *, actor):
             f'Cannot transition booking from {locked.status} to rejected.'
         )
     locked.status = Booking.Status.REJECTED
+    locked.decision_reason = reason
     locked.calendar_sequence += 1
     locked.calendar_updated_at = timezone.now()
-    locked.save(update_fields=['status', 'calendar_sequence', 'calendar_updated_at'])
+    locked.save(update_fields=['status', 'decision_reason', 'calendar_sequence', 'calendar_updated_at'])
     _audit(
         space,
         actor,
@@ -207,6 +210,7 @@ def reject_booking(booking, *, actor):
             'booking_id': locked.pk,
             'old_status': Booking.Status.PENDING,
             'new_status': Booking.Status.REJECTED,
+            'reason': reason,
         },
     )
     notifications.notify_booking_status(locked, 'rejected')

@@ -2,7 +2,6 @@ import { BookableSpaceForm, valuesForSpace } from "./BookableSpaceForm";
 import { BookingCloneControl } from "./BookingCloneControl";
 import { BookingDetailsEditor } from "./BookingDetailsEditor";
 import { BookingStaffAccess } from "./BookingStaffAccess";
-import { SpacePhotosSection } from "./SpacePhotosSection";
 import type { bookingAccess } from "./bookingStaffPermissions";
 import type { BookableSpace, useUpdateBookableSpace } from "./bookingsApi";
 
@@ -23,7 +22,6 @@ export function BookingSpaceSettings({ makerspaceId, space, access, update }: {
       : access.edit ? <BookingDetailsEditor key={space.updated_at} space={space} pending={update.isPending} onSubmit={payload => update.mutate(payload)} />
       : <p className="whitespace-pre-wrap text-sm text-muted">{space.description || "Use your assigned resource permissions."}</p>}
     {!space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
-    <SpacePhotosSection spaceId={space.id} active={space.is_active} />
     {access.manager && space.clone_enabled ? <BookingCloneControl space={space} /> : null}
     {access.manager && space.staff_grants_enabled ? <BookingStaffAccess target={{ id: space.id }} /> : null}
   </div>;

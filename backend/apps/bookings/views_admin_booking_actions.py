@@ -12,6 +12,7 @@ from apps.bookings.serializers_admin import (
 )
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
 from apps.bookings import services
+from apps.bookings.services_decisions import BookingDecisionSerializer, BookingRejectSerializer
 from apps.bookings.models import Booking
 from apps.hardware_requests.view_helpers import (
     ERROR_400,
@@ -53,12 +54,13 @@ def _manageable_booking(actor, pk):
 class _BookingActionView(APIView):
     permission_classes = [IsActiveStaff]
     operation = None
+    body = EmptyActionSerializer
 
     def execute(self, request, pk):
         booking = _manageable_booking(request.user, pk)
-        serializer = EmptyActionSerializer(data=request.data)
+        serializer = self.body(data=request.data)
         serializer.is_valid(raise_exception=True)
-        booking = self.operation(booking, actor=request.user)
+        booking = self.operation(booking, actor=request.user, **serializer.validated_data)
         context = scoped_payment_context(
             request.user,
             rbac.Action.MANAGE_BOOKINGS,
@@ -70,11 +72,12 @@ class _BookingActionView(APIView):
 
 class BookingCancelView(_BookingActionView):
     operation = staticmethod(services.cancel_booking)
+    body = BookingDecisionSerializer
 
     @extend_schema(
         tags=['Admin bookings'],
-        summary='Cancel a booking',
-        request=EmptyActionSerializer,
+        summary='Cancel a booking (optional reason shown to the requester)',
+        request=BookingDecisionSerializer,
         responses={
             200: BookingAdminSerializer,
             **VALIDATED_ERROR_RESPONSES,
@@ -104,11 +107,12 @@ class BookingApproveView(_BookingActionView):
 
 class BookingRejectView(_BookingActionView):
     operation = staticmethod(services.reject_booking)
+    body = BookingRejectSerializer
 
     @extend_schema(
         tags=['Admin bookings'],
-        summary='Reject a pending booking',
-        request=EmptyActionSerializer,
+        summary='Reject a pending booking (reason required, shown to the requester)',
+        request=BookingRejectSerializer,
         responses={
             200: BookingAdminSerializer,
             **VALIDATED_ERROR_RESPONSES,

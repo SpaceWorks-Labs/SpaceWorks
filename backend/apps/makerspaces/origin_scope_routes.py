@@ -100,6 +100,8 @@ MODEL_LOOKUPS = {
     **{name: ('hardware_requests.HardwareRequest', 'makerspace_id') for name in REQUEST_ACTIONS},
     **{name: ('machines.MachineServiceRequest', 'makerspace_id') for name in MACHINE_SERVICE_ACTIONS},
 }
+from .origin_scope_routes_p2_bookings import MODEL_LOOKUPS as P2_BOOKING_LOOKUPS
+MODEL_LOOKUPS.update(P2_BOOKING_LOOKUPS)
 
 def request_route_targets(request, view=None):
     url_name, targets, invalid, route_recognized = _authoritative_route_targets(

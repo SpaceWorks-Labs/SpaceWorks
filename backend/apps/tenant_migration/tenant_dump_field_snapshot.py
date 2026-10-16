@@ -34,6 +34,9 @@ for _label, _names in WP3_EXTRA_FIELDS.items():
 from .catalog_booking_arrival import FIELD_NAMES as BOOKING_ARRIVAL_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(BOOKING_ARRIVAL_FIELDS)
 FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= {"checkin_token", "arrived_at"}
+from .catalog_p2_bookings import FIELD_NAMES as P2_BOOKING_FIELDS, BOOKING_EXTRA_FIELDS as P2_BOOKING_EXTRA
+FIRST_PARTY_FIELD_NAMES.update(P2_BOOKING_FIELDS)
+FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= P2_BOOKING_EXTRA
 
 AUTO_CREATED_FIELD_NAMES = {
     'auth.Group_permissions': frozenset('group id permission'.split()),

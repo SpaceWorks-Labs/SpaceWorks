@@ -4,7 +4,11 @@ import { ScanWorkbench } from "../../components/ui";
 import { BookingPassPrint } from "./BookingPassPrint";
 import { opsStatusLabel } from "./opsPresentation";
 import { staffRequest } from "../../lib/api";
-import type { BookingArrival } from "../../generated/api";
+import type { BookingArrival as GeneratedArrival } from "../../generated/api";
+import { DepartureForm, type DepartureInput } from "../bookings/DepartureForm";
+
+/** Phase 2 adds the check-out projection; hand-typed until the client is regenerated. */
+type BookingArrival = GeneratedArrival & { departed_at?: string | null; can_depart?: boolean };
 
 /** Staff-side booking arrival: scan or paste, check the details, then confirm.
  *
@@ -43,9 +47,15 @@ export function BookingArrivalScanner({ makerspaceId, spaceId }: { makerspaceId:
       setRecent((rows) => [{ key: `${value.booking_id}:${Date.now()}`, label: `${value.display_name} arrival reversed`, meta: value.space_name, tone: "warn" as const }, ...rows].slice(0, 5));
       await invalidate();
     }, onError: () => setResult(null) });
-  const busy = resolve.isPending || confirm.isPending || reverse.isPending;
+  const depart = useMutation({ mutationFn: (input: DepartureInput) => staffRequest<BookingArrival>(path + `${result!.booking_id}/depart/`, { method: "POST", body: JSON.stringify(input) }),
+    onSuccess: async (value) => {
+      setResult(value); forget();
+      setRecent((rows) => [{ key: `${value.booking_id}:${Date.now()}`, label: `${value.display_name} checked out`, meta: value.space_name, tone: "success" as const }, ...rows].slice(0, 5));
+      await Promise.all([invalidate(), client.invalidateQueries({ queryKey: ["booking-issues", makerspaceId] })]);
+    } });
+  const busy = resolve.isPending || confirm.isPending || reverse.isPending || depart.isPending;
   const error = resolve.error ?? confirm.error ?? reverse.error;
-  const clear = () => { setResult(null); forget(); resolve.reset(); confirm.reset(); reverse.reset(); };
+  const clear = () => { setResult(null); forget(); resolve.reset(); confirm.reset(); reverse.reset(); depart.reset(); };
   function find(value: string) {
     credentialRef.current = value; setCredential(value);
     setResult(null); confirm.reset(); reverse.reset(); resolve.mutate();
@@ -61,16 +71,19 @@ export function BookingArrivalScanner({ makerspaceId, spaceId }: { makerspaceId:
         summary: <div className="grid gap-2">
           <p>{result.space_name}</p>
           <p>{time(result.starts_at, result.timezone)} – {time(result.ends_at, result.timezone)} ({result.timezone})</p>
-          <p>{opsStatusLabel(result.status)} · {result.arrived_at ? "Arrival recorded" : "No active arrival"}</p>
+          <p>{opsStatusLabel(result.status)} · {result.arrived_at ? "Arrival recorded" : "No active arrival"}{result.departed_at ? " · Checked out" : ""}</p>
           <p className="text-base">Waiver: {result.waiver_state.replace(/_/g, " ")} (advisory)</p>
         </div>,
         next: canConfirm ? { label: "Confirm arrival", onClick: () => confirm.mutate(), disabled: busy, disabledReason: busy ? "Wait for the current request to finish." : undefined }
           : { label: "Scan another", onClick: clear },
       } : error ? { title: "Couldn’t record arrival", tone: "danger", summary: error.message, next: { label: "Scan another", onClick: clear } } : undefined}
-      controls={result && (result.can_print_pass || result.can_reverse || canConfirm) ? <div className="flex flex-wrap items-start gap-2">
+      controls={result && (result.can_print_pass || result.can_reverse || canConfirm || result.can_depart) ? <div className="flex flex-wrap items-start gap-2">
         {canConfirm ? <button className="desk-button" type="button" disabled={busy} onClick={clear}>Scan another</button> : null}
         {result.can_print_pass ? <BookingPassPrint key={result.booking_id} spaceId={spaceId} bookingId={result.booking_id} disabled={busy} /> : null}
         {result.can_reverse ? <button type="button" className="desk-button-danger" disabled={busy} onClick={() => reverse.mutate()}>Reverse recorded arrival</button> : null}
+        {result.can_depart ? <div className="w-full rounded-lg border border-line p-3">
+          <DepartureForm audience="staff" pending={depart.isPending} error={depart.error?.message} onSubmit={input => depart.mutate(input)} />
+        </div> : null}
       </div> : undefined} />
   </section>;
 }

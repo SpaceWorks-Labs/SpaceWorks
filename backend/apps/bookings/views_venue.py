@@ -14,7 +14,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.apiclients.throttling import ClientTierRateThrottle
-from apps.events.website_visibility import public_events
 from apps.inventory.public_image_storage import public_url
 from apps.makerspaces.guards import require_module_for_servable
 from apps.makerspaces.lookup import get_public_makerspace
@@ -79,6 +78,11 @@ class PublicEventVenueView(APIView):
     @extend_schema(tags=["Public bookings"], auth=[], request=None, summary="Hosted-at venue for a public event",
                    responses={200: PublicEventVenueSerializer, **PUBLIC_BOOKING_ERRORS})
     def get(self, request, makerspace_slug, public_token):
+        from django.http import Http404
+        from apps.separability.tombstones import app_is_tombstoned
+        if app_is_tombstoned("events"):  # bookings must keep working without the events app
+            raise Http404
+        from apps.events.website_visibility import public_events
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, "events")
         event = get_object_or_404(public_events(makerspace), public_token=public_token)

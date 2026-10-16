@@ -44,12 +44,26 @@ def recipients(campaign):
     return User.objects.filter(pk__in=Subquery(bookings(campaign).values("member_id")))
 
 
-def eligible(campaign, account):
+def campaign_enabled(campaign):
     override = campaign.space.requester_notifications_enabled
-    enabled = campaign.makerspace.booking_requester_notifications_enabled if override is None else override
-    return bool(enabled
-                and recipient_account(campaign.makerspace, account.pk, "broadcast")
-                and bookings(campaign).filter(member_id=account.pk).exists())
+    return campaign.makerspace.booking_requester_notifications_enabled if override is None else override
+
+
+def eligible(campaign, account):
+    """Email path for the batch worker; a recipient with a personal channel choice gets an envelope instead.
+
+    Called per recipient inside the worker's batch transaction, so the envelope is written
+    atomically with the batch cursor. That envelope then resolves the recipient's selected
+    channels (email included, under the same verified-email/module/unsubscribe gates) and
+    `notification_sources.broadcast_eligible` re-checks the campaign and audience live.
+    """
+    if not campaign_enabled(campaign) or not bookings(campaign).filter(member_id=account.pk).exists():
+        return False
+    from .broadcasts_personal import emit_personal, has_personal_choice
+    if has_personal_choice(campaign.makerspace, account):
+        emit_personal(campaign, account)
+        return False
+    return bool(recipient_account(campaign.makerspace, account.pk, "broadcast"))
 
 
 def render_recipient(campaign, account):

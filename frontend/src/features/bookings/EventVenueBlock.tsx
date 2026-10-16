@@ -53,5 +53,6 @@ export function EventVenueBlock({ venue, spaceHref }: { venue: EventVenue; space
 /** Section list entry for PublicDetailLayout; empty while loading or when the route is unavailable. */
 export function useEventVenueSection(slug: string, eventToken: string | undefined, spaceHref?: (token: string) => string) {
   const venue = useEventVenue(slug, eventToken);
-  return venue.data ? [{ id: "venue", label: "Hosted at", content: <EventVenueBlock venue={venue.data} spaceHref={spaceHref} /> }] : [];
+  // Only a well-formed venue renders; anything else (an older server, a proxy page) shows no block.
+  return venue.data?.host ? [{ id: "venue", label: "Hosted at", content: <EventVenueBlock venue={venue.data} spaceHref={spaceHref} /> }] : [];
 }

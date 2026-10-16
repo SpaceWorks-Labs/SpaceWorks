@@ -239,6 +239,8 @@ _EXCLUDED_USER_EDGE_REASONS = {
 
 RELATIONAL_USER_FIELDS |= frozenset({("bookings.BookingCheckInEvent", "actor"), ("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
 _EXCLUDED_USER_EDGE_REASONS[("bookings.BookingCalendarFeed", "user")] = "Source-bound calendar authority is excluded from portable closure."
+from apps.tenant_migration.catalog_p2_bookings import USER_EDGES as P2_BOOKING_USER_EDGES
+RELATIONAL_USER_FIELDS |= P2_BOOKING_USER_EDGES
 
 # WP4 policies, schedules and materials have no User FKs. Personal watches and
 # feed credentials are explicitly omitted, but their actor edges remain classified.

@@ -93,7 +93,7 @@ def reorder_photos(space, *, actor, order):
             rows[pk].position = position
             rows[pk].save(update_fields=["position"])
     audit.record(actor, "booking.space_photos_reordered", makerspace=locked.makerspace, target=locked,
-                 meta={"order": list(order)})
+                 meta={"count": len(order)})
     return list(locked.photos.all())
 
 

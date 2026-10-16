@@ -295,3 +295,5 @@ AUTHORITY_ENTRIES = (
 
 from .catalog_booking_arrival import authority_entries as booking_arrival_authority
 AUTHORITY_ENTRIES += booking_arrival_authority(authority, D)
+from .catalog_p2_bookings import authority_entries as p2_booking_authority
+AUTHORITY_ENTRIES += p2_booking_authority(authority, D)

@@ -24,7 +24,14 @@ def arrival_data(booking):
         "can_arrive": arrival_eligible(booking, now=timezone.now()),
         "can_reverse": booking.arrived_at is not None and booking.status in ("confirmed", "completed"),
         "waiver_state": waiver_state,
+        "departed_at": booking.departed_at,
+        "can_depart": _can_depart(booking),
     }
+
+
+def _can_depart(booking):
+    from .services_departure import can_depart
+    return can_depart(booking, now=timezone.now(), source="staff")
 
 
 def arrival_metrics(bookings):

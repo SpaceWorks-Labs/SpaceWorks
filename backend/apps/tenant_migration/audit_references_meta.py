@@ -15,6 +15,7 @@ from .audit_references_meta_source_local import SOURCE_LOCAL_AUDIT_EDGES
 from .audit_references_meta_ux import UX_AUDIT_EDGES
 from .audit_references_wp3 import WP3_AUDIT_EDGES
 from .audit_references_meta_fixed_roles import FIXED_ROLE_AUDIT_EDGES
+from .audit_references_meta_p2_bookings import P2_BOOKING_AUDIT_EDGES
 
 _SOURCE_LOCAL_EDGES = SOURCE_LOCAL_AUDIT_EDGES
 
@@ -42,6 +43,7 @@ AUDIT_META_REFERENCES = {
                  ("event.certificate_template_previewed", "revision_id"),
                  ("event.certificate_created", "template_revision_id")),
     **_reference(R, "bookings.Booking", ("booking.arrival_confirmed", "booking_id"), ("booking.arrival_reversed", "booking_id")),
+    **P2_BOOKING_AUDIT_EDGES,
     **FIXED_ROLE_AUDIT_EDGES,
     **{edge: AuditReference(R, model) for edge, model in EVENT_AUDIT_EDGES.items()},
     **_reference(R, "makerspaces.MakerspaceLoanPolicy",

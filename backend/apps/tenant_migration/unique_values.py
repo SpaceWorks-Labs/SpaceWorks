@@ -33,6 +33,8 @@ DEPLOYMENT_GLOBAL_UNIQUE_RULES = {
     **BOOKING_UNIQUE_RULES,
     **WEBSITE_UNIQUE_RULES,
 }
+from .catalog_p2_bookings import unique_rules as _p2_booking_unique_rules
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_p2_booking_unique_rules(PRESERVE, REMAP, _policy))
 
 
 def collision_policy(model_label, field_name):

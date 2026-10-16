@@ -424,8 +424,11 @@ so operators can `docker compose pull` without authenticating.
 
 ## HTTPS & security hardening
 
-TLS-dependent settings are **env-gated, not `DEBUG`-gated**, so the default HTTP stack works out of
-the box. The default frontend nginx does **not** trust inbound `X-Forwarded-Proto`; it forwards only
+TLS-dependent settings are **env-gated, not `DEBUG`-gated**. Plain HTTP setup is restricted to
+`localhost` or `127.0.0.1` and binds website and bundled storage ports to loopback. LAN addresses
+and other hostnames require HTTPS through automatic Caddy or your own trusted reverse proxy.
+Setup writes `AUTH_COOKIE_SECURE=false` and `AUTH_COOKIE_SAMESITE=Lax` only for the loopback
+trial; HTTPS deployments use secure cookies with `SameSite=None`. The default frontend nginx does **not** trust inbound `X-Forwarded-Proto`; it forwards only
 its own scheme to Django.
 
 For a real domain with automatic TLS, use the Caddy overlay:
@@ -513,7 +516,8 @@ Know what you are exposing: superadmin sign-in is protected by django-axes locko
 when the superadmin has enrolled an authenticator or platform policy requires one — an unenrolled
 superadmin's password alone signs in. `/control/` also shares an origin with the website, so a script bug in
 the website could act on an open control-plane session. Enrol MFA, use the allowlist, or prefer the tunnel.
-With plain HTTP, the password and MFA code cross the network unencrypted; use this only on a trusted LAN.
+Plain HTTP is for loopback trials on this computer only. Use HTTPS for LAN access, including
+the control plane; authentication cookies and browser security depend on a secure origin.
 API-only installs support this route only with automatic HTTPS.
 
 **SSH tunnel (`CONTROL_PLANE_TUNNEL_PORT`, automatic HTTPS only).** Caddy listens on `127.0.0.1:<port>` of

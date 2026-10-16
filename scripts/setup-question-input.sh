@@ -78,6 +78,7 @@ question() {
           [[ "$invalid" == 0 ]] || { echo 'Days must be from 1 to 365.'; continue; }
         fi ;;
       repository) [[ "$value" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9_.-]{1,100}$ && "$value" != */. && "$value" != */.. ]] || { echo 'Enter a GitHub owner/repo name.'; continue; } ;;
+      loopback) [[ "$value" == localhost || "$value" == 127.0.0.1 ]] || { echo 'Plain HTTP is only for localhost or 127.0.0.1. LAN access requires HTTPS (automatic Caddy or your own proxy).'; continue; } ;;
       host) valid_dns_host "$value" || { echo 'Enter a hostname or IPv4 address without a scheme, port or path.'; continue; } ;;
       domain) [[ "$value" == *.* && ! "${value##*.}" =~ ^[0-9]+$ ]] && valid_dns_host "$value" || { echo 'Enter a DNS domain without a scheme, port or path.'; continue; }; value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" ;;
       slug)

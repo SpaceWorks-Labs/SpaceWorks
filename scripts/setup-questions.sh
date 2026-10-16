@@ -29,7 +29,7 @@ ask_setup_questions() {
     question TLS_EMAIL 'HTTPS certificate email' '' email || return 1
   else
     echo 'HTTPS:'
-    [[ "$RUN_FRONTEND" == 2 ]] || echo '  1) None - plain HTTP for a LAN or trial.'
+    [[ "$RUN_FRONTEND" == 2 ]] || echo '  1) None - plain HTTP on localhost only (local trial).'
     echo '  2) Automatic HTTPS - built-in Caddy; point DNS at this server.'
     echo '  3) I already run a reverse proxy - forward HTTPS to this server.'
     # API-only with an external website requires HTTPS, so plain HTTP is not offered.
@@ -72,7 +72,7 @@ ask_setup_questions() {
   if [[ "$HOSTING_MODEL" != 3 && ! ( "$RUN_FRONTEND" == 2 && "$HTTPS_MODE" == 3 ) ]]; then
     echo 'The Django control plane is for superadmin operations; website access is off by default.'
     if [[ "$HTTPS_MODE" == 1 ]]; then
-      echo 'Warning: over plain HTTP, the superadmin password and MFA code cross the network unencrypted.'
+      echo 'Plain HTTP is restricted to this computer; use HTTPS for LAN access.'
     fi
     local CP_ANSWER
     question CP_ANSWER 'Reach the Django control plane (/control/) through the website?' N choices:Y,y,yes,YES,N,n,no,NO || return 1
@@ -92,7 +92,9 @@ ask_setup_questions() {
   fi
   WEBHOST="$PUBLIC_DOMAIN"
   if [[ "$HOSTING_MODEL" == 3 ]]; then WEBHOST="$PLATFORM_DOMAIN"; fi
-  [[ -n "$WEBHOST" ]] || question WEBHOST 'Web address (host name or IP, no http://)' localhost host || return 1
+  local webhost_rule=host
+  [[ "$HTTPS_MODE" != 1 ]] || webhost_rule=loopback
+  [[ -n "$WEBHOST" ]] || question WEBHOST 'Web address (host name or IP, no http://)' localhost "$webhost_rule" || return 1
   echo 'Makerspaces belong to an organization (your network, university, company or community).'
   question ORG_NAME 'Organization name' '' org_name || return 1
   question MSNAME 'Name of your makerspace' 'My Makerspace' name || return 1

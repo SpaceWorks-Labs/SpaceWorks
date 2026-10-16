@@ -3,7 +3,7 @@ from .claim_route_types import AnonymousRead, Allowed, ID, ReadOnly, Refused, Ro
 
 PROFILE_CLAIM_ROUTES = {
     **{(name, method): AnonymousRead() for name in (
-        "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects",
+        "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github",
     ) for method in ("GET", "HEAD", "OPTIONS")},
     **{("member-profile-handle", method): Refused(
         "A global public handle requires a full account session.") for method in ("POST", "DELETE")},

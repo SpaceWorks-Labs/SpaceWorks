@@ -38,6 +38,8 @@ def refresh_github_contributions_task():
                 counts["updated"] += 1
             else:
                 counts["unavailable"] += 1
+    from .profile_github_tasks import refresh_public_calendars
+    refresh_public_calendars()
     return {"configured": True, **counts}
 
 

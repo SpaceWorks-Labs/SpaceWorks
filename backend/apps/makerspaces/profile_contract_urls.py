@@ -1,11 +1,14 @@
 """Included below /api/v1/ by the makerspaces URL barrel."""
 from django.urls import path
 from .public_profile_views import (
-    PublicProfileView, PublicProfileActivityView, PublicProfileEventsView, PublicProfileProjectsView,
+    PublicProfileView, PublicProfileActivityView, PublicProfileProjectsView,
 )
+from .profile_history_views import PublicProfileEventsView
 from .profile_contract_views import HandleView, TimelineListView, TimelineDetailView
+from .profile_github_urls import urlpatterns as github_patterns
 
 urlpatterns = [
+    *github_patterns,
     path("public/profiles/<str:handle>/", PublicProfileView.as_view(), name="public-profile"),
     path("public/profiles/<str:handle>/activity", PublicProfileActivityView.as_view(), name="public-profile-activity"),
     path("public/profiles/<str:handle>/events", PublicProfileEventsView.as_view(), name="public-profile-events"),

@@ -7,6 +7,8 @@ from django.utils import timezone
 from apps.tenant_migration.models import ImportIdentityDecision, TenantImportJob
 from apps.audit import services as audit
 
+from .services_import_run import run_import_job
+
 from .import_job_cleanup import (
     CLEANUP_LEASE_NAME,
     CLEANUP_OBJECTS_LEASE_NAME,
@@ -75,7 +77,7 @@ def submit_identity_decisions(*, actor, job, decisions):
 
 
 @transaction.atomic
-def claim_import_job(*, actor, job):
+def claim_import_job(*, actor, job, target_identity=None):
     """Move a ready import to its single runnable state under a row lock."""
     _require_superadmin(actor)
     locked = TenantImportJob.objects.select_for_update().get(pk=job.pk)
@@ -84,98 +86,13 @@ def claim_import_job(*, actor, job):
 
         raise ImportStateError("The import is not ready to run.")
     locked.status = TenantImportJob.Status.MATERIALIZING
-    locked.save(update_fields=("status", "updated_at"))
+    locked.run_request = {"actor_id": actor.pk, "target_identity": target_identity or {}}
+    locked.save(update_fields=("status", "run_request", "updated_at"))
     audit.record(
         actor, "tenant_migration.import_run_requested", target=locked,
         meta={"import_id": str(locked.pk), "format_version": 1},
     )
     return locked
-
-
-def run_import_job(job_id, *, actor_id, target_identity=None):
-    from apps.accounts.models import User
-    from .import_finalization import finalize_import_job
-    from .insertion_errors import (
-        ImportCompletionAuditError,
-        ImportPromotionClaimLost,
-        ImportPromotionInProgress,
-        MaterializationAlreadyCommitted,
-    )
-    from .materialization import materialize_tenant
-
-    actor = User.objects.get(pk=actor_id)
-    _require_superadmin(actor)
-    job = TenantImportJob.objects.get(pk=job_id)
-    if job.status == TenantImportJob.Status.COMPLETED:
-        return job
-    if job.status not in {
-        TenantImportJob.Status.MATERIALIZING,
-        TenantImportJob.Status.FINALIZING,
-    }:
-        raise ValidationError({"detail": "The import has not been claimed for execution."})
-
-    try:
-        if job.status == TenantImportJob.Status.MATERIALIZING:
-            from .import_staging import decrypted_archive
-
-            try:
-                with decrypted_archive(job.archive_path) as (root, carried):
-                    materialize_tenant(
-                        root, job, carried, target_identity=target_identity
-                    )
-            except MaterializationAlreadyCommitted:
-                # A concurrent delivery won the database transaction. Its committed
-                # FINALIZING state is the authority for the remaining work.
-                pass
-        job.refresh_from_db()
-        job = finalize_import_job(job, actor=actor)
-    except ImportPromotionClaimLost:
-        # A replacement delivery owns finalization. Its status and objects are
-        # authoritative, so this stale worker exits without changing either.
-        return TenantImportJob.objects.get(pk=job.pk)
-    except ImportPromotionInProgress:
-        # A periodic, idempotently leased sweep requeues FINALIZING after this object
-        # lease expires. It deliberately excludes jobs with any still-live claim.
-        return TenantImportJob.objects.get(pk=job.pk)
-    except ImportCompletionAuditError:
-        # Completion and its audit entry share one transaction. Keep FINALIZING and
-        # its verified objects intact so the scheduled sweep can retry that transaction.
-        raise
-    except Exception as exc:
-        failure_detail = str(exc).strip()[:500] or type(exc).__name__
-        failed_active = TenantImportJob.objects.filter(
-            pk=job.pk,
-            status__in=(
-                TenantImportJob.Status.MATERIALIZING,
-                TenantImportJob.Status.FINALIZING,
-            ),
-        ).update(
-            status=TenantImportJob.Status.FAILED,
-            failure_code="materialization_failed",
-            failure_detail=failure_detail,
-            terminal_at=timezone.now(),
-        )
-        if failed_active:
-            from .object_import import rollback_import_objects
-
-            rollback_job = TenantImportJob.objects.select_related(
-                "target_makerspace", "actor"
-            ).get(pk=job.pk)
-            rollback_import_objects(rollback_job)
-        else:
-            # materialize_tenant() records FAILED before re-raising. Annotate only
-            # that still-unexplained failure and never overwrite a competing reason.
-            TenantImportJob.objects.filter(
-                pk=job.pk,
-                status=TenantImportJob.Status.FAILED,
-                failure_code="",
-                failure_detail="",
-            ).update(
-                failure_code="materialization_failed",
-                failure_detail=failure_detail,
-            )
-        raise
-    return job
 
 
 def _require_superadmin(actor):
@@ -220,6 +137,8 @@ def scrub_terminal_job(job):
     locked.source_deployment_id = ""
     locked.source_deployment_identity = {}
     locked.storage_mode = ""
+    locked.run_request = {}
+    locked.run_attempt = None
     locked.scrubbed_at = timezone.now()
     locked.save(
         update_fields=(
@@ -230,6 +149,8 @@ def scrub_terminal_job(job):
             "source_deployment_id",
             "source_deployment_identity",
             "storage_mode",
+            "run_request",
+            "run_attempt",
             "scrubbed_at",
             "updated_at",
         )

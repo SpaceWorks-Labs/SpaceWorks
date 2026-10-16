@@ -20,8 +20,10 @@ CLEANUP_LEASE_NAME = "tenant-import-expiry-cleanup-work"
 CLEANUP_OBJECTS_LEASE_NAME = "tenant-import-object-cleanup-work"
 FINALIZATION_SWEEP_LEASE_NAME = "tenant-import-finalization-sweep-work"
 STAGING_SWEEP_LEASE_NAME = "tenant-import-staging-sweep-work"
+MATERIALIZATION_SWEEP_LEASE_NAME = "tenant-import-materialization-sweep-work"
 CLEANUP_LEASE_DURATION = timedelta(minutes=15)
 FINALIZATION_SWEEP_LEASE_DURATION = timedelta(minutes=5)
+MATERIALIZATION_RESUME_GRACE = timedelta(minutes=2)
 DEFAULT_CLEANUP_BATCH_SIZE = 100
 
 
@@ -198,6 +200,51 @@ def resume_stale_pending_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BAT
             extra={"candidate_count": len(jobs), "failure_count": failures},
         )
     return len(jobs)
+
+
+def resume_stalled_materializations(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SIZE):
+    """Re-run persisted run requests whose execution lock is free.
+
+    Without a broker this sweep is the only executor; with one it recovers a run
+    whose lock connection was lost before commit. run_import_job re-takes the lock
+    and a fresh attempt token, so a redundant dispatch never starts a second run.
+    """
+    from .import_run_lock import import_run_lock
+    from .tasks import run_import_job_task
+
+    sweep_at = now or timezone.now()
+    if not _claim_named_cleanup_lease(
+        MATERIALIZATION_SWEEP_LEASE_NAME, sweep_at,
+        lease_duration=FINALIZATION_SWEEP_LEASE_DURATION,
+    ):
+        return 0
+    jobs = list(
+        TenantImportJob.objects.filter(
+            status=TenantImportJob.Status.MATERIALIZING,
+            target_makerspace__isnull=True,
+            updated_at__lt=sweep_at - MATERIALIZATION_RESUME_GRACE,
+        ).exclude(run_request={}).order_by("updated_at", "pk")
+        .values("pk", "run_request")[:batch_size]
+    )
+    dispatched = 0
+    for job in jobs:
+        try:
+            # A live run holds the lock; skip it rather than queue a no-op.
+            with import_run_lock(job["pk"]) as probe:
+                free = probe.acquired
+            if not free:
+                continue
+            request = job["run_request"]
+            run_import_job_task.delay(
+                str(job["pk"]), request.get("actor_id"), request.get("target_identity"),
+            )
+            dispatched += 1
+        except Exception:
+            logger.exception(
+                "tenant_import_materialization_recovery_failed",
+                extra={"tenant_import_job_id": str(job["pk"])},
+            )
+    return dispatched
 
 
 @transaction.atomic

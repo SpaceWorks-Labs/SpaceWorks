@@ -163,15 +163,20 @@ class TenantImportIdentityDecisionsView(MigrationAPIView):
 
 
 class TenantImportRunView(MigrationAPIView):
-    @extend_schema(tags=["Tenant migration"], summary="Run an identity-decided tenant import", request=ImportRunSerializer, responses={202: ImportJobSerializer, 400: FIELD_ERRORS, 409: CONFLICT, 404: NOT_FOUND, 503: OpenApiResponse(description="Import worker unavailable."), **AUTH_ERRORS})
+    @extend_schema(tags=["Tenant migration"], summary="Run an identity-decided tenant import", description="Brokerless deployments run the persisted import request from the scheduler.", request=ImportRunSerializer, responses={202: ImportJobSerializer, 400: FIELD_ERRORS, 409: CONFLICT, 404: NOT_FOUND, 503: OpenApiResponse(description="Import worker unavailable."), **AUTH_ERRORS})
     def post(self, request, job_id):
         job = _job(request.user, job_id)
         serializer = ImportRunSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            job = claim_import_job(actor=request.user, job=job)
+            job = claim_import_job(
+                actor=request.user, job=job,
+                target_identity=serializer.validated_data["target_identity"],
+            )
         except Exception as exc:
             return protocol_error(exc)
+        if settings.CELERY_TASK_ALWAYS_EAGER:
+            return Response(ImportJobSerializer(job).data, status=status.HTTP_202_ACCEPTED)
         try:
             run_import_job_task.delay(
                 str(job.pk), request.user.pk, serializer.validated_data["target_identity"]

@@ -6,6 +6,7 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-16 — brokerless tenant-import runs.** Persisted requester/identity requests run from the scheduler; dedicated lifetime advisory locks, attempt fencing and race-safe journal adoption protect interrupted or overlapping executions; the same sweep recovers broker-backed runs that lost their lock.
 - **2026-10-16 — resumable tenant-archive uploads.** The console sends audited 8 MiB chunks to an
   `uploading` job, resumes from the server's offset after interruption, and completes idempotently
   into asynchronous staging. Idle expiry slides by 24 hours; cleanup rechecks expiry under lock.

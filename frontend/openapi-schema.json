@@ -44304,6 +44304,7 @@
         "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/run": {
             "post": {
                 "operationId": "api_v1_admin_platform_tenant_migrations_imports_run_create",
+                "description": "Brokerless deployments run the persisted import request from the scheduler.",
                 "summary": "Run an identity-decided tenant import",
                 "parameters": [
                     {

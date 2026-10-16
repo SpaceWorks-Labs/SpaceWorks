@@ -64,6 +64,7 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("tenant_migration.import_created", "import_id"),
         ("tenant_migration.import_read", "import_id"),
         ("tenant_migration.import_run_requested", "import_id"),
+        ("tenant_migration.import_run_refused", "import_id"),
         ("tenant_migration.import_staging_failed", "import_id"),
         ("tenant_migration.import_upload_received", "import_id"),
         ("tenant_migration.import_upload_started", "import_id"),

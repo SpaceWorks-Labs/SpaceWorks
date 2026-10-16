@@ -37,6 +37,8 @@ ENTRIES = (
       ("format_version", "import_id")),
     P("tenant_migration.import_run_requested", "Tenant migration import run requested",
       ("format_version", "import_id")),
+    P("tenant_migration.import_run_refused", "Tenant migration import run refused",
+      ("failure_code", "format_version", "import_id")),
     P("tenant_migration.import_staging_failed", "Tenant migration import staging failed",
       ("failure_code", "format_version", "import_id")),
     P("tenant_migration.import_upload_received", "Tenant migration import upload received",

@@ -84,7 +84,9 @@ class TenantDumpCatalogError(AssertionError):
 # Re-blessed after permanent removal of the deployment updater singleton.
 # Re-blessed for TenantImportJob.upload_total_bytes/upload_received_bytes. The
 # frozen snapshot graph reproduced the prior digest exactly before adding them.
-CATALOG_SCHEMA_SHA256 = "67aded23075ce9cf6fc1aedf2dc743e779e813414ae42ef55897dc14b24ee1de"
+# Re-blessed for TenantImportJob.run_request/run_attempt after reproducing the prior
+# digest from the frozen graph with schema_digest's canonical JSON encoding.
+CATALOG_SCHEMA_SHA256 = "ac796bcffa66d1b8c185b1591018f11d485f3747a1cffc943ac3fa9e6cd40672"
 
 
 def catalog_models(apps_registry=apps):

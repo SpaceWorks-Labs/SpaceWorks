@@ -20,7 +20,7 @@ from .identity_resolution import (
 )
 from .import_keys import install_carried_deks
 from .import_finalization import finalize_import_job
-from .insertion_errors import MaterializationAlreadyCommitted
+from .insertion_errors import MaterializationAlreadyCommitted, MaterializationSuperseded
 from .materialization_failure import handle_materialization_failure
 from .models_import_job import TenantImportJob
 from .object_import import (
@@ -67,6 +67,8 @@ def materialize_tenant(
     *,
     target_identity=None,
     batch_size=500,
+    run_attempt=None,
+    run_lock=None,
 ):
     """Commit database state atomically, then promote its staged objects."""
     archive = PortableArchive(archive_directory)
@@ -80,6 +82,11 @@ def materialize_tenant(
         object_plan = prepare_import_objects(archive, job)
         with transaction.atomic():
             locked_job = TenantImportJob.objects.select_for_update().get(pk=job.pk)
+            if run_attempt is not None and (
+                locked_job.run_attempt != run_attempt
+                or locked_job.status != TenantImportJob.Status.MATERIALIZING
+            ):
+                raise MaterializationSuperseded("A replacement owns this import execution.")
             if locked_job.target_makerspace_id is not None:
                 raise MaterializationAlreadyCommitted(
                     "The import database materialization is already committed."
@@ -185,6 +192,8 @@ def materialize_tenant(
             locked_job.save(
                 update_fields=("status", "materialization_report", "updated_at")
             )
+            if run_lock is not None:
+                run_lock.require_retained()
         promoted = promote_import_objects(locked_job)
         finalize_import_job(locked_job, actor=locked_job.actor)
         return MaterializationResult(
@@ -194,7 +203,9 @@ def materialize_tenant(
             }
         )
     except Exception as exc:
-        handle_materialization_failure(job=job, target=target, error=exc)
+        handle_materialization_failure(
+            job=job, target=target, error=exc, run_attempt=run_attempt,
+        )
         raise
 
 

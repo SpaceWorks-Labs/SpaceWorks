@@ -36,6 +36,8 @@ class TenantImportJob(models.Model):
         related_name="tenant_import_jobs",
     )
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.PENDING)
+    run_request = models.JSONField(default=dict, blank=True)
+    run_attempt = models.UUIDField(null=True, blank=True)
     # SET_NULL is deliberate: PROTECT would make tenant purge impossible. CASCADE would
     # not solve the wider lifecycle either, because failed/abandoned pre-tenant jobs have
     # no makerspace FK and would still retain attacker-supplied identity data forever.

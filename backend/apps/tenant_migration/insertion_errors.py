@@ -45,6 +45,10 @@ class MaterializationAlreadyCommitted(TenantInsertionError):
     """A competing delivery committed the one-shot database materialization."""
 
 
+class MaterializationSuperseded(TenantInsertionError):
+    """A replacement owns the import; this attempt must not commit or clean up."""
+
+
 class ImportPromotionInProgress(TenantInsertionError):
     """Another live delivery owns an object-promotion lease."""
 

@@ -3211,6 +3211,23 @@ Rules that must hold:
   `PENDING` jobs older than two minutes with no live lease, so the cron service does the work. A failed
   enqueue also leaves the job `PENDING` for that sweep. It never fails the job, because the error does not
   prove the message was lost.
+- **Brokerless runs are scheduled and fenced.** Claiming `READY -> MATERIALIZING` stores the
+  requester's `actor_id` and `target_identity` in `run_request`; `actor` remains the uploader.
+  Eager-mode views return 202 without dispatch. `resume_stalled_materializations` (every
+  deployment, two-minute grace) re-dispatches persisted requests whose run lock is free: without a
+  broker it is the only executor, and with one it recovers a run that lost its lock connection
+  before commit. It probes the lock first and skips live runs. A missing,
+  deleted or demoted requester fails with `forbidden` and `tenant_migration.import_run_refused`
+  before archive I/O. Every materializing execution, with or without a broker, holds an advisory
+  transaction lock in namespace `734311` on a dedicated psycopg2 connection for its lifetime;
+  `SET LOCAL idle_in_transaction_session_timeout = 0` protects that idle lock transaction.
+  While holding the job row lock, it rechecks lock retention through `pg_locks` before claiming
+  a fresh `run_attempt` UUID. The commit transaction checks that token and rechecks lock retention
+  before committing. No claimed token means no failure transition or cleanup; superseded attempts
+  cannot commit or clean shared objects, and failure transitions match their token. A concurrent
+  object-journal insert uses a savepoint and adopts the matching winner's `target_key` and
+  regeneration flag. Finalization keeps its existing promotion leases; cleanup deletes nothing
+  new, and terminal scrubbing clears both run fields.
 - **The staff console uploads resumable chunks.** `POST .../imports/uploads` starts an `UPLOADING`
   job with a declared `upload_total_bytes` (1 byte through 20 GiB), an empty private 0600 archive
   in the 0700 imports directory, and `import_upload_started`. The single multipart `POST .../imports`

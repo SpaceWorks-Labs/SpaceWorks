@@ -1,6 +1,9 @@
 from celery import shared_task
 
-from apps.tenant_migration.import_job_cleanup import resume_stale_pending_import_jobs
+from apps.tenant_migration.import_job_cleanup import (
+    resume_stalled_materializations,
+    resume_stale_pending_import_jobs,
+)
 from apps.tenant_migration.services_import_job import (
     cleanup_abandoned_import_objects,
     cleanup_expired_import_jobs,
@@ -31,7 +34,11 @@ def cleanup_refused_tenant_dump_artifacts_task():
 
 @shared_task(name="apps.tenant_migration.tasks.resume_expired_finalizing_import_jobs_task")
 def resume_expired_finalizing_import_jobs_task():
-    return resume_expired_finalizing_import_jobs() + resume_stale_pending_import_jobs()
+    return (
+        resume_expired_finalizing_import_jobs()
+        + resume_stale_pending_import_jobs()
+        + resume_stalled_materializations()
+    )
 
 
 @shared_task(name="apps.tenant_migration.tasks.run_migration_export_job_task")

@@ -30,6 +30,7 @@ class PublicVouchSerializer(serializers.Serializer):
 
 
 class PublicProfileSerializer(serializers.Serializer):
+    viewer_is_owner = serializers.BooleanField()
     handle = serializers.CharField()
     display_name = serializers.CharField()
     avatar_url = serializers.CharField(allow_null=True)

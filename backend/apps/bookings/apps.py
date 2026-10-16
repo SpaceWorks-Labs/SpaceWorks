@@ -24,6 +24,8 @@ class BookingsConfig(AppConfig):
             register_reminders()
             from .notification_sources import register_notification_sources
             register_notification_sources()
+            from .notification_owner_mailbox import register_owner_mailbox
+            register_owner_mailbox()
             from apps.makerspaces.resource_grant_sources import ResourceGrantSource, register
             from .staff_payload import granted_booking_entries, has_grant_authority
             from .serializers_staff_grants import GrantedBookingEntrySerializer

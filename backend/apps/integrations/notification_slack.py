@@ -61,12 +61,12 @@ class SlackProvider:
         return {"connect_url": "https://slack.com/openid/connect/authorize?" + urlencode({
             "client_id": credentials["client_id"], "response_type": "code", "scope": "openid profile",
             "team": credentials["team_id"], "nonce": verifier(code),
-            "redirect_uri": redirect_uri("slack", self.config.makerspace_id), "state": state_for(challenge, code)})}
+            "redirect_uri": redirect_uri("slack", self.config.makerspace_id, challenge.pk), "state": state_for(challenge, code)})}
 
     def verify_callback(self, request):
         try:
-            if (request.method == "GET" or request.path.endswith("/oauth/callback")
-                    or getattr(getattr(request, "user", None), "is_authenticated", False)):
+            if (request.method == "POST"
+                    and getattr(getattr(request, "user", None), "is_authenticated", False)):
                 data = request.query_params if request.method == "GET" else request.data
                 if data.get("state"):
                     return self.oauth_proof(data, getattr(getattr(request, "user", None), "pk", None))
@@ -78,11 +78,13 @@ class SlackProvider:
         return None
 
     def oauth_proof(self, data, user_id=None):
-        _, proof_code = read_state(self.config, data["state"], user_id=user_id)
+        if user_id is None:
+            return None
+        challenge, proof_code = read_state(self.config, data["state"], user_id=user_id)
         creds = credentials_for(self.config)
         tokens = api("POST", "https://slack.com/api/openid.connect.token", form=True, data={
             "client_id": creds["client_id"], "client_secret": creds["client_secret"],
-            "code": data["code"], "redirect_uri": redirect_uri("slack", self.config.makerspace_id), "grant_type": "authorization_code"})
+            "code": data["code"], "redirect_uri": redirect_uri("slack", self.config.makerspace_id, challenge.pk), "grant_type": "authorization_code"})
         header = jwt.get_unverified_header(tokens["id_token"])
         keys = api("GET", "https://slack.com/openid/connect/keys")["keys"]
         key = next(key for key in keys if key.get("kid") == header.get("kid") and key.get("kty") == "RSA")
@@ -135,19 +137,19 @@ class SlackProvider:
 def install_url(config, challenge, code):
     creds = credentials_for(config)
     return "https://slack.com/oauth/v2/authorize?" + urlencode({"client_id": creds["client_id"],
-        "scope": "chat:write,im:write", "redirect_uri": redirect_uri("slack", config.makerspace_id),
+        "scope": "chat:write,im:write", "redirect_uri": redirect_uri("slack", config.makerspace_id, challenge.pk),
         "state": state_for(challenge, code, purpose="install"),
         "code_challenge": pkce(code), "code_challenge_method": "S256"})
 
 
 def complete_install(config, data):
     from .notification_slack_oauth import claim_install, save_install
-    _, proof_code = read_state(config, data["state"], purpose="install")
+    challenge, proof_code = read_state(config, data["state"], purpose="install")
     actor = claim_install(config, data["state"])
     creds = credentials_for(config)
     tokens = api("POST", "https://slack.com/api/oauth.v2.access", form=True, data={
         "client_id": creds["client_id"], "code": data["code"],
-        "redirect_uri": redirect_uri("slack", config.makerspace_id), "code_verifier": verifier(proof_code)})
+        "redirect_uri": redirect_uri("slack", config.makerspace_id, challenge.pk), "code_verifier": verifier(proof_code)})
     if not tokens.get("ok") or not tokens.get("access_token") or not tokens.get("team", {}).get("id"):
         raise ProviderFailure("provider_error")
     creds.update(bot_token=tokens["access_token"], team_id=tokens["team"]["id"])

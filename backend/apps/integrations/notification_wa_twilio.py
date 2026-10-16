@@ -1,6 +1,4 @@
 """Personal WhatsApp adapter. Import/registration never reads DB or contacts Twilio."""
-from datetime import timedelta
-
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -8,6 +6,7 @@ from .notification_providers import ProviderResult, register_provider
 from .notification_wa_twilio_config import ConfigurationError, callback_url, phone, validate_credentials
 from .notification_wa_twilio_http import send_message
 from .notification_wa_twilio_templates import template_payload
+from .notification_wa_window import in_session_window
 
 
 class TwilioWhatsAppProvider:
@@ -64,8 +63,7 @@ class TwilioWhatsAppProvider:
                 or delivery.envelope.makerspace_id != config.makerspace_id
                 or delivery.envelope.recipient_id != endpoint.user_id):
             return ProviderResult(False, error_code="invalid_endpoint")
-        now = timezone.now()
-        if endpoint.last_inbound_at and now - timedelta(hours=24) < endpoint.last_inbound_at <= now:
+        if in_session_window(endpoint):
             body = rendered.get("text", "")
             if not isinstance(body, str) or not body.strip() or len(body) > 4096:
                 return ProviderResult(False, error_code="provider_error")
@@ -93,7 +91,7 @@ class TwilioWhatsAppProvider:
                 or challenge.integration_identity != config.integration_identity
                 or challenge.consumed_at or challenge.expires_at <= timezone.now()):
             raise ValidationError({"channel": "Account linking is unavailable."})
-        payload = template_payload(config, "opt_in", "member", "en", {"code": code})
+        payload = template_payload(config, "notification_opt_in", "member", "en", {"code": code})
         import json
         if (payload is None or code not in json.loads(payload["ContentVariables"]).values()
                 or not self._send(challenge.candidate_destination, payload).accepted):
@@ -103,7 +101,7 @@ class TwilioWhatsAppProvider:
     def test(self, target):
         if not self.active() or not self.valid_endpoint(target):
             return ProviderResult(False, error_code="invalid_endpoint")
-        payload = template_payload(self.configuration, "test", "member", "en", {})
+        payload = template_payload(self.configuration, "notification_test", "member", "en", {})
         if payload is None:
             return ProviderResult(False, error_code="template_required")
         return self._send(target.destination, payload)

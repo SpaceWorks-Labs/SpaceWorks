@@ -1,6 +1,6 @@
 """Snapshot legacy-only staff alerts without changing the shared feed contract."""
 
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from apps.accounts import rbac
 from apps.accounts.models import User
@@ -12,7 +12,7 @@ from apps.tenant_migration.gate_runtime import tenant_write
 from django.db import transaction
 
 
-def mirror_legacy_staff(makerspace, payload):
+def mirror_legacy_staff(makerspace, payload, *, source_intent=""):
     event = payload["event"]
     from apps.integrations.notification_catalog import is_notification_enabled
     from apps.notifications.views import _makerspace_for_manager
@@ -42,8 +42,10 @@ def mirror_legacy_staff(makerspace, payload):
                 continue
             if not personal_enabled(makerspace, user.pk, family, "in_app", event=event):
                 continue
-            NotificationInboxRow.objects.create(makerspace=makerspace, user=user,
-                feature=family, event=event[:64], event_key=event_key,
-                title=payload["title"], summary=payload["body"][:12000],
-                link=safe_link(payload["url_path"]))
-            transaction.on_commit(lambda uid=user.pk: _hint(makerspace.pk, uid), robust=True)
+            key = (uuid5(NAMESPACE_URL, f"p2:{source_intent}:u:{user.pk}")
+                   if source_intent and (event.startswith("stocktake.") or event == "email.failed") else event_key)
+            _, created = NotificationInboxRow.objects.get_or_create(makerspace=makerspace, user=user, event_key=key,
+                defaults={"feature": family, "event": event[:64], "title": payload["title"],
+                          "summary": payload["body"][:12000], "link": safe_link(payload["url_path"])})
+            if created:
+                transaction.on_commit(lambda uid=user.pk: _hint(makerspace.pk, uid), robust=True)

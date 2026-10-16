@@ -89,6 +89,8 @@ class PresenceCurrentSerializer(serializers.Serializer):
     active = serializers.BooleanField()
     session = PresenceSessionSerializer(allow_null=True)
     presets = serializers.ListField(child=serializers.IntegerField(), required=False)
+    personal_opt_out_allowed = serializers.BooleanField()
+    names_displayed = serializers.BooleanField()
 
 
 class PresenceRosterSerializer(PresenceSessionSerializer):
@@ -112,6 +114,8 @@ class PresenceRosterPageSerializer(serializers.Serializer):
     next = serializers.URLField(allow_null=True)
     previous = serializers.URLField(allow_null=True)
     results = PresenceRosterSerializer(many=True)
+    personal_opt_out_allowed = serializers.BooleanField()
+    names_displayed = serializers.BooleanField()
 
 
 class PresenceProjectSerializer(serializers.Serializer):
@@ -120,7 +124,10 @@ class PresenceProjectSerializer(serializers.Serializer):
     public_visible = serializers.BooleanField()
 
 
-class PresenceProjectPageSerializer(PresenceRosterPageSerializer):
+class PresenceProjectPageSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    next = serializers.URLField(allow_null=True)
+    previous = serializers.URLField(allow_null=True)
     results = PresenceProjectSerializer(many=True)
 
 

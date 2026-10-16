@@ -24,6 +24,8 @@ urlpatterns = [
 
 from .notification_contract_urls import urlpatterns as contract_urls
 urlpatterns += contract_urls
+from .notification_wa_meta_urls import urlpatterns as wa_meta_urls
+urlpatterns += wa_meta_urls
 urlpatterns += [path("", include("apps.integrations.notification_wa_twilio_urls"))]
 urlpatterns += [path("", include("apps.integrations.notification_slack_urls"))]
 urlpatterns += [path("", include("apps.integrations.notification_mattermost_urls"))]

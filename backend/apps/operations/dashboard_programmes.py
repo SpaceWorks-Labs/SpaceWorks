@@ -44,13 +44,17 @@ def _event_counts(makerspace, actor):
 
 def _booking_counts(makerspace, actor):
     from apps.bookings.models import Booking
+    from apps.bookings.models_departure import BookingIssue
 
     rows = Booking.objects.filter(space__makerspace=makerspace)
+    issues = BookingIssue.objects.filter(makerspace=makerspace, resolved_at__isnull=True)
     if actor is not None:
         rows = rbac.scope_by_action(actor, rbac.Action.MANAGE_BOOKINGS, rows, field="space__makerspace_id")
+        issues = rbac.scope_by_action(actor, rbac.Action.MANAGE_BOOKINGS, issues, field="makerspace_id")
     return {
         "pending_bookings": rows.filter(status=Booking.Status.PENDING).count(),
         "upcoming_bookings": rows.filter(status=Booking.Status.CONFIRMED, ends_at__gt=_now()).count(),
+        "open_booking_issues": issues.count(),
     }
 
 

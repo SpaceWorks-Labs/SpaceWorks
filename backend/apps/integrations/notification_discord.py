@@ -39,12 +39,12 @@ class DiscordProvider:
             raise ProviderFailure("not_configured")
         return {"connect_url": "https://discord.com/oauth2/authorize?" + urlencode({
             "client_id": creds["application_id"], "response_type": "code", "scope": "identify",
-            "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id), "state": state_for(challenge, code)})}
+            "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id, challenge.pk), "state": state_for(challenge, code)})}
 
     def verify_callback(self, request):
         try:
-            if (request.method == "GET" or request.path.endswith("/oauth/callback")
-                    or getattr(getattr(request, "user", None), "is_authenticated", False)):
+            if (request.method == "POST"
+                    and getattr(getattr(request, "user", None), "is_authenticated", False)):
                 data = request.query_params if request.method == "GET" else request.data
                 if data.get("state"):
                     return self.oauth_proof(data, getattr(getattr(request, "user", None), "pk", None))
@@ -55,12 +55,14 @@ class DiscordProvider:
         return None
 
     def oauth_proof(self, data, user_id=None):
-        _, proof_code = read_state(self.config, data["state"], user_id=user_id)
+        if user_id is None:
+            return None
+        challenge, proof_code = read_state(self.config, data["state"], user_id=user_id)
         creds = credentials_for(self.config)
         self.check_identity(creds)
         tokens = api("POST", API + "/oauth2/token", form=True, data={
             "client_id": creds["application_id"], "client_secret": creds["client_secret"],
-            "code": data["code"], "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id), "grant_type": "authorization_code"})
+            "code": data["code"], "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id, challenge.pk), "grant_type": "authorization_code"})
         if "identify" not in tokens.get("scope", "").split():
             return None
         user = api("GET", API + "/users/@me", token=tokens["access_token"])

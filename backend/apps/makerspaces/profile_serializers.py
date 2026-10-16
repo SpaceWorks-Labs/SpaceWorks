@@ -120,6 +120,7 @@ class ProfileActivitySerializer(serializers.Serializer):
 
 
 class ProfileReadSerializer(PublicationWriteSerializer):
+    verified = serializers.BooleanField()
     public_consented_at = serializers.DateTimeField(allow_null=True)
     handle = serializers.CharField(allow_null=True)
     membership_id = serializers.IntegerField()

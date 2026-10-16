@@ -7,10 +7,8 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts import rbac
 from apps.audit import services as audit
-from apps.integrations.notify import EmailDelivery, LifecyclePayload, notify_lifecycle
 from apps.makerspaces.models import MakerspaceMembership, MembershipPlan, MembershipTerm
 from apps.makerspaces.platform import feature_enabled, module_enabled
-from apps.notifications.inbox import InboxDelivery
 from apps.notifications.models_broadcasts import MemberBroadcast
 
 
@@ -67,26 +65,7 @@ def send_broadcast(space, *, actor, title, body, **segment):
     broadcast = MemberBroadcast.objects.create(makerspace=space, created_by=actor, title=title, body=body)
     audit.record(actor, 'notification.broadcast_created', makerspace=space, target=broadcast,
                  meta={'recipient_count': len(ids)})
+    from apps.makerspaces.notifications_p2_broadcasts import notify_broadcast
     for user_id in ids:
-        def build(uid=user_id):
-            # Re-evaluate the segment after commit; revocation/opt-out always wins.
-            space.refresh_from_db()
-            if not feature_enabled(space, "membership.broadcasts"):
-                return LifecyclePayload(text="", staff_channels_enabled=False)
-            member = segment_members(space, segment).filter(user_id=uid).first()
-            if member is None:
-                return LifecyclePayload(text='', staff_channels_enabled=False)
-            from apps.integrations.email_templates import render
-            from apps.integrations.email_templates_registry_helpers import bag
-            rendered = render(space, "membership", "requester", "broadcast", {
-                "makerspace": bag(name=space.name), "announcement": bag(title=broadcast.title, body=broadcast.body),
-            })
-            return LifecyclePayload(
-                text='', staff_channels_enabled=False,
-                emails=(EmailDelivery(user_id=uid, to_email=member.user.email,
-                                      subject=rendered["subject"], text_body=rendered["text_body"], html_body=rendered["html_body"],
-                                      audience='requester', stream='membership', mute_event='broadcast'),),
-                inbox=(InboxDelivery(uid, broadcast.title, broadcast.body, f'/m/{space.slug}/member'),),
-            )
-        notify_lifecycle(space, feature='members', event='broadcast', build=build)
+        notify_broadcast(broadcast, user_id=user_id, segment=segment)
     return broadcast, len(ids)

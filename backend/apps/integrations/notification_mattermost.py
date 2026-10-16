@@ -23,13 +23,14 @@ class MattermostProvider:
         if base != self.config.integration_identity or not creds.get("bot_token"):
             raise ProviderFailure("not_configured")
         return {"connect_url": base + "/oauth/authorize?" + urlencode({
-            "client_id": creds["client_id"], "response_type": "code", "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id),
+            "client_id": creds["client_id"], "response_type": "code", "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id, challenge.pk),
             "state": state_for(challenge, code), "code_challenge": pkce(code), "code_challenge_method": "S256"})}
 
     def verify_callback(self, request):
         try:
             data = request.query_params if request.method == "GET" else request.data
-            if data.get("state"):
+            if (request.method == "POST" and data.get("state")
+                    and getattr(getattr(request, "user", None), "is_authenticated", False)):
                 return self.oauth_proof(data, getattr(getattr(request, "user", None), "pk", None))
             token = credentials_for(self.config).get("webhook_token", "")
             if token and constant_time_compare(token, data.get("token", "")):
@@ -39,14 +40,16 @@ class MattermostProvider:
         return None
 
     def oauth_proof(self, data, user_id=None):
-        _, proof_code = read_state(self.config, data["state"], user_id=user_id)
+        if user_id is None:
+            return None
+        challenge, proof_code = read_state(self.config, data["state"], user_id=user_id)
         creds = credentials_for(self.config)
         base = server_url(creds["server_url"])
         if base != self.config.integration_identity:
             return None
         tokens = mattermost_api(base, "POST", "/oauth/access_token", form=True, data={
             "client_id": creds["client_id"], "client_secret": creds["client_secret"],
-            "code": data["code"], "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id),
+            "code": data["code"], "redirect_uri": redirect_uri(self.channel, self.config.makerspace_id, challenge.pk),
             "grant_type": "authorization_code", "code_verifier": verifier(proof_code)})
         user = mattermost_api(base, "GET", "/api/v4/users/me", token=tokens["access_token"])
         if not user.get("id") or user.get("delete_at") or user.get("is_bot"):

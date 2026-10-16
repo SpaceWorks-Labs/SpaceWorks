@@ -3,7 +3,7 @@ import base64
 import hashlib
 from datetime import timedelta
 import secrets
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.conf import settings
 from django.core import signing
@@ -20,16 +20,26 @@ from .notification_proofs import digest
 SALT = "notification.chat.oauth.v1"
 
 
-def redirect_uri(channel, makerspace_id=None):
+def redirect_uri(channel, makerspace_id=None, challenge_id=None):
     value = getattr(settings, f"NOTIFICATION_{channel.upper()}_REDIRECT_URI", "")
     if "{makerspace_id}" in value:
         if not isinstance(makerspace_id, int) or makerspace_id <= 0:
             raise ValidationError({"channel": "OAuth redirect requires a configured makerspace."})
         value = value.replace("{makerspace_id}", str(makerspace_id))
+    if "{challenge_id}" in value:
+        if not isinstance(challenge_id, int) or challenge_id <= 0:
+            raise ValidationError({"channel": "OAuth redirect requires a challenge."})
+        value = value.replace("{challenge_id}", str(challenge_id))
     parts = urlsplit(value)
-    if parts.scheme != "https" or not parts.hostname or parts.username or parts.password or parts.fragment:
+    if (parts.scheme != "https" or not parts.hostname or parts.username or parts.password
+            or parts.fragment or "{" in value or "}" in value):
         raise ValidationError({"channel": "Configure an HTTPS OAuth redirect URI on the server."})
-    return value
+    if challenge_id is not None:
+        query = [(key, val) for key, val in parse_qsl(parts.query, keep_blank_values=True)
+                 if key != "notify_challenge"]
+        query.append(("notify_challenge", str(challenge_id)))
+        parts = parts._replace(query=urlencode(query))
+    return urlunsplit(parts)
 
 
 def state_for(challenge, code, *, purpose="link"):
@@ -37,13 +47,14 @@ def state_for(challenge, code, *, purpose="link"):
     return signing.dumps({"challenge": challenge.pk, "purpose": purpose, "code": code}, salt=SALT)
 
 
-def read_state(config, state, *, purpose="link", user_id=None):
+def read_state(config, state, *, purpose="link", user_id=None, challenge_id=None):
     try:
         value = signing.loads(state, salt=SALT, max_age=600)
         challenge = NotificationEndpointChallenge.objects.select_related("user").get(
             pk=value["challenge"], configuration=config, makerspace_id=config.makerspace_id)
         if (value["purpose"] != purpose
                 or user_id is not None and user_id != challenge.user_id
+                or challenge_id is not None and challenge_id != challenge.pk
                 or challenge.integration_generation != config.generation
                 or challenge.integration_identity != config.integration_identity
                 or challenge.consumed_at or challenge.expires_at <= timezone.now()

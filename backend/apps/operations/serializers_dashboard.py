@@ -8,6 +8,7 @@ class DashboardSerializer(serializers.Serializer):
     pending_event_registrations = serializers.IntegerField(required=False, default=0)
     pending_bookings = serializers.IntegerField(required=False, default=0)
     upcoming_bookings = serializers.IntegerField(required=False, default=0)
+    open_booking_issues = serializers.IntegerField(required=False, default=0)
     scope_mode = serializers.ChoiceField(choices=["machine", "full"])
     overdue_loans = serializers.IntegerField(required=False, default=0)
     pending_requests = serializers.IntegerField(required=False, default=0)

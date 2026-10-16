@@ -51,7 +51,10 @@ class PresenceRosterView(StaffPresenceView):
         space = staff_space(request, makerspace_id)
         rows = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, present_rows(space))
         page = PageNumberPagination()
-        return page.get_paginated_response(PresenceRosterSerializer(page.paginate_queryset(rows, request), many=True).data)
+        response = page.get_paginated_response(PresenceRosterSerializer(page.paginate_queryset(rows, request), many=True).data)
+        policy = settings_for(space)
+        response.data.update(personal_opt_out_allowed=policy.allow_personal_opt_out, names_displayed=policy.show_names)
+        return response
 
 
 class StaffPresenceStartView(StaffPresenceView):
@@ -74,7 +77,9 @@ class StaffPresenceEndView(StaffPresenceView):
         serializer.is_valid(raise_exception=True)
         account = scoped_account(space, serializer.validated_data["account_id"], present=True)
         end_session(account, space, actor=request.user)
-        return Response({"active": False, "session": None})
+        policy = settings_for(space)
+        return Response({"active": False, "session": None, "personal_opt_out_allowed": policy.allow_personal_opt_out,
+                         "names_displayed": policy.show_names})
 
 
 class PresencePrivacyView(StaffPresenceView):

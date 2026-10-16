@@ -1,8 +1,6 @@
 """Live personal audience/channel resolution; no inference from an email address."""
 from dataclasses import dataclass
 
-from django.utils import timezone
-
 from apps.accounts import rbac
 from apps.integrations.dispatch_policy import email_module_blocks
 from apps.integrations.email_preferences import blocked_reason
@@ -11,6 +9,16 @@ from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.notifications.models_preferences import NotificationPreference
 from apps.notifications.preferences import mandatory_email, personal_enabled
 from .notification_sources import source_eligible
+
+LEGACY_STAFF_EMAIL_SOURCES = {
+    "hardware_requests": {"hardware.request", "hardware.loan_reminder", "hardware.problem_report", "hardware.charge"},
+    "printing": {"machines.service"},
+    "maintenance": {"machines.maintenance"},
+    "stock": {"machines.procurement"},
+    "certifications": {"machines.certification", "machines.certification_summary"},
+    "events": {"events.lifecycle"},
+    "bookings": {"bookings.lifecycle"},
+}
 
 
 @dataclass(frozen=True)
@@ -56,10 +64,32 @@ def eligible(envelope):
 def email_eligible(envelope):
     user = envelope.recipient
     user.refresh_from_db()
-    return bool(user.email and user.email_verified_at and not email_module_blocks(
+    if envelope.source_kind in {"bookings.lifecycle", "bookings.reminder"}:
+        from apps.bookings.notification_owner_mailbox import email_reserved
+        if email_reserved(envelope):
+            return False
+    verified = user.email_verified_at or legacy_staff_email_allowed(envelope)
+    return bool(user.email and verified and not email_module_blocks(
         envelope.makerspace, envelope.stream, envelope.event,
     ) and not blocked_reason(envelope.makerspace, user.email, user_id=user.pk,
                             feature=envelope.feature, stream=envelope.stream, event=envelope.event))
+
+
+def legacy_staff_email_allowed(envelope):
+    """Only existing operational audiences may use an unverified staff mailbox."""
+    if (envelope.audience != "staff" or envelope.source_kind not in LEGACY_STAFF_EMAIL_SOURCES.get(envelope.feature, set())
+            or envelope.event in {"broadcast", "campaign"}):
+        return False
+    from .destinations import NotificationScope
+    from .staff_notifications import staff_user_ids_for_feature
+    from apps.makerspaces.models import MakerspaceMembership
+    user = envelope.recipient
+    membership = policy_rows(MakerspaceMembership, envelope.makerspace).select_related("assigned_role").filter(
+        user=user, status="active", receives_notifications=True).first()
+    return bool(user.is_active and user.access_status == "active" and not user.is_tenant_dump_stub
+        and rbac.actions_for_membership(membership)
+        and user.pk in staff_user_ids_for_feature(envelope.makerspace, envelope.feature,
+            envelope.event, NotificationScope.from_dict(envelope.scope)))
 
 
 def endpoint_eligible(endpoint, envelope):
@@ -156,10 +186,10 @@ def resolve(envelope, *, fallback=False):
 
 def whatsapp_template(delivery, now=None):
     """Only authenticated inbound messages open the customer service window."""
-    from datetime import timedelta
+    from .notification_wa_window import in_session_window
     from .models_endpoints import WhatsAppTemplate
     endpoint = delivery.endpoint
-    if endpoint.last_inbound_at and endpoint.last_inbound_at > (now or timezone.now()) - timedelta(hours=24):
+    if in_session_window(endpoint, now=now):
         return None
     return WhatsAppTemplate.objects.filter(configuration=endpoint.configuration,
         event=delivery.envelope.event, audience=delivery.envelope.audience,

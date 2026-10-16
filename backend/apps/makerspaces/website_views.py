@@ -113,6 +113,9 @@ class WebsiteSitemapView(WebsitePublicView):
         for adapter in adapters():
             for row in adapter.discover(spaces, {})[:50000 - len(urls)]:
                 urls.append(public_url(row.makerspace, adapter.kind, row.public_token))
+        from itertools import islice
+        from .public_profile_share import sitemap_profile_urls
+        urls.extend(islice(sitemap_profile_urls(request, spaces=spaces), max(0, 50000 - len(urls))))
         body = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         body += "".join(f"<url><loc>{escape(url)}</loc></url>" for url in urls)
         response = HttpResponse(body + "</urlset>", content_type="application/xml")

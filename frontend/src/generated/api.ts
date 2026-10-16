@@ -84,6 +84,7 @@ export const openApiTags = [
   "Public machine service",
   "Public machines",
   "Public organizations",
+  "Public profiles",
   "Public requests",
   "Public websites",
   "QR assets",
@@ -342,6 +343,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/devices",
   "/api/v1/admin/makerspace/{makerspace_id}/direct-loan-members",
   "/api/v1/admin/makerspace/{makerspace_id}/direct-loans",
+  "/api/v1/admin/makerspace/{makerspace_id}/domain-settings/{domain}",
   "/api/v1/admin/makerspace/{makerspace_id}/email-logs",
   "/api/v1/admin/makerspace/{makerspace_id}/email-logs/{id}/retry",
   "/api/v1/admin/makerspace/{makerspace_id}/email-templates",
@@ -750,7 +752,10 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/checkout",
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/mobile-intent",
   "/api/v1/member/makerspaces/{makerspace_id}/profile",
+  "/api/v1/member/makerspaces/{makerspace_id}/profile/handle",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/image",
+  "/api/v1/member/makerspaces/{makerspace_id}/profile/timeline",
+  "/api/v1/member/makerspaces/{makerspace_id}/profile/timeline/{id}",
   "/api/v1/member/makerspaces/{makerspace_id}/referrals",
   "/api/v1/member/makerspaces/{makerspace_id}/verification",
   "/api/v1/member/makerspaces/{makerspace_id}/waiver",
@@ -788,6 +793,10 @@ export const openApiPaths = [
   "/api/v1/public/makerspaces/",
   "/api/v1/public/organizations/{slug}/",
   "/api/v1/public/organizations/{slug}/events/",
+  "/api/v1/public/profiles/{handle}/",
+  "/api/v1/public/profiles/{handle}/activity",
+  "/api/v1/public/profiles/{handle}/events",
+  "/api/v1/public/profiles/{handle}/projects",
   "/api/v1/public/requests/{public_token}/status",
   "/api/v1/public/{makerspace_slug}/bookings/calendar/{raw_token}.ics",
   "/api/v1/public/{makerspace_slug}/event-calendar/{raw_token}.ics",
@@ -2148,6 +2157,8 @@ export type CategoryAdmin = {
   "updated_at": string;
 };
 
+export type CategoryEnum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
+
 export type CategoryInput = {
   "name": string;
   "slug": string;
@@ -2307,9 +2318,9 @@ export type Channel59dEnum = "telegram" | "slack" | "mattermost" | "discord" | "
 
 export type Channel673Enum = "email" | "in_app" | "native_push";
 
-export type ChannelB30Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
+export type ChannelBe2Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
 
-export type ChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook" | "whatsapp";
+export type ChannelDb9Enum = "telegram" | "slack" | "mattermost" | "discord" | "whatsapp";
 
 export type CheckoutUrl = {
   "checkout_url": string;
@@ -2368,7 +2379,7 @@ export type ClosureIdentity = {
 export type CollaborativeEvent = {
   "participating_organizations": Array<ParticipatingOrganization>;
   "audience_label": string | null;
-  "registration_audience": EventDefaultRegistrationAudienceEnum;
+  "registration_audience": DefaultRegistrationAudienceEnum;
   "category": {
   "id"?: number;
   "name"?: string;
@@ -2526,22 +2537,22 @@ export type ContractChallenge = {
 };
 
 export type ContractChallengeStart = {
-  "channel": "telegram" | "slack" | "mattermost" | "discord" | "whatsapp";
+  "channel": ChannelDb9Enum;
   "consent": boolean;
   "consent_version": string;
   "phone_number"?: string;
 };
 
 export type ContractChannel = {
-  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
-  "enabled": boolean;
-  "room_enabled": boolean;
-  "personal_enabled": boolean;
-  "email_fallback": boolean;
+  "channel": ChannelBe2Enum;
+  "enabled"?: boolean;
+  "room_enabled"?: boolean;
+  "personal_enabled"?: boolean;
   "provider": string;
-  "integration_identity": string;
-  "generation": number;
-  "quotas": ContractQuota;
+  "email_fallback"?: boolean;
+  "integration_identity"?: string;
+  "generation"?: number;
+  "quotas"?: unknown;
   "credentials_set": boolean;
   "templates": Array<ContractWhatsAppTemplate>;
 };
@@ -2553,29 +2564,17 @@ export type ContractChannelPage = {
   "results": Array<ContractChannel>;
 };
 
-export type ContractChannelPatch = {
-  "enabled"?: boolean;
-  "room_enabled"?: boolean;
-  "personal_enabled"?: boolean;
-  "email_fallback"?: boolean;
-  "provider"?: string;
-  "integration_identity"?: string;
-  "quotas"?: ContractQuota;
-  "templates"?: Array<ContractWhatsAppTemplate>;
-  "credentials"?: {
-  [key: string]: string;
-};
-};
+export type ContractChannelPatchProviderEnum = "telegram" | "slack" | "mattermost" | "discord" | "twilio" | "meta" | "builtin" | "webhook";
 
 export type ContractDelivery = {
   "id": number;
   "envelope_id": number;
-  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
-  "state": "accepted" | "sent" | "delivered" | "read" | "failed" | "skipped" | "retrying";
-  "attempt_count": number;
-  "next_attempt_at": string | null;
-  "last_error": string;
-  "retryable": boolean;
+  "channel": ChannelBe2Enum;
+  "state"?: ContractDeliveryStateEnum;
+  "attempt_count"?: number;
+  "next_attempt_at"?: string | null;
+  "last_error"?: string;
+  "retryable"?: boolean;
   "event": string;
   "feature": string;
   "created_at": string;
@@ -2589,16 +2588,18 @@ export type ContractDeliveryPage = {
   "results": Array<ContractDelivery>;
 };
 
+export type ContractDeliveryStateEnum = "accepted" | "sent" | "delivered" | "read" | "failed" | "skipped" | "retrying";
+
 export type ContractEndpoint = {
   "id": number;
-  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
+  "channel": ChannelDb9Enum;
   "provider": string;
   "integration_generation": number;
-  "verification_state": "verified" | "revoked";
+  "verification_state"?: VerificationStateEnum;
   "verified_at": string;
   "consented_at": string;
   "consent_version": string;
-  "revoked_at": string | null;
+  "revoked_at"?: string | null;
   "created_at": string;
 };
 
@@ -2607,11 +2608,6 @@ export type ContractEndpointPage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<ContractEndpoint>;
-};
-
-export type ContractError = {
-  "detail": string;
-  "code"?: string;
 };
 
 export type ContractPreferences = {
@@ -2641,33 +2637,32 @@ export type ContractRevoked = {
 };
 
 export type ContractSelection = {
-  "category": "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
-  "channels": Array<"email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp">;
+  "category": CategoryEnum;
+  "channels": Array<ContractSelectionChannelsEnum>;
   "email_fallback"?: boolean;
-  "available_channels"?: Array<string>;
+  "available_channels": Array<string>;
 };
 
+export type ContractSelectionChannelsEnum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "whatsapp";
+
 export type ContractTest = {
-  "channel": "email" | "in_app" | "native_push" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "webhook";
+  "channel": ContractTestChannelEnum;
   "endpoint_id"?: number;
   "room_id"?: number;
 };
 
-export type ContractValidationError = {
-  "detail": string;
-  "code"?: string;
-} | {
-  [key: string]: string | Array<string> | Record<string, unknown>;
-};
+export type ContractTestChannelEnum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
 
 export type ContractWhatsAppTemplate = {
   "event": string;
-  "audience": string;
+  "audience": ContractWhatsAppTemplateAudienceEnum;
   "locale"?: string;
   "template_name": string;
   "variables": Array<string>;
-  "approved"?: boolean;
+  "approved": boolean;
 };
+
+export type ContractWhatsAppTemplateAudienceEnum = "staff" | "requester" | "member";
 
 export type Count = {
   "count": number;
@@ -2754,6 +2749,14 @@ export type CutoverReceiptRequest = {
   "receipt": ReceiptEnvelope;
 };
 
+export type DailyBucket = {
+  "date": string;
+  "count": number;
+  "families": {
+  [key: string]: number;
+};
+};
+
 export type DamagedLostReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<DamagedLostReportRow>;
@@ -2825,6 +2828,8 @@ export type DataExportJob = {
   "expires_at": string;
   "created_at": string;
 };
+
+export type DefaultRegistrationAudienceEnum = "members" | "accounts" | "invite" | "participating_organizations";
 
 export type Delivery = {
   "id": number;
@@ -3116,6 +3121,34 @@ export type DocumentPresign = {
   "content_type": string;
 };
 
+export type DomainEnum = "bookings" | "events" | "inventory" | "machines";
+
+export type DomainFeature = {
+  "key": string;
+  "label": string;
+  "description": string;
+  "parent_module": string | null;
+  "requires_features": Array<string>;
+  "enabled": boolean;
+  "available": boolean;
+};
+
+export type DomainSettings = {
+  "domain": DomainEnum;
+  "editable": boolean;
+  "features": Array<DomainFeature>;
+  "settings": DomainSettingValues;
+};
+
+export type DomainSettingValues = {
+  "event_default_registration_audience"?: DefaultRegistrationAudienceEnum;
+  "event_reminder_lead_hours"?: Array<number>;
+  "booking_requester_notifications_enabled"?: boolean;
+  "booking_reminder_lead_hours"?: Array<number>;
+  "filament_low_stock_threshold_grams"?: string;
+  "anonymous_requests_enabled"?: boolean;
+};
+
 export type DomainVerificationRecord = {
   "host": string;
   "type": string;
@@ -3230,6 +3263,7 @@ export type EventAdmin = {
   "id": number;
   "staff_permissions": Array<string>;
   "can_manage_staff": boolean;
+  "can_duplicate": boolean;
   "makerspace_id": number;
   "ticketing_features": Array<string>;
   "broadcasts_enabled": boolean;
@@ -3254,7 +3288,7 @@ export type EventAdmin = {
   "capacity": number;
   "payment_amount": string;
   "registration_requires_approval": boolean;
-  "registration_audience": EventDefaultRegistrationAudienceEnum;
+  "registration_audience": DefaultRegistrationAudienceEnum;
   "category_id": number | null;
   "tags": unknown;
   "cancellation_cutoff_hours": number | null;
@@ -3423,7 +3457,7 @@ export type EventCollaboratorReplace = {
 };
 
 export type EventCreate = {
-  "registration_audience"?: EventDefaultRegistrationAudienceEnum;
+  "registration_audience"?: DefaultRegistrationAudienceEnum;
   "category_id"?: number | null;
   "tags"?: Array<string>;
   "title": string;
@@ -3447,8 +3481,6 @@ export type EventCreate = {
   "audience_organization_ids"?: Array<number>;
   "collaborator_slugs"?: Array<string>;
 };
-
-export type EventDefaultRegistrationAudienceEnum = "members" | "accounts" | "invite" | "participating_organizations";
 
 export type EventDuplicate = {
   "attach_series"?: boolean;
@@ -3490,7 +3522,7 @@ export type EventListWithDefaults = {
   "next"?: string | null;
   "previous"?: string | null;
   "results": Array<EventAdmin>;
-  "default_registration_audience": EventDefaultRegistrationAudienceEnum;
+  "default_registration_audience": DefaultRegistrationAudienceEnum;
 };
 
 export type EventOrganizerList = {
@@ -3588,7 +3620,7 @@ export type EventSeriesDetail = {
   "capacity"?: number;
   "payment_amount"?: string;
   "registration_requires_approval"?: boolean;
-  "registration_audience"?: EventDefaultRegistrationAudienceEnum;
+  "registration_audience"?: DefaultRegistrationAudienceEnum;
   "cancellation_cutoff_hours"?: number | null;
   "registration_cutoff_lead_minutes"?: number | null;
   "is_public"?: boolean;
@@ -3939,6 +3971,16 @@ export type GrantedEventEntry = {
 
 export type GrantedEventEntrySourceEnum = "event_grant";
 
+export type Handle = {
+  "handle": string;
+};
+
+export type HandleRead = {
+  "handle": string;
+  "claimed_at": string;
+  "changed_at": string;
+};
+
 export type HardwareRequestError = {
   "detail": string;
   "code": string;
@@ -3965,6 +4007,11 @@ export type HostWaiverProjection = {
 };
 
 export type HostWaiverStateEnum = "not_required" | "on_file" | "missing";
+
+export type HttpsLink = {
+  "kind": string;
+  "url": string;
+};
 
 export type IdentityDisclosureDecision = {
   "user_id": number;
@@ -4493,7 +4540,7 @@ export type JournalLine = {
 
 export type Key4feEnum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
 
-export type KeyB30Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
+export type KeyBe2Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
 
 export type Kind21fEnum = "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
 
@@ -5317,7 +5364,7 @@ export type Makerspace = {
   "archive_custody_state": ArchiveCustodyStateEnum | null;
   "staff_notifications_enabled"?: boolean;
   "booking_requester_notifications_enabled"?: boolean;
-  "event_default_registration_audience"?: EventDefaultRegistrationAudienceEnum;
+  "event_default_registration_audience"?: DefaultRegistrationAudienceEnum;
   "event_reminder_lead_hours"?: Array<number>;
   "booking_reminder_lead_hours"?: Array<number>;
   "logo_key": string;
@@ -6194,7 +6241,7 @@ export type ModuleAction = {
   "key": string;
 };
 
-export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
+export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook";
 
 export type MostLentReport = {
   "rows": Array<Array<unknown>>;
@@ -6300,7 +6347,7 @@ export type Notification = {
 };
 
 export type NotificationChannel = {
-  "key": KeyB30Enum;
+  "key": KeyBe2Enum;
   "label": string;
 };
 
@@ -6345,7 +6392,7 @@ export type NotificationMarkAllRead = {
 
 export type NotificationPreferenceCell = {
   "feature": Feature4feEnum;
-  "channel": ChannelB30Enum;
+  "channel": ChannelBe2Enum;
   "enabled": boolean;
   "source": NotificationPreferenceCellSourceEnum;
 };
@@ -6354,7 +6401,7 @@ export type NotificationPreferenceCellSourceEnum = "default" | "override";
 
 export type NotificationPreferenceChange = {
   "feature": Feature4feEnum;
-  "channel": ChannelB30Enum;
+  "channel": ChannelBe2Enum;
   "enabled": boolean;
 };
 
@@ -6866,7 +6913,7 @@ export type PackMembershipPlan = {
 
 export type PackNotificationPreference = {
   "feature": Feature4feEnum;
-  "channel": ChannelB30Enum;
+  "channel": ChannelBe2Enum;
   "enabled": boolean;
 };
 
@@ -7412,9 +7459,30 @@ export type PatchedCertificationTypeUpdate = {
   "updated_at"?: string;
 };
 
+export type PatchedContractChannelPatch = {
+  "enabled"?: boolean;
+  "room_enabled"?: boolean;
+  "personal_enabled"?: boolean;
+  "email_fallback"?: boolean;
+  "provider"?: ContractChannelPatchProviderEnum;
+  "integration_identity"?: string;
+  "credentials"?: {
+  [key: string]: string;
+};
+  "quotas"?: ContractQuota;
+  "templates"?: Array<ContractWhatsAppTemplate>;
+};
+
 export type PatchedDeviceUpdate = {
   "name"?: string;
   "offline_threshold_seconds"?: number;
+};
+
+export type PatchedDomainSettingsUpdate = {
+  "features"?: {
+  [key: string]: boolean;
+};
+  "settings"?: DomainSettingValues;
 };
 
 export type PatchedEmailTemplateUpdate = {
@@ -7447,7 +7515,7 @@ export type PatchedEventSeriesWrite = {
 };
 
 export type PatchedEventWrite = {
-  "registration_audience"?: EventDefaultRegistrationAudienceEnum;
+  "registration_audience"?: DefaultRegistrationAudienceEnum;
   "category_id"?: number | null;
   "tags"?: Array<string>;
   "title"?: string;
@@ -7643,7 +7711,7 @@ export type PatchedMakerspace = {
   "archive_custody_state"?: ArchiveCustodyStateEnum | null;
   "staff_notifications_enabled"?: boolean;
   "booking_requester_notifications_enabled"?: boolean;
-  "event_default_registration_audience"?: EventDefaultRegistrationAudienceEnum;
+  "event_default_registration_audience"?: DefaultRegistrationAudienceEnum;
   "event_reminder_lead_hours"?: Array<number>;
   "booking_reminder_lead_hours"?: Array<number>;
   "logo_key"?: string;
@@ -7899,6 +7967,32 @@ export type PatchedPrinterPoolVisibility = {
   "is_public"?: boolean;
 };
 
+export type PatchedProfileWrite = {
+  "public_visible"?: boolean;
+  "publication_consent"?: boolean;
+  "show_activity_graph"?: boolean;
+  "show_events"?: boolean;
+  "show_speaking"?: boolean;
+  "show_projects"?: boolean;
+  "show_machine_activity"?: boolean;
+  "show_bookings"?: boolean;
+  "show_loans"?: boolean;
+  "domains"?: Array<string>;
+  "skills"?: Array<Skill>;
+  "links"?: Array<HttpsLink>;
+  "is_visible"?: boolean;
+  "show_attended_events"?: boolean;
+  "show_certifications"?: boolean;
+  "headline"?: string;
+  "institution"?: string;
+  "bio"?: string;
+  "interests"?: Array<string>;
+  "languages"?: Array<string>;
+  "education"?: Array<EducationEntry>;
+  "github_username"?: string;
+  "projects"?: Array<ProjectWrite>;
+};
+
 export type PatchedRegistrationAnswers = {
   "custom_answers"?: unknown | null;
 };
@@ -7983,10 +8077,22 @@ export type PatchedStaffGrantUpdate = {
   "role_label"?: RoleLabelEnum | BlankEnum;
 };
 
+export type PatchedTimelineWrite = {
+  "id"?: number;
+  "kind"?: TimelineWriteKindEnum;
+  "title"?: string;
+  "organization"?: string;
+  "location"?: string;
+  "start"?: string;
+  "end"?: string | null;
+  "description"?: string;
+  "order"?: number;
+};
+
 export type PatchedTimingPolicy = {
   "quiet_start"?: string;
   "quiet_end"?: string;
-  "channels"?: Array<ChannelsEnum>;
+  "channels"?: Array<TimingPolicyChannelsEnum>;
   "digest_at"?: string;
   "daily_digest_default"?: boolean;
   "bounce_secret"?: string;
@@ -8467,6 +8573,20 @@ export type ProfileImageUploadRequest = {
 };
 
 export type ProfileRead = {
+  "public_visible"?: boolean;
+  "publication_consent"?: boolean;
+  "show_activity_graph"?: boolean;
+  "show_events"?: boolean;
+  "show_speaking"?: boolean;
+  "show_projects"?: boolean;
+  "show_machine_activity"?: boolean;
+  "show_bookings"?: boolean;
+  "show_loans"?: boolean;
+  "domains"?: Array<string>;
+  "skills"?: Array<Skill>;
+  "links"?: Array<HttpsLink>;
+  "public_consented_at": string | null;
+  "handle": string | null;
   "membership_id": number;
   "display_name": string;
   "is_visible": boolean;
@@ -8487,6 +8607,18 @@ export type ProfileRead = {
 };
 
 export type ProfileWrite = {
+  "public_visible"?: boolean;
+  "publication_consent"?: boolean;
+  "show_activity_graph"?: boolean;
+  "show_events"?: boolean;
+  "show_speaking"?: boolean;
+  "show_projects"?: boolean;
+  "show_machine_activity"?: boolean;
+  "show_bookings"?: boolean;
+  "show_loans"?: boolean;
+  "domains"?: Array<string>;
+  "skills"?: Array<Skill>;
+  "links"?: Array<HttpsLink>;
   "is_visible"?: boolean;
   "show_attended_events"?: boolean;
   "show_certifications"?: boolean;
@@ -8508,6 +8640,9 @@ export type ProjectLink = {
 export type ProjectRead = {
   "id": number;
   "title": string;
+  "subtitle": string;
+  "tags": unknown;
+  "public_visible": boolean;
   "description": string;
   "links": unknown;
   "image_url": string | null;
@@ -8516,6 +8651,9 @@ export type ProjectRead = {
 export type ProjectWrite = {
   "id"?: number;
   "title": string;
+  "subtitle"?: string;
+  "tags"?: Array<string>;
+  "public_visible"?: boolean;
   "description"?: string;
   "links"?: Array<ProjectLink>;
 };
@@ -8553,6 +8691,13 @@ export type ProvisionSubdomainRequest = {
 
 export type ProvisionSubdomainValidationError = {
   "label": Array<string>;
+};
+
+export type PublicActivity = {
+  "to": string;
+  "timezone": string;
+  "days": Array<DailyBucket>;
+  "from": string;
 };
 
 export type PublicAdmission = {
@@ -8646,7 +8791,7 @@ export type PublicConfig = {
 export type PublicEvent = {
   "participating_organizations": Array<ParticipatingOrganization>;
   "audience_label": string | null;
-  "registration_audience": EventDefaultRegistrationAudienceEnum;
+  "registration_audience": DefaultRegistrationAudienceEnum;
   "category": {
   "id"?: number;
   "name"?: string;
@@ -8687,6 +8832,13 @@ export type PublicEvent = {
   "public_token"?: string;
   "title"?: string;
 } | null;
+};
+
+export type PublicEventPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<PublicEvent>;
 };
 
 export type PublicEventRegistrationInput = {
@@ -8816,7 +8968,7 @@ export type PublicOrganization = {
 export type PublicOrganizationEvent = {
   "participating_organizations": Array<ParticipatingOrganization>;
   "audience_label": string | null;
-  "registration_audience": EventDefaultRegistrationAudienceEnum;
+  "registration_audience": DefaultRegistrationAudienceEnum;
   "category": {
   "id"?: number;
   "name"?: string;
@@ -8940,6 +9092,46 @@ export type PublicProduct = {
   "count"?: number;
 } | null;
   "image_url": string | null;
+};
+
+export type PublicProfile = {
+  "handle": string;
+  "display_name": string;
+  "avatar_url": string | null;
+  "verified": boolean;
+  "headline": string;
+  "institution": string;
+  "bio": string;
+  "domains": Array<string>;
+  "skills": Array<Skill>;
+  "links": Array<HttpsLink>;
+  "timeline": Array<PublicTimeline>;
+  "projects": Array<PublicProject>;
+  "vouched_by": Array<PublicVouch>;
+  "vouched_count": number;
+  "show_activity_graph": boolean;
+  "show_events": boolean;
+  "show_speaking": boolean;
+  "show_projects": boolean;
+  "show_machine_activity": boolean;
+  "show_bookings": boolean;
+  "show_loans": boolean;
+};
+
+export type PublicProject = {
+  "title": string;
+  "subtitle": string;
+  "description": string;
+  "tags": Array<string>;
+  "image_url": string | null;
+  "links": Array<HttpsLink>;
+};
+
+export type PublicProjectPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<PublicProject>;
 };
 
 export type PublicQueueEstimate = {
@@ -9074,6 +9266,17 @@ export type PublicStatsToolsOut = {
   "quantity_out": number;
 };
 
+export type PublicTimeline = {
+  "kind": string;
+  "title": string;
+  "organization": string;
+  "location": string;
+  "start": string;
+  "end": string | null;
+  "description": string;
+  "order": number;
+};
+
 export type PublicToolCheckout = {
   "kit_checklist"?: Array<KitCount>;
   "payload": string;
@@ -9111,6 +9314,11 @@ export type PublicToolScan = {
 export type PublicTypeIntake = {
   "materials": Array<PublicMaterial>;
   "intake_schema": unknown;
+};
+
+export type PublicVouch = {
+  "handle": string;
+  "display_name": string;
 };
 
 export type PurposeEnum = "enroll" | "rotate" | "reactivate";
@@ -10158,6 +10366,11 @@ export type SetupState = {
 
 export type SeverityEnum = "info" | "warning" | "error" | "critical";
 
+export type Skill = {
+  "name": string;
+  "level": number;
+};
+
 export type SocialIdentity = {
   "provider": string;
   "created_at": string;
@@ -10815,15 +11028,38 @@ export type TimelineEvent = {
   "evidence_retention"?: EvidenceRetention | null;
 };
 
+export type TimelinePage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<TimelineWrite>;
+};
+
+export type TimelineWrite = {
+  "id": number;
+  "kind": TimelineWriteKindEnum;
+  "title": string;
+  "organization"?: string;
+  "location"?: string;
+  "start": string;
+  "end"?: string | null;
+  "description"?: string;
+  "order"?: number;
+};
+
+export type TimelineWriteKindEnum = "experience" | "education" | "volunteering";
+
 export type TimingPolicy = {
   "quiet_start": string;
   "quiet_end": string;
-  "channels": Array<ChannelsEnum>;
+  "channels": Array<TimingPolicyChannelsEnum>;
   "digest_at": string;
   "daily_digest_default"?: boolean;
   "bounce_secret"?: string;
   "bounce_configured": boolean;
 };
+
+export type TimingPolicyChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook";
 
 export type ToBuyItem = {
   "id": number;
@@ -11066,6 +11302,8 @@ export type VerificationRunPage = {
 };
 
 export type VerificationRunStateEnum = "QUEUED" | "RUNNING" | "RETRYING" | "SUCCEEDED" | "INCOMPLETE" | "FAILED" | "TIMED_OUT";
+
+export type VerificationStateEnum = "verified" | "revoked";
 
 export type VersionEnum = 1;
 

@@ -99,8 +99,9 @@ class TenantDumpCatalogError(AssertionError):
 # frozen snapshot graph reproduced the prior digest exactly before adding them.
 # Re-blessed for TenantImportJob.run_request/run_attempt after reproducing the prior
 # digest from the frozen graph with schema_digest's canonical JSON encoding.
-# Merged feature/async-tenant-import: re-pin from the merged graph.
-CATALOG_SCHEMA_SHA256 = "81b67d683bb62a62e5937031d29e4af43d7791945b189674026d2ba482bd6bbd"
+# Phase 1 merge (notification + profile contracts) and feature/async-tenant-import:
+# re-pinned from schema_digest() over the merged live graph.
+CATALOG_SCHEMA_SHA256 = "9393dfb7f73e4efb9f1f473fe7ddbb9a560616ebe046042646b1c4294e302d5c"
 # int-events: DROP-only EventAudienceOrganization, display-only staff-grant role_label and
 # Organization.is_discoverable; the runtime guard reproduced 7a7132b9 before these fields.
 # Phase 0 merge: re-pinned again by the catalog guard test after merging int-events.

@@ -11,7 +11,7 @@ from apps.backup.main_projection_inverse import boundary_deltas
 from apps.backup.raw_projection import canonical_owner_q, no_decrypt_guard, raw_records
 from apps.backup.recipient_selection import BackupBuildError
 from apps.backup.tenant_projection import project_raw_dataset
-from apps.data_export.datasets import DATASET_SPECS
+from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS
 
 
 def verify_unsealed_slice(

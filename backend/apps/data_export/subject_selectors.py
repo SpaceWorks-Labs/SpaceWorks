@@ -13,6 +13,8 @@ from .datasets import DATASET_SPECS
 
 
 SUBJECT_PATHS = {
+    "notifications.NotificationPreference": ("user",),
+    "notifications.MemberNotificationPreference": ("user",),
     "presence.PresencePreference": ("account",),
     "makerspaces.PublicHandle": ("user",),
     "makerspaces.ProfileTimelineEntry": ("profile__membership__user",),
@@ -63,7 +65,7 @@ SUBJECT_PATHS.update(_P2_BOOKING_SUBJECTS)
 def subject_query(model, user, makerspace_id):
     label = model._meta.label
     if label == "accounts.User":
-        return model.objects.filter(pk=user.pk)
+        return model.objects.filter(pk=user.pk, retired_at__isnull=True)
     if label == "audit.AuditLog":
         own = Q(actor_id=user.pk) | Q(
             target_type="accounts.user", target_id=str(user.pk),

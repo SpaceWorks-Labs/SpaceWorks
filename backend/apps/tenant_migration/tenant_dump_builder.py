@@ -234,20 +234,6 @@ def _split_bootstrap_roots(rows):
     )
 
 
-def _remap_member_roles(rows, member_role_id):
-    result = []
-    labels = {"makerspaces.MakerspaceMembership", "makerspaces.MembershipRequest"}
-    for row in rows:
-        if row.model._meta.label not in labels:
-            result.append(row)
-            continue
-        field = row.model._meta.get_field("assigned_role")
-        values = dict(row.values)
-        values[field.column] = member_role_id
-        result.append(SanitizedRow(row.model, row.source_pk, values))
-    return result
-
-
 def _mapped_identities(rows_by_label):
     result = {}
     for label, rows in rows_by_label.items():

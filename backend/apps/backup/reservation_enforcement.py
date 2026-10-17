@@ -72,6 +72,12 @@ def install_reservation_entry(
 def _catalog_bound_payload(fact, *, kind, reservation_salt, using):
     payload = dict(fact)
     if kind != B1ReservationEntry.Kind.COMMITMENT:
+        if kind == B1ReservationEntry.Kind.BROAD_FENCE and "constraint_identity" not in payload:
+            from .staff_shell_fences import validate_supplemental_fence
+            try:
+                validate_supplemental_fence(payload)
+            except ValueError as exc:
+                raise BackupBuildError("Unregistered staff shell reservation fence.") from exc
         _validate_fact_digest(payload)
         return payload
     rules = {item.identity: item for item in load_unique_rules(using)}

@@ -34,6 +34,8 @@ class CallbackEvent:
     inbound: bool = False
     delivery_id: int | None = None
     delivery_attempt: int | None = None
+    identity_digest: str = ""
+    opt_in: bool = False
 
 
 class Provider(Protocol):

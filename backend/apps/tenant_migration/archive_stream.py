@@ -24,8 +24,16 @@ class PortableArchive:
         self.root = Path(root)
         if not self.root.is_dir():
             raise ArchiveFormatError("The decrypted archive directory does not exist.")
+        self._staff_context = None
 
     def rows(self, model_label):
+        from .portable_staff import StaffArchiveContext
+        if self._staff_context is None:
+            self._staff_context = StaffArchiveContext(self)
+        for row in self.raw_rows(model_label):
+            yield self._staff_context.decorate(model_label, row)
+
+    def raw_rows(self, model_label):
         dataset = PORTABLE_DATASETS.get(model_label)
         if dataset is None:
             raise ArchiveFormatError(f"No PORTABLE dataset exists for {model_label}.")

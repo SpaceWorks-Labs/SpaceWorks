@@ -58,11 +58,9 @@ def build_user_closure(rows, makerspace_id, capture_id, *, using="default"):
     references = _referencing_edges(rows)
     user_ids = set(references)
     User = apps.get_model("accounts.User")
-    existing_user_ids = set(
-        User._base_manager.using(using)
-        .filter(pk__in=user_ids)
-        .values_list("pk", flat=True)
-    )
+    identities = {row["id"]: row for row in User._base_manager.using(using).filter(pk__in=user_ids)
+                  .values("id", "account_kind", "staff_makerspace_id", "retired_at")}
+    existing_user_ids = set(identities)
     missing = sorted(user_ids - existing_user_ids, key=str)
     if missing:
         refused = tuple(
@@ -85,7 +83,10 @@ def build_user_closure(rows, makerspace_id, capture_id, *, using="default"):
 
     included, stubbed = [], []
     for pk in sorted(user_ids, key=str):
-        exclusive = memberships[pk] == {int(makerspace_id)}
+        identity = identities[pk]
+        exclusive = (identity["retired_at"] is None and (
+            identity["account_kind"] == "staff" and identity["staff_makerspace_id"] == int(makerspace_id)
+            or identity["account_kind"] == "member" and memberships[pk] == {int(makerspace_id)}))
         if exclusive:
             included.append(
                 _entry(capture_id, pk, "tenant_exclusive", references[pk], emitted=pk)
@@ -150,6 +151,9 @@ def _referencing_edges(rows):
                 references[int(value)].append(
                     (label, row[model._meta.pk.attname], field_name)
                 )
+    for row in rows.get("accounts.User", ()):
+        if row.get("account_kind") == "staff" and row.get("staff_makerspace_id") is not None:
+            references[int(row["id"])].append(("accounts.User", row["id"], "staff_makerspace"))
     _semantic_edges(rows, references)
     return {pk: tuple(sorted(edges, key=_edge_key)) for pk, edges in references.items()}
 
@@ -174,7 +178,7 @@ def _semantic_edges(rows, references):
 
 def _database_reference_rows(using):
     result = {}
-    labels = {
+    labels = {"accounts.User"} | {
         label
         for (fidelity, label, _field), edge in USER_EDGES.items()
         if fidelity is Fidelity.PORTABLE and edge.included

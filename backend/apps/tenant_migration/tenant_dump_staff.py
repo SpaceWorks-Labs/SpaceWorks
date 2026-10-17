@@ -44,10 +44,8 @@ def prepare_staff_rows(rows, makerspace_id, *, using):
     for label in STAFF_CHILD_LABELS:
         kept = (row for row in result.get(label, ()) if row['membership_id'] in staff_memberships)
         result[label] = tuple(with_role(row, 'role_id') for row in kept) if label.endswith('MembershipAdditionalRole') else tuple(kept)
-    result['notifications.MemberNotificationPreference'] = tuple(
-        row for row in result.get('notifications.MemberNotificationPreference', ())
-        if row['user_id'] in staff_ids
-    )
+    for label in ('notifications.MemberNotificationPreference', 'notifications.NotificationPreference'):
+        result[label] = tuple(row for row in result.get(label, ()) if row['user_id'] in staff_ids)
     return result
 
 

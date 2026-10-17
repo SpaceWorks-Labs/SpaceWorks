@@ -25,6 +25,7 @@ def verify_user_closure_manifest(value, capture_id):
         for (fidelity, label, field_name), edge in USER_EDGES.items()
         if fidelity is Fidelity.PORTABLE and edge.included
     }
+    allowed_edges.add(("accounts.User", "staff_makerspace"))
     for disposition, entries in lists.items():
         if not isinstance(entries, list) or any(
             not isinstance(item, dict) for item in entries

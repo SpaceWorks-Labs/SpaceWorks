@@ -4,6 +4,9 @@ from .tenant_dump_types import AuthorityDisposition as D, authority
 
 
 AUTHORITY_ENTRIES = (
+    *((('notifications.NotificationPreference', field), authority(
+        D.PRESERVE, 'Carried staff category/channel choices do not carry provider endpoints or proof.',
+    )) for field in ('makerspace', 'user', 'category', 'channels', 'email_fallback')),
     *((('makerspaces.MakerspaceMembership', field), authority(
         (D.PRESERVE, D.RESET),
         'Tenant staff roles and notification choices travel; member authority resets to Member.',

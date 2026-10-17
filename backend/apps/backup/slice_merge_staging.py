@@ -123,10 +123,17 @@ def apply_staged(group, operation_id, *, using="default"):
             for model in order:
                 for record, component_id in by_model[model]:
                     if _row_exists(cursor, model, record["pk"]):
-                        raise SliceMergeError("A staged row would overwrite an occupied target identity.")
+                        from .staff_shells import restore_staff_shell
+                        with merge_role(cursor, operation_id, component_id, group.schema):
+                            restore_staff_shell(cursor, model, record, component_id)
+                        continue
+                    if record.get("_shell_preimage"):
+                        raise SliceMergeError("The registered staff shell is missing from the readable main.")
                     with merge_role(cursor, operation_id, component_id, group.schema):
                         _insert_public(cursor, model, record)
             for model, delta, component_id in group.deltas:
+                if delta.get("staff_shell"):
+                    continue  # Applied as one context-valid row transition above.
                 with merge_role(cursor, operation_id, component_id, group.schema):
                     _apply_delta(cursor, model, delta)
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
@@ -184,6 +191,8 @@ def _create_schema(schema, slices, tables, *, using):
             "component_id uuid NOT NULL, table_name text NOT NULL, row_pk jsonb NOT NULL, "
             "column_name text NOT NULL, old_value jsonb NOT NULL, new_value jsonb NOT NULL)"
         )
+        cursor.execute(f"CREATE TABLE {quote(schema)}.backup_b1_shells "
+                       "(component_id uuid NOT NULL, old_row jsonb NOT NULL)")
         for table in sorted(tables):
             cursor.execute(
                 f"CREATE TABLE {quote(schema)}.{quote(table)} "
@@ -206,6 +215,12 @@ def _insert_staged(schema, model, record, component_id, *, using):
             f"({', '.join(names)}) VALUES ({', '.join(['%s'] * len(names))})",
             [*values, component_id],
         )
+        if record.get("_shell_preimage"):
+            shell_columns, shell_values = _prepared_record(model, record["_shell_preimage"], connection)
+            # Ask PostgreSQL to normalize timestamps/JSON exactly as to_jsonb(OLD).
+            cursor.execute(f"INSERT INTO {quote(schema)}.backup_b1_shells "
+                f"SELECT %s, to_jsonb(shell) FROM (SELECT {', '.join('%s::' + model._meta.get_field(name).db_type(connection) + ' AS ' + quote(name) for name in shell_columns)}) shell",
+                [component_id, *shell_values])
 
 
 def _insert_delta(schema, model, delta, component_id, *, using):
@@ -218,9 +233,10 @@ def _insert_delta(schema, model, delta, component_id, *, using):
     with connection.cursor() as cursor:
         cursor.execute(
             f"INSERT INTO {quote(schema)}.backup_b1_deltas VALUES "
-            "(%s, %s, %s::jsonb, %s, %s::jsonb, %s::jsonb)",
-            [component_id, model._meta.db_table, json.dumps(pk, default=str), field.column,
-             json.dumps(old_value, default=str), json.dumps(new_value, default=str)],
+            f"(%s, %s, to_jsonb(%s::{model._meta.pk.db_type(connection)}), %s, "
+            f"COALESCE(to_jsonb(%s::{field.db_type(connection)}), 'null'::jsonb), "
+            f"COALESCE(to_jsonb(%s::{field.db_type(connection)}), 'null'::jsonb))",
+            [component_id, model._meta.db_table, pk, field.column, old_value, new_value],
         )
 
 

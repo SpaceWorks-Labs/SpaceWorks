@@ -202,6 +202,14 @@ def _validate_sequences(facts):
 
 
 def _bind_rules(rule_proofs, commitments, broad, sequences, slice_ids):
+    from .staff_shell_fences import validate_supplemental_fence
+    ordinary = []
+    for fact in broad:
+        if "constraint_identity" not in fact:
+            validate_supplemental_fence(fact)
+        else:
+            ordinary.append(fact)
+    broad = ordinary
     proof_ids = {item["constraint_identity"] for item in rule_proofs}
     committed = {item["constraint_identity"] for item in commitments}
     fenced = {item["constraint_identity"] for item in broad}

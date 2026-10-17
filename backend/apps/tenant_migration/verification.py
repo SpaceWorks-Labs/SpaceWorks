@@ -11,11 +11,10 @@ from apps.encryption.blind_index import active_generation
 from apps.encryption.crypto import decrypt_with_key_loader
 from apps.encryption.models import PiiBlindIndex
 from apps.encryption.registry import all_fields
-from apps.makerspaces.models import MakerspaceMembership
 
 from .blind_indexes import verify_event_hashes
 from .insertion_errors import ImportVerificationError, PrimaryKeyMapUnavailable
-from .identity_resolution import linked_authority_fingerprint
+from .verification_authority import _verify_authority
 from .omitted_fields import NULL, OMITTED_FIELD_RECONSTRUCTIONS
 from .references import (
     AUDIT_TARGET_DISPOSITIONS,
@@ -137,32 +136,6 @@ def _verify_regenerated_unique(regenerated_fields):
             raise ImportVerificationError(
                 f"Regenerated value is not unique for {model._meta.label}.{field_name}."
             )
-
-
-def _verify_authority(target, job, pk_map, identity_report):
-    member_role = target.roles.get(slug="member")
-    memberships = MakerspaceMembership.objects.filter(makerspace=target)
-    if memberships.exclude(
-        assigned_role=member_role,
-        role=MakerspaceMembership.Role.CUSTOM,
-    ).exists():
-        raise ImportVerificationError("The import conferred authority beyond Member.")
-    for decision in job.identity_decisions.iterator(chunk_size=500):
-        try:
-            target_id = pk_map.lookup(User, decision.source_user_id)
-        except PrimaryKeyMapUnavailable:
-            continue
-        user = User.objects.get(pk=target_id)
-        if decision.identity_resolution == decision.IdentityResolution.CREATE_WALK_IN:
-            if user.is_superuser or user.is_staff or user.role != User.Role.REQUESTER:
-                raise ImportVerificationError("An imported walk-in has global authority.")
-    if (
-        linked_authority_fingerprint(job, pk_map)
-        != identity_report.linked_global_state_fingerprint
-    ):
-        raise ImportVerificationError(
-            "The import mutated a linked identity's target-global authority."
-        )
 
 
 def _verify_reference_remaps(archive, models, pk_map, references):

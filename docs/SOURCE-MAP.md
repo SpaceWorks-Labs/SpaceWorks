@@ -8,6 +8,12 @@
 
 ## Current source map (real paths)
 
+Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
+`bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
+to `inventory/public_image_promotion.py`. Membership owner mail is classified as staff/account
+or community in `makerspaces/notifications_p2_members.py`; `operations/notifications_p2.py`
+keeps the owner route separate from the existing staff-summary category.
+
 The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
 `AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
 `WorkspaceSwitcher`, `UserMenu`, `MobileTopBar`, `SidebarDrawer`, `BottomTabs` and

@@ -14,6 +14,9 @@ OBJECT_FIELD_NAMES = frozenset({
 })
 
 NON_OBJECT_KEY_FIELDS = frozenset({
+    # Notification intent and delivery-target identities, never bucket locators.
+    ("integrations.NotificationEnvelope", "dedup_key"),
+    ("integrations.NotificationDelivery", "target_key"),
     # UUID identifying one inbox fan-out, never a bucket locator.
     ("notifications.NotificationInboxRow", "event_key"),
     ("accounts.NativeAppRegistration", "verifier_config_key"),

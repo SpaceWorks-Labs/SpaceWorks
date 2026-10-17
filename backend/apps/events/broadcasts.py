@@ -47,8 +47,7 @@ def registrations(campaign):
 
 def recipients(campaign):
     return User.objects.filter(pk__in=Subquery(registrations(campaign).values("member_id")),
-                               is_active=True, access_status="active", is_tenant_dump_stub=False,
-                               email_verified_at__isnull=False).exclude(email="")
+                               is_active=True, access_status="active", is_tenant_dump_stub=False)
 
 
 def eligible(campaign, account):
@@ -80,5 +79,7 @@ def render_recipient(campaign, account):
 
 
 def register_broadcasts():
+    from .broadcast_channels import emit_channels
     register("event_broadcast", BroadcastAdapter(EventBroadcast, EventBroadcastDelivery, authorize,
-             recipients, eligible, render_recipient, "events", "event.broadcast"))
+             recipients, eligible, render_recipient, "events", "event.broadcast",
+             reserve_personal=emit_channels))

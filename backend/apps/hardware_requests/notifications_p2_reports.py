@@ -1,5 +1,6 @@
 """Problem reports disclose only navigation summaries to hardware staff."""
 from apps.accounts import rbac
+from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.hardware_requests.notifications_p2 import safe_adapter
 from .models import PublicProblemReport
@@ -22,7 +23,8 @@ def notify_report(row):
         version=revision(row.created_at, row.request_id, row.requester_id),
         staff={"subject": "Tool problem reported",
                "text": f"Problem report #{row.pk} filed for loan #{row.loan_id}. Review in the staff console."},
-        context={"problem_report_id": row.pk})
+        context={"problem_report_id": row.pk},
+        staff_context={"makerspace": bag(name=row.makerspace.name), "problem_report_id": row.pk})
 
 
 def register():

@@ -53,7 +53,8 @@ def notify_request(row, event, room_text=None):
     # Bearer URLs are never channel content. All account delivery navigates to the
     # authenticated member page; existing templates keep their editable wording.
     link = local_link(row.makerspace, "member")
-    staff = render(row.makerspace, "hardware", "staff", event, hardware_context(row, staff=True))
+    staff_context = hardware_context(row, staff=True)
+    staff = render(row.makerspace, "hardware", "staff", event, staff_context)
     summary = room_text(row) if room_text else (
         f"Hardware request #{row.pk} {event.replace('_', ' ')}. Review in the staff console.")
     context = {"request_id": row.pk}
@@ -74,7 +75,7 @@ def notify_request(row, event, room_text=None):
     result = fanout(space=row.makerspace, feature="hardware_requests", stream="hardware",
         event=event, kind=KIND, source=row.pk, version=request_revision(row), subject=row,
         owner=row.requester if not row.anonymous_idempotency_key_fingerprint else None,
-        own=content(own, link=link), staff=content(staff), room_body=summary, context=context)
+        own=content(own, link=link), staff=content(staff), room_body=summary, context=context, staff_context=staff_context)
     from apps.integrations.notify import NotificationResult
     return NotificationResult(result.scheduled or bool(contact and contact.status != "skipped"))
 
@@ -101,6 +102,7 @@ def notify_charge(row, event, payment):
     return fanout(space=row.makerspace, feature="hardware_requests", stream="hardware",
         event=event, kind="hardware.charge", source=payment.pk, version=version, subject=payment,
         context={"request_id": row.pk, "payment_id": payment.pk},
+        staff_context=hardware_context(row, staff=True),
         staff={"subject": label, "text": f"Hardware request #{row.pk}: {label.lower()} raised."})
 
 

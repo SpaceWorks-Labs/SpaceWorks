@@ -75,10 +75,11 @@ def notify_service(row, event):
         raise ValueError("Unknown machine service event")
     from .service_printing_emails import _projection, _is_printer_request
     link = local_link(row.makerspace, "member")
+    staff_context = printing_context(_projection(row), "", "")
     if _is_printer_request(row) and event in {"submitted", "accepted", "rejected", "started", "completed"}:
         # Preserve authored printer templates; authenticated navigation replaces
         # bearer tracking credentials for all personal chat/native transports.
-        context = printing_context(_projection(row), link, "")
+        context = {**staff_context, "status_url": link}
         own = content(render(row.makerspace, "printing", "requester", event,
                              context, machine_type=machine_type(row)), link=link)
         staff = content(render(row.makerspace, "printing", "staff", event,
@@ -89,13 +90,13 @@ def notify_service(row, event):
                "text": f"Your {label.lower()} request #{row.pk}: {event.replace('_', ' ')}.", "link": link}
         staff = {"subject": f"{label} request #{row.pk}",
                  "text": f"{label} request #{row.pk} {event.replace('_', ' ')}."}
-    # Room summaries never inherit requester templates, contacts, reasons or links.
+    # The fallback summary stays bounded; authored staff chat templates render separately.
     room_staff = dict(staff)
     room_staff["text"] = f"Machine service request #{row.pk} {event.replace('_', ' ')}. Review in the staff console."
     return fanout(space=row.makerspace, feature="printing", stream="printing", event=event,
         kind=KIND, source=row.pk, version=version(row), subject=row,
         owner=row.member or row.requester, own=own, staff=staff,
-        room_body=room_staff["text"], scope=scope_for(row),
+        room_body=room_staff["text"], staff_context=staff_context, scope=scope_for(row),
         context={"machine_service_request_id": row.pk})
 
 

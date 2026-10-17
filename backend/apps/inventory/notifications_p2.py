@@ -38,7 +38,7 @@ def notify_stock(product):
     return fanout(space=product.makerspace, feature="stock", stream="stock", event="low_stock",
         kind=STOCK, source=product.pk, subject=product,
         version=revision(product.updated_at, product.available_quantity, product.reorder_point),
-        staff=content(rendered), scope=NotificationScope(category=product.category_id),
+        staff=content(rendered), staff_context=context, scope=NotificationScope(category=product.category_id),
         context={"product_id": product.pk})
 
 

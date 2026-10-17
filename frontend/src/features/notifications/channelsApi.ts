@@ -82,7 +82,21 @@ export function useTestChannel(makerspaceId: number) {
 
 export function useEndpoints(makerspaceId: number, member = false) {
   return useQuery({ queryKey: channelKeys.endpoints(makerspaceId),
-    queryFn: () => sender(member)<Page<Endpoint>>(`${base(makerspaceId)}/personal/endpoints`) });
+    queryFn: async () => {
+      const path = `${base(makerspaceId)}/personal/endpoints`;
+      const request = sender(member);
+      const first = await request<Page<Endpoint>>(path);
+      const results = [...first.results];
+      let next = first.next;
+      while (next) {
+        // DRF next links can be absolute. Keep the authenticated request on this
+        // endpoint and carry forward only its pagination query.
+        const page = await request<Page<Endpoint>>(`${path}${new URL(next, window.location.origin).search}`);
+        results.push(...page.results);
+        next = page.next;
+      }
+      return { ...first, next: null, results };
+    } });
 }
 
 export function useOAuthReturn(makerspaceId: number, state: string | null, member = false) {

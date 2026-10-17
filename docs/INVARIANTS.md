@@ -2702,7 +2702,10 @@ This guarantees durable enqueue identity, not exactly-once SMTP acceptance.
 
 Campaign email passes through `integrations/delivery_sources.py` inside `dispatch_delivery`;
 selected non-email legs use `events/broadcast_channels.py` personal envelopes, with email pre-skipped.
-The campaign channel task has no periodic lost-task recovery. On the email path:
+The durable campaign worker reserves these envelopes in the same transaction as its
+recipient cursor, including accounts without verified email. A failed reservation rolls
+back the batch; `resume_broadcasts` recovers initial enqueue loss and lost continuation
+batches, while the personal outbox sweeper recovers envelope dispatch. On the email path:
 immediate, quiet-hours release and retry all reload campaign state, the original sender's
 current resource authority and live recipient eligibility. Unknown/tombstoned sources
 fail closed. Event recipients need matching registration status/attendance, a verified,
@@ -2902,8 +2905,9 @@ through `booking_authority`, `bookings.broadcasts`, Notifications and Email, plu
 servable, non-hidden tenant. Ten queues/hour/tenant are serialized by its row lock;
 API calls additionally have a per-user throttle. Sender revocation and matching booking
 loss stop unclaimed sends on immediate, quiet-hours and retry paths. Render-time loss
-also skips safely. The batch worker remains email-only; saved bookings-category choices use
-`broadcasts_personal.py` envelopes instead and are excluded from that email batch. No campaign body
+also skips safely. The batch worker reserves saved bookings-category choices through
+`broadcasts_personal.py` envelopes instead of the email leg, in the same transaction as
+the recipient cursor. Reservation failures roll back that batch for recovery. No campaign body
 enters a staff room. Personal envelopes use the shared timing policy.
 
 `communication_recipients.py` preserves current account standing, optional membership

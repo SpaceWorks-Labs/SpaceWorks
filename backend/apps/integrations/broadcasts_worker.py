@@ -57,6 +57,10 @@ def broadcast_batch(kind, pk):
         accounts = list(adapter.recipients(campaign).filter(pk__gt=campaign.recipient_cursor)
                         .order_by("pk").distinct()[:BATCH_SIZE])
         for account in accounts:
+            # Personal intents and the cursor commit together. A failed insert
+            # rolls back the batch so resume_broadcasts can retry every recipient.
+            if adapter.reserve_personal is not None:
+                adapter.reserve_personal(campaign, account)
             if not adapter.eligible(campaign, account):
                 continue
             delivery, created = adapter.delivery_model.objects.get_or_create(campaign=campaign, recipient=account)
@@ -81,6 +85,7 @@ def broadcast_batch(kind, pk):
         if not campaign.recipients_complete:
             transaction.on_commit(lambda: enqueue(kind, pk))
     reconcile(kind, pk)
+    return len(accounts)
 
 
 def transition(adapter, campaign, status):

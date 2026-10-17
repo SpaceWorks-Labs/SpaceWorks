@@ -14,6 +14,7 @@ class BroadcastAdapter:
     render: Callable
     feature: str
     audit_prefix: str
+    reserve_personal: Callable | None = None
 
 
 ADAPTERS = {}

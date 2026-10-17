@@ -5,8 +5,6 @@ as one personal envelope; everyone else keeps the batch worker's email path, so 
 messaged twice. Staff rooms never receive campaign bodies.
 """
 
-import logging
-
 from django.utils import timezone
 
 from apps.integrations.notification_links import local_link
@@ -14,8 +12,6 @@ from apps.integrations.broadcasts_templates import render
 from apps.makerspaces.platform import member_area_url
 
 from .notification_sources import BROADCAST_SOURCE
-
-logger = logging.getLogger(__name__)
 
 
 def has_personal_choice(makerspace, account):
@@ -45,11 +41,7 @@ def emit_personal(campaign, account):
     rendered = personal_content(campaign, account)
     if rendered is None:
         return None
-    try:
-        return emit(makerspace=campaign.makerspace, recipient=account, feature="bookings", stream="bookings",
-                    event="broadcast", audience="requester", dedup_key=f"bookings.broadcast:{campaign.pk}:{account.pk}",
-                    source_kind=BROADCAST_SOURCE, source_id=str(campaign.pk), revision="1", subject=campaign,
-                    context={"campaign_id": campaign.pk, "space_id": campaign.space_id}, rendered=rendered)
-    except Exception:
-        logger.warning("booking_broadcast_envelope_failed", extra={"campaign_id": campaign.pk})
-        return None
+    return emit(makerspace=campaign.makerspace, recipient=account, feature="bookings", stream="bookings",
+                event="broadcast", audience="requester", dedup_key=f"bookings.broadcast:{campaign.pk}:{account.pk}",
+                source_kind=BROADCAST_SOURCE, source_id=str(campaign.pk), revision="1", subject=campaign,
+                context={"campaign_id": campaign.pk, "space_id": campaign.space_id}, rendered=rendered)

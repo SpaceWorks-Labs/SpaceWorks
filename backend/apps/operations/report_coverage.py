@@ -62,6 +62,15 @@ for _key, _modules in required_report_modules().items():
             _coverage = REPORT_MODULE_COVERAGE[_module]
             REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage("substantive", tuple(dict.fromkeys((*_coverage.reports, _key))))
 
+# Coverage associations describe the plan's area, not runtime source dependencies.
+_MACHINE_AREA_REPORT_KEYS = (
+    "machine-usage", "machine-usage-members", "machine-usage-heatmap", "machine-downtime",
+    "maintenance-activity", "machine-service", "service-queue-times", "printer-jobs", "machine-errors", "warranty-expiry",
+)
+for _module in ("machines", "machine_service", "printing", "maintenance"):
+    _coverage = REPORT_MODULE_COVERAGE[_module]
+    REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(_coverage.kind, tuple(dict.fromkeys((*_coverage.reports, *_MACHINE_AREA_REPORT_KEYS))))
+
 
 @checks.register(checks.Tags.models)
 def check_report_module_coverage(app_configs=None, **kwargs):

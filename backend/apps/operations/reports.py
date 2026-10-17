@@ -36,7 +36,8 @@ def report_data(
     kwargs = dict(limit=_normalized_limit(limit), date_range=date_range, **(report_filters or {}))
     if report_key in {"member-retention", "membership-revenue"}:
         kwargs["actor"] = actor
-    if report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
+    from .report_definitions_machines import MACHINE_REPORT_KEYS
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
         kwargs["actor"] = actor
     if definition.grains:
         kwargs["grain"] = grain
@@ -73,7 +74,8 @@ def report_rows(
     kwargs = dict(limit=limit, date_range=date_range, **(report_filters or {}))
     if report_key in {"member-retention", "membership-revenue"}:
         kwargs["actor"] = actor
-    if report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
+    from .report_definitions_machines import MACHINE_REPORT_KEYS
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
         kwargs["actor"] = actor
     if definition.grains:
         kwargs["grain"] = grain

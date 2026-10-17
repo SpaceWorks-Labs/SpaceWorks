@@ -7,6 +7,7 @@ from .report_request_contract import _export_format, _grain_param, _report_filte
 from .report_exports import _csv_response, _xlsx_response
 from .report_exports_provenance import actor_label, build_provenance, export_filters
 from .views_report_helpers import _date_range, _makerspace_for_report_view
+from .report_definitions_machines import MACHINE_REPORT_KEYS
 
 
 def _export_response(request, definition, makerspace_id, *, platform_context=None):
@@ -19,7 +20,7 @@ def _export_response(request, definition, makerspace_id, *, platform_context=Non
     local_space = None
     if makerspace_id is not None:
         local_space = _makerspace_for_report_view(request.user, makerspace_id, definition.key)
-    local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in {"member-retention", "membership-revenue"})
+    local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in {"member-retention", "membership-revenue"} | MACHINE_REPORT_KEYS)
     date_range = _date_range(request, local_space if local_dates else None)
     report_filters = _report_filters(request, definition.key)
     grain = _grain_param(request, definition)

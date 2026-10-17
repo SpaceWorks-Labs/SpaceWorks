@@ -185,6 +185,17 @@ STRATEGIES = {
     ),
 }
 
+# Area C owns its schemas; append these overrides without rewriting other lanes.
+from .org_machine_report_schemas import MACHINE_ORG_FIELDS, MACHINE_ORG_GROUPS
+STRATEGIES.update({
+    key: _strategy(
+        AggregationKind.WEIGHTED_RATE if key in {"machine-service", "maintenance-activity"}
+        else (AggregationKind.ROW_UNION if key == "warranty-expiry" else AggregationKind.GROUP_SUM),
+        MACHINE_ORG_GROUPS[key], fields,
+    )
+    for key, fields in MACHINE_ORG_FIELDS.items()
+})
+
 
 def organization_strategy(report_key: str) -> OrganizationAggregationStrategy:
     try:

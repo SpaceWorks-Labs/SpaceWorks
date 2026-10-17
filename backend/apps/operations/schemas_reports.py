@@ -14,12 +14,15 @@ from apps.operations.serializers_reports import (
     BookingUtilizationReportSerializer,
     EventAttendanceReportSerializer,
     FabLabHealthReportSerializer,
-    MachineUsageReportSerializer,
-    MaintenanceActivityReportSerializer,
     MemberActivityReportSerializer,
     PaymentReconciliationReportSerializer,
 )
 from apps.operations.serializers_report_catalog import GenericAnalyticsReportSerializer
+from .serializers_reports_machine_analytics import (
+    MachineUsageV2ReportSerializer, MachineUsageMembersReportSerializer, MachineUsageHeatmapReportSerializer,
+    MachineDowntimeReportSerializer, MaintenanceActivityV2ReportSerializer, MachineServiceV2ReportSerializer,
+    ServiceQueueTimesReportSerializer, PrinterJobsReportSerializer, MachineErrorsReportSerializer, WarrantyExpiryReportSerializer,
+)
 from .serializers_reports_events_detail import EventRegistrationReportSerializer, EventFeedbackReportSerializer
 from .serializers_reports_bookings import (
     BookingResourceUtilizationReportSerializer, BookingReservationReportSerializer, BookingAnswerReportSerializer,
@@ -44,10 +47,13 @@ ANALYTICS_REPORT_RESPONSE = PolymorphicProxySerializer(
         MostLentReportSerializer,
         TopBorrowersReportSerializer,
         RecentlyAddedReportSerializer,
-        MachineUsageReportSerializer,
+        MachineUsageV2ReportSerializer,
         EventAttendanceReportSerializer,
         BookingUtilizationReportSerializer,
-        MaintenanceActivityReportSerializer,
+        MaintenanceActivityV2ReportSerializer,
+        MachineUsageMembersReportSerializer, MachineUsageHeatmapReportSerializer, MachineDowntimeReportSerializer,
+        MachineServiceV2ReportSerializer, ServiceQueueTimesReportSerializer, PrinterJobsReportSerializer,
+        MachineErrorsReportSerializer, WarrantyExpiryReportSerializer,
         MemberActivityReportSerializer,
         FabLabHealthReportSerializer,
         PaymentReconciliationReportSerializer,

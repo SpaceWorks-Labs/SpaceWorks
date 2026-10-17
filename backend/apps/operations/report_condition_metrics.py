@@ -29,6 +29,11 @@ NUMERIC_FIELDS = frozenset({
     "triggered_count", "sent_count", "failed_count", "skipped_count", "suppressed_count",
     "bounced_count", "complained_count", "invalid_count", "inbox_created_count", "inbox_read_count",
     "unread_count", "read_rate_percent",
+    "entries", "service_hours", "manual_hours", "booked_hours", "status_hours", "costed_log_count", "average_cost", "average_interval_days",
+    "completed_count", "failed_count", "failed_partial_hours", "total_recorded_service_hours", "failure_rate",
+    "completed_amount", "failed_partial_amount", "total_used", "failed_count_amount", "failed_grams_amount",
+    "samples", "median_minutes", "p90_minutes", "p95_minutes", "job_count", "error_count", "days_until_expiry",
+    "submitted", "accepted", "in_progress", "collected", "failed",
 })
 
 

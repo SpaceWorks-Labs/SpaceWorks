@@ -42,6 +42,14 @@ optional local members/times. `inventory/cost_basis.py` validates current price 
 products and pools. `admin_api/views_machine_usage_candidates.py` and the React
 `panels/machine/UsageAttributionFields.tsx` provide the scoped optional member picker.
 
+Machine analytics (1f-2 area C) register in `operations/report_definitions_machines.py`.
+`reports_machine_common.py` resolves staff authority/type scope, `reports_machine_facts.py`
+projects allowlisted source facts, and the usage/heatmap/downtime/service/maintenance/queue/health
+builders own their measurements. `org_machine_reports.py` combines partitioned numeric inputs;
+`org_machine_report_schemas.py` declares organization schema parity. Typed API rows live in
+`serializers_reports_machine_analytics.py`. The field and measurement handoff is
+`docs/report-machines-1f2.md`; focused tests are `backend/tests/analytics/test_c_*_m1f2.py`.
+
 `inventory/models_tracking.py` defines stock observations; `availability_stock.observe_stock`
 reads authoritative quantity buckets, while `stock_snapshots.py` gates tenant fan-out and
 `tasks.py` exposes the daily task. `data_export/classification_m1f1.py` classifies new facts;

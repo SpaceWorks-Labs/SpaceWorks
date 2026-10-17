@@ -1,6 +1,7 @@
 """Organization report orchestration: breakdown and combined total are inseparable."""
 
 from decimal import Decimal
+from apps.accounts.rbac import Action
 
 from apps.operations.org_report_aggregate import aggregate_rows
 from apps.operations.org_report_identity import (
@@ -35,6 +36,7 @@ def organization_report_data(
     date_range=None,
     report_filters=None,
     grain="day",
+    actor=None,
 ):
     _validate_inputs(definition, scope, limit)
     strategy = organization_strategy(definition.key)
@@ -49,6 +51,7 @@ def organization_report_data(
             limit=None,
             date_range=date_range,
             **({"grain": grain} if definition.grains else {}),
+            **({"actor": actor} if definition.required_action == Action.MANAGE_MACHINES else {}),
             **(report_filters or {}),
         )
         rows = _result_rows(result)

@@ -47,6 +47,7 @@ from apps.operations.views_report_helpers import (
 )
 from .report_render_throttles import ReportRenderThrottle
 from .report_download import _export_response
+from .report_definitions_machines import MACHINE_REPORT_KEYS
 
 
 ERROR_RESPONSES = {
@@ -89,7 +90,7 @@ class AnalyticsView(APIView):
         response = Response(reports.report_data(
             report_key, makerspace.id,
             actor=request.user,
-            limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in {"member-retention", "membership-revenue"} else None),
+            limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in {"member-retention", "membership-revenue"} | MACHINE_REPORT_KEYS else None),
             report_filters=_report_filters(request, report_key), grain=_grain_param(request, definition),
         ))
         if definition.subject_kind or request.query_params.get("subject_kind"):
@@ -115,6 +116,8 @@ class ReportCatalogView(APIView):
             if definition.subject_kind or definition.platform_only:
                 continue
             if not rbac.can(request.user, definition.required_action, makerspace.id):
+                continue
+            if definition.key == "machine-usage-members" and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
                 continue
             missing = [key for key in definition.required_modules if not module_enabled(makerspace, key)]
             if definition.required_feature:

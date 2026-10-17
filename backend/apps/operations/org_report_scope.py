@@ -41,6 +41,7 @@ ORGANIZATION_REPORT_ACTIONS = frozenset({
 EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "overdue-loans", "longest-loans", "qr-scan-actors",
     "active-loans", "returns", "top-borrowers",
+    "machine-usage-members", "machine-usage-heatmap",
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
     "event-registrations", "event-feedback", "event-attendance-pdf",
     # Financial detail and accounting custody stay tenant-local. Different local
@@ -87,6 +88,7 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"loan-t
 
 # v2 communications exposes additive cohorts and both rate denominators.
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"communications-health"}
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"machine-service"}
 
 
 class OrganizationReportScopeError(ValueError):

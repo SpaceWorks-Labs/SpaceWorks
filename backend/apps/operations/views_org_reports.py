@@ -132,6 +132,7 @@ class OrganizationAnalyticsView(APIView):
                 date_range=_date_range(request),
                 report_filters=_report_filters(request, report_key),
                 grain=_grain_param(request, definition),
+                actor=request.user,
             )
         except (OrganizationReportScopeError, org_reports.OrganizationAggregationError) as exc:
             raise InvalidOrganizationReport(exc) from exc

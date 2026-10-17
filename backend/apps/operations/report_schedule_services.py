@@ -140,6 +140,7 @@ def _skip_reason(schedule, definition):
 def schedule_inputs(schedule, now):
     """Translate the stored filters into exactly what the manual export view passes."""
     filters = dict(schedule.filters or {})
+    from .report_definitions_machines import MACHINE_REPORT_KEYS
     window_days = filters.get("window_days")
     if window_days:
         date_range = (now - timedelta(days=int(window_days)), now)
@@ -147,7 +148,7 @@ def schedule_inputs(schedule, now):
         date_range = date_range_from_dates(
             parse_date(filters.get("start") or "") if filters.get("start") else None,
             parse_date(filters.get("end") or "") if filters.get("end") else None,
-            makerspace=schedule.makerspace if schedule.report_key in {"member-retention", "membership-revenue"} else None,
+            makerspace=schedule.makerspace if schedule.report_key in {"member-retention", "membership-revenue"} | MACHINE_REPORT_KEYS else None,
         )
     report_filters = {}
     if schedule.report_key in {"payment-reconciliation", "payments-ledger", "revenue-over-time", "cash-book", "accounting-journal"}:

@@ -7,6 +7,9 @@ text, secrets, object keys or before/after payloads)."""
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P("staff_account.deactivated", "Staff account deactivated"),
+    P("staff_account.reactivated", "Staff account reactivated"),
+    P("staff_account.password_reset", "Staff account password issued", ("reset_mfa",)),
     P("account.credentials_revoked", "Account credentials revoked", ("scope",)),
     P("api_client.bookings_read", "Api client read bookings", ("attendance", "rows")),
     P("api_client.created", "Api client created", ("api_key_request_id", "scopes")),

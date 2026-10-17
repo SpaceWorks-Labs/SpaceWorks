@@ -62,8 +62,6 @@ DYNAMIC_EXACT_ACTIONS = frozenset({
     "certification.renewed",
     "saved_view.shared",
     "saved_view.unshared",
-    "staff.invitation_resent",
-    "staff.invitation_revoked",
 
     "event.calendar_feed_created",
     "event.calendar_feed_rotated",

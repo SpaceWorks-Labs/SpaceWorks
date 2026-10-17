@@ -1,29 +1,19 @@
-"""Email possession alone cannot take over an existing account or change its password."""
-
-from django.contrib.auth import authenticate
-from django.contrib.auth.password_validation import validate_password
+"""Single-use initial setup; an invitation never links or resets accounts."""
 from django.contrib.auth.hashers import make_password
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ObjectDoesNotExist, ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import F, Q
-import secrets
+from django.db.models import F
 from django.utils import timezone
 from rest_framework.exceptions import APIException, ValidationError
 
-from apps.accounts import audit_events, mfa_policy
+from apps.accounts import audit_events
 from apps.accounts.mfa_challenges import digest
-from apps.accounts.models import User
-from apps.accounts.models_mfa import UserMFA
-from apps.accounts.models_staff_invitations import StaffInvitation
-from apps.accounts.principal_guards import is_anonymous_requester
-from apps.accounts.services_mfa import consume_code
-from apps.accounts.services_staff_invitations import authority
+from apps.accounts.models import StaffInvitation, User
+from apps.accounts.services_staff_invitations import authority, snapshot
+from apps.accounts.staff_account_policy import require_authority
 from apps.audit.services import record
-from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
-from apps.makerspaces.role_services import can_assign_role
-from apps.makerspaces.servability import is_servable
 from apps.tenant_migration.gate_runtime import tenant_write
 
 GENERIC_ERROR = "Unable to accept this invitation. Check the link and credentials or contact the inviter."
@@ -32,96 +22,57 @@ GENERIC_ERROR = "Unable to accept this invitation. Check the link and credential
 def accept(request, *, token, makerspace_slug, password, code=""):
     candidate = StaffInvitation.objects.filter(token_digest=digest(token), makerspace__slug=makerspace_slug).first()
     if candidate is None:
-        # Match a real password check's cost on the unknown-token path.
         make_password(password)
         raise ValidationError({"detail": GENERIC_ERROR})
-    ok = False
-    password_checked = False
+    ok = password_checked = False
     with tenant_write(candidate.makerspace_id):
         try:
             with transaction.atomic():
-                space = Makerspace.objects.select_for_update().get(pk=candidate.makerspace_id)
+                space = Makerspace.objects.select_for_update(no_key=True).get(pk=candidate.makerspace_id)
                 row = StaffInvitation.objects.select_for_update().get(pk=candidate.pk)
-                if (row.accepted_at or row.revoked_at or row.expires_at <= timezone.now()
-                        or row.failed_attempts >= 5 or not is_servable(space)):
+                if (row.token_digest != digest(token) or row.account_id is None
+                        or row.accepted_at or row.revoked_at or row.expires_at <= timezone.now()
+                        or row.failed_attempts >= 5):
                     raise ValidationError(GENERIC_ERROR)
-                role = MakerspaceRole.objects.select_for_update().get(pk=row.role_id, makerspace=space)
-                email = row.email
-                # Accounts are platform-global: lock inviter and recipient in PK order,
-                # even when the two invitations belong to different makerspaces.
-                users = list(User.objects.select_for_update().filter(
-                    Q(pk=row.created_by_id) | Q(account_kind="staff", staff_makerspace=space, email__iexact=email)).order_by("pk"))
-                creator = next((user for user in users if user.pk == row.created_by_id), None)
-                if creator is None:
+                # Preserve Invitation -> ordered Users -> Membership lock order.
+                # Nullable account/role FKs never participate in the locking query.
+                users = {user.pk: user for user in User.objects.select_for_update().filter(
+                    pk__in=[row.created_by_id, row.account_id],
+                ).order_by("pk")}
+                creator, user = users[row.created_by_id], users[row.account_id]
+                authority(creator, space)
+                require_authority(creator, space, target=user)
+                if (not user.is_active or user.has_usable_password() or user.is_tenant_dump_stub
+                        or user.access_status != User.AccessStatus.ACTIVE
+                        or user.email.lower() != row.email.lower()):
                     raise ValidationError(GENERIC_ERROR)
-                authority(creator, space, role)
-                if sorted(role.granted_actions) != row.granted_actions:
+                membership = MakerspaceMembership.objects.select_for_update().get(
+                    user=user, makerspace=space, status="active")
+                expected = snapshot(user, membership)
+                if any(getattr(row, key) != value for key, value in expected.items()):
                     raise ValidationError(GENERIC_ERROR)
-                matches = [user for user in users if user.account_kind == "staff"
-                           and user.staff_makerspace_id == space.pk
-                           and user.email.lower() == email.lower()]
-                if len(matches) > 1:
-                    raise ValidationError(GENERIC_ERROR)
-                user = matches[0] if matches else None
-                if user:
-                    if (not user.is_active or user.is_tenant_dump_stub or user.is_walk_in
-                            or user.must_change_password or is_anonymous_requester(user)
-                            or user.access_status != User.AccessStatus.ACTIVE):
-                        raise ValidationError(GENERIC_ERROR)
-                    password_checked = True
-                    authenticated = authenticate(request=request, username=user.username, password=password)
-                    if authenticated is None:
-                        raise ValidationError(GENERIC_ERROR)
-                    mfa = UserMFA.objects.select_for_update().filter(user=user, enabled_at__isnull=False).first()
-                    if mfa_policy.available() and mfa and not consume_code(mfa, code):
-                        raise ValidationError(GENERIC_ERROR)
-                else:
-                    # The invite proves email ownership, but cannot be used as a password reset.
-                    user = User(email=row.email, username="staff_" + secrets.token_hex(12),
-                                account_kind="staff", staff_makerspace=space)
-                    # Hash before validation so weak new-account passwords are not a
-                    # cheaper probe than wrong existing-account passwords.
-                    user.set_password(password)
-                    password_checked = True
-                    validate_password(password, user)
-                    user.email_verified_at = timezone.now()
-                    user.save()
-                membership = MakerspaceMembership.objects.select_for_update().filter(
-                    user=user, makerspace=space).first()
-                if membership and membership.status != "active":
-                    raise ValidationError(GENERIC_ERROR)
-                can_assign_role(creator, space, role, target_membership=membership)
-                if membership is None:
-                    limits.check_quota(space, "staff", adding=1)
-                    membership = MakerspaceMembership(
-                        user=user, makerspace=space, assigned_role=role,
-                        role=role.legacy_role or MakerspaceMembership.Role.CUSTOM,
-                    )
-                if membership.pk is None:
-                    membership.save()
-                from apps.makerspaces.role_membership_writes import replace_membership_roles
-                changes = replace_membership_roles(
-                    membership=membership, roles=[role], actor=user,
-                    reason="staff.invitation_accepted", fresh_lifecycle=True,
-                )
+                roles = list(MakerspaceRole.objects.filter(makerspace=space, slug__in=row.role_snapshot))
+                require_authority(creator, space, target=user, roles=roles)
+                # Only full Space Managers/platform admins can invite: both have
+                # full machine authority. Scoped helpers cannot pass this policy.
+                user.set_password(password)
+                password_checked = True
+                validate_password(password, user)
+                user.must_change_password = False
+                user.email_verified_at = timezone.now()
+                user.save(update_fields=["password", "must_change_password", "email_verified_at"])
                 row.accepted_at, row.accepted_by = timezone.now(), user
                 row.save(update_fields=["accepted_at", "accepted_by"])
                 record(user, "staff.invitation_accepted", makerspace=space, target=row,
-                       meta={"membership_id": membership.pk, "role_id": role.pk,
-                             "before": changes["before"], "after": changes["after"],
-                             "removed_machine_type_ids": changes["removed_machine_type_ids"]})
+                       meta={"membership_id": membership.pk, "role_id": row.role_id})
                 ok = True
-        except (APIException, DjangoValidationError, IntegrityError, ObjectDoesNotExist):
+        except (APIException, DjangoValidationError, IntegrityError, ObjectDoesNotExist, KeyError):
             if not password_checked:
                 make_password(password)
-            # The inner transaction rolls back grants, but a wrong credential commits its refusal.
-            with transaction.atomic():
-                StaffInvitation.objects.filter(pk=candidate.pk, accepted_at__isnull=True,
-                                               failed_attempts__lt=5).update(
-                    failed_attempts=F("failed_attempts") + 1)
-                audit_events.record_auth_event(None, "staff.invitation_accept_failed",
-                                               meta={"invitation_hash": audit_events.fingerprint(candidate.pk)})
+            StaffInvitation.objects.filter(pk=candidate.pk, accepted_at__isnull=True,
+                                           failed_attempts__lt=5).update(failed_attempts=F("failed_attempts") + 1)
+            audit_events.record_auth_event(None, "staff.invitation_accept_failed",
+                                           meta={"invitation_hash": audit_events.fingerprint(candidate.pk)})
     if not ok:
         raise ValidationError({"detail": GENERIC_ERROR})
-    # Exactly the same success body for a newly created or linked account, no tokens/PII.
-    return {"detail": "Invitation accepted. Sign in with your email and password."}
+    return {"detail": "Invitation accepted. Sign in with your staff username or email and password."}

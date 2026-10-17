@@ -427,6 +427,10 @@ also include concrete artwork and revision rows. Frontend shared design controls
 Account contexts live in `accounts/models_user.py` (re-exported by `models.py`),
 `account_constraints.py`, `account_kind_guards.py` and `managers.py`.
 `staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
+`staff_account_policy.py`, `staff_account_services.py` and `staff_account_lifecycle.py`
+own staff lifecycle authority, onboarding, deactivation and administrator password issue.
+`admin_api/views_staff_accounts.py` exposes that lifecycle; the account and makerspace
+`admin_staff_*` modules reuse it in `/control/`. `accounts/admin_native.py` holds native-app administration.
 `membership_context.py` shares the object/SQL account-validity rules used by RBAC.
 `backup/main_projection_catalog.py` owns the physical-table check re-exported by
 `main_projection_registry.py`; the staff inert-shell boundary is declared there, with

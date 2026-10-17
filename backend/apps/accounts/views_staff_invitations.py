@@ -48,14 +48,12 @@ class StaffInvitationListView(RecentReauthenticationMixin, GenericAPIView):
         return self.get_paginated_response(self.get_serializer(page, many=True).data)
 
     @extend_schema(tags=["Staff invitations"], request=StaffInvitationCreateSerializer,
-                   responses={201: StaffInvitationDeliverySerializer, **errors(400, 401, 403, 404, 429), **GATE_WRITE_ERRORS})
+                   deprecated=True, description="Retired writer. Create a separate staff account through staff-accounts.",
+                   responses={**errors(400, 401, 403, 404, 429), **GATE_WRITE_ERRORS})
     def post(self, request, makerspace_id):
         serializer = StaffInvitationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        row, raw = service.create(request.user, makerspace_id, **serializer.validated_data)
-        response = Response({**StaffInvitationSerializer(row).data, **deliver(row, raw)}, status=201)
-        response["Cache-Control"] = "no-store"
-        return response
+        service.create(request.user, makerspace_id, **serializer.validated_data)
 
 
 class StaffInvitationRevokeView(StaffInvitationListView):

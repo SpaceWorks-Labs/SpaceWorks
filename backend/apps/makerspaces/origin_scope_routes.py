@@ -10,6 +10,11 @@ PUBLIC_SLUG_ROUTES = {"public-presence-now", "presence-start", "presence-current
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 
 MAKERSPACE_KWARG_ROUTES = {
+    **{name: "makerspace_id" for name in (
+        "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
+        "admin-staff-account-deactivate", "admin-staff-account-reactivate",
+        "admin-staff-account-set-password", "admin-staff-account-resend-invite",
+    )},
     "whatsapp-meta-webhook": "makerspace_id",
     "website-origins": "makerspace_id",
     'admin-booking-machine-types': 'makerspace_id',

@@ -12,12 +12,14 @@ from .urls_memberships import management_urlpatterns, roster_urlpatterns
 from .urls_notifications import urlpatterns as notification_urlpatterns
 from .urls_platform import settings_urlpatterns, urlpatterns as platform_urlpatterns
 from .urls_staff import urlpatterns as staff_urlpatterns
+from .urls_staff_accounts import urlpatterns as staff_account_urlpatterns
 from .urls_utils import _separable as _separable
 
 
 from apps.accounts.urls_security import admin_urlpatterns as security_urlpatterns
 
 urlpatterns = [
+    *staff_account_urlpatterns,
     *security_urlpatterns,
     *platform_urlpatterns,
     *roster_urlpatterns,

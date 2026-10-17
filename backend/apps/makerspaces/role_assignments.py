@@ -21,6 +21,13 @@ def can_assign_roles(actor, makerspace, roles, target_membership=None):
     roles = validated_roles(
         target_membership or MakerspaceMembership(makerspace=makerspace), roles
     )
+    if any(role.slug != "member" for role in roles) or (
+            target_membership and target_membership.user.account_kind == "staff"):
+        from apps.accounts.staff_account_policy import require_authority
+
+        require_authority(actor, makerspace,
+                          target=target_membership.user if target_membership else None, roles=roles)
+        return True
     actions = set().union(*(set(role.granted_actions) for role in roles))
     actor_actions = _locked_actor_actions(actor, makerspace)
     if rbac.Action.MANAGE_MAKERSPACE not in actor_actions:
@@ -54,7 +61,11 @@ def set_membership_roles(*, makerspace, actor, membership, roles):
     ):
         raise PermissionDenied()
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        from apps.accounts.models import User
+        actor = User.objects.get(pk=actor.pk)
         # Keep the pre-existing primary-role lock in its original position.
         # Additional roles are immutable and need no new row locks.
         requested_ids = {role.pk for role in roles}
@@ -67,11 +78,15 @@ def set_membership_roles(*, makerspace, actor, membership, roles):
         primary = MakerspaceRole.objects.select_for_update().get(pk=roles[0].pk)
         roles[0] = primary
         membership = (
-            MakerspaceMembership.objects.select_for_update(of=("self",))
-            .select_related("assigned_role").prefetch_related(additional_roles_prefetch())
+            MakerspaceMembership.objects.select_for_update()
+            .prefetch_related(additional_roles_prefetch())
             .get(pk=membership.pk, makerspace=makerspace)
         )
         can_assign_roles(actor, makerspace, roles, target_membership=membership)
+        if membership.user.account_kind == "staff" and "space_manager" not in {role.slug for role in roles}:
+            from apps.accounts.staff_account_policy import protect_last_manager
+
+            protect_last_manager(makerspace, membership)
         changes = replace_membership_roles(
             membership=membership, roles=roles, actor=actor, reason="staff.roles_changed",
         )

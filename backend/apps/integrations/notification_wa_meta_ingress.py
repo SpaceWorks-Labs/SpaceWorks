@@ -48,7 +48,7 @@ def apply_item(configuration, request, index, item):
             return
         kind, row = item
         if kind == "statuses" and event.state == "retrying":
-            result = _retry_failure(current, row)
+            result = _retry_failure(current, row, event)
         if kind == "statuses" and result:
             _delivery_audit(current, row)
         if kind == "messages" and not event.opt_out:
@@ -72,21 +72,30 @@ def _delivery_rows(configuration, row):
         provider_id=row["id"])
 
 
-def _retry_failure(configuration, row):
+def _retry_failure(configuration, row, event):
     """No premature email fallback on an authenticated transient failure callback."""
     changed = False
-    for delivery in _delivery_rows(configuration, row).select_for_update():
-        if delivery.state not in {"accepted", "sent"}:
+    rows = rbac.scope_notification_policy(NotificationDelivery.objects.all(),
+        makerspace_id=configuration.makerspace_id).filter(channel="whatsapp", provider="meta",
+        integration_generation=configuration.generation, integration_identity=configuration.integration_identity)
+    rows = rows.filter(pk=event.delivery_id) if event.delivery_id else rows.filter(provider_id=row["id"])
+    for delivery in rows.select_for_update():
+        if event.delivery_attempt is not None and delivery.attempt_count != event.delivery_attempt:
+            continue
+        if delivery.provider_id and delivery.provider_id != row["id"]:
+            continue
+        if delivery.state not in {"accepted", "sent"} and not (delivery.state == "retrying" and delivery.claim_until):
             continue
         if delivery.attempt_count >= MAX_ATTEMPTS:
-            changed = apply_callback(configuration, CallbackEvent(provider_id=row["id"], state="failed")) or changed
+            changed = apply_callback(configuration, CallbackEvent(provider_id=row["id"], state="failed", delivery_id=delivery.pk)) or changed
             continue
         error = row["errors"][0]
         delivery.state, delivery.retryable = "retrying", True
+        delivery.provider_id = row["id"]
         delivery.last_error = error_result(400, {"error": error}).error_code
         delivery.next_attempt_at = timezone.now() + timedelta(seconds=min(30 * 2 ** delivery.attempt_count, 3600))
         delivery.claim_until = None
-        delivery.save(update_fields=["state", "retryable", "last_error", "next_attempt_at", "claim_until", "updated_at"])
+        delivery.save(update_fields=["state", "provider_id", "retryable", "last_error", "next_attempt_at", "claim_until", "updated_at"])
         changed = True
     return changed
 

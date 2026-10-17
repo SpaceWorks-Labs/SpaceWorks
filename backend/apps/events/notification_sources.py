@@ -16,16 +16,32 @@ def _event(envelope):
     return event if event is not None and module_enabled(event.makerspace, "events") else None
 
 
-def _owns(envelope, event):
+def _current_lifecycle(envelope, event):
     from .models import EventRegistration
+    from .notification_envelopes import lifecycle_revision
+    context = envelope.context
+    expected_event = {
+        "published": "published", "cancelled": "cancelled", "completed": "completed",
+        "series_published": "published", "series_cancelled": "cancelled", "series_completed": "completed",
+    }.get(envelope.event)
+    if (context.get("notice") != envelope.event
+            or context.get("event_status") != event.status
+            or (expected_event and event.status != expected_event)):
+        return False, None
     registration_id = envelope.context.get("registration_id")
-    return bool(registration_id) and EventRegistration.objects.filter(
-        pk=registration_id, event=event, member_id=envelope.recipient_id).exists()
+    if not registration_id:
+        return envelope.revision == lifecycle_revision(event, None), None
+    registration = EventRegistration.objects.filter(pk=registration_id, event=event).first()
+    valid = bool(registration and envelope.revision == lifecycle_revision(event, registration))
+    return valid, registration
 
 
 def lifecycle_eligible(envelope):
     event = _event(envelope)
     if event is None:
+        return False
+    current, registration = _current_lifecycle(envelope, event)
+    if not current:
         return False
     if envelope.audience == "staff":
         if envelope.makerspace_id == event.makerspace_id:
@@ -33,13 +49,15 @@ def lifecycle_eligible(envelope):
         # Organizer spaces: the organization link and its kill switch are re-read live.
         from .notifications import _organizer_spaces
         return _organizer_spaces(event.pk, event.makerspace_id).filter(makerspace_id=envelope.makerspace_id).exists()
-    return envelope.audience == "requester" and _owns(envelope, event)
+    return bool(envelope.audience == "requester" and registration
+                and registration.member_id == envelope.recipient_id)
 
 
 def grant_eligible(envelope):
     from .grant_recipients import holds_registration_grant
     event = _event(envelope)
-    return bool(event and envelope.makerspace_id == event.makerspace_id
+    return bool(event and _current_lifecycle(envelope, event)[0]
+                and envelope.makerspace_id == event.makerspace_id
                 and holds_registration_grant(envelope.recipient_id, event))
 
 

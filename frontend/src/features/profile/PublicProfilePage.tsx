@@ -20,6 +20,8 @@ export function PublicProfilePage() {
   const tenant = useOptionalTenant();
   const single = tenant?.mode === "single" ? tenant : null;
   const [sessionReady, setSessionReady] = useState(() => Boolean(getAccessToken()));
+  // Existing tokens are refreshed on 401 by the profile request; missing tokens
+  // get one cookie restoration attempt before the anonymous read.
   useEffect(() => {
     if (sessionReady || !HANDLE_PATTERN.test(handle)) return;
     let active = true;

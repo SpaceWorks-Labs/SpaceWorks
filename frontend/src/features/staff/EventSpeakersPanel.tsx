@@ -41,7 +41,7 @@ export function EventSpeakersPanel({ eventId, makerspaceId, websiteEnabled, disa
   const rows = speakers.data?.results ?? [];
   return <section className="grid gap-4" aria-label="Event speakers">
     <div><h3 className="title-section">Speakers</h3>
-      <p className="mt-1 text-sm text-muted">Link speakers to their accounts so the talk appears in their event history. Removing a speaker also ends any check-in access it gave them.</p></div>
+      <p className="mt-1 text-sm text-muted">Link speakers to their accounts so the talk appears in their event history. Removing a speaker leaves their separate Team check-in grant active. Revoke check-in access on the Team tab.</p></div>
     {!disabled ? <div className="grid gap-4 lg:grid-cols-2">
       <AssignSpeakerForm eventId={eventId} sections={sections} disabled={disabled} />
       <InviteSpeakerForm eventId={eventId} sections={sections} disabled={disabled} />
@@ -60,7 +60,7 @@ export function EventSpeakersPanel({ eventId, makerspaceId, websiteEnabled, disa
     </li>)}</ul> : null}
     <EventPanelPager page={page} setPage={setPage} previous={speakers.data?.previous} next={speakers.data?.next} />
     <ConfirmDialog open={removing !== null} title="Remove speaker" tone="danger" confirmLabel="Remove speaker" pending={remove.isPending}
-      message={`Remove ${removing?.display_name ?? "this speaker"} from the event? An unclaimed link stops working, and any check-in access the speaker received ends.`}
+      message={`Remove ${removing?.display_name ?? "this speaker"} from the event? An unclaimed link stops working. Their separate Team check-in grant stays active; revoke check-in access on the Team tab.`}
       onCancel={() => setRemoving(null)} onConfirm={() => { if (removing) remove.mutate(removing.id, { onSettled: () => setRemoving(null) }); }} />
   </section>;
 }

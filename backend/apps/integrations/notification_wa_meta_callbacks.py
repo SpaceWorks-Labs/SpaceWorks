@@ -13,6 +13,7 @@ from .notification_proofs import digest
 from .notification_providers import CallbackEvent, EndpointProof
 from .notification_wa_meta_http import PHONE, credentials, error_result
 from .notification_wa_window import inbound_time
+from .notification_wa_meta_reference import referenced_delivery
 
 MAX_BODY = 262144
 MAX_ITEMS = 200
@@ -144,7 +145,9 @@ def callback_event(configuration, request):
             # Defer that state until the lane's bounded retry handler decides it
             # is terminal. verified_callback still authenticates this event.
             state = "retrying"
+        delivery_id, attempt = referenced_delivery(configuration, row.get("biz_opaque_callback_data"))
         return CallbackEvent(provider_id=provider_id, state=state,
+            delivery_id=delivery_id, delivery_attempt=attempt,
             endpoint_id=endpoint.pk if endpoint and stopped else None, opt_out=stopped)
     number = destination(row.get("from") if kind == "messages" else row.get("wa_id"))
     if not number:

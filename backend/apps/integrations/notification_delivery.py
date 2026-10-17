@@ -27,10 +27,13 @@ def apply_callback(configuration, event):
         rows = rows.filter(pk=event.delivery_id) if event.delivery_id else rows.filter(provider_id=event.provider_id)
         changed = False
         for row in rows:
+            if event.delivery_attempt is not None and row.attempt_count != event.delivery_attempt:
+                continue
             if row.provider_id and row.provider_id != event.provider_id:
                 continue
             # A read/delivered acknowledgement cannot be undone by a late failure.
-            if event.state == "failed" and row.state in {"accepted", "sent"}:
+            if event.state == "failed" and (row.state in {"accepted", "sent"}
+                    or (row.state == "retrying" and row.claim_until)):
                 row.state, row.retryable = "failed", False
             elif RANK[event.state] > RANK[row.state] and event.state in SUCCESS:
                 row.state, row.retryable = event.state, False
@@ -96,7 +99,11 @@ def claim(delivery_id):
             return None
         row.claim_until = now + timedelta(minutes=5)
         row.attempt_count += 1
-        row.save(update_fields=["claim_until", "attempt_count", "ambiguous_count", "updated_at"])
+        if row.provider == "meta":
+            # The next signed attempt has its own provider message. Old callbacks
+            # cannot bind to it by ID or by their previous attempt reference.
+            row.provider_id = ""
+        row.save(update_fields=["claim_until", "provider_id", "attempt_count", "ambiguous_count", "updated_at"])
     return row
 
 
@@ -160,8 +167,13 @@ def record_result(row, result):
         return Delivery.objects.get(pk=row.pk)
     with transaction.atomic():
         current = Delivery.objects.select_for_update().get(pk=row.pk)
+        if current.attempt_count != row.attempt_count:
+            return current
         # A callback can win the race with the send response.
         if current.state in SUCCESS or (current.state == "failed" and not current.retryable):
+            return current
+        if current.provider == "meta" and current.provider_id and current.claim_until is None:
+            # A transient callback already scheduled this attempt's retry.
             return current
         current.claim_until = None
         current.provider_id = result.provider_id or current.provider_id

@@ -14,10 +14,9 @@ from apps.audit.services import record
 from apps.makerspaces.guards import require_module_locked
 
 from .feature_gates import require_feature
+from .capacity import CONFIRMED_STATUSES
 from .models import EventCategory, EventRegistration, EventTicketType
 
-LIVE = (EventRegistration.Status.PENDING_APPROVAL, EventRegistration.Status.REGISTERED,
-        EventRegistration.Status.WAITLISTED, EventRegistration.Status.ATTENDED)
 TICKET_FIELDS = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active")
 FROZEN_WHEN_USED = ("amount", "audience")
 
@@ -48,8 +47,8 @@ def update_ticket(ticket, *, actor, **values):
         raise ReferencedConflict("Price and audience are fixed once people registered with this ticket. "
                                  "Deactivate it and create a new ticket type instead.", "ticket_type_referenced")
     capacity = values.get("capacity", row.capacity)
-    if "capacity" in changed and capacity and capacity < used.filter(status__in=LIVE).count():
-        raise ValidationError({"capacity": "Capacity cannot be lower than the live registrations on this ticket."})
+    if "capacity" in changed and capacity and capacity < used.filter(status__in=CONFIRMED_STATUSES).count():
+        raise ValidationError({"capacity": "Capacity cannot be lower than the registered and attended seats on this ticket."})
     for field in changed:
         setattr(row, field, values[field])
     _validate(row)

@@ -34,9 +34,13 @@
         <tr>
           <td>{{ row.object.name }}</td>
           <td><code>{{ row.object.slug }}</code></td>
-          <td>{{ row.owned_pending }}</td>
-          <td>{{ row.routed_pending }}</td>
-          <td>{{ row.total_pending }}</td>
+          {% if row.hidden %}
+            <td colspan="3">Hidden (superadmin access is off)</td>
+          {% else %}
+            <td>{{ row.owned_pending }}</td>
+            <td>{{ row.routed_pending }}</td>
+            <td>{{ row.total_pending }}</td>
+          {% endif %}
           <td>
             {% if row.pending_archive_request %}
               <strong>Will be approved.</strong><br>

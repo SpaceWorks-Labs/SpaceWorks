@@ -41,7 +41,10 @@ class MakerspaceLifecycleActionsMixin:
                     {
                         "object": makerspace,
                         "pending_archive_request": pending_by_makerspace.get(makerspace.pk),
-                        **lifecycle.archive_impact(makerspace),
+                        # A hidden space discloses governance fields only — never its money counts.
+                        "hidden": not makerspace.superadmin_access_enabled,
+                        **(lifecycle.archive_impact(makerspace)
+                           if makerspace.superadmin_access_enabled else {}),
                     }
                     for makerspace in makerspaces
                 ],

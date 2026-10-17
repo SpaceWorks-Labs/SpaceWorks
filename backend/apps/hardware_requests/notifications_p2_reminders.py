@@ -59,6 +59,7 @@ def deliver(makerspace, loan, reminder, message, local_tz):
         source=loan.pk, version=version, subject=loan,
         owner=None if staff else loan.requester, own=None if staff else content(rendered,
             link=local_link(makerspace, "member")), staff=content(rendered) if staff else None,
+        staff_context=context if staff else None,
         context={"due_at": loan.return_due_at.isoformat(), "kind": reminder.kind,
                  "offset_seconds": reminder.offset_seconds})
 

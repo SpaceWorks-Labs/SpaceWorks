@@ -37,7 +37,7 @@ def notify(item, event):
                "subject": bag(id=item.pk, name=item.name[:160])}
     return fanout(space=item.makerspace, feature="stock", stream="stock", event=event,
         kind=KIND, source=item.pk, version=version(item), subject=item,
-        staff=content(render(item.makerspace, "stock", "staff", event, context)),
+        staff=content(render(item.makerspace, "stock", "staff", event, context)), staff_context=context,
         scope=NotificationScope(machine=machine_id, machine_type=item.machine_type_id),
         context={"to_buy_item_id": item.pk})
 

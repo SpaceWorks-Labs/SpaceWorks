@@ -73,7 +73,7 @@ def notify(grant, event, *, include_staff=True):
     return fanout(space=space, feature="certifications", stream="certifications",
         event=event, kind=KIND, source=grant.pk, version=version(grant), subject=grant,
         owner=grant.membership.user, own=own, staff=content(staff) if include_staff else None,
-        scope=NotificationScope(machine_type=certification.machine_type_id),
+        staff_context=context, scope=NotificationScope(machine_type=certification.machine_type_id),
         context={"certification_grant_id": grant.pk})
 
 
@@ -99,7 +99,8 @@ def notify_digest(space, reminder, message):
     return fanout(space=space, feature="certifications", stream="certifications", event="expiring",
         kind=DIGEST, source=certification.pk, version=revision(type_id, day), subject=certification,
         staff={"subject": message.title, "text": message.body}, scope=NotificationScope(machine_type=int(type_id)),
-        context={"day": day})
+        context={"day": day}, staff_context={"makerspace": bag(name=space.name),
+            "event_name": "expiring", "subject": bag(id=certification.pk, name=certification.name[:160], expires_at="")})
 
 
 def register():

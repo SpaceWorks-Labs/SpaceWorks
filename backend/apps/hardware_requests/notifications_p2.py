@@ -46,7 +46,7 @@ def content(rendered, *, link=""):
 @transaction.atomic
 def fanout(*, space, feature, stream, event, kind, source, version, subject,
            staff=None, owner=None, own=None, scope=None, context=None, rooms=True, room_body=None,
-           intent_key=None):
+           intent_key=None, staff_context=None):
     """One durable intent per source revision, audience and account.
 
     No channel is chosen here: preferences, mandatory email, suppression and live
@@ -78,6 +78,7 @@ def fanout(*, space, feature, stream, event, kind, source, version, subject,
             from .notifications_p2_rooms import queue_rooms
             queue_rooms(space=space, feature=feature, event=event, kind=kind,
                         source=source, version=version, subject=subject, scope=scope,
-                        context=context, body=room_body if room_body is not None else staff.get("text", ""), key=base)
+                        context=context, body=room_body if room_body is not None else staff.get("text", ""),
+                        key=base, staff_context=staff_context)
     # Scheduling is not proof of delivery. The outbox owns retry and recovery.
     return NotificationResult(bool(envelopes))

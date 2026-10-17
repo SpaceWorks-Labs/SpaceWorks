@@ -61,6 +61,4 @@ def change(campaign, actor, action):
     record(actor, f"event.broadcast.{campaign.status}", makerspace=event.makerspace, target=campaign)
     if action == "queue":
         transaction.on_commit(lambda: enqueue("event_broadcast", campaign.pk))
-        from .broadcast_channels import enqueue_channels
-        transaction.on_commit(lambda: enqueue_channels(campaign.pk))
     return campaign

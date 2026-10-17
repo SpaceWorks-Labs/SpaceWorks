@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from django.db import transaction
 
 from apps.accounts import rbac
+from apps.integrations.chat_templates import render_chat_text
 from apps.integrations.destinations import NotificationScope, resolve_destinations
 from apps.integrations.dispatch_channels import dispatch_channel
 from apps.integrations.models import NotificationDeliveryLog
@@ -16,12 +17,13 @@ ROOM_CHANNELS = ("telegram", "slack", "mattermost", "discord", "webhook")
 
 
 @transaction.atomic
-def queue_rooms(*, space, feature, event, kind, source, version, subject, scope, context, body, key):
+def queue_rooms(*, space, feature, event, kind, source, version, subject, scope, context, body, key, staff_context=None):
     # Serialise repeated fan-out on the domain row, without inventing another model.
     type(subject).objects.select_for_update().get(pk=subject.pk)
     payload = {"equipment_source": kind, "source_id": str(source),
                "revision": version, "context": context, "intent_key": key,
                "scope": scope.as_dict()}
+    room_text = render_chat_text(space, feature, event, body, staff_context, audience="staff")
     for channel in ROOM_CHANNELS:
         if not is_notification_enabled(space, feature, channel):
             continue
@@ -29,7 +31,7 @@ def queue_rooms(*, space, feature, event, kind, source, version, subject, scope,
                 makerspace_id=space.pk).filter(channel=channel, payload__intent_key=key).exists():
             continue
         dispatch_channel(makerspace=space, feature=feature, event=event, channel=channel,
-                         text_body=body, payload=payload, scope=scope)
+                         text_body=room_text, payload=payload, scope=scope)
 
 
 def eligible_room(log):

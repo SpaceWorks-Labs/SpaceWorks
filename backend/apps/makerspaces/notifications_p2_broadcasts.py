@@ -3,7 +3,7 @@ from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.integrations.notification_sources import NotificationSource, register_source
-from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, scoped
+from apps.operations.notifications_p2 import body, fanout, revision, scoped
 from apps.notifications.models_broadcasts import MemberBroadcast
 from .platform import feature_enabled, module_enabled
 
@@ -43,7 +43,7 @@ def render(envelope):
     return body(row.title, row.body, local_link(row.makerspace, "member"))
 
 
-@safe_notification
+# Broadcast creation and all recipient intents must succeed in the same transaction.
 def notify_broadcast(row, *, user_id, segment):
     if set(segment) - SEGMENT_KEYS:
         raise ValueError("Unknown member broadcast segment")

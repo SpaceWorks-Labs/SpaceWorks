@@ -72,7 +72,7 @@ def notify(instance, event_name, *, log_id=None, sync=False, due_reason=""):
             rendered["html_body"] = f"<p>{escape(due_reason)}</p>" + rendered["html_body"]
     return fanout(space=space, feature="maintenance", stream="maintenance", event=event_name,
         kind=KIND, source=instance.pk, version=version(instance), subject=instance,
-        staff=content(rendered), scope=NotificationScope(machine=machine),
+        staff=content(rendered), staff_context=context, scope=NotificationScope(machine=machine),
         context={"schedule": is_schedule, "meter": bool(due_reason),
                  "machine_id": machine.pk,
                  "schedule_id": instance.pk if is_schedule else None,

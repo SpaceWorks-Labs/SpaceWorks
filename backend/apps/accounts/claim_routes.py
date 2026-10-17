@@ -41,6 +41,8 @@ CLAIM_ROUTES = {
 
 def policy_for(view_name, method):
     """Fail closed at runtime even before the build guard reports route drift."""
+    if view_name == "notification-media":
+        return Refused("Media delivery requires its own single-use capability")
     if view_name in STAFF_ACCOUNT_REFUSALS:
         return Refused("Claim sessions cannot manage staff accounts")
     return CLAIM_ROUTES.get(

@@ -60,6 +60,10 @@ class MattermostProvider:
         return failure_result(self.channel, lambda: self.send_personal(delivery.endpoint,
             message_text(rendered), str(delivery.pk)))
 
+    def send_document(self, delivery, *, filename, pdf_bytes, caption):
+        from .notification_chat_documents import mattermost_document
+        return mattermost_document(self, delivery, filename=filename, pdf_bytes=pdf_bytes, caption=caption)
+
     def send_room(self, text, destination=None):
         self.config.refresh_from_db()
         return failure_result(self.channel, lambda: room(self.config, destination, text))

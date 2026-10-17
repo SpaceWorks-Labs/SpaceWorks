@@ -29,6 +29,7 @@ from .presentation_catalog_wa_meta import ENTRIES as _WA_META
 from .presentation_catalog_p2_p_chat import ENTRIES as _P2_P_CHAT
 from .presentation_catalog_p2_bookings import ENTRIES as _P2_BOOKINGS
 from .presentation_catalog_p2_events import ENTRIES as _P2_EVENTS
+from .presentation_catalog_notification_media import ENTRIES as _NOTIFICATION_MEDIA
 
 # Closed name -> callable registry for target links. Phase 10 ships no resolver: a link
 # needs a real route and query-level tenant authorization, which no generic one has.
@@ -50,6 +51,7 @@ def _compose(*fragments):
 from .presentation_catalog_p2_presence import ENTRIES as _PRESENCE
 
 PRESENTATION_CATALOG = _compose(
+    _NOTIFICATION_MEDIA,
     _PRESENCE,
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
     _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,

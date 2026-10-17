@@ -243,12 +243,14 @@ def _insert_delta(schema, model, delta, component_id, *, using):
 def _insert_public(cursor, model, record):
     columns, values = _prepared_record(model, record, cursor.db)
     quote = cursor.db.ops.quote_name
-    cursor.execute(
-        f"INSERT INTO {quote(model._meta.db_table)} "
-        f"({', '.join(quote(value) for value in columns)}) "
-        f"VALUES ({', '.join(['%s'] * len(values))})",
-        values,
-    )
+    from apps.payments.document_import import document_import_rows
+    with document_import_rows(cursor, model, [record["pk"]]):
+        cursor.execute(
+            f"INSERT INTO {quote(model._meta.db_table)} "
+            f"({', '.join(quote(value) for value in columns)}) "
+            f"VALUES ({', '.join(['%s'] * len(values))})",
+            values,
+        )
 
 
 def _apply_delta(cursor, model, delta):

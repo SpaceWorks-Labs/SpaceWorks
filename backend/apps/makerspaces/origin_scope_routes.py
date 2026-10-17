@@ -163,6 +163,10 @@ def _authoritative_route_targets(request, view=None):
     url_name = getattr(match, 'url_name', '')
     kwargs = dict(getattr(match, 'kwargs', {}) or {})
     kwargs.update(getattr(view, 'kwargs', {}) or {})
+    if url_name == "notification-media":
+        from .origin_scope_notification_media import media_grant_targets
+        targets = media_grant_targets(kwargs.get("token"))
+        return url_name, targets, not bool(targets), True
     targets = set()
     invalid = False
     # Domain adapters register targets without widening any user RBAC scope.

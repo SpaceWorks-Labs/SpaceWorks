@@ -48,6 +48,10 @@ class ScopeObservation:
 
 
 def lookup(view_name, method):
+    # This provider fetch is authorized solely by a single-use media grant. It is
+    # outside protected prefixes; public scopes must never substitute for its token.
+    if view_name == "notification-media":
+        return None
     if view_name in STAFF_ACCOUNT_EXCLUSIONS:
         return None
     if not view_name or not method:

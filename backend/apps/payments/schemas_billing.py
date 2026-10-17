@@ -8,6 +8,8 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 
 class BillingPolicyValidationErrorSerializer(serializers.Serializer):
     number_prefix = serializers.ListField(child=serializers.CharField(), required=False)
+    bill_prefix = serializers.ListField(child=serializers.CharField(), required=False)
+    payment_instructions = serializers.ListField(child=serializers.CharField(), required=False)
     legal_name = serializers.ListField(child=serializers.CharField(), required=False)
     address = serializers.ListField(child=serializers.CharField(), required=False)
     tax_id = serializers.ListField(child=serializers.CharField(), required=False)

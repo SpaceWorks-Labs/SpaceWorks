@@ -115,7 +115,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     navigate(destination.pathname + destination.search);
   }}><ListLayout
     header={{ title: "Payments", subtitle: eventOnly ? `Event registration fees owed to ${makerspaceName ?? "your makerspace"}, and how they were paid.` : `Money owed to ${makerspaceName ?? "your makerspace"}, and how it was paid.`,
-      secondary: !forRecording && !eventOnly ? { label: "Receipts & credit notes", onClick: () => setDocumentsOpen(true) } : undefined }}
+      secondary: !forRecording && !eventOnly ? { label: "Billing documents", onClick: () => setDocumentsOpen(true) } : undefined }}
     state={payments.isLoading ? { status: "loading" } : payments.error && !payments.data
       ? { status: "error", error: "Couldn't load payments. Try again.", onRetry: () => { void payments.refetch(); } } : { status: "ready" }}
     isEmpty={payments.data?.count === 0}
@@ -129,7 +129,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
       selectedIds={selected} onSelectionChange={ids => setSelected(ids.map(Number))} emptyTitle="No matching payments" /> }}
     detail={<>
       {!forRecording && !eventOnly && documentsOpen ? <DetailLayout presentation="drawer" open onClose={() => setDocumentsOpen(false)}
-        title="Receipts & credit notes" state={{ status: "ready" }}
+        title="Billing documents" state={{ status: "ready" }}
         main={<PaymentDocuments key={makerspaceId} makerspaceId={makerspaceId} audience="staff" initiallyExpanded />} /> : null}
       {settling ? (
         <SettlementDialog

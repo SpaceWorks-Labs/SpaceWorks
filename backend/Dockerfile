@@ -18,7 +18,7 @@ ARG POSTGRESQL_LOCAL_SERVER_MAJOR=16
 # Both are versioned package names, so nothing floats to 18. `age` is the archive
 # boundary.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age fonts-noto-core fonts-dejavu-core \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age fonts-noto-core fonts-noto-extra fonts-dejavu-core \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
       | gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg \
@@ -45,7 +45,8 @@ COPY --chown=app:app . .
 
 # Keep the fixed printable font vocabulary outside live source bind mounts and
 # verify the actual ReportLab/shaping runtime while building, not during issuance.
-RUN python -m scripts.verify_printable_runtime --bundle
+RUN python -m scripts.bundle_cjk_fonts \
+    && python -m scripts.verify_printable_runtime --bundle
 
 ARG BUILD_GIT_SHA=unknown
 ARG BUILD_GIT_DESCRIBE=unknown

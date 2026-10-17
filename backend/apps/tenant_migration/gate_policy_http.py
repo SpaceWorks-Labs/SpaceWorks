@@ -5,6 +5,10 @@ from .gate_policy_p2_wa_twilio import HTTP_ANONYMOUS_PARTICIPANTS as WA_TWILIO_P
 
 
 HTTP_EXEMPTIONS = {
+    "notification-media": (
+        "Single-use GET resolves its tenant from the hashed media grant, then takes "
+        "tenant_write for atomic consumption and audit; closed source gates refuse disclosure."
+    ),
     "auth-reauth": "Global browser session proof has no tenant-owned authority.",
     "auth-reauth-social-start": "Global session-bound credential intent.",
     "auth-reauth-social-complete": "Global credential verification and browser proof.",

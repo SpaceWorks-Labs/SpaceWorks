@@ -593,6 +593,10 @@ if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
 CELERY_BEAT_SCHEDULE = {
+    "missing-payment-bills": {
+        "task": "apps.payments.tasks.issue_missing_bills_task",
+        "schedule": crontab(minute="*/5"),
+    },
     "notification-contract-outbox": {
         "task": "apps.integrations.notification_tasks.sweep_notification_outbox",
         "schedule": crontab(minute="*"),

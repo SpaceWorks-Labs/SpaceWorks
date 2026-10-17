@@ -11,7 +11,6 @@ const REASON_MAX_LENGTH = 2000;
 const ERROR_MESSAGES: Record<string, string> = {
   pending_archive_request_exists: "An archive request is already pending for this makerspace.",
   archive_request_cooldown: "Please wait one hour after the last archive request before filing another.",
-  superadmin_access_disabled: "Turn on superadmin access before requesting archival.",
   makerspace_already_archived: "This makerspace has already been archived.",
   archive_request_not_pending: "This archive request is no longer pending and cannot be withdrawn.",
 };

@@ -624,7 +624,10 @@ revocation. Use the restrict/suspend flow to end someone's access.
 
 Changes that would strand a member with only a disabled provider are refused. Staff/platform
 accounts do not count social identities as alternative credentials and cannot use member recovery.
-Staff passwords are issued by an authorized administrator; platform recovery uses the host command.
+Staff passwords can be issued by an authorized administrator. Staff and platform sign-in also offer
+**Forgot password?** using a six-digit email code through configured Platform Email. Staff recovery
+stays within the selected makerspace; platform recovery uses the platform console. MFA remains
+required after recovery. The host command remains available for platform break-glass recovery.
 
 ### Rooms: sending different alerts to different places
 
@@ -751,8 +754,9 @@ continue to use their member login and only their granted workspace actions.
 
 Staff invitations set the initial password of that exact new staff account. With Email or invitations
 off, an administrator sets or generates a password and hands it over; Membership and MFA need not
-be enabled. Staff use admin-issued reset, which ends sessions and forces password change; emailed
-self-service reset is member-only. Deactivation retains history and revokes credentials; reactivation
+be enabled. Admin-issued reset ends sessions and forces password change. Separate staff/platform
+email OTP recovery ends sessions, clears forced password change and preserves enrolled MFA; it needs
+configured Platform Email, including when tenant Email is off. Deactivation retains history and revokes credentials; reactivation
 needs new credentials. With superadmin access off, only local Space Managers manage staff, including
 other Space Managers; nobody can manage self or remove the last active manager.
 

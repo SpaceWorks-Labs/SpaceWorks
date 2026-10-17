@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="confirm_review" value="1">
+  {% for space in spaces %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ space.pk }}">{% endfor %}
+  {% for row in requests %}
+    <section>
+      <h2>Request {{ row.id }}</h2>
+      <p>{{ row.requested_at }} - {{ row.username }}</p>
+      {{ row.reason|linebreaksbr }}
+
+    </section>
+  {% empty %}<p>No pending archive requests.</p>{% endfor %}
+  {% if not approve %}<label for="resolution_note">Reason for declining</label>
+    <textarea id="resolution_note" name="resolution_note" maxlength="2000" required></textarea>{% endif %}
+  <div class="submit-row"><input type="submit" value="Confirm" class="default"><a href=".">Cancel</a></div>
+</form>
+{% endblock %}

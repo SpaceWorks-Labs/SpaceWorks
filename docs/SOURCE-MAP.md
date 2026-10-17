@@ -445,8 +445,10 @@ Account-kind authentication is enforced in `accounts/login_context.py`, `surface
 `checks.py` fails unclassified staff URLs. `member_identity.py` and `account_kind_guards.py`
 keep member credential/community writers separate. `credential_revocation.py` and
 `credential_revocation_helpers.py` own generation fencing and account-owned credential teardown.
-`models_password_reset.py`, `services_password_reset.py`/`services_password_reset_drain.py` and
-`password_reset_crypto.py` bind member recovery to the exact account. `services_staff_invitations.py`,
+`models_password_reset.py`, `services_password_reset.py`, `services_password_reset_confirmation.py`,
+`services_password_reset_drain.py` and `password_reset_crypto.py` bind recovery to the exact account
+and member/staff/platform context. `password_reset_context.py` owns trusted-origin/live-tenant policy
+and reset-page destinations; `credential_locks.py` enforces the shared credential-operation lock order. `services_staff_invitations.py`,
 `staff_invitation_acceptance.py` and `staff_invitation_delivery.py` own initial staff password setup.
 `admin_api/urls_staff_accounts.py` and `serializers_staff_accounts.py` define its HTTP contract;
 `accounts/admin_staff_lifecycle.py` and `makerspaces/admin_staff_accounts.py` provide control actions.
@@ -455,6 +457,9 @@ Staff transport is in `tenant_migration/portable_staff.py`, `tenant_dump_staff.p
 `tenant_dump_user_closure.py`, `staff_postconditions.py` and `catalog_account_context.py`;
 `data_export/runner_users.py` and `subject_selectors.py` include tenant staff without retired shells.
 `makerspaces/staff_retirement.py` performs the purge retirement step from `lifecycle_purge.py`.
+`makerspaces/lifecycle_purge_graph.py` owns the ordered whole-tenant deletion graph.
+`admin_governance.py` and `admin_lifecycle_review.py` provide the slim hidden-tenant lifecycle list
+and pending archive-request review; ordinary tenant object pages remain scoped.
 Shared chat destination facts use `integrations/notification_destination_events.py`;
 `notification_proofs.py` keeps proof and unlink account-bound. Transport/backup policy:
 [account-split-portability.md](account-split-portability.md).

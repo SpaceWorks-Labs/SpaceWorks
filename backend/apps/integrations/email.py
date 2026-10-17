@@ -123,14 +123,17 @@ def send_password_reset_email(recipient, reset_url):
     return 1 if log.status == log.Status.SENT else 0
 
 
-def send_password_reset_otp(recipient, code, *, expires_in_minutes):
+def send_password_reset_otp(recipient, code, *, expires_in_minutes, reset_url="", account_label=""):
     """Deliver a recovery code without persisting it or crossing a queue."""
     from apps.integrations.dispatch import dispatch_email
 
     subject = "Your password reset code"
+    recovery_page = (f"Reset your {account_label} password at {reset_url}\n"
+                     "Enter your username or email, the code and your new password.\n\n"
+                     if reset_url else "")
     body = (
         "We received a request to reset your password.\n\n"
-        f"Your password reset code is: {code}\n\n"
+        f"{recovery_page}Your password reset code is: {code}\n\n"
         f"This code expires in {expires_in_minutes} minutes and can be used once.\n\n"
         "If you did not request this, you can ignore this email."
     )

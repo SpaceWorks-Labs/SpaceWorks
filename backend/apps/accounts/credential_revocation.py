@@ -3,7 +3,8 @@
 from django.db import transaction
 from django.utils import timezone
 
-from apps.accounts.models import PasswordResetEnvelope, StaffInvitation, User
+from apps.accounts.models import PasswordResetEnvelope
+from apps.accounts.credential_locks import lock_credentials
 from apps.accounts.credential_revocation_helpers import (
     revoke_authentication, revoke_pending_proofs, revoke_reset_envelopes,
 )
@@ -18,8 +19,8 @@ def revoke_all_credentials(user, *, reason, actor=None):
     linked social identities are retained; their outstanding proofs are consumed.
     Repeating a call is safe: timestamps remain terminal and no authority is restored.
     Each explicit invalidation advances the generation, including repeated calls.
-    Call this before taking an account row lock in an outer lifecycle transaction:
-    recovery envelopes and invitation redemption both lock their rows before User.
+    All credential writers share Tenant -> Invitations -> User -> Envelopes order.
+    Call this before taking an account row lock in an outer lifecycle transaction.
     """
     return _revoke(user, reason=reason, actor=actor, all_credentials=True)
 
@@ -35,17 +36,11 @@ def _revoke(user, *, reason, actor, all_credentials):
     if user.pk is None:
         raise ValueError("Credential revocation requires a persisted account.")
     with transaction.atomic():
-        # Recovery's declared order is Envelope -> User. Lock only account-bound
-        # envelopes: email is shared across account kinds and is never ownership.
+        locked = lock_credentials(user)
+        # Email is shared across kinds and never establishes account ownership.
         envelopes = list(PasswordResetEnvelope.objects.select_for_update().filter(
             user_id=user.pk,
         ).order_by("pk")) if all_credentials else []
-        # Invitation acceptance also locks its invitation before the account.
-        # Keep that order for reset-vs-redemption; never join nullable account FKs.
-        list(StaffInvitation.objects.select_for_update().filter(
-            account_id=user.pk, accepted_at__isnull=True, revoked_at__isnull=True,
-        ).order_by("pk"))
-        locked = User.objects.select_for_update().get(pk=user.pk)
         now = timezone.now()
         locked.credential_generation += 1
         locked.save(update_fields=["credential_generation"])
@@ -53,7 +48,8 @@ def _revoke(user, *, reason, actor, all_credentials):
         if all_credentials:
             counts.update(revoke_pending_proofs(locked, now=now))
             counts["password_reset_envelopes"] = revoke_reset_envelopes(envelopes, now=now)
-        audit.record(actor, "account.credentials_revoked", target=locked, meta={
+        audit.record(actor, "account.credentials_revoked", target=locked,
+                     makerspace=locked.staff_makerspace, meta={
             "reason": reason, "counts": counts,
             "scope": "all" if all_credentials else "sessions",
         })

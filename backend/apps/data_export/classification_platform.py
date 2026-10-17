@@ -55,7 +55,7 @@ OMITTED_MODELS = {
     # nobody, since anyone can create one by asking for a reset -- holding a live OTP
     # digest and a credential fingerprint. Transient authentication state, and global
     # rather than tenant data.
-    "accounts.PasswordResetEnvelope": "Transient authentication state.",
+    "accounts.PasswordResetEnvelope": "Transient authentication state, including context, tenant, origin and credential generation; never portable.",
     "accounts.PhoneVerificationChallenge": "Transient authentication state.",
     "accounts.PlatformLoginMethods": "Platform identity configuration.",
     "accounts.PlatformSocialAuthSettings": "Platform credentials and identity configuration.",

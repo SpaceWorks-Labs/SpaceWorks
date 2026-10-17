@@ -1,5 +1,7 @@
 """Password change and anonymous account-recovery endpoints."""
 
+from collections.abc import Mapping
+
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -20,6 +22,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import User
 from apps.accounts.principal_guards import is_anonymous_requester
 from apps.accounts.password_reset_crypto import normalize_email
+from apps.accounts.password_reset_context import recovery_origin
 from apps.accounts.serializers_password_reset import (
     ChangePasswordResponseSerializer,
     ChangePasswordSerializer,
@@ -139,8 +142,8 @@ class ForgotPasswordView(APIView):
 
     @extend_schema(
         tags=["Auth"],
-        summary="Request an emailed member-account password reset code",
-        description="Member accounts only. Unknown, staff and platform addresses receive the same acknowledgement.",
+        summary="Request a context-bound emailed password reset code",
+        description="Select member, staff (with makerspace slug) or platform. Unknown and unavailable accounts receive the same acknowledgement. Staff/platform require a trusted origin and Platform Email.",
         auth=[],
         request=ForgotPasswordRequestSerializer,
         responses={
@@ -154,14 +157,15 @@ class ForgotPasswordView(APIView):
         # This deployment-level gate deliberately precedes payload validation and every
         # envelope write. It reveals only the same mail capability
         # already published by /api/v1/config.
-        if not email_enabled():
+        payload = request.data if isinstance(request.data, Mapping) else {}
+        if payload.get("context", "member") == "member" and not email_enabled():
             return Response(
                 RECOVERY_UNAVAILABLE, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         serializer = ForgotPasswordRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            request_password_reset(serializer.validated_data["email"])
+            request_password_reset(**serializer.validated_data, origin=recovery_origin(request))
         except PasswordResetCooldown:
             # A per-account 429 would turn the resend budget into an enumeration oracle.
             pass
@@ -175,7 +179,7 @@ class ResetPasswordConfirmView(APIView):
 
     @extend_schema(
         tags=["Auth"],
-        summary="Confirm a member-account OTP or legacy password reset link",
+        summary="Confirm a context-bound OTP (legacy UID/token links are member-only)",
         auth=[],
         request=CONFIRM_REQUEST_SCHEMA,
         responses={
@@ -190,7 +194,8 @@ class ResetPasswordConfirmView(APIView):
         data = serializer.validated_data
         if data["method"] == "otp":
             confirm_password_reset(
-                data["email"], data["code"], data["new_password"]
+                data["email"], data["code"], data["new_password"],
+                context=data["context"], makerspace=data.get("makerspace"), origin=recovery_origin(request)
             )
         else:
             # Removal condition: last time old links could be issued +

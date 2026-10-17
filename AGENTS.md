@@ -59,7 +59,8 @@ verified private account-link proofs, never workflow decisions. Two architectura
 - **Auth & RBAC** — enforces account kind, the role/action matrix AND makerspace scoping on every query.
   Member, tenant staff and platform superadmin are separate accounts, even for the same person/email.
   Staff belong to one makerspace and are created only by its Space Manager or a permitted superadmin;
-  staff/platform sign in with password (+ authenticator MFA), and staff resets are admin-issued.
+  staff/platform sign in with password (+ authenticator MFA); recovery uses admin-issued resets or
+  separate context-bound email OTPs via configured Platform Email.
   Resource helpers and organization delegates use member accounts, never built-in staff memberships.
   Super Admin is global; each makerspace has seven fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
   Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member. No custom roles or role
@@ -122,8 +123,9 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
 
 - **Staff and member are separate accounts.** Only a Space Manager (own space, non-Space-Manager
   staff) or permitted superadmin creates staff; members never receive built-in staff roles. Staff
-  sign-in is username/email + password (+ authenticator MFA), and staff reset is admin-issued,
-  session-revoking and forces password change. Platform accounts are separate and password-only too.
+  sign-in is username/email + password (+ authenticator MFA). Admin-issued resets revoke sessions
+  and force password change; context-bound email OTP recovery via Platform Email clears that flag
+  and retains MFA. Platform accounts have their own email recovery and host break-glass command.
   With `superadmin_access_enabled=False`, only local Space Managers manage staff, including other
   Space Managers; never self and never the last active manager. See **Account kinds** in `docs/INVARIANTS.md`.
 - Reviewed-request hardware **cannot be issued** without both a box QR scan and an issue photo.

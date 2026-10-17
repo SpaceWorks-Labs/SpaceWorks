@@ -132,6 +132,13 @@ HTTP_ANONYMOUS_PARTICIPANTS = {
 
 
 ADMIN_ACTION_EXEMPTIONS = {
+    "makerspaces.Makerspace.approve_archive_requests": (
+        "Approving a pending lifecycle request performs the excluded tenant archive."
+    ),
+    "makerspaces.Makerspace.decline_archive_requests": (
+        "Declining a governance request grants no authority on the frozen tenant."
+    ),
+
     "makerspaces.MakerspaceArchiveRequest.approve_selected": (
         "Approving the request performs the excluded tenant archive."
     ),

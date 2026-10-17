@@ -11,6 +11,7 @@ import { RecoveryQuarantinePanel } from "./RecoveryQuarantinePanel";
 import { useStaffSession } from "./useStaffSession";
 import { tabFromStaffPath } from "./staffTabs";
 import { useLocation } from "react-router-dom";
+import { contextForRoute } from "../../lib/api/sessionContext";
 
 /** A whole-screen status between sign-in and the console: the shell is not up yet, so this owns the landmark. */
 function StaffLoading({ message, restoring = false }: { message: string; restoring?: boolean }) {
@@ -50,6 +51,7 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
     tenant,
     user,
   } = useStaffSession(guestOnly);
+  const platformSignIn = contextForRoute(location.pathname, location.search, tenant.slug) === "platform";
   if (restoring) {
     return <StaffLoading message="Restoring session..." restoring />;
   }
@@ -64,7 +66,11 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
       <LoginPanel
         error={login.error?.message}
         guestOnly={guestOnly}
-        platform={tenant.mode === "central" && !routeMakerspaceSlug}
+        platform={platformSignIn}
+        recoveryHref={platformSignIn ? "/admin/reset-password?context=platform&step=request"
+          : tenant.mode === "single" ? "/admin/reset-password?step=request"
+          : routeMakerspaceSlug ? `/m/${encodeURIComponent(routeMakerspaceSlug)}/admin/reset-password?step=request`
+          : "/admin/reset-password?context=platform&step=request"}
         isPending={login.isPending}
         onSubmit={login.mutate}
       />

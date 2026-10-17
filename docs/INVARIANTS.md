@@ -95,7 +95,7 @@ The lifecycle API under `admin/makerspaces/<id>/staff-accounts/` and `/control/`
 services, recent server-owned reauthentication, tenant write gates, quotas and append-only audits.
 Generic admin account fields/password/bulk/delete and legacy membership/reset writers cannot
 bypass them. There is no hidden-Space-Manager application break-glass reset; the operator's
-server-side management command remains the platform recovery surface.
+server-side management command remains the platform break-glass recovery surface.
 
 Email onboarding initializes the already-created staff account, never links by email or creates
 one on redemption. Invitations bind account ID, full role/machine-scope snapshot and
@@ -107,11 +107,25 @@ so reset/redemption races cannot install stale credentials. Admin-issued passwor
 are displayed once in a no-store response. Optional authenticator reset consumes pending MFA.
 Without Email, Membership, staff invitations or MFA, admin-set initial passwords still work.
 
-Self-service reset is member-only: queue envelopes bind the member account, not a shared email;
-request, worker, OTP and legacy UID/token confirmation preserve generation fencing. Staff/platform
-addresses get generic acknowledgements without recovery mail. Separate same-email member recovery
-remains independent. Established MFA is per account; pending MFA/reauth proofs bind account, kind
-and credential generation and revalidate on completion.
+Self-service email recovery uses separate `member`, `staff` and `platform` contexts. Envelopes bind
+an account, context, staff tenant, trusted request origin and credential generation, never shared-email
+ownership. Member recovery remains independent; legacy UID/token links remain member-only. Staff
+supply their tenant slug and email or username; platform recovery uses only the platform origin.
+Staff/platform recovery requires configured Platform Email at request and issuance, irrespective of
+tenant email/modules. Unknown, unavailable, other-kind/tenant and unconfigured requests acknowledge
+identically without issuing mail. Staff accounts must be live, unrestricted, have active membership
+and a servable, nonmigrating tenant; trusted origin and all live conditions are rechecked at issuance
+and confirmation. Mail contains a six-digit OTP and a trusted reset-page URL, never a bearer link;
+only verified tenant domains override configured central URLs.
+
+Recovery, invitation redemption, admin password issue and deactivation share the lock order:
+Makerspace, account invitations, User, then envelopes. OTP expiry, attempt budget, single use and
+credential generation fence concurrent operations. Email confirmation validates the password,
+clears `must_change_password` and calls `revoke_sessions_only` once: sessions/device grants and open
+invitations end, generation advances once. Established MFA remains enrolled and required on next
+sign-in; pre-reset MFA/reauth proofs cannot complete. Staff envelopes of hidden tenants remain
+invisible even on the otherwise global operational envelope admin, including direct object reads.
+The operator's host command remains a platform break-glass option.
 
 Deactivation revokes the account's Django sessions, outstanding JWTs/browser markers, native
 device grants/refresh families and push destinations, station operator leases, pending MFA,
@@ -226,19 +240,27 @@ feeds general CORS + publishable-key validation) — so an API-client/public ori
 publishable-key calls but **can never mint a staff session**. `origin_scope.py` hard-scopes a browser
 staff request to its domain's makerspace; origin-less (server) requests fall back to `MakerspaceMembership`.
 
-**Superadmin access is a HARD block, not a soft hide.** `Makerspace.superadmin_access_enabled=False`
+**Superadmin access is a HARD block with one lifecycle governance exception.** `Makerspace.superadmin_access_enabled=False`
 excludes the space for a GLOBAL superadmin across `rbac.can`/`scope_by_action`/`makerspaces_for_action(s)`
 etc. Platform accounts have no memberships; a local manager uses a separate tenant staff account. Status contract: hidden
 → **403** on action/permission-gated endpoints, **404** on object-lookup detail + re-enable PATCH,
 **empty 200** on scope-filtered lists. Existence stays visible as a slim row (governance). True→False is
 rejected unless Platform Email is configured (forgot-password recovery). Re-enable is space-manager-only.
 Staff management has no hidden-space platform exception: only local Space Managers may create or
-reset staff there (D7). Server-side operator recovery remains outside application authority.
+admin-reset staff there (D7). Platform superadmins may archive, unarchive, purge and review archive
+requests through the slim `/control/` lifecycle list, with recent session reauthentication on selection
+and confirmation POSTs. That exception grants no data, staff, settings, support or migration HTTP access.
+Server-side operator recovery remains outside application authority.
 
 **Makerspace archive → purge (superadmin, `/control/` only).** `Makerspace.archived_at` is the
 single soft-delete flag; archive scoping is threaded through central rbac + all aggregates + public +
 token-status surfaces (archived is invisible everywhere but `/control/`). `lifecycle.py` is the single
-lifecycle source. **Purge** is break-glass: collects S3 keys, writes a platform-scoped audit, then in
+lifecycle source. Its public decision services independently require an active platform superadmin.
+Hidden spaces support the same lifecycle without changing the access flag, custody activation or
+recipient set; unarchive preserves hiding and still refuses an active migrated-out handoff. The internal
+`_archive_locked()` caller used by tenant migration cutover also supports hidden spaces; migration HTTP
+routes retain their hard block. Archive, unarchive and purge completion audits retain the access flag
+from the locked decision row. **Purge** is break-glass: collects S3 keys, writes a platform-scoped audit, then in
 one `transaction.atomic()` suspends immutability triggers **transaction-scoped** and deletes the full
 `PROTECT` object graph in verified dependency order, then best-effort deletes S3.
 - Self-host: `SET LOCAL session_replication_role='replica'` (all triggers off; FK off — ORM does
@@ -344,13 +366,17 @@ been **worse than doing nothing**, which is the lesson worth keeping here.
 mutate status outside it). Direct SM archive was rejected as a **self-lockout** — archiving
 removes the space from RBAC scope and `unarchive` is `/control/`-only, so the person who pressed
 the button loses the space and any way to undo it.
-- **THE HIDDEN-SPACE HOLE, and it is why this feature is safe.** A manager can set
-  `superadmin_access_enabled=False` themselves; a hidden space is excluded from `/control/`
-  querysets **and** `lifecycle.archive()` refuses it. So `file request → hide space` made the
-  request vanish from the superadmin's queue while rendering it unapprovable — a manager
-  escaping the exact oversight the design exists to impose. **Both directions are closed:**
-  creation refuses a hidden space, and disabling superadmin access refuses while a request is
-  pending. Do not remove either half.
+- **Hidden spaces retain lifecycle governance.** A manager may request archival while
+  `superadmin_access_enabled=False`, and may disable access while a request is pending. The
+  `/control/` makerspace list exposes only name, slug, lifecycle state, archived timestamp,
+  archive-request status and the access-off label for a hidden row. Search and ordering use only
+  name/slug; setting filters omit hidden rows. There is no object/change link, inline or tenant-data
+  access. Platform superadmins can archive/unarchive/purge directly without a request, and can
+  approve/decline the pending request through dedicated list actions. Review discloses request id,
+  time, requester username and reason (no contact details).
+  The archive-request admin itself remains hard-hidden; neither model is globally exempted from
+  tenant lookup. Recent control-session reauthentication protects both action and confirmation POSTs,
+  including the ordinary makerspace delete route.
 - **Authority is the `MANAGE_MAKERSPACE` ACTION, never `rbac.is_space_manager_identity`.** That
   helper deliberately does not infer identity from actions. Organization-derived authority can
   carry the action without local Space Manager identity. Both view and service must check the
@@ -4024,6 +4050,13 @@ that breaches the floor — security response must never wait for redundancy. A 
 recipient **continues** to back up under a recorded degraded state (owner decision); at **zero** it
 fails closed. Creating a makerspace with the switch already off is refused: at creation no recipient can
 exist, so the supported sequence is **create on → enrol and verify two → switch off**.
+
+The admission floor governs recipient maintenance, not authorized whole-tenant destruction.
+An archived hidden makerspace may be purged without restoring access or recipients. The authorized
+purge removes live tenant DEKs, recipients, custody/alarm rows and activation state; permanent
+recipient reservations, retained encrypted artifacts and recipient-use history survive their own
+retention rules. `BackupArchive.makerspace` becomes NULL while snapshot identities remain.
+Archive/unarchive never add a platform recipient or change activation state or the access flag.
 
 **Every transaction that changes the effective recipient count must go through
 `backup/custody.py::with_makerspace_custody_lock`, which locks the MAKERSPACE ROW FIRST, then recipient

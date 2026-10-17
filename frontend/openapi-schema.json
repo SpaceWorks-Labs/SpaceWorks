@@ -105546,10 +105546,17 @@
             },
             "FirstStaffInvite": {
                 "type": "object",
+                "description": "Create a separate tenant staff account, then invite it to set its password.",
                 "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Staff display name; defaults to the email's local part.",
+                        "maxLength": 200
+                    },
                     "email": {
                         "type": "string",
-                        "format": "email"
+                        "format": "email",
+                        "maxLength": 254
                     },
                     "role_slug": {
                         "$ref": "#/components/schemas/RoleSlugEnum"
@@ -112369,7 +112376,12 @@
                         "maxItems": 60
                     },
                     "first_staff_invite": {
-                        "$ref": "#/components/schemas/FirstStaffInvite"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FirstStaffInvite"
+                            }
+                        ],
+                        "description": "Atomically creates a separate staff account and its initial-password invitation. Requires email onboarding; never attaches a member account with the same email."
                     }
                 }
             },
@@ -134273,12 +134285,26 @@
                     },
                     "email_onboarding_available": {
                         "type": "boolean"
+                    },
+                    "machine_types": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StaffMachineTypeChoice"
+                        }
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Role"
+                        }
                     }
                 },
                 "required": [
                     "can_manage_space_managers",
                     "creatable_roles",
                     "email_onboarding_available",
+                    "machine_types",
+                    "roles",
                     "superadmin_access_enabled"
                 ]
             },
@@ -134838,6 +134864,21 @@
                     "makerspace",
                     "role",
                     "role_name"
+                ]
+            },
+            "StaffMachineTypeChoice": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
                 ]
             },
             "StaffMembership": {

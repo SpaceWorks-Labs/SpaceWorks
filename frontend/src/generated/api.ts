@@ -4086,6 +4086,7 @@ export type FieldValidationError = {
 };
 
 export type FirstStaffInvite = {
+  "name"?: string;
   "email": string;
   "role_slug": RoleSlugEnum;
 };
@@ -11063,6 +11064,8 @@ export type StaffAccountPolicy = {
   "can_manage_space_managers": boolean;
   "superadmin_access_enabled": boolean;
   "email_onboarding_available": boolean;
+  "machine_types": Array<StaffMachineTypeChoice>;
+  "roles": Array<Role>;
 };
 
 export type StaffBookingInput = {
@@ -11183,6 +11186,11 @@ export type StaffInvitationDelivery = {
   "created_at": string;
   "accept_url": string;
   "delivery_status": string;
+};
+
+export type StaffMachineTypeChoice = {
+  "id": number;
+  "name": string;
 };
 
 export type StaffMembership = {

@@ -8,15 +8,14 @@ def reconcile(page, rows):
     working = {row.identity_id: row for row in page.sessions.all()}
     by_slug = {row.slug: row for row in working.values()}
     aliases = {row.slug: row.identity_id for row in page.session_aliases.all()}
-    identities = set(page.session_identities.values_list("pk", flat=True))
     seen, resolved = set(), []
     for row in rows:
         values = dict(row)
         supplied = values.pop("session_id", None)
         slug = values["slug"]
         if supplied is not None:
-            if supplied not in identities:
-                raise ValidationError({"session_id": "Session identity must belong to this page."})
+            if supplied not in working:
+                raise ValidationError({"session_id": "Choose an active working session identity on this page."})
             identity = supplied
             if slug in aliases and aliases[slug] != identity:
                 raise ValidationError({"slug": "This slug is permanently reserved for another session."})

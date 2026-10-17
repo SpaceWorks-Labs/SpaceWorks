@@ -56,13 +56,16 @@ def upload(kind, owner_id, *, actor, version, file, alt_text):
                                      size_bytes=len(converted), due_at=timezone.now() + timedelta(hours=1))
         finish(typed, owner, page, actor, "public_page.asset_reserved")
         reserved_version = page.version
+        job_id = job.pk
     try:
         website_assets._put("staging/" + key, raw, "application/octet-stream")
         website_assets._put(key, converted, "image/webp")
         website_assets.delete_object("staging/" + key)
         with transaction.atomic(durable=True):
             typed, owner, actor, page = lock_state(kind, owner_id, actor, reserved_version)
-            job = Cleanup.objects.select_for_update().get(pk=job.pk, completed_at__isnull=True)
+            job = Cleanup.objects.select_for_update().filter(pk=job_id, completed_at__isnull=True, attempts=0).first()
+            if job is None:
+                raise PageConflict("stale_version", "The upload expired. Upload the image again.")
             asset = typed.asset.objects.create(page=page, object_key=key, size_bytes=len(converted), alt_text=alt_text.strip())
             job.due_at = timezone.now() + timedelta(hours=24)
             job.save(update_fields=["due_at"])
@@ -70,7 +73,7 @@ def upload(kind, owner_id, *, actor, version, file, alt_text):
             state = editor_state(typed, owner, page)
             return {"asset": next(row for row in state["assets"] if row["id"] == asset.pk), "state": state}
     except BaseException:
-        Cleanup.objects.filter(pk=job.pk, completed_at__isnull=True).update(due_at=timezone.now())
+        Cleanup.objects.filter(pk=job_id, completed_at__isnull=True).update(due_at=timezone.now())
         raise
 
 

@@ -39,7 +39,7 @@ def copy_page(source, target, *, copies, preserve_delays=False, preserve_revisio
     if asset_map is not None:
         asset_map.update({source_id: row.pk for source_id, row in assets.items()})
     sections = {}
-    for row in bounded_children(original.sections.all()):
+    for row in bounded_children(original.sections.filter(is_working=True)):
         sections[row.pk] = EventPageSection.objects.create(
             page=page, asset=assets.get(row.asset_id), **copy_fields(row, SECTION_FIELDS))
     anchor = original.series if original.series_id else original.event

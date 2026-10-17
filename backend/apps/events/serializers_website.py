@@ -5,6 +5,10 @@ from rest_framework import serializers
 from .models_website import EventPageSection
 from .serializers_website_content import HttpLinkField, WebsitePageFields
 from .website_content import SPONSOR_TIERS
+from .serializers_website_state import WebsiteCapabilities, WebsiteDelayTarget, WebsiteGroupVisibility
+from .serializers_website_state import PublicEventEditorialDocument
+from apps.makerspaces.public_page_serializers import Cover
+from apps.makerspaces.public_page_presentation_serializers import Presentation
 
 VISIBILITY = (("draft", "Draft"), ("published", "Published"))
 
@@ -90,15 +94,25 @@ class WebsiteSessionSerializer(WebsiteSessionInput):
 
 
 class WebsiteSerializer(WebsitePageFields):
-    cover = serializers.DictField(child=serializers.CharField(allow_null=True), allow_null=True, required=False)
-    presentation = serializers.JSONField(required=False)
-    capabilities = serializers.DictField(child=serializers.BooleanField(), required=False)
+    cover = Cover(allow_null=True, required=False)
+    presentation = Presentation(required=False)
+    capabilities = WebsiteCapabilities(required=False)
+    section_enabled = WebsiteGroupVisibility(required=False)
     draft_revision_id = serializers.UUIDField(allow_null=True, required=False)
     published_revision_id = serializers.UUIDField(allow_null=True, required=False)
-    delay_targets = serializers.ListField(child=serializers.DictField(), required=False)
+    delay_targets = WebsiteDelayTarget(many=True, required=False)
     revision = serializers.IntegerField()
     released = serializers.BooleanField()
     inherited = serializers.BooleanField()
     sections = WebsiteSectionSerializer(many=True)
     sessions = WebsiteSessionSerializer(many=True)
     assets = WebsiteAssetSerializer(many=True, required=False)
+
+
+class PublicWebsiteSerializer(WebsiteSerializer):
+    editorial_document = PublicEventEditorialDocument(allow_null=True, required=False)
+    capabilities = None
+    draft_revision_id = None
+    published_revision_id = None
+    delay_targets = None
+    assets = None

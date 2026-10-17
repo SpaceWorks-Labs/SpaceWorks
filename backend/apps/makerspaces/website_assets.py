@@ -104,6 +104,9 @@ def upload(file, *, module, page, copies):
     import sys
     this = sys.modules[__name__]
     limits.add_storage(page.makerspace, len(converted))
+    if module == "events":
+        from .website_asset_journal import enlist
+        enlist(page, key, len(converted), copies)
     copies.created.extend(((this, staged), (this, key)))
     _put(staged, data, "application/octet-stream")
     _put(key, converted, "image/webp")
@@ -121,7 +124,7 @@ def copy_asset(asset, destination, *, module, copies):
     return copies.copy_image(destination.makerspace, OwnedImage(
         asset.object_key, asset.object_key.rsplit("/", 1)[0] + "/",
         prefix(module, destination.makerspace_id, destination.pk), MAX_BYTES,
-    ), storage=sys.modules[__name__])
+    ), storage=sys.modules[__name__], **({"journal_page": destination} if module == "events" else {}))
 
 
 def release(makerspace, key, size):

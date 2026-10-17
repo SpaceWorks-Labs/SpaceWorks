@@ -18,11 +18,13 @@ def upload_asset(target, *, actor, file, alt_text, replace_id=None, revision=Non
         raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
     with clone_transaction() as copies:
         target, actor = locked_target(target, actor, EDIT_DETAILS)
-        page = own_page(target, copies)
-        if revision is not None and revision != page.revision:
+        from .website_projection import project
+        if revision is not None and revision != project(target)["revision"]:
             raise ValidationError({"revision": "The page changed. Reload before uploading."})
+        page = own_page(target, copies)
         old = get_object_or_404(page.assets, pk=replace_id) if replace_id else None
-        if page.assets.count() >= 100:
+        from apps.makerspaces.website_asset_journal import pending_count
+        if page.assets.count() + pending_count(page) >= 100:
             raise ValidationError("A page may have at most 100 images.")
         key, size = website_assets.upload(file, module="events", page=page, copies=copies)
         asset = EventPageAsset.objects.create(page=page, object_key=key,
@@ -44,19 +46,20 @@ def delete_asset(target, asset_id, *, actor):
     asset = get_object_or_404(page.assets, pk=asset_id)
     if asset.eventpagerevisionasset_set.exists():
         raise ValidationError({"asset_id": "Saved revisions retain this image."})
-    key, size = asset.object_key, asset.size_bytes
+    from apps.makerspaces.website_asset_journal import schedule
+    job_id = schedule(asset)
     asset.delete()
     from .website_revisions import save_draft
     save_draft(page, actor)
     bump(page)
     audit(page, actor, "event.website_asset_removed", revision=page.revision)
-    transaction.on_commit(lambda: website_assets.release(page.makerspace, key, size), robust=True)
+    from apps.makerspaces.public_page_asset_cleanup import clean_object
+    transaction.on_commit(lambda: clean_object(job_id), robust=True)
 
 
 def schedule_occurrence_asset_cleanup(event):
     """Capture owned keys before recurrence deletes an occurrence's page graph."""
-    for key, size in EventPageAsset.objects.filter(page__event=event).values_list("object_key", "size_bytes"):
-        transaction.on_commit(
-            lambda key=key, size=size: website_assets.release(event.makerspace, key, size),
-            robust=True,
-        )
+    from .website_asset_cleanup import schedule_page_cleanup
+    from .models_website import EventPage
+    for page in EventPage.objects.filter(event=event):
+        schedule_page_cleanup(page)

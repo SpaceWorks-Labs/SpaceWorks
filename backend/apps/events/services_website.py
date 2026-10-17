@@ -162,8 +162,8 @@ def save_content(target, *, actor, data):
         from .website_session_identity import reconcile
         sessions = reconcile(page, data["sessions"])
         page.sessions.all().delete()
-        page.sections.all().delete()
-        sections = {row["slug"]: EventPageSection.objects.create(page=page, **row) for row in data["sections"]}
+        from .website_sections import reconcile_sections
+        sections = reconcile_sections(page, data["sections"])
         for row in sessions:
             values = dict(row)
             speakers = values.pop("speakers")

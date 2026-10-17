@@ -15,6 +15,7 @@ LEGACY_ADDITIONS = {
     "makerspaces.PublicHandle": {"makerspace_id": None, "organization_id": None},
     "events.EventPage": {"draft_revision_id": None, "published_revision_id": None, "editorial_document": {}},
     "events.EventSession": {"identity_id": None},
+    "events.EventPageSection": {"is_working": True},
 }
 
 

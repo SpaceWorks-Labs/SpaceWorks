@@ -5,6 +5,7 @@ import math
 from rest_framework import serializers
 
 from .website_content import PAGE_GROUPS
+from .serializers_website_state import WebsiteGroupVisibilityInput, EventEditorialDocument
 
 
 class HttpLinkField(serializers.URLField):
@@ -44,19 +45,19 @@ class WebsiteVenueSerializer(serializers.Serializer):
 
 
 class WebsitePageFields(serializers.Serializer):
-    editorial_document = serializers.JSONField(required=False, allow_null=True)
+    editorial_document = EventEditorialDocument(required=False, allow_null=True)
     # Omitted fields preserve existing content, including older editor clients.
     tagline = serializers.CharField(max_length=300, allow_blank=True, required=False)
     accent_color = serializers.RegexField(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", allow_blank=True, required=False)
     section_order = serializers.ListField(child=serializers.ChoiceField(choices=PAGE_GROUPS),
                                          min_length=len(PAGE_GROUPS)-1, max_length=len(PAGE_GROUPS), required=False)
-    section_enabled = serializers.DictField(child=serializers.BooleanField(), required=False)
+    section_enabled = WebsiteGroupVisibilityInput(required=False)
     venue = WebsiteVenueSerializer(allow_null=True, required=False)
 
     def validate_section_order(self, value):
         if "EDITORIAL" not in value:
             value = [*value, "EDITORIAL"]
-        if len(set(value)) != len(PAGE_GROUPS):
+        if len(value) != len(PAGE_GROUPS) or set(value) != set(PAGE_GROUPS):
             raise serializers.ValidationError("List each page section exactly once.")
         return value
 

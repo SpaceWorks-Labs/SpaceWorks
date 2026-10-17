@@ -12,6 +12,7 @@ from .serializers_organization_audience import OrganizationAudienceFields
 from .serializers_ticketing_public import EventTicketingPublicSerializer
 from apps.forms_schema.serializers import CustomFormSubmissionMixin
 from apps.inventory import public_image_storage
+from .serializers_website import PublicWebsiteSerializer
 
 
 PUBLIC_EVENT_FIELDS = (
@@ -48,15 +49,14 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
 class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
     website = serializers.SerializerMethodField()
 
-    @extend_schema_field({"allOf": [{"$ref": "#/components/schemas/Website"}], "nullable": True})
+    @extend_schema_field(PublicWebsiteSerializer(allow_null=True))
     def get_website(self, obj):
         if self.context.get("omit_website"):
             return None
         from django.http import Http404
         from .views_website_public import projection
-        from .serializers_website import WebsiteSerializer
         try:
-            return WebsiteSerializer(projection(obj, self.context.get("request"))).data
+            return PublicWebsiteSerializer(projection(obj, self.context.get("request"))).data
         except Http404:
             return None
 

@@ -3,6 +3,8 @@
 from rest_framework import serializers as s
 from .public_page_sections import StrictSerializer
 from .public_page_contract import Document
+from .public_page_projected_serializers import ProjectedSection, ProjectedSections
+from .public_page_presentation_serializers import EditorCapabilities, PageLimits, Presentation, RevisionSummary
 
 
 class VersionInput(StrictSerializer):
@@ -56,8 +58,8 @@ class EditorState(s.Serializer):
     published_revision_id = s.UUIDField(allow_null=True)
     document = Document()
     assets = Asset(many=True)
-    capabilities = s.JSONField()
-    limits = s.JSONField()
+    capabilities = EditorCapabilities()
+    limits = PageLimits()
 
 
 class AssetUploadResult(s.Serializer):
@@ -70,13 +72,6 @@ class Cover(s.Serializer):
     alt = s.CharField()
 
 
-class ProjectedSection(s.Serializer):
-    id = s.UUIDField()
-    type = s.CharField()
-    enabled = s.BooleanField()
-    payload = s.JSONField()
-
-
 class PublicPageProjection(s.Serializer):
     schema_version = s.IntegerField()
     kind = s.ChoiceField(choices=("makerspace", "organization"))
@@ -85,8 +80,8 @@ class PublicPageProjection(s.Serializer):
     description = s.CharField(allow_blank=True)
     publication_token = s.UUIDField()
     cover = Cover(allow_null=True)
-    presentation = s.JSONField()
-    sections = ProjectedSection(many=True)
+    presentation = Presentation()
+    sections = ProjectedSections()
 
 
 class PreviewProjection(PublicPageProjection):
@@ -98,7 +93,7 @@ class RevisionMetadata(s.Serializer):
     id = s.UUIDField()
     created_at = s.DateTimeField()
     created_by_display = s.CharField(allow_null=True)
-    summary = s.JSONField()
+    summary = RevisionSummary()
 
 
 class RevisionList(s.Serializer):

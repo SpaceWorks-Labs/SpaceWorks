@@ -83,6 +83,7 @@ class Command(BaseCommand):
                     "member_card_photos": self._sum(MemberCard.objects.filter(makerspace=makerspace).values_list("photo_object_key", "photo_size_bytes"), evidence_storage.object_size, True),
                     "booking_website_assets": self._sum(BookingResourcePageAsset.objects.filter(page__space__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                     "event_website_assets": self._sum(EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
+                    "pending_page_asset_cleanup": self._pending_page_assets(makerspace),
                     "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(registration__event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                     "event_certificate_artwork": self._sum(
                         EventCertificateArtwork.objects.filter(
@@ -115,6 +116,11 @@ class Command(BaseCommand):
             total = sum(values.values())
             Makerspace.objects.filter(pk=makerspace.pk).update(storage_bytes_used=total)
             self.stdout.write(self.style.SUCCESS(f"{makerspace.slug}: total={total} bytes"))
+
+    @staticmethod
+    def _pending_page_assets(makerspace):
+        from apps.makerspaces.website_asset_journal import accounted_pending_bytes
+        return accounted_pending_bytes(makerspace.pk)
 
     @staticmethod
     def _sum(rows, object_size, fallback=False):

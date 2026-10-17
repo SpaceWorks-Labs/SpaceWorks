@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from apps.apiclients.throttling import ClientTierRateThrottle
 from apps.hardware_requests.exceptions import ErrorSerializer
-from .serializers_website import WebsiteSerializer, WebsiteSectionSerializer, WebsiteSessionSerializer
+from .serializers_website import PublicWebsiteSerializer, WebsiteSectionSerializer, WebsiteSessionSerializer
 from .website_projection import project_page
 from .website_visibility import resolve, visible_page
 from .views_website_admin import image_response
@@ -37,9 +37,9 @@ class PublicWebsiteBase(APIView):
 
 
 class PublicEventWebsiteView(PublicWebsiteBase):
-    @extend_schema(tags=["Public event website"], auth=[], responses={200: WebsiteSerializer, **ERRORS})
+    @extend_schema(tags=["Public event website"], auth=[], responses={200: PublicWebsiteSerializer, **ERRORS})
     def get(self, request, makerspace_slug, public_token):
-        return Response(WebsiteSerializer(projection(resolve(makerspace_slug, public_token), request)).data)
+        return Response(PublicWebsiteSerializer(projection(resolve(makerspace_slug, public_token), request)).data)
 
 
 class PublicEventWebsiteSectionView(PublicWebsiteBase):

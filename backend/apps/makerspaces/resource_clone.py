@@ -43,8 +43,10 @@ class AssetCopies:
         self.total_bytes = 0
         self.created = []
         self.committed = False
+        self.journal_ids = []
+        self.journal_keys = set()
 
-    def copy_image(self, makerspace, image, *, storage):
+    def copy_image(self, makerspace, image, *, storage, journal_page=None):
         if not image.source_key:
             return ""
         if (not image.source_prefix.endswith("/")
@@ -60,6 +62,9 @@ class AssetCopies:
             raise ValidationError("The clone asset limit was exceeded.")
         key = image.destination_prefix + uuid4().hex + PurePosixPath(image.source_key).suffix
         limits.add_storage(makerspace, size)
+        if journal_page is not None:
+            from .website_asset_journal import enlist
+            enlist(journal_page, key, size, self)
         # Enlist before I/O: a timed-out copy may still have created an object.
         self.created.append((storage, key))
         self.total_bytes += size
@@ -69,7 +74,22 @@ class AssetCopies:
         return key
 
     def cleanup(self):
+        if self.journal_ids:
+            from .models_page_cleanup import PublicPageObjectCleanup as Cleanup
+            from .public_page_asset_cleanup import clean_object
+            from django.utils import timezone
+            try:
+                Cleanup.objects.filter(pk__in=self.journal_ids).update(due_at=timezone.now())
+            except Exception:
+                logger.exception("clone_journal_retry_schedule_failed")
+            for job_id in self.journal_ids:
+                try:
+                    clean_object(job_id)
+                except Exception:
+                    logger.exception("clone_journal_cleanup_failed", extra={"cleanup_id": job_id})
         for storage, key in reversed(self.created):
+            if key.removeprefix("staging/") in self.journal_keys:
+                continue
             try:
                 if storage.delete_object(key) is not True:
                     logger.error("clone_asset_cleanup_failed", extra={"object_key": key})

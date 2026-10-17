@@ -36,7 +36,7 @@ def project_page(target, page, *, public=False, image_url=None, snapshot=True, r
     if public:
         from .website_revision_projection import project_revision
         return project_revision(target, page, image_url=image_url, request=request)
-    sections = list(page.sections.select_related("asset"))
+    sections = list(page.sections.filter(is_working=True).select_related("asset"))
     allowed = {row.pk: row for row in sections if not public or (
         row.visibility == "published" and group_enabled(page, SECTION_GROUPS.get(row.kind)))}
     delta = timedelta()

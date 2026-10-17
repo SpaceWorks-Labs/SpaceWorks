@@ -38,11 +38,12 @@ class Section(StrictSerializer):
 
 # Documentation uses the same payload registry as validation, so adding a reviewed
 # section cannot silently leave its OpenAPI body as an untyped JSON object.
-SECTION_SCHEMA = PolymorphicProxySerializer(component_name="PublicPageSectionInput", serializers=[
-    type(f"PublicPage{key.title().replace('_', '')}SectionInput", (Section,), {
+INPUT_SECTION_TYPES = {key: type(f"PublicPage{key.title().replace('_', '')}SectionInput", (Section,), {
         "type": s.ChoiceField(choices=(key,)), "payload": serializer(),
     }) for key, serializer in PAYLOADS.items()
-], resource_type_field_name="type", many=True)
+}
+SECTION_SCHEMA = PolymorphicProxySerializer(component_name="PublicPageSectionInput",
+    serializers=INPUT_SECTION_TYPES, resource_type_field_name="type", many=True)
 
 
 @extend_schema_field(SECTION_SCHEMA)

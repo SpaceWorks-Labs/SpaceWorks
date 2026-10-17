@@ -22,7 +22,7 @@ GLOBAL_FIELDS = {
 }
 FIELD_NAMES = {label: frozenset(fields.split()) for label, fields in {**EXPORTED_FIELDS, **GLOBAL_FIELDS}.items()}
 FIELD_NAMES["makerspaces.PublicPageObjectCleanup"] = frozenset(
-    "id owner_kind owner_id page_id object_key size_bytes due_at attempts completed_at created_at".split())
+    "id owner_kind owner_id page_id object_key size_bytes storage_accounted ownership_proven due_at attempts completed_at created_at".split())
 OMITTED_MODELS = {label: "Organization-owned global editorial content; deployment backup only."
                   for label in GLOBAL_FIELDS}
 OMITTED_MODELS["makerspaces.PublicPageObjectCleanup"] = "Deployment-local retryable byte-cleanup journal; never target authority."

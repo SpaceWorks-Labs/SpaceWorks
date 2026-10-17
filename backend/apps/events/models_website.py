@@ -57,6 +57,8 @@ class EventPageSection(models.Model):
         HIGHLIGHT = "highlight", "Highlight"
 
     page = models.ForeignKey(EventPage, on_delete=models.CASCADE, related_name="sections")
+    # Account-linked speaker sections survive draft removal as identity anchors.
+    is_working = models.BooleanField(default=True)
     kind = models.CharField(max_length=16, choices=Kind.choices)
     slug = models.SlugField(max_length=80)
     title = models.CharField(max_length=200)
@@ -108,3 +110,20 @@ class EventSessionSpeaker(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("session", "speaker"), name="event_session_speaker_unique")]
+
+
+# Retention also loads this model module when the Events runtime is removed.
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+
+
+@receiver(pre_delete, sender=EventPageAsset, dispatch_uid="events.website_asset_cleanup")
+def queue_deleted_asset(sender, instance, **kwargs):
+    from django.db import transaction
+    from apps.makerspaces import website_assets
+    from apps.makerspaces.website_asset_journal import schedule
+    from apps.makerspaces.public_page_asset_cleanup import clean_object
+    if website_assets.owns(instance.object_key, "events", instance.page.makerspace_id,
+                           instance.page_id, asset=instance):
+        job_id = schedule(instance)
+        transaction.on_commit(lambda: clean_object(job_id), robust=True)

@@ -17,4 +17,5 @@ FIELD_NAMES = {
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items()}
 FIELD_NAMES["events.EventPage"] |= {"draft_revision", "published_revision", "editorial_document"}
 FIELD_NAMES["events.EventSession"] |= {"identity"}
+FIELD_NAMES["events.EventPageSection"] |= {"is_working"}
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items()}

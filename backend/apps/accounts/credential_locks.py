@@ -4,6 +4,26 @@ from apps.accounts.models import StaffInvitation, User
 from apps.makerspaces.models import Makerspace
 
 
+def lock_token_issuance(user):
+    """Fence a proved account snapshot before touching session/device rows.
+
+    Issuers need no invitation/tenant locks and must not acquire them afterwards.
+    Keep this lock through minting in the caller's atomic transaction.
+    """
+    from rest_framework.exceptions import AuthenticationFailed
+
+    try:
+        locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
+    except User.DoesNotExist as exc:
+        raise AuthenticationFailed("Account is not available.") from exc
+    if locked.credential_generation != user.credential_generation:
+        raise AuthenticationFailed("Account credentials have changed.")
+    for attr in ("_mfa_verified_version", "_mfa_provider_verified", "_mfa_source"):
+        if hasattr(user, attr):
+            setattr(locked, attr, getattr(user, attr))
+    return locked
+
+
 def lock_credentials(user_or_id, *, extra_user_ids=()):
     """Lock tenant, invitations and users; callers lock envelopes afterwards.
 

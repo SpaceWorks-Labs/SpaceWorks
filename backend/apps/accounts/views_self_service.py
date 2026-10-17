@@ -97,6 +97,7 @@ class AccountSessionDetailView(APIView):
             elif kind == "web-legacy":
                 row = revoke_legacy_session(request.user, identifier)
             elif kind == "device":
+                User.objects.select_for_update(no_key=True).get(pk=request.user.pk)
                 import uuid
                 try:
                     grant_id = uuid.UUID(identifier)

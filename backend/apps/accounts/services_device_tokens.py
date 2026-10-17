@@ -10,7 +10,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import UntypedToken
 
 from apps.accounts import audit_events
+from apps.accounts.credential_locks import lock_token_issuance
+from apps.accounts.models import User
 from apps.accounts.models_devices import (
+    DeviceGrant,
     DeviceRefreshFamily,
     DeviceRefreshToken,
     NativeAppRegistration,
@@ -36,10 +39,19 @@ def issue_device_token_pair(user, grant, *, family=None):
     from apps.backup.recovery import assert_token_issuance_allowed
     from apps.accounts.surface_policy import assert_surface
 
+    user = lock_token_issuance(user)
     assert_surface(user, "member")
     if grant.user_id != user.pk:
         raise AuthenticationFailed("Invalid device authorization.")
     assert_token_issuance_allowed(user)
+    grant = DeviceGrant.objects.select_for_update().filter(pk=grant.pk, user=user).first()
+    if (grant is None or grant.status != grant.Status.ACTIVE
+            or grant.registration.status != NativeAppRegistration.Status.APPROVED):
+        raise AuthenticationFailed("Invalid device authorization.")
+    if family is not None:
+        family = DeviceRefreshFamily.objects.select_for_update().get(pk=family.pk)
+        if family.revoked_at or family.user_id != user.pk or family.grant_id != grant.pk:
+            raise AuthenticationFailed("Invalid device authorization.")
     family = family or DeviceRefreshFamily.objects.create(grant=grant, user=user)
     refresh = SpaceWorksRefreshToken.for_user(user, web_session=False)
     refresh["surface"] = "member"
@@ -71,15 +83,24 @@ def rotate_device_refresh(raw):
     replay = False
     result = None
     with transaction.atomic():
+        owner_id = DeviceRefreshToken.objects.filter(
+            jti=jti, token_fingerprint=token_fingerprint(raw),
+        ).values_list("family__user_id", flat=True).first()
+        if owner_id is None:
+            raise AuthenticationFailed("Invalid device refresh token.")
+        try:
+            user = User.objects.select_for_update(no_key=True).get(pk=owner_id)
+        except User.DoesNotExist as exc:
+            raise AuthenticationFailed("Invalid device refresh token.") from exc
         row = (
-            DeviceRefreshToken.objects.select_for_update()
+            DeviceRefreshToken.objects.select_for_update(of=("self",))
             .select_related("family__grant__registration", "family__user")
             .filter(jti=jti, token_fingerprint=token_fingerprint(raw))
             .first()
         )
         if row is None or str(row.family_id) != str(family_id):
             raise AuthenticationFailed("Invalid device refresh token.")
-        family, grant, user = row.family, row.family.grant, row.family.user
+        family, grant = row.family, row.family.grant
         from apps.accounts.surface_policy import validate_account_token
         validate_account_token(user, claims)
         if user.account_kind != "member" or grant.user_id != user.pk:

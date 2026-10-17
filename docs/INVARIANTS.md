@@ -127,6 +127,13 @@ sign-in; pre-reset MFA/reauth proofs cannot complete. Staff envelopes of hidden 
 invisible even on the otherwise global operational envelope admin, including direct object reads.
 The operator's host command remains a platform break-glass option.
 
+JWT issuance/rotation and session/device logout lock User before outstanding/blacklist tokens,
+session markers or device grants/families; MFA/phone confirmation locks User before its proof.
+These token paths take no later tenant/invitation locks.
+Issuance rechecks the proved account's credential generation under that lock; rotation rechecks
+revocation after waiting. Cookie logout validates CSRF and clears only the selected namespace even
+when its refresh credential has expired or already been revoked.
+
 Deactivation revokes the account's Django sessions, outstanding JWTs/browser markers, native
 device grants/refresh families and push destinations, station operator leases, pending MFA,
 email/phone verification, bound OIDC/GitHub attempts/social nonces, reauth proofs/intents, reset

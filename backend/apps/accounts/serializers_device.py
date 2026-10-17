@@ -28,7 +28,7 @@ class DeviceRefreshSerializer(serializers.Serializer):
 
 class DeviceGrantSerializer(serializers.Serializer):
     id = serializers.UUIDField()
-    platform = serializers.CharField()
+    platform = serializers.ChoiceField(choices=DevicePlatform.choices)
     app_id = serializers.CharField()
     environment = serializers.CharField()
     status = serializers.CharField()

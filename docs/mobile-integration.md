@@ -93,24 +93,31 @@ validation, not evidence of a successful provider round trip.
 The payment provider is per makerspace (`MakerspacePaymentSettings.provider`, default
 `stripe`, alternative `razorpay`). The Space Manager chooses the rail for that space;
 apps consume the resolved vendor and never select it or store merchant secrets.
-**Current provisioning limitation:** the staff settings serializer, React settings panel
-and /control/ form expose Stripe credentials only. They do not expose `provider` or the
-Razorpay fields. There is no supported provider-selector/Razorpay-settings API in this
-snapshot. Arrange provisioning with the deployment maintainer before promising Razorpay
-onboarding; do not send invented fields to the Stripe settings endpoint or put them in app builds.
+The Space Manager can set up either provider in the staff console's Online payments
+settings, without deployment-maintainer provisioning. Select Stripe or Razorpay, enter
+that account's credentials, copy its webhook URL into the provider dashboard, and save.
+Credential writes and provider selection require recent session reauthentication; the
+console prompts for verification when needed.
 
 Credentials live on the server's per-makerspace payment-settings row. The Space Manager's
 web console payment settings uses GET/PATCH
 `/api/v1/admin/makerspace/{makerspace_id}/payment-settings`, authorized by
-`MANAGE_MAKERSPACE`. Stripe fields are `stripe_publishable_key`, `stripe_secret_key`,
+`MANAGE_MAKERSPACE` with the existing makerspace scope (including its superadmin-access
+switch). Select `provider: "stripe" | "razorpay"`. Stripe fields are `stripe_publishable_key`, `stripe_secret_key`,
 `stripe_webhook_secret` and `default_currency` (lowercase three-letter code).
 Credential inputs are write-only; GET returns `*_set` booleans and
 `effective_mode` (`raw`, `connect` or `unavailable`), never saved keys.
-The protected /control/ Payments > Makerspace payment settings form is an operator alternative
-for these Stripe fields. Secret keys and webhook secrets are encrypted at rest.
+The protected /control/ Payments > Makerspace payment settings form remains an operator alternative
+for Stripe fields. Secret keys and webhook secrets are encrypted at rest.
 The Razorpay model fields are `razorpay_key_id` (public), `razorpay_key_secret` and
-`razorpay_webhook_secret` (encrypted through their model setters). They are not yet exposed
-by either settings form above. Do not write raw secrets directly into encrypted database columns.
+`razorpay_webhook_secret` (encrypted through their model setters). All three are writable
+through the same staff API/panel and write-only in settings responses, including the public
+key ID. GET returns `razorpay_key_id_set`, `razorpay_key_secret_set` and
+`razorpay_webhook_secret_set`. Omit a credential to keep it, or send `""` to clear it;
+the panel has an explicit clear control for each saved field. Razorpay key IDs start with
+`rzp_test_` or `rzp_live_`. Validation is local; saving keys does not prove a provider round trip.
+The response includes exact `stripe_webhook_url` and `razorpay_webhook_url` values, with
+copy buttons in the panel. Audit metadata records changed field names only.
 
 Own Stripe credentials take precedence. Managed deployments can alternatively use Stripe
 Connect: configure platform publishable/secret/webhook keys and `stripe_connect_client_id`
@@ -150,7 +157,11 @@ Valid events return 200 `{detail:"Verified."}` even when ignored; invalid config
 signature or payload returns 400; unknown/unservable tenants return 404. Signature checking
 requires unchanged raw body bytes. Do not change providers or remove old webhook credentials
 while collections are unsettled: Razorpay callbacks require the selected provider to remain
-Razorpay, and changing configuration can strand settlement. Inspect pending online rails first.
+Razorpay. Switching provider is refused with 409 `payment_provider_conflict` while a pending
+collection on the other vendor has an unexpired hosted checkout, native Order or PaymentIntent.
+Settle or close those collections first. Uncollected ledger debts without online handles do not
+block selection. Razorpay credential rotation/clearing is also refused while its collections
+are pending; saved keys can be resubmitted unchanged.
 
 The apps use an attested device bearer and matching `X-Makerspace-Id`, then POST with no body:
 `/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/mobile-intent`.
@@ -172,8 +183,8 @@ there is no member payment-detail endpoint. `paid_online` / `paid_offline` are s
 
 Test in a separate staging makerspace with no real debt or live credentials:
 
-1. Provision matching provider test/sandbox keys and the test webhook endpoint's signing
-   secret; for Razorpay, the provisioning limitation above must be resolved by the maintainer.
+1. In Online payments settings, choose the provider and save matching test/sandbox keys and
+   the test webhook endpoint's signing secret. Copy the displayed webhook URL to its dashboard.
    There is no `test_mode` request parameter or separate mobile test endpoint: mode comes
    from the provider credentials. Keep live and test keys/webhook secrets separate.
 2. Enable the source domain and charge capabilities with the online rail initially off.

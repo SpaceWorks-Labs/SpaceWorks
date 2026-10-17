@@ -1191,6 +1191,13 @@ SPECTACULAR_SETTINGS = {
     # context and the file does not exist inside the container.
     "VERSION": "0.9.2",
     "ENUM_NAME_OVERRIDES": {
+        "DevicePlatformEnum": "apps.accounts.models_devices.DevicePlatform.choices",
+        # Each anyOf proof branch has a `type` discriminator. Without unique names
+        # spectacular extracts all three as DeviceAttestationPayloadTypeEnum and
+        # silently replaces the iOS/development choices with the Android choice.
+        "PlayIntegrityAttestationTypeEnum": ["play_integrity"],
+        "AppAttestAttestationTypeEnum": ["app_attest"],
+        "DevelopmentAttestationTypeEnum": ["development"],
         # Phase 9b: the kiosk evidence-prepare route shares these choices; pin the
         # existing component name so the generated client type does not rename.
         "EvidenceUrlRequestEvidenceTypeEnum": [("issue", "Issue"), ("return", "Return")],

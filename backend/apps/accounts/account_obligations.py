@@ -26,4 +26,9 @@ def lock_obligation_owner(user):
     locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
     if locked.deletion_requested_at is not None:
         raise AccountDeletionPending()
-    return locked
+    # Return the caller's instance refreshed from the locked row: it may carry
+    # request-scoped attribution (the claim audit context) that a freshly fetched
+    # instance would silently drop, while callers still see committed field values.
+    for field in User._meta.concrete_fields:
+        setattr(user, field.attname, getattr(locked, field.attname))
+    return user

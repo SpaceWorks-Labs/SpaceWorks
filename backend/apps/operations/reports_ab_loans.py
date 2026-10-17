@@ -70,11 +70,14 @@ def build_loan_throughput(makerspace_id, *, limit=None, date_range=None, grain="
         # bulk returns with multiple events cannot be assigned from cumulative item counters.
         events = dated(ReturnEvent.objects.filter(makerspace=space), "created_at", space, date_range, grain)
         from django.db.models import Count
-        counts = dict(ReturnEvent.objects.filter(makerspace=space).values("request_id").annotate(n=Count("pk"))
-                      .values_list("request_id", "n"))
+        # Count every event for selected requests, including earlier partial returns.
+        # Unrelated historical requests must never be materialized for this window.
+        counts = dict(ReturnEvent.objects.filter(
+            makerspace=space, request_id__in=events.values("request_id"),
+        ).values("request_id").annotate(n=Count("pk")).values_list("request_id", "n"))
         linked = defaultdict(int)
         for event_id in HardwareRequestItemAsset.objects.filter(
-            request_item__request__makerspace=space, outcome="returned", return_event__isnull=False,
+            request_item__request__makerspace=space, outcome="returned", return_event__in=events,
         ).values_list("return_event_id", flat=True):
             linked[event_id] += 1
         for event in events.select_related("request").prefetch_related("request__items__product").iterator(chunk_size=200):

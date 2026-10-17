@@ -16,7 +16,7 @@ export function useAnalyticsMakerspaces(page: number, reportKey: string) {
 // Fallbacks mirror the registry for cached responses from servers predating chart metadata.
 export const PLATFORM_CHART_SPECS: Record<"platform-services" | "platform-usage", ReportChartSpec> = {
   "platform-services": {
-    series: ["makerspace", "service", "provider_source", "status", "bucket"], x: { field: "day", kind: "time" },
+    series: ["makerspace", "service", "purpose", "provider_source", "status", "bucket"], x: { field: "day", kind: "time" },
     values: [{ field: "count", unit: "operations" }, { field: "amount", unit: "currency" }],
     currency_field: "currency", partition: "currency", negatives: "clip", truncation: null, alt_template: "{count} operations",
   },

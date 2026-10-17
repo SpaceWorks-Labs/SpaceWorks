@@ -6,11 +6,14 @@ from django.db.models import Q
 from apps.machines.models import MachineConsumableAdjustment, MachineServiceRequest, ServiceRequestConsumption
 from apps.machines import role_scope
 from apps.machines.models_tracking import ConsumableCostRecord
+from apps.makerspaces.platform import module_enabled
 from apps.operations.reports_common import apply_range
 
 
 def _sources(space, actor):
     services = role_scope.scoped_service_requests(actor, MachineServiceRequest.objects.filter(makerspace=space), [space.pk])
+    if not module_enabled(space, "machine_service"):
+        services = services.none()
     scope = role_scope.manage_scope_for(actor, space.pk)
     manual = MachineConsumableAdjustment.objects.filter(makerspace=space, kind="manual", quantity_delta__lt=0,
                                                         service_request__isnull=True, usage_entry__isnull=False)

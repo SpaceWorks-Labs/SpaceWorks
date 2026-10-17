@@ -7,7 +7,7 @@ from apps.boxes.models import QrScanEvent
 from apps.hardware_requests.models import PublicProblemReport
 from apps.inventory.models_watch import InventoryWatch
 from apps.operations.report_types import ReportNotFound
-from apps.operations.reports_ab_common import bucket, dated, hours, in_range, result, spaces
+from apps.operations.reports_ab_common import bucket, calendar_range, dated, hours, in_range, result, spaces
 
 
 PROBLEM_FIELDS = ("period", "opened_count", "resolved_count", "resolution_hours", "average_resolution_hours")
@@ -19,6 +19,7 @@ QR_ACTOR_FIELDS = ("actor_id", "count")
 def build_problem_reports(makerspace_id, *, limit=None, date_range=None, grain="day"):
     records = []
     for space in spaces(makerspace_id, "guest_handover"):
+        local_range = calendar_range(date_range, space)
         groups = {}
 
         def row(at):
@@ -28,14 +29,14 @@ def build_problem_reports(makerspace_id, *, limit=None, date_range=None, grain="
 
         qs = PublicProblemReport.objects.filter(makerspace=space)
         from django.db.models import Q
-        if date_range:
+        if local_range:
             from apps.operations.reports_common import apply_range
-            qs = qs.filter(Q(pk__in=apply_range(qs, "created_at", date_range).values("pk")) |
-                           Q(pk__in=apply_range(qs, "resolved_at", date_range).values("pk")))
+            qs = qs.filter(Q(pk__in=apply_range(qs, "created_at", local_range).values("pk")) |
+                           Q(pk__in=apply_range(qs, "resolved_at", local_range).values("pk")))
         for report in qs.iterator():
-            if in_range(report.created_at, date_range):
+            if in_range(report.created_at, local_range):
                 row(report.created_at)["opened_count"] += 1
-            if in_range(report.resolved_at, date_range):
+            if in_range(report.resolved_at, local_range):
                 target = row(report.resolved_at)
                 target["resolved_count"] += 1
                 target["resolution_hours"] += hours(report.created_at, report.resolved_at)
@@ -53,7 +54,7 @@ def build_inventory_watch_demand(makerspace_id, *, limit=None, date_range=None):
     for space in spaces(makerspace_id, "public_inventory"):
         qs = apply_range(InventoryWatch.objects.filter(makerspace=space, product__is_archived=False,
                                                        product__available_quantity__lte=0),
-                         "created_at", date_range)
+                         "created_at", calendar_range(date_range, space))
         for row in qs.values("product_id", "product__name").annotate(
             watch_count=Count("pk"), waiting_count=Count("pk", filter=Q(notified_at__isnull=True)),
         ):
@@ -90,6 +91,6 @@ def build_qr_scan_actors(makerspace_id, *, limit=None, date_range=None, actor=No
     for space in spaces(makerspace_id, "scanner"):
         from apps.operations.reports_ab_assets import _require_inventory
         _require_inventory(actor, space.pk)
-        rows.extend(apply_range(QrScanEvent.objects.filter(makerspace=space), "created_at", date_range
+        rows.extend(apply_range(QrScanEvent.objects.filter(makerspace=space), "created_at", calendar_range(date_range, space)
                                 ).values("actor_id").annotate(count=Count("pk")).order_by("-count", "actor_id"))
     return result(QR_ACTOR_FIELDS, rows, makerspace_id, limit, identity=True)

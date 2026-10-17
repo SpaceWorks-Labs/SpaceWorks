@@ -9,7 +9,7 @@ from apps.hardware_requests.models import HardwareRequest, HardwareRequestItemAs
 from apps.inventory.models import InventoryAsset
 from apps.operations.report_types import ReportNotFound
 from apps.operations.reports_ab_common import (
-    dated, hours, percent, result, spaces, window,
+    calendar_range, dated, hours, percent, result, spaces, window,
 )
 
 
@@ -21,7 +21,7 @@ OVERDUE_FIELDS = ("row_kind", "period", "request_id", "holder", "due_at", "overd
 
 
 def asset_records(space, date_range):
-    start, end = window(date_range)
+    start, end = window(calendar_range(date_range, space))
     qs = HardwareRequestItemAsset.objects.filter(request_item__request__makerspace=space,
                                                 issued_at__lt=end).select_related("asset__product", "request_item__request")
     if start:
@@ -70,7 +70,7 @@ def build_longest_loans(makerspace_id, *, limit=None, date_range=None, actor=Non
         _require_inventory(actor, space.pk)
         from apps.operations.reports_common import apply_range
         qs = apply_range(HardwareRequest.objects.filter(makerspace=space, issued_at__isnull=False),
-                         "issued_at", date_range).select_related("requester")
+                         "issued_at", calendar_range(date_range, space)).select_related("requester")
         end = timezone.now()
         for request in qs.iterator():
             records.append(dict(request_id=request.pk, holder=requester_label(request), status=request.status,

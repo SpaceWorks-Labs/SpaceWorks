@@ -507,8 +507,13 @@ view returns the definition's typed `chart_spec` beside the existing rows and me
 
 **Role dashboards (analytics 1f-4) reuse those reports.** `dashboard_widgets.WIDGETS`
 declares actions, source modules, report keys, kind and a default 30-local-day period.
-The existing dashboard counters remain compatible; `widgets` adds report-service data
-and the canonical typed `chart_spec`. Every widget requires both its declared action
+The existing dashboard counters remain compatible; `widgets` adds authorized descriptors
+and the canonical typed `chart_spec`. `data.meta.deferred` supplies tenant-local `start`/`end`
+labels; clients fetch each widget independently through the existing tenant analytics
+endpoint, which rechecks current authority. Dashboard counter requests never invoke report
+builders. Consumption predicates precede source materialization, cost reads match bounded
+batches of selected source identities, and return-history reads stay within selected requests.
+Every widget requires both its declared action
 and its report's action, source modules plus `reports`, and a servable tenant.
 Identity-bearing widgets additionally require `VIEW_AUDIT` and their domain action;
 hard-hidden superadmin access is checked per action. Machine widgets forward the actor

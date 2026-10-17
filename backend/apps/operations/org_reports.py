@@ -51,7 +51,8 @@ def organization_report_data(
             limit=None,
             date_range=date_range,
             **({"grain": grain} if definition.grains else {}),
-            **({"actor": actor} if definition.required_action == Action.MANAGE_MACHINES else {}),
+            **({"actor": actor} if definition.required_action == Action.MANAGE_MACHINES
+               or definition.key == "procurement-performance" else {}),
             **(report_filters or {}),
         )
         rows = _result_rows(result)

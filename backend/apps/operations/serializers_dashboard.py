@@ -12,7 +12,9 @@ class DashboardWidgetSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(choices=["count", "trend", "top_n", "heatmap", "queue"])
     report_keys = serializers.ListField(child=serializers.CharField())
     default_period = serializers.IntegerField(help_text="Inclusive local calendar days.")
-    data = serializers.DictField(child=serializers.JSONField())
+    data = serializers.DictField(child=serializers.JSONField(), help_text=(
+        "Deferred widget: meta.start/end are tenant-local calendar labels. Fetch "
+        "report_keys[0] independently through the tenant analytics endpoint."))
     chart_spec = ReportChartSpecSerializer(allow_null=True)
 
 

@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.makerspaces.platform import module_enabled
 from apps.operations.report_types import ReportNotFound, ReportResult
 from apps.operations.reports_common import apply_range, limited, period_expression, report_spaces
+from apps.operations.reports_j_common import calendar_range
 
 
 GRAINS = ("day", "week", "month")
@@ -19,7 +20,7 @@ def spaces(makerspace_id, *modules):
 
 
 def dated(queryset, field, space, date_range, grain):
-    return apply_range(queryset, field, date_range).annotate(
+    return apply_range(queryset, field, calendar_range(date_range, space)).annotate(
         report_period=period_expression(field, grain, makerspace=space),
     )
 

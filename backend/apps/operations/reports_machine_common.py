@@ -134,4 +134,5 @@ def result(fields, rows, makerspace_id, limit, **meta):
 
 def window(date_range, created_at):
     start, end = date_range or (None, None)
-    return max(start or created_at, created_at), end or timezone.now()
+    now = timezone.now()
+    return max(start or created_at, created_at), min(end, now) if end else now

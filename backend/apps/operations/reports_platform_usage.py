@@ -103,15 +103,15 @@ def build_platform_usage(makerspace_id=None, *, platform_context=None, limit=Non
                 services = MachineServiceRequest.objects.filter(makerspace=space, status__in=("completed", "collected", "failed"))
                 services = role_scope.scoped_service_requests(ctx.actor, services, [space.pk])
                 services = services.annotate(at=Coalesce("completed_at", "failed_at"), machine=Coalesce("assigned_machine_id", "bucket__machine_id"))
-                for row in apply_range(services, "at", date_range).values("at", "machine", "actual_minutes", "estimated_minutes", "fail_percent_complete", "status").iterator():
+                for row in apply_range(services, "at", date_range).values("at", "machine", "actual_minutes").iterator():
                     if row["at"]:
-                        minutes = Decimal(row["estimated_minutes"]) * row["fail_percent_complete"] / 100 if row["status"] == "failed" else Decimal(row["actual_minutes"])
+                        minutes = Decimal(row["actual_minutes"])
                         add(space.pk, row["at"], "service_machine_hours", minutes / 60,
                             entity_kind="machine" if row["machine"] else "unattributed", entity_id=row["machine"], unit="hours")
-                for row in consumption_rows(space, date_range, actor=ctx.actor):
-                    add(space.pk, row["at"], "consumables", row["quantity"], entity_kind=row["entity_kind"], entity_id=row["entity_id"], unit=row["unit"])
-                for row in cost_rows(space, date_range, actor=ctx.actor):
-                    add(space.pk, row["recorded_at"], "consumable_cost", row["cost_total_minor"], entity_kind="cost_source", entity_id=row["source_kind"], unit="minor_currency", currency=row["currency"])
+            for row in consumption_rows(space, date_range, actor=ctx.actor):
+                add(space.pk, row["at"], "consumables", row["quantity"], entity_kind=row["entity_kind"], entity_id=row["entity_id"], unit=row["unit"])
+            for row in cost_rows(space, date_range, actor=ctx.actor):
+                add(space.pk, row["recorded_at"], "consumable_cost", row["cost_total_minor"], entity_kind="cost_source", entity_id=row["source_kind"], unit="minor_currency", currency=row["currency"])
         if module_enabled(space, "devices"):
             for row in apply_range(Device.objects.filter(makerspace=space), "created_at", date_range).values("created_at", "kind").iterator():
                 add(space.pk, row["created_at"], "device_adoption", entity_kind="device_kind", entity_id=row["kind"])

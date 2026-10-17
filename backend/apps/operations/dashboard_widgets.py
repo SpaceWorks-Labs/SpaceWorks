@@ -10,9 +10,7 @@ from apps.admin_api.permissions import active_user
 from apps.makerspaces.local_time import to_local
 from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.makerspaces.servability import is_servable
-from . import reports
 from .report_registry import REPORT_REGISTRY
-from .views_report_helpers import date_range_from_dates
 
 
 @dataclass(frozen=True)
@@ -96,25 +94,23 @@ def visible_widgets(actor, makerspace):
 
 
 def build_widgets(actor, makerspace):
+    """Return authorized descriptors; clients fetch each report independently.
+
+    A dashboard request must not execute analytical builders before returning its
+    operational counters. Report GETs recheck current actor/module/type scope.
+    """
     today = to_local(makerspace, timezone.now()).date()
     result = []
     for widget in visible_widgets(actor, makerspace):
-        # Calendar days use the tenant's zone, exactly as manual report previews do.
-        date_range = tuple(date_range_from_dates(
-            today - timedelta(days=widget.default_period - 1), today, makerspace=makerspace,
-        ))
-        # These are resolved instants, not CalendarDateRange labels. Finance and
-        # membership builders must not reinterpret their UTC dates in the zone again.
         definition = REPORT_REGISTRY[widget.report_keys[0]]
         result.append({
             "key": widget.key, "title": widget.title, "kind": widget.kind,
             "required_action": widget.required_action,
             "required_modules": list(widget.required_modules),
             "report_keys": list(widget.report_keys), "default_period": widget.default_period,
-            "data": reports.report_data(
-                definition.key, makerspace.pk, actor=actor, date_range=date_range,
-                grain="day", limit=reports.MAX_REPORT_LIMIT,
-            ),
+            "data": {"typed_rows": [], "meta": {"deferred": True,
+                "start": (today - timedelta(days=widget.default_period - 1)).isoformat(),
+                "end": today.isoformat()}},
             "chart_spec": definition.chart_spec,
         })
     return result

@@ -8,7 +8,7 @@ from apps.inventory.models import InventoryAsset, InventoryProduct
 from apps.inventory.models_tracking import InventoryStockSnapshot
 from apps.makerspaces.platform import module_enabled
 from apps.operations.reports_ab_assets import asset_records
-from apps.operations.reports_ab_common import bucket, percent, result, spaces
+from apps.operations.reports_ab_common import bucket, calendar_range, percent, result, spaces
 
 
 UTIL_FIELDS = ("row_kind", "period", "product_id", "product_name", "asset_id", "issued_quantity",
@@ -23,6 +23,7 @@ SUMMARY_FIELDS = ("products", "assets", "active_loans", "available_quantity", "i
 
 
 def observations(space, date_range):
+    date_range = calendar_range(date_range, space)
     qs = InventoryStockSnapshot.objects.filter(makerspace=space).select_related("product")
     if date_range:
         from zoneinfo import ZoneInfo

@@ -12,7 +12,7 @@ export function platformChartRows(rows: ChartRecord[], spaces: AnalyticsMakerspa
   return rows.map(row => {
     if (row.bucket === "hidden_makerspaces") return { makerspace: "Hidden makerspaces", day: row.day,
       service: row.service, bucket: "Hidden makerspaces", count: row.count };
-    const fields = ["period", "day", "service", "provider_source", "status", "bucket", "count", "currency", "amount",
+    const fields = ["period", "day", "service", "purpose", "provider_source", "status", "bucket", "count", "currency", "amount",
       "metric", "entity_kind", "entity_id", "unit", "value"];
     return { makerspace: row.makerspace_id == null ? "Deployment" : spaces.find(space => space.id === row.makerspace_id)?.name ?? `Makerspace #${row.makerspace_id}`,
       ...Object.fromEntries(fields.filter(field => field in row).map(field => [field, row[field]])) };

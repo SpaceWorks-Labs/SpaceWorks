@@ -3,7 +3,7 @@
 import logging
 
 from apps.integrations.notification_links import local_link
-from apps.integrations.email_templates import render
+from apps.integrations import email_templates
 from django.db import transaction
 
 from .notification_sources import REMINDER_SOURCE
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def emit_reminder(row, schedule, account):
     from apps.integrations.notification_outbox import emit
     makerspace = row.space.makerspace
-    message = render(makerspace, "bookings", "requester", "reminder", context_for(row))
+    message = email_templates.render(makerspace, "bookings", "requester", "reminder", context_for(row))
     try:
         with transaction.atomic():
             envelope = emit(makerspace=makerspace, recipient=account, feature="bookings", stream="bookings", event="reminder",

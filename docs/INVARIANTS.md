@@ -708,7 +708,7 @@ removed, while nonempty role sections are refused. Membership and per-person aut
 in a pack. Tenant imports reduce member memberships to Member; staff retain built-in roles and
 remapped additional roles/type links under D11 (see the account-kinds section above).
 
-**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 34
+**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 35
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
 `requires_modules`, `default_enabled`, `is_core`, `frontend_exposed`, `frontend_workflows`), and the
 lists that used to be hand-kept in parallel now **derive** from it: `models.DEFAULT_ENABLED_MODULES`,
@@ -730,7 +730,7 @@ unregistered, if the derived lists change, or if a migration-referenced callable
 `member_accounts`, `mobile` and `payments` once carried it too and are now opt-in for new
 makerspaces (existing rows kept them through `0057`). Everything else is off in the registry default. Guided setup explicitly installs the chosen
 areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 14 / `lending` 17 /
-`recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 34 — pinned by
+`recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 35 — pinned by
 `tests/modules/test_combo_profiles.py`).
 `ModuleDefinition.default_enabled` defaults to **False** and core must not set it (core is on by
 definition; two sources for one fact is the drift the registry exists to remove). `backup`, whose key

@@ -13,7 +13,6 @@ from apps.integrations.email import platform_email_configured
 from apps.makerspaces import domain_verification
 from apps.makerspaces.models import (
     Makerspace,
-    MakerspaceArchiveRequest,
     default_branding_config,
 )
 
@@ -161,22 +160,6 @@ class MakerspaceMutationMixin:
             )
         if new_flag is not False:
             return
-        if (
-            MakerspaceArchiveRequest.objects.select_for_update()
-            .filter(
-                makerspace=locked,
-                status=MakerspaceArchiveRequest.Status.PENDING,
-            )
-            .exists()
-        ):
-            raise serializers.ValidationError(
-                {
-                    "superadmin_access_enabled": (
-                        "Withdraw the pending archive request before disabling "
-                        "superadmin access."
-                    )
-                }
-            )
         if not platform_email_configured():
             raise serializers.ValidationError(
                 {

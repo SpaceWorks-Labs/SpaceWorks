@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { AuthLayout } from "../../components/layouts";
 import { AuthShowcase } from "../auth/AuthShowcase";
 import { PasswordInput } from "../auth/PasswordInput";
 
-export function LoginPanel({ error, guestOnly, isPending, onSubmit, platform = false }: {
+export function LoginPanel({ error, guestOnly, isPending, onSubmit, platform = false, recoveryHref }: {
   error?: string;
   guestOnly: boolean;
   isPending: boolean;
   onSubmit: (payload: { username: string; password: string }) => void;
   platform?: boolean;
+  recoveryHref?: string;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -27,6 +29,8 @@ export function LoginPanel({ error, guestOnly, isPending, onSubmit, platform = f
       <label className="text-sm font-semibold" htmlFor="staff-password">Password</label>
       <PasswordInput id="staff-password" name="password" autoComplete="current-password"
         value={password} onChange={(event) => setPassword(event.target.value)} />
+      <Link className="justify-self-end text-sm font-semibold underline"
+        to={recoveryHref ?? `/admin/reset-password?${platform ? "context=platform&" : ""}step=request`}>Forgot password?</Link>
       {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
       <button className="desk-button-primary w-full" type="submit" disabled={isPending || !username.trim() || !password}>
         {isPending ? "Signing in?" : "Sign in"}

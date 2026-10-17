@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.credential_revocation import revoke_all_credentials, revoke_sessions_only
+from apps.accounts.credential_locks import lock_credentials
 from apps.accounts.models import User
 from apps.accounts.staff_account_policy import (
     protect_last_manager, require_authority, scoped_space, target_account,
@@ -27,9 +28,9 @@ def deactivate(actor, space_id, user_id, *, reason=""):
         require_authority(actor, space, target=target)
         membership = MakerspaceMembership.objects.get(user=target, makerspace=space)
         protect_last_manager(space, membership)
-        # P1b owns Envelope -> Invitation -> User lock order and generation fencing.
+        # Revocation takes Invitations -> User -> Envelopes under our tenant lock.
         revoke_all_credentials(target, reason="staff_account.deactivated", actor=actor)
-        target = User.objects.select_for_update().get(pk=target.pk)
+        target = lock_credentials(target)
         target.is_active = False
         target.must_change_password = True
         target.set_unusable_password()
@@ -51,7 +52,7 @@ def reactivate(actor, space_id, user_id):
         space, actor = scoped_space(actor, space_id, lock=True)
         target = target_account(space, user_id)
         require_authority(actor, space, target=target)
-        target = User.objects.select_for_update().get(pk=target.pk)
+        target = lock_credentials(target)
         membership = MakerspaceMembership.objects.select_for_update().get(user=target, makerspace=space)
         if target.is_active and membership.status == "active":
             raise ValidationError({"detail": "This staff account is already active."})
@@ -85,7 +86,7 @@ def set_password(actor, space_id, user_id, *, password=None, generate=False, res
         except DjangoValidationError as exc:
             raise ValidationError({"password": exc.messages}) from exc
         revoke_sessions_only(target, reason="staff_account.password_reset", actor=actor)
-        target = User.objects.select_for_update().get(pk=target.pk)
+        target = lock_credentials(target)
         target.set_password(candidate)
         target.must_change_password = True
         target.save(update_fields=["password", "must_change_password"])

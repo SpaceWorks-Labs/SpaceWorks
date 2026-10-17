@@ -12,7 +12,10 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus, User
-from apps.accounts.principal_guards import is_anonymous_requester
+from apps.accounts.password_reset_context import (
+    lock_recovery_account, recoverable, reset_destination, recovery_transaction,
+)
+from apps.integrations.email import platform_email_configured
 from apps.accounts.password_reset_crypto import (
     credential_fingerprint,
     generate_otp,
@@ -44,6 +47,8 @@ class DeliveryAttempt:
     claim: EnvelopeClaim
     recipient: str
     code: str
+    reset_url: str = ""
+    account_label: str = ""
 
 
 def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None):
@@ -64,11 +69,14 @@ def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None)
         try:
             # The digest and `delivering` state committed before this SMTP call. This
             # call must remain synchronous and outside every row-lock transaction.
+            recovery_details = ({"reset_url": attempt.reset_url, "account_label": attempt.account_label}
+                                if attempt.reset_url else {})
             delivered = bool(
                 send_password_reset_otp(
                     attempt.recipient,
                     attempt.code,
                     expires_in_minutes=int(CHALLENGE_TTL.total_seconds() // 60),
+                    **recovery_details,
                 )
             )
         except Exception:  # provider failure is terminal but never crashes the drain
@@ -124,7 +132,14 @@ def claim_pending_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None, now=No
 def prepare_delivery(claim, *, now=None):
     """Commit the digest and delivering state, returning the in-memory secret."""
     issued_at = now or timezone.now()
-    with transaction.atomic():
+    snapshot = PasswordResetEnvelope.objects.filter(pk=claim.envelope_id).first()
+    if snapshot is None:
+        return None
+    account = User.objects.filter(pk=snapshot.user_id).first()
+    if account is None:
+        return None
+    with recovery_transaction(account):
+        user = lock_recovery_account(account)
         envelope = (
             PasswordResetEnvelope.objects.select_for_update()
             .filter(
@@ -136,22 +151,18 @@ def prepare_delivery(claim, *, now=None):
         )
         if envelope is None:
             return None
-        # Envelope -> User is the declared lock order shared with confirmation.
-        user = (
-            User.objects.select_for_update()
-            .filter(
-                pk=envelope.user_id, account_kind=User.AccountKind.MEMBER,
-                email__iexact=envelope.email_normalized,
-            )
-            .first()
-        )
-        if not _recoverable(user):
+        slug = envelope.makerspace.slug if envelope.makerspace_id else None
+        if (not recoverable(user, context=envelope.context, makerspace=slug,
+                            origin=envelope.request_origin)
+                or user.email.lower() != envelope.email_normalized
+                or (envelope.context != "member" and
+                    user.credential_generation != envelope.credential_generation)):
             return _finish_claimed_terminal(
                 envelope, claim, PasswordResetEnvelopeStatus.DISCARDED, issued_at
             )
         # Availability is re-checked where issuance actually occurs. The deployment-level
         # request-time gate alone is insufficient because configuration may change in queue.
-        if not email_enabled():
+        if not (email_enabled() if envelope.context == "member" else platform_email_configured()):
             return _finish_claimed_terminal(
                 envelope, claim, PasswordResetEnvelopeStatus.UNDELIVERABLE, issued_at
             )
@@ -178,7 +189,10 @@ def prepare_delivery(claim, *, now=None):
         )
         if updated != 1:
             return None
-    return DeliveryAttempt(claim, envelope.email_normalized, code)
+        # Capture trusted routing while the tenant is still locked. A purge or
+        # domain edit after commit must not turn destination resolution into a crash.
+        url, label = reset_destination(user) if envelope.context != "member" else ("", "")
+    return DeliveryAttempt(claim, envelope.email_normalized, code, url, label)
 
 
 def finalize_delivery(claim, *, delivered, now=None):
@@ -228,20 +242,6 @@ def _finish_claimed_terminal(envelope, claim, status, now):
         claim_expires_at=None,
     )
     return status if updated == 1 else None
-
-
-def _recoverable(user):
-    return bool(
-        user is not None
-        and user.account_kind == User.AccountKind.MEMBER
-        and not user.is_tenant_dump_stub
-        and user.is_active
-        and user.access_status == User.AccessStatus.ACTIVE
-        and not user.is_walk_in
-        and not is_anonymous_requester(user)
-        # A superadmin resets on the host (`changepassword` / `recover_superadmin`), never by email.
-        and not (user.is_superuser or user.role == User.Role.SUPERADMIN)
-    )
 
 
 def _worker_identity():

@@ -122,6 +122,11 @@ class MakerspaceArchiveRequestListCreateView(generics.ListCreateAPIView):
     @extend_schema(
         tags=["Admin makerspaces"],
         summary="Request makerspace archival",
+        description=(
+            "Requires local MANAGE_MAKERSPACE authority on a live makerspace, including "
+            "when superadmin access is disabled. A platform superadmin reviews the "
+            "request through the control-panel lifecycle list."
+        ),
         request=MakerspaceArchiveRequestSerializer,
         responses={
             201: MakerspaceArchiveRequestSerializer,
@@ -131,7 +136,8 @@ class MakerspaceArchiveRequestListCreateView(generics.ListCreateAPIView):
             ),
             403: OpenApiResponse(response=ArchiveRequestErrorSerializer),
             404: OpenApiResponse(response=ArchiveRequestErrorSerializer),
-            409: OpenApiResponse(response=ArchiveRequestErrorSerializer),
+            409: OpenApiResponse(response=ArchiveRequestErrorSerializer,
+                                 description="A pending request exists, the cooldown applies, or the space is unavailable."),
         },
     )
     def post(self, request, *args, **kwargs):

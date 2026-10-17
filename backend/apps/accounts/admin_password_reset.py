@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.db.models import Q
+from django.http import Http404
 from unfold.admin import ModelAdmin
 
 from apps.accounts.models_password_reset import PasswordResetEnvelope
@@ -35,6 +37,25 @@ class PasswordResetEnvelopeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         "terminal_at",
     )
     readonly_fields = fields
+
+    def get_queryset(self, request):
+        from config.admin_account_scope import visible_staff_spaces
+
+        return super().get_queryset(request).filter(
+            ~Q(user__account_kind="staff")
+            | Q(user__staff_makerspace__in=visible_staff_spaces(), user__retired_at__isnull=True)
+        )
+
+    def _obj_in_hidden(self, obj):
+        from config.admin_account_scope import staff_account_hidden
+
+        return bool(obj is not None and staff_account_hidden(obj.user)) or super()._obj_in_hidden(obj)
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None or self._obj_in_hidden(obj):
+            raise Http404
+        return obj
 
     def has_add_permission(self, request):
         return False

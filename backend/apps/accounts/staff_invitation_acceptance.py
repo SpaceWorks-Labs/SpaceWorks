@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import APIException, ValidationError
 
 from apps.accounts import audit_events
+from apps.accounts.credential_locks import lock_credentials
 from apps.accounts.mfa_challenges import digest
 from apps.accounts.models import StaffInvitation, User
 from apps.accounts.services_staff_invitations import authority, snapshot
@@ -29,17 +30,15 @@ def accept(request, *, token, makerspace_slug, password, code=""):
         try:
             with transaction.atomic():
                 space = Makerspace.objects.select_for_update(no_key=True).get(pk=candidate.makerspace_id)
+                if candidate.account_id is None:
+                    raise ValidationError(GENERIC_ERROR)
+                user = lock_credentials(candidate.account_id, extra_user_ids=[candidate.created_by_id])
                 row = StaffInvitation.objects.select_for_update().get(pk=candidate.pk)
                 if (row.token_digest != digest(token) or row.account_id is None
                         or row.accepted_at or row.revoked_at or row.expires_at <= timezone.now()
                         or row.failed_attempts >= 5):
                     raise ValidationError(GENERIC_ERROR)
-                # Preserve Invitation -> ordered Users -> Membership lock order.
-                # Nullable account/role FKs never participate in the locking query.
-                users = {user.pk: user for user in User.objects.select_for_update().filter(
-                    pk__in=[row.created_by_id, row.account_id],
-                ).order_by("pk")}
-                creator, user = users[row.created_by_id], users[row.account_id]
+                creator = User.objects.get(pk=row.created_by_id)
                 authority(creator, space)
                 require_authority(creator, space, target=user)
                 if (not user.is_active or user.has_usable_password() or user.is_tenant_dump_stub

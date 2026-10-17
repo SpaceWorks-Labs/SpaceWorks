@@ -15,14 +15,18 @@ class PasswordResetEnvelopeStatus(models.TextChoices):
 
 
 class PasswordResetEnvelope(models.Model):
-    """One reusable recovery envelope for each member account.
+    """One reusable recovery envelope for each account and its immutable namespace.
 
     The stable row is both the request queue item and the confirmation lock target.
     Email is a delivery address, never account ownership. Unknown addresses and
-    non-member accounts receive the same public acknowledgement without a queue row.
+    unavailable accounts receive the same public acknowledgement without a queue row.
     """
 
     email_normalized = models.CharField(max_length=254)
+    context = models.CharField(max_length=8, choices=[(kind, kind.title()) for kind in ("member", "staff", "platform")], default="member")
+    makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True, on_delete=models.CASCADE)
+    request_origin = models.CharField(max_length=512, blank=True)
+    credential_generation = models.PositiveBigIntegerField(default=0)
     email_fingerprint = models.CharField(max_length=64)
     digest = models.CharField(max_length=64)
     digest_is_live = models.BooleanField(default=False)

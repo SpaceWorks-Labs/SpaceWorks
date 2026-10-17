@@ -1,3 +1,6 @@
+from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
+from apps.makerspaces.admin_governance import MakerspaceGovernanceMixin
+from apps.makerspaces.admin_lifecycle_review import MakerspaceLifecycleReviewMixin
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
@@ -59,6 +62,9 @@ class MakerspaceMembershipInline(ReadOnlyMembershipInlineMixin, TabularInline):
 
 @admin.register(Makerspace)
 class MakerspaceAdmin(
+    RecentReauthenticationAdminMixin,
+    MakerspaceGovernanceMixin,
+    MakerspaceLifecycleReviewMixin,
     MakerspaceStaffAccountAdminMixin,
     MakerspaceOwnerAdminMixin,
     MakerspaceLifecycleActionsMixin,
@@ -68,19 +74,13 @@ class MakerspaceAdmin(
     ModelAdmin,
 ):
     form = MakerspaceAdminForm
-    actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces"]
+    actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces",
+               "approve_archive_requests", "decline_archive_requests"]
     list_display = (
-        "name",
-        "public_code",
-        "slug",
-        "location",
-        "public_inventory_enabled",
-        "superadmin_access",
-        "frontend_domain",
-        "hidden_from_central_directory",
-        "frontend_mode",
-        "archived",
-        "updated_at",
+        "governance_name", "governance_public_code", "slug", "governance_location",
+        "governance_public_inventory", "superadmin_access", "governance_domain",
+        "governance_directory", "frontend_mode", "lifecycle_state", "archived_at",
+        "archive_request_status", "governance_updated",
     )
     list_filter = ("public_inventory_enabled", "superadmin_access_enabled", ArchivedFilter)
     prepopulated_fields = {"slug": ("name",)}
@@ -199,10 +199,12 @@ class MakerspaceAdmin(
 
     @admin.display(description="Superadmin access")
     def superadmin_access(self, obj):
-        return "Yes" if obj.superadmin_access_enabled else "No"
+        return "on" if obj.superadmin_access_enabled else "off"
 
     @admin.display(description="Frontend mode")
     def frontend_mode(self, obj):
+        if not obj.superadmin_access_enabled:
+            return "hidden"
         return "single-tenant" if obj.frontend_domain else "central"
 
 

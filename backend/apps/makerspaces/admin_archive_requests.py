@@ -8,10 +8,11 @@ from unfold.admin import ModelAdmin
 from apps.makerspaces import archive_requests
 from apps.makerspaces.models import MakerspaceArchiveRequest
 from config.admin_access import SuperuserOnlyModelAdmin
+from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
 
 
 @admin.register(MakerspaceArchiveRequest)
-class MakerspaceArchiveRequestAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class MakerspaceArchiveRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
     actions = ["approve_selected", "decline_selected"]
     list_display = (
         "makerspace",

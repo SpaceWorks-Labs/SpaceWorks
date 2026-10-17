@@ -57,8 +57,10 @@ columns are absent internally and NULL in the public matrix projection.
   coverage_kind, activity_count, failure_count, last_activity_at,
   rollup_watermark, rollup_state, period, delivery_kind, delivery_count,
   success_count, success_rate_percent.
-- **platform-services:** makerspace_id, period, day, service, provider_source,
-  status, bucket, count, currency, amount.
+- **platform-services v2:** makerspace_id, period, day, service, provider_source,
+  status, bucket, count, currency, amount, purpose. SMS distinguishes OTP from
+  addressed notifications; WhatsApp notification counts and the hidden bucket
+  follow [Messaging analytics](report-builders-messaging.md).
 - **platform-usage:** makerspace_id, period, metric, entity_kind, entity_id,
   unit, currency, value.
 

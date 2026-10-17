@@ -62,8 +62,10 @@ def validate_chart_spec(spec, fields):
         raise ValueError("Table specs require a category row dimension and no aggregation settings.")
     value_fields = []
     for value in spec["values"]:
-        if not isinstance(value, dict) or set(value) != {"field", "unit"}:
+        if not isinstance(value, dict) or set(value) not in ({"field", "unit"}, {"field", "unit", "kind"}):
             raise ValueError("Each value requires field and unit.")
+        if "kind" in value and value["kind"] not in ("line", "stacked_bar"):
+            raise ValueError("Value kind must be line or stacked_bar.")
         field(value["field"])
         text(value["unit"])
         value_fields.append(value["field"])

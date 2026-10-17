@@ -100,6 +100,23 @@ dashboard, member, organization and picker DTOs await coordinator OpenAPI regene
 Vitest panel suites live beside these components, with registry fixtures and shared
 fetch/provider helpers in `src/test/reportChartCases.ts` and `analyticsFixtures.tsx`.
 
+Addressed messaging frontend (1h-D): `features/messaging/messagingApi.ts` owns the local
+serializer-matched TypeScript contracts and tenant-specific TanStack Query keys;
+`MessagingFeedback.tsx` provides inline errors and exact-value copy controls.
+`features/staff/MakerspaceMessagingSettings.tsx` and `MessagingTestSend.tsx` own sender
+credentials, source/availability indicators, callback setup and caller-only diagnostics.
+`WhatsAppTemplateBindings.tsx` owns binding CRUD/pagination and `WhatsAppBindingForm.tsx`
+owns catalog-constrained, ordered BODY variables. `MakerspaceSettingsPanel.tsx` mounts
+them under Email & integrations for settings managers with the relevant module enabled.
+`NotificationChannelPreferences.tsx` renders API-supplied SMS/WhatsApp columns and sender
+setup warnings. `features/members/MemberMessaging.tsx` owns per-makerspace consent in
+Account → Messaging, mounted by `MemberArea.tsx` independently of `notifications` and
+`membership` module gates for active memberships. `MemberPhoneVerification.tsx` exposes
+the existing authenticated phone-link OTP endpoints under Account → Verify phone;
+verification alone never grants messaging consent. Focused mocked-fetch component tests
+live beside both staff panels and the member section; fixtures are in
+`src/test/messagingFixtures.tsx`.
+
 The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
 `AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
 `WorkspaceSwitcher`, `UserMenu`, `MobileTopBar`, `SidebarDrawer`, `BottomTabs` and
@@ -439,7 +456,7 @@ count per row where no measurement existed; health rows retain their tenant char
 `tests/operations/test_chart_spec_complete_m1f6.py` guards the whole previewable registry
 and both platform analytics responses. The latter use `PlatformAnalyticsReportSerializer`.
 
-H/I analytics register in `operations/report_definitions_hi.py`: communications v2 stays in
+H/I analytics register in `operations/report_definitions_hi.py`: communications v3 stays in
 `integrations/reports_communications.py`; tenant mobile counts live in
 `operations/reports_mobile_devices.py` and `reports_mobile_auth.py`. Their shared allowlists
 are `report_fields_hi.py`; `reports_mobile_platform.py` exposes context-guarded global source
@@ -797,3 +814,29 @@ member APIs. `admin_messaging.py` exposes platform settings/templates only.
 classify history, credentials and inert target projection. `tasks_messaging_settings.py`
 is registered through integrations tasks and both schedulers. The core scope validator
 is `integrations/notification_scope_contract.py`; the optional inbox re-exports it.
+
+
+Addressed delivery pipeline (1h-B): `integrations/recipients_addressed.py` is the core
+recipient resolver imported by the optional inbox. `messaging/sources.py` persists and
+revalidates domain identity/scope; `eligibility.py` separates pure policy from idempotent
+quota reservation. `dispatch.py` owns the unique transactional outbox and on-commit queue.
+`worker.py`, `outcomes.py` and `correlation.py` own fenced claims/completion, derived provider
+status and the WhatsApp correlation barrier. `stops.py` owns shared sender suppression and
+optional consent annotations; `webhook_signatures.py`, `webhook_payloads.py` and
+`webhook_processing.py` verify, normalize and durably process provider callbacks behind
+`views_messaging_webhooks.py` and `messaging/urls_webhooks.py`. `messaging/views_test.py`
+limits diagnostics to the caller. `tasks_messaging.py` registers worker and recovery;
+`messaging/sweep.py` owns recovery/retention in both scheduler modes. Origin targets,
+API-client explicit denies (`apiclients/scope_registry_messaging.py`) and source-gate
+participation are declared in their existing registries. Operator setup and recovery:
+`docs/messaging-channels.md`. No new model or field is introduced by lane B.
+
+Messaging analytics (1h-C): `integrations/reports_messaging.py` projects addressed
+SMS/WhatsApp creation cohorts, segment provenance, abandoned callback receipts and
+current live-consent snapshots into `reports_communications.py`. Shared public fields
+are `operations/report_fields_hi.py`; `org_reports_messaging.py` combines weighted
+rates and excludes person snapshots from organization totals. `reports_platform_services.py`
+splits SMS OTP/notifications via `purpose` and adds WhatsApp counts through the existing
+anonymous hidden-service projection. `serializers_reports_messaging.py` declares typed
+OpenAPI rows; chart values optionally declare line/stacked-bar kinds. Measurement and
+integration details: [report-builders-messaging.md](report-builders-messaging.md).

@@ -122,6 +122,10 @@ from .scope_registry_wp4 import definitions as wp4_routes
 _ROUTE_DEFINITIONS += wp4_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
 
 
+from .scope_registry_messaging import definitions as messaging_denied_routes
+_ROUTE_DEFINITIONS += messaging_denied_routes()
+
+
 def _build_registry():
     registry = {}
     for definition in _ROUTE_DEFINITIONS:

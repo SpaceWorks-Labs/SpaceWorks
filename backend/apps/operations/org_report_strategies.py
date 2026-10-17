@@ -55,10 +55,15 @@ def _strategy(kind, groups, totals, *, breakdown=(), ordering=(), limit=None, te
 
 STRATEGIES = {
     "communications-health": _strategy(
-        AggregationKind.WEIGHTED_RATE, COMMUNICATION_GROUPS, COMMUNICATION_FIELDS,
+        AggregationKind.WEIGHTED_RATE, COMMUNICATION_GROUPS,
+        tuple(field for field in COMMUNICATION_FIELDS if field != "consented_member_count"),
+        breakdown=("consented_member_count",),
         ordering=COMMUNICATION_GROUPS, text=(
             ("success_rate_percent", "summed sent over summed delivery cohorts"),
             ("read_rate_percent", "summed read over summed created cohorts"),
+            ("delivery_rate", "summed delivered over summed accepted"),
+            ("read_rate", "summed read over summed delivered"),
+            ("consented_member_count", "current distinct-person snapshot; excluded from organization totals"),
             ("last_activity_at", "latest value survives"),
         ),
     ),

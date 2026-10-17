@@ -314,3 +314,12 @@ Provider credentials live encrypted in the platform or tenant settings, not envi
 variables. OTP SMS keeps its existing independent platform configuration. Retired callback
 credentials are accepted for fourteen days and wiped by `messaging-credential-wipe` in
 both Celery beat and `run_scheduled_tasks`.
+
+
+Addressed channel operations: see [SMS and WhatsApp notifications](messaging-channels.md)
+for exact versioned webhook URLs, Twilio Advanced Opt-Out and connection overrides,
+Meta registration/PIN and permissions, and the bounded WhatsApp correlation probe.
+`MANAGED_RESOURCE_LIMITS["sms"]` and `["whatsapp"]` default to 100 logical messages per
+makerspace/day, with existing per-space resource-limit overrides. Self-host bypasses
+these notification quotas. Both scheduler modes run `messaging-recovery` every five
+minutes; provider secrets retired for 14 days are wiped independently of module state.

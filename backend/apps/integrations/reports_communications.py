@@ -11,6 +11,8 @@ from apps.operations.report_fields_hi import (
 )
 from apps.operations.reports_common import report_spaces
 from apps.operations.reports_hi_common import buckets, category, percent, result
+from apps.operations.reports_j_common import calendar_range
+from apps.integrations.reports_messaging import messaging_rows
 
 FIELDS = COMMUNICATION_FIELDS
 CHANNELS = ("telegram", "slack", "mattermost", "discord", "webhook")
@@ -19,35 +21,39 @@ CHANNELS = ("telegram", "slack", "mattermost", "discord", "webhook")
 def build_communications_health(makerspace_id, *, limit=None, date_range=None, grain="day"):
     records = []
     for space in report_spaces(makerspace_id):
+        local_range = calendar_range(date_range, space)
         groups = {}
         if module_enabled(space, "email"):
-            _email(space, groups, grain, date_range)
+            _email(space, groups, grain, local_range)
         for channel in CHANNELS:
             if module_enabled(space, channel):
                 qs = NotificationDeliveryLog.objects.filter(makerspace=space, channel=channel)
-                _delivery(qs, space, groups, grain, date_range, channel, channel)
+                _delivery(qs, space, groups, grain, local_range, channel, channel)
         if module_enabled(space, "mobile"):
             staff = PushDeliveryAttempt.objects.filter(delivery_log__makerspace=space)
-            _delivery(staff, space, groups, grain, date_range, "mobile", "native_push", push=True)
+            _delivery(staff, space, groups, grain, local_range, "mobile", "native_push", push=True)
             if module_enabled(space, "notifications"):
                 member = MemberPushDelivery.objects.filter(inbox_row__makerspace=space)
-                _delivery(member, space, groups, grain, date_range, "mobile", "native_push", push=True, member=True)
+                _delivery(member, space, groups, grain, local_range, "mobile", "native_push", push=True, member=True)
         if module_enabled(space, "notifications"):
-            _inbox(space, groups, grain, date_range)
-        for row in groups.values():
+            _inbox(space, groups, grain, local_range)
+        for row in [*groups.values(), *messaging_rows(space, grain=grain, date_range=local_range)]:
             row["success_rate_percent"] = percent(row["sent_count"], row["delivery_count"])
-            row["read_rate_percent"] = percent(row["inbox_read_count"], row["inbox_created_count"])
+            row["read_rate_percent"] = (percent(row["read_rate_numerator"], row["read_rate_denominator"])
+                                        if row["channel"] in ("sms", "whatsapp") else
+                                        percent(row["inbox_read_count"], row["inbox_created_count"]))
             if makerspace_id is None:
                 row["makerspace_id"] = space.pk
             records.append(row)
     records.sort(key=lambda row: (row.get("makerspace_id", 0), *(str(row.get(f) or "") for f in COMMUNICATION_GROUPS)))
     return result(FIELDS, records, makerspace_id is None, limit,
-                  basis="Delivery cohorts use creation time; bounces and complaints use event time. Inbox reads are creation-cohort reads as of the window end.",
-                  history="Unrecorded platform/provider dimensions are unknown; push retries are attempts on one delivery row.")
+                  basis="Delivery creation cohorts show current progress; inbox reads are measured at window end. Bounces/complaints use event time. Consent is a current snapshot; segments prefer billed over estimated, labelled by segment_source.",
+                  history="Retained rows only; unrecorded dimensions are unknown. Rejected messaging signatures have no durable count. Push retries are attempts, not extra deliveries.")
 
 
 def _add(groups, period, module, channel, feature, provider="unknown", platform="unknown", last=None, **counts):
-    key = (period.date().isoformat(), module, channel, feature, provider, platform)
+    key = (period.date().isoformat(), module, channel, feature, provider, platform,
+           "not_applicable", "none", "not_applicable", "delivery_cohort")
     row = groups.setdefault(key, {**dict(zip(COMMUNICATION_GROUPS, key)),
                                   **dict.fromkeys(COMMUNICATION_COUNTS, 0), "last_activity_at": None})
     for field, value in counts.items():

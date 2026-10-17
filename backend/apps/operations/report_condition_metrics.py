@@ -44,6 +44,11 @@ NUMERIC_FIELDS = frozenset({
     "charge_count", "charged_amount", "promo_discount_amount", "confirmation_rate_percent", "checkin_count",
     "score_count", "score_total", "average_score",
     "activated_members", "owed_amount", "waived_amount",
+    "accepted_count", "delivered_count", "read_count", "pending_count", "sending_count",
+    "accepted_only_count", "sent_only_count", "delivered_only_count", "estimated_segments",
+    "billed_segments", "segments", "abandoned_webhook_count", "consented_member_count",
+    "delivery_rate", "read_rate", "delivery_rate_numerator", "delivery_rate_denominator",
+    "read_rate_numerator", "read_rate_denominator",
 })
 
 

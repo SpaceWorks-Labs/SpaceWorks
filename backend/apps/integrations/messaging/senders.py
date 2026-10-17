@@ -2,7 +2,7 @@
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
-from django.db.models import Max, Q
+from django.db.models import Case, IntegerField, Max, Q, Value, When
 from django.utils import timezone
 from rest_framework.exceptions import APIException
 
@@ -72,7 +72,10 @@ def callback_credentials(*, channel, owner, makerspace_id=None):
     return MessagingSenderCredential.objects.filter(
         identity__channel=channel, identity__owner=owner, identity__makerspace_id=makerspace_id,
         wiped_at__isnull=True,
-    ).filter(Q(retired_at__isnull=True) | Q(retired_at__gte=cutoff)).select_related("identity").order_by("-version")
+    ).filter(Q(retired_at__isnull=True) | Q(retired_at__gte=cutoff)).select_related("identity").annotate(verification_order=Case(
+        When(retired_at__isnull=True, identity__active=True, then=Value(0)),
+        default=Value(1), output_field=IntegerField(),
+    )).order_by("verification_order", "-version")
 
 
 @transaction.atomic

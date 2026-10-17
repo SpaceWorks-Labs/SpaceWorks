@@ -10,7 +10,10 @@ All time axes support tenant-local day, ISO week and month.
 registration IDs, message bodies, raw metadata, provider errors or credentials.
 Audit dimensions and reasons are projected through closed vocabularies.
 
-- `communications-health` v2: period/module/channel/feature/provider source/platform;
+- `communications-health` v3 extends the original v2 measures below with addressed
+  SMS/WhatsApp cohorts, rates, segments, abandoned callbacks and current consent
+  snapshots. Measurement/combination/chart contracts: [Messaging analytics](report-builders-messaging.md).
+  Original measures: period/module/channel/feature/provider source/platform;
   triggered, delivery, attempt, sent, failed, skipped, suppressed, bounced, complained,
   invalid, inbox-created, inbox-read and unread counts; success/read percentages;
   last activity time. Chart: multiple lines, time axis, explicit per-value units,

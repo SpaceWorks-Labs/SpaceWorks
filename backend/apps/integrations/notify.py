@@ -143,6 +143,12 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
                 write_matrix_inbox(makerspace, feature, event, payload, event_key)
             except Exception:
                 logger.warning("matrix_inbox_failed", extra={"makerspace_id": makerspace.pk})
+        try:
+            from apps.integrations.messaging.dispatch import enqueue_addressed_messages
+            enqueue_addressed_messages(makerspace, feature=feature, event=event,
+                                       event_key=event_key, payload=payload)
+        except Exception:
+            logger.warning("addressed_messaging_enqueue_failed", extra={"makerspace_id": makerspace.pk})
         payer_receipt = (feature == NotificationFeature.PAYMENTS and event == "payment_received"
                          and receipt_email_default(makerspace))
         mandatory_hardware = feature == "hardware_requests" and event in {"return_reminder", "closed_with_issue"}

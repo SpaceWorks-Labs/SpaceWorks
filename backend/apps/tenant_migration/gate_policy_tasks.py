@@ -77,6 +77,8 @@ TASK_TENANT_RESOLVERS = {
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.integrations.tasks_messaging.deliver_messaging_task": "Worker acquires sender lock first and holds tenant_write during claims and fenced completion.",
+    "apps.integrations.tasks_messaging.sweep_messaging_task": "Recovery/retention use per-tenant skip-and-count gates; sender protections and operational webhook/credential retention are deployment-local.",
     "apps.inventory.tasks.snapshot_stock_task": "Daily stock observations gate each tenant separately.",
     "apps.notifications.tasks.deliver_member_push": (
         "Resolves inbox_row.makerspace and holds its dedicated source boundary through delivery."
@@ -143,6 +145,8 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.integrations.messaging.sweep.run_sweep": "Recovery and delivery retention skip frozen tenants; operational callbacks remain durable.",
+    "apps.integrations.messaging.stops.append_stop_consents": "Optional consent annotations skip frozen tenants after committing sender-level STOP protection.",
     "apps.inventory.stock_snapshots.snapshot_inventory_stock": "Daily stock observations gate each tenant separately.",
     "apps.notifications.tasks.sweep_member_push": "Member push recovery gates each tenant separately.",
     "apps.accounts.account_purge.purge_account": "Account erasure and durable object cleanup gate each tenant separately.",

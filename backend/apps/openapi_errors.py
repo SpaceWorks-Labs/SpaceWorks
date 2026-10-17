@@ -18,6 +18,7 @@ _DESCRIPTIONS = {
     415: "Unsupported media type for the request body.",
     423: "Makerspace writes are frozen for tenant migration.",
     429: "Rate limit exceeded; retry after the interval in Retry-After.",
+    500: "An internal or persistence failure prevented completing the request.",
     503: "A required dependency is unavailable.",
 }
 

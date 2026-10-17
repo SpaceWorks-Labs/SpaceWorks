@@ -6,8 +6,9 @@ from apps.accounts import rbac
 from .org_report_aggregate import register_combine
 from .report_types import ReportDefinition
 from .reports_hi_common import combine_counts
+from .org_reports_messaging import combine_communications
 from .report_fields_hi import (
-    COMMUNICATION_COUNTS, COMMUNICATION_FIELDS, COMMUNICATION_GROUPS,
+    COMMUNICATION_FIELDS, MESSAGING_STATUS_COUNTS,
     MOBILE_AUTH_FIELDS, MOBILE_AUTH_GROUPS, MOBILE_DEVICE_FIELDS, MOBILE_DEVICE_GROUPS,
 )
 
@@ -21,18 +22,28 @@ def _chart(series, values, alt):
     }
 
 
+_COMMUNICATION_CHART = _chart(["channel", "feature", "provider_source", "platform", "audience", "skip_reason", "segment_source", "measurement"],
+                            [], "{channel} activity in {period}")
+# Cumulative progress overlaps: only exclusive current outcomes are stacked.
+# Per-value kinds keep percentage/fraction lines separate from count stacks.
+_COMMUNICATION_CHART["values"] = [
+    {"field": field, "unit": "deliveries", "kind": "stacked_bar"} for field in MESSAGING_STATUS_COUNTS
+] + [
+    {"field": field, "unit": unit, "kind": "line"} for field, unit in (
+        ("sent_count", "deliveries"), ("invalid_count", "deliveries"),
+        ("bounced_count", "events"), ("complained_count", "events"),
+        ("inbox_created_count", "inbox rows"), ("inbox_read_count", "inbox rows"),
+        ("delivery_rate", "ratio"), ("read_rate", "ratio"),
+    )
+]
+
 COMMUNICATIONS_REPORT_DEFINITION = ReportDefinition(
     "communications-health", "apps.integrations.reports_communications.build_communications_health",
     COMMUNICATION_FIELDS, required_action=rbac.Action.MANAGE_MAKERSPACE,
-    title="Communications health", chart_hint="multi_line", version=2,
+    title="Communications health", chart_hint="multi_line", version=3,
     grains=("day", "week", "month"),
-    section_modules=("notifications", "email", "telegram", "slack", "mattermost", "discord", "webhook", "mobile"),
-    chart_spec=_chart(["channel", "feature", "provider_source", "platform"],
-                      [("sent_count", "deliveries"), ("failed_count", "deliveries"),
-                       ("invalid_count", "deliveries"), ("suppressed_count", "deliveries"),
-                       ("bounced_count", "events"), ("complained_count", "events"),
-                       ("inbox_created_count", "inbox rows"), ("inbox_read_count", "inbox rows")],
-                      "{channel} activity in {period}"),
+    section_modules=("notifications", "email", "telegram", "slack", "mattermost", "discord", "webhook", "mobile", "sms", "whatsapp"),
+    chart_spec=_COMMUNICATION_CHART,
 )
 
 HI_REPORT_DEFINITIONS = (
@@ -52,11 +63,6 @@ HI_REPORT_DEFINITIONS = (
     ),
 )
 
-register_combine("communications-health", partial(
-    combine_counts, groups=COMMUNICATION_GROUPS, counts=COMMUNICATION_COUNTS,
-    rates=(("success_rate_percent", "sent_count", "delivery_count"),
-           ("read_rate_percent", "inbox_read_count", "inbox_created_count")),
-    latest=("last_activity_at",),
-))
+register_combine("communications-health", combine_communications)
 register_combine("mobile-devices", partial(combine_counts, groups=MOBILE_DEVICE_GROUPS, counts=("count",)))
 register_combine("mobile-auth", partial(combine_counts, groups=MOBILE_AUTH_GROUPS, counts=("count",)))

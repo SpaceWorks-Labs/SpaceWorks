@@ -32,6 +32,7 @@ _ROWS = (
     (("audit",), ("audit-activity",)),
     (("organizations",), ("organization-membership",)),
     (("platform",), ("platform-services", "platform-usage")),
+    (("sms", "whatsapp"), ("communications-health", "platform-services")),
 )
 
 REPORT_COVERAGE_CONTRACT = {module: keys for modules, keys in _ROWS for module in modules}

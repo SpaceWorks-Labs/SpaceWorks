@@ -18,6 +18,7 @@ from apps.operations.serializers_reports import (
     PaymentReconciliationReportSerializer,
 )
 from apps.operations.serializers_report_catalog import GenericAnalyticsReportSerializer
+from apps.operations.serializers_reports_messaging import CommunicationsHealthReportSerializer, PlatformServicesReportSerializer
 from .serializers_reports_machine_analytics import (
     MachineUsageV2ReportSerializer, MachineUsageMembersReportSerializer, MachineUsageHeatmapReportSerializer,
     MachineDowntimeReportSerializer, MaintenanceActivityV2ReportSerializer, MachineServiceV2ReportSerializer,
@@ -68,6 +69,8 @@ ANALYTICS_REPORT_RESPONSE = PolymorphicProxySerializer(
         CashBookReportSerializer,
         AccountingJournalReportSerializer,
         GenericAnalyticsReportSerializer,
+        CommunicationsHealthReportSerializer,
+        PlatformServicesReportSerializer,
         MemberRetentionReportSerializer,
         MembershipRevenueReportSerializer,
         MembershipGrowthReportSerializer,

@@ -4,6 +4,10 @@ from .gate_policy_replay import REPLAY_HTTP_PARTICIPANTS
 
 
 HTTP_EXEMPTIONS = {
+    **{name: "Signed provider ingress durably records deployment events; status writes gate their resolved tenant; STOP protection must survive frozen tenants." for name in (
+        "messaging-twilio-platform-status", "messaging-twilio-platform-inbound",
+        "messaging-twilio-status", "messaging-twilio-inbound", "messaging-meta-platform", "messaging-meta",
+    )},
     "auth-account-restore-email": "Global identity recovery never reinstates tenant authority.",
     "auth-account-restore-phone": "Global identity recovery never reinstates tenant authority.",
     "auth-account-restore-social-start": "Global provider recovery intent has no tenant mutation.",
@@ -108,6 +112,8 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
 
 
 HTTP_ANONYMOUS_PARTICIPANTS = {
+    "apps.integrations.views_messaging_webhooks.TwilioMessagingWebhookView.post": "Signed ingress stores a durable event; status uses tenant_write and STOP uses sender-scoped protection.",
+    "apps.integrations.views_messaging_webhooks.MetaMessagingWebhookView.post": "Sender lock precedes event/correlation row locks; tenant status writes use tenant_write independently of module state.",
     "apps.integrations.views_bounce.BounceWebhookView.post": (
         "Verified tenant HMAC resolves one makerspace; suppression and audit commit under tenant_write."
     ),

@@ -118,6 +118,7 @@ def dispatch(space, reminder, message, now, local_tz):
             return LifecyclePayload(text="", staff_channels_enabled=False)
         return LifecyclePayload(
             text=message.body, staff_channels_enabled=False,
+            data={"inventory_watch_id": row.pk, "product_id": row.product_id},
             emails=(EmailDelivery(to_email=row.user.email, subject=message.title,
                                   text_body=message.body, html_body="", stream="hardware", mute_event="back_available",
                                   audience="requester", user_id=row.user_id),),

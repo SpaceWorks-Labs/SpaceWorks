@@ -28,6 +28,13 @@ def percent(numerator, denominator):
     )
 
 
+def ratio(numerator, denominator):
+    """Fractional rates use the same rounding on tenant and organization paths."""
+    if not denominator:
+        return None
+    return (Decimal(numerator) / Decimal(denominator)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
+
 def result(fields, records, aggregate, limit, **meta):
     order = (("makerspace_id",) + fields) if aggregate else fields
     return ReportResult(order, limited(records, limit), meta)

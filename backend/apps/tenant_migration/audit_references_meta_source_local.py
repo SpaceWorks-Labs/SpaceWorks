@@ -14,6 +14,8 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("audit.signing_key_rotation_failed", "rotation_id"),
         ("encryption.write_fence_closed", "operation_id"),
         ("encryption.write_fence_opened", "operation_id"),
+        # MessagingWebhookEvent is deployment-local replay state, dropped from tenant dumps.
+        ("messaging.webhook_abandoned", "event_id"),
         ("payment.checkout_created", "subject_id"),
         ("payment.created", "subject_id"),
         ("payment.double_paid_refund_required", "event_id"),

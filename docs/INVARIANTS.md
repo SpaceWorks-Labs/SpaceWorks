@@ -543,6 +543,16 @@ per-makerspace breakdown is always present in the same response; (4) `ReportScop
 mode permitted to flatten, and only for that resolved set. Anything wider is still a regression. Deployment
 -wide aggregates are unchanged: they stay grouped by `makerspace_id`.
 
+**Addressed messaging analytics (1h-C)** uses `MessagingDelivery.progress_rank` for cumulative
+accepted/sent/delivered/read counts (>=1/>=2/>=3/=4) and the derived current `status` for failures.
+Failure observations never erase delivery/read evidence. Only exclusive current outcomes may
+be stacked in charts; cumulative progress and ratios remain lines. Consent counts are labelled
+current snapshots and excluded from organization totals. SMS segment totals prefer recorded
+billed segments (including zero), otherwise labelled estimates. Platform services distinguish
+OTP from notifications for visible tenants; hidden buckets discard that distinction and all
+other breakdowns except service/day/count. Sender keys, phones, message content and credentials
+never enter report rows. Measurement notes: `docs/report-builders-messaging.md`.
+
 
 **Report provenance and scheduled delivery (forward plan phase 6, 2026-09-04).** Every CSV/XLSX export
 leaves through `apps/operations/report_exports.py` with an `ExportProvenance`: CSV line 1 is a raw
@@ -4877,3 +4887,52 @@ its number. The two numbers must not share a Twilio Messaging Service. SMS estim
 count GSM-7 extension septets and UCS-2 UTF-16 units, use conservative 152/66 multipart
 limits, and cap at three segments using ASCII '...' followed by a recount. Provider
 billed segments remain separate from estimates.
+
+
+The addressed pipeline lives in core integrations, including recipient extraction. Inbox
+imports that selection without changing its own feature/in_app gates or member-wording
+precedence. Disabling or tombstoning notifications must not disable consented SMS/WhatsApp.
+Eligibility is read-only and runs both at enqueue and just before submission: servability,
+channel module, feature/matrix, account/membership, current domain source and scope,
+recipient authority/reach, optional personal preference, verified phone, live consent,
+resolved sender, suppression, and approved audience binding. Deleted/moved sources skip
+as source_changed; inactive/missing local memberships skip as no_membership. Diagnostic
+tests require settings authority and target only the caller's own verified/consented
+phone; settings authority authorizes that test recipient, while the selected event must
+still pass feature/matrix gates, consent and sender protections.
+
+A unique (makerspace, event_key, user, channel) outbox key prevents duplicate lifecycle
+fan-out. reserve_quota runs only in the creating transaction and records quota_reserved_at;
+retries, duplicate enqueue and crash recovery never spend again. Managed sms/whatsapp
+limits count logical messages, including eligible test sends. Claims use one conditional
+UPDATE with attempts < max_attempts and a fresh token/90-second lease. Completion is
+fenced by that token, and acceptance never lowers observed webhook progress. Source-gate
+protection spans provider I/O using a dedicated boundary, not a long SQL transaction.
+
+WhatsApp sender locking precedes row locks in claim, callback confirmation, unmapped STOP
+and re-consent. Callback correlation uses the submitted phone hash and provider message ID
+or echoed delivery ID, never the user's later phone. Alias confirmation is atomic with its
+mapping; phone-only confirmation requires no unmapped alias suppression. An ambiguous
+probe is never resubmitted, including after a worker crashes with an expired probe lease.
+Only explicit provider rejections may retry a probe. Ordinary correlated sends remain
+at least once. A new unmapped STOP blocks alias-unknown pairs until re-consent. Concurrent
+workers and platform-sharing tenants cannot submit a second probe before confirmation.
+
+Twilio callbacks admit form bodies only and validate every repeated parameter using the
+official validator ordering and URL-port variants, plus AccountSid/sender-number binding.
+StatusCallback includes #rc=5&rp=5xx,ct,rt; its fragment is excluded from verification.
+Meta validates the raw-body HMAC and ignores foreign phone_number_id entries. Verification
+tries active credentials before versions retired within 14 days; old secrets are then wiped.
+Ingress commits a minimal durable event before processing; DB failures return 500. Early
+callbacks retry. Status writes hold the tenant source gate but ignore module switches;
+sender-level STOP/alias protection needs no tenant gate and is never abandoned. Inbound
+START cannot lift suppression. 21610 suppresses provider_opt_out; invalid-number errors
+suppress permanent_failure. Template failures record template_rejected, never provider text.
+
+Both beat and run_scheduled_tasks run messaging-recovery every five minutes. Recovery
+bounds pending/sending age at seven days, enforces attempts_exhausted, expires waiting
+probes at 72 hours, retries status events for 30 days, and audits abandonment. Retention
+uses derived status: failed deliveries 365 days, other terminal outcomes 90 days from
+creation; processed/abandoned webhook events 30 days after processing/abandonment. Provider
+timestamps are never invented; delivery/read wins in either failure order and billed
+segments remain distinct. Operator setup and exact versioned routes: messaging-channels.md.

@@ -219,7 +219,11 @@ def validate_registry():
         for _route, view_name, methods in protected
         for method in methods
     }
-    stale = sorted(key for key in SCOPE_REGISTRY if key not in protected_keys)
+    from .scope_registry_messaging import DENIED_KEYS
+    # Explicit denies are valid outside HMAC prefixes, but must still name a live operation.
+    live_keys = {(name, method) for _route, name, methods in routes for method in methods}
+    stale = sorted(key for key in SCOPE_REGISTRY if key not in protected_keys
+                   and not (key in DENIED_KEYS and key in live_keys))
     # A protected route whose methods cannot be derived contributes nothing to
     # `missing`, so it would pass the completeness guard while being unregistered.
     # Report it as its own drift class: today every protected route is a class-based

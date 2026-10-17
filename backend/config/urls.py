@@ -198,3 +198,5 @@ urlpatterns = [
 from apps.integrations.messaging.urls import member_urlpatterns as messaging_member_urls
 from apps.integrations.messaging.urls import staff_urlpatterns as messaging_staff_urls
 urlpatterns += [path("api/v1/", include(messaging_member_urls)), path("api/v1/admin/", include(messaging_staff_urls))]
+
+urlpatterns += [path("api/v1/integrations/messaging/", include("apps.integrations.messaging.urls_webhooks"))]

@@ -8,7 +8,7 @@ from django.db.models.functions import TruncDay
 from apps.accounts.models_activity import AttestationVerificationLog
 from apps.backup.models import BackupArchive, BackupRun
 from apps.backup.models_runs import BackupRunCoverage
-from apps.integrations.models import EmailLog, NotificationDeliveryLog
+from apps.integrations.models import EmailLog, MessagingDelivery, NotificationDeliveryLog
 from apps.integrations.models_tracking import PushDeliveryAttempt, SmsSendLog
 from apps.notifications.models_push import MemberPushDelivery
 from apps.operations.platform_scope import hidden_platform_service_bucket, platform_analytics_spaces, require_platform_context
@@ -21,7 +21,7 @@ from apps.operations.report_fields_j import SERVICES_FIELDS as FIELDS
 
 
 
-def _outcomes(qs, service, *, scope="makerspace_id", outcome="status", provider="provider_source", date_range=None):
+def _outcomes(qs, service, *, scope="makerspace_id", outcome="status", provider="provider_source", date_range=None, purpose=None):
     qs = apply_range(qs, "created_at", date_range)
     aliases = {"day": TruncDay("created_at", tzinfo=datetime_timezone.utc)}
     if scope != "makerspace_id":
@@ -35,7 +35,8 @@ def _outcomes(qs, service, *, scope="makerspace_id", outcome="status", provider=
         source = row.get(provider) if provider else "platform"
         status = row["_analytics_outcome"]
         yield {"makerspace_id": row["makerspace_id"], "day": row["day"].date(),
-               "service": service, "status": status if status in ("pending", "sending", "sent", "failed", "skipped", "suppressed") else "unknown", "count": row["count"],
+               "service": service, "status": status if status in ("pending", "sending", "accepted", "sent", "delivered", "read", "failed", "skipped", "suppressed") else "unknown", "count": row["count"],
+               **({"purpose": purpose} if purpose else {}),
                "provider_source": source if source in ("platform", "own") else "unknown"}
 
 
@@ -75,7 +76,10 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
         default=F("status"), output_field=CharField(),
     ))
     raw = list(_outcomes(email, "email", outcome="analytics_status", date_range=date_range))
-    raw.extend(_outcomes(SmsSendLog.objects.filter(permitted), "sms", date_range=date_range))
+    raw.extend(_outcomes(SmsSendLog.objects.filter(permitted), "sms", date_range=date_range, purpose="otp"))
+    for channel in ("sms", "whatsapp"):
+        raw.extend(_outcomes(MessagingDelivery.objects.filter(permitted, channel=channel), channel,
+                             date_range=date_range, purpose="notifications"))
     raw.extend(_outcomes(PushDeliveryAttempt.objects.filter(delivery_log__makerspace_id__in=visible | hidden), "push",
                          scope="delivery_log__makerspace_id", date_range=date_range))
     raw.extend(_outcomes(MemberPushDelivery.objects.filter(inbox_row__makerspace_id__in=visible | hidden), "push",
@@ -117,7 +121,7 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
         at = row["day"]
         from datetime import datetime, time
         bucket = period(datetime.combine(at, time.min, tzinfo=datetime_timezone.utc), grain)
-        key = (row["makerspace_id"], bucket, row["service"], row["provider_source"], row["status"], row.get("currency"))
+        key = (row["makerspace_id"], bucket, row["service"], row["provider_source"], row["status"], row.get("currency"), row.get("purpose"))
         state = groups.setdefault(key, {**row, "period": bucket, "day": bucket, "bucket": "makerspace" if row["makerspace_id"] else "deployment", "count": 0, "amount": None})
         state["count"] += row["count"]
         if "amount" in row:

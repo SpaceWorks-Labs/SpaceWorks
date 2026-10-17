@@ -377,10 +377,18 @@ history and their owned cover images while preserving the core payment ledger.
 ### sms
 
 [Read the SMS module reference](MODULES-PLATFORM.md#sms).
+Provisioning, verified callbacks, quotas and recovery: [messaging operator guide](messaging-channels.md).
+With reports enabled, communications health includes scoped SMS delivery cohorts,
+segment estimates/bills and a labelled current consent snapshot. Platform metering
+separates notification usage from OTP counts; [measurement notes](report-builders-messaging.md).
 
 ### whatsapp
 
 [Read the WhatsApp module reference](MODULES-PLATFORM.md#whatsapp).
+Provisioning and the shared sender correlation barrier: [messaging operator guide](messaging-channels.md).
+With reports enabled, communications health includes scoped WhatsApp progress and
+delivery/read rates plus a labelled current consent snapshot. Platform usage exposes
+counts only; [measurement notes](report-builders-messaging.md).
 
 ### telegram
 

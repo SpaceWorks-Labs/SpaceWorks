@@ -28,7 +28,7 @@ identity-bearing, tenant-only and unschedulable.
 4. **Anonymous service counts:** only `platform-services` may call
    `hidden_platform_service_bucket(ctx, rows, report_key=...)`. Internal input rows contain
    `makerspace_id`, `provider_source`, `service`, `day` (a date), and nonnegative integer `count`.
-   Supported services: `email`, `push`, `sms`, `attestation`, `connect`, `backups`.
+   Supported services: `email`, `push`, `sms`, `whatsapp`, `attestation`, `connect`, `backups`.
    The helper ignores own providers and visible spaces, then emits only service/day/bucket/count.
    It must never be used for business activity, own-provider usage, adoption or growth.
 5. **Organization combination:** declare the matching `org_report_strategies.STRATEGIES` entry
@@ -83,6 +83,9 @@ requires it. Tenant partitioning requires `makerspace_id`. Alt placeholders are 
 fields or `count`, with no attribute traversal, conversion or format expressions.
 `report_validation.validate_chart_spec` enforces this; `serializers_report_chart.py` owns its
 typed OpenAPI representation. Catalogs return `chart_spec` and `identity_bearing`.
+Messaging analytics adds an optional `kind=line|stacked_bar` to individual values:
+exclusive current outcomes stack, while cumulative counts and ratios remain lines.
+All existing top-level F1 keys and values without a kind remain valid.
 
 ### Remaining chart coverage (1f-6)
 

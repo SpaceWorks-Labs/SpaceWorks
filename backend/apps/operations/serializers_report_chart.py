@@ -11,6 +11,8 @@ class ReportChartAxisSerializer(serializers.Serializer):
 class ReportChartValueSerializer(serializers.Serializer):
     field = serializers.CharField()
     unit = serializers.CharField()
+    kind = serializers.ChoiceField(choices=["line", "stacked_bar"], required=False,
+                                   help_text="Optional series rendering: exclusive status counts stack; cumulative rates use lines.")
 
 
 class ReportChartTruncationSerializer(serializers.Serializer):

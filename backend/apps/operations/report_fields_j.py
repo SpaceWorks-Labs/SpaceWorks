@@ -16,5 +16,5 @@ HEALTH_FIELDS = ("module_key", "enabled", "runtime_available", "coverage_kind", 
 ORGANIZATION_FIELDS = ("period", "organization_id", "invitations", "redeemed", "revoked", "expired", "open_invitations",
                        "memberships", "active_memberships", "suspended_memberships", "redemption_percent")
 ORGANIZATION_COUNTS = ORGANIZATION_FIELDS[2:-1]
-SERVICES_FIELDS = ("makerspace_id", "period", "day", "service", "provider_source", "status", "bucket", "count", "currency", "amount")
+SERVICES_FIELDS = ("makerspace_id", "period", "day", "service", "provider_source", "status", "bucket", "count", "currency", "amount", "purpose")
 USAGE_FIELDS = ("makerspace_id", "period", "metric", "entity_kind", "entity_id", "unit", "currency", "value")

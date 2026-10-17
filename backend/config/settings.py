@@ -92,6 +92,8 @@ MANAGED_RESOURCE_LIMITS = {
     "mattermost": 100,
     "discord": 100,
     "native_push": 500,
+    "sms": 100,
+    "whatsapp": 100,
     "api_clients": 1,
     # Tenant exports retain a long-lived database snapshot while running. This is an
     # active-job ceiling, independent of the byte quota charged when an archive lands.
@@ -1316,3 +1318,7 @@ SPECTACULAR_SETTINGS.setdefault("APPEND_COMPONENTS", {}).setdefault("securitySch
 # Addressed notifications require an operator-owned absolute callback origin.
 MESSAGING_WEBHOOK_BASE_URL = env("MESSAGING_WEBHOOK_BASE_URL", default="").rstrip("/")
 WHATSAPP_GRAPH_VERSION = env("WHATSAPP_GRAPH_VERSION", default="v23.0")
+
+CELERY_BEAT_SCHEDULE["messaging-recovery"] = {
+    "task": "apps.integrations.tasks_messaging.sweep_messaging_task", "schedule": 300.0,
+}

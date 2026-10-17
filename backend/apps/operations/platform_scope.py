@@ -14,7 +14,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts.rbac_superadmin import superadmin_hidden_block_applies
 
 _VIEW_TOKEN = object()
-PLATFORM_SERVICES = frozenset({"email", "push", "sms", "attestation", "connect", "backups"})
+PLATFORM_SERVICES = frozenset({"email", "push", "sms", "whatsapp", "attestation", "connect", "backups"})
 
 
 @dataclass(frozen=True, init=False)

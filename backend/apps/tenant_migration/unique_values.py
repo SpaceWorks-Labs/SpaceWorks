@@ -20,6 +20,11 @@ from .unique_values_policy import (  # noqa: F401 -- re-exported
 
 # One mapping over every rule set; a per-app extension module adds its own dict here.
 DEPLOYMENT_GLOBAL_UNIQUE_RULES = {
+    ("makerspaces.MakerspacePublicPage", "field:makerspace"): _policy(REMAP, "Typed owner follows the imported tenant."),
+    ("makerspaces.MakerspacePublicPageAsset", "field:object_key"): _policy(REMAP, "Verified private-object journal allocates keys."),
+    ("events.EventSession", "field:identity"): _policy(REMAP, "One working row per remapped durable session identity."),
+    ("makerspaces.PublicHandle", "field:makerspace"): _policy(REMAP, "Typed tenant claim remaps without replacing existing claims."),
+    ("makerspaces.PublicHandle", "field:organization"): _policy(REMAP, "Global organization claims never travel."),
     **CORE_UNIQUE_RULES,
     ("presence.PresenceSession", "field:event_registration"): _policy(
         UniqueValueDisposition.DROP_ROW,

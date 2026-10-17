@@ -9,6 +9,7 @@ TABLE_NAME = "tenant_import_reference_state"
 
 class ReferenceState:
     def __init__(self, archive, *, using="default"):
+        self.archive = archive
         self.connection = require_import_transaction(using)
         with self.connection.cursor() as cursor:
             cursor.execute(

@@ -28,6 +28,7 @@ class WebsiteSectionInput(serializers.Serializer):
 
 
 class WebsiteSessionInput(serializers.Serializer):
+    session_id = serializers.UUIDField(required=False)
     slug = serializers.SlugField(max_length=80)
     title = serializers.CharField(max_length=200)
     body = serializers.CharField(max_length=10000, allow_blank=True, default="")
@@ -56,33 +57,45 @@ class WebsiteReleaseInput(serializers.Serializer):
 
 
 class WebsiteDelayInput(serializers.Serializer):
+    revision = serializers.IntegerField(min_value=1, required=False)
+    session_id = serializers.UUIDField(required=False)
     delay_minutes = serializers.IntegerField(min_value=0, max_value=1440)
 
 
 class WebsiteAssetInput(serializers.Serializer):
+    revision = serializers.IntegerField(min_value=0, required=False)
     file = serializers.FileField()
     alt_text = serializers.CharField(max_length=200)
     replace_id = serializers.IntegerField(min_value=1, required=False)
 
 
 class WebsiteAssetSerializer(serializers.Serializer):
+    pinned = serializers.BooleanField(required=False)
     id = serializers.IntegerField()
     alt_text = serializers.CharField()
     size_bytes = serializers.IntegerField()
 
 
 class WebsiteSectionSerializer(WebsiteSectionInput):
+    body_rendering = serializers.ChoiceField(choices=("restricted_v1", "legacy_literal_v1"), required=False)
     image_url = serializers.CharField(allow_null=True)
     image_alt_text = serializers.CharField(allow_blank=True)
 
 
 class WebsiteSessionSerializer(WebsiteSessionInput):
+    body_rendering = serializers.ChoiceField(choices=("restricted_v1", "legacy_literal_v1"), required=False)
     delay_minutes = serializers.IntegerField()
     effective_starts_at = serializers.DateTimeField()
     effective_ends_at = serializers.DateTimeField()
 
 
 class WebsiteSerializer(WebsitePageFields):
+    cover = serializers.DictField(child=serializers.CharField(allow_null=True), allow_null=True, required=False)
+    presentation = serializers.JSONField(required=False)
+    capabilities = serializers.DictField(child=serializers.BooleanField(), required=False)
+    draft_revision_id = serializers.UUIDField(allow_null=True, required=False)
+    published_revision_id = serializers.UUIDField(allow_null=True, required=False)
+    delay_targets = serializers.ListField(child=serializers.DictField(), required=False)
     revision = serializers.IntegerField()
     released = serializers.BooleanField()
     inherited = serializers.BooleanField()

@@ -2,7 +2,6 @@ from django.urls import path
 
 from apps.organizations.views_public import (
     PublicOrganizationDetailView,
-    PublicOrganizationEventListView,
 )
 from apps.separability.registry import runtime_active
 
@@ -17,6 +16,7 @@ def _events_routes():
     """
     if not runtime_active("events"):
         return []
+    from .views_public_events import PublicOrganizationEventListView
     return [
         path(
             "<slug:slug>/events/",

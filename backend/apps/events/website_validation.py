@@ -20,8 +20,10 @@ def validate_owner_window(target):
                 anchor, _ = window(page.series)
                 if any(row.ends_at - anchor > end - start for row in page.sessions.all()):
                     raise ValidationError("The new event window excludes inherited website sessions. Edit the website programme first.")
+                _released_window(target, page, inherited=True)
                 return
     if page:
+        _released_window(target, page)
         start, end = window(target)
         if page.sessions.filter(Q(starts_at__lt=start) | Q(ends_at__gt=end)).exists():
             raise ValidationError("The new window excludes website sessions. Edit the website programme first.")
@@ -32,3 +34,18 @@ def validate_owner_window(target):
                 website_duration=F("ends_at") - F("starts_at"),
             ).filter(website_duration__lt=latest_end - start).exists():
                 raise ValidationError("The new series window excludes inherited website sessions. Edit the website programme first.")
+
+
+def _released_window(target, page, *, inherited=False):
+    if not page.released or not page.published_revision_id:
+        return
+    from .website_revisions import validate_snapshot_window
+    from rest_framework.exceptions import ValidationError as ApiValidationError
+    from .models import EventSeries
+    try:
+        validate_snapshot_window(target, page.published_revision, inherited=inherited)
+        if isinstance(target, EventSeries):
+            for occurrence in target.occurrences.filter(website_page__isnull=True):
+                validate_snapshot_window(occurrence, page.published_revision, inherited=True)
+    except ApiValidationError as exc:
+        raise ValidationError("The new window excludes the released website. Release a fitting draft or unrelease first.") from exc

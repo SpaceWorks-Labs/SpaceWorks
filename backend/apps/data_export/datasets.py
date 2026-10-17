@@ -13,7 +13,7 @@ P = TenantPredicate
 DATASET_SPECS = {
     "presence.PresenceSettings": ("presence/settings.csv", P(("makerspace",))),
     "presence.PresencePreference": ("presence/preferences.csv", P(("makerspace",))),
-    "makerspaces.PublicHandle": ("members/public_handles.csv", P(("profile__membership__makerspace",))),
+    "makerspaces.PublicHandle": ("members/public_handles.csv", P(("profile__membership__makerspace", "makerspace"))),
     "makerspaces.ProfileTimelineEntry": ("members/timeline.csv", P(("profile__membership__makerspace",))),
     "bookings.BookingResourcePage": ("bookings/pages.csv", P(("space__makerspace",))),
     "bookings.BookingResourcePageAsset": ("bookings/page_assets.csv", P(("page__space__makerspace",))),
@@ -196,6 +196,8 @@ DATASET_SPECS.update({label: (path, P(paths)) for label, (path, paths) in P2_BOO
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs
 DATASET_SPECS.update(wp3_dataset_specs(P))
+from apps.tenant_migration.catalog_public_pages import DATASETS as PAGE_DATASETS
+DATASET_SPECS.update({label: (path, P((owner_path,))) for label, (path, owner_path) in PAGE_DATASETS.items()})
 
 _MODEL_KEYSETS = {
     "evidence.EvidenceObjectRetentionState": ("evidence_id",),

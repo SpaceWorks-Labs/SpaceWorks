@@ -5,6 +5,12 @@ from celery import shared_task
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
 
 
+@shared_task(name="apps.makerspaces.tasks.cleanup_public_page_assets_task")
+def cleanup_public_page_assets_task():
+    from .public_page_asset_cleanup import sweep
+    return sweep()
+
+
 @shared_task(name="apps.makerspaces.tasks.refresh_github_contributions_task")
 def refresh_github_contributions_task():
     """Refresh the cached GitHub contribution counts on maker profiles.

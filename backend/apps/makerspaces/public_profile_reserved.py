@@ -13,6 +13,7 @@ RESERVED_SEGMENTS = frozenset({
     'discover',
     'docs',
     'embed',
+    'e',
     'event-check-in',
     'events',
     'favicon.ico',

@@ -34,6 +34,8 @@ ERRORS = {code: OpenApiResponse(ErrorSerializer, description=label) for code, la
 
 
 def target_for(request, pk, series=False, permission=VIEW):
+    from apps.makerspaces.public_page_authority import reject_platform
+    reject_platform(request.user)
     target = event_authority.get_event(request.user, pk, permission, series=series)
     from .feature_gates import require_feature
     require_feature(target, "events.website")
@@ -42,7 +44,11 @@ def target_for(request, pk, series=False, permission=VIEW):
 
 def payload(request, target):
     prefix = "event-series" if isinstance(target, EventSeries) else "events"
-    return WebsiteSerializer(project(target, image_url=lambda asset: f"/api/v1/admin/{prefix}/{target.pk}/website/assets/{asset}")).data
+    result = project(target, image_url=lambda asset: f"/api/v1/admin/{prefix}/{target.pk}/website/assets/{asset}")
+    from .event_permissions import PUBLISH_SCHEDULE
+    result["capabilities"] = {"can_edit_details": event_authority.can(request.user, target, EDIT_DETAILS),
+                              "can_publish_schedule": event_authority.can(request.user, target, PUBLISH_SCHEDULE)}
+    return WebsiteSerializer(result).data
 
 
 class StaffWebsiteBase(APIView):
@@ -85,7 +91,8 @@ class EventWebsiteDelayView(StaffWebsiteBase):
         data = WebsiteDelayInput(data=request.data)
         data.is_valid(raise_exception=True)
         target = set_delay(target_for(request, pk, series), slug, actor=request.user,
-                           minutes=data.validated_data["delay_minutes"])
+                           minutes=data.validated_data["delay_minutes"],
+                           revision=data.validated_data.get("revision"), session_id=data.validated_data.get("session_id"))
         return Response(payload(request, target))
 
 

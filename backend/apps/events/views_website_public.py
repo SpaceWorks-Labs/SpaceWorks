@@ -19,10 +19,13 @@ ERRORS = {code: OpenApiResponse(ErrorSerializer, description=text) for code, tex
 )}
 
 
-def projection(event):
+def projection(event, request=None):
+    if request:
+        from apps.makerspaces.public_page_access import require_scope
+        require_scope("makerspace", event.makerspace, request)
     page = visible_page(event)
     base = f"/api/v1/public/{event.makerspace.slug}/events/{event.public_token}/website/assets/"
-    return project_page(event, page, public=True, image_url=lambda pk: f"{base}{pk}/")
+    return project_page(event, page, public=True, image_url=lambda pk: f"{base}{pk}/", request=request)
 
 
 class PublicWebsiteBase(APIView):
@@ -36,13 +39,13 @@ class PublicWebsiteBase(APIView):
 class PublicEventWebsiteView(PublicWebsiteBase):
     @extend_schema(tags=["Public event website"], auth=[], responses={200: WebsiteSerializer, **ERRORS})
     def get(self, request, makerspace_slug, public_token):
-        return Response(WebsiteSerializer(projection(resolve(makerspace_slug, public_token))).data)
+        return Response(WebsiteSerializer(projection(resolve(makerspace_slug, public_token), request)).data)
 
 
 class PublicEventWebsiteSectionView(PublicWebsiteBase):
     @extend_schema(tags=["Public event website"], auth=[], responses={200: WebsiteSectionSerializer, **ERRORS})
     def get(self, request, makerspace_slug, public_token, slug, section_kind=None):
-        rows = projection(resolve(makerspace_slug, public_token))["sections"]
+        rows = projection(resolve(makerspace_slug, public_token), request)["sections"]
         row = next((row for row in rows if row["slug"] == slug and (section_kind is None or row["kind"] == section_kind)), None)
         if row is None:
             raise Http404
@@ -52,13 +55,13 @@ class PublicEventWebsiteSectionView(PublicWebsiteBase):
 class PublicEventWebsiteScheduleView(PublicWebsiteBase):
     @extend_schema(tags=["Public event website"], auth=[], responses={200: WebsiteSessionSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_slug, public_token):
-        return Response(WebsiteSessionSerializer(projection(resolve(makerspace_slug, public_token))["sessions"], many=True).data)
+        return Response(WebsiteSessionSerializer(projection(resolve(makerspace_slug, public_token), request)["sessions"], many=True).data)
 
 
 class PublicEventWebsiteSessionView(PublicWebsiteBase):
     @extend_schema(tags=["Public event website"], auth=[], responses={200: WebsiteSessionSerializer, **ERRORS})
     def get(self, request, makerspace_slug, public_token, slug):
-        rows = projection(resolve(makerspace_slug, public_token))["sessions"]
+        rows = projection(resolve(makerspace_slug, public_token), request)["sessions"]
         row = next((row for row in rows if row["slug"] == slug), None)
         if row is None:
             raise Http404
@@ -68,11 +71,13 @@ class PublicEventWebsiteSessionView(PublicWebsiteBase):
 class PublicEventWebsiteImageView(PublicWebsiteBase):
     @extend_schema(tags=["Public event website"], auth=[], responses={200: OpenApiResponse(bytes, description="Released WebP image."), **ERRORS})
     def get(self, request, makerspace_slug, public_token, asset_id):
-        page = visible_page(resolve(makerspace_slug, public_token))
+        event = resolve(makerspace_slug, public_token)
+        from apps.makerspaces.public_page_access import require_scope
+        require_scope("makerspace", event.makerspace, request)
+        page = visible_page(event)
         from django.shortcuts import get_object_or_404
-        from .website_content import SECTION_GROUPS, group_enabled
-        kinds = [kind for kind, group in SECTION_GROUPS.items() if group_enabled(page, group)]
-        asset = get_object_or_404(page.assets.filter(
-            eventpagesection__page=page, eventpagesection__visibility="published",
-            eventpagesection__kind__in=kinds).distinct(), pk=asset_id)
+        from .website_revision_projection import visible_asset_ids
+        if asset_id not in visible_asset_ids(page.published_revision):
+            raise Http404
+        asset = get_object_or_404(page.assets, pk=asset_id)
         return image_response(asset)

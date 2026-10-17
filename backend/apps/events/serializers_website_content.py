@@ -44,18 +44,25 @@ class WebsiteVenueSerializer(serializers.Serializer):
 
 
 class WebsitePageFields(serializers.Serializer):
+    editorial_document = serializers.JSONField(required=False, allow_null=True)
     # Omitted fields preserve existing content, including older editor clients.
     tagline = serializers.CharField(max_length=300, allow_blank=True, required=False)
     accent_color = serializers.RegexField(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", allow_blank=True, required=False)
     section_order = serializers.ListField(child=serializers.ChoiceField(choices=PAGE_GROUPS),
-                                         min_length=len(PAGE_GROUPS), max_length=len(PAGE_GROUPS), required=False)
+                                         min_length=len(PAGE_GROUPS)-1, max_length=len(PAGE_GROUPS), required=False)
     section_enabled = serializers.DictField(child=serializers.BooleanField(), required=False)
     venue = WebsiteVenueSerializer(allow_null=True, required=False)
 
     def validate_section_order(self, value):
+        if "EDITORIAL" not in value:
+            value = [*value, "EDITORIAL"]
         if len(set(value)) != len(PAGE_GROUPS):
             raise serializers.ValidationError("List each page section exactly once.")
         return value
+
+    def validate_editorial_document(self, value):
+        from apps.makerspaces.public_page_contract import normalize_document, empty_document
+        return normalize_document(value or empty_document("event"), kind="event")
 
     def validate_section_enabled(self, value):
         if set(value) - set(PAGE_GROUPS):

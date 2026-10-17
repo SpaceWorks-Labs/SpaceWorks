@@ -3,7 +3,7 @@
 from django.db import models
 from django.db.models import F, Q
 
-from .website_content import SPONSOR_TIERS, default_section_enabled, default_section_order
+from .website_content import SPONSOR_TIERS, default_section_enabled, default_section_order, default_editorial_document
 
 
 class EventPage(models.Model):
@@ -19,6 +19,11 @@ class EventPage(models.Model):
     section_order = models.JSONField(default=default_section_order)
     section_enabled = models.JSONField(default=default_section_enabled)
     venue = models.JSONField(null=True, blank=True)
+    editorial_document = models.JSONField(default=default_editorial_document)
+    draft_revision = models.ForeignKey("events.EventPageRevision", null=True, blank=True,
+                                      on_delete=models.SET_NULL, related_name="+")
+    published_revision = models.ForeignKey("events.EventPageRevision", null=True, blank=True,
+                                          on_delete=models.SET_NULL, related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -75,6 +80,8 @@ class EventPageSection(models.Model):
 
 
 class EventSession(models.Model):
+    identity = models.OneToOneField("events.EventSessionIdentity", on_delete=models.RESTRICT,
+                                    related_name="working_session")
     page = models.ForeignKey(EventPage, on_delete=models.CASCADE, related_name="sessions")
     slug = models.SlugField(max_length=80)
     title = models.CharField(max_length=200)

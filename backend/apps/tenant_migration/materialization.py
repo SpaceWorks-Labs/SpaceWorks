@@ -149,6 +149,8 @@ def materialize_tenant(
                     batch_size,
                     object_plan.target_keys,
                 )
+                from .page_pointer_fixups import apply_page_pointer_fixups
+                page_fixups = apply_page_pointer_fixups(archive, pk_map)
                 # Imported audit rows have no target MAC (see
                 # advance_attestation_cutover). Move this tenant's attestation cutover
                 # past them so verification reports them as unattested history rather
@@ -189,6 +191,9 @@ def materialize_tenant(
             )
             locked_job.status = TenantImportJob.Status.FINALIZING
             locked_job.materialization_report = _report_for(result)
+            locked_job.materialization_report["public_page_pointer_fixups"] = page_fixups
+            locked_job.materialization_report["public_page_reconstruction"] = getattr(archive, "public_page_reconstruction", {})
+            locked_job.materialization_report["public_page_warnings"] = getattr(references, "public_page_warnings", [])
             locked_job.save(
                 update_fields=("status", "materialization_report", "updated_at")
             )

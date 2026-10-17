@@ -121,8 +121,12 @@ class PublicHandle(models.Model):
     """One global namespace claim, pointing at one explicitly chosen tenant profile."""
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                              related_name="public_handle")
-    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handles")
+                              related_name="public_handle", null=True, blank=True)
+    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handles", null=True, blank=True)
+    makerspace = models.OneToOneField("makerspaces.Makerspace", null=True, blank=True,
+                                     on_delete=models.CASCADE, related_name="public_handle")
+    organization = models.OneToOneField("organizations.Organization", null=True, blank=True,
+                                       on_delete=models.CASCADE, related_name="public_handle")
     handle = models.CharField(max_length=30, validators=[RegexValidator(HANDLE_PATTERN)])
     claimed_at = models.DateTimeField(auto_now_add=True)
     changed_at = models.DateTimeField()
@@ -132,19 +136,44 @@ class PublicHandle(models.Model):
             models.UniqueConstraint(Lower("handle"), name="public_handle_ci_unique"),
             models.CheckConstraint(condition=models.Q(handle__regex=HANDLE_PATTERN),
                                    name="public_handle_grammar"),
+            models.CheckConstraint(condition=(
+                models.Q(user__isnull=False, profile__isnull=False, makerspace__isnull=True, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=False, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=True, organization__isnull=False)
+            ), name="public_handle_typed_owner"),
         ]
 
 
 class PublicHandleRedirect(models.Model):
     """A retired claim reserves its name for thirty days; redirects require live consent."""
 
-    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handle_redirects")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                             on_delete=models.CASCADE, related_name="public_handle_redirects")
+    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handle_redirects", null=True, blank=True)
+    makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True,
+                                   on_delete=models.CASCADE, related_name="public_handle_redirects")
+    organization = models.ForeignKey("organizations.Organization", null=True, blank=True,
+                                     on_delete=models.CASCADE, related_name="public_handle_redirects")
     handle = models.CharField(max_length=30)
     released_at = models.DateTimeField()
     expires_at = models.DateTimeField(db_index=True)
 
+    def save(self, *args, **kwargs):
+        # Compatibility for member-only callers; capture the stable account once.
+        if self.profile_id and self.user_id is None:
+            self.user_id = self.profile.membership.user_id
+        super().save(*args, **kwargs)
+
     class Meta:
-        constraints = [models.UniqueConstraint(Lower("handle"), name="profile_redirect_ci_unique")]
+        constraints = [
+            models.UniqueConstraint(Lower("handle"), name="profile_redirect_ci_unique"),
+            models.CheckConstraint(condition=models.Q(handle__regex=HANDLE_PATTERN), name="redirect_handle_grammar"),
+            models.CheckConstraint(condition=(
+                models.Q(user__isnull=False, profile__isnull=False, makerspace__isnull=True, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=False, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=True, organization__isnull=False)
+            ), name="redirect_handle_typed_owner"),
+        ]
 
 
 class ProfileTimelineEntry(models.Model):

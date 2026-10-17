@@ -83,6 +83,11 @@ from apps.makerspaces.models_profiles import (  # noqa: E402,F401
     ProfileTimelineEntry,
 )
 from apps.makerspaces.models_member_cards import MemberCard  # noqa: E402,F401
+from .models_page_cleanup import PublicPageObjectCleanup  # noqa: E402,F401
+from apps.makerspaces.models_public_pages import (  # noqa: E402,F401
+    MakerspacePublicPage, MakerspacePublicPageRevision, MakerspacePublicPageAsset,
+    MakerspacePublicPageRevisionAsset, MakerspacePublicPageRevisionMember,
+)
 from apps.makerspaces.models_membership_plans import (  # noqa: E402,F401
     MembershipPlan,
     MembershipTerm,

@@ -56,7 +56,7 @@ def claim_handle(membership, value):
     lock_names(handle, *([current.handle] if current else []))
     now = timezone.now()
     if not current and PublicHandleRedirect.objects.filter(
-        profile__membership__user_id=membership.user_id, expires_at__gt=now,
+        user_id=membership.user_id, expires_at__gt=now,
     ).exists():
         raise ValidationError({"handle": "Wait 30 days after releasing a handle before claiming another."})
     if current and current.handle == handle and current.profile.membership_id == membership.pk:
@@ -93,7 +93,9 @@ def claim_handle(membership, value):
 
 def _retire(current, now):
     PublicHandleRedirect.objects.update_or_create(handle=current.handle, defaults={
-        "profile": current.profile, "released_at": now, "expires_at": now + HANDLE_RELEASE_DELAY,
+        "user_id": current.user_id, "profile_id": current.profile_id,
+        "makerspace_id": current.makerspace_id, "organization_id": current.organization_id,
+        "released_at": now, "expires_at": now + HANDLE_RELEASE_DELAY,
     })
 
 

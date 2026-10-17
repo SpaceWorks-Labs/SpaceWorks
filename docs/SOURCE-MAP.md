@@ -423,3 +423,12 @@ registers artwork keys embedded in issuance JSON; the normal retention/purge reg
 also include concrete artwork and revision rows. Frontend shared design controls live in
 `components/print-layout/`; `EventCertificateDesigner.tsx` and
 `eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.
+
+Account contexts live in `accounts/models_user.py` (re-exported by `models.py`),
+`account_constraints.py`, `account_kind_guards.py` and `managers.py`.
+`staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
+`membership_context.py` shares the object/SQL account-validity rules used by RBAC.
+`backup/main_projection_catalog.py` owns the physical-table check re-exported by
+`main_projection_registry.py`; the staff inert-shell boundary is declared there, with
+projection and guarded reversal reserved for account-split P4. Demo account/machine
+fixtures are split into `inventory/management/commands/_seed_demo_fixtures.py`.

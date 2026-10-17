@@ -6,6 +6,7 @@ from django.db.models import F, Q
 
 from apps.accounts import rbac
 from apps.accounts.rbac import Action
+from apps.accounts.membership_context import valid_membership_context, valid_staff_membership_q
 
 from apps.accounts.rbac_roles import additional_role_exists, stored_actions_for_membership
 from apps.makerspaces.models import MakerspaceMembership
@@ -24,8 +25,12 @@ NOTHING = (frozenset(), frozenset())
 
 def _scope_for_membership(membership):
     """EXEMPT, a membership id to look links up for, or NOTHING."""
-    if membership.assigned_role_id is None:
-        return EXEMPT, None
+    valid = getattr(membership, "_valid_account_context", None)
+    if valid is None:
+        valid = valid_membership_context(membership)
+    if not valid or (not hasattr(membership, "_valid_account_context")
+                     and membership.user.account_kind != "staff"):
+        return NOTHING, None
     role = membership.assigned_role
     if role.makerspace_id != membership.makerspace_id:
         return NOTHING, None
@@ -50,7 +55,7 @@ def manage_scopes_for(actor, makerspace_ids):
         return {}
     memberships = list(actor.makerspace_memberships.select_related("assigned_role").filter(
         status="active", makerspace_id__in=ids,
-    ).annotate(_additional_manage_machines=additional_role_exists(
+    ).annotate(_valid_account_context=valid_staff_membership_q(), _additional_manage_machines=additional_role_exists(
         actions=[Action.MANAGE_MACHINES],
     )))
     by_membership = manage_scopes_for_memberships(memberships)
@@ -76,17 +81,13 @@ def manage_scopes_for_memberships(memberships):
     # A caller may provide plain memberships rather than select_related/prefetched
     # rows. Reload just those authority snapshots in ONE query, using Exists for
     # additional machine authority rather than introducing two lazy FK queries.
-    unloaded = {
-        row.pk for row in memberships if row.assigned_role_id is not None
-        and not hasattr(row, "_additional_manage_machines")
-        and ("assigned_role" not in row._state.fields_cache
-             or "additional_roles" not in getattr(row, "_prefetched_objects_cache", {}))
-    }
+    unloaded = {row.pk for row in memberships if not hasattr(row, "_valid_account_context")}
     snapshots = {}
     if unloaded:
         snapshots = {row.pk: row for row in MakerspaceMembership.objects.filter(
             pk__in=unloaded,
         ).select_related("assigned_role").annotate(
+            _valid_account_context=valid_staff_membership_q(),
             _additional_manage_machines=additional_role_exists(actions=[Action.MANAGE_MACHINES]),
         )}
     resolved, scoped = {}, []

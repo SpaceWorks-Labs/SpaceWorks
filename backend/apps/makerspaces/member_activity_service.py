@@ -31,6 +31,7 @@ def active_member_memberships(user):
     """
     if not (
         user and user.is_authenticated and user.pk and user.is_active
+        and user.account_kind == "member"
         and user.access_status == User.AccessStatus.ACTIVE
     ):
         return MakerspaceMembership.objects.none()

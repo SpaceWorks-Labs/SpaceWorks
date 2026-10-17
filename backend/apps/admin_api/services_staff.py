@@ -51,6 +51,38 @@ def attach_staff_membership(
     )
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        existing_user = User.objects.select_for_update().filter(username=username).first()
+        staff_roles = role.slug != "member"
+        if staff_roles:
+            if is_break_glass:
+                raise PermissionDenied("Only this makerspace's Space Managers may manage its staff.")
+            if existing_user is None:
+                from apps.accounts.staff_accounts import create_staff_account
+                from apps.audit import services as audit
+
+                user = create_staff_account(
+                    makerspace, name=(" ".join(filter(None, (first_name, last_name))) or username)[:200],
+                    email=email, username=username, roles=roles, created_by=actor,
+                )
+                if first_name or last_name:
+                    user.first_name, user.last_name = first_name, last_name
+                    user.save(update_fields=["first_name", "last_name"])
+                membership = MakerspaceMembership.objects.get(user=user, makerspace=makerspace)
+                audit.record(actor, "staff.roles_changed", makerspace=makerspace, target=user,
+                             meta={"membership_id": membership.pk, "before": [],
+                                   "after": [item.slug for item in roles],
+                                   "removed_machine_type_ids": []})
+                return membership, True, False
+            if (existing_user.account_kind != "staff"
+                    or existing_user.staff_makerspace_id != makerspace.pk):
+                raise ValidationError({"username": "Use a staff account belonging to this makerspace."})
+            if (not existing_user.is_active or existing_user.retired_at is not None
+                    or not MakerspaceMembership.objects.filter(
+                        user=existing_user, makerspace=makerspace, status="active",
+                    ).exists()):
+                raise ValidationError({"username": "Inactive staff require the staff reactivation workflow."})
+        elif existing_user is not None and existing_user.account_kind != "member":
+            raise ValidationError({"username": "Community memberships require a member account."})
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed, settings_for
         policy = settings_for(makerspace)
         role = MakerspaceRole.objects.select_for_update().get(
@@ -63,75 +95,50 @@ def attach_staff_membership(
             "role": _global_role_for_membership(role.legacy_role),
             "password": make_password(password or get_random_string(32)),
         }
-        if is_break_glass:
-            ensure_join_allowed(makerspace)
-            errors = {}
-            if User.objects.filter(username=username).exists():
-                errors["username"] = "A user with that username already exists."
-            if email and User.objects.filter(email__iexact=email).exists():
-                errors["email"] = "A user with that email already exists."
-            if errors:
-                raise ValidationError(errors)
-            user = User.objects.create(username=username, **user_defaults)
-            limits.check_quota(makerspace, "staff", adding=1)
-            membership = MakerspaceMembership.objects.create(
-                user=user,
-                makerspace=makerspace,
+        user, created = User.objects.get_or_create(
+            username=username, defaults=user_defaults
+        )
+        if not actor_is_superadmin:
+            # `of=("self",)` because `assigned_role` is nullable: select_related makes
+            # it a LEFT OUTER JOIN, and Postgres refuses FOR UPDATE on the nullable
+            # side of one. Same pattern as `role_services.assign_role`.
+            existing = (
+                MakerspaceMembership.objects.select_for_update(of=("self",))
+                .select_related("assigned_role")
+                .filter(makerspace=makerspace, user=user)
+                .first()
             )
-            created = True
-        else:
-            user, created = User.objects.get_or_create(
-                username=username, defaults=user_defaults
-            )
-            if not actor_is_superadmin:
-                # `of=("self",)` because `assigned_role` is nullable: select_related makes
-                # it a LEFT OUTER JOIN, and Postgres refuses FOR UPDATE on the nullable
-                # side of one. Same pattern as `role_services.assign_role`.
-                existing = (
-                    MakerspaceMembership.objects.select_for_update(of=("self",))
-                    .select_related("assigned_role")
-                    .filter(makerspace=makerspace, user=user)
-                    .first()
+            if existing is not None and _is_superadmin_only_membership(existing):
+                raise PermissionDenied(
+                    "Only a superadmin can change a Space Manager membership."
                 )
-                if existing is not None and _is_superadmin_only_membership(existing):
-                    raise PermissionDenied(
-                        "Only a superadmin can change a Space Manager membership."
-                    )
-            from apps.makerspaces.platform import module_enabled
-            has_active_membership = MakerspaceMembership.objects.filter(
-                user=user, makerspace=makerspace, status="active",
-                user__is_active=True, user__access_status=User.AccessStatus.ACTIVE,
-            ).exists()
-            if not has_active_membership:
-                policy = ensure_join_allowed(makerspace)
-            if (policy.configured and module_enabled(makerspace, "membership")
-                    and not role.granted_actions and not has_active_membership):
-                if not user.is_active or user.access_status != User.AccessStatus.ACTIVE:
-                    raise ValidationError({"detail": "Community admission requires an unrestricted active account."})
-                from apps.makerspaces.membership_activation import _activate_membership
-                membership = _activate_membership(actor, makerspace, user, role, source="staff_create")
-                return membership, created, is_break_glass
-            if not has_active_membership and user.is_active and (
-                user.access_status == User.AccessStatus.ACTIVE
-            ):
-                limits.check_quota(makerspace, "staff", adding=1)
-            # Only NEW accounts take a global User.role from the membership (via
-            # get_or_create defaults above). Never rewrite an EXISTING account's global
-            # role here: doing so would let a manager add a known non-is_superuser global
-            # superadmin as a delegable/custom role and silently strip their global
-            # authority (P1). Authority is per-makerspace via the membership anyway.
-            # Re-adding a previously revoked staff member must reactivate the row, not
-            # leave status="revoked" (which the M2 RBAC paths treat as no access).
-            membership, _ = MakerspaceMembership.objects.update_or_create(
-                user=user,
-                makerspace=makerspace,
-                defaults={
-                    "status": "active",
-                    "revoked_at": None,
-                    "revoked_by": None,
-                    "revocation_reason": "",
-                },
-            )
+        from apps.makerspaces.platform import module_enabled
+        has_active_membership = MakerspaceMembership.objects.filter(
+            user=user, makerspace=makerspace, status="active",
+            user__is_active=True, user__access_status=User.AccessStatus.ACTIVE,
+        ).exists()
+        if not has_active_membership:
+            policy = ensure_join_allowed(makerspace)
+        if (policy.configured and module_enabled(makerspace, "membership")
+                and not role.granted_actions and not has_active_membership):
+            if not user.is_active or user.access_status != User.AccessStatus.ACTIVE:
+                raise ValidationError({"detail": "Community admission requires an unrestricted active account."})
+            from apps.makerspaces.membership_activation import _activate_membership
+            membership = _activate_membership(actor, makerspace, user, role, source="staff_create")
+            return membership, created, is_break_glass
+        if not has_active_membership and user.is_active and (
+            user.access_status == User.AccessStatus.ACTIVE
+        ):
+            limits.check_quota(makerspace, "staff", adding=1)
+        # Existing principals keep their identity; only this tenant's valid
+        # membership assignment changes. Staff reactivation has a separate policy.
+        lifecycle = {"status": "active", "revoked_at": None,
+                     "revoked_by": None, "revocation_reason": ""}
+        membership, _ = MakerspaceMembership.objects.update_or_create(
+            user=user, makerspace=makerspace, defaults=lifecycle,
+            create_defaults={**lifecycle, "assigned_role": role,
+                             "role": role.legacy_role or MakerspaceMembership.Role.CUSTOM},
+        )
         from apps.makerspaces.role_membership_writes import replace_membership_roles
         from apps.audit import services as audit
         changes = replace_membership_roles(

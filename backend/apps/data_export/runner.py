@@ -213,7 +213,7 @@ def _read_dataset(dataset, tenant_id, closure, page_size, deadline, monotonic):
 
 def _read_users(dataset, closure, page_size, deadline, monotonic):
     model = apps.get_model("accounts.User")
-    queryset = model.objects.filter(pk__in=closure)
+    queryset = model.objects.filter(pk__in=closure, retired_at__isnull=True)
     cursor_values, rows = None, []
     while True:
         _check_deadline(dataset.path, len(rows), deadline, monotonic)

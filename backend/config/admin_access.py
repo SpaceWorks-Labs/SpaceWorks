@@ -131,6 +131,10 @@ class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
+        if self.model._meta.label_lower == "accounts.user":
+            from config.admin_account_scope import scope_account_rows
+
+            queryset = scope_account_rows(queryset)
         lookup = self.resolve_hidden_lookup()
         if not lookup:
             return queryset
@@ -159,6 +163,12 @@ class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
         # list and let a superadmin target a hard-hidden makerspace. Scope every
         # makerspace FK widget to visible makerspaces to close that hard-hide bypass.
         from apps.makerspaces.models import Makerspace
+        from apps.accounts.models import User
+
+        if getattr(getattr(db_field, "remote_field", None), "model", None) is User:
+            from config.admin_account_scope import scope_account_rows
+
+            kwargs["queryset"] = scope_account_rows(kwargs.get("queryset", User.objects.all()))
 
         if (
             getattr(db_field, "remote_field", None) is not None
@@ -180,6 +190,11 @@ class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
         view/change/delete PAGES too, so /control/ can't reach a hidden row by id."""
         if obj is None:
             return False
+        if self.model._meta.label_lower == "accounts.user":
+            from config.admin_account_scope import staff_account_hidden
+
+            if staff_account_hidden(obj):
+                return True
         lookup = self.resolve_hidden_lookup()
         if not lookup:
             return False

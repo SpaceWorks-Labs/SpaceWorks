@@ -1,3 +1,5 @@
+from apps.accounts.account_kind_guards import require_member_account
+
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -42,6 +44,7 @@ def submit_request(
     idempotency_key_fingerprint="",
     payload_fingerprint="",
 ):
+    require_member_account(requester_principal)
     with transaction.atomic():
         from apps.encryption.write_fence import assert_mapped_write_allowed
 

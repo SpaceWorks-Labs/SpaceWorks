@@ -4,6 +4,8 @@ The rail lives in `services_checkout`; this module re-exports it, and the webhoo
 handlers, so `from apps.payments.services import X` keeps resolving for every caller.
 """
 
+from apps.accounts.account_kind_guards import require_member_account
+
 import logging
 
 from django.db import transaction
@@ -40,6 +42,7 @@ def create_payment(
     # from being able to collect it online: a space that takes cash still needs the debt
     # on the books, visible in the member area and settleable by staff. The row is stamped
     # `unclaimed` and the first checkout that reaches a provider claims it.
+    require_member_account(member)
     source = resolve_payment_source(makerspace)
     if source is None:
         vendor = Payment.Provider.UNCLAIMED

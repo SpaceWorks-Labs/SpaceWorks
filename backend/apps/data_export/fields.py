@@ -17,6 +17,8 @@ USER_PROJECTIONS = {
             "display_name",
             "phone",
             "date_joined",
+            "account_kind",
+            "staff_makerspace",
         }
     ),
 }
@@ -200,9 +202,14 @@ for _fidelity in Fidelity:
         if _field.name in USER_PROJECTIONS[_fidelity]:
             disposition = (
                 Remapped()
-                if _fidelity is Fidelity.PORTABLE and _field.primary_key
+                if _fidelity is Fidelity.PORTABLE and (_field.primary_key or _field.is_relation)
                 else Emitted()
             )
         else:
-            disposition = Omitted("Outside the literal global-user projection.")
+            disposition = Omitted({
+                "retired_at": "Retired staff shells are excluded from tenant exports.",
+                "credential_generation": "Source credential fencing is deployment-local.",
+                "account_kind": "Readable identity projection omits account context.",
+                "staff_makerspace": "Readable identity projection omits account context.",
+            }.get(_field.name, "Outside the literal global-user projection."))
         FIELDS[(_fidelity, "accounts.User", _field.name)] = disposition

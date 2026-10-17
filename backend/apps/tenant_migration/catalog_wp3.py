@@ -19,7 +19,9 @@ def wp3_authority(authority, disposition):
            for name in ('user', 'token_digest', 'token_hint', 'revoked_at')},
         **{('integrations.NotificationTimingPolicy', name): authority(disposition.DROP, reason)
            for name in ('quiet_start', 'quiet_end', 'channels', 'digest_at', 'daily_digest_default', 'bounce_secret')},
-        ('notifications.MemberNotificationPreference', 'daily_digest'): authority(disposition.DROP, reason),
+        ('notifications.MemberNotificationPreference', 'daily_digest'): authority(
+            disposition.PRESERVE, 'Only carried tenant staff digest preferences travel; delivery credentials do not.',
+        ),
         ('bookings.Booking', 'calendar_sequence'): authority(
             disposition.RESET, 'New target calendar subscriptions start a fresh update sequence.',
         ),

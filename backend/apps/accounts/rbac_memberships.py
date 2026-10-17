@@ -2,6 +2,7 @@
 
 
 from apps.accounts.rbac_roles import additional_roles_prefetch
+from .membership_context import valid_membership_context
 from apps.makerspaces.models import MakerspaceMembership
 
 
@@ -11,7 +12,7 @@ def membership_role(actor, makerspace_id):
         status="active",
         makerspace_id=makerspace_id,
     ).first()
-    return membership.role if membership else None
+    return membership.role if valid_membership_context(membership) else None
 
 
 def _membership_for(actor, makerspace_id) -> MakerspaceMembership | None:
@@ -22,6 +23,8 @@ def _membership_for(actor, makerspace_id) -> MakerspaceMembership | None:
 
 
 def _membership_is_space_manager(membership) -> bool:
+    if not valid_membership_context(membership) or membership.user.account_kind != "staff":
+        return False
     if membership.assigned_role_id is not None:
         role = membership.assigned_role
         return bool(

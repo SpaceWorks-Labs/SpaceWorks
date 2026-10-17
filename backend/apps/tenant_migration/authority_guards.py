@@ -63,6 +63,7 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "accounts" / "rbac_bookings.py",
     APPS_DIR / "accounts" / "rbac_actions.py",
     APPS_DIR / "accounts" / "rbac_roles.py",
+    APPS_DIR / "accounts" / "membership_context.py",
     APPS_DIR / "makerspaces" / "role_membership_writes.py",
     APPS_DIR / "makerspaces" / "staff_authority.py",
     APPS_DIR / "machines" / "role_scope_resolution.py",

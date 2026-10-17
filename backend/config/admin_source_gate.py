@@ -40,9 +40,8 @@ class AdminSourceGateMixin:
             queryset = self.model._default_manager.filter(pk=object_id)
         if queryset is not None:
             makerspace_ids = queryset.values_list(lookup, flat=True).distinct()
-            for makerspace_id in sorted(set(makerspace_ids)):
-                if makerspace_id is not None:
-                    assert_write_allowed(makerspace_id)
+            for makerspace_id in sorted({pk for pk in makerspace_ids if pk is not None}):
+                assert_write_allowed(makerspace_id)
             return
         parts = lookup.split("__")
         form_field = parts[0].removesuffix("_id")

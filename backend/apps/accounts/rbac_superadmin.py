@@ -1,5 +1,6 @@
 """Superadmin visibility and hard-hide RBAC helpers."""
 
+from .membership_context import valid_membership_q
 from django.db.models import F
 
 from apps.accounts.models import User
@@ -52,6 +53,7 @@ def _superadmin_hidden_to_exclude(actor, action=None):
     if not hidden:
         return set()
     memberships = actor.makerspace_memberships.filter(
+        valid_membership_q(),
         makerspace_id__in=hidden,
         status="active",
     )

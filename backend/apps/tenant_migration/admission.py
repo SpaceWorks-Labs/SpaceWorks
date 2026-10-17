@@ -56,7 +56,8 @@ def canonical_identities(user_rows):
     for user in sorted(user_rows, key=lambda item: str(item.pk)):
         identity = {}
         for name in sorted(names):
-            value = getattr(user, name)
+            # A foreign key (staff_makerspace) is compared by its column value, never the related object.
+            value = getattr(user, user._meta.get_field(name).attname)
             identity[name] = value.isoformat() if hasattr(value, "isoformat") else value
         identities.append(identity)
     return identities

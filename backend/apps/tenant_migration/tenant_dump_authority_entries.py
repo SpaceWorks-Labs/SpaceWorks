@@ -56,9 +56,9 @@ AUTHORITY_ENTRIES = (
     ),
     *_same(
         "makerspaces.MakerspaceMembership",
-        "role assigned_role can_refer can_verify receives_notifications",
+        "can_refer can_verify",
         D.RESET,
-        "Membership authority and delivery preferences restart at target defaults.",
+        "Member referral and verification grants restart at target defaults.",
     ),
     *_same(
         "makerspaces.MembershipRequest",

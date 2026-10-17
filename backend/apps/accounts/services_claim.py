@@ -75,7 +75,8 @@ def _locked_target(makerspace_id: int, membership_id: int):
 
 def _credential_free_walk_in(user: User) -> bool:
     return bool(
-        not user.is_tenant_dump_stub
+        user.account_kind == "member"
+        and not user.is_tenant_dump_stub
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
         and user.is_walk_in

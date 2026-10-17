@@ -55,6 +55,8 @@ def _apply_projection(using, rules, makerspace_ids):
             boundary_markers = []
             for index, rule in enumerate(boundaries):
                 affected = boundary_queryset(rule, using, makerspace_ids)
+                if rule.disposition == BoundaryDisposition.INERT_SHELL_TO_SLICE and affected.exists():
+                    raise BackupBuildError("Staff inert-shell projection requires account-split P4.")
                 marker = _mark_queryset(cursor, using, affected, f"boundary_{index}")
                 boundary_markers.append((rule, marker))
             table_markers = []

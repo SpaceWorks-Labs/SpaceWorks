@@ -3,6 +3,7 @@
 from django.db.models import Exists, F, OuterRef, Prefetch, Q
 
 from apps.makerspaces.role_catalog import BUILTIN_ROLE_SLUGS, COMBINABLE_ROLE_SLUGS
+from .membership_context import valid_membership_context, valid_staff_membership_q
 
 
 def membership_roles(membership):
@@ -11,7 +12,7 @@ def membership_roles(membership):
     Status deliberately does not participate: revoked authority must still be
     inspectable by reattachment guards. Action resolvers check active status.
     """
-    if membership is None or membership.assigned_role_id is None:
+    if not valid_membership_context(membership):
         return []
     primary = membership.assigned_role
     if primary.makerspace_id != membership.makerspace_id:
@@ -34,14 +35,13 @@ def membership_roles(membership):
 
 def stored_actions_for_membership(membership):
     """Direct grants, without implications or an active-status requirement."""
-    from .rbac_actions import ROLE_GRANTABLE_ACTIONS, _MEMBERSHIP_ROLE_ACTIONS
+    from .rbac_actions import ROLE_GRANTABLE_ACTIONS
 
-    if membership is None:
+    roles = membership_roles(membership)
+    if not roles or membership.user.account_kind != "staff":
         return set()
-    if membership.assigned_role_id is None:
-        return set(_MEMBERSHIP_ROLE_ACTIONS.get(membership.role, ()))
     return {
-        action for role in membership_roles(membership)
+        action for role in roles
         if isinstance(role.granted_actions, list)
         for action in role.granted_actions
         if isinstance(action, str) and action in ROLE_GRANTABLE_ACTIONS
@@ -72,22 +72,23 @@ def additional_role_exists(*, actions=(), slugs=(), role_ids=()):
         for action in actions:
             grants |= Q(role__granted_actions__contains=[action])
         links = links.filter(grants)
-    return Exists(links)
+    return valid_staff_membership_q() & Q(Exists(links))
 
 
 def direct_role_filter(actions):
     primary = Q()
     for action in actions:
         primary |= Q(assigned_role__granted_actions__contains=[action])
-    return (
-        Q(assigned_role__makerspace_id=F("makerspace_id")) & primary
-    ) | Q(additional_role_exists(actions=actions))
+    return valid_staff_membership_q() & (
+        (Q(assigned_role__makerspace_id=F("makerspace_id")) & primary)
+        | Q(additional_role_exists(actions=actions))
+    )
 
 
 def role_slug_filter(slug):
-    return Q(
+    return valid_staff_membership_q() & (Q(
         assigned_role__makerspace_id=F("makerspace_id"), assigned_role__slug=slug,
-    ) | Q(additional_role_exists(slugs=[slug]))
+    ) | Q(additional_role_exists(slugs=[slug])))
 
 
 def additional_roles_prefetch():

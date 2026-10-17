@@ -21,6 +21,7 @@ from .tenant_dump_cross_tenant import inspect_cross_tenant_source
 from .tenant_dump_model_catalog import FIRST_PARTY_MODEL_RULES
 from .tenant_dump_types import ModelDisposition
 from .tenant_dump_user_closure import build_user_closure
+from .tenant_dump_staff import prepare_staff_rows
 from .tenant_dump_user_rows import (
     apply_user_closure,
     excluded_stub_profile_object_keys,
@@ -63,6 +64,7 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
                 if _source_row_allowed(label, row, makerspace_id, cross_tenant)
             )
 
+        projected = prepare_staff_rows(projected, makerspace_id, using=using)
         _close_conditional_rows(projected)
         user_ids = _referenced_user_ids(projected)
         User = apps.get_model("accounts.User")

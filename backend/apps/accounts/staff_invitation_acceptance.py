@@ -50,14 +50,16 @@ def accept(request, *, token, makerspace_slug, password, code=""):
                 # Accounts are platform-global: lock inviter and recipient in PK order,
                 # even when the two invitations belong to different makerspaces.
                 users = list(User.objects.select_for_update().filter(
-                    Q(pk=row.created_by_id) | Q(email__iexact=email)).order_by("pk"))
+                    Q(pk=row.created_by_id) | Q(account_kind="staff", staff_makerspace=space, email__iexact=email)).order_by("pk"))
                 creator = next((user for user in users if user.pk == row.created_by_id), None)
                 if creator is None:
                     raise ValidationError(GENERIC_ERROR)
                 authority(creator, space, role)
                 if sorted(role.granted_actions) != row.granted_actions:
                     raise ValidationError(GENERIC_ERROR)
-                matches = [user for user in users if user.email.lower() == email.lower()]
+                matches = [user for user in users if user.account_kind == "staff"
+                           and user.staff_makerspace_id == space.pk
+                           and user.email.lower() == email.lower()]
                 if len(matches) > 1:
                     raise ValidationError(GENERIC_ERROR)
                 user = matches[0] if matches else None
@@ -75,7 +77,8 @@ def accept(request, *, token, makerspace_slug, password, code=""):
                         raise ValidationError(GENERIC_ERROR)
                 else:
                     # The invite proves email ownership, but cannot be used as a password reset.
-                    user = User(email=row.email, username="staff_" + secrets.token_hex(12))
+                    user = User(email=row.email, username="staff_" + secrets.token_hex(12),
+                                account_kind="staff", staff_makerspace=space)
                     # Hash before validation so weak new-account passwords are not a
                     # cheaper probe than wrong existing-account passwords.
                     user.set_password(password)
@@ -90,7 +93,10 @@ def accept(request, *, token, makerspace_slug, password, code=""):
                 can_assign_role(creator, space, role, target_membership=membership)
                 if membership is None:
                     limits.check_quota(space, "staff", adding=1)
-                    membership = MakerspaceMembership(user=user, makerspace=space)
+                    membership = MakerspaceMembership(
+                        user=user, makerspace=space, assigned_role=role,
+                        role=role.legacy_role or MakerspaceMembership.Role.CUSTOM,
+                    )
                 if membership.pk is None:
                     membership.save()
                 from apps.makerspaces.role_membership_writes import replace_membership_roles

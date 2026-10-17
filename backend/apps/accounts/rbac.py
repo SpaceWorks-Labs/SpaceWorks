@@ -27,6 +27,7 @@ from .rbac_actions import (
     actions_satisfying,
     expand_implied_actions,
 )
+from .membership_context import valid_membership_q
 from .rbac_memberships import (
     _membership_for,
     _membership_is_space_manager,
@@ -62,7 +63,7 @@ def resolve_scope(actor):
     # Organization grants confer actions, not identity, so they never widen this
     # action-agnostic scope (or scope_by_makerspace(), which derives from it).
     scope = set(
-        actor.makerspace_memberships.filter(status="active").values_list(
+        actor.makerspace_memberships.filter(valid_membership_q(), status="active").values_list(
             "makerspace_id", flat=True
         )
     )

@@ -205,6 +205,8 @@ class MembershipRevokeView(RecentReauthenticationMixin, APIView):
                 membership.user,
                 membership.role,
             )
+            if target_user.account_kind == "staff":
+                raise ValidationError({"detail": "Use the staff account deactivation workflow."})
             membership.delete()
             audit.record(
                 actor,

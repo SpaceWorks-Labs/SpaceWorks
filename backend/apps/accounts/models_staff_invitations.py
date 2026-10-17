@@ -5,6 +5,9 @@ from django.db import models
 
 
 class StaffInvitation(models.Model):
+    # Legacy invitations stay unbound. Never infer ownership from shared email.
+    account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                               null=True, blank=True, related_name="staff_invitations")
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     email_ciphertext = models.TextField()
     role = models.ForeignKey("makerspaces.MakerspaceRole", on_delete=models.CASCADE)

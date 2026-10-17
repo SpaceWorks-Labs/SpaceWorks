@@ -122,6 +122,10 @@ def _selected_disposition(model, field, source, rule, selector):
         return AuthorityDisposition.PRESERVE
     if len(rule.dispositions) == 1:
         return rule.dispositions[0]
+    if (model._meta.label == "makerspaces.MakerspaceMembership"
+            and field.name in {"role", "assigned_role", "receives_notifications"}):
+        return (AuthorityDisposition.PRESERVE if source.get("_staff_account")
+                else AuthorityDisposition.RESET)
     if selector is not None:
         selected = selector(model._meta.label, field.name, source, rule)
         if selected not in rule.dispositions:
@@ -129,6 +133,10 @@ def _selected_disposition(model, field, source, rule, selector):
                 f"Invalid conditional disposition for {model._meta.label}.{field.name}."
             )
         return selected
+    if (model._meta.label == "accounts.User"
+            and source.get("account_kind") == "staff"
+            and field.name in {"password", "must_change_password"}):
+        return AuthorityDisposition.RESET
     from .target_projection import TARGET_FIELD_PROJECTION
 
     target = TARGET_FIELD_PROJECTION.get((model._meta.label, field.name))
@@ -156,6 +164,8 @@ def _reset_value(model, field, source):
     if target is not None and condition_matches(target.condition, source):
         return target.resolved_value(model._meta.label, field.name)
     explicit = {
+        ("accounts.User", "password"): "!tenant-import-staff",
+        ("accounts.User", "must_change_password"): True,
         ("accounts.User", "is_superuser"): False,
         ("accounts.User", "is_staff"): False,
         ("accounts.User", "role"): "requester",
@@ -169,6 +179,7 @@ def _reset_value(model, field, source):
         ("makerspaces.Makerspace", "slack_webhook_url"): "",
         ("makerspaces.Makerspace", "mattermost_webhook_url"): "",
         ("makerspaces.Makerspace", "discord_webhook_url"): "",
+        ("makerspaces.Makerspace", "booking_requester_notifications_enabled"): False,
         ("audit.AuditLog", "event_uuid"): None,
         ("audit.AuditLog", "row_mac"): None,
     }

@@ -11,7 +11,8 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext
 from unfold.admin import ModelAdmin, TabularInline
-from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.forms import AdminPasswordChangeForm
+from .admin_account_forms import AccountUserChangeForm, PlatformUserCreationForm
 from rest_framework.exceptions import APIException
 
 from apps.accounts.models import NativeAppRegistration, User
@@ -53,8 +54,8 @@ class MakerspaceMembershipInline(TabularInline):  # Intentionally legacy string 
 @admin.register(User)
 class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
     actions = ["restrict_access", "restore_access", "reset_password_selected"]
-    form = UserChangeForm
-    add_form = UserCreationForm
+    form = AccountUserChangeForm
+    add_form = PlatformUserCreationForm
     change_password_form = AdminPasswordChangeForm
     fieldsets = (
         (None, {"fields": ("username", "password")}),

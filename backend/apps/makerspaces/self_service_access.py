@@ -4,12 +4,14 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.accounts.account_kind_guards import require_member_account
 from apps.accounts.models import User
 from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.models import MakerspaceMembership
 
 
 def own_membership(user, makerspace_id):
+    require_member_account(user)
     if (not user.is_active or user.access_status != User.AccessStatus.ACTIVE
             or user.is_walk_in or user.is_tenant_dump_stub):
         raise PermissionDenied("An active member account is required.")

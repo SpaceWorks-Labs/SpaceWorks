@@ -1,5 +1,7 @@
 """The one row-locked path that turns a person into an active member."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -17,6 +19,9 @@ from apps.makerspaces.models import (
 
 def _activate_membership(actor, makerspace, user, role, *, request=None, source, skip_dues=False):
     """Activate or reactivate exactly one membership in the mandated lock order."""
+    require_member_account(user)
+    if role.slug != "member":
+        raise ValidationError({"role_id": "Community membership requires the Member role."})
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed

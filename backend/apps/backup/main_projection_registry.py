@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from django.apps import apps
-from django.db import connections, models
+from django.db import models
 from django.db.models import Q
 
 from apps.backup.recipient_selection import BackupBuildError
@@ -20,6 +20,7 @@ class RowDisposition(StrEnum):
 
 
 class BoundaryDisposition(StrEnum):
+    INERT_SHELL_TO_SLICE = "inert_shell_to_slice"
     DROP_ROW_TO_SLICE = "drop_row_to_slice"
     PROJECT_NULL_TO_SLICE = "project_null_to_slice"
 
@@ -62,6 +63,8 @@ DJANGO_RUNTIME_TABLES = frozenset(NON_MODEL_TABLES)
 EMPTIED_NON_MODEL_TABLES = frozenset(
     table for table, carry_rows in NON_MODEL_TABLES.items() if not carry_rows
 )
+INERT_SHELL_BOUNDARIES = frozenset({("accounts.User", "staff_makerspace")})
+
 PROJECT_GLOBAL_BOUNDARIES = frozenset({
     ("backup.BackupArchive", "makerspace"),
     ("backup.RestoreRollbackObject", "makerspace"),
@@ -253,6 +256,8 @@ def _is_canonical_owner(rule, field):
 
 
 def _boundary_disposition(source_rule, field):
+    if (source_rule.model._meta.label, field.name) in INERT_SHELL_BOUNDARIES:
+        return BoundaryDisposition.INERT_SHELL_TO_SLICE
     if source_rule.disposition == RowDisposition.RETAIN_GLOBAL:
         key = (source_rule.model._meta.label, field.name)
         return (
@@ -276,24 +281,4 @@ def sovereign_q(predicate, makerspace_ids):
     return query
 
 
-def assert_catalog_matches(using, rules):
-    connection = connections[using]
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT c.relname
-              FROM pg_catalog.pg_class c
-              JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-             WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')
-             ORDER BY c.relname
-            """
-        )
-        actual = {row[0] for row in cursor.fetchall()}
-    expected = {rule.model._meta.db_table for rule in rules} | DJANGO_RUNTIME_TABLES
-    if actual != expected:
-        missing = sorted(actual - expected)
-        stale = sorted(expected - actual)
-        raise BackupBuildError(
-            "Readable-main physical-table registry drift: "
-            f"unclassified={missing}, absent={stale}."
-        )
+from .main_projection_catalog import assert_catalog_matches  # noqa: E402,F401

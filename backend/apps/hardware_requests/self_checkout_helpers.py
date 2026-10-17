@@ -1,3 +1,5 @@
+
+from apps.accounts.account_kind_guards import require_member_account
 from collections import Counter
 
 from django.utils import timezone
@@ -204,6 +206,7 @@ def _create_issued_request(
     requested_for,
     issued_by,
 ):
+    require_member_account(requester)
     request = HardwareRequest.objects.create(
         makerspace=makerspace,
         requester=requester,

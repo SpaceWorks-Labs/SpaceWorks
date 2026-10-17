@@ -29,15 +29,24 @@ class ProofThrottle(UserRateThrottle):
 class EndpointListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["Personal notification contract"], parameters=[OpenApiParameter("page", int)],
+    @extend_schema(tags=["Personal notification contract"], parameters=[OpenApiParameter("page", int),
+                   OpenApiParameter("oauth_state", str, description="Resolve this account's live signed OAuth return state.")],
                    responses={200: EndpointPageSerializer, **errors(400, 401, 403, 404)})
     def get(self, request, makerspace_id):
         space = contract_space(request.user, makerspace_id)
-        rows = policy_rows(NotificationEndpoint, space).filter(user=request.user)
+        rows = policy_rows(NotificationEndpoint, space).filter(user=request.user).select_related("configuration")
         paginator = PageNumberPagination()
         paginator.page_size = 24
         page = paginator.paginate_queryset(rows.order_by("-created_at", "-pk"), request, view=self)
-        return paginator.get_paginated_response(EndpointSerializer(page, many=True).data)
+        response = paginator.get_paginated_response(EndpointSerializer(page, many=True).data)
+        if "oauth_state" in request.query_params:
+            from .notification_oauth_verification import oauth_return
+            state = request.query_params["oauth_state"]
+            if not 1 <= len(state) <= 512:
+                raise ValidationError({"proof": "Invalid OAuth state."})
+            from .notification_api_serializers import OAuthReturnSerializer
+            response.data["oauth_return"] = OAuthReturnSerializer(oauth_return(space, request.user, state)).data
+        return response
 
 
 class EndpointStartView(APIView):
@@ -54,9 +63,13 @@ class EndpointStartView(APIView):
         config = get_object_or_404(policy_rows(ChannelConfiguration, space), channel=data["channel"])
         from .notification_proofs import start
         challenge, result = start(request.user, config, data["consent_version"], phone_number=data.get("phone_number", ""))
+        from .notification_oauth_verification import OAUTH_CHANNELS
+        if config.channel in OAUTH_CHANNELS:
+            from urllib.parse import parse_qs, urlsplit
+            result["oauth_state"] = parse_qs(urlsplit(result["connect_url"]).query)["state"][0]
         # Providers may return only the documented fields, never their raw response.
         return Response(ChallengeSerializer({"challenge_id": challenge.pk, "expires_at": challenge.expires_at,
-            **{key: result[key] for key in ("connect_url", "instructions") if key in result}}).data, status=201)
+            **{key: result[key] for key in ("connect_url", "instructions", "oauth_state") if key in result}}).data, status=201)
 
 
 class EndpointVerifyView(APIView):

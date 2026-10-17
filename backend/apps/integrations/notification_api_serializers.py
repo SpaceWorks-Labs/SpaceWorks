@@ -78,10 +78,16 @@ class ChannelPatchSerializer(StrictSerializer):
 
 @extend_schema_serializer(component_name="ContractEndpoint")
 class EndpointSerializer(serializers.ModelSerializer):
+    effective_valid = serializers.SerializerMethodField()
+
+    def get_effective_valid(self, obj) -> bool:
+        from .notification_resolution import endpoint_current
+        return endpoint_current(obj)
+
     class Meta:
         model = NotificationEndpoint
         fields = ["id", "channel", "provider", "integration_generation", "verification_state", "verified_at",
-                  "consented_at", "consent_version", "revoked_at", "created_at"]
+                  "consented_at", "consent_version", "revoked_at", "created_at", "effective_valid"]
 
 
 @extend_schema_serializer(component_name="ContractChannelPage")
@@ -92,12 +98,18 @@ class ChannelPageSerializer(serializers.Serializer):
     results = ChannelSerializer(many=True)
 
 
+class OAuthReturnSerializer(serializers.Serializer):
+    challenge_id = serializers.IntegerField()
+    expires_at = serializers.DateTimeField()
+
+
 @extend_schema_serializer(component_name="ContractEndpointPage")
 class EndpointPageSerializer(serializers.Serializer):
     count = serializers.IntegerField()
     next = serializers.URLField(allow_null=True)
     previous = serializers.URLField(allow_null=True)
     results = EndpointSerializer(many=True)
+    oauth_return = OAuthReturnSerializer(read_only=True, required=False)
 
 
 @extend_schema_serializer(component_name="ContractChallengeStart")
@@ -119,6 +131,7 @@ class ChallengeSerializer(serializers.Serializer):
     expires_at = serializers.DateTimeField()
     connect_url = serializers.URLField(required=False)
     instructions = serializers.CharField(required=False)
+    oauth_state = serializers.CharField(required=False)
 
 
 @extend_schema_serializer(component_name="ContractProofVerify")

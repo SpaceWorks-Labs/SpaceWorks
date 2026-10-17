@@ -25,6 +25,8 @@ def render_digest(summary):
     lines = []
     for row in constituents(summary):
         content = render(row)
+        from .notification_links import external_links
+        content = external_links(row.makerspace, content)
         lines.append(f"{content.get('subject', row.event)}\n{content.get('text', '')}")
     return {"subject": "Your Space Works notification digest", "text": "\n\n".join(lines)}
 

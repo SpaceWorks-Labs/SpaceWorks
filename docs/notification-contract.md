@@ -61,7 +61,7 @@ The views still enforce tenant/account standing and ownership.
 | GET | `/channels/{channel}` | â€” | Channel |
 | PATCH | `/channels/{channel}` | Any ChannelWrite fields | Channel |
 | GET | `/personal/endpoints?page=` | â€” | Page<Endpoint> |
-| POST | `/personal/endpoints/start` | channel, consent=true, consent_version, optional phone_number (WhatsApp candidate only) | challenge_id, expires_at, optional connect_url/instructions |
+| POST | `/personal/endpoints/start` | channel, consent=true, consent_version, optional phone_number (WhatsApp candidate only) | challenge_id, expires_at, optional connect_url/instructions/oauth_state |
 | POST | `/personal/challenges/{challenge_id}/verify` | Optional opaque provider code/state; provider verifies independently | Endpoint |
 | DELETE | `/personal/endpoints/{id}` | â€” | revoked=true |
 | GET | `/personal/preferences` | â€” | preferences: Selection[] |
@@ -84,7 +84,12 @@ other existing room transports retain their destination credentials;
 the new room enable switch gates them without changing their audience.
 
 Endpoint = id, channel, provider, integration_generation, verification_state,
-verified_at, consented_at, consent_version, revoked_at, created_at.
+verified_at, consented_at, consent_version, revoked_at, created_at, effective_valid.
+The read-only effective_valid includes the current configuration generation, provider/identity,
+verification, consent, revocation and personal-delivery switches. Invalidated endpoints are
+disconnected in both the connection list and channel choices.
+Endpoints GET accepts optional `oauth_state`; its optional `oauth_return` contains the authenticated
+account's live signed-state-bound challenge_id and expires_at. It performs no token exchange.
 Selection = category, channels[] and email_fallback, plus read-only available_channels[]
 in responses. The tenant's enabled choices are exposed to personal clients; selecting
 a disabled channel is rejected. Duplicate categories/channels and
@@ -167,7 +172,9 @@ canonical origin; inbox navigation never receives an absolute URL.
 - **Slack / Mattermost / Discord:** provider OAuth proves identity; Slack binds workspace OIDC,
   Mattermost binds configured-server `/users/me`, Discord uses identify. The authenticated
   `/personal/challenges/{id}/verify` consumes code/state for the current account; the UI handles
-  `?notify_challenge=<id>&code=...&state=...`. Slack installation uses S256 PKCE (enable it on the
+  `?code=...&state=...`. It first asks the authenticated endpoints GET to resolve `oauth_state`,
+  then uses the returned challenge ID on the existing verify route. No browser storage or
+  untrusted challenge query selects the challenge. Slack installation uses S256 PKCE (enable it on the
   provider app); installation is distinct from personal OIDC. No submitted user/chat ID is proof.
   Signed inbound chat hooks acknowledge only, with no decisions or destination assignment.
 - **WhatsApp:** Twilio signed inbound/status routes are mounted and its provider is registered.
@@ -179,8 +186,10 @@ canonical origin; inbox navigation never receives an absolute URL.
   `notification_wa_window.in_session_window` governs both providers, resolution and delivery:
   exactly 24 h and future inbound timestamps are outside the window. SMS-login consent grants
   no WhatsApp consent. Meta's remaining readiness gate is recorded below.
-  Browser PATCH cannot self-approve templates; provider refresh owns approval. Status callbacks
-  correlate installation/message and advance monotonically. Ambiguous retries may duplicate sends.
+  Browser PATCH cannot self-approve templates; provider refresh owns approval.
+  The Twilio setup form exposes Refresh approval for saved bindings and reads back the provider's
+  approval states; unsaved credentials or binding edits must be saved first.
+  Status callbacks correlate installation/message and advance monotonically. Ambiguous retries may duplicate sends.
   Meta sends a signed `biz_opaque_callback_data` reference with the delivery, installation generation
   and attempt. Early status webhooks bind through that reference before the REST response stores its
   provider message ID. Callback transitions win over the later response; transient failures retain
@@ -191,7 +200,7 @@ Provider setting lookups are deployment-wide, never derived from the request hos
 
 | Django setting | Adapter behaviour |
 | --- | --- |
-| `NOTIFICATION_SLACK_REDIRECT_URI` | HTTPS frontend notification-settings URL; blank refuses; optional `{makerspace_id}` / `{challenge_id}` substitutions |
+| `NOTIFICATION_SLACK_REDIRECT_URI` | Exact registered HTTPS frontend notification-settings URL; blank or placeholders refuse |
 | `NOTIFICATION_MATTERMOST_REDIRECT_URI` | Same server-selected redirect policy |
 | `NOTIFICATION_DISCORD_REDIRECT_URI` | Same server-selected redirect policy |
 | `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | Defaults false; only boolean true allows private self-host addresses |
@@ -199,9 +208,9 @@ Provider setting lookups are deployment-wide, never derived from the request hos
 
 All five are environment-backed in `config/settings.py`, included in deployment examples/manifests
 and classified as nonblocking value-comparison settings for backup. Redirect defaults are blank;
-private Mattermost hosts default false. Redirect selection appends `notify_challenge=<id>`;
-authorization and token exchange use that identical URI. Register the resulting frontend return
-URI with the provider. The frontend relays code/state through authenticated
+private Mattermost hosts default false. Authorization and token exchange use the setting value
+byte for byte, including its fixed query; dynamic challenge IDs belong only in signed state.
+Register that exact frontend return URI with the provider. The frontend relays code/state through authenticated
 `POST /personal/challenges/{id}/verify`; signed state must match both the account and URL challenge
 before provider I/O. Completion locks configuration/challenge and consumes once. Anonymous
 completion is gone; `ChatOAuthCallbackView` retains only authenticated, actor-bound Slack installation.

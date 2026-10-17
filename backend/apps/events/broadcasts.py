@@ -1,6 +1,5 @@
 """Thin event adapter over the common campaign/outbox pipeline."""
 
-from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db.models import Subquery
@@ -13,6 +12,7 @@ from apps.integrations.email_preferences import blocked_reason
 from apps.integrations.notification_catalog import is_notification_enabled
 from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.servability import is_servable
+from apps.makerspaces.website_directory import public_url
 from apps.notifications.inbox import eligible_owner
 from . import event_authority
 from .event_permissions import MANAGE_REGISTRATIONS
@@ -75,7 +75,7 @@ def render_recipient(campaign, account):
         "name": account.get_full_name() or account.username,
         "event_title": event.title, "event_date": event.starts_at.isoformat(),
         "event_location": event.location,
-        "ticket_url": f"{settings.PUBLIC_APP_BASE_URL.rstrip('/')}/m/{ticket_space.slug}/member/events/{registration.pk}/ticket",
+        "ticket_url": public_url(ticket_space, "member", f"events/{registration.pk}/ticket"),
     })
 
 

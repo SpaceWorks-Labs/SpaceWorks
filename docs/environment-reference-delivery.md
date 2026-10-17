@@ -16,7 +16,7 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `EMAIL_PORT` | `587` |  |
 | `EMAIL_USE_TLS` | `True` |  |
 | `GITHUB_API_TOKEN` | `''` | Optional; raises the GitHub rate limit for maker-profile contribution refresh. |
-| `NOTIFICATION_SLACK_REDIRECT_URI` | `''` | HTTPS frontend notification-settings return; blank refuses personal linking. Supports `{makerspace_id}` / `{challenge_id}`; appends `notify_challenge`. |
+| `NOTIFICATION_SLACK_REDIRECT_URI` | `''` | Fixed HTTPS frontend notification-settings return, registered byte-for-byte in the provider app; blank refuses personal linking. No placeholders: the signed OAuth state carries the makerspace and challenge. |
 | `NOTIFICATION_MATTERMOST_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
 | `NOTIFICATION_DISCORD_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
 | `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | `False` | Only boolean true allows private self-hosted Mattermost addresses. |

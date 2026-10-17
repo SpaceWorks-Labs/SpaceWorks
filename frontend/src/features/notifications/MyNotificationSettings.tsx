@@ -3,14 +3,14 @@ import { useSearchParams } from "react-router-dom";
 
 import { ErrorBlock } from "../../components/ui";
 import { CONNECTABLE } from "./channelCatalog";
-import { useEndpoints, usePreferences, useVerifyChallenge } from "./channelsApi";
+import { useEndpoints, useOAuthReturn, usePreferences, useVerifyChallenge } from "./channelsApi";
 import { ChannelDeliveryLog } from "./ChannelDeliveryLog";
 import { ChannelPreferences } from "./ChannelPreferences";
 import { connectedChannels, PersonalChannels } from "./PersonalChannels";
 import { slackInstallKey, useCompleteSlackInstall } from "./SlackInstallation";
 
 /** Return parameters an OAuth provider sign-in (Slack, Discord, Mattermost) lands back with. */
-const RETURN_KEYS = ["notify_challenge", "code", "state"] as const;
+const RETURN_KEYS = ["notify_challenge", "code", "state", "error", "error_description"] as const;
 
 /**
  * A person's own notification setup in one makerspace, shared by the staff console and the
@@ -25,17 +25,21 @@ export function MyNotificationSettings({ makerspaceId, member = false }: { maker
   const install = useCompleteSlackInstall(makerspaceId);
   const [search, setSearch] = useSearchParams();
   const handled = useRef(false);
-  const challengeId = Number(search.get("notify_challenge"));
+  const state = search.get("state");
+  const isInstall = !member && !!state && sessionStorage.getItem(slackInstallKey(makerspaceId)) === state;
+  const returned = useOAuthReturn(makerspaceId, isInstall ? null : state, member);
+  const challengeId = returned.data?.oauth_return.challenge_id;
   useEffect(() => {
-    if (handled.current || !challengeId) return;
+    if (handled.current || (!challengeId && !isInstall)) return;
     handled.current = true;
     const proof = { code: search.get("code") ?? undefined, state: search.get("state") ?? undefined };
-    if (!member && proof.state && sessionStorage.getItem(slackInstallKey(makerspaceId)) === proof.state) install.mutate(proof);
-    else verify.mutate({ challengeId, ...proof });
+    if (isInstall) install.mutate(proof);
+    else if (challengeId) verify.mutate({ challengeId, ...proof });
     const next = new URLSearchParams(search);
     RETURN_KEYS.forEach(key => next.delete(key));
+    if (member) next.set("section", "channels");
     setSearch(next, { replace: true });
-  }, [challengeId, search, setSearch, verify, install, makerspaceId, member]);
+  }, [challengeId, isInstall, state, search, setSearch, verify, install, makerspaceId, member]);
   if (preferences.isLoading) return <p className="text-sm text-muted">Loading your notification settings…</p>;
   if (preferences.error || !preferences.data) return <ErrorBlock error={preferences.error ?? new Error("Couldn't load your notification settings.")}
     onRetry={() => { void preferences.refetch(); }} />;
@@ -43,6 +47,7 @@ export function MyNotificationSettings({ makerspaceId, member = false }: { maker
   const offered = new Set(rows.flatMap(row => row.available_channels ?? []));
   const chat = CONNECTABLE.filter(channel => offered.has(channel));
   return <div className="grid min-w-0 gap-6">
+    {returned.error ? <p role="alert">Couldn't validate the connection return: {returned.error.message}</p> : null}
     {verify.isError ? <p role="alert" className="text-sm text-danger">Couldn't finish connecting: {verify.error.message}</p> : null}
     {verify.isSuccess ? <p role="status" className="text-sm text-muted">Connected.</p> : null}
     {install.isError ? <p role="alert">Couldn't install Slack: {install.error.message}</p> : null}

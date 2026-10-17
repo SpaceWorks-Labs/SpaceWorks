@@ -3,7 +3,7 @@ import base64
 import hashlib
 from datetime import timedelta
 import secrets
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.core import signing
@@ -21,25 +21,13 @@ SALT = "notification.chat.oauth.v1"
 
 
 def redirect_uri(channel, makerspace_id=None, challenge_id=None):
+    # Registered URIs must match byte for byte. Dynamic bindings live in state.
     value = getattr(settings, f"NOTIFICATION_{channel.upper()}_REDIRECT_URI", "")
-    if "{makerspace_id}" in value:
-        if not isinstance(makerspace_id, int) or makerspace_id <= 0:
-            raise ValidationError({"channel": "OAuth redirect requires a configured makerspace."})
-        value = value.replace("{makerspace_id}", str(makerspace_id))
-    if "{challenge_id}" in value:
-        if not isinstance(challenge_id, int) or challenge_id <= 0:
-            raise ValidationError({"channel": "OAuth redirect requires a challenge."})
-        value = value.replace("{challenge_id}", str(challenge_id))
     parts = urlsplit(value)
     if (parts.scheme != "https" or not parts.hostname or parts.username or parts.password
             or parts.fragment or "{" in value or "}" in value):
         raise ValidationError({"channel": "Configure an HTTPS OAuth redirect URI on the server."})
-    if challenge_id is not None:
-        query = [(key, val) for key, val in parse_qsl(parts.query, keep_blank_values=True)
-                 if key != "notify_challenge"]
-        query.append(("notify_challenge", str(challenge_id)))
-        parts = parts._replace(query=urlencode(query))
-    return urlunsplit(parts)
+    return value
 
 
 def state_for(challenge, code, *, purpose="link"):

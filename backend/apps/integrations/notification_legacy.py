@@ -19,6 +19,7 @@ def snapshot(envelope, payload):
     # security mail cannot be persisted or reconstructed; those callers remain sync.
     emails = [asdict(email) for email in payload.emails if email.persist_body]
     content = {"text": payload.text, "emails": emails, "data": payload.data,
+               "source": payload.source,
                "staff_channels_enabled": payload.staff_channels_enabled,
                "inbox": [asdict(item) for item in payload.inbox]}
     envelope.scope = payload.scope.as_dict() if payload.scope else {}
@@ -50,5 +51,6 @@ def recover(envelope):
     content = json.loads(envelope.message_body)
     payload = LifecyclePayload(text=content["text"], emails=tuple(EmailDelivery(**v) for v in content["emails"]),
         scope=NotificationScope.from_dict(envelope.scope), data=content["data"],
+        source=content.get("source", {}),
         staff_channels_enabled=content["staff_channels_enabled"], inbox=tuple(InboxDelivery(**v) for v in content["inbox"]))
     return dispatch(envelope, lambda: payload, False, envelope.context["occurred_at"], UUID(envelope.dedup_key.removeprefix("legacy:")))

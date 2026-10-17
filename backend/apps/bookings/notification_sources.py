@@ -79,6 +79,8 @@ def broadcast_eligible(envelope):
 
 
 def register_notification_sources():
+    from .notification_guest_mail import register_guest_mailbox
+    register_guest_mailbox()
     from .notifications import GRANT_SOURCE, LIFECYCLE_SOURCE
     register_source(LIFECYCLE_SOURCE, NotificationSource(lifecycle_eligible))
     register_source(GRANT_SOURCE, NotificationSource(grant_eligible))

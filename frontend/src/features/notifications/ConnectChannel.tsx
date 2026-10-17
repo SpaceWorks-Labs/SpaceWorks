@@ -48,7 +48,7 @@ export function ConnectChannel({ makerspaceId, channel, member = false, onDone }
   const finish = () => verify.mutate({ challengeId: challenge.challenge_id, ...(whatsapp ? { code: code.trim() } : {}) }, { onSuccess: onDone });
   return <div className="grid min-w-0 gap-3" role="group" aria-label={`Finish connecting ${label}`}>
     {challenge.instructions ? <p className="text-sm text-ink">{challenge.instructions}</p> : null}
-    {link ? <p className="text-sm"><a className="desk-button inline-flex" href={link} target="_blank" rel="noopener noreferrer">
+    {link ? <p className="text-sm"><a className="desk-button inline-flex" href={link} target={challenge.oauth_state ? "_self" : "_blank"} rel="noopener noreferrer">
       Open {label} to connect ↗</a></p> : null}
     <p className="text-sm text-muted">This {whatsapp ? "code" : "link"} expires at {new Date(challenge.expires_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.
       {whatsapp ? " Enter the code we sent to your WhatsApp." : ` When ${label} says you are connected, come back and confirm.`}</p>

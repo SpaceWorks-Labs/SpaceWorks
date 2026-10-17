@@ -119,6 +119,12 @@ def _emit(row, event, recipient_id, audience, source_kind, rendered):
                  source_kind=source_kind, source_id=str(row.pk), revision=str(row.calendar_sequence), subject=row,
                  scope=scope_for(row, event), context={"booking_id": row.pk, "space_id": row.space_id, "status": row.status},
                  rendered=rendered)
+            if audience == "staff":
+                from apps.integrations.models_contract import NotificationDelivery
+                for channel in ("in_app", "native_push"):
+                    NotificationDelivery.objects.get_or_create(envelope=envelope, channel=channel, defaults={
+                        "makerspace": row.space.makerspace, "target_key": channel, "provider": "builtin",
+                        "state": "skipped", "last_error": "legacy_matrix_channel"})
             if audience == "requester":
                 from .notification_owner_mailbox import notify_owner
                 notify_owner(envelope)
@@ -157,13 +163,19 @@ def notify_booking_status(booking, event, *, sync=False):
         live = rbac.scope_notification_policy(
             Booking.objects.all(), makerspace_id=makerspace.pk, field="space__makerspace_id",
         ).select_related("space__makerspace").get(pk=row.pk)
-        if live.member_id is None and requester_enabled(live, event) and live.email:
-            member = render(makerspace, "bookings", "requester", event, context)
+        if (live.calendar_sequence == row.calendar_sequence and live.status == row.status
+                and live.member_id is None and requester_enabled(live, event) and live.email):
+            member = requester_content(live, event, bookings_context(live, event,
+                next_steps=BOOKINGS_REQUESTER_BODIES.get(event, "")))
             emails = (EmailDelivery(to_email=live.email, subject=member["subject"],
-                                    text_body=_with_reason(member["text_body"], row, event),
-                                    html_body=member["html_body"], audience="requester", stream="bookings"),)
+                                    text_body=member["text"], html_body=member["html"],
+                                    audience="requester", stream="bookings",
+                                    source_kind="bookings.guest_mailbox", source_id=live.pk,
+                                    source_metadata={"revision": str(live.calendar_sequence), "status": live.status}),)
         # `text` is the STAFF summary: chat rooms are a staff surface.
         return LifecyclePayload(text=staff["text"], emails=emails, context=context, scope=scope,
+                                source={"source_kind": LIFECYCLE_SOURCE, "source_id": str(row.pk),
+                                        "revision": str(row.calendar_sequence), "context": {}},
                                 data={"booking_id": row.pk, "space_id": row.space_id})
 
     return notify_lifecycle(makerspace, feature="bookings", event=event, build=build, sync=sync)

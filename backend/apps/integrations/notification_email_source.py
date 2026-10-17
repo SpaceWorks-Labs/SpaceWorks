@@ -19,6 +19,8 @@ def prepare(log):
         return False
     from apps.hardware_requests.notifications_p2_email import render_email as equipment_email
     content = equipment_email(row.envelope, render(row.envelope))
+    from .notification_links import external_links
+    content = external_links(row.envelope.makerspace, content)
     render_email(log, to_email=row.envelope.recipient.email, subject=content.get("subject", "Space Works"),
                  text_body=content.get("text", ""), html_body=content.get("html", ""))
     return True
@@ -32,3 +34,5 @@ def retry(log, actor):
 def register_email_source():
     from .delivery_sources import DeliverySource, register
     register("notification.envelope", DeliverySource(prepare, digestible=False, retry=retry))
+    from .notification_direct_mail import KIND, prepare as prepare_direct
+    register(KIND, DeliverySource(prepare_direct, digestible=False))

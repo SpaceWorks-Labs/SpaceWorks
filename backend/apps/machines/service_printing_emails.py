@@ -2,11 +2,11 @@
 
 import logging
 from types import SimpleNamespace
-
-from django.conf import settings
+from urllib.parse import urlencode
 
 from apps.integrations.email_templates import printing_context, render
 from apps.machines.printer_capabilities import is_printer_type
+from apps.makerspaces.website_directory import public_url
 
 logger = logging.getLogger(__name__)
 REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed", "failed", "collected", "reprinted"})
@@ -39,8 +39,7 @@ def _requester_render(event, request):
     recipient = request.contact_email or request.requester.email
     if not recipient:
         return None, None
-    base = getattr(settings, "PUBLIC_APP_BASE_URL", "") or ""
-    status_url = f"{base}/m/{request.makerspace.slug}/print?token={request.public_token}" if base else ""
+    status_url = public_url(request.makerspace, "print", "").rstrip("/") + "?" + urlencode({"token": request.public_token})
     row = _projection(request)
     return recipient, render(
         request.makerspace,

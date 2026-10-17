@@ -57,6 +57,8 @@ class LifecyclePayload:
     data: dict = field(default_factory=dict)
     staff_channels_enabled: bool = True
     inbox: tuple = ()
+    # Internal source identity, separate from the public numeric-ID payload.
+    source: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -129,7 +131,13 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
     delivered, failed = {}, {}
     try:
         payload = build()
+        if payload.source:
+            from .notification_lifecycle_source import eligible_source
+            if not eligible_source(makerspace, feature, event, payload.source):
+                return NotificationResult(False)
         data = lifecycle_data(payload.data)
+        if payload.source:
+            data["lifecycle_source"] = payload.source
         data["occurred_at"] = occurred_at or timezone.now().isoformat()
         enabled = {
             channel: is_notification_enabled(makerspace, feature, channel)

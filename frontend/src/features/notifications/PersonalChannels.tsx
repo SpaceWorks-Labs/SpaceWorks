@@ -16,7 +16,7 @@ export function PersonalChannels({ makerspaceId, channels, member = false }: {
   if (endpoints.error) return <ErrorBlock error={endpoints.error} onRetry={() => { void endpoints.refetch(); }} />;
   if (!channels.length) return <p className="text-sm text-muted">This space has not turned on any chat channels for personal messages yet. You will get email and inbox notifications.</p>;
   const live = new Map<ChannelKey, Endpoint>();
-  for (const row of endpoints.data?.results ?? []) if (!row.revoked_at && row.verification_state === "verified" && !live.has(row.channel)) live.set(row.channel, row);
+  for (const row of endpoints.data?.results ?? []) if (row.effective_valid && !live.has(row.channel)) live.set(row.channel, row);
   return <ul className="grid min-w-0 gap-3" aria-label="Your connected channels">
     {channels.map(channel => {
       const endpoint = live.get(channel);
@@ -39,5 +39,5 @@ export function PersonalChannels({ makerspaceId, channels, member = false }: {
 }
 
 export function connectedChannels(endpoints: readonly Endpoint[] | undefined): Set<ChannelKey> {
-  return new Set((endpoints ?? []).filter(row => !row.revoked_at && row.verification_state === "verified").map(row => row.channel));
+  return new Set((endpoints ?? []).filter(row => row.effective_valid).map(row => row.channel));
 }

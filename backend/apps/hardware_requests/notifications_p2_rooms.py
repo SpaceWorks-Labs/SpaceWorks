@@ -35,7 +35,12 @@ def queue_rooms(*, space, feature, event, kind, source, version, subject, scope,
 def eligible_room(log):
     """Hook for the existing room transport, before every send/retry/release."""
     payload = log.payload or {}
-    kind = payload.get("equipment_source")
+    if payload.get("lifecycle_source"):
+        from apps.integrations.notification_lifecycle_source import eligible_source
+        if not eligible_source(log.makerspace, log.feature, log.event, payload["lifecycle_source"]):
+            return False
+    personal_family = bool(payload.get("p2_intent"))
+    kind = payload.get("source_kind") if personal_family else payload.get("equipment_source")
     if not kind:
         return True
     space = log.makerspace
@@ -55,4 +60,13 @@ def eligible_room(log):
         makerspace=space, makerspace_id=space.pk, recipient_id=None,
         audience="staff", event=log.event, feature=log.feature,
         scope=payload.get("scope", {}))
+    if personal_family:
+        from apps.accounts.models import User
+        from apps.integrations.staff_notifications import staff_user_ids_for_feature
+        ids = staff_user_ids_for_feature(space, log.feature, log.event, scope)
+        for user in User.objects.filter(pk__in=ids):
+            envelope.recipient, envelope.recipient_id = user, user.pk
+            if source_eligible(envelope):
+                return True
+        return False
     return source_eligible(envelope)

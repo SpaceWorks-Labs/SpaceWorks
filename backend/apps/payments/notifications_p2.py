@@ -113,10 +113,14 @@ def document_eligible(envelope):
 
 
 def document_body(document):
-    return body(f"{document.get_kind_display()} {document.number}",
-        f"Your {document.get_kind_display().lower()} {document.number} is available.\n"
-        f"{document.currency.upper()} {document.amount}\nSign in to download the PDF.",
-        local_link(document.makerspace, "member"))
+    from django.utils.html import format_html
+    from apps.makerspaces.website_directory import public_url
+    navigation = public_url(document.makerspace, "member", "").rstrip("/")
+    text = (f"Your {document.get_kind_display().lower()} {document.number} is available.\n"
+            f"{document.currency.upper()} {document.amount}\nSign in to download the PDF: {navigation}")
+    return body(f"{document.get_kind_display()} {document.number}", text,
+        local_link(document.makerspace, "member"),
+        str(format_html('<p>{}</p><p><a href="{}">Download your document</a></p>', text, navigation)))
 
 
 def render_document(envelope):
@@ -137,7 +141,7 @@ def notify_document(document):
         own = document_body(document)
         direct_mail_unless_routed(space=document.makerspace, source_kind=DOCUMENT_SOURCE, row=document,
             revision=version, event="document_issued", owner=owner, to_email=owner.email,
-            subject=own["subject"], text=f"{own['text'][:-1]}: {own['link']}", stream="payments",
+            subject=own["subject"], text=own["text"], stream="payments",
             audience="requester", feature="", sync=True, persist_body=False, address_owner=False)
     return result
 

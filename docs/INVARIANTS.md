@@ -1376,8 +1376,9 @@ integration gaps; `notification-coverage.md` distinguishes converted producers f
 - Telegram proves a private `/start`; Slack workspace OIDC, Mattermost configured-server OAuth and
   Discord identify OAuth prove provider identities. The authenticated challenge verify endpoint
   binds signed state to both the signed-in account and URL challenge before provider I/O, then
-  locks/consumes once. The frontend returns with `notify_challenge`, code and state and posts to
-  that verify route; anonymous personal completion is gone. Member JWTs full-match exactly the six
+  locks/consumes once. The frontend returns with code and state, resolves the challenge through
+  authenticated endpoints GET with `oauth_state`, then posts to that verify route; anonymous
+  personal completion is gone. Member JWTs full-match exactly the six
   frozen personal route shapes, never a broad integrations prefix; channel settings/tests/installations
   retain staff authority. No typed destination ID establishes identity.
 - WhatsApp is a personal channel (`twilio|meta`), without rooms or a registry module key. Signed
@@ -1391,8 +1392,9 @@ integration gaps; `notification-coverage.md` distinguishes converted producers f
 - Provider settings are deployment-wide: `TELEGRAM_WEBHOOK_SECRET` is environment-backed.
   OAuth reads `NOTIFICATION_SLACK_REDIRECT_URI`, `NOTIFICATION_MATTERMOST_REDIRECT_URI` and
   `NOTIFICATION_DISCORD_REDIRECT_URI` from Django settings: HTTPS frontend notification-settings
-  URL, optional `{makerspace_id}` / `{challenge_id}`, appended `notify_challenge`,
-  blank refuses. Mattermost private hosts default refused unless
+  URL used exactly as registered, including any fixed query. Dynamic placeholders and appended
+  challenge IDs are forbidden; signed state carries the challenge. Blank refuses.
+  Mattermost private hosts default refused unless
   `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS is True`; Meta defaults
   `WHATSAPP_META_GRAPH_VERSION` to `v25.0`. All five are environment-backed in `config/settings.py`
   and forwarded through deployment manifests; backup treats them as nonblocking value comparisons.

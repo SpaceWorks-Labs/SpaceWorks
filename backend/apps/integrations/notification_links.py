@@ -13,6 +13,7 @@ def local_link(space, kind, tail=""):
 
 def external_links(space, rendered):
     from apps.notifications.inbox import safe_link
+    from django.utils.html import escape
 
     value = dict(rendered)
     link = safe_link(value.get("link", ""))
@@ -27,4 +28,10 @@ def external_links(space, rendered):
         value["link"] = public_url(space, kind, tail)
         if not tail:
             value["link"] = value["link"].rstrip("/")
+        # link is inbox metadata; outbound transports only consume body fields.
+        navigation = value["link"]
+        if navigation not in value.get("text", ""):
+            value["text"] = f"{value.get('text', '').rstrip()}\n\n{navigation}"
+        if value.get("html") and escape(navigation) not in value["html"]:
+            value["html"] += f'<p><a href="{escape(navigation)}">Open in Space Works</a></p>'
     return value

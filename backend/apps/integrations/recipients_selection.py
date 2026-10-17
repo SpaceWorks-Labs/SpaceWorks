@@ -63,9 +63,11 @@ def feature_available(makerspace, feature, *, source_kind="") -> bool:
     """False when the feature's module is not installed for this makerspace."""
     # These categories are shared by independent domain families. Their registered
     # source still checks the particular job type/revision before every delivery.
-    key = {"machines.service": "machine_service", "operations.stocktake": "stocktake"}.get(
-        source_kind, FEATURE_MODULES.get(feature),
-    )
+    # Inventory is core (no module key): low-stock thresholds are never module-gated, and the
+    # borrower back-in-stock watch follows the lending workflow it belongs to.
+    overrides = {"machines.service": "machine_service", "operations.stocktake": "stocktake",
+                 "inventory.threshold": None, "inventory.watch": "request_workflow"}
+    key = overrides[source_kind] if source_kind in overrides else FEATURE_MODULES.get(feature)
     if key is None or makerspace is None:
         return True
     try:
@@ -89,11 +91,9 @@ def category_available(makerspace, feature):
     Actual deliveries still pass the exact source gate in feature_available and
     the registered source predicate; showing a category grants no delivery reach.
     """
-    alternatives = {"printing": "machines.service", "stock": "operations.stocktake"}
+    alternatives = {"printing": ["machines.service"], "stock": ["operations.stocktake", "inventory.threshold"]}
     return feature_available(makerspace, feature) or (
-        feature in alternatives and feature_available(
-            makerspace, feature, source_kind=alternatives[feature],
-        )
+        any(feature_available(makerspace, feature, source_kind=kind) for kind in alternatives.get(feature, []))
     )
 
 

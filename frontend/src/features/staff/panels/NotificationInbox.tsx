@@ -7,8 +7,8 @@ import { Modal, type Action } from "../../../components/ui";
 
 export function NotificationInbox({ makerspace, canManageMembers = false }: { makerspace: Makerspace; canManageMembers?: boolean }) {
   const [compose, setCompose] = useState(false);
-  // A provider sign-in (Slack, Discord, Mattermost) returns here with ?notify_challenge=…
-  const [channels, setChannels] = useState(() => new URLSearchParams(window.location.search).has("notify_challenge"));
+  // Provider returns carry signed state; the server resolves its challenge.
+  const [channels, setChannels] = useState(() => new URLSearchParams(window.location.search).has("state"));
   const canBroadcast = canManageMembers && makerspace.enabled_features?.includes("membership.broadcasts");
   // Personal channels need the notifications module (the contract endpoints require it).
   const hasChannels = (makerspace.enabled_modules ?? []).includes("notifications");

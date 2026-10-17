@@ -35,6 +35,12 @@ EVENT_NOTIFICATION_EVENTS = frozenset(EVENTS_KEYS)
 
 
 def _rooms(event_id, makerspace, event_name, registration_id, *, sync):
+    original = Event.objects.get(pk=event_id)
+    entry = EventRegistration.objects.get(pk=registration_id, event=original) if registration_id else None
+    source = {"source_kind": envelopes.LIFECYCLE_SOURCE,
+              "source_id": f"r{entry.pk}" if entry else f"e{original.pk}",
+              "revision": envelopes.lifecycle_revision(original, entry),
+              "context": envelopes._context(original, entry, event_name)}
     def build():
         event = Event.objects.select_related("makerspace").get(pk=event_id)
         registration = (EventRegistration.objects.get(pk=registration_id, event=event)
@@ -43,7 +49,7 @@ def _rooms(event_id, makerspace, event_name, registration_id, *, sync):
                                  next_steps=EVENTS_REQUESTER_BODIES.get(event_name, ""))
         staff = render(makerspace, "events", "staff", event_name, context)
         return LifecyclePayload(
-            text=staff["text_body"], context=context,
+            text=staff["text_body"], context=context, source=source,
             data={"event_id": event.pk, "series_id": event.series_id,
                   "registration_id": registration.pk if registration else None},
         )

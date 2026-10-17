@@ -8,8 +8,6 @@ import { StaffAccountEditor } from "./StaffAccountEditor";
 import { StaffAccountRows } from "./StaffAccountRows";
 import { StaffPasswordDialog } from "./StaffPasswordDialog";
 import { refreshMembershipAuthority } from "../roleSets";
-import { useStaffGet } from "../shared";
-import type { StaffRole } from "../rolesApi";
 import { RolesReference } from "../RolesReference";
 
 export function StaffAccountsPanel({ space, toolbar, onAuthRefresh, secondary, canManageRoles = false, initialCreateRoles }: {
@@ -34,8 +32,7 @@ export function StaffAccountsPanel({ space, toolbar, onAuthRefresh, secondary, c
   const [notice, setNotice] = useState("");
   const list = useQuery({ queryKey: [...key, page, inactive], queryFn: () => listStaffAccounts(space, page, inactive), enabled: space > 0 });
   const policy = useQuery({ queryKey: ["staff-account-policy", space], queryFn: () => staffAccountPolicy(space), enabled: space > 0 });
-  const roles = useStaffGet<StaffRole[]>(["staff", "roles", space], `/admin/makerspaces/${space}/roles`, space > 0 && canManageRoles);
-  const activeQuery = activeTab === "roles" ? roles : list;
+  const activeQuery = activeTab === "roles" ? policy : list;
   const refresh = () => {
     void client.invalidateQueries({ queryKey: key });
     void client.invalidateQueries({ queryKey: ["staff-account-policy", space] });
@@ -58,7 +55,7 @@ export function StaffAccountsPanel({ space, toolbar, onAuthRefresh, secondary, c
       {error && !activeQuery.isError && !(activeTab === "staff" && policy.isError) ? <ErrorText message={error.message} /> : null}
     </div> }}
     isEmpty={activeTab === "staff" && list.data?.count === 0} empty={{ message: "No staff accounts yet." }}
-    body={{ kind: "rows", rows: activeTab === "roles" ? <RolesReference roles={roles.data ?? []} /> : <>
+    body={{ kind: "rows", rows: activeTab === "roles" ? <RolesReference roles={policy.data?.roles ?? []} /> : <>
       <StaffAccountRows rows={list.data?.results ?? []} pending={changeStatus.isPending || resend.isPending} onEdit={setEditor}
         onPassword={setPassword} onStatus={account => { changeStatus.reset(); setReason(""); setStatus(account); }} onResend={account => resend.mutate(account)} />
       <div className="flex items-center gap-3"><button className="desk-button" disabled={!list.data?.previous} onClick={() => setPage(value => value - 1)}>Previous</button>

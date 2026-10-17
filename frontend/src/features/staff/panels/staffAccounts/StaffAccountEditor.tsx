@@ -21,7 +21,7 @@ export function StaffAccountEditor({ space, policy, account, initialRoles = [], 
   const roles = policy.creatable_roles.filter(role => role !== "space_manager" || policy.can_manage_space_managers);
   return <Modal open size="xl" title={account ? `Roles for ${account.display_name || account.username}` : "Create staff account"} onClose={() => { if (!save.isPending) onClose(); }}>
     <form className="grid gap-4" onSubmit={e => { e.preventDefault(); if (!save.isPending) save.mutate(); }}>
-      <StaffAccountFields space={space} draft={draft} onChange={setDraft} roles={roles} identity={!account} pending={save.isPending} />
+      <StaffAccountFields machineTypes={policy.machine_types} draft={draft} onChange={setDraft} roles={roles} identity={!account} pending={save.isPending} />
       {!account ? <p className="text-sm text-muted">{policy.email_onboarding_available ? "An email invitation sets the initial password. You can also issue a password directly." : "Email onboarding is unavailable. Issue a password after creating the account."}</p> : null}
       {save.error ? <ErrorText message={save.error.message} /> : null}
       <div className="flex flex-wrap justify-end gap-2">

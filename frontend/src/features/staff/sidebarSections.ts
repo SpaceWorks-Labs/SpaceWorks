@@ -43,7 +43,7 @@ export function sidebarSections(moduleAllowedTabs: readonly string[], activeKey:
   path: (tab: string) => string = tab => staffTabPath(tab, false), onSelect?: (tab: string) => void,
   flat = false): ShellSection[] {
   const item = (key: string): ShellItem => ({ key, label: SIDEBAR_LABELS[key] ?? TAB_LABELS[key], href: path(key), icon: ICONS[key], onSelect: () => onSelect?.(key) });
-  if (flat) return [{ key: "desk", items: ["requests", "direct", "handover", "payments", "notifications", "granted"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
+  if (flat) return [{ key: "desk", items: ["dashboard", "requests", "direct", "handover", "payments", "notifications", "granted"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
   return SIDEBAR_SECTIONS.map(section => {
     const items = section.tabs.filter(key => moduleAllowedTabs.includes(key)).map(item);
     const more = section.more?.filter(key => moduleAllowedTabs.includes(key)).map(item);

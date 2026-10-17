@@ -4,6 +4,7 @@ import { type CalloutProps, DataTable, EmptyState, KeyValueCard, ListRow, Relati
 import { adminQueryState } from "./adminPresentation";
 import { getPlatformDashboard, getPlatformProblems, usageAmount } from "./platformMonitoringApi";
 import { UsageTable } from "./TenantUsagePanel";
+import { PlatformAnalyticsPanels } from "./PlatformAnalyticsPanels";
 
 export function PlatformDashboardPanel() {
   const dashboard = useQuery({ queryKey: ["platform-dashboard"], queryFn: getPlatformDashboard, refetchInterval: 60_000 });
@@ -28,6 +29,7 @@ export function PlatformDashboardPanel() {
       ...Object.entries(data.usage_totals).map(([key, value]) => ({ label: key.replace(/_/g, " "), value: usageAmount(value, key === "storage" ? "bytes" : "count") })),
     ] } : undefined}
     main={[
+      { title: "Analytics", content: <PlatformAnalyticsPanels />, empty: { message: "No platform activity yet." } },
       { title: "Problems", empty: { message: "All checks passed. Run checks again after a deployment change." },
         content: problems.isLoading ? <p role="status">Running checks…</p> : problems.isError ? <EmptyState message="Couldn't load problems. Try again." action={{ label: "Retry", onClick: () => { void problems.refetch(); } }} />
           : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <>Checked <RelativeTime date={problems.data.checked_at} />. </> : null}Checks also run every 15 minutes through the platform scheduler.</p>

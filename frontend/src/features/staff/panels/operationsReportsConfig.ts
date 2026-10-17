@@ -1,17 +1,19 @@
 import type { ChartSpec } from "./charts/chartSpec";
+import type { ReportChartSpec } from "./analyticsApi";
 
 export type ReportCatalogItem = {
   key: string; title: string; fields: string[]; exportable: boolean; summary: boolean;
   required_modules: string[]; available: boolean | null; unavailable_reason: string | null;
   grains: string[]; chart_hint: string; aggregate_supported: boolean;
   // Server capabilities (phase 10). Absent on an older server: treat as unrestricted.
-  allowed_formats?: Array<"csv" | "xlsx">; schedulable?: boolean; previewable?: boolean;
+  allowed_formats?: Array<"csv" | "xlsx" | "pdf">; schedulable?: boolean; previewable?: boolean;
   condition_metrics?: string[];
-  chart_spec?: ChartSpec;
+  chart_spec?: ChartSpec | ReportChartSpec | null;
+  identity_bearing?: boolean;
 };
 
 export function reportFormats(report: Pick<ReportCatalogItem, "allowed_formats">): Array<"csv" | "xlsx"> {
-  return report.allowed_formats?.length ? report.allowed_formats : ["csv", "xlsx"];
+  return report.allowed_formats?.length ? report.allowed_formats.filter((format): format is "csv" | "xlsx" => format !== "pdf") : ["csv", "xlsx"];
 }
 
 export function reportGrain(report: Pick<ReportCatalogItem, "grains"> | undefined, requested: string): string {

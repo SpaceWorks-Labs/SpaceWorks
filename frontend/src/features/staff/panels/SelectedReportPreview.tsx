@@ -28,7 +28,7 @@ export function SelectedReportPreview({ report, analyticsBase, scopeKey, start, 
   const visible = indexes.length ? { rows: rows.map((row) => indexes.map((index) => row[index])) } : result.data;
   const chartRows = result.data?.typed_rows ?? rows.slice(1).map((row) => Object.fromEntries((rows[0] ?? []).map((header, index) => [String(header), row[index]])));
   return <><Panel title={`${report.title} preview`} reportKey={report.key} generic>
-    {report.chart_spec ? <CatalogChartPanel title={report.title} spec={report.chart_spec} rows={chartRows}
+    {report.chart_spec ? <CatalogChartPanel title={report.title} spec={report.chart_spec} hint={report.chart_hint} rows={chartRows}
       loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} /> : <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={rows.length <= 1}>
       <ReportTable data={visible} />
     </DataState>}</Panel>

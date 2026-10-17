@@ -1,3 +1,4 @@
+import { ModuleAnalytics } from "./panels/ModuleAnalytics";
 import { Suspense, type ReactNode } from "react";
 
 import { ListLayout } from "../../components/layouts";
@@ -234,6 +235,7 @@ export function StaffTabContent({
       ) : null}
       <StaffPlatformTabContent activeTab={activeTab} activeMakerspace={activeMakerspace} makerspaces={makerspaces} isSuperadmin={isSuperadmin} canManageMakerspace={canManageMakerspace} currentUser={currentUser} onAuthRefresh={onAuthRefresh} />
       {activeTab === "audit" && canViewAudit ? <AuditLog makerspaceId={activeMakerspace?.id} /> : null}
+      <ModuleAnalytics key={`analytics:${makerspaceKey}:${activeTab}`} makerspace={activeMakerspace} tab={activeTab} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
       </Suspense>
     </StaffPanelErrorBoundary>
   );

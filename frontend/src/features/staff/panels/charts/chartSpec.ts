@@ -16,6 +16,7 @@ export type ChartSpec = {
 export type ChartPoint = { x: string | number; label: string; value: number; other?: boolean };
 export type ChartSeries = {
   id: string; label: string; unit: string; currency?: string; partition?: string;
+  valueField?: string; dimensions?: string[];
   panelKey: string; points: ChartPoint[];
 };
 export type ChartData = { series: ChartSeries[]; summary: string; xKind: "time" | "category"; xLabel: string };
@@ -55,7 +56,8 @@ export function toChartData(spec: ChartSpec, rows: readonly ChartRecord[]): Char
       const id = JSON.stringify([identity, field.field, panelKey]);
       let series = groups.get(id);
       if (!series) {
-        series = { id, label: [...identity, field.label ?? field.field].join(" · "), unit, currency, partition, panelKey, points: [] };
+        series = { id, label: [...identity, field.label ?? field.field].join(" · "), unit, currency, partition,
+          valueField: field.field, dimensions: identity, panelKey, points: [] };
         groups.set(id, series);
       }
       const point = series.points.find((point) => point.x === x);

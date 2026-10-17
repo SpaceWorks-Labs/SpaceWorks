@@ -120,7 +120,7 @@ export function getStaffAccess(
   // finished work over, so a manager needs no separate grant.
   const canCollectServiceRequests = has("collect_service_request") || canManageMachines;
   const printingOnly = canSeePrinting && !canEditInventory && !canManageMakerspace;
-  const baseTabs = handoutOnly ? (["requests", "direct", "handover", "payments", "notifications", "granted"] as const) : ALL_TABS;
+  const baseTabs = handoutOnly ? (["dashboard", "requests", "direct", "handover", "payments", "notifications", "granted"] as const) : ALL_TABS;
   const grantOnly = !isSuperadmin && actions.length === 0 && hasGrants;
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.
@@ -128,7 +128,7 @@ export function getStaffAccess(
     if (tabName === "granted") return hasGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;
     if (tabName === "usage") return canManageMakerspace;
-    if (tabName === "dashboard") return !handoutOnly && (isSuperadmin || canSeeDashboard);
+    if (tabName === "dashboard") return handoutOnly || isSuperadmin || canSeeDashboard;
     // Personal rows and read state admit machine-only and handover staff.
     if (tabName === "notifications") return isSuperadmin || actions.length > 0;
     if (tabName === "tobuy") return canUseToBuy;
@@ -204,11 +204,7 @@ export function getStaffAccess(
     canCollectServiceRequests,
     canChooseToBuyKind,
     allowedTabs,
-    // A handover-only staffer lands on Requests when they have it -- but a collect-only
-    // role does not, and defaulting to a tab they cannot open would open the console on an
-    // error. Fall through to whatever they actually have.
-    defaultTab: handoutOnly
-      ? (allowedTabs.includes("requests") ? "requests" : (allowedTabs[0] ?? "handover"))
-      : (allowedTabs.includes("dashboard") ? "dashboard" : (allowedTabs[0] ?? "dashboard")),
+    // The backend serves handover-only actors an operational queue home.
+    defaultTab: allowedTabs.includes("dashboard") ? "dashboard" : (allowedTabs[0] ?? "dashboard"),
   };
 }

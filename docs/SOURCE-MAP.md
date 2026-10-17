@@ -71,6 +71,35 @@ reads authoritative quantity buckets, while `stock_snapshots.py` gates tenant fa
 `tracking_references.py`; `verification_semantic.py` verifies non-FK references behind
 the existing `verification.py` exports. Regression coverage is `backend/tests/analytics/`.
 
+Frontend analytics (1f-5) lives in `features/staff/panels/`: `reportAreas.ts` groups only
+server-catalog entries into nine areas, `ReportAreaSections.tsx` mounts the selected
+report query, and `AnalyticsData.tsx` pairs charts with complete source-table toggles
+(including rows omitted by chart axes or top-N display). `analyticsApi.ts` owns the
+local serializer contracts, scoped query keys under the existing `operations-report`
+invalidation prefix, and matrix-to-record projection. `charts/wireChartSpec.ts` adapts
+the backend F1 spec into the existing accessible chart kit, preserving tenant, currency,
+measurement-unit and negative-value rules. Null specs retain the table presentation.
+`DashboardAnalyticsWidgets.tsx` renders server-authorized widget kinds and the separate
+handover queue home; `staffAccess.ts` and the flat sidebar admit that queue-only home.
+`ModuleAnalytics.tsx` embeds catalog-authorized small panels in inventory, machines,
+bookings, events, membership, money, communications and device consoles. The online
+payment rail is not a gate on core money analytics.
+
+`features/members/memberUsageApi.ts` and `MemberUsagePanel.tsx` own the personal
+`my-usage` query, keyed by makerspace under `member`, and its charts in the member
+overview. They suppress 403/404 and display payments independently of membership usage.
+`organizationAnalyticsApi.ts`, `organizationReportChoices.ts` and
+`panels/OrganizationAnalyticsPanel.tsx` retain the server's combined total alongside
+every makerspace breakdown, with period/grain controls and nullable combined chart specs.
+`platformAnalyticsApi.ts`, `PlatformAnalyticsPanels.tsx` and `PlatformAnalyticsPicker.tsx`
+add services/usage charts and paginated tenant drill-down to `PlatformDashboardPanel`.
+Hidden service buckets have one anonymous label and no tenant identifiers; scoped
+catalog/report 403s remain explicit blocks. The two platform fallback specs mirror the
+registry because the current platform response omits chart metadata. Local report,
+dashboard, member, organization and picker DTOs await coordinator OpenAPI regeneration.
+Vitest panel suites live beside these components, with registry fixtures and shared
+fetch/provider helpers in `src/test/reportChartCases.ts` and `analyticsFixtures.tsx`.
+
 The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
 `AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
 `WorkspaceSwitcher`, `UserMenu`, `MobileTopBar`, `SidebarDrawer`, `BottomTabs` and

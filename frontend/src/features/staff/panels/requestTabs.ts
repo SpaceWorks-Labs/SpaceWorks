@@ -15,7 +15,7 @@ const TAB_ACTIONS: Record<RequestTab, readonly string[]> = {
   history: ["issue_request"],
 };
 export function visibleRequestTabs(guestOnly: boolean, actions: readonly string[] = [], isSuperadmin = false): RequestTab[] {
-  return REQUEST_TABS.filter(tab => (tab !== "pending" && tab !== "active" || !guestOnly)
+  return REQUEST_TABS.filter(tab => (tab !== "pending" || !guestOnly)
     && (isSuperadmin || TAB_ACTIONS[tab].some(action => actions.includes(action))));
 }
 /** Read legacy links without rewriting them; only an explicit tab click canonicalises the URL. */

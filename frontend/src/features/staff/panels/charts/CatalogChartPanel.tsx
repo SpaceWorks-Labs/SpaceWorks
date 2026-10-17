@@ -6,6 +6,9 @@ import { FunnelChart } from "./FunnelChart";
 import { Heatmap } from "./Heatmap";
 import { Histogram } from "./Histogram";
 import { MultiLineChart } from "./MultiLineChart";
+import type { ReportChartSpec } from "../analyticsApi";
+import { funnelInput, reportAlternative, wireChartSpec } from "./wireChartSpec";
+import { rankedTimeSeries } from "./rankedTimeSeries";
 
 function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
   switch (spec.kind) {
@@ -23,30 +26,36 @@ function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
         segments: props.data.series.map((series) => ({ label: series.label, value: series.points.find((point) => point.x === x)?.value ?? 0 })),
       }))} />;
     }
-    case "bar": case "pie": break;
+    case "pie": return <PieChart title={props.title} chartData={props.data} valueLabel={props.data.series[0]?.unit}
+      rows={props.data.series.flatMap(series => series.points.map(point => ({ label: `${series.label} — ${point.label}`, value: point.value })))} />;
+    case "bar": break;
     default: return <ChartFrame {...props}><p>Chart type unavailable. Show the table to explore this report.</p></ChartFrame>;
   }
-  const Component = spec.kind === "pie" ? PieChart : spec.kind === "line" ? LineChart : BarChart;
+  const Component = spec.kind === "line" ? LineChart : BarChart;
   return <div className="space-y-4">{props.data.series.map((series) => <Component key={series.id}
     title={`${props.title} — ${series.label}`} chartData={{ ...props.data, series: [series], summary: chartSummary(spec, [series]) }}
     valueLabel={[series.label, series.currency, series.unit].filter(Boolean).join(" · ")}
     rows={series.points.map((point) => ({ label: point.label, value: point.value }))} />)}</div>;
 }
 
-export function CatalogChartPanel({ spec, rows, title, loading = false, error, onRetry }: {
-  spec: ChartSpec; rows: readonly ChartRecord[]; title: string; loading?: boolean; error?: unknown; onRetry?: () => void;
+export function CatalogChartPanel({ spec: inputSpec, hint, rows, title, loading = false, error, onRetry }: {
+  spec: ChartSpec | ReportChartSpec; hint?: string; rows: readonly ChartRecord[]; title: string; loading?: boolean; error?: unknown; onRetry?: () => void;
 }) {
   let data;
+  let spec: ChartSpec;
   let invalid = false;
-  try { data = toChartData(spec, rows); } catch { invalid = true; }
+  try {
+    const input = funnelInput(wireChartSpec(inputSpec, hint, rows), rows);
+    spec = input.spec; data = rankedTimeSeries(inputSpec, toChartData(spec, input.rows));
+  } catch { invalid = true; }
   if (loading) return <div role="status" className="p-4 text-muted">Loading chart…</div>;
   if (invalid && !error) return <p role="alert" className="text-danger">This report has an invalid chart specification.</p>;
   const panels = [...new Set(data?.series.map((series) => series.panelKey))];
   return <DataState loading={false} error={error} onRetry={onRetry} empty={!data?.series.length}>
-    <div className="space-y-6">{panels.map((key) => {
+    <div className="space-y-6">{reportAlternative(inputSpec, rows) ? <p className="text-sm text-muted">{reportAlternative(inputSpec, rows)}</p> : null}{panels.map((key) => {
       const series = data!.series.filter((series) => series.panelKey === key);
       const partitionLabel = [...new Set([series[0].partition, series[0].currency, series[0].unit].filter(Boolean))].join(" · ");
-      return <Chart key={key} spec={spec} title={`${title} — ${partitionLabel}`} data={{ ...data!, series, summary: chartSummary(spec, series) }} />;
+      return <Chart key={key} spec={spec!} title={`${title} — ${partitionLabel}`} data={{ ...data!, series, summary: chartSummary(spec!, series) }} />;
     })}</div>
   </DataState>;
 }

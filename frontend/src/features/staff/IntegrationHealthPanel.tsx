@@ -1,3 +1,4 @@
+import { ModuleAnalytics } from "./panels/ModuleAnalytics";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { ErrorBlock } from "../../components/ui";
 import { SettingsRow } from "../../components/ui";
@@ -95,6 +96,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
         </div>
       </div>
 
+      <ModuleAnalytics makerspace={makerspace} tab="communications" />
       {data ? (
         <div className="mt-4 grid gap-3 @3xl:grid-cols-2">
           <HealthBlock title="Email" status={data.email.status} detail={data.email.detail}>

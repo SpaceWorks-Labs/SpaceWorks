@@ -3,7 +3,7 @@ export type DashboardCounts = {
   pending_event_registrations?: number;
   pending_bookings?: number;
   upcoming_bookings?: number;
-  scope_mode: "machine" | "full";
+  scope_mode: "machine" | "full" | "handover";
   overdue_loans?: number;
   pending_requests?: number;
   awaiting_issue?: number;

@@ -42,6 +42,9 @@ def eligible(envelope):
     space.refresh_from_db()
     custody = envelope.stream == "backup" and envelope.event in {"archive_custody_alarm", "tenant_exit_custody_alarm"}
     owner_ok = eligible_owner(space, envelope.recipient_id)
+    if not owner_ok and envelope.source_kind == "membership.application":
+        from apps.makerspaces.notifications_p2_members import reapplication_owner_eligible
+        owner_ok = reapplication_owner_eligible(envelope)
     if mandatory_email(envelope.stream, envelope.event):
         from apps.accounts.models import User
         owner_ok = User.objects.filter(pk=envelope.recipient_id, is_active=True, access_status="active",
@@ -75,7 +78,7 @@ def email_eligible(envelope):
         if email_reserved(envelope):
             return False
     verified = user.email_verified_at or proven_address(envelope) or legacy_staff_email_allowed(envelope)
-    return bool(user.email and verified and not email_module_blocks(
+    return bool((user.email or "").strip() and verified and not email_module_blocks(
         envelope.makerspace, envelope.stream, envelope.event,
     ) and not blocked_reason(envelope.makerspace, user.email, user_id=user.pk,
                             feature=envelope.feature, stream=envelope.stream, event=envelope.event))

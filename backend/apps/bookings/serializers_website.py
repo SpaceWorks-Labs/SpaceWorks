@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from .models import BookableSpace
 from .models_website import BookingResourcePageSection
-from .serializers_public import PublicBookableSpaceSerializer
+from .serializers_public import PublicBookableSpaceSerializer, PublicSpacePhotoSerializer
 
 
 class StrictInput(serializers.Serializer):
@@ -79,6 +79,8 @@ class BookingPublicRulesSerializer(serializers.Serializer):
 
 
 class PublicBookingResourceSerializer(PublicBookableSpaceSerializer):
+    # detail() already projects model-backed gallery rows into this allow-list.
+    photos = PublicSpacePhotoSerializer(many=True, read_only=True)
     image_url = serializers.CharField(allow_blank=True)
     payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
     currency = serializers.CharField()

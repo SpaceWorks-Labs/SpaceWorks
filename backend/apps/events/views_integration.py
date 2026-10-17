@@ -10,8 +10,7 @@ from apps.apiclients.read_contract import SignedReadView, keyset_page
 from apps.apiclients.scope_registry_reads import ATTENDANCE_READ, EVENT_READ, PARTICIPANT_READ
 from apps.audit.services import record
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.makerspaces.guards import require_module
-from apps.makerspaces.platform import feature_enabled
+from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.makerspaces.servability import is_servable
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
 
@@ -44,8 +43,7 @@ class EventIntegrationReadView(SignedReadView):
         tenant = request.api_client.makerspace
         if not is_servable(tenant) or not tenant.superadmin_access_enabled:
             raise NotFound()
-        require_module(tenant, "events")
-        if not feature_enabled(tenant, "events.api_read"):
+        if not module_enabled(tenant, "events") or not feature_enabled(tenant, "events.api_read"):
             raise NotFound()
         return tenant
 

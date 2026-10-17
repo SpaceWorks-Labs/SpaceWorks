@@ -36,6 +36,7 @@ REPORT_MODULE_COVERAGE = {
     "bookings": ModuleReportCoverage("substantive", ("booking-utilization",)),
     "maintenance": ModuleReportCoverage("substantive", ("maintenance-activity",)),
     "membership": ModuleReportCoverage("substantive", ("member-activity", "community-engagement")),
+    "presence": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "notifications": ModuleReportCoverage("composite", ("communications-health",)),
     "email": ModuleReportCoverage("composite", ("communications-health",)),
     "slack": ModuleReportCoverage("composite", ("communications-health",)),

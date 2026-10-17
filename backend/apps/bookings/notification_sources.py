@@ -47,10 +47,15 @@ def grant_eligible(envelope):
 def reminder_eligible(envelope):
     from .communication_recipients import notification_account
     from .notifications import _effective_toggle
+    from apps.makerspaces.reminder_policy import reminder_offsets
     row = _booking(envelope)
     return bool(row and envelope.audience == "requester" and row.member_id == envelope.recipient_id
                 and row.status == Booking.Status.CONFIRMED and row.starts_at > timezone.now()
                 and _effective_toggle(row)
+                and type(envelope.context.get("offset_seconds")) is int
+                and envelope.context["offset_seconds"] in reminder_offsets(row.space.makerspace, "booking")
+                and type(envelope.context.get("booking_id")) is int
+                and envelope.context["booking_id"] == row.pk
                 and notification_account(row.space.makerspace, row.member_id, "reminder") is not None)
 
 

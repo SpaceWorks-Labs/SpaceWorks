@@ -5,6 +5,7 @@ from pathlib import Path
 import uuid
 
 from botocore.exceptions import BotoCoreError, ClientError
+from django.apps import apps
 from django.conf import settings
 
 from apps.backup.storage import client
@@ -120,12 +121,16 @@ def _occupied(bucket_kind, key):
     if _receipt_reserved(bucket_kind, key):
         return True
     if bucket_kind == "private":
-        from apps.events.models import EventCertificateArtwork
-
         # A row reserves its unique key even when its bytes are missing. Allocate
-        # here so promotion, imported rows and issuance snapshots share one key.
-        if EventCertificateArtwork.objects.filter(object_key=key).exists():
-            return True
+        # here so promotion and imported rows share one key. Removed domain apps
+        # have no rows to reserve and must not be imported just to inspect storage.
+        for label in ("events.EventCertificateArtwork", "events.EventPageAsset", "bookings.BookingResourcePageAsset"):
+            try:
+                model = apps.get_model(label)
+            except LookupError:
+                continue
+            if model.objects.filter(object_key=key).exists():
+                return True
     return object_exists(bucket_kind, key)
 
 

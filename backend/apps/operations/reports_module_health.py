@@ -24,7 +24,7 @@ ACTION_MODULES = {
     "stock_transfer": "stock_transfers", "stocktake": "stocktake",
     "procurement": "procurement", "machine": "machines", "service": "machine_service",
     "event": "events", "booking": "bookings", "maintenance": "maintenance",
-    "membership": "membership", "notification": "notifications", "email": "email",
+    "membership": "membership", "presence": "presence", "notification": "notifications", "email": "email",
     "payment": "payments", "device": "mobile", "devices": "devices",
     "report": "reports",
 }

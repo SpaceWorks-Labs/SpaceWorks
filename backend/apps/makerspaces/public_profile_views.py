@@ -5,7 +5,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.utils.cache import patch_vary_headers
 from apps.apiclients.throttling import ClientTierRateThrottle
 from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -27,13 +26,17 @@ class PublicProfileBase(APIView):
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "public_read"
 
-    def finalize_response(self, request, response, *args, **kwargs):
-        response = super().finalize_response(request, response, *args, **kwargs)
-        response["Cache-Control"] = "no-store"
-        patch_vary_headers(response, ("Origin", "Host"))
-        return response
+    def cache_headers(self):
+        # Called by the authenticated handler, never a DRF lifecycle override.
+        # Middleware covers authentication/throttle errors before this point.
+        self.headers["Cache-Control"] = "no-store"
+        vary = self.headers.get("Vary", "").split(",")
+        self.headers["Vary"] = ", ".join(dict.fromkeys(
+            [value.strip() for value in vary if value.strip()] + ["Origin", "Host"]
+        ))
 
     def resolve(self, request, handle, suffix=""):
+        self.cache_headers()
         claim, redirected = resolve_public_profile(handle, request)
         if redirected:
             location = f"/api/v1/public/profiles/{claim.handle}/{suffix}"

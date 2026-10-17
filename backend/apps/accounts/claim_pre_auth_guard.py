@@ -20,6 +20,9 @@ from rest_framework.views import APIView
 # configured on claim-reachable routes. Exact class+method matching makes a new hook a
 # build failure instead of silently trusting executable pre-auth code.
 POLICY_OVERRIDE_ALLOWLIST = {
+    # Presence TV throttles only declare a scope/rate; DRF owns every hook.
+    "apps.presence.views_public.PresenceTVThrottle": set(),
+    "apps.presence.views_public.PresenceTVUserThrottle": set(),
     "apps.bookings.views_passes.BookingPassRenderThrottle": set(),
     "apps.bookings.views_confirmation.BookingConfirmationThrottle": set(),
     "apps.bookings.throttles_feed.BookingFeedTokenThrottle": {"get_cache_key"},
@@ -79,6 +82,7 @@ POLICY_OVERRIDE_ALLOWLIST = {
     # Certificate downloads share a principal-keyed render budget. The only hook
     # selects that cache key; it never authenticates or grants claim authority.
     "apps.events.throttles.CredentialRenderThrottle": {"get_cache_key"},
+    "apps.events.throttles.SpeakerClaimThrottle": {"get_cache_key"},
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},

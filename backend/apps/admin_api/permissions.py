@@ -69,6 +69,8 @@ def require_makerspace_superadmin_access(actor, makerspace):
 
 
 def hidden_space_manager_reset_break_glass(target):
+    if target.account_kind == "staff":
+        raise PermissionDenied("Only this makerspace's Space Managers may manage hidden staff accounts.")
     memberships = list(target.makerspace_memberships.select_related("makerspace"))
     hidden = [
         membership

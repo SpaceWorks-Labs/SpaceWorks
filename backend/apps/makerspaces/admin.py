@@ -20,6 +20,8 @@ from apps.makerspaces.models import (
     normalize_frontend_domain,
 )
 from config.admin_access import SuperuserOnlyModelAdmin
+from apps.accounts.admin_staff_lifecycle import ReadOnlyMembershipInlineMixin
+from apps.makerspaces.admin_staff_accounts import MakerspaceStaffAccountAdminMixin
 
 
 class ArchivedFilter(admin.SimpleListFilter):
@@ -40,11 +42,12 @@ class ArchivedFilter(admin.SimpleListFilter):
         return queryset
 
 
-class MakerspaceMembershipInline(TabularInline):
+class MakerspaceMembershipInline(ReadOnlyMembershipInlineMixin, TabularInline):
     # Compatibility: intentionally writes only the legacy string; null FK = frozen fallback.
     model = MakerspaceMembership
     fk_name = "makerspace"
     fields = ("user", "role")
+    readonly_fields = fields
     autocomplete_fields = ("user",)
     extra = 0
 
@@ -56,6 +59,7 @@ class MakerspaceMembershipInline(TabularInline):
 
 @admin.register(Makerspace)
 class MakerspaceAdmin(
+    MakerspaceStaffAccountAdminMixin,
     MakerspaceOwnerAdminMixin,
     MakerspaceLifecycleActionsMixin,
     MakerspaceImageAdminMixin,
@@ -87,6 +91,7 @@ class MakerspaceAdmin(
             {
                 "fields": (
                     "name",
+                    "create_staff_account_link",
                     "public_code",
                     "slug",
                     "location",
@@ -119,7 +124,7 @@ class MakerspaceAdmin(
             },
         ),
     )
-    readonly_fields = ("logo_preview", "cover_preview")
+    readonly_fields = ("logo_preview", "cover_preview", "create_staff_account_link")
     inlines = (MakerspaceMembershipInline,)
 
     def save_model(self, request, obj, form, change):

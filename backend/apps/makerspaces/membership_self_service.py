@@ -48,6 +48,8 @@ def cancel_renewal(actor, makerspace_id, reason):
 
 @transaction.atomic
 def leave_makerspace(actor, makerspace_id, reason):
+    from apps.accounts.account_kind_guards import require_member_account
+    require_member_account(actor)
     makerspace, membership = _locked_membership(actor, makerspace_id)
     if rbac.Action.MANAGE_MAKERSPACE in rbac.actions_for_membership(membership):
         others = rbac.scope_by_makerspace(actor, MakerspaceMembership.objects.filter(

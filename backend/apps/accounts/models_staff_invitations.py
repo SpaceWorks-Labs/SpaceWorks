@@ -1,4 +1,4 @@
-"""Deployment-local invitations to staff authority, stored as bearer digests."""
+"""Account-bound initial-password invitations, stored as bearer digests."""
 
 from django.conf import settings
 from django.db import models
@@ -12,6 +12,9 @@ class StaffInvitation(models.Model):
     email_ciphertext = models.TextField()
     role = models.ForeignKey("makerspaces.MakerspaceRole", on_delete=models.CASCADE)
     granted_actions = models.JSONField(default=list)
+    role_snapshot = models.JSONField(default=list)
+    machine_scope_snapshot = models.JSONField(default=list)
+    credential_generation = models.PositiveIntegerField(default=0)
     token_digest = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()
     accepted_at = models.DateTimeField(null=True)

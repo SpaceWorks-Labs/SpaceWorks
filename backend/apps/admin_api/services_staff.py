@@ -52,36 +52,9 @@ def attach_staff_membership(
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         existing_user = User.objects.select_for_update().filter(username=username).first()
-        staff_roles = role.slug != "member"
-        if staff_roles:
-            if is_break_glass:
-                raise PermissionDenied("Only this makerspace's Space Managers may manage its staff.")
-            if existing_user is None:
-                from apps.accounts.staff_accounts import create_staff_account
-                from apps.audit import services as audit
-
-                user = create_staff_account(
-                    makerspace, name=(" ".join(filter(None, (first_name, last_name))) or username)[:200],
-                    email=email, username=username, roles=roles, created_by=actor,
-                )
-                if first_name or last_name:
-                    user.first_name, user.last_name = first_name, last_name
-                    user.save(update_fields=["first_name", "last_name"])
-                membership = MakerspaceMembership.objects.get(user=user, makerspace=makerspace)
-                audit.record(actor, "staff.roles_changed", makerspace=makerspace, target=user,
-                             meta={"membership_id": membership.pk, "before": [],
-                                   "after": [item.slug for item in roles],
-                                   "removed_machine_type_ids": []})
-                return membership, True, False
-            if (existing_user.account_kind != "staff"
-                    or existing_user.staff_makerspace_id != makerspace.pk):
-                raise ValidationError({"username": "Use a staff account belonging to this makerspace."})
-            if (not existing_user.is_active or existing_user.retired_at is not None
-                    or not MakerspaceMembership.objects.filter(
-                        user=existing_user, makerspace=makerspace, status="active",
-                    ).exists()):
-                raise ValidationError({"username": "Inactive staff require the staff reactivation workflow."})
-        elif existing_user is not None and existing_user.account_kind != "member":
+        if any(item.slug != "member" for item in roles):
+            raise ValidationError({"roles": "Use the staff-accounts lifecycle API to create staff."})
+        if existing_user is not None and existing_user.account_kind != "member":
             raise ValidationError({"username": "Community memberships require a member account."})
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed, settings_for
         policy = settings_for(makerspace)
@@ -103,8 +76,7 @@ def attach_staff_membership(
             # it a LEFT OUTER JOIN, and Postgres refuses FOR UPDATE on the nullable
             # side of one. Same pattern as `role_services.assign_role`.
             existing = (
-                MakerspaceMembership.objects.select_for_update(of=("self",))
-                .select_related("assigned_role")
+                MakerspaceMembership.objects.select_for_update()
                 .filter(makerspace=makerspace, user=user)
                 .first()
             )

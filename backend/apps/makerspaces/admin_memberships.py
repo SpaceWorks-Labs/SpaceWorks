@@ -14,6 +14,32 @@ from config.admin_access import SuperuserOnlyModelAdmin
 
 @admin.register(MakerspaceMembership)
 class MakerspaceMembershipAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "user":
+            from apps.accounts.models import User
+            kwargs["queryset"] = User.objects.filter(account_kind="member")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "role":
+            kwargs["choices"] = [("custom", "Member")]
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.user.account_kind == "staff":
+            return tuple(field.name for field in self.model._meta.fields) + ("additional_role_names",)
+        return super().get_readonly_fields(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        if obj and obj.user.account_kind == "staff" and request.method not in {"GET", "HEAD"}:
+            return False
+        return super().has_change_permission(request, obj)
     list_display = ("user", "makerspace", "role", "created_at")
     list_filter = ("makerspace", "role")
     search_fields = ("user__username", "user__email")
@@ -107,4 +133,3 @@ class MemberCardAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-

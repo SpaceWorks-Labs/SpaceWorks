@@ -53,6 +53,7 @@ class ReplayIdentity:
             raise ReplayFailure("session_mismatch")
         user = User.objects.filter(pk=self.actor_id, is_active=True).first()
         if (user is None or user.access_status != User.AccessStatus.ACTIVE
+                or user.retired_at is not None or user.is_tenant_dump_stub
                 or user.must_change_password or not is_servable(station.makerspace)):
             raise ReplayFailure("permission_revoked")
         operation = OPERATIONS[kind]

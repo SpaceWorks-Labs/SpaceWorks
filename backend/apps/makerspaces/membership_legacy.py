@@ -180,10 +180,12 @@ def legacy_approve_request(actor, request, assigned_role, plan=None):
 
 
 def _approve_request(actor, request, assigned_role):
+    if assigned_role.slug != "member":
+        raise ValidationError({"role_id": "Use a separate staff account for staff roles."})
     request = MembershipRequest.objects.select_related("makerspace", "user").get(pk=request.pk)
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=request.makerspace_id)
-        request = MembershipRequest.objects.select_for_update(of=("self",)).select_related("user").get(pk=request.pk)
+        request = MembershipRequest.objects.select_for_update().get(pk=request.pk)
         if (request.assigned_role_id and request.assigned_role.granted_actions
                 and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)):
             raise PermissionDenied("Managing staff invitations requires makerspace administration.")

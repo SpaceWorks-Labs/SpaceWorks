@@ -19,13 +19,15 @@ def validate_report_definition(definition):
     if definition.platform_only and (not definition.deployment_aggregate or definition.schedulable):
         raise ValueError("Platform-only reports must be deployment aggregates and unschedulable.")
     validate_chart_spec(definition.chart_spec, definition.fields)
+    if definition.chart_spec is not None and not definition.chart_spec["values"] and definition.chart_hint != "table":
+        raise ValueError("Reports without numeric chart measures must use the table hint.")
 
 
 def validate_chart_spec(spec, fields):
     """All keys are required; nullable currency/partition/truncation are explicit.
 
-    series is a list of dimension field names; values is a nonempty list of
-    {field, unit}. Units are display labels, not conversions. Alt placeholders
+    series is a list of dimension field names; values is a list of
+    {field, unit}, or an empty list for a table. Units are display labels, not conversions. Alt placeholders
     reference declared fields (plus count); attribute/index traversal is forbidden.
     """
     if spec is None:
@@ -51,8 +53,13 @@ def validate_chart_spec(spec, fields):
     if not isinstance(x, dict) or set(x) != {"field", "kind"} or x["kind"] not in ("time", "category"):
         raise ValueError("x requires field and kind (time or category).")
     field(x["field"])
-    if not isinstance(spec["values"], list) or not spec["values"]:
-        raise ValueError("values must be a nonempty list.")
+    if not isinstance(spec["values"], list):
+        raise ValueError("values must be a list.")
+    if not spec["values"] and (
+        x["kind"] != "category" or series or spec["currency_field"] is not None
+        or spec["partition"] is not None or spec["truncation"] is not None or spec["negatives"] != "clip"
+    ):
+        raise ValueError("Table specs require a category row dimension and no aggregation settings.")
     value_fields = []
     for value in spec["values"]:
         if not isinstance(value, dict) or set(value) != {"field", "unit"}:

@@ -496,6 +496,15 @@ holds canonical `ReportDefinition`s (module-gated, `report_scope.eligible_makers
 contract; **aggregate output groups by `makerspace_id` and never flattens cross-tenant data**. Per-makerspace
 report rows are gated by query-level scope (no per-row Python check → no N+1).
 
+**Every previewable report declares a valid F1 `chart_spec`.** Chart dimensions and values
+reference only its registered output fields. Money charts partition by currency and preserve
+negative corrections; reports without a currency field chart non-money measures. Detail
+loan lists expose `count=1` per row, never sum identifiers. These counts describe the returned
+(possibly limited) rows. Event, booking and audit detail lists retain their export allowlists;
+their table specs use an empty `values` list and no aggregation settings. The audit trail remains
+export-only even though its definition also carries a table spec. The platform analytics
+view returns the definition's typed `chart_spec` beside the existing rows and metadata.
+
 **Role dashboards (analytics 1f-4) reuse those reports.** `dashboard_widgets.WIDGETS`
 declares actions, source modules, report keys, kind and a default 30-local-day period.
 The existing dashboard counters remain compatible; `widgets` adds report-service data
@@ -2035,7 +2044,11 @@ The confirmation UI always discloses manual removal in Apple Account settings.
 Portable and deployment backups preserve deletion timestamps. Portable identity creation
 keeps deletion-requested users inactive with their timestamps and anonymises purged users;
 linking a deleted source to an existing target account is refused rather than changing
-that target's unrelated platform identity. Source cleanup journals and Apple credentials
+that target's unrelated platform identity. The fixed `global/users.csv` identity projection
+does not grow: PORTABLE carries deletion fences in `global/user_lifecycle.json`, only for
+deleted identities in the approved user closure. The migration envelope hashes this sidecar;
+the importer validates its literal timestamp fields and merges them into identity resolution.
+Subject exports keep the same fixed identity projection. Source cleanup journals and Apple credentials
 never travel in tenant artifacts; target cleanup resumes from the imported timestamps.
 
 **Retained and disclosed:** `AuditLog`; `Payment`/`Refund`/`ManualSettlement`;

@@ -24,7 +24,9 @@ def build_most_lent(makerspace_id, *, limit=None, date_range=None, grain="day"):
         qs = dated(HardwareRequestItem.objects.filter(request__makerspace=space, issued_quantity__gt=0),
                    "request__issued_at", space, date_range, grain).select_related("product")
         for item in qs.iterator():
-            key = (item.report_period.date(), item.product_id)
+            # Legacy issued rows may lack issued_at. Keep their unbounded export
+            # totals in an unknown cohort rather than inventing a date or crashing.
+            key = (item.report_period.date() if item.report_period else None, item.product_id)
             row = groups.setdefault(key, dict(makerspace_id=space.pk, period=key[0], product_id=item.product_id,
                                              product_name=item.product.name, times_lent=0, total_quantity_lent=0))
             seen[key].add(item.request_id)
@@ -43,7 +45,8 @@ def build_most_lent(makerspace_id, *, limit=None, date_range=None, grain="day"):
                 for field in ("times_lent", "total_quantity_lent"):
                     target[field] += row[field]
         records.extend(other.values())
-    records.sort(key=lambda row: (row["period"], -row["total_quantity_lent"], row["product_name"]))
+    records.sort(key=lambda row: (row["period"] is None, row["period"],
+                                  -row["total_quantity_lent"], row["product_name"]))
     return result(MOST_FIELDS, records, makerspace_id, limit)
 
 

@@ -31,3 +31,7 @@ class GenericAnalyticsReportSerializer(serializers.Serializer):
     rows = serializers.ListField(child=serializers.ListField(child=serializers.JSONField()))
     typed_rows = serializers.ListField(child=serializers.DictField(), required=False)
     meta = serializers.DictField(required=False)
+
+
+class PlatformAnalyticsReportSerializer(GenericAnalyticsReportSerializer):
+    chart_spec = ReportChartSpecSerializer(help_text="Canonical chart fields, units, and partitions from the report definition.")

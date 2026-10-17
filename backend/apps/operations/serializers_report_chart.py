@@ -21,7 +21,7 @@ class ReportChartTruncationSerializer(serializers.Serializer):
 class ReportChartSpecSerializer(serializers.Serializer):
     series = serializers.ListField(child=serializers.CharField())
     x = ReportChartAxisSerializer()
-    values = ReportChartValueSerializer(many=True, allow_empty=False)
+    values = ReportChartValueSerializer(many=True, help_text="Empty for detail tables without numeric measures.")
     currency_field = serializers.CharField(allow_null=True)
     partition = serializers.ChoiceField(choices=["tenant", "currency", "unit"], allow_null=True)
     negatives = serializers.ChoiceField(choices=["allow", "clip"])

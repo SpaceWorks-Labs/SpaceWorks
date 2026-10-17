@@ -59,7 +59,8 @@ identity-bearing, tenant-only and unschedulable.
 
 ## Chart specification
 
-`chart_spec` may be `None`. Otherwise all these keys are required; referenced fields must appear
+The definition type permits `chart_spec=None`, but every previewable entry in the canonical
+registry must now supply a valid spec. All these keys are required; referenced fields must appear
 in the definition's output allowlist. `series` lists dimension fields; `values` is nonempty.
 
 ```json
@@ -82,6 +83,45 @@ requires it. Tenant partitioning requires `makerspace_id`. Alt placeholders are 
 fields or `count`, with no attribute traversal, conversion or format expressions.
 `report_validation.validate_chart_spec` enforces this; `serializers_report_chart.py` owns its
 typed OpenAPI representation. Catalogs return `chart_spec` and `identity_bearing`.
+
+### Remaining chart coverage (1f-6)
+
+`report_charts_remaining.py` closes the sixteen legacy/coverage/finance gaps plus the seven
+previewable event/booking subject reports found by checking registry composition. The audit
+trail definition also has a valid spec, while remaining CSV-only and non-previewable.
+The F1 contract does **not** accept a `{"kind": "table"}` shortcut. Ledger charts use
+existing collected/owed/refunded amounts, separated by effective status, row kind and refund
+status; journal charts compare debit/credit by account. Both partition currency, use major
+currency units and preserve negative values. Printer service charts hours; FabLab health
+charts existing percentages because neither older shape declares a currency.
+
+Active loans and returns expose `count=1` in each detail row (including exports), with
+definition versions bumped to 2. Counts summarize only the returned rows. Event registrations,
+feedback, booking reservations/answers and audit trail retain their version 1 export fields.
+Their F1 table specs declare a category row dimension, empty `values` and no aggregation
+settings; the client renders a table without summing IDs or adding synthetic columns.
+FabLab health v2 includes `makerspace_id` in local rows
+as well as aggregate rows, so its chart's x field exists in real output.
+
+`GET /api/v1/admin/platform/analytics/{report_key}` returns the definition's `chart_spec`
+alongside rows, typed rows and metadata for `platform-services` and `platform-usage`.
+Those definitions already carried specs. `PlatformAnalyticsReportSerializer` documents
+the required typed response field. Loan detail serializers document their count fields;
+event and booking serializers keep their existing export allowlists.
+
+SMS and WhatsApp have module-health coverage rows; communications-health does not yet
+aggregate their addressed-delivery models. Module health retains its registered local export
+fields and includes tenant identifiers only at deployment scope. Most-lent v2 preserves
+undated legacy loans as a null period in unbounded reports instead of inventing an issue date;
+dated windows naturally exclude those unknown timestamps.
+
+The coverage acceptance table now associates `evidence-compliance` only with
+`evidence_uploads`, and `import-quality` only with `bulk_import`. Both are explicitly
+completed before coverage parametrization. `test_chart_spec_complete_m1f6.py` guards all
+previewable definitions, currency safety, both platform responses for each grain, loan
+row counts and the local health axis. Tests and generated OpenAPI/TypeScript regeneration
+are left to the orchestrator for this lane; the repository ignores `backend/tests`, so
+the new guard and the edited coverage test must be included explicitly at integration.
 
 ## Verification
 

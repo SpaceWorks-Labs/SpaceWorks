@@ -91,7 +91,7 @@ def _taken_items(makerspace_id, aggregate, limit=None, date_range=None):
 
 
 def _active_loans(makerspace_id, aggregate, limit=None, date_range=None):
-    header = ["id", "requester", "status", "issued_at"]
+    header = ["id", "requester", "status", "issued_at", "count"]
     if aggregate:
         header = ["makerspace_id", *header]
     qs = _apply_date_range(_requests(makerspace_id), "issued_at", date_range).select_related("requester").filter(
@@ -102,7 +102,7 @@ def _active_loans(makerspace_id, aggregate, limit=None, date_range=None):
 
 
 def _returns(makerspace_id, aggregate, limit=None, date_range=None):
-    header = ["id", "requester", "status", "closed_at"]
+    header = ["id", "requester", "status", "closed_at", "count"]
     if aggregate:
         header = ["makerspace_id", *header]
     qs = _apply_date_range(_requests(makerspace_id), "closed_at", date_range).select_related("requester").filter(
@@ -115,7 +115,7 @@ def _returns(makerspace_id, aggregate, limit=None, date_range=None):
 def _request_row(request, aggregate, timestamp):
     # Readable holder label (never the internal checkin_<hash>); matches the ledger.
     prefix = [request.makerspace_id] if aggregate else []
-    return [*prefix, request.id, requester_label(request), request.status, timestamp]
+    return [*prefix, request.id, requester_label(request), request.status, timestamp, 1]
 
 
 def _damaged_missing(makerspace_id, aggregate, limit=None):

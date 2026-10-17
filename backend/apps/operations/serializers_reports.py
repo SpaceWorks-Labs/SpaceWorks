@@ -12,6 +12,7 @@ class ActiveLoansReportRowSerializer(TypedReportBaseSerializer):
     requester = serializers.CharField()
     status = serializers.CharField()
     issued_at = serializers.DateTimeField(allow_null=True)
+    count = serializers.IntegerField(min_value=1, max_value=1, help_text="One loan per detail row; sum to count issued loans in this result.")
 
 
 class ReturnsReportRowSerializer(TypedReportBaseSerializer):
@@ -19,6 +20,7 @@ class ReturnsReportRowSerializer(TypedReportBaseSerializer):
     requester = serializers.CharField()
     status = serializers.CharField()
     closed_at = serializers.DateTimeField(allow_null=True)
+    count = serializers.IntegerField(min_value=1, max_value=1, help_text="One loan per detail row; sum to count closed loans in this result.")
 
 
 class DamagedMissingReportRowSerializer(TypedReportBaseSerializer):
@@ -47,7 +49,7 @@ class QrScansReportRowSerializer(TypedReportBaseSerializer):
 
 
 class MostLentReportRowSerializer(TypedReportBaseSerializer):
-    period = serializers.DateField()
+    period = serializers.DateField(allow_null=True, help_text="Null for legacy loans without an issue timestamp.")
     product_id = serializers.IntegerField(allow_null=True, help_text="Null identifies the Other series.")
     product_name = serializers.CharField()
     times_lent = serializers.IntegerField()

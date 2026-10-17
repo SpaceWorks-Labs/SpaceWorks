@@ -24,7 +24,10 @@ SUBJECT_REPORT_DESCRIPTION = (
     "bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, "
     "bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; "
     "reservation detail includes overlapping windows. No credentials are exported. "
-    "Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated."
+    "Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated. "
+    "Active-loan and return detail rows include count=1 for chart summaries of returned rows. "
+    "Event, booking and audit detail exports retain their explicit column allowlists and use table specs. "
+    "FabLab health rows include makerspace_id in tenant previews."
 )
 
 

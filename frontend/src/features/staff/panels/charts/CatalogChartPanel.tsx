@@ -9,6 +9,7 @@ import { MultiLineChart } from "./MultiLineChart";
 import type { ReportChartSpec } from "../analyticsApi";
 import { funnelInput, reportAlternative, wireChartSpec } from "./wireChartSpec";
 import { rankedTimeSeries } from "./rankedTimeSeries";
+import { ReportTable } from "../OperationsReportTable";
 
 function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
   switch (spec.kind) {
@@ -41,6 +42,18 @@ function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
 export function CatalogChartPanel({ spec: inputSpec, hint, rows, title, loading = false, error, onRetry }: {
   spec: ChartSpec | ReportChartSpec; hint?: string; rows: readonly ChartRecord[]; title: string; loading?: boolean; error?: unknown; onRetry?: () => void;
 }) {
+  // Detail specs deliberately have no measures: render the projected rows without
+  // converting record identifiers into numbers to sum on a chart.
+  if ("values" in inputSpec && inputSpec.values.length === 0) {
+    const headers = [...new Set(rows.flatMap(row => Object.keys(row)))];
+    const cells = rows.map(row => headers.map(field => {
+      const value = row[field];
+      return value == null ? null : typeof value === "object" ? JSON.stringify(value) : String(value);
+    }));
+    return <DataState loading={loading} error={error} onRetry={onRetry} empty={!rows.length}>
+      <ReportTable data={{ rows: [headers, ...cells] }} />
+    </DataState>;
+  }
   let data;
   let spec: ChartSpec;
   let invalid = false;

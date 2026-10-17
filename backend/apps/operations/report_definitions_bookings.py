@@ -1,6 +1,7 @@
 """Tenant-local resource reports retain their whole-window overlap contract."""
 
 from .report_types import ReportDefinition
+from .report_charts_remaining import RESOURCE_UTILIZATION_CHART, RESERVATIONS_CHART
 
 UTILIZATION_FIELDS = (
     "space_id", "space_name", "kind", "is_active", "booked", "completed", "no_show",
@@ -26,12 +27,16 @@ def _definition(key, builder, fields, title, feature, **kwargs):
 
 BOOKING_REPORT_DEFINITIONS = (
     _definition("booking-resource-utilization", "reports_booking_resources.build_resource_utilization",
-                RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "analytics", version=2),
+                RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "analytics", version=2,
+                chart_hint="grouped_bar", chart_spec=RESOURCE_UTILIZATION_CHART),
     _definition("booking-resource-utilization-pdf", "reports_booking_resources.build_resource_utilization_pdf",
                 RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "utilization_pdf", version=2,
+                chart_hint="grouped_bar", chart_spec=RESOURCE_UTILIZATION_CHART,
                 allowed_formats=("pdf",), pdf_renderer_path="apps.operations.reports_booking_pdf.render_pdf"),
     _definition("booking-reservations", "reports_booking_exports.build_reservations",
-                RESERVATION_FIELDS, "Resource reservation export", "exports"),
+                RESERVATION_FIELDS, "Resource reservation export", "exports",
+                chart_spec=RESERVATIONS_CHART),
     _definition("booking-answers", "reports_booking_exports.build_answers",
-                ANSWER_FIELDS, "Resource reservation answers", "exports"),
+                ANSWER_FIELDS, "Resource reservation answers", "exports",
+                chart_spec=RESERVATIONS_CHART),
 )

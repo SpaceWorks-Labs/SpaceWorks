@@ -37,7 +37,8 @@ def build_module_operational_health(makerspace_id, *, limit=None, date_range=Non
                 if row[status_field] in failures:
                     state["failure_count"] += row["count"]
             for bucket, state in sorted(groups.items()):
-                records.append({"makerspace_id": space.pk, "module_key": module, "period": bucket,
+                records.append({**({"makerspace_id": space.pk} if makerspace_id is None else {}),
+                                "module_key": module, "period": bucket,
                                 "delivery_kind": kind, "enabled": True, "runtime_available": True,
                                 "coverage_kind": "delivery", "activity_count": state["delivery_count"], **state,
                                 "success_rate_percent": rate(state["success_count"], state["success_count"] + state["failure_count"])})

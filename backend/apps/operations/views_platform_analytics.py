@@ -15,7 +15,7 @@ from apps.makerspaces.servability import servable_queryset
 from apps.operations import reports
 from apps.operations.platform_scope import _platform_context_for_view
 from apps.operations.report_request_contract import DATE_RANGE_PARAMETERS, _grain_param
-from apps.operations.schemas_reports import ANALYTICS_REPORT_RESPONSE
+from apps.operations.serializers_report_catalog import PlatformAnalyticsReportSerializer
 from apps.operations.views_report_helpers import _date_range, _limit_param
 from apps.operations.views_reports import ERROR_RESPONSES
 
@@ -44,11 +44,11 @@ class PlatformAnalyticsView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="Get superadmin platform analytics", request=None,
-        description="Platform-only counts. Hidden tenants appear solely as anonymous daily platform-service counts; own-provider and business usage exclude them. Connect includes attributed ledger facts, with no provider-attempt failure history.",
+        description="Platform-only counts with the definition's typed chart_spec. Hidden tenants appear solely as anonymous daily platform-service counts; own-provider and business usage exclude them. Connect includes attributed ledger facts, with no provider-attempt failure history.",
         parameters=[OpenApiParameter("report_key", OpenApiTypes.STR, OpenApiParameter.PATH, enum=PLATFORM_KEYS),
                     *DATE_RANGE_PARAMETERS, OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
                     OpenApiParameter("grain", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["day", "week", "month"])],
-        responses={200: ANALYTICS_REPORT_RESPONSE, **ERROR_RESPONSES},
+        responses={200: PlatformAnalyticsReportSerializer, **ERROR_RESPONSES},
     )
     def get(self, request, report_key, *args, **kwargs):
         from .report_subjects import reject_aggregate
@@ -57,9 +57,10 @@ class PlatformAnalyticsView(APIView):
         if report_key not in PLATFORM_KEYS:
             raise reports.ReportNotFound()
         definition = reports.validate_report_key(report_key, platform_context=ctx)
-        return Response(reports.report_data(report_key, actor=request.user, platform_context=ctx,
-                                            limit=_limit_param(request), date_range=_date_range(request),
-                                            grain=_grain_param(request, definition)))
+        data = reports.report_data(report_key, actor=request.user, platform_context=ctx,
+                                   limit=_limit_param(request), date_range=_date_range(request),
+                                   grain=_grain_param(request, definition))
+        return Response({**data, "chart_spec": definition.chart_spec})
 
 
 class PlatformAnalyticsMakerspacesView(APIView):

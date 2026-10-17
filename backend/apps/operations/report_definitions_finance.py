@@ -4,12 +4,14 @@ from apps.operations.reports_finance import LEDGER_FIELDS, REVENUE_FIELDS, CASH_
 from apps.operations.reports_accounting import FIELDS as ACCOUNTING_FIELDS
 from apps.operations.reports_payments_ageing import FIELDS as AGEING_FIELDS
 from apps.operations.report_charts_fg import REVENUE_CHART, CASH_CHART, AGEING_CHART
+from apps.operations.report_charts_remaining import LEDGER_CHART, JOURNAL_CHART
 from apps.operations.org_report_aggregate import register_combine
 from apps.operations.org_report_fg import combine_revenue, combine_cash, combine_ageing, combine_reconciliation
 
 FINANCE_REPORT_DEFINITIONS = (
     ReportDefinition("payments-ledger", "apps.operations.reports_finance.build_payments_ledger", LEDGER_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title="Payments ledger", deployment_aggregate=False),
+                     required_action=rbac.Action.VIEW_FINANCE, title="Payments ledger", deployment_aggregate=False,
+                     chart_hint="stacked_bar", chart_spec=LEDGER_CHART),
     ReportDefinition("revenue-over-time", "apps.operations.reports_finance.build_revenue_over_time", REVENUE_FIELDS,
                      required_action=rbac.Action.VIEW_FINANCE, title="Collected, owed and refunded by rail", chart_hint="stacked_bar",
                      grains=("day", "week", "month"), version=2, chart_spec=REVENUE_CHART),
@@ -21,7 +23,7 @@ FINANCE_REPORT_DEFINITIONS = (
                      chart_spec=AGEING_CHART),
     ReportDefinition("accounting-journal", "apps.operations.reports_accounting.build_accounting_journal", ACCOUNTING_FIELDS,
                      required_action=rbac.Action.VIEW_FINANCE, title="Accounting journal CSV", allowed_formats=("csv",),
-                     deployment_aggregate=False),
+                     deployment_aggregate=False, chart_hint="grouped_bar", chart_spec=JOURNAL_CHART),
 )
 
 # Money tracking is core: none of these requires the removable online rail.

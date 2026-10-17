@@ -433,6 +433,11 @@ Report infrastructure: `operations/report_registry.py` composes `report_definiti
 and service buckets from tenant authority. Organization builders register combine functions
 with `org_report_aggregate.register_combine`; `report_coverage_contract.py` is the phase-1f
 module-to-report acceptance table, separate from runtime prerequisites.
+`report_charts_remaining.py` supplies the F1 specs for legacy and subject-detail reports,
+including currency-separated ledger/journal summaries. Detail builders expose a numeric
+count per row where no measurement existed; health rows retain their tenant chart axis.
+`tests/operations/test_chart_spec_complete_m1f6.py` guards the whole previewable registry
+and both platform analytics responses. The latter use `PlatformAnalyticsReportSerializer`.
 
 H/I analytics register in `operations/report_definitions_hi.py`: communications v2 stays in
 `integrations/reports_communications.py`; tenant mobile counts live in

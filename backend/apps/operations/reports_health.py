@@ -33,7 +33,7 @@ def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
     today = timezone.localdate()
     base = eligible_makerspaces() if aggregate else Makerspace.objects.filter(pk=makerspace_id)
     spaces = list(base.values("id", "enabled_modules").order_by("id"))
-    records = {row["id"]: _empty_record(row, aggregate) for row in spaces}
+    records = {row["id"]: _empty_record(row) for row in spaces}
     _run_section(spaces, records, "events", lambda ids: _event_rows(ids, date_range))
     _run_section(spaces, records, "bookings", lambda ids: _booking_rows(ids, date_range, now))
     _run_section(spaces, records, "machines", lambda ids: _machine_rows(ids, date_range))
@@ -41,10 +41,11 @@ def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
     ordered = [records[row["id"]] for row in spaces]
     if limit is not None:
         ordered = ordered[:limit]
-    return ReportResult((("makerspace_id",) + FIELDS) if aggregate else FIELDS, ordered)
+    # The health chart uses this real tenant dimension on local previews too.
+    return ReportResult(("makerspace_id", *FIELDS), ordered)
 
 
-def _empty_record(space, aggregate):
+def _empty_record(space):
     record = {}
     modules = set(space["enabled_modules"] or [])
     for section, metrics in SECTION_FIELDS.items():
@@ -52,8 +53,7 @@ def _empty_record(space, aggregate):
         record[f"{section}_enabled"] = enabled
         record[f"{section}_available"] = False
         record.update({metric: None for metric in metrics})
-    if aggregate:
-        record["makerspace_id"] = space["id"]
+    record["makerspace_id"] = space["id"]
     return record
 
 

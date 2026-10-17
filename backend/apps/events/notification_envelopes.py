@@ -16,6 +16,7 @@ so staff envelopes pre-mark those two channels as skipped instead of delivering 
 """
 
 import logging
+from hashlib import sha256
 from uuid import uuid4
 
 from django.db import transaction
@@ -45,13 +46,22 @@ def new_intent():
     return uuid4().hex
 
 
+def lifecycle_revision(event, registration):
+    """The persisted wording belongs to this resource state, not just its existence."""
+    values = (event.status, event.calendar_sequence, event.updated_at,
+              registration.status if registration else None,
+              registration.calendar_sequence if registration else None)
+    return sha256("\x1f".join(str(value) for value in values).encode()).hexdigest()
+
+
 def _rendered(template, link):
     return {"subject": template["subject"], "text": template["text_body"],
             "html": template.get("html_body", ""), "link": link}
 
 
 def _staff_link(space, event):
-    return f"/m/{space.slug}/admin/events?event={event.pk}"
+    from apps.operations.notifications_p2 import staff_link
+    return staff_link(space, f"events?event={event.pk}")
 
 
 def _owner_link(space, registration):
@@ -73,7 +83,7 @@ def _emit(space, user, *, audience, event_name, source_kind, source_id, intent, 
         envelope = emit(
             makerspace=space, recipient=user, feature="events", stream="events", event=event_name,
             audience=audience, dedup_key=f"ev:{intent}:{space.pk}:{audience[0]}:{source_kind[-5:]}:{user.pk}",
-            source_kind=source_kind, source_id=str(source_id), revision=intent,
+            source_kind=source_kind, source_id=str(source_id), revision=lifecycle_revision(event, registration),
             subject=registration or event, context=_context(event, registration, event_name), rendered=rendered,
         )
         for channel in skip:

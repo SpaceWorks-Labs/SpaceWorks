@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { EmptyState, Field } from "../../components/ui";
 import { PresenceRoster } from "../presence/PresenceRoster";
-import { presenceApi, presenceKeys } from "../presence/api";
+import { DEFAULT_PRESETS, presenceApi, presenceKeys } from "../presence/api";
 import type {
   AdminMembership,
   MembershipListResponse,
@@ -69,6 +69,9 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
   });
   // Module off: no presence tab, no request. Page 1 is shared with the roster tab's own query.
   const presence = useQuery({ queryKey: presenceKeys.roster(makerspaceId, 1), queryFn: () => presenceApi.roster(makerspaceId, 1), enabled: presenceEnabled });
+  const presencePolicy = useQuery({ queryKey: ["makerspace-settings", makerspaceId],
+    queryFn: () => staffRequest<{ presence_preset_minutes: number[] }>(`/admin/makerspaces/${makerspaceId}`), enabled: presenceEnabled });
+  const configuredPresets = presencePolicy.data?.presence_preset_minutes;
   const roles = useQuery({ queryKey: [...key, "roles"], queryFn: () => staffRequest<StaffRole[]>(`/admin/makerspaces/${makerspaceId}/roles`) });
   const grantableRoles = assignableRoles(roles.data ?? [], actorActions, isSuperadmin);
   const [roleId, setRoleId] = useState<number | null>(null);
@@ -165,7 +168,10 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       <MembershipPagination label="requests" page={requestPage} next={requests.data?.next} previous={requests.data?.previous} fetching={requests.isFetching} onPage={setRequestPage} /></Panel> : null}
     {membershipEnabled && tab === "requests" ? <InvitationRequestsSection makerspaceId={makerspaceId} roles={grantableRoles} /> : null}
     {membershipEnabled && canManageMakerspace && tab === "plans" ? <MembershipPlansSection makerspaceId={makerspaceId} /> : null}
-    {presenceEnabled && tab === "presence" ? <PresenceRoster makerspaceId={makerspaceId} /> : null}
+    {presenceEnabled && tab === "presence" ? presencePolicy.isSuccess
+      ? <PresenceRoster makerspaceId={makerspaceId} presets={configuredPresets?.length ? configuredPresets : DEFAULT_PRESETS} />
+      : presencePolicy.isError ? <p role="alert">Couldn't load check-in durations. <button type="button" onClick={() => { void presencePolicy.refetch(); }}>Try again</button></p>
+      : <p role="status">Loading check-in durations…</p> : null}
     {canManageMakerspace && tab === "waivers" ? <MembershipWaiverPanel makerspaceId={makerspaceId} /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{membershipErrorText(error)}</p> : null}
   </> }} detail={<>

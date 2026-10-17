@@ -7,6 +7,7 @@ from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.hardware_requests.notifications_p2 import safe_adapter
 from apps.makerspaces.platform import feature_enabled
+from apps.makerspaces.website_directory import public_url
 from apps.presence.guard import require_active_member, MemberPresenceRequired, WaiverAcceptanceRequired
 from .models import InventoryProduct
 from .models_watch import InventoryWatch
@@ -65,7 +66,7 @@ def notify_watch(row, message):
         event="back_available", kind=WATCH, source=row.pk, subject=row,
         version=revision(row.created_at, row.ready_at), owner=row.user,
         own={"subject": message.title, "text": message.body,
-             "link": f"/m/{row.makerspace.slug}/inventory/{row.product_id}"},
+             "link": public_url(row.makerspace, "items", row.product_id)},
         context={"product_id": row.product_id})
 
 

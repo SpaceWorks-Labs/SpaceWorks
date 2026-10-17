@@ -19,6 +19,7 @@ def event_attendance(registration):
     makes repeated calls idempotent, including after that presence has ended.
     """
     from apps.events.models import EventRegistration
+    from apps.events.services import _locked_event
     from .services import _create, _lock_account
     try:
         registration = EventRegistration.objects.select_related("event__makerspace", "member").get(pk=registration.pk)
@@ -33,12 +34,15 @@ def event_attendance(registration):
         if account is None:
             return None
         with tenant_write(space.pk):
+            # Match check-in: Event -> Makerspace -> registration. Never acquire
+            # the joined Event implicitly after the presence tenant/account locks.
+            event = _locked_event(registration.event_id)
+            registration = EventRegistration.objects.select_for_update().get(pk=registration.pk, event=event)
+            registration.event = event
             account, space = _lock_account(account, space)
             if not module_enabled(space, "events"):
                 return None
-            registration = EventRegistration.objects.select_for_update().select_related("event").get(pk=registration.pk)
             now = timezone.now()
-            event = registration.event
             if (registration.status != "attended" or event.status != "published"
                     or not event.starts_at <= now < event.ends_at):
                 return None

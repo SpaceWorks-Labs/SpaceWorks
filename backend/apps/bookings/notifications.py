@@ -91,11 +91,12 @@ def requester_content(row, event, context):
 
 
 def staff_content(row, event, context):
+    from apps.operations.notifications_p2 import staff_link
     message = render(row.space.makerspace, "bookings", "staff", event, context)
     query = ("?view=requests&status=pending" if row.status == "pending"
              else f"?space={row.space_id}&booking={row.pk}&bookingTab=requests")
     return {"subject": message["subject"], "text": _with_reason(message["text_body"], row, event), "html": "",
-            "link": f"/m/{row.space.makerspace.slug}/admin/bookings{query}"}
+            "link": staff_link(row.space.makerspace, f"bookings{query}")}
 
 
 def grant_recipient_ids(space):

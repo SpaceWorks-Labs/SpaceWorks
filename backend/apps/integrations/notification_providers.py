@@ -33,6 +33,7 @@ class CallbackEvent:
     opt_out: bool = False
     inbound: bool = False
     delivery_id: int | None = None
+    delivery_attempt: int | None = None
 
 
 class Provider(Protocol):

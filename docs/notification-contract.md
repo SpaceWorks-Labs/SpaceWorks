@@ -120,7 +120,7 @@ Providers use the stable delivery identity as their idempotency key wherever the
 API supports one, and report ambiguous timeouts explicitly. Callback correlation must not
 replace a different provider message ID already bound to the delivery.
 
-`CallbackEvent` carries provider_id/state, optional signed delivery_id correlation,
+`CallbackEvent` carries provider_id/state, optional signed delivery_id/delivery_attempt correlation,
 EndpointProof, endpoint_id, opt_out and inbound. EndpointProof contains code, destination,
 integration_identity, subject and explicit private=True. Signature/authentication checks
 happen in the adapter before returning an event; the shared handler never trusts raw
@@ -165,6 +165,11 @@ are explicitly classified as excluded. Module purge removes the graph in depende
   no WhatsApp consent. Meta's remaining readiness gate is recorded below.
   Browser PATCH cannot self-approve templates; provider refresh owns approval. Status callbacks
   correlate installation/message and advance monotonically. Ambiguous retries may duplicate sends.
+  Meta sends a signed `biz_opaque_callback_data` reference with the delivery, installation generation
+  and attempt. Early status webhooks bind through that reference before the REST response stores its
+  provider message ID. Callback transitions win over the later response; transient failures retain
+  bounded retries and terminal failures release email fallback. A new attempt clears the old Meta
+  message binding and rejects previous-attempt references.
 
 Provider setting lookups are deployment-wide, never derived from the request host:
 

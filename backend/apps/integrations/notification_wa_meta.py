@@ -6,6 +6,7 @@ from .notification_providers import register_provider
 from .notification_wa_meta_http import PHONE, credentials, failure, send_message
 from .notification_wa_meta_templates import bound_template, sync_templates, template_content
 from .notification_wa_window import in_session_window
+from .notification_wa_meta_reference import client_reference
 
 
 class MetaWhatsAppProvider:
@@ -44,9 +45,9 @@ class MetaWhatsAppProvider:
         if envelope.recipient_id != endpoint.user_id or envelope.makerspace_id != config.makerspace_id:
             return failure("invalid_endpoint")
         return self._send(endpoint, envelope.event, envelope.audience, envelope.context,
-                          rendered.get("text", ""))
+                          rendered.get("text", ""), reference=client_reference(config, delivery))
 
-    def _send(self, endpoint, event, audience, context, text):
+    def _send(self, endpoint, event, audience, context, text, *, reference=""):
         if not self._live_target(endpoint):
             return failure("invalid_endpoint")
         if in_session_window(endpoint):
@@ -64,6 +65,8 @@ class MetaWhatsAppProvider:
             content = template_content(binding, context)
             if content is None:
                 return failure("template_required")
+        if reference:
+            content["biz_opaque_callback_data"] = reference
         return send_message(self.configuration, endpoint.destination, content)
 
     def _live_target(self, endpoint):

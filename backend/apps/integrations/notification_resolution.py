@@ -140,6 +140,8 @@ def selected_policy(envelope):
     preference = policy_rows(NotificationPreference, space).filter(user=user, category=envelope.feature).first()
     if preference:
         return preference.channels, preference.email_fallback
+    if envelope.feature == "presence":
+        return ["in_app", "native_push"], False
     managers = rbac.effective_actions(user, space.pk) & {
         "manage_makerspace", "edit_inventory", "manage_machines", "manage_events", "manage_bookings",
     }

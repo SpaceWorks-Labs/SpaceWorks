@@ -14,14 +14,19 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
   const [draft, setDraft] = useState(preferences);
   const save = useSavePreferences(makerspaceId, member);
   const shown = draft.filter(row => row.available_channels?.length);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(preferences);
+  const edited = shown.filter(row => {
+    const original = preferences.find(item => item.category === row.category);
+    return row.channels.length !== original?.channels.length || row.channels.some(channel => !original.channels.includes(channel))
+      || row.email_fallback !== original?.email_fallback;
+  });
+  const dirty = edited.length > 0;
   const update = (category: string, patch: Partial<Selection>) =>
     setDraft(current => current.map(row => row.category === category ? { ...row, ...patch } : row));
   if (!shown.length) return <p className="text-sm text-muted">There are no notifications to choose channels for in this space yet.</p>;
   return <form className="grid min-w-0 gap-3" aria-label="Where your notifications go" onSubmit={event => {
     event.preventDefault();
     // Defaults may contain channels disabled by the tenant or source module.
-    save.mutate(draft.map(row => ({ ...row,
+    save.mutate(edited.map(row => ({ ...row,
       channels: row.channels.filter(channel => row.available_channels?.includes(channel)),
     })), { onSuccess: data => setDraft(data.preferences) });
   }}>

@@ -1,7 +1,7 @@
 """Ledger-backed personal notices, independent of the removable payment rail."""
 from django.utils import timezone
 
-from apps.integrations.notification_links import local_link
+from apps.integrations.notification_links import payment_link
 from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, direct_mail_unless_routed, fanout, revision, safe_notification, scoped, staff_link, template
@@ -80,7 +80,7 @@ def rendered(payment, event, audience, refund=None):
             due_date=to_local(payment.makerspace, payment.due_at).date().isoformat() if payment.due_at else "")
     return template(payment.makerspace, "payments", audience, event,
         {"makerspace": bag(name=payment.makerspace.name), "event_name": event, "subject": subject},
-        link=local_link(payment.makerspace, "member") if audience != "staff" else staff_link(payment.makerspace, "payments"))
+        link=payment_link(payment.makerspace) if audience != "staff" else staff_link(payment.makerspace, "payments"))
 
 
 def render(envelope):
@@ -114,12 +114,11 @@ def document_eligible(envelope):
 
 def document_body(document):
     from django.utils.html import format_html
-    from apps.makerspaces.website_directory import public_url
-    navigation = public_url(document.makerspace, "member", "").rstrip("/")
+    navigation = payment_link(document.makerspace, external=True)
     text = (f"Your {document.get_kind_display().lower()} {document.number} is available.\n"
             f"{document.currency.upper()} {document.amount}\nSign in to download the PDF: {navigation}")
     return body(f"{document.get_kind_display()} {document.number}", text,
-        local_link(document.makerspace, "member"),
+        payment_link(document.makerspace),
         str(format_html('<p>{}</p><p><a href="{}">Download your document</a></p>', text, navigation)))
 
 

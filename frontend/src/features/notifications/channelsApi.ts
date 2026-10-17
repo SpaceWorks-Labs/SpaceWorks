@@ -138,7 +138,7 @@ export function usePreferences(makerspaceId: number, member = false) {
 export function useSavePreferences(makerspaceId: number, member = false) {
   const client = useQueryClient();
   return useMutation({
-    // A complete replacement: categories left out return to their defaults.
+    // Replace supplied categories; omitted categories keep explicit choices or defaults.
     mutationFn: (preferences: Selection[]) => sender(member)<{ preferences: Selection[] }>(
       `${base(makerspaceId)}/personal/preferences`, { method: "PUT", body: JSON.stringify({
         preferences: preferences.map(({ category, channels, email_fallback }) => ({ category, channels, email_fallback })) }) }),

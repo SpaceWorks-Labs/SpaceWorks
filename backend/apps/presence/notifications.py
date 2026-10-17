@@ -24,10 +24,6 @@ def eligible(envelope):
 
 
 def remind(row):
-    from apps.notifications.models_preferences import NotificationPreference
-    # Presence's product default is push + web. Existing explicit selections win.
-    NotificationPreference.objects.get_or_create(makerspace=row.makerspace, user=row.account,
-        category="presence", defaults={"channels": ["in_app", "native_push"], "email_fallback": False})
     return emit(makerspace=row.makerspace, recipient=row.account, feature="presence", stream="presence",
         event="expired", audience="member", source_kind=KIND, source_id=row.pk,
         revision=str(row.revision), dedup_key=f"presence:expired:{row.pk}:{row.revision}", subject=row,

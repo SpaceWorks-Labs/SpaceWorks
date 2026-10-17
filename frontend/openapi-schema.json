@@ -71443,6 +71443,14 @@
                     },
                     {
                         "in": "query",
+                        "name": "oauth_state",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Resolve this account's live signed OAuth return state."
+                    },
+                    {
+                        "in": "query",
                         "name": "page",
                         "schema": {
                             "type": "integer"
@@ -98236,6 +98244,9 @@
                     },
                     "instructions": {
                         "type": "string"
+                    },
+                    "oauth_state": {
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -98510,6 +98521,10 @@
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true
+                    },
+                    "effective_valid": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -98517,6 +98532,7 @@
                     "consent_version",
                     "consented_at",
                     "created_at",
+                    "effective_valid",
                     "id",
                     "integration_generation",
                     "provider",
@@ -98544,11 +98560,20 @@
                         "items": {
                             "$ref": "#/components/schemas/ContractEndpoint"
                         }
+                    },
+                    "oauth_return": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OAuthReturn"
+                            }
+                        ],
+                        "readOnly": true
                     }
                 },
                 "required": [
                     "count",
                     "next",
+                    "oauth_return",
                     "previous",
                     "results"
                 ]
@@ -115313,6 +115338,22 @@
                 "required": [
                     "code",
                     "state"
+                ]
+            },
+            "OAuthReturn": {
+                "type": "object",
+                "properties": {
+                    "challenge_id": {
+                        "type": "integer"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "challenge_id",
+                    "expires_at"
                 ]
             },
             "OAuthStart": {

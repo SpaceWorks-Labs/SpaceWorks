@@ -2642,6 +2642,7 @@ export type ContractChallenge = {
   "expires_at": string;
   "connect_url"?: string;
   "instructions"?: string;
+  "oauth_state"?: string;
 };
 
 export type ContractChallengeStart = {
@@ -2709,6 +2710,7 @@ export type ContractEndpoint = {
   "consent_version": string;
   "revoked_at"?: string | null;
   "created_at": string;
+  "effective_valid": boolean;
 };
 
 export type ContractEndpointPage = {
@@ -2716,6 +2718,7 @@ export type ContractEndpointPage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<ContractEndpoint>;
+  "oauth_return": OAuthReturn;
 };
 
 export type ContractPreferences = {
@@ -6745,6 +6748,11 @@ export type NullEnum = null;
 export type OAuthCallback = {
   "code": string;
   "state": string;
+};
+
+export type OAuthReturn = {
+  "challenge_id": number;
+  "expires_at": string;
 };
 
 export type OAuthStart = {

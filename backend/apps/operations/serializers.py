@@ -51,6 +51,13 @@ class AnalyticsSummarySerializer(serializers.Serializer):
     issued_quantity = serializers.IntegerField()
     damaged_quantity = serializers.IntegerField()
     missing_quantity = serializers.IntegerField()
+    asset_available = serializers.IntegerField()
+    asset_reserved = serializers.IntegerField()
+    asset_issued = serializers.IntegerField()
+    asset_damaged = serializers.IntegerField()
+    asset_lost = serializers.IntegerField()
+    asset_maintenance = serializers.IntegerField()
+    asset_retired = serializers.IntegerField()
 
 
 class LedgerUnitSerializer(serializers.Serializer):

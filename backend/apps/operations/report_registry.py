@@ -10,6 +10,7 @@ from apps.operations.report_definitions_finance import FINANCE_REPORT_DEFINITION
 from apps.operations.report_definitions_events import EVENT_REPORT_DEFINITIONS
 from apps.operations.report_definitions_bookings import BOOKING_REPORT_DEFINITIONS
 from apps.operations.report_definitions_hi import HI_REPORT_DEFINITIONS
+from apps.operations.report_definitions_ab import AB_REPORT_DEFINITIONS, AB_REPORT_KEYS, register_ab_combines
 from apps.operations.report_types import (
     ReportDefinition,
     ReportNotExportable,
@@ -26,6 +27,9 @@ REPORT_DEFINITIONS = (
     *BOOKING_REPORT_DEFINITIONS,
     *HI_REPORT_DEFINITIONS,
 )
+# Area A+B replaces the shipped definitions without retaining duplicate catalog keys.
+REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS if d.key not in AB_REPORT_KEYS) + AB_REPORT_DEFINITIONS
+register_ab_combines()
 # Runtime entries disappear on a deployment tombstone; retention stays registered.
 from apps.separability.tombstones import tombstoned_app_labels
 REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS

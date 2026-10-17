@@ -36,6 +36,8 @@ def report_data(
     kwargs = dict(limit=_normalized_limit(limit), date_range=date_range, **(report_filters or {}))
     if report_key in {"member-retention", "membership-revenue"}:
         kwargs["actor"] = actor
+    if report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
+        kwargs["actor"] = actor
     if definition.grains:
         kwargs["grain"] = grain
     if definition.platform_only:
@@ -47,7 +49,7 @@ def report_data(
         with tenant_write(subject.makerspace_id):
             record(actor, "report.previewed", makerspace=subject.makerspace, target=subject,
                    meta={"report_key": definition.key})
-    if definition.summary:
+    if definition.summary and isinstance(result, dict):
         return result
     if not isinstance(result, ReportResult):
         return {"rows": result, "typed_rows": typed_report_rows(report_key, result)}
@@ -70,6 +72,8 @@ def report_rows(
     _authorize_subject(actor, makerspace_id, definition, report_filters)
     kwargs = dict(limit=limit, date_range=date_range, **(report_filters or {}))
     if report_key in {"member-retention", "membership-revenue"}:
+        kwargs["actor"] = actor
+    if report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
         kwargs["actor"] = actor
     if definition.grains:
         kwargs["grain"] = grain

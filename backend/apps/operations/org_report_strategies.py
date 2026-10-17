@@ -191,3 +191,7 @@ def organization_strategy(report_key: str) -> OrganizationAggregationStrategy:
         return STRATEGIES[report_key]
     except KeyError as exc:
         raise ValueError(f"Report {report_key!r} has no organization aggregation strategy.") from exc
+
+
+from apps.operations.org_report_ab import install_strategies
+install_strategies(STRATEGIES, _strategy, AggregationKind)

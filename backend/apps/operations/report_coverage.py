@@ -53,6 +53,15 @@ REPORT_MODULE_COVERAGE["mobile"] = ModuleReportCoverage(
     "substantive", ("community-engagement", "mobile-devices", "mobile-auth", "communications-health"),
 )
 
+# Coverage associations are independent of the builders' actual source-module gates.
+from apps.operations.report_definitions_ab import AB_REPORT_KEYS
+from apps.operations.report_coverage_contract import required_report_modules
+for _key, _modules in required_report_modules().items():
+    if _key in AB_REPORT_KEYS:
+        for _module in _modules:
+            _coverage = REPORT_MODULE_COVERAGE[_module]
+            REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage("substantive", tuple(dict.fromkeys((*_coverage.reports, _key))))
+
 
 @checks.register(checks.Tags.models)
 def check_report_module_coverage(app_configs=None, **kwargs):

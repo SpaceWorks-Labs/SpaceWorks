@@ -34,8 +34,12 @@ ORGANIZATION_REPORT_ACTIONS = frozenset({
     # organization grant of that action (never a local role) is what admits them.
     rbac.Action.MANAGE_EVENTS,
     rbac.Action.MANAGE_BOOKINGS,
+    rbac.Action.VIEW_INVENTORY,
+    rbac.Action.EDIT_INVENTORY,
+    rbac.Action.MANAGE_MACHINES,
 })
 EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
+    "overdue-loans", "longest-loans", "qr-scan-actors",
     "active-loans", "returns", "top-borrowers",
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
     "event-registrations", "event-feedback", "event-attendance-pdf",
@@ -76,6 +80,9 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     # Medians/percentiles cannot be reconstructed by averaging tenant summaries.
     "service-queue-times", "booking-lead-time", "event-checkin-times",
 })
+
+# v2 A+B definitions expose additive samples/denominators for these former exclusions.
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"loan-throughput", "inventory-control", "procurement-performance"}
 
 
 # v2 communications exposes additive cohorts and both rate denominators.

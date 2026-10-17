@@ -397,6 +397,17 @@ H/I analytics register in `operations/report_definitions_hi.py`: communications 
 `operations/reports_mobile_devices.py` and `reports_mobile_auth.py`. Their shared allowlists
 are `report_fields_hi.py`; `reports_mobile_platform.py` exposes context-guarded global source
 projections for platform builders. Measurement and disclosure notes: [report-builders-hi.md](report-builders-hi.md).
+Area J analytics: `operations/report_definitions_j.py` registers device, presence,
+audit, organization membership and delivery-health reports; `report_fields_j.py`
+declares their public schemas. `reports_j_*` builds tenant rows and `org_reports_j.py`
+combines organization counts and rate inputs. Person rankings and local hour-of-week
+are separate tenant-only keys. Organization membership is offered only on organization
+and deployment surfaces. `reports_platform_services.py` owns provider metering and the
+anonymous hidden-service bucket; `reports_platform_usage.py` owns visible-space activity,
+with finalized consumable sources in `reports_platform_consumables.py`.
+`views_platform_analytics.py` serves the two platform keys and the action-scoped tenant
+picker. `metrics_push.py` reads both per-device outcome ledgers for Prometheus.
+Field/measurement contracts and the complete lane handoff are in `report-builders-j.md`.
 
 Membership admission is described in [membership-admission.md](membership-admission.md).
 `makerspaces/models_admission.py` owns the settings and immutable vouch models.

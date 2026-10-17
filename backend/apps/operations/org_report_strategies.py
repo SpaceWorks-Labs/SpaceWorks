@@ -100,6 +100,10 @@ STRATEGIES = {
         ("currency", "age_bucket", "payment_count", "outstanding_amount"), ordering=("currency", "age_bucket"),
         text=(("currency", "group and carry"), ("age_bucket", "0-30, 31-60, 61-90, over 90 local days")),
     ),
+    "device-health": _strategy(AggregationKind.WEIGHTED_RATE, ("period", "device_id"), ("period", "device_id", "online_seconds", "offline_seconds", "unknown_seconds", "uptime_percent", "offline_incidents", "commands", "commands_acknowledged", "commands_failed", "command_success_percent", "label_prints", "labels_printed", "label_failures"), text=(("period", "group and carry"), ("device_id", "group and carry")), ordering=("period", "device_id")),
+    "presence-activity": _strategy(AggregationKind.WEIGHTED_RATE, ("period",), ("period", "visits", "unique_visitors", "declared_presence_seconds", "average_declared_presence_seconds"), text=(("period", "group and carry; union visitor IDs privately"),), ordering=("period",)),
+    "audit-activity": _strategy(AggregationKind.GROUP_SUM, ("period", "action"), ("period", "action", "count"), text=(("period", "group and carry"), ("action", "group and carry")), ordering=("-count", "period", "action")),
+    "organization-membership": _strategy(AggregationKind.WEIGHTED_RATE, ("period", "organization_id"), ("period", "organization_id", "invitations", "redeemed", "revoked", "expired", "open_invitations", "memberships", "active_memberships", "suspended_memberships", "redemption_percent"), text=(("period", "UTC cohort"), ("organization_id", "deduplicate repeated owner projections before rate calculation")), ordering=("period", "organization_id")),
     "payment-cash-book": _strategy(
         AggregationKind.GROUP_SUM, ("currency", "method"),
         ("currency", "method", "collected_amount", "refunded_amount", "net_amount"),

@@ -113,6 +113,10 @@ class ReportCatalogView(APIView):
         require_module(makerspace, "reports")
         entries = []
         for definition in REPORT_DEFINITIONS:
+            if definition.key == "organization-membership":
+                continue
+            if definition.key == "presence-top-visitors" and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
+                continue
             # General report controls cannot supply an exact domain subject.
             # Subject-only reports remain available from their resource's UI.
             if definition.subject_kind or definition.platform_only:

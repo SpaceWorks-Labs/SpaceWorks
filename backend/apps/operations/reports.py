@@ -34,6 +34,8 @@ def report_data(
         # Export-only: the generic JSON analytics path must never become a second list.
         raise ReportNotFound()
     kwargs = dict(limit=_normalized_limit(limit), date_range=date_range, **(report_filters or {}))
+    if report_key in {"presence-top-visitors", "audit-top-actors"}:
+        kwargs["actor"] = actor
     if report_key == "booking-top-members":
         kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation"}:
@@ -44,6 +46,8 @@ def report_data(
     if definition.grains:
         kwargs["grain"] = grain
     if definition.platform_only:
+        kwargs["platform_context"] = platform_context
+    if report_key == "organization-membership" and makerspace_id is None:
         kwargs["platform_context"] = platform_context
     result = project_report_output(definition, definition.builder()(makerspace_id, **kwargs))
     if subject is not None:
@@ -74,6 +78,8 @@ def report_rows(
         raise ReportNotFound()
     _authorize_subject(actor, makerspace_id, definition, report_filters)
     kwargs = dict(limit=limit, date_range=date_range, **(report_filters or {}))
+    if report_key in {"presence-top-visitors", "audit-top-actors"}:
+        kwargs["actor"] = actor
     if report_key == "booking-top-members":
         kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation"}:
@@ -84,6 +90,8 @@ def report_rows(
     if definition.grains:
         kwargs["grain"] = grain
     if definition.platform_only:
+        kwargs["platform_context"] = platform_context
+    if report_key == "organization-membership" and makerspace_id is None:
         kwargs["platform_context"] = platform_context
     result = project_report_output(definition, definition.builder()(makerspace_id, **kwargs))
     if isinstance(result, ReportResult):

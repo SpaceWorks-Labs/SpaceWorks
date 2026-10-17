@@ -125,6 +125,12 @@ class OrganizationAnalyticsView(APIView):
             scope = resolve_organization_report_scope(
                 request.user, organization, definition
             )
+            if report_key == "organization-membership":
+                from .reports_j_organizations import organization_membership_data
+                return Response(organization_membership_data(
+                    organization, scope, limit=_limit_param(request), date_range=_date_range(request),
+                    grain=_grain_param(request, definition),
+                ))
             data = org_reports.organization_report_data(
                 definition,
                 scope,

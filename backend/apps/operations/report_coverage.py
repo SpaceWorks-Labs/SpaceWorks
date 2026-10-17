@@ -5,6 +5,7 @@ from django.core import checks
 from apps.makerspaces.module_registry import MODULE_KEYS
 from apps.operations.report_registry import REPORT_REGISTRY
 from apps.operations.report_coverage_contract import REPORT_COVERAGE_AREAS
+from apps.separability.tombstones import tombstoned_app_labels
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,10 @@ class ModuleReportCoverage:
 
 
 REPORT_MODULE_COVERAGE = {
+    "presence": ModuleReportCoverage("substantive", ("presence-activity",)),
+    "audit": ModuleReportCoverage("substantive", ("audit-activity",)),
+    "organizations": ModuleReportCoverage("substantive", ("organization-membership",)),
+    "platform": ModuleReportCoverage("substantive", ("platform-services", "platform-usage")),
     "public_inventory": ModuleReportCoverage("composite", ("inventory-control",)),
     "request_workflow": ModuleReportCoverage("substantive", ("loan-throughput",)),
     "staff_admin": ModuleReportCoverage("health_row", ("module-operational-health",)),
@@ -88,6 +93,7 @@ REPORT_MODULE_COVERAGE.update({
     "member_accounts": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["member_accounts"].reports, "membership-growth", "member-retention", "membership-revenue")),
     "payments": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["payments"].reports, "revenue-over-time", "payments-ageing", "cash-book")),
 })
+REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device-health", "module-operational-health"))
 
 
 @checks.register(checks.Tags.models)
@@ -101,6 +107,8 @@ def check_report_module_coverage(app_configs=None, **kwargs):
             id="operations.E001",
         ))
     for module_key, coverage in REPORT_MODULE_COVERAGE.items():
+        if module_key == "presence" and "presence" in tombstoned_app_labels():
+            continue
         from apps.makerspaces.module_registry import module_available
         if module_key in MODULE_KEYS and not module_available(module_key):
             continue

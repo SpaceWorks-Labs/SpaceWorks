@@ -27,6 +27,7 @@ from apps.organizations.models import (
 
 
 ORGANIZATION_REPORT_ACTIONS = frozenset({
+    rbac.Action.MANAGE_MEMBERS,
     rbac.Action.VIEW_AUDIT,
     rbac.Action.MANAGE_MAKERSPACE,
     rbac.Action.VIEW_FINANCE,
@@ -40,6 +41,9 @@ ORGANIZATION_REPORT_ACTIONS = frozenset({
 })
 EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "overdue-loans", "longest-loans", "qr-scan-actors",
+    "presence-top-visitors", "audit-top-actors",
+    "presence-activity-hours", "audit-activity-hours",
+    "platform-services", "platform-usage",
     "active-loans", "returns", "top-borrowers",
     "machine-usage-members", "machine-usage-heatmap",
     "booking-top-members",

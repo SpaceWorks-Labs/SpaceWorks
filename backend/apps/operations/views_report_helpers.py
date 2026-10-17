@@ -74,6 +74,10 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
     nothing, so it cannot help an actor with no inventory scope enumerate a makerspace.
     The registry lookup never invokes a builder.
     """
+    if report_key == "organization-membership":
+        # Global organization membership is an ORG + PLAT projection. A local
+        # makerspace grant does not authorize its owner's global membership data.
+        raise reports.ReportNotFound()
     spaces = Makerspace.objects.all()
     queryset = rbac.scope_by_action(user, rbac.Action.VIEW_INVENTORY, spaces, field="id")
     definition = REPORT_REGISTRY.get(report_key)

@@ -96724,10 +96724,11 @@
                     "devices",
                     "payments",
                     "stock",
-                    "certifications"
+                    "certifications",
+                    "presence"
                 ],
                 "type": "string",
-                "description": "* `hardware_requests` - hardware_requests\n* `printing` - printing\n* `events` - events\n* `bookings` - bookings\n* `maintenance` - maintenance\n* `members` - members\n* `api_access` - api_access\n* `devices` - devices\n* `payments` - payments\n* `stock` - stock\n* `certifications` - certifications"
+                "description": "* `hardware_requests` - hardware_requests\n* `printing` - printing\n* `events` - events\n* `bookings` - bookings\n* `maintenance` - maintenance\n* `members` - members\n* `api_access` - api_access\n* `devices` - devices\n* `payments` - payments\n* `stock` - stock\n* `certifications` - certifications\n* `presence` - presence"
             },
             "CategoryInput": {
                 "type": "object",
@@ -103814,7 +103815,7 @@
                 "type": "string",
                 "description": "* `` - None\n* `deadline_exceeded` - Deadline exceeded\n* `integrity_error` - Integrity error\n* `storage_error` - Storage error\n* `quota_exceeded` - Quota exceeded\n* `internal_error` - Internal error"
             },
-            "Feature4feEnum": {
+            "Feature4d1Enum": {
                 "enum": [
                     "hardware_requests",
                     "printing",
@@ -103826,10 +103827,11 @@
                     "devices",
                     "payments",
                     "stock",
-                    "certifications"
+                    "certifications",
+                    "presence"
                 ],
                 "type": "string",
-                "description": "* `hardware_requests` - Hardware requests\n* `printing` - Printing\n* `events` - Events\n* `bookings` - Bookings\n* `maintenance` - Maintenance\n* `members` - Members\n* `api_access` - API access\n* `devices` - Devices\n* `payments` - Payments\n* `stock` - Stock and procurement\n* `certifications` - Certifications"
+                "description": "* `hardware_requests` - Hardware requests\n* `printing` - Printing\n* `events` - Events\n* `bookings` - Bookings\n* `maintenance` - Maintenance\n* `members` - Members\n* `api_access` - API access\n* `devices` - Devices\n* `payments` - Payments\n* `stock` - Stock and procurement\n* `certifications` - Certifications\n* `presence` - Presence"
             },
             "Feature977Enum": {
                 "enum": [
@@ -106908,7 +106910,7 @@
                     "subject_type"
                 ]
             },
-            "Key4feEnum": {
+            "Key4d1Enum": {
                 "enum": [
                     "hardware_requests",
                     "printing",
@@ -106920,10 +106922,11 @@
                     "devices",
                     "payments",
                     "stock",
-                    "certifications"
+                    "certifications",
+                    "presence"
                 ],
                 "type": "string",
-                "description": "* `hardware_requests` - Hardware requests\n* `printing` - Printing\n* `events` - Events\n* `bookings` - Bookings\n* `maintenance` - Maintenance\n* `members` - Members\n* `api_access` - API access\n* `devices` - Devices\n* `payments` - Payments\n* `stock` - Stock and procurement\n* `certifications` - Certifications"
+                "description": "* `hardware_requests` - Hardware requests\n* `printing` - Printing\n* `events` - Events\n* `bookings` - Bookings\n* `maintenance` - Maintenance\n* `members` - Members\n* `api_access` - API access\n* `devices` - Devices\n* `payments` - Payments\n* `stock` - Stock and procurement\n* `certifications` - Certifications\n* `presence` - Presence"
             },
             "KeyBe2Enum": {
                 "enum": [
@@ -115024,7 +115027,7 @@
                 "type": "object",
                 "properties": {
                     "key": {
-                        "$ref": "#/components/schemas/Key4feEnum"
+                        "$ref": "#/components/schemas/Key4d1Enum"
                     },
                     "label": {
                         "type": "string"
@@ -115057,7 +115060,7 @@
                 "type": "object",
                 "properties": {
                     "feature": {
-                        "$ref": "#/components/schemas/Feature4feEnum"
+                        "$ref": "#/components/schemas/Feature4d1Enum"
                     },
                     "channel": {
                         "$ref": "#/components/schemas/ChannelBe2Enum"
@@ -115088,7 +115091,7 @@
                 "type": "object",
                 "properties": {
                     "feature": {
-                        "$ref": "#/components/schemas/Feature4feEnum"
+                        "$ref": "#/components/schemas/Feature4d1Enum"
                     },
                     "channel": {
                         "$ref": "#/components/schemas/ChannelBe2Enum"
@@ -116786,7 +116789,7 @@
                 "type": "object",
                 "properties": {
                     "feature": {
-                        "$ref": "#/components/schemas/Feature4feEnum"
+                        "$ref": "#/components/schemas/Feature4d1Enum"
                     },
                     "event": {
                         "type": "string",
@@ -117280,7 +117283,7 @@
                 "type": "object",
                 "properties": {
                     "feature": {
-                        "$ref": "#/components/schemas/Feature4feEnum"
+                        "$ref": "#/components/schemas/Feature4d1Enum"
                     },
                     "channel": {
                         "$ref": "#/components/schemas/ChannelBe2Enum"

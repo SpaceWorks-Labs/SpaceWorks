@@ -2265,7 +2265,7 @@ export type CategoryAdmin = {
   "updated_at": string;
 };
 
-export type CategoryEnum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
+export type CategoryEnum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
 export type CategoryInput = {
   "name": string;
@@ -3961,7 +3961,7 @@ export type FailedDeliveries = {
 
 export type FailureCodeEnum = "deadline_exceeded" | "integrity_error" | "storage_error" | "quota_exceeded" | "internal_error";
 
-export type Feature4feEnum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
+export type Feature4d1Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
 export type Feature977Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
@@ -4741,7 +4741,7 @@ export type JournalLine = {
   "settlement_method": string;
 };
 
-export type Key4feEnum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications";
+export type Key4d1Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
 export type KeyBe2Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
 
@@ -6669,7 +6669,7 @@ export type NotificationDestinationWrite = {
 export type NotificationDestinationWritePayloadVersionEnum = 1 | 2;
 
 export type NotificationFeature = {
-  "key": Key4feEnum;
+  "key": Key4d1Enum;
   "label": string;
   "events": Array<string>;
 };
@@ -6679,7 +6679,7 @@ export type NotificationMarkAllRead = {
 };
 
 export type NotificationPreferenceCell = {
-  "feature": Feature4feEnum;
+  "feature": Feature4d1Enum;
   "channel": ChannelBe2Enum;
   "enabled": boolean;
   "source": NotificationPreferenceCellSourceEnum;
@@ -6688,7 +6688,7 @@ export type NotificationPreferenceCell = {
 export type NotificationPreferenceCellSourceEnum = "default" | "override";
 
 export type NotificationPreferenceChange = {
-  "feature": Feature4feEnum;
+  "feature": Feature4d1Enum;
   "channel": ChannelBe2Enum;
   "enabled": boolean;
 };
@@ -7099,7 +7099,7 @@ export type PackChange = {
 };
 
 export type PackChatTemplate = {
-  "feature": Feature4feEnum;
+  "feature": Feature4d1Enum;
   "event": string;
   "text_body": string;
   "is_active": boolean;
@@ -7214,7 +7214,7 @@ export type PackMembershipPlan = {
 };
 
 export type PackNotificationPreference = {
-  "feature": Feature4feEnum;
+  "feature": Feature4d1Enum;
   "channel": ChannelBe2Enum;
   "enabled": boolean;
 };

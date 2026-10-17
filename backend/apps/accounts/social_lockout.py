@@ -60,7 +60,7 @@ def users_locked_out_by_disabling(provider):
         provider=provider
     )
     candidates = (
-        User.objects.filter(is_active=True, social_identities__provider=provider)
+        User.objects.filter(account_kind="member", is_active=True, social_identities__provider=provider)
         .annotate(
             has_other_identity=Exists(other_identity),
             has_staff_identity=Exists(other_identity.exclude(provider=SocialProvider.GITHUB)),

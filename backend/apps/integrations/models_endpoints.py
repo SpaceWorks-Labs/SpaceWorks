@@ -63,7 +63,7 @@ class NotificationEndpoint(ScopedPiiModelMixin, models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["makerspace", "user", "channel"], condition=models.Q(revoked_at__isnull=True), name="uniq_live_personal_endpoint"),
-            models.UniqueConstraint(fields=["configuration", "identity_digest"], condition=models.Q(revoked_at__isnull=True), name="uniq_live_provider_identity"),
+            models.UniqueConstraint(fields=["configuration", "identity_digest", "user"], condition=models.Q(revoked_at__isnull=True), name="uniq_live_provider_identity"),
         ]
 
 

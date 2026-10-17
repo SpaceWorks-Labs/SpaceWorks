@@ -6,6 +6,8 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-17 — account split.** Separate member/tenant-staff/platform identity, kind-bound auth and browser contexts, audited admin-issued staff lifecycle, shared chat binding and credential-free tenant staff transport; purge/backup shells preserve signed audit actors.
+
 - **2026-10-17 — personal notification delivery.** Transactional envelopes/outbox, encrypted
   per-space channel configuration, provider-proven connections, multi-select category choices and
   email fallback; Telegram private /start linking and contract-token room sender, Slack/Mattermost/

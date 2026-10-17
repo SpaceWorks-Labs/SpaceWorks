@@ -12,7 +12,7 @@ from apps.backup.projection_databases import restore_dump, temporary_database
 from apps.backup.recipient_selection import BackupBuildError
 from apps.backup.reservation_catalog import load_unique_rules
 from apps.backup.source_reservations import _evaluate_rule, _qualifying_count
-from apps.data_export.datasets import DATASET_SPECS
+from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,8 @@ def _load_slices(using, slices):
     fixtures = _fixture_records(_root(item) for item in slices)
     ordered_models = _dependency_order(fixtures)
     seen = set()
-    with transaction.atomic(using=using):
+    from .staff_reconstruction import reconstruction_context
+    with reconstruction_context(using), transaction.atomic(using=using):
         connection = connections[using]
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL DEFERRED")
@@ -152,6 +153,8 @@ def _fixture_records(slices):
             for item in _read_json(path):
                 preimage = item.get("row_preimage")
                 if preimage:
+                    if item.get("disposition") == "inert_shell_to_slice":
+                        preimage = {**preimage, "_shell_postimage": item["row_postimage"]}
                     result.setdefault(apps.get_model(preimage["model"]), []).append(preimage)
     return result
 
@@ -185,6 +188,9 @@ def _dependency_order(fixtures):
 
 
 def _insert_fixture(cursor, model, item):
+    from .staff_reconstruction import reconstruct_shell
+    if reconstruct_shell(cursor, model, item):
+        return
     fields = {model._meta.pk.name: item["pk"], **item["fields"]}
     columns, values = [], []
     for name, raw in fields.items():
@@ -194,10 +200,12 @@ def _insert_fixture(cursor, model, item):
         values.append(field.get_db_prep_save(value, connection=cursor.db))
     table = cursor.db.ops.quote_name(model._meta.db_table)
     placeholders = ", ".join(["%s"] * len(values))
-    cursor.execute(
-        f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})",
-        values,
-    )
+    from apps.payments.document_import import document_import_rows
+    with document_import_rows(cursor, model, [item["pk"]]):
+        cursor.execute(
+            f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})",
+            values,
+        )
 
 
 def _apply_boundary_deltas(cursor, root):

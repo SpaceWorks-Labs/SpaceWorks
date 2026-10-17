@@ -22,7 +22,6 @@ from django.db.models import Exists, OuterRef
 
 from apps.accounts.models import PlatformLoginMethods, User
 from apps.accounts.models_social import SocialIdentity
-from apps.accounts.social_staff_providers import staff_capable_provider_filter
 
 logger = logging.getLogger(__name__)
 
@@ -113,38 +112,12 @@ def users_stranded_without_social():
     the query narrows to users who hold any social identity -- a bounded set -- and the
     final check runs in Python.
     """
-    candidates = User.objects.filter(is_active=True).filter(
+    candidates = User.objects.filter(is_active=True, account_kind="member", retired_at__isnull=True).filter(
         Exists(SocialIdentity.objects.filter(user=OuterRef("pk")))
     )
     return [user for user in candidates if not user.has_usable_password()]
 
 
 def superadmins_without_social():
-    """Active superadmins holding no social identity.
-
-    With passwords switched off these are the accounts that cannot sign in — and only if
-    social sign-in itself stays enabled, which is why the caller checks that first rather
-    than this function trying to know both switches at once.
-
-    Narrowed to superadmins on purpose. A member or a staffer stranded by this can be
-    recovered by an administrator; an administrator stranded by it cannot be recovered by
-    anyone, and `/control/` is the only place the switch can be flipped back. Same floor
-    that stops `superadmin_access_enabled` being turned off without Platform Email
-    configured: never remove the last route back in.
-
-    Phone is not counted as a rescue. It signs in on the **member surface only** -- the
-    refresh claim is a hardcoded "member" and staff surfaces reject it -- so a superadmin
-    holding only a verified number still cannot reach the console.
-    """
-    superadmins = User.objects.filter(is_active=True).filter(
-        is_superuser=True
-    ) | User.objects.filter(is_active=True, role=User.Role.SUPERADMIN)
-    from apps.accounts.login_methods_validation import available_providers
-
-    available = available_providers(PlatformLoginMethods.load())
-    superadmins = superadmins.distinct().annotate(
-        has_social=Exists(SocialIdentity.objects.filter(
-            staff_capable_provider_filter(), user=OuterRef("pk"), provider__in=available
-        ))
-    )
-    return [user for user in superadmins if not user.has_social]
+    """Compatibility seam: member login-method switches never gate platform passwords."""
+    return []

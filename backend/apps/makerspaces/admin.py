@@ -1,3 +1,6 @@
+from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
+from apps.makerspaces.admin_governance import MakerspaceGovernanceMixin
+from apps.makerspaces.admin_lifecycle_review import MakerspaceLifecycleReviewMixin
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
@@ -20,6 +23,8 @@ from apps.makerspaces.models import (
     normalize_frontend_domain,
 )
 from config.admin_access import SuperuserOnlyModelAdmin
+from apps.accounts.admin_staff_lifecycle import ReadOnlyMembershipInlineMixin
+from apps.makerspaces.admin_staff_accounts import MakerspaceStaffAccountAdminMixin
 
 
 class ArchivedFilter(admin.SimpleListFilter):
@@ -40,11 +45,12 @@ class ArchivedFilter(admin.SimpleListFilter):
         return queryset
 
 
-class MakerspaceMembershipInline(TabularInline):
+class MakerspaceMembershipInline(ReadOnlyMembershipInlineMixin, TabularInline):
     # Compatibility: intentionally writes only the legacy string; null FK = frozen fallback.
     model = MakerspaceMembership
     fk_name = "makerspace"
     fields = ("user", "role")
+    readonly_fields = fields
     autocomplete_fields = ("user",)
     extra = 0
 
@@ -56,6 +62,10 @@ class MakerspaceMembershipInline(TabularInline):
 
 @admin.register(Makerspace)
 class MakerspaceAdmin(
+    RecentReauthenticationAdminMixin,
+    MakerspaceGovernanceMixin,
+    MakerspaceLifecycleReviewMixin,
+    MakerspaceStaffAccountAdminMixin,
     MakerspaceOwnerAdminMixin,
     MakerspaceLifecycleActionsMixin,
     MakerspaceImageAdminMixin,
@@ -64,19 +74,13 @@ class MakerspaceAdmin(
     ModelAdmin,
 ):
     form = MakerspaceAdminForm
-    actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces"]
+    actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces",
+               "approve_archive_requests", "decline_archive_requests"]
     list_display = (
-        "name",
-        "public_code",
-        "slug",
-        "location",
-        "public_inventory_enabled",
-        "superadmin_access",
-        "frontend_domain",
-        "hidden_from_central_directory",
-        "frontend_mode",
-        "archived",
-        "updated_at",
+        "governance_name", "governance_public_code", "slug", "governance_location",
+        "governance_public_inventory", "superadmin_access", "governance_domain",
+        "governance_directory", "frontend_mode", "lifecycle_state", "archived_at",
+        "archive_request_status", "governance_updated",
     )
     list_filter = ("public_inventory_enabled", "superadmin_access_enabled", ArchivedFilter)
     prepopulated_fields = {"slug": ("name",)}
@@ -87,6 +91,7 @@ class MakerspaceAdmin(
             {
                 "fields": (
                     "name",
+                    "create_staff_account_link",
                     "public_code",
                     "slug",
                     "location",
@@ -119,7 +124,7 @@ class MakerspaceAdmin(
             },
         ),
     )
-    readonly_fields = ("logo_preview", "cover_preview")
+    readonly_fields = ("logo_preview", "cover_preview", "create_staff_account_link")
     inlines = (MakerspaceMembershipInline,)
 
     def save_model(self, request, obj, form, change):
@@ -176,8 +181,14 @@ class MakerspaceAdmin(
         # disable ordinary deletes to preserve history, which blocks a whole-space
         # purge even though lifecycle.purge() deletes the complete graph safely.
         objs = list(objs)
+        from .admin_lifecycle_actions import visible_archive_impacts
+        warnings = [
+            f"Advisory unsettled charges for {row['object'].name}: {row['owned_pending']} owned pending, "
+            f"{row['routed_pending']} routed pending, {row['total_pending']} total pending. Counts may change."
+            for row in visible_archive_impacts(objs)
+        ]
         return (
-            [f"{self.opts.verbose_name}: {obj}" for obj in objs],
+            [f"{self.opts.verbose_name}: {obj}" for obj in objs] + warnings,
             {self.opts.verbose_name_plural: len(objs)},
             set(),
             [],
@@ -194,10 +205,12 @@ class MakerspaceAdmin(
 
     @admin.display(description="Superadmin access")
     def superadmin_access(self, obj):
-        return "Yes" if obj.superadmin_access_enabled else "No"
+        return "on" if obj.superadmin_access_enabled else "off"
 
     @admin.display(description="Frontend mode")
     def frontend_mode(self, obj):
+        if not obj.superadmin_access_enabled:
+            return "hidden"
         return "single-tenant" if obj.frontend_domain else "central"
 
 

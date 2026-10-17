@@ -12,6 +12,169 @@
 The load-bearing rules, grouped by area. These were established across many shipped batches and matter
 beyond any single module. Read the subsection covering what you are touching.
 
+## Account kinds (member / staff / platform)
+
+These are the account-split owner decisions D1–D12, including approved amendments V1–V12.
+They supersede older shared-account, staff social-login and staff-role stripping descriptions
+in historical batch notes below. Account identity never changes to obtain another surface.
+
+**Identity and database boundaries (D1–D3, M1–M5, V7/V10).**
+
+- `User.account_kind` is non-null: `member`, `staff` or `platform`. The same person uses separate
+  accounts for community activity, each makerspace's staff work and platform administration.
+  Staff have a `staff_makerspace` FK with `PROTECT`; kind and tenant are immutable in model and
+  database guards, except the retirement/restore transitions below. Platform means both
+  `is_superuser=True` and `role=superadmin`; members/staff cannot have those flags (M1/M2).
+- Email is case-insensitively unique among members, among platform accounts, and within each
+  staff makerspace, independently. A staff email never blocks member signup. Member phone,
+  Telegram and legacy external-check-in identities have member-only uniqueness. Username is
+  globally unique; staff allocation uses `<handle>.<slug>` (bounded to 150 characters), captured
+  at creation and unchanged by a later makerspace slug change (M3).
+- A nonretired staff account has exactly one active or revoked membership in its own makerspace,
+  with only the six built-in staff roles; Space Manager stands alone, the other five combine.
+  Member memberships hold only Member; platform and retired accounts have none (M4).
+  `DEFERRABLE INITIALLY DEFERRED` constraint triggers on User, MakerspaceMembership and
+  MembershipAdditionalRole validate at commit, including both old and new subjects when links
+  move. Deferral permits atomic creation/import/role replacement, never a durable invalid set.
+  Object and SQL readers in `accounts/rbac_roles.py` fail closed even before commit; deleting a
+  staff membership requires the exact-tenant purge guard.
+- Community-owned profiles, cards, terms, waivers, presence, bookings, loans, registrations and
+  payments are created for member accounts only. No history or credential moves between a
+  person's accounts (M5). Resource event/booking helpers and organization grants/governance stay
+  on member accounts (D8); they confer their specific actions, never built-in staff identity.
+
+**Surface policy and simultaneous sessions (D5/D8/D9, V8/V10/V12).**
+
+Staff and platform authentication accepts username/email + password, with local authenticator
+MFA where applicable. Social/OIDC/Google/Apple/GitHub, phone OTP, claims and magic-link methods
+are member-only. Native human device sessions are member-only too. Member login-method switches
+cannot strand staff/platform: their password door remains available. `/control/` accepts only
+live platform Django sessions and retains its own MFA/reauth gates and password fallback.
+Platform API sign-in requires `PLATFORM_STAFF_ORIGINS`.
+
+Staff password login explicitly supplies `context=staff` and a makerspace slug; a verified
+custom origin must agree. Wrong kind/tenant has the generic credential failure. Access/refresh
+tokens carry `kind` and, for staff, `makerspace`; kind-less pre-cutover tokens are refused.
+`accounts/surface_policy.py` rechecks the live account on access, refresh, MFA completion,
+reauthentication and device issuance. Staff stay in their own tenant and cannot enter member
+surfaces. Platform accounts reach platform/control operations and authorized staff lifecycle
+actions; every kind may use its own classified account utilities.
+
+`accounts/delegated_routes.py` and `delegated_route_catalog.py` classify staff routes as
+`membership-only`, `delegable` or `shared-account-utility`. Unknown routes deny; Django URL
+system check `accounts.E001` rejects unclassified/unnamed staff routes. A member reaches a
+delegable route only with a live resource grant, organization action grant or organization
+governance source in the target scope. The route's ordinary action/resource checks still decide
+the operation. A registry entry alone grants nothing, and members cannot enter membership-only
+routes. Shared utilities cover only the actor's own profile/password/MFA/personal connections.
+
+Browser contexts are `member`, `staff:<slug>` and `platform`. Refresh/logout explicitly select
+one context (omission defaults to member) and validate only that context's cookie. Cookie names
+are `refresh_token`, `refresh_token_staff_<slug>` and `refresh_token_platform`; Django control
+sessions remain separate. Frontend token stores, refresh promises/generation fences, QueryClients,
+reauth queues and offline/staff state are partitioned by context. Sign-out affects that context
+only; late responses cannot restore it or replace another account's state. Delegated workspaces
+use the member context with `surface=delegated`.
+
+Current integration limitation: cookie names are tenant-specific, but all refresh cookies use
+`AUTH_COOKIE_PATH` (`/api/v1/auth/`). The approved slug-specific Path requirement needs endpoint
+aliases and matching frontend calls: a slug-specific Path cannot reach the shared refresh/logout
+URLs. Do not describe the current implementation as providing slug-specific cookie paths.
+
+**Staff lifecycle and recovery (D2/D4/D6/D7, V2/V6).**
+
+Only a local Space Manager or permitted platform superadmin creates staff accounts. With
+superadmin access on, only the superadmin manages Space Managers; local managers manage the
+other staff. With `superadmin_access_enabled=False`, platform access is exclusively refused
+and local Space Managers may manage other Space Managers. No lifecycle action may target self.
+Deactivation and demotion lock the tenant and its Space Manager memberships and refuse removal
+of the last active Space Manager, including concurrent removals. Removal deactivates and keeps
+history; staff membership deletion/self-service leave and member-to-staff attachment are refused.
+
+The lifecycle API under `admin/makerspaces/<id>/staff-accounts/` and `/control/` actions share
+services, recent server-owned reauthentication, tenant write gates, quotas and append-only audits.
+Generic admin account fields/password/bulk/delete and legacy membership/reset writers cannot
+bypass them. There is no hidden-Space-Manager application break-glass reset; the operator's
+server-side management command remains the platform break-glass recovery surface.
+
+Email onboarding initializes the already-created staff account, never links by email or creates
+one on redemption. Invitations bind account ID, full role/machine-scope snapshot and
+`credential_generation`. Under locks redemption rechecks the inviter's live authority, matching
+snapshots/generation, expiry, active status and unusable password. Resend revokes the old bearer.
+Admin password issue and deactivation increment generation and revoke open invitations atomically,
+so reset/redemption races cannot install stale credentials. Admin-issued passwords set
+`must_change_password`, revoke sessions/grants and are never logged/emailed; generated passwords
+are displayed once in a no-store response. Optional authenticator reset consumes pending MFA.
+Without Email, Membership, staff invitations or MFA, admin-set initial passwords still work.
+
+Self-service email recovery uses separate `member`, `staff` and `platform` contexts. Envelopes bind
+an account, context, staff tenant, trusted request origin and credential generation, never shared-email
+ownership. Member recovery remains independent; legacy UID/token links remain member-only. Staff
+supply their tenant slug and email or username; platform recovery uses only the platform origin.
+Staff/platform recovery requires configured Platform Email at request and issuance, irrespective of
+tenant email/modules. Unknown, unavailable, other-kind/tenant and unconfigured requests acknowledge
+identically without issuing mail. Staff accounts must be live, unrestricted, have active membership
+and a servable, nonmigrating tenant; trusted origin and all live conditions are rechecked at issuance
+and confirmation. Mail contains a six-digit OTP and a trusted reset-page URL, never a bearer link;
+only verified tenant domains override configured central URLs.
+
+Recovery, invitation redemption, admin password issue and deactivation share the lock order:
+Makerspace, account invitations, User, then envelopes. OTP expiry, attempt budget, single use and
+credential generation fence concurrent operations. Email confirmation validates the password,
+clears `must_change_password` and calls `revoke_sessions_only` once: sessions/device grants and open
+invitations end, generation advances once. Established MFA remains enrolled and required on next
+sign-in; pre-reset MFA/reauth proofs cannot complete. Staff envelopes of hidden tenants remain
+invisible even on the otherwise global operational envelope admin, including direct object reads.
+The operator's host command remains a platform break-glass option.
+
+JWT issuance/rotation and session/device logout lock User before outstanding/blacklist tokens,
+session markers or device grants/families; MFA/phone confirmation locks User before its proof.
+These token paths take no later tenant/invitation locks.
+Issuance rechecks the proved account's credential generation under that lock; rotation rechecks
+revocation after waiting. Cookie logout validates CSRF and clears only the selected namespace even
+when its refresh credential has expired or already been revoked.
+
+Deactivation revokes the account's Django sessions, outstanding JWTs/browser markers, native
+device grants/refresh families and push destinations, station operator leases, pending MFA,
+email/phone verification, bound OIDC/GitHub attempts/social nonces, reauth proofs/intents, reset
+envelopes, open invitations and personal chat challenges/endpoints. Offline replay refuses inactive
+actors and revoked leases. Reactivation restores none of these and leaves an unusable password
+until admin issue. Independent HMAC API clients (creator is provenance), hardware devices and
+Station credentials remain separate principals.
+
+**Shared chat binding (D10, V3).** Live uniqueness is
+`(configuration, identity_digest, user)`: each account proves the shared destination independently.
+Signed STOP/opt-out, START/consent renewal and inbound-window facts lock and update all live
+bindings of that configuration/digest atomically. Account unlink affects only that account;
+delivery callbacks remain delivery-ID-bound. Preferences and recipient envelopes remain account-keyed.
+
+**Transport, retirement and rollout (D11/D12, V4/V5/V9/V11).** Staff travel with their tenant in
+PORTABLE and sovereign Lane D exports as new target staff identities, preserving active status,
+built-in roles, remapped machine scopes and staff notification preferences. Never link an existing
+target account. Passwords, MFA, sessions, device grants, chat endpoints and invitations do not
+travel: target staff start with unusable passwords and `must_change_password`; a target admin
+issues credentials. Member memberships remain Member; platform attribution is inert provenance.
+Full contract: [account-split-portability.md](account-split-portability.md).
+
+Tenant purge retires staff before removing the tenant: scrub name/email/phone/avatar, allocate
+`retired-<uuid>` username, revoke credentials, remove MFA secrets, set inactive + `retired_at`, and
+clear `staff_makerspace` under `app.account_retirement_makerspace_id` for that exact tenant.
+Staff are never hard-deleted. This one-way shell preserves global authentication audit actor IDs,
+MACs and signed batch leaves; shells cannot log in or enter exported identity/list results.
+
+Readable-main deployment backups use the same PII-free, inactive same-PK staff shells, never null
+AuditLog.actor. Full staff rows and account credential rows reside in sealed tenant slices;
+browser sessions are omitted. The registered inert-shell boundary and username reservations
+protect delayed slices. Guarded slice restoration checks the exact complete shell, owning restore
+component, staged full row, inverse deltas and merge role; ordinary occupied-ID upserts or partial
+reversals remain refused. The unserved producer reconstruction clone has its own narrow guard.
+
+This programme is an atomic release, not conversion of mixed production accounts (D12). Rebuild
+dev data from separate platform/staff/member seeds; classify existing superusers as platform and
+other legacy accounts as member while stripping old built-in staff assignments. Cutover invalidates
+existing sessions/refresh credentials. Installer/setup, target restore and host recovery use only
+platform operators and never promote an existing member/staff identity.
+
 ## Cross-cutting invariants (from shipped batches)
 
 **Recent reauthentication (Lane F).** `accounts.ReauthenticationSession` holds
@@ -84,19 +247,27 @@ feeds general CORS + publishable-key validation) — so an API-client/public ori
 publishable-key calls but **can never mint a staff session**. `origin_scope.py` hard-scopes a browser
 staff request to its domain's makerspace; origin-less (server) requests fall back to `MakerspaceMembership`.
 
-**Superadmin access is a HARD block, not a soft hide.** `Makerspace.superadmin_access_enabled=False`
+**Superadmin access is a HARD block with one lifecycle governance exception.** `Makerspace.superadmin_access_enabled=False`
 excludes the space for a GLOBAL superadmin across `rbac.can`/`scope_by_action`/`makerspaces_for_action(s)`
-etc. (a superadmin with an explicit membership keeps only that role's actions). Status contract: hidden
+etc. Platform accounts have no memberships; a local manager uses a separate tenant staff account. Status contract: hidden
 → **403** on action/permission-gated endpoints, **404** on object-lookup detail + re-enable PATCH,
 **empty 200** on scope-filtered lists. Existence stays visible as a slim row (governance). True→False is
 rejected unless Platform Email is configured (forgot-password recovery). Re-enable is space-manager-only.
-Break-glass: superadmin may create a fresh SPACE_MANAGER / reset a hidden-only SM. Application-layer only
-(DB/`manage.py` access always overrides).
+Staff management has no hidden-space platform exception: only local Space Managers may create or
+admin-reset staff there (D7). Platform superadmins may archive, unarchive, purge and review archive
+requests through the slim `/control/` lifecycle list, with recent session reauthentication on selection
+and confirmation POSTs. That exception grants no data, staff, settings, support or migration HTTP access.
+Server-side operator recovery remains outside application authority.
 
 **Makerspace archive → purge (superadmin, `/control/` only).** `Makerspace.archived_at` is the
 single soft-delete flag; archive scoping is threaded through central rbac + all aggregates + public +
 token-status surfaces (archived is invisible everywhere but `/control/`). `lifecycle.py` is the single
-lifecycle source. **Purge** is break-glass: collects S3 keys, writes a platform-scoped audit, then in
+lifecycle source. Its public decision services independently require an active platform superadmin.
+Hidden spaces support the same lifecycle without changing the access flag, custody activation or
+recipient set; unarchive preserves hiding and still refuses an active migrated-out handoff. The internal
+`_archive_locked()` caller used by tenant migration cutover also supports hidden spaces; migration HTTP
+routes retain their hard block. Archive, unarchive and purge completion audits retain the access flag
+from the locked decision row. **Purge** is break-glass: collects S3 keys, writes a platform-scoped audit, then in
 one `transaction.atomic()` suspends immutability triggers **transaction-scoped** and deletes the full
 `PROTECT` object graph in verified dependency order, then best-effort deletes S3.
 - Self-host: `SET LOCAL session_replication_role='replica'` (all triggers off; FK off — ORM does
@@ -202,13 +373,17 @@ been **worse than doing nothing**, which is the lesson worth keeping here.
 mutate status outside it). Direct SM archive was rejected as a **self-lockout** — archiving
 removes the space from RBAC scope and `unarchive` is `/control/`-only, so the person who pressed
 the button loses the space and any way to undo it.
-- **THE HIDDEN-SPACE HOLE, and it is why this feature is safe.** A manager can set
-  `superadmin_access_enabled=False` themselves; a hidden space is excluded from `/control/`
-  querysets **and** `lifecycle.archive()` refuses it. So `file request → hide space` made the
-  request vanish from the superadmin's queue while rendering it unapprovable — a manager
-  escaping the exact oversight the design exists to impose. **Both directions are closed:**
-  creation refuses a hidden space, and disabling superadmin access refuses while a request is
-  pending. Do not remove either half.
+- **Hidden spaces retain lifecycle governance.** A manager may request archival while
+  `superadmin_access_enabled=False`, and may disable access while a request is pending. The
+  `/control/` makerspace list exposes only name, slug, lifecycle state, archived timestamp,
+  archive-request status and the access-off label for a hidden row. Search and ordering use only
+  name/slug; setting filters omit hidden rows. There is no object/change link, inline or tenant-data
+  access. Platform superadmins can archive/unarchive/purge directly without a request, and can
+  approve/decline the pending request through dedicated list actions. Review discloses request id,
+  time, requester username and reason (no contact details).
+  The archive-request admin itself remains hard-hidden; neither model is globally exempted from
+  tenant lookup. Recent control-session reauthentication protects both action and confirmation POSTs,
+  including the ordinary makerspace delete route.
 - **Authority is the `MANAGE_MAKERSPACE` ACTION, never `rbac.is_space_manager_identity`.** That
   helper deliberately does not infer identity from actions. Organization-derived authority can
   carry the action without local Space Manager identity. Both view and service must check the
@@ -491,18 +666,20 @@ Names, slugs and grants are immutable; role CRUD and the capabilities editor/API
 membership has a primary `assigned_role` plus `MembershipAdditionalRole` rows. Space Manager and Member
 stand alone; the other five combine freely. `accounts/rbac_roles.py` shares the validity predicate
 between object and SQL readers: additional rows contribute only when the primary and additional role
-belong to the membership's tenant and both have combinable canonical slugs. Null primary keeps the
-frozen legacy fallback and ignores additional rows; foreign/obsolete roles fail closed. Authority is
+belong to the membership's tenant and both have combinable canonical slugs. Account-kind/context
+validation also applies; null primary or foreign/obsolete roles fail closed. Authority is
 the union of valid roles' actions, with existing implication and active/tenant/origin fences unchanged.
 `/auth/me` and login expose `role_ids`, `role_slugs`, `role_names` and effective `actions`; navigation
 continues to use server authority, never role-name inference. Organizations have empty role arrays.
 
 `replace_membership_roles` is the complete-set writer. Both assignment routes accept `role_ids` (or
 compatibility `role_id`, never both), reject empty or incompatible sets, and enforce the actor's grant
-ceiling; only a global superadmin can grant Space Manager or modify its holders. Create/reattach,
+ceiling and the account-kind/D7 lifecycle policy above; with platform access off, another local
+Space Manager may manage Space Managers, never self or the last active one. Create/reattach,
 activation/reactivation/approval and invitation acceptance clear ALL additional roles and membership
 machine links before assigning afresh. In-life edits preserve type links only while Machine Manager
-is retained. Invitations remain single-role. Existing writers keep their lock order: Makerspace
+is retained. Staff initial-setup invitations snapshot the complete role set and machine scopes;
+community invitations remain Member-only. Existing writers keep their lock order: Makerspace
 `FOR NO KEY UPDATE` before membership `FOR UPDATE OF self`; helpers add no role-row locks. Existing
 User/invitation/role locks in callers retain their established order and strength.
 
@@ -528,7 +705,8 @@ and canonical defaults restored last. References are repointed before obsolete r
 Mutes silence a membership only when EVERY stream-applicable role it holds is muted; an unrelated
 role does not count. Space packs no longer export roles: legacy empty `roles: []` is accepted and
 removed, while nonempty role sections are refused. Membership and per-person authority never travel
-in a pack; portable tenant imports reduce memberships to Member and drop additional roles/type links.
+in a pack. Tenant imports reduce member memberships to Member; staff retain built-in roles and
+remapped additional roles/type links under D11 (see the account-kinds section above).
 
 **`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 34
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
@@ -836,17 +1014,13 @@ RBAC state, so gating it wholesale would lock a makerspace out of its own staff 
 `memberships/me`, and waivers (member read + accept, staff publish + witness — liability evidence, made
 core by `cd2936d1`). **Gated by `membership`:** public join request, community requests in the queue and
 the approve/decline on them, verify/unverify, member activity, referrals, profiles/directory, member cards,
-plans and terms. Invitations run staff and community intent down **one** path in
-`membership_services.invite_membership`, discriminated by the assigned role's `granted_actions` — a role
-granting no actions is a community invitation (gated) however it is named; a role granting actions is a
-staff invitation and must keep working with the module off. **That discrimination holds at every later
-step, in `membership_gating.py`** (2026-10-09): with the module off the queue lists only staff invitations,
-approving or declining one works (approving it INTO a role with no actions mints a community member and is
-gated, and so is attaching a plan), and claiming a community invitation or a referral is refused — and
-omitted from discovery — even when it was issued while the module was on. Before that, a staff invitation
-issued module-off could never be listed, approved or declined, and a referral stayed claimable after the
-module was switched off. Module gates are **additive `AND`s** — `refer_membership` still checks
-`referrals_enabled` and `can_refer`.
+plans and terms. Community invitations through `membership_services.invite_membership` are
+Member-only and membership-gated at issue, queue, approval/decline and claim; referrals remain gated
+with their additional `referrals_enabled`/`can_refer` checks. Built-in staff onboarding now uses
+`accounts.staff_account_services` and account-bound initial-password invitations, outside this
+community queue. Membership off never blocks staff creation or administrator password issue.
+Email onboarding additionally needs Email + `staff.invitations`; with either off, use admin-set
+passwords. The old shared invitation path must never grant staff roles to member accounts.
 
 Staff invitation and activation/welcome owner mail uses the core `account` stream without the
 community `members` category. Its source still rechecks the live role, owner, sender and revision;
@@ -999,7 +1173,8 @@ they differ only in configuration. Load-bearing details:
 **Social identity is global; authorization remains per makerspace.** `SocialIdentity(provider, sub)` links
 Google/Apple to the global `User`; it never grants a role. Provider JWTs are server-verified against bounded,
 cached static JWKS endpoints and one-time origin/device-bound nonces. Auto-linking is allowed only when both
-provider and local email are verified; staff social login never creates an account or membership. Social
+provider and local email are verified. All social/OIDC sign-in and linking is member-only;
+staff/platform accounts use password plus local MFA. Social
 tokens carry `surface=member|staff`: member tokens are rejected by staff APIs, while staff tokens require
 the exact trusted staff origin and matching tenant scope on access and refresh. Provider secrets remain
 write-only/encrypted, and unconfigured social auth is omitted from public config.
@@ -1023,7 +1198,7 @@ starts empty everywhere, so its constraint always applies cleanly.
   caught. `services_registration.confirm_challenge` defers for the same reason.
 - **MEMBER SURFACE ONLY.** `refresh["surface"]` is hardcoded `"member"`, never derived from the
   request. An SMS code is the weakest factor here (SIM swap, number recycling) and staff hold
-  destructive powers, so staff must come through password or a social provider on the trusted origin.
+  destructive powers, so staff must use their tenant password door plus local MFA where required.
 - **The login start endpoint is a uniform 200 in every case** — unknown, malformed, suspended, or on
   cooldown. `ChallengeCooldown` is swallowed there on purpose: a 429 only for real numbers leaks
   exactly what the generic ack protects. `LINK` and `LOGIN` challenges are discriminated by
@@ -1168,8 +1343,8 @@ screen reads the same endpoint.
   Adding the browser flow (PKCE, redirect, discovery) is its own phase.
 
 **Login methods are four independent platform switches (module program phase 10).**
-`accounts.PlatformLoginMethods` (`pk=1`, superadmin-only) governs password / social / phone /
-self-registration. Platform-scoped and never a tenant feature, for the reason that keeps social sign-in
+`accounts.PlatformLoginMethods` (`pk=1`, superadmin-only) governs member password / social / phone /
+self-registration; staff/platform password doors are independent (V12). Platform-scoped and never a tenant feature, for the reason that keeps social sign-in
 off the capability registry: each resolves before a makerspace is selected. All four default **on** and
 are additive `AND`s in front of the readiness each method already had, so switching one on can never
 make an unconfigured method work. `load()` deliberately does **not** `get_or_create` — this is read on
@@ -1185,10 +1360,9 @@ every unauthenticated login attempt, and a read path that writes is a write per 
 - **`login_methods_validation.validate_login_methods(proposed)` checks the complete state**,
   including credential readiness, all simultaneous provider removals and enabled OIDC providers.
   The admin form, operator command and setup service share it. Social-only users must retain
-  a usable enabled credential; superadmins require an enabled usable password or a configured,
-  enabled staff-capable identity. Phone and GitHub cannot rescue staff access. Password + social
-  both off is refused outright. Reads fail open with last-known-good switch values; writes fail
-  closed when validation cannot prove survival.
+  a usable enabled credential. Staff/platform are password-only, regardless of the member password
+  switch; social identities never count as their alternative credentials. Reads fail open with
+  last-known-good switch values; writes fail closed when validation cannot prove member survival.
 - **Setup applies `SETUP_MFA_ENABLED` and `SETUP_SOCIAL_PROVIDERS` only on first row creation**,
   independently of whether the makerspace already exists. Reruns preserve later operator choices.
   `set_login_methods --mfa on|off --providers google,apple,github` (empty/`none` = none)
@@ -1208,10 +1382,9 @@ recovery regeneration refuse while off; disable and password-only invitation acc
 single-use attempt ledger, binds state to origin and a browser-held nonce, uses PKCE
 S256, and requires a primary verified email. The platform client secret is encrypted
 and write-only; provider access tokens never persist or enter audit metadata. Google,
-Apple and OIDC are the staff-capable providers: GitHub cannot count as a surviving
-credential when disabling passwords for superadmins, disabling a provider, or unlinking
-their last staff-capable identity. Both settings surfaces refuse clearing either GitHub
-credential when it would strand GitHub-only accounts. Provider-issued GitHub sessions
+Apple, GitHub and OIDC all authenticate member accounts only. Provider removal/unlink
+checks protect member credentials; none can replace a staff/platform password.
+Both settings surfaces refuse clearing a GitHub credential when it would strand a GitHub-only member. Provider-issued GitHub sessions
 use the same version-bound MFA provider proof as other social sign-ins.
 
 **Maker profiles hang off `MakerspaceMembership`, and are deliberately NOT PII-encrypted (phase 12).**
@@ -3586,6 +3759,9 @@ with a reason in `NON_OBJECT_KEY_FIELDS`.
 
 ### Lane D tenant-exclusive identity and payment closure (D6, 2026-08-23)
 
+The account-kind extension (D11/V5) in [account-split-portability.md](account-split-portability.md)
+preserves tenant staff authority without credentials; platform actors remain inert provenance.
+
 **Lane D does not use the older per-identity `DisclosureClosureApproval` policy.** That
 path remains for the older PORTABLE data-export/API contract, but a sovereign tenant
 dump classifies identities from its immutable captured database image: a referenced
@@ -3881,6 +4057,13 @@ that breaches the floor — security response must never wait for redundancy. A 
 recipient **continues** to back up under a recorded degraded state (owner decision); at **zero** it
 fails closed. Creating a makerspace with the switch already off is refused: at creation no recipient can
 exist, so the supported sequence is **create on → enrol and verify two → switch off**.
+
+The admission floor governs recipient maintenance, not authorized whole-tenant destruction.
+An archived hidden makerspace may be purged without restoring access or recipients. The authorized
+purge removes live tenant DEKs, recipients, custody/alarm rows and activation state; permanent
+recipient reservations, retained encrypted artifacts and recipient-use history survive their own
+retention rules. `BackupArchive.makerspace` becomes NULL while snapshot identities remain.
+Archive/unarchive never add a platform recipient or change activation state or the access flag.
 
 **Every transaction that changes the effective recipient count must go through
 `backup/custody.py::with_makerspace_custody_lock`, which locks the MAKERSPACE ROW FIRST, then recipient

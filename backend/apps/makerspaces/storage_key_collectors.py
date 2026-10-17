@@ -31,6 +31,9 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
         for key in model.objects.filter(**lookup).values_list("object_key", flat=True):
             add(key)
     collect_service(makerspace, add)
+    from apps.payments.models import PaymentDocument
+    for key in PaymentDocument.objects.filter(makerspace=makerspace).values_list("branding_logo_key", flat=True):
+        add(key)
     artwork = EventCertificateArtwork.objects.filter(event__makerspace=makerspace)
     if not include_coordination:
         artwork = artwork.filter(promoted_at__isnull=False)

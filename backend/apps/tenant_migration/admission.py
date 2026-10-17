@@ -56,7 +56,8 @@ def canonical_identities(user_rows):
     for user in sorted(user_rows, key=lambda item: str(item.pk)):
         identity = {}
         for name in sorted(names):
-            value = getattr(user, name)
+            # A foreign key (staff_makerspace) is compared by its column value, never the related object.
+            value = getattr(user, user._meta.get_field(name).attname)
             identity[name] = value.isoformat() if hasattr(value, "isoformat") else value
         identities.append(identity)
     return identities
@@ -71,7 +72,8 @@ def closure_digest(identities):
 
 def compute_pending_closure(makerspace):
     """Compute the exact projected identity list shown to the source superadmin."""
-    closure = set()
+    closure = set(User.objects.filter(account_kind="staff", staff_makerspace=makerspace,
+                                      retired_at__isnull=True).values_list("pk", flat=True))
     for dataset in DATASETS.values():
         if dataset.fidelity is not Fidelity.PORTABLE or dataset.model == "accounts.User":
             continue
@@ -81,7 +83,7 @@ def compute_pending_closure(makerspace):
             emit, contributes = export_row_policy(dataset.model, row)
             if emit and contributes:
                 closure.update(_row_user_ids(dataset.model, row))
-    users = apps.get_model("accounts.User").objects.filter(pk__in=closure)
+    users = apps.get_model("accounts.User").objects.filter(pk__in=closure, retired_at__isnull=True)
     identities = canonical_identities(users)
     return {"digest": closure_digest(identities), "identities": identities}
 

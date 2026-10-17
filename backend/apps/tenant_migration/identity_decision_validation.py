@@ -11,6 +11,21 @@ from .protocol_errors import MembershipDependencyError
 
 def validate_membership_dispositions(archive, decisions):
     """Reject dropped memberships whose non-null archived dependents survive."""
+    source_kinds = {str(row["id"]): row.get("account_kind", "member") for row in archive.rows("accounts.User")}
+    staff_ids = {pk for pk, kind in source_kinds.items() if kind == "staff"}
+    for item in decisions:
+        if str(item["source_user_id"]) in staff_ids and (
+            item["identity_resolution"] != ImportIdentityDecision.IdentityResolution.CREATE_WALK_IN
+            or item.get("target_user_id") is not None
+            or item["membership_disposition"] == ImportIdentityDecision.MembershipDisposition.NO_MEMBERSHIP
+        ):
+            raise MembershipDependencyError("Staff accounts must be created anew with their complete membership.")
+    for item in decisions:
+        if source_kinds.get(str(item["source_user_id"])) == "platform" and (
+            item["identity_resolution"] != ImportIdentityDecision.IdentityResolution.CREATE_WALK_IN
+            or item.get("target_user_id") is not None
+        ):
+            raise MembershipDependencyError("Platform provenance must become a new inert stub.")
     dropped_users = {
         str(item["source_user_id"])
         for item in decisions

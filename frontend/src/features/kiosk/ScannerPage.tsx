@@ -3,6 +3,7 @@ import { KioskLayout } from "../../components/layouts";
 import { Card, EmptyState, KeyValueCard, ScanWorkbench, StatusPill } from "../../components/ui";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { staffRequest } from "../../lib/api";
+import { currentSessionContext } from "../../lib/api/sessionContext";
 import { useStationConnection } from "./useStationConnection";
 
 type ResolveResult = { target: Record<string, string | number>; allowed_actions: string[] };
@@ -10,9 +11,13 @@ const words = (value: string) => value.replace(/_/g, " ").replace(/^./, letter =
 
 export function ScannerPage() {
   const online = useStationConnection();
-  const resolve = useMutation({ mutationFn: (payload: string) => staffRequest<ResolveResult>("/admin/qr/resolve", {
-    method: "POST", body: JSON.stringify({ payload: payload.trim() }),
-  }) });
+  const context = currentSessionContext();
+  const resolve = useMutation({ mutationFn: (payload: string) => {
+    if (!context.startsWith("staff:")) throw new Error("Open the scanner for your makerspace from its staff console.");
+    return staffRequest<ResolveResult>("/admin/qr/resolve", {
+      method: "POST", body: JSON.stringify({ payload: payload.trim() }),
+    }, context);
+  } });
   const target = resolve.data?.target;
   const title = target ? String(target.name ?? target.label ?? target.product ?? "Label resolved") : "Scan a label";
   return <KioskLayout context={{ title: "Scanner", subtitle: "Scan a label or paste its code." }} connection={{ online }}

@@ -7,6 +7,7 @@ readable; both names are re-exported there, which is where every caller imports 
 # Models whose makerspace is reached via a nested relation (no direct `makerspace` FK).
 # Keyed by "app_label.model_name" (lowercase) -> ORM lookup ending in _id.
 NESTED_MAKERSPACE_LOOKUPS = {
+    "accounts.user": "staff_makerspace_id",
     "devices.printerjobconsumption": "job__makerspace_id",
     "accounts.memberclaimcode": "membership__makerspace_id",
     "audit.auditverificationrunevent": "run__makerspace_id",
@@ -45,7 +46,6 @@ NESTED_MAKERSPACE_LOOKUPS = {
 # Registered admin models that are intentionally NOT makerspace-scoped (account/global).
 GLOBAL_ADMIN_MODELS = {
     "makerspaces.spacepackprofile",
-    "accounts.user",
     "organizations.organization",
     "organizations.organizationmembership",
     "accounts.platformsocialauthsettings",

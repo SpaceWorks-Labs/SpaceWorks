@@ -19,19 +19,27 @@ def boundary_deltas(makerspace_id):
                 rule, "default", (makerspace_id,)
             ).order_by(rule.source_model._meta.pk.name)
             for record in raw_records(queryset, rule.source_model):
-                fixture = fixture_payload(rule.source_model, (record,))[0]
+                if rule.source_model._meta.label == "accounts.User":
+                    from .staff_shells import staff_fixture
+                    fixture = staff_fixture(rule.source_model, record)
+                else:
+                    fixture = fixture_payload(rule.source_model, (record,))[0]
                 entry = {
                     "model": rule.source_model._meta.label,
                     "row_pk": fixture["pk"],
                     "field": rule.field.name,
                     "disposition": rule.disposition,
                 }
-                if rule.disposition == BoundaryDisposition.DROP_ROW_TO_SLICE:
+                if rule.disposition in {BoundaryDisposition.DROP_ROW_TO_SLICE,
+                                        BoundaryDisposition.INERT_SHELL_TO_SLICE}:
                     identity = (entry["model"], str(entry["row_pk"]))
                     if identity in seen_dropped_rows:
                         continue
                     seen_dropped_rows.add(identity)
                     entry["row_preimage"] = fixture
+                    if rule.disposition == BoundaryDisposition.INERT_SHELL_TO_SLICE:
+                        from .staff_shells import shell_fixture
+                        entry["row_postimage"] = shell_fixture(fixture)
                 else:
                     entry["field_preimage"] = fixture["fields"][rule.field.name]
                 result.append(entry)

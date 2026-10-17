@@ -58,6 +58,7 @@ class Command(BaseCommand):
         user, created = User.objects.get_or_create(
             username=username,
             defaults={
+                "account_kind": "platform",
                 "email": options["email"],
                 "role": User.Role.SUPERADMIN,
                 "is_staff": True,
@@ -66,6 +67,8 @@ class Command(BaseCommand):
         )
         # CLI access already overrides application rules; this assertion makes an
         # improbable collision loud instead of silently changing a person record.
+        if not created and user.account_kind != "platform":
+            raise CommandError("Setup requires a separate platform account; existing member/staff accounts cannot be promoted.")
         if not created and user.is_walk_in:
             raise CommandError(f"Cannot set up {username!r}: the existing user is a walk-in.")
         if created:

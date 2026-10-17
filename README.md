@@ -63,9 +63,10 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   personal routes; browser OAuth completes through authenticated challenge verification. WhatsApp
   Twilio and Meta are registered/mounted; remaining delivery limits are recorded in the
   [delivery contract](docs/notification-contract.md#integration-limits-in-this-tree).
-- **Accounts and profiles.** Password, Google, Apple, member-only GitHub, OIDC (Keycloak, Authentik,
-  Azure AD, Okta) and member phone/SMS sign-in. Methods are switchable; external identity and
-  staff-created walk-ins support spaces without the member-account ecosystem. Opt-in maker profiles
+- **Accounts and profiles.** Separate member, tenant staff and platform accounts. Members use
+  password, Google, Apple, GitHub, OIDC (Keycloak, Authentik, Azure AD, Okta) or phone/SMS;
+  staff/platform use password plus authenticator MFA where required. Member methods are switchable;
+  external identity and staff-created walk-ins support spaces without the member-account ecosystem. Opt-in maker profiles
   include projects, interests, education, optional GitHub counts and a consent-based member directory.
   Public pages at `/<handle>` add fresh publication consent, separate activity-family opt-ins,
   counts-only activity and GitHub calendars, and HOSTED/SPOKE event badges. Public reads expose
@@ -90,8 +91,8 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   upload slots that never became handover evidence.
 
 **Password sign-in works out of the box.** Google, Apple, GitHub and OIDC need credentials issued for
-your domain; phone sign-in needs an SMS account. Setup selects Google/Apple/GitHub options, and you
-enter provider keys later in the console. These keys are separate from `GITHUB_API_TOKEN`, which
+your domain; phone sign-in needs an SMS account. These provider/code methods are member-only.
+Setup selects Google/Apple/GitHub options, and you enter provider keys later in the console. These keys are separate from `GITHUB_API_TOKEN`, which
 enables the optional contribution count on maker profiles; without that token the count stays hidden.
 
 ## Design system
@@ -607,12 +608,13 @@ Existing request status links remain bearer-token reads.
 
 ### Choosing which ways in you offer
 
-**`/control/` → Platform login methods** switches the four credential kinds independently: password,
+**`/control/` → Platform login methods** switches the four member credential kinds independently: password,
 identity provider, phone code, and self sign-up. All four are on by default and switching one off
 never deletes anything, so turning it back on needs no re-entry.
 
-Each switch covers **every** way in of that kind, not just the obvious one. Turning passwords off
-also refuses a mobile app's device login, which would otherwise mint a long-lived session from the
+Each switch covers **every member** way in of that kind, including delegated helper workspaces.
+Staff and platform accounts always retain password sign-in (+ local MFA where required).
+Turning member passwords off also refuses a mobile app's device login, which would otherwise mint a long-lived session from the
 same password. Turning self sign-up off also stops an identity provider from creating a brand-new
 account — signing in on an already-linked account, and linking a provider to an account you already
 have, both keep working, because neither is a registration.
@@ -620,10 +622,12 @@ have, both keep working, because neither is a registration.
 Existing sessions are deliberately **not** revoked: a login-method switch is a policy change, not a
 revocation. Use the restrict/suspend flow to end someone's access.
 
-Two changes are refused rather than performed, because they cannot be undone from inside the app:
-switching off a method that is somebody's *only* credential (they have no password to reset, so
-forgot-password cannot rescue them), and switching off passwords while a superadmin lacks a usable linked,
-configured staff-capable provider (Google, Apple or OIDC; GitHub and phone are member-only) — this page would then be unreachable.
+Changes that would strand a member with only a disabled provider are refused. Staff/platform
+accounts do not count social identities as alternative credentials and cannot use member recovery.
+Staff passwords can be issued by an authorized administrator. Staff and platform sign-in also offer
+**Forgot password?** using a six-digit email code through configured Platform Email. Staff recovery
+stays within the selected makerspace; platform recovery uses the platform console. MFA remains
+required after recovery. The host command remains available for platform break-glass recovery.
 
 ### Rooms: sending different alerts to different places
 
@@ -741,6 +745,21 @@ built-ins whose names and grants cannot be edited:
 | **Handover** | Issue accepted requests/direct handouts, return tools, upload evidence and collect completed jobs |
 | **Member** | Community services without staff management actions |
 
+Staff accounts belong to one makerspace and are created under **Staff & roles** by its Space Manager
+(non-Space-Manager staff) or a permitted superadmin (including Space Managers). A staff email can
+also have a separate member account and separate staff accounts in other spaces. Staff sign in at
+`/m/<slug>/admin` with username/email + password (+ authenticator MFA); member and staff sessions
+can stay open together, with independent sign-out. Event/booking helpers and organization delegates
+continue to use their member login and only their granted workspace actions.
+
+Staff invitations set the initial password of that exact new staff account. With Email or invitations
+off, an administrator sets or generates a password and hands it over; Membership and MFA need not
+be enabled. Admin-issued reset ends sessions and forces password change. Separate staff/platform
+email OTP recovery ends sessions, clears forced password change and preserves enrolled MFA; it needs
+configured Platform Email, including when tenant Email is off. Deactivation retains history and revokes credentials; reactivation
+needs new credentials. With superadmin access off, only local Space Managers manage staff, including
+other Space Managers; nobody can manage self or remove the last active manager.
+
 Space Manager and Member each stand alone; the other five roles can combine. Machine scope is assigned
 per person by type: no links means no machines; a type covers machines added later, while new types
 need assignment. Space Manager is exempt. Handover alone cannot accept/reject requests, edit inventory
@@ -755,7 +774,10 @@ Celery beat, while the cloud profile uses cron. The retired all-in-one image is 
 The [hosting guide](docs/README-HOSTING.md#hosting) covers first-run generated credentials, Docker and
 split deployments, and an approved, encrypted tenant export/import onto a space's own server.
 Migration preserves accountable records, approves personal-data closure and admits only one writable
-side through cutover; the source is archived. [Recovery](docs/update-recovery.md) is separate from updates.
+side through cutover; the source is archived. Tenant staff identities, roles/scopes and notification
+preferences travel without credentials; a target administrator issues new passwords. See the
+[staff portability contract](docs/account-split-portability.md).
+[Recovery](docs/update-recovery.md) is separate from updates.
 
 ## Tech stack
 

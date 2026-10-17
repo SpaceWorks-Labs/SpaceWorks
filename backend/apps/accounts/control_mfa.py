@@ -24,6 +24,13 @@ class ControlMFAThrottle(SimpleRateThrottle):
 
 def session_verified(request):
     try:
+        user = request.user
+        from apps.accounts.surface_policy import assert_surface
+        assert_surface(user, "control")
+        if (request.session.get("account_kind") != user.account_kind
+                or request.session.get("account_id") != str(user.pk)
+                or request.session.get("credential_generation") != user.credential_generation):
+            return False
         mfa_policy.assert_verified(request.user, {
             "mfa_version": request.session.get("mfa_version"),
             "mfa_source": request.session.get("mfa_source"),
@@ -35,6 +42,11 @@ def session_verified(request):
 
 def stamp_password_session(sender, request, user, **kwargs):
     """Version even password-only admin sessions so host MFA resets revoke them."""
+    if user.account_kind != "platform":
+        return
+    request.session["account_kind"] = user.account_kind
+    request.session["account_id"] = str(user.pk)
+    request.session["credential_generation"] = user.credential_generation
     if user.is_superuser and not mfa_policy.needs_challenge(user):
         row = mfa_policy.credential(user)
         request.session["mfa_version"] = str(row.version) if row else ""
@@ -46,7 +58,8 @@ def stamp_password_session(sender, request, user, **kwargs):
 @never_cache
 def control_mfa(request):
     user = request.user
-    if (not user.is_superuser or not user.is_active or user.access_status != "active"
+    if (user.account_kind != "platform" or user.retired_at is not None
+            or not user.is_superuser or not user.is_active or user.access_status != "active"
             or user.is_tenant_dump_stub or user.must_change_password):
         return HttpResponseForbidden()
     if session_verified(request):

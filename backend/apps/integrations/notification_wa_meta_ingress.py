@@ -4,7 +4,6 @@ from datetime import timedelta
 from types import SimpleNamespace
 
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -18,7 +17,7 @@ from .models_endpoints import ChannelConfiguration, NotificationEndpoint
 from .notification_proofs import verified_callback
 from .notification_delivery import MAX_ATTEMPTS, apply_callback
 from .notification_providers import CallbackEvent
-from .notification_wa_meta_callbacks import callback_event, destination, endpoint_for
+from .notification_wa_meta_callbacks import callback_event, destination, destination_digest
 from .notification_wa_meta_http import error_result
 from .notification_wa_window import inbound_time
 
@@ -51,18 +50,20 @@ def apply_item(configuration, request, index, item):
             result = _retry_failure(current, row, event)
         if kind == "statuses" and result:
             _delivery_audit(current, row)
+        if event.opt_in and result:
+            audit.record(None, "notification.whatsapp_inbound", makerspace=current.makerspace,
+                target=current, meta={"channel": "whatsapp", "generation": current.generation})
         if kind == "messages" and not event.opt_out:
-            endpoint = result if event.proof else endpoint_for(current, destination(row.get("from")))
+            from .notification_destination_events import live_destination
+            identity = destination_digest(current, destination(row.get("from")))
             moment = inbound_time(row.get("timestamp"))
-            if endpoint and moment:
-                rows = rbac.scope_notification_policy(NotificationEndpoint.objects.all(),
-                    makerspace_id=current.makerspace_id).filter(pk=endpoint.pk,
-                    configuration=current, integration_generation=current.generation,
-                    integration_identity=current.integration_identity, revoked_at=None)
-                changed = rows.filter(Q(last_inbound_at=None) | Q(last_inbound_at__lt=moment)).update(last_inbound_at=moment)
-                if changed:
-                    audit.record(None, "notification.whatsapp_inbound", makerspace=current.makerspace,
-                        target=endpoint, meta={"channel": "whatsapp", "generation": current.generation})
+            if identity and moment:
+                endpoints = list(live_destination(current, identity).select_for_update().order_by("pk"))
+                for endpoint in endpoints:
+                    if endpoint.last_inbound_at is None or endpoint.last_inbound_at < moment:
+                        NotificationEndpoint.objects.filter(pk=endpoint.pk).update(last_inbound_at=moment)
+                        audit.record(None, "notification.whatsapp_inbound", makerspace=current.makerspace,
+                            target=endpoint, meta={"channel": "whatsapp", "generation": current.generation})
 
 
 def _delivery_rows(configuration, row):

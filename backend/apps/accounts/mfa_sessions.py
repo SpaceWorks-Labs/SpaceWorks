@@ -28,10 +28,13 @@ def device_context(challenge, verified, grant=None):
 
 def issue_session(user, data, request):
     from apps.accounts.serializers import user_payload
+    from apps.accounts.surface_policy import assert_surface, validate_account_token
+    validate_account_token(user, data)
     surface = data["surface"]
+    assert_surface(user, surface, request=request)
     if surface == "control":
         return {"mfa_version": str(user._mfa_verified_version)}
-    if surface in ("staff", "staff_api"):
+    if surface in ("staff", "staff_api", "delegated"):
         from apps.accounts.services_social_identity import SocialResolutionError
         try:
             assert_staff_authority(user, request)
@@ -39,6 +42,8 @@ def issue_session(user, data, request):
             raise PermissionDenied("Staff access is required.") from exc
     device = data.get("device")
     if device:
+        if user.account_kind != "member":
+            raise AuthenticationFailed("Device authorization is no longer active.")
         from apps.accounts.views_device import _reject_browser_headers
         _reject_browser_headers(request)
         assert_mobile_grant_creation_enabled()

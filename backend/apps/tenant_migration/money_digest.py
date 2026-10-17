@@ -97,7 +97,7 @@ def money_fingerprint(makerspace_id, *, using="default"):
         payload["documents"] = documents
     Billing = apps.get_model("payments.MakerspaceBillingSettings")
     counters = list(Billing.objects.using(using).filter(makerspace_id=makerspace_id)
-                    .values("next_document_number", "number_prefix"))
+                    .values("next_document_number", "number_prefix", "next_bill_number", "bill_prefix"))
     if counters:
         payload["document_counter"] = counters
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()

@@ -56,8 +56,13 @@ verified private account-link proofs, never workflow decisions. Two architectura
 
 ### Module responsibilities
 
-- **Auth & RBAC** — enforces the role/action matrix AND makerspace scoping on every query. Super Admin is
-  global; each makerspace has seven fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
+- **Auth & RBAC** — enforces account kind, the role/action matrix AND makerspace scoping on every query.
+  Member, tenant staff and platform superadmin are separate accounts, even for the same person/email.
+  Staff belong to one makerspace and are created only by its Space Manager or a permitted superadmin;
+  staff/platform sign in with password (+ authenticator MFA); recovery uses admin-issued resets or
+  separate context-bound email OTPs via configured Platform Email.
+  Resource helpers and organization delegates use member accounts, never built-in staff memberships.
+  Super Admin is global; each makerspace has seven fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
   Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member. No custom roles or role
   editing. A membership holds a primary role plus combinable additional roles; Space Manager and Member
   must each stand alone. Authority is the union of the valid role set's actions. Machine Manager reach is
@@ -116,6 +121,13 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
 
 ## Hard Rules Baked Into Workflows (don't regress these)
 
+- **Staff and member are separate accounts.** Only a Space Manager (own space, non-Space-Manager
+  staff) or permitted superadmin creates staff; members never receive built-in staff roles. Staff
+  sign-in is username/email + password (+ authenticator MFA). Admin-issued resets revoke sessions
+  and force password change; context-bound email OTP recovery via Platform Email clears that flag
+  and retains MFA. Platform accounts have their own email recovery and host break-glass command.
+  With `superadmin_access_enabled=False`, only local Space Managers manage staff, including other
+  Space Managers; never self and never the last active manager. See **Account kinds** in `docs/INVARIANTS.md`.
 - Reviewed-request hardware **cannot be issued** without both a box QR scan and an issue photo.
 - Public self-checkout and staff direct handout **cannot be issued** without uploaded issue evidence and an
   eligible scanned/selected tool.
@@ -130,7 +142,7 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   Full detail: **Handover roles** in `docs/INVARIANTS.md`.
 - Public borrow-request access is derived by `makerspaces/request_access.py`: with **`membership` on**,
   an active member must pass the applicable presence, waiver and current-term checks; with it **off**,
-  an active signed-in account may submit. A per-makerspace **account-less request opt-in** additionally
+  an active signed-in member account may submit (no membership required). A per-makerspace **account-less request opt-in** additionally
   admits anonymous proposals only while `membership` is off. Installing membership clears that opt-in.
   `RequestSubmitView` uses `AllowAny` and enforces these branches itself; anonymous submissions need
   contact details, an `Idempotency-Key` and IP/email throttles. Staff acceptance still reserves stock.
@@ -403,6 +415,7 @@ because none are quoted here — this index is a router, not a summary.
 
 | Section of `docs/INVARIANTS.md` | Before you touch |
 | --- | --- |
+| **Account kinds (member / staff / platform)** | account creation, kind/tenant constraints and uniqueness, staff lifecycle, auth surfaces and delegated routes, session contexts, reset/MFA, chat identity, staff export/import, retirement and backup shells |
 | **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin hide/archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles and public handles; staff event registration; notifications v2; presence check-in and TV privacy; the colour vocabulary; the accessibility floor; console parity |
 | **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |

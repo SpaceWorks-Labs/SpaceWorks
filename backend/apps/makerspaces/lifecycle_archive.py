@@ -5,6 +5,7 @@ from django.db import transaction
 
 from apps.audit import services as audit
 from apps.makerspaces.servability import is_servable
+from .lifecycle_authority import require_platform_superadmin
 
 
 def archive_impact(makerspace):
@@ -33,8 +34,6 @@ def archive(makerspace, actor):
 
 
 def _archive_locked(makerspace, actor, *, archived_at):
-    if not makerspace.superadmin_access_enabled:
-        raise ValidationError("Cannot archive a hidden makerspace.")
     if not is_servable(makerspace):
         raise ValidationError("Makerspace is not available for archival.")
 
@@ -52,16 +51,15 @@ def _archive_locked(makerspace, actor, *, archived_at):
         "makerspace.archived",
         makerspace=makerspace,
         target=makerspace,
-        meta=impact,
+        meta={**impact, "superadmin_access_enabled": makerspace.superadmin_access_enabled},
     )
     return makerspace
 
 
 def unarchive(makerspace, actor):
+    require_platform_superadmin(actor)
     with transaction.atomic():
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
-        if not locked.superadmin_access_enabled:
-            raise ValidationError("Cannot unarchive a hidden makerspace.")
         if locked.archived_at is None:
             raise ValidationError("Makerspace is not archived.")
         from apps.tenant_migration.cutover import has_active_migrated_out_handoff
@@ -74,5 +72,8 @@ def unarchive(makerspace, actor):
         locked.archived_at = None
         locked.archived_by = None
         locked.save(update_fields=["archived_at", "archived_by"])
-        audit.record(actor, "makerspace.unarchived", makerspace=locked, target=locked)
+        audit.record(
+            actor, "makerspace.unarchived", makerspace=locked, target=locked,
+            meta={"superadmin_access_enabled": locked.superadmin_access_enabled},
+        )
         return locked

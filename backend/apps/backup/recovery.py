@@ -166,7 +166,7 @@ def _invalidate_tokens(now):
 def set_recovery_principal(user, raw_password):
     User = get_user_model()
     locked = User.objects.select_for_update().get(pk=user.pk)
-    if not (locked.is_superuser or locked.role == User.Role.SUPERADMIN):
+    if locked.account_kind != "platform" or not (locked.is_superuser and locked.role == User.Role.SUPERADMIN):
         raise ValidationError("The recovery principal must already be a superadmin.")
     locked.is_active = True
     locked.is_staff = True

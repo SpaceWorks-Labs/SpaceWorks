@@ -4,6 +4,8 @@ The rail lives in `services_checkout`; this module re-exports it, and the webhoo
 handlers, so `from apps.payments.services import X` keeps resolving for every caller.
 """
 
+from apps.accounts.account_kind_guards import require_member_account
+
 import logging
 
 from django.db import transaction
@@ -40,6 +42,7 @@ def create_payment(
     # from being able to collect it online: a space that takes cash still needs the debt
     # on the books, visible in the member area and settleable by staff. The row is stamped
     # `unclaimed` and the first checkout that reaches a provider claims it.
+    require_member_account(member)
     source = resolve_payment_source(makerspace)
     if source is None:
         vendor = Payment.Provider.UNCLAIMED
@@ -90,6 +93,15 @@ def create_payment(
     )
     from apps.payments.notifications import notify_payment
     notify_payment(payment, "charge_raised")
+    # An optional document must never poison the required debt transaction.
+    try:
+        with transaction.atomic():
+            from apps.payments.documents import issue_bill
+            issue_bill(payment, actor=created_by)
+    except Exception as exc:
+        logger.error("payment_bill_issue_failed", extra={
+            "payment_id": payment.pk, "failure_type": type(exc).__name__,
+        })
     return payment
 
 

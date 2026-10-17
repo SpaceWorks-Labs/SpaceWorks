@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { KioskLayout } from "../../components/layouts";
 import { Callout } from "../../components/ui";
+import { currentSessionContext } from "../../lib/api/sessionContext";
 import { KioskOnlineHandover } from "./KioskOnlineHandover";
 import { KioskOnlineScanner } from "./KioskOnlineScanner";
 import {
@@ -21,9 +22,14 @@ import { KioskReplayCorrection } from "./KioskReplayCorrection";
 // Reset destroys encrypted local work; the cookie and human grant remain server-owned.
 export function KioskStationPage() {
   const { slug, stationToken = "" } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const recoveryId = searchParams.get("recovery");
-  const [session, setSession] = useState<KioskBootstrap | null>(null);
+  const [session, setSession] = useState<KioskBootstrap | null>(() => {
+    const opened = location.state?.kiosk as { token: string; session: KioskBootstrap } | undefined;
+    return opened?.token === stationToken ? opened.session : null;
+  });
   const [lease, setLease] = useState<KioskLease | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shiftPending, setShiftPending] = useState(false);
@@ -35,6 +41,21 @@ export function KioskStationPage() {
   const activeLease = lease ?? offline.queue?.lease ?? null;
   const queueMode = Boolean(offline.queue && (!offline.online || offline.restored || continuing));
   const hasCommands = Boolean(offline.queue?.commands.length);
+  const contextReady = Boolean(slug) || Boolean(activeSession
+    && currentSessionContext() === `staff:${activeSession.makerspace.slug}`);
+
+  useEffect(() => {
+    if (!activeSession || slug) return;
+    const context = `staff:${activeSession.makerspace.slug}`;
+    if (searchParams.get("context") === context) return;
+    const params = new URLSearchParams(searchParams);
+    params.set("context", context);
+    // Preserve the PIN bootstrap across the context boundary's cache remount.
+    // It grants no human authority: the server still checks the cookie and JWT.
+    navigate({ pathname: location.pathname, search: `?${params}` }, {
+      replace: true, state: { kiosk: { token: stationToken, session: activeSession } },
+    });
+  }, [activeSession, slug, searchParams, navigate, location.pathname, stationToken]);
 
   useEffect(() => {
     if (offline.restored && !offline.queue) { setSession(null); setLease(null); }
@@ -60,14 +81,14 @@ export function KioskStationPage() {
   }
 
   async function signIn() {
-    if (shiftPending) return;
+    if (shiftPending || !contextReady) return;
     setShiftPending(true); setError(null);
     try { setLease(await takeOperatorLease(stationToken)); }
     catch { setError("Sign in to the staff console with an account allowed to work this Station."); }
     finally { setShiftPending(false); }
   }
 
-  const workPanel = recoveryId && activeSession ? <KioskReplayCorrection key={`${stationToken}/${recoveryId}`} id={recoveryId} token={stationToken} session={activeSession} online={offline.online} onQueueChange={offline.setQueue} />
+  const workPanel = !contextReady ? null : recoveryId && activeSession ? <KioskReplayCorrection key={`${stationToken}/${recoveryId}`} id={recoveryId} token={stationToken} session={activeSession} online={offline.online} onQueueChange={offline.setQueue} />
     : queueMode && offline.queue ? <KioskOfflineHandover queue={offline.queue}
       onChange={() => { void offline.refresh(); }} retry={() => { void offline.retry(); }}
       acknowledge={() => { void lock().catch(() => setError("Local reset failed.")); }} />
@@ -85,8 +106,8 @@ export function KioskStationPage() {
     mode={!activeSession && offline.online ? "lock" : activeSession && !activeLease && !recoveryId ? "ready" : "work"}
     lock={{ title: "Enter the station PIN", helper: "Ask a manager for the 8-digit PIN. It unlocks this device only.",
       pending, error: error ?? undefined, submitLabel: "Unlock station", pendingLabel: "Unlocking…", onSubmit: pin => { void unlock(pin); } }}
-    ready={{ primary: { label: "Start operator shift", pending: shiftPending, pendingLabel: "Starting…", onClick: () => { void signIn(); }, disabled: !offline.online,
-      disabledReason: !offline.online ? "Reconnect before starting an operator shift." : undefined } }}
+    ready={{ primary: { label: "Start operator shift", pending: shiftPending, pendingLabel: "Starting…", onClick: () => { void signIn(); }, disabled: !offline.online || !contextReady,
+      disabledReason: !offline.online ? "Reconnect before starting an operator shift." : !contextReady ? "Preparing the tenant staff workspace." : undefined } }}
     headerActions={activeSession ? [{ label: "Full screen", onClick: () => { void enterKioskMode(); } },
       { label: "Lock station", onClick: () => { if (hasCommands) setResetRequested(true); else void lock().catch(() => setError("Local reset failed.")); } }] : []}
     work={{ capture: !activeSession ? <Callout size="panel" tone="warn" lead="Reconnect to unlock and load this handover" /> : offline.online && activeLease && !hasCommands && !queueMode && !recoveryId ? <KioskOnlineScanner token={stationToken} lease={activeLease} /> : <div className="rounded-xl border border-dashed border-outline p-8"><p className="title-panel">{offline.online ? "Your handover workspace" : "Keep working offline"}</p><p className="mt-3 text-muted">Loaded handovers stay encrypted on this device until the server confirms them.</p></div>,

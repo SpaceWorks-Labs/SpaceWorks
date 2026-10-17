@@ -81,7 +81,7 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | `PLATFORM_ADMIN_SSO` | `False` |  |
 | `PLATFORM_DOMAIN_SUFFIX` | `''` | Blank = self-host. Non-blank activates managed mode and fair-use limits. |
 | `PLATFORM_ORIGIN_HOST` | `''` |  |
-| `PLATFORM_STAFF_ORIGINS` | `[]` |  |
+| `PLATFORM_STAFF_ORIGINS` | `[]` | Exact platform-console origins allowed for platform API password login; tenant staff login supplies its makerspace slug and must match a verified custom origin. Member provider switches do not disable staff/platform passwords. |
 | `PLATFORM_SUBDOMAIN_AUTO_TLS` | `False` | Guided platforms enable TLS admission for registered, verified, non-archived tenant subdomains. Unknown/pending/archived domains remain denied. Compared during restore preflight without blocking a target's TLS choice. |
 
 ## Database

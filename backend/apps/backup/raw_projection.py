@@ -2,6 +2,7 @@
 
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
+from datetime import datetime, time
 import json
 from threading import RLock
 from unittest.mock import patch
@@ -118,7 +119,7 @@ def fixture_payload(model, records):
             "pk": _value_from_record(record, proxy, model._meta.pk),
             "fields": fields,
         })
-    # Match serializers.serialize("json", ...), then the existing sorted re-dump.
+    # Keep Django's fixture shape, with lossless timestamps for reconstruction.
     normalized = json.loads(json.dumps(payload, cls=DjangoJSONEncoder))
     return normalized
 
@@ -137,6 +138,11 @@ def _value_from_record(record, proxy, field):
     if isinstance(field, CompositePrimaryKey):
         return [_value_from_record(record, proxy, item) for item in field]
     value = record[field.attname]
+    # DjangoJSONEncoder truncates datetime/time microseconds to milliseconds. Besides
+    # losing source data, .000123 becomes .000, then no fraction after restore,
+    # so the independently reconstructed row no longer has its source digest.
+    if isinstance(value, (datetime, time)) and value.microsecond % 1000:
+        return value.isoformat()
     return value if is_protected_type(value) else field.value_to_string(proxy)
 
 

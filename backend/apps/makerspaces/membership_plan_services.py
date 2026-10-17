@@ -6,6 +6,8 @@ subject constraint is what guarantees "exactly one renewal charge per term". A p
 failure never rolls back a recorded debt. Optional automation tracks bounded retries,
 promised grace and one successor behind the compatibility exports at the end of this file.
 """
+
+from apps.accounts.account_kind_guards import require_member_account
 import logging
 from datetime import timedelta
 
@@ -34,6 +36,7 @@ def term_end(plan, starts_at):
 
 def create_term(actor, membership, plan, starts_at=None):
     """Open a term for an active membership; a new term follows the current one."""
+    require_member_account(membership.user)
     with transaction.atomic():
         # Makerspace lock first, then the membership -- the order `_activate_membership`
         # mandates -- and the module gate re-checked under that lock (plan A8).

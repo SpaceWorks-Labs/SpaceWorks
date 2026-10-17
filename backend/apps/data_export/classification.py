@@ -41,6 +41,7 @@ from apps.tenant_migration.catalog_p2_bookings import EXPORTED_FIELDS as P2_BOOK
 EXPORTED_MODEL_FIELDS.update(P2_BOOKING_FIELDS)
 EXPORTED_MODEL_FIELDS["bookings.Booking"] += " " + " ".join(sorted(BOOKING_EXTRA_FIELDS))
 EXPORTED_MODEL_FIELDS["notifications.MemberNotificationPreference"] += " daily_digest"
+EXPORTED_MODEL_FIELDS["notifications.NotificationPreference"] = "id makerspace user category channels email_fallback updated_at"
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
     **NOTIFICATION_OMITTED,

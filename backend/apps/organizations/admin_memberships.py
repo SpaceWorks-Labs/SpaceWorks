@@ -15,6 +15,11 @@ from config.admin_access import SuperuserOnlyModelAdmin
 
 
 class OrganizationMembershipForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "user" in self.fields:
+            self.fields["user"].queryset = self.fields["user"].queryset.filter(account_kind="member")
+
     class Meta:
         model = OrganizationMembership
         fields = "__all__"

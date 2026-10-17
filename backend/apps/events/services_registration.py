@@ -1,5 +1,7 @@
 """Registration mutation boundary, kept separate from event lifecycle services."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -47,6 +49,8 @@ def register(
     member view. That view proves an accepted EventCollaborator exists; this service
     deliberately does not re-derive the actor's makerspace membership.
     """
+    if member is not None:
+        require_member_account(member)
     from apps.events.services import _audit, _locked_event, _refresh, _validate
 
     assert_mapped_write_allowed(event.makerspace_id)

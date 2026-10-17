@@ -24,6 +24,8 @@ class PasswordResetResult:
 def reset_user_password(actor, target_pk, password=None, data=None):
     is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
     target = _target_for_reset(actor, target_pk, is_superadmin)
+    if target.account_kind == "staff":
+        raise PermissionDenied("Use the staff account set-password workflow.")
     if target.is_superuser or target.role == User.Role.SUPERADMIN:
         raise PermissionDenied("Cannot reset a superadmin's password here.")
     refuse_anonymous_requester_credential(target)

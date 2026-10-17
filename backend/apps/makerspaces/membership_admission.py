@@ -3,6 +3,8 @@
 Lock order: makerspace, request, membership/role, payment. Legacy tenants continue
 through the shipped flow until settings are explicitly configured.
 """
+
+from apps.accounts.account_kind_guards import require_member_account
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
@@ -32,6 +34,7 @@ def transition(actor, row, state, *, event=None):
 
 
 def _prepare(row, user, policy, raw_answers):
+    require_member_account(user)
     row.user = user
     row.admission_managed = True
     row.application_schema = application_schema_for(row.makerspace, policy)
@@ -43,6 +46,7 @@ def _prepare(row, user, policy, raw_answers):
 
 
 def request_membership(user, makerspace, application_answers=None):
+    require_member_account(user)
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         policy = ensure_join_allowed(makerspace)
@@ -82,6 +86,7 @@ def request_membership(user, makerspace, application_answers=None):
 
 
 def claim_invitation(user, request_id, application_answers=None):
+    require_member_account(user)
     original = MembershipRequest.objects.get(pk=request_id)
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=original.makerspace_id)

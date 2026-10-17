@@ -56,7 +56,8 @@ class ReauthenticationView(APIView):
         return response({"verified": verified, "password_available": request.user.has_usable_password(),
                          "mfa_enabled": bool(credential and credential.enabled_at),
                          "providers": list(request.user.social_identities.filter(
-                             provider__startswith="oidc:").values_list("provider", flat=True))})
+                             provider__startswith="oidc:").values_list("provider", flat=True))
+                         if request.user.account_kind == "member" else []})
 
     @extend_schema(tags=["Reauthentication"], request=ReauthenticationSerializer,
                    responses={200: ReauthenticationResultSerializer, **ERRORS})

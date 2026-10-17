@@ -40,7 +40,7 @@ class CertificationMembersView(APIView):
         row = _resolved_type(request.user, pk)
         rows = rbac.scope_by_makerspace(request.user, MakerspaceMembership.objects.select_related("user")).filter(
             makerspace_id=row.makerspace_id, status="active", user__is_active=True,
-            user__access_status="active",
+            user__access_status="active", user__account_kind="member",
         ).order_by("user__display_name", "user__username", "pk")
         paginator = PageNumberPagination()
         paginator.page_size = 24

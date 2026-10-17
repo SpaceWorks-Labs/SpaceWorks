@@ -7,7 +7,7 @@ from .types import GlobalReference
 
 GLOBAL_MODELS = {
     "accounts.User": GlobalReference(
-        "Only the user closure is projected; the platform-global table is never tenant-owned."
+        "The shared table is closure-projected; staff context belongs to its tenant, while credentials remain deployment-local."
     ),
     "organizations.Organization": GlobalReference(
         "Platform-level organizations are referenced by tenant links but are never tenant-owned."
@@ -55,7 +55,7 @@ OMITTED_MODELS = {
     # nobody, since anyone can create one by asking for a reset -- holding a live OTP
     # digest and a credential fingerprint. Transient authentication state, and global
     # rather than tenant data.
-    "accounts.PasswordResetEnvelope": "Transient authentication state.",
+    "accounts.PasswordResetEnvelope": "Transient authentication state, including context, tenant, origin and credential generation; never portable.",
     "accounts.PhoneVerificationChallenge": "Transient authentication state.",
     "accounts.PlatformLoginMethods": "Platform identity configuration.",
     "accounts.PlatformSocialAuthSettings": "Platform credentials and identity configuration.",

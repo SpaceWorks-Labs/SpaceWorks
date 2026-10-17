@@ -44,6 +44,7 @@ from .tenant_dump_sql import (
     verify_tables_empty,
 )
 from .tenant_dump_sequences import normalize_sequences
+from .tenant_dump_staff import remap_account_roles
 from .tenant_dump_types import ModelDisposition
 from .tenant_dump_verification import verify_projection_database
 
@@ -108,7 +109,7 @@ def build_tenant_dump(
                 insert_rows(using, root_plan.rows)
                 insert_closed_tenant_fence(using, makerspace_id, operation_id)
                 role_ids = seed_default_roles(using, makerspace_id)
-                remainder = _remap_member_roles(remainder, role_ids["member"])
+                remainder = remap_account_roles(remainder, role_ids, source_rows)
                 plan = plan_row_load(remainder, resolved_pks=resolved_pks)
                 insert_rows(using, plan.rows)
                 apply_deferred_foreign_keys(
@@ -231,20 +232,6 @@ def _split_bootstrap_roots(rows):
         [row for row in rows if row.model._meta.label in root_labels],
         [row for row in rows if row.model._meta.label not in root_labels],
     )
-
-
-def _remap_member_roles(rows, member_role_id):
-    result = []
-    labels = {"makerspaces.MakerspaceMembership", "makerspaces.MembershipRequest"}
-    for row in rows:
-        if row.model._meta.label not in labels:
-            result.append(row)
-            continue
-        field = row.model._meta.get_field("assigned_role")
-        values = dict(row.values)
-        values[field.column] = member_role_id
-        result.append(SanitizedRow(row.model, row.source_pk, values))
-    return result
 
 
 def _mapped_identities(rows_by_label):

@@ -58,7 +58,6 @@ from apps.admin_api.views_users import (
     AuditLogPagination,
     MembershipRevokeView,
     StaffListCreateView,
-    _can_create_staff_role,
 )
 
 __all__ = [
@@ -104,7 +103,6 @@ __all__ = [
     "StaffListCreateView",
     "_assert_box_in_makerspace",
     "_assert_category_in_makerspace",
-    "_can_create_staff_role",
     "_global_role_for_membership",
     "_rows_from_upload",
 ]

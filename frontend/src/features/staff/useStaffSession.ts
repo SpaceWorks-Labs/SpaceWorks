@@ -14,7 +14,7 @@ import {
   type PasswordLoginResponse,
   type StaffAuthUser,
 } from "../../lib/api";
-import type { SocialLoginResult } from "../auth/socialSdk";
+import { contextForRoute, consoleSessionHref, offlineSessionPrefix } from "../../lib/api/sessionContext";
 import { isMfaChallenge, type MfaChallenge, type MfaCompleted } from "../auth/mfaApi";
 import { type RecoveryState } from "./RecoveryQuarantinePanel";
 import {
@@ -35,13 +35,15 @@ export function useStaffSession(guestOnly: boolean) {
   const tenant = useTenant();
   const queryClient = useQueryClient();
   const location = useLocation();
+  const context = contextForRoute(location.pathname, location.search, tenant.slug);
+  const delegated = context === "member";
   const navigate = useNavigate();
   const [restoring, setRestoring] = useState(true);
   // Hydration seeds this query; invalidation after authority changes now refreshes
   // the same user consumed by navigation and capability checks.
   const authUser = useQuery<StaffAuthUser | null>({
     queryKey: ["staff", "me"],
-    queryFn: fetchMe,
+    queryFn: () => fetchMe(context, delegated ? "delegated" : undefined),
     enabled: query => !restoring && Boolean(query.state.data),
     staleTime: Infinity,
     retry: false,
@@ -51,7 +53,7 @@ export function useStaffSession(guestOnly: boolean) {
     queryClient.setQueryData<StaffAuthUser | null>(["staff", "me"], value);
   }, [queryClient]);
   const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge>();
-  const [selected, setSelectedState] = useState<number | null>(() => readStoredMakerspace());
+  const [selected, setSelectedState] = useState<number | null>(() => readStoredMakerspace(context));
   const [staffSignInRequested] = useState(() => new URLSearchParams(location.search).get("sign-in") === "staff");
   const [oidcCallback] = useState(() => {
     const query = new URLSearchParams(window.location.search);
@@ -62,11 +64,11 @@ export function useStaffSession(guestOnly: boolean) {
   const singleTenantLocked = tenant.mode === "single" && tenant.makerspaceId !== null;
   const setSelected = useCallback((value: number | null) => {
     setSelectedState(value);
-    persistSelectedMakerspace(value);
-  }, []);
+    persistSelectedMakerspace(value, context);
+  }, [context]);
   const setTab = useCallback((value: string) => {
-    persistStaffTab(value);
-  }, []);
+    persistStaffTab(value, context);
+  }, [context]);
 
   useEffect(() => {
     routeMakerspaceSlugRef.current = routeMakerspaceSlug;
@@ -83,10 +85,10 @@ export function useStaffSession(guestOnly: boolean) {
       setSelected(routeMembership.id);
       return;
     }
-    const saved = readStoredMakerspace();
+    const saved = readStoredMakerspace(context);
     const staffSaved = nextUser.makerspaces.some((item) => item.id === saved) ? saved : null;
     setSelected(superadmin ? saved : staffSaved ?? nextUser.makerspaces[0]?.id ?? null);
-  }, [setSelected, setUser, tenant.makerspaceId, tenant.mode]);
+  }, [context, setSelected, setUser, tenant.makerspaceId, tenant.mode]);
 
   useEffect(() => {
     if (authUser.data) hydrateUser(authUser.data);
@@ -106,40 +108,40 @@ export function useStaffSession(guestOnly: boolean) {
   }, [queryClient]);
 
   const expireSession = useCallback(() => {
-    void wipeOfflineScopes("staff:");
+    void wipeOfflineScopes(offlineSessionPrefix(context)).catch(() => undefined);
     setUser(null);
     setSelected(null);
     setTab("");
     queryClient.clear();
-  }, [queryClient, setSelected, setTab, setUser]);
+  }, [context, queryClient, setSelected, setTab, setUser]);
 
-  useEffect(() => addAuthExpiredListener(expireSession), [expireSession]);
+  useEffect(() => addAuthExpiredListener(expireSession, context), [expireSession, context]);
 
   useEffect(() => {
     let active = true;
 
     // Finish the pending provider login before consulting any previous cookie.
     if (oidcCallback) { setUser(null); setRestoring(false); return; }
-    // Member cookies retain their surface on refresh. This explicit handoff must
-    // mint a staff session through the normal password/social/MFA login flow.
-    if (staffSignInRequested) { clearAccessToken(); setUser(null); setRestoring(false); return; }
+    // An explicit staff sign-in restarts only this console context.
+    // Delegated workspaces reuse the existing member session.
+    if (staffSignInRequested && !delegated) { clearAccessToken(context); setUser(null); setRestoring(false); return; }
 
     async function restoreSession() {
-      const refreshed = await refreshAccessToken();
+      const refreshed = await refreshAccessToken(context);
       if (refreshed) {
         try {
-          const currentUser = await fetchMe();
+          const currentUser = await fetchMe(context, delegated ? "delegated" : undefined);
           if (active) {
             hydrateUser(currentUser);
           }
         } catch {
-          clearAccessToken();
+          clearAccessToken(context);
           if (active) {
             setUser(null);
           }
         }
       } else if (active) {
-        clearAccessToken();
+        clearAccessToken(context);
         setUser(null);
       }
       if (active) {
@@ -151,28 +153,30 @@ export function useStaffSession(guestOnly: boolean) {
     return () => {
       active = false;
     };
-  }, [hydrateUser, oidcCallback, staffSignInRequested, setUser]);
+  }, [context, delegated, hydrateUser, oidcCallback, staffSignInRequested, setUser]);
 
   const login = useMutation({
     mutationFn: (payload: { username: string; password: string }) =>
       staffRequest<PasswordLoginResponse<StaffAuthUser> | MfaChallenge>("/auth/login", {
         method: "POST",
         credentials: "include",
-        body: JSON.stringify({ ...payload, surface: "staff" } satisfies PasswordLoginRequest),
-      }),
+        body: JSON.stringify({ ...payload, surface: delegated ? "delegated" : "staff",
+          context: context.startsWith("staff:") ? "staff" : context === "platform" ? "platform" : "member",
+          ...(context.startsWith("staff:") ? { makerspace: context.slice(6) } : {}),
+        } satisfies PasswordLoginRequest),
+      }, context),
     onSuccess: (data) => {
-      if (isMfaChallenge(data)) { clearAccessToken(); setMfaChallenge(data); return; }
-      setAccessToken(data.access);
+      if (isMfaChallenge(data)) { clearAccessToken(context); setMfaChallenge(data); return; }
+      setAccessToken(data.access, context);
       hydrateUser(data.user);
     },
   });
   const mfaCompleted = (result: MfaCompleted) => {
-    setMfaChallenge(undefined); setAccessToken(result.access); hydrateUser(result.user);
+    setMfaChallenge(undefined); setAccessToken(result.access, context); hydrateUser(result.user);
   };
-  const socialLoginSucceeded = useCallback((result: SocialLoginResult) => {
-    setAccessToken(result.access);
-    hydrateUser(result.user as unknown as StaffAuthUser);
-  }, [hydrateUser]);
+  const delegatedAuthenticated = async () => {
+    hydrateUser(await fetchMe(context, "delegated"));
+  };
 
   const makerspaces = useStaffGet<Makerspace[]>(
     ["staff", "makerspaces"],
@@ -199,9 +203,9 @@ export function useStaffSession(guestOnly: boolean) {
     // navigate here would remount the non-guest app and drop the guest UI).
     if (ms?.slug && !guestOnly) {
       const currentTab = tabFromStaffPath(location.pathname, guestOnly);
-      navigate(staffTabPath(currentTab, guestOnly, ms.slug));
+      navigate(consoleSessionHref(staffTabPath(currentTab, guestOnly, context === "platform" ? undefined : ms.slug), context));
     }
-  }, [guestOnly, location.pathname, makerspaces.data, navigate, setSelected, singleTenantLocked]);
+  }, [context, guestOnly, location.pathname, makerspaces.data, navigate, setSelected, singleTenantLocked]);
   const activeMakerspace = useMemo(
     () => {
       return makerspaces.data?.find((item) => item.id === selected);
@@ -235,11 +239,11 @@ export function useStaffSession(guestOnly: boolean) {
   useLiveUpdates(Boolean(user));
 
   const signOut = async () => {
-    await logoutStaff();
-    await wipeOfflineScopes("staff:");
-    setUser(null);
-    setSelected(null);
-    queryClient.clear();
+    try { await logoutStaff(context); }
+    finally {
+      await wipeOfflineScopes(offlineSessionPrefix(context)).catch(() => undefined);
+      setUser(null); setSelected(null); queryClient.clear();
+    }
   };
 
   return {
@@ -261,7 +265,8 @@ export function useStaffSession(guestOnly: boolean) {
     setUser,
     signOut,
     singleTenantLocked,
-    socialLoginSucceeded,
+    delegated,
+    delegatedAuthenticated,
     tenant,
     user,
   };

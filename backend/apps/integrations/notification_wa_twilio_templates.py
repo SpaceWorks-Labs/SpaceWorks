@@ -12,8 +12,10 @@ from .models_endpoints import ChannelConfiguration, WhatsAppTemplate
 from .notification_wa_twilio_config import sid
 from .notification_wa_twilio_http import CONTENT_ROOT, call
 
+DOCUMENT_MEDIA = "__document_media__"
 
-def template_payload(config, event, audience, locale, context):
+
+def template_payload(config, event, audience, locale, context, *, document_url=None):
     binding = WhatsAppTemplate.objects.filter(configuration=config, event=event,
         audience=audience, locale=locale, approved=True).first()
     if binding is None or not sid(binding.template_name, "HX"):
@@ -21,8 +23,17 @@ def template_payload(config, event, audience, locale, context):
     names = binding.variables
     if not isinstance(names, list) or len(names) > 30 or len(set(names)) != len(names):
         return None
+    if (DOCUMENT_MEDIA in names) != (document_url is not None):
+        return None
     values = {}
     for index, name in enumerate(names, 1):
+        if name == DOCUMENT_MEDIA:
+            if (not isinstance(document_url, str) or document_url.startswith("/")
+                    or ":" in document_url or not document_url.endswith(".pdf")
+                    or len(document_url) > 1024):
+                return None
+            values[str(index)] = document_url
+            continue
         if not isinstance(name, str) or name not in context:
             return None
         value = context[name]
@@ -33,6 +44,23 @@ def template_payload(config, event, audience, locale, context):
             return None
         values[str(index)] = value
     return {"ContentSid": binding.template_name, "ContentVariables": json.dumps(values, ensure_ascii=False)}
+
+
+def approved_document_content(config, credentials, binding, content):
+    """Twilio media variables are paths after a static origin, never a variable host."""
+    if (not isinstance(content, dict) or content.get("account_sid") != credentials.account_sid
+            or content.get("sid") != binding.template_name or content.get("language") != binding.locale
+            or not isinstance(binding.variables, list)
+            or binding.variables.count(DOCUMENT_MEDIA) != 1):
+        return False
+    index = str(binding.variables.index(DOCUMENT_MEDIA) + 1)
+    types, samples = content.get("types"), content.get("variables")
+    media = types.get("twilio/media") if isinstance(types, dict) else None
+    sample = samples.get(index) if isinstance(samples, dict) else None
+    return bool(isinstance(media, dict)
+        and media.get("media") == [credentials.public_base_url + "/{{" + index + "}}"]
+        and isinstance(sample, str) and not sample.startswith("/") and ":" not in sample
+        and sample.lower().endswith(".pdf") and "{{" + index + "}}" not in str(media.get("body", "")))
 
 
 def refresh_approvals(config, credentials, actor, *, content_sids=None):
@@ -46,7 +74,7 @@ def refresh_approvals(config, credentials, actor, *, content_sids=None):
         raise ValidationError({"templates": "At most 100 template bindings."})
     if len({b.template_name for b in bindings if sid(b.template_name, "HX")}) > 5:
         raise ValidationError({"content_sids": "Select at most five Content SIDs per refresh."})
-    results, approvals, unavailable = {}, {}, 0
+    results, approvals, contents, unavailable = {}, {}, {}, 0
     for binding in bindings:
         approved = False
         if sid(binding.template_name, "HX"):
@@ -60,6 +88,13 @@ def refresh_approvals(config, credentials, actor, *, content_sids=None):
                 approved = (data.get("account_sid") == credentials.account_sid
                     and data.get("sid") == binding.template_name and isinstance(whatsapp, dict)
                     and whatsapp.get("status") == "approved")
+                if approved and DOCUMENT_MEDIA in binding.variables:
+                    if binding.template_name not in contents:
+                        contents[binding.template_name] = call(credentials, f"{CONTENT_ROOT}/{binding.template_name}")
+                    content, content_error = contents[binding.template_name]
+                    if content_error:
+                        unavailable += 1
+                    approved = not content_error and approved_document_content(config, credentials, binding, content)
         results[binding.pk] = approved
     with tenant_write(config.makerspace_id), transaction.atomic():
         current = rbac.scope_notification_policy(ChannelConfiguration.objects.select_for_update(),

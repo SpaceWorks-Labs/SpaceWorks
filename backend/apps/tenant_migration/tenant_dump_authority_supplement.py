@@ -14,6 +14,8 @@ def _same(label, names, disposition, reason):
 
 
 SUPPLEMENTAL_AUTHORITY_ENTRIES = (
+    *_same("integrations.NotificationMediaGrant", "id delivery document token_digest expires_at consumed_at", D.DROP,
+           "Single-use source-local document disclosure authority never travels."),
     *_same("integrations.EmailLog", "source_kind source_id source_metadata", D.DROP, "Source delivery identity is omitted telemetry."),
     *_same('bookings.BookableSpace',
            'buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours pass_template', D.PRESERVE,
@@ -24,8 +26,8 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
            'The recurring event cancellation deadline is a portable scheduling policy.'),
     *_same('makerspaces.Makerspace', 'event_reminder_lead_hours booking_reminder_lead_hours', D.PRESERVE,
            'Tenant reminder timing travels; target channel and recipient gates still apply.'),
-    *_same("notifications.MemberNotificationPreference", "makerspace user feature channel enabled", D.DROP,
-           "Source personal delivery policy never becomes target disclosure authority."),
+    *_same("notifications.MemberNotificationPreference", "makerspace user feature channel enabled", D.PRESERVE,
+           "Only carried tenant staff preferences travel; endpoints and channel credentials never do."),
     *_same("notifications.NotificationInboxRow", "makerspace user feature event event_key title summary link read_at", D.DROP,
            "Personal inbox delivery text and read telemetry are omitted from portable artifacts."),
     *_same("integrations.EmailSuppression", "makerspace address_hash reason created_by", D.DROP,
@@ -51,9 +53,9 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
            "A member's decision not to renew must survive migration."),
     *_same("payments.PaymentDocument", "id makerspace payment settlement refund reverses issued_by", D.PRESERVE,
            "Core financial document relations follow the imported ledger identities."),
-    *_same("payments.PaymentDocument", "sequence number kind issuer payer_label payer_type lines amount currency settlement_method settlement_reference money_at issued_at tax_breakdown", D.PRESERVE,
+    *_same("payments.PaymentDocument", "sequence number kind issuer payer_label payer_type lines amount currency settlement_method settlement_reference money_at issued_at tax_breakdown branding_logo_key branding_logo_sha256", D.PRESERVE,
            "Issued snapshots are immutable financial history."),
-    *_same("payments.MakerspaceBillingSettings", "number_prefix legal_name address tax_id footer account_codes next_document_number", D.PRESERVE,
+    *_same("payments.MakerspaceBillingSettings", "number_prefix legal_name address tax_id footer account_codes next_document_number bill_prefix next_bill_number payment_instructions", D.PRESERVE,
            "The numbering counter and billing presentation travel with issued documents; mail permissions do not."),
     *_same("operations.SavedView", "shared state", D.RESET,
            "Target publication and filter identifiers must be authorized anew."),

@@ -1,5 +1,7 @@
 """The sole state-transition authority for machine service requests."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -32,6 +34,9 @@ from apps.machines.service_workflow_helpers import (
 
 def submit(bucket_or_machine, requester, *, requester_name, contact_email, contact_phone, title, description="", source_link="", actor=None, member=None, capability_payload=None, certification_override_reason=""):
     """Create a pending legacy bucket request or unassigned pooled request."""
+    require_member_account(requester)
+    if member is not None:
+        require_member_account(member)
     with transaction.atomic():
         _assert_submission_write_allowed(bucket_or_machine)
         target = _locked_submission_target(bucket_or_machine) if isinstance(bucket_or_machine, ServiceQueue) else _locked_submission_machine(bucket_or_machine)

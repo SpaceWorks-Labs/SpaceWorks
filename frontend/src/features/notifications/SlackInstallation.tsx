@@ -1,8 +1,9 @@
+import { currentSessionContext } from "../../lib/api/sessionContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 
-export const slackInstallKey = (id: number) => `notification-slack-install:${id}`;
+export const slackInstallKey = (id: number) => `notification-slack-install:${currentSessionContext()}:${id}`;
 
 export function useCompleteSlackInstall(makerspaceId: number) {
   const client = useQueryClient();

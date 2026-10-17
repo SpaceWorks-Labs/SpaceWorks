@@ -150,9 +150,10 @@ written by `member_scope_services.py`. The console API lives in
 `admin_api/views_member_scope.py` and `serializers_member_scope.py`.
 Frontend `features/staff/panels/RoleSetPicker.tsx` owns exclusive/combinable checkbox selection;
 `roleSets.ts` owns assignment ceilings, handwritten membership role-set types and cache invalidation.
-`RolesReference.tsx` renders the read-only server role catalogue. `MemberRolesControl.tsx` saves
-community-roster role sets; `MemberMachineTypes.tsx` edits per-person type scope using `rolesApi.ts`.
-Users/AddStaffModal reuse the picker; UsersTable and MembersPanel display the whole role set.
+`RolesReference.tsx` renders the read-only server role catalogue. `MemberRolesControl.tsx` retains the compatibility role control; the backend refuses
+member-to-staff assignment; `MemberMachineTypes.tsx` edits per-person type scope using `rolesApi.ts`.
+The staffAccounts panel reuses the picker; UsersTable and MembersPanel display the whole role set.
+Built-in staff assignments use separate staff accounts, never the member roster.
 Role CRUD and RoleManager/RoleEditor/RoleMachineScopeEditor are removed. Booking rules reuse
 `MakerspaceBookingRulesSettings.tsx` in both Settings and Bookings.
 
@@ -423,3 +424,53 @@ registers artwork keys embedded in issuance JSON; the normal retention/purge reg
 also include concrete artwork and revision rows. Frontend shared design controls live in
 `components/print-layout/`; `EventCertificateDesigner.tsx` and
 `eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.
+
+Account contexts live in `accounts/models_user.py` (re-exported by `models.py`),
+`account_constraints.py`, `account_kind_guards.py` and `managers.py`.
+`staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
+`staff_account_policy.py`, `staff_account_services.py` and `staff_account_lifecycle.py`
+own staff lifecycle authority, onboarding, deactivation and administrator password issue.
+`admin_api/views_staff_accounts.py` exposes that lifecycle; the account and makerspace
+`admin_staff_*` modules reuse it in `/control/`. `accounts/admin_native.py` holds native-app administration.
+`membership_context.py` shares the object/SQL account-validity rules used by RBAC.
+`backup/main_projection_catalog.py` owns the physical-table check re-exported by
+`main_projection_registry.py`; the staff inert-shell boundary is declared there, with
+projection in `backup/staff_shells.py` and guarded reversal in `staff_shell_fences.py`,
+`staff_reconstruction.py`, `main_projection_inverse.py` and `slice_merge_*`. Demo account/machine
+fixtures are split into `inventory/management/commands/_seed_demo_fixtures.py`.
+
+Account-kind authentication is enforced in `accounts/login_context.py`, `surface_policy.py`,
+`authentication.py` and `tokens.py`; `session_context.py`/`auth_cookies.py` select refresh contexts.
+`delegated_routes.py` exposes the authority-source classification in `delegated_route_catalog.py`;
+`checks.py` fails unclassified staff URLs. `member_identity.py` and `account_kind_guards.py`
+keep member credential/community writers separate. `credential_revocation.py` and
+`credential_revocation_helpers.py` own generation fencing and account-owned credential teardown.
+`models_password_reset.py`, `services_password_reset.py`, `services_password_reset_confirmation.py`,
+`services_password_reset_drain.py` and `password_reset_crypto.py` bind recovery to the exact account
+and member/staff/platform context. `password_reset_context.py` owns trusted-origin/live-tenant policy
+and reset-page destinations; `credential_locks.py` enforces the shared credential-operation lock order. `services_staff_invitations.py`,
+`staff_invitation_acceptance.py` and `staff_invitation_delivery.py` own initial staff password setup.
+`admin_api/urls_staff_accounts.py` and `serializers_staff_accounts.py` define its HTTP contract;
+`accounts/admin_staff_lifecycle.py` and `makerspaces/admin_staff_accounts.py` provide control actions.
+
+Staff transport is in `tenant_migration/portable_staff.py`, `tenant_dump_staff.py`,
+`tenant_dump_user_closure.py`, `staff_postconditions.py` and `catalog_account_context.py`;
+`data_export/runner_users.py` and `subject_selectors.py` include tenant staff without retired shells.
+`makerspaces/staff_retirement.py` performs the purge retirement step from `lifecycle_purge.py`.
+`makerspaces/lifecycle_purge_graph.py` owns the ordered whole-tenant deletion graph.
+`admin_governance.py` and `admin_lifecycle_review.py` provide the slim hidden-tenant lifecycle list
+and pending archive-request review; ordinary tenant object pages remain scoped.
+Shared chat destination facts use `integrations/notification_destination_events.py`;
+`notification_proofs.py` keeps proof and unlink account-bound. Transport/backup policy:
+[account-split-portability.md](account-split-portability.md).
+
+Frontend `lib/api/sessionContext.ts` selects member, staff:<slug> or platform;
+`sessionTokens.ts`, `client.ts`, `requests.ts` and `reauthentication.ts` isolate tokens, refresh
+and late responses. `lib/SessionBoundary.tsx` and `lib/queryClient.ts` partition server-state
+caches. `features/staff/useStaffSession.ts` restores tenant or delegated-member workspaces;
+`LoginPanel.tsx` and `ChangePasswordGate.tsx` handle tenant passwords and mandatory change.
+`features/staff/panels/staffAccounts/` owns creation, roles/scope, status and password dialogs,
+using the handwritten contract in `lib/api/staffAccounts.ts`. Password secrets remain in mounted
+dialog state, outside Query caches/storage. Staff offline rosters, jobs and toasts are context-bound;
+member offline cards/loans retain their separate lifecycle. Tests: `backend/tests/account_split/`
+and frontend `*.accountSplit.test.*`, `sessionContexts.test.ts`, `contextStores.test.ts`.

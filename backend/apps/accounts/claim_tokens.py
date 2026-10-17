@@ -51,6 +51,8 @@ def claim_user_from_refresh(raw_refresh, *, require_active=True):
 
 
 def _tokens_for_claim(claim):
+    if claim.membership.user.account_kind != "member":
+        raise TokenError("Invalid claim session.")
     if claim.absolute_expires_at is None or claim.absolute_expires_at <= timezone.now():
         raise TokenError("Claim session has expired.")
     from apps.backup.recovery import assert_token_issuance_allowed

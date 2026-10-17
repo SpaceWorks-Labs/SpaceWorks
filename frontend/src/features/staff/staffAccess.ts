@@ -7,6 +7,9 @@ const ALL_TABS = [
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
 
+// Mirrors surface_policy.PLATFORM_ROUTES: tenant operations require a staff account.
+const PLATFORM_TABS = ["platform-dashboard", "users", "organizations", "modules", "backups", "migration", "platform"];
+
 export const TAB_LABELS: Record<string, string> = {
   "platform-dashboard": "Platform dashboard",
   usage: "Usage & limits",
@@ -84,7 +87,7 @@ export function getStaffAccess(
   hasBookingGrants = false,
 ) {
   const hasGrants = hasEventGrants || hasBookingGrants;
-  const has = (action: string) => isSuperadmin || actions.includes(action);
+  const has = (action: string) => !isSuperadmin && actions.includes(action);
   const canEditInventory = has("edit_inventory");
   const canViewInventory = has("view_inventory");
   const canSeePrinting = has("manage_printing") || has("manage_machines");
@@ -93,7 +96,7 @@ export function getStaffAccess(
   const canManageBookings = has("manage_bookings");
   const canViewAudit = has("view_audit");
   const canManageQr = has("manage_qr");
-  const canManageMakerspace = has("manage_makerspace");
+  const canManageMakerspace = isSuperadmin || has("manage_makerspace");
   const canManageMembers = has("manage_members");
   const canViewFinance = has("view_finance");
   const canRecordPayment = has("record_payment");
@@ -103,7 +106,7 @@ export function getStaffAccess(
   // this gate action-based rather than assuming a local role's catalogue grants.
   const canUseMemberCards = canManageMembers || has("manage_member_cards") || has("scan_member_cards");
   const canIssueDirectLoan = has("issue_direct_loan");
-  const canSeeHardware = isSuperadmin || ["accept_request", "reject_request", "assign_box", "issue_request", "issue_direct_loan", "return_request"].some((action) => actions.includes(action));
+  const canSeeHardware = !isSuperadmin && ["accept_request", "reject_request", "assign_box", "issue_request", "issue_direct_loan", "return_request"].some((action) => actions.includes(action));
   const canUseToBuy = has("edit_inventory") || has("manage_printing") || has("manage_machines") || has("manage_makerspace");
   const canChooseToBuyKind = has("manage_makerspace");
   const canSeeDashboard = has("view_inventory") || has("manage_printing") || has("manage_machines")
@@ -124,7 +127,9 @@ export function getStaffAccess(
   const grantOnly = !isSuperadmin && actions.length === 0 && hasGrants;
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.
-  const allowedTabs: readonly string[] = grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
+  const allowedTabs: readonly string[] = isSuperadmin
+    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform", "organizations"].includes(tab))
+    : grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
     if (tabName === "granted") return hasGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;
     if (tabName === "usage") return canManageMakerspace;

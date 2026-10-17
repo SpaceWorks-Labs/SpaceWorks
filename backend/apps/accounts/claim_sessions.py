@@ -28,6 +28,8 @@ class ClaimSessionInvalid(Exception):
 
 def validated_claim_session(token, *, for_update=False):
     """Return the session with membership/user loaded using exactly one query."""
+    if token.get("kind") != "member":
+        raise ClaimSessionInvalid()
     social = SocialIdentity.objects.filter(user_id=OuterRef("membership__user_id"))
     grants = DeviceGrant.objects.filter(
         user_id=OuterRef("membership__user_id"),
@@ -45,6 +47,7 @@ def validated_claim_session(token, *, for_update=False):
         revoked_at__isnull=True,
         absolute_expires_at__gt=now,
         membership__status="active",
+        membership__user__account_kind="member",
         membership__user__is_tenant_dump_stub=False,
         membership__user__is_active=True,
         membership__user__access_status="active",
@@ -93,6 +96,7 @@ def token_payload_for_context(context, user_id):
         "claim_makerspace_id": context.makerspace_id,
         "absolute_expires_at": int(context.absolute_expires_at.timestamp()),
         "user_id": user_id,
+        "kind": "member",
     }
 
 

@@ -82,21 +82,10 @@ def makerspaces_granting_directly(actor, action):
         return set()
     if rbac._is_superadmin(actor):
         return rbac.makerspaces_for_action(actor, action)
-    legacy_roles = [
-        role
-        for role, actions in rbac._MEMBERSHIP_ROLE_ACTIONS.items()
-        if action in actions
-    ]
     memberships = actor.makerspace_memberships.filter(status="active")
     from apps.accounts.rbac_roles import direct_role_filter
 
     scope = set(
         memberships.filter(direct_role_filter([action])).values_list("makerspace_id", flat=True)
     )
-    if legacy_roles:
-        scope |= set(
-            memberships.filter(
-                assigned_role__isnull=True, role__in=legacy_roles
-            ).values_list("makerspace_id", flat=True)
-        )
     return rbac._exclude_archived_ids(scope)

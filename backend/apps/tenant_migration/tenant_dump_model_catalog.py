@@ -26,6 +26,8 @@ THIRD_PARTY_INSTALLED_APP_LABELS = frozenset(
 # Lane-D-specific review.
 PROJECTED_MODEL_LABELS = frozenset(
     """operations.SavedView accounts.User apiclients.ApiKeyRequest audit.AuditLog
+    makerspaces.MembershipAdditionalRole machines.MembershipMachineTypeScope
+    notifications.MemberNotificationPreference notifications.NotificationPreference
     backup.MakerspaceArchiveRecipient bookings.BookableSpace bookings.Booking boxes.Box
     boxes.BoxScan boxes.QrCode boxes.QrScanEvent devices.Device devices.DeviceEvent
     events.EventSeries events.Event events.EventRegistration
@@ -97,9 +99,6 @@ PROJECTED_MODEL_LABELS |= PROFILE_FIELDS.keys()
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
 EXPLICIT_DROP_MODEL_REASONS = {
-    "makerspaces.MembershipAdditionalRole": "Source additional roles must not grant target staff authority.",
-    "machines.MembershipMachineTypeScope": "Source membership scopes must not grant target machine authority.",
-    "notifications.MemberNotificationPreference": "Target users re-establish personal communication preferences; no source disclosure controls become live.",
     "apiclients.ApiClient": "Source clients and their bearer secrets never become target authority.",
     "events.EventCollaborator": "Cross-tenant collaboration grants have no target counterpart.",
     "events.EventSeriesCollaborator": "Cross-tenant series collaboration grants have no target counterpart.",

@@ -35,6 +35,9 @@ RESOURCE_AUTHORITY_FIELDS = {
         "Revocation evidence; imported memberships are reduced to Member and target status rules apply."
     ),
     ("makerspaces.MakerspaceMembership", "revoked_by"): _PROVENANCE,
+    ("makerspaces.MakerspaceMembership", "revocation_reason"): (
+        "Revocation explanation is preserved history, never a grant or target credential."
+    ),
     ("makerspaces.MakerspaceRole", "name"): "Archived role rows are dropped; target role names are kept.",
     # Event and booking resources: their tenant/series/type relations bound resource
     # authority; staff grants themselves are never portable and are reissued on the target.
@@ -49,7 +52,7 @@ RESOURCE_AUTHORITY_FIELDS = {
     ("events.EventSeries", "status"): "Lifecycle state gates actions; target authority still decides who acts.",
     ("events.EventSeries", "registration_audience"): "Who may register; never staff authority.",
     **_fields("events.EventSeries", "title description location", _DISPLAY),
-    **_fields("events.EventSeries", "calendar_sequence", _SCHEDULE),
+    **_fields("events.EventSeries", "calendar_sequence duration_minutes", _SCHEDULE),
     **_fields("events.EventSeries", "created_by", _PROVENANCE),
     ("bookings.BookableSpace", "makerspace"): "Tenant boundary for booking authority; remapped to the target.",
     ("bookings.BookableSpace", "machine_type"): "Remapped type relation; never a staff authority scope.",

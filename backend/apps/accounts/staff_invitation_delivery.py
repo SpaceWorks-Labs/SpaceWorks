@@ -24,7 +24,7 @@ def deliver(invitation, raw):
             to_email=invitation.email, subject=f"Staff invitation to {space.name}",
             text_body=f"You have been invited as {invitation.role.name} at {space.name}.\n"
                       f"Accept: {link}\nExpires: {invitation.expires_at.isoformat()}.\n"
-                      "If you already have an account, use its existing password. "
+                      "Set the initial password for your new staff account using this single-use link. "
                       "If you did not expect this invitation, ignore it.",
             makerspace=space, stream="account", event="staff_invitation", audience="staff",
             persist_body=False, sync=True,

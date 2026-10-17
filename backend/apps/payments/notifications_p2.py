@@ -107,14 +107,24 @@ def document_eligible(envelope):
     document = scoped(PaymentDocument, envelope.makerspace_id).select_related("payment").filter(
         pk=envelope.source_id,
     ).first()
-    return bool(document and document.payment.member_id == envelope.recipient_id
+    from apps.makerspaces.platform import feature_enabled
+    return bool(document and envelope.recipient_id and envelope.audience != "staff"
+                and feature_enabled(document.makerspace, "billing.documents")
+                and document.payment.member_id == envelope.recipient_id
                 and envelope.event == "document_issued"
                 and envelope.revision == revision(document.pk, document.issued_at))
 
 
 def document_body(document):
     from django.utils.html import format_html
+    from apps.integrations.email_templates_registry_documents import DOCUMENT_LABELS
     navigation = payment_link(document.makerspace, external=True)
+    if document.kind in DOCUMENT_LABELS:
+        return template(document.makerspace, "payments", "requester", "document_" + document.kind,
+            {"document": bag(number=document.number, kind=document.kind, label=DOCUMENT_LABELS[document.kind],
+                currency=document.currency.upper(), amount=str(document.amount)),
+             "makerspace": bag(name=document.makerspace.name), "download_url": navigation},
+            link=payment_link(document.makerspace))
     text = (f"Your {document.get_kind_display().lower()} {document.number} is available.\n"
             f"{document.currency.upper()} {document.amount}\nSign in to download the PDF: {navigation}")
     return body(f"{document.get_kind_display()} {document.number}", text,
@@ -134,14 +144,16 @@ def notify_document(document):
     owner = document.payment.member
     result = fanout(row=document, space=document.makerspace, feature="payments", stream="payments",
         event="document_issued", source_kind=DOCUMENT_SOURCE, revision=version,
-        owner=owner, owner_body=document_body(document), staff=False)
+        owner=owner, owner_body=document_body(document), staff=False,
+        context={"document_kind": document.kind, "document_number": document.number})
     if owner is not None:
         # The document email was a direct, matrix-independent payer mail.
         own = document_body(document)
         direct_mail_unless_routed(space=document.makerspace, source_kind=DOCUMENT_SOURCE, row=document,
             revision=version, event="document_issued", owner=owner, to_email=owner.email,
             subject=own["subject"], text=own["text"], stream="payments",
-            audience="requester", feature="", sync=True, persist_body=False, address_owner=False)
+            audience="requester", feature="", sync=True, persist_body=False, address_owner=True,
+            document_reference={"document_id": document.pk, "kind": document.kind})
     return result
 
 

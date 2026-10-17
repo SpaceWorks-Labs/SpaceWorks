@@ -25,7 +25,7 @@ from apps.backup.postgres_client import client_binary
 from apps.backup.models import ARCHIVE_PURGE_WARNING, BackupArchive
 from apps.backup.raw_projection import canonical_owner_q, no_decrypt_guard, raw_records
 from apps.backup.tenant_projection import project_raw_dataset
-from apps.data_export.datasets import DATASET_SPECS
+from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS
 
 
 CONTINUITY_KEYS = (

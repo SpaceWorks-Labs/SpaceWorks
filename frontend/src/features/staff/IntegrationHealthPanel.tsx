@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { ErrorBlock } from "../../components/ui";
 import { SettingsRow } from "../../components/ui";
@@ -85,7 +86,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
           {health.error ? <ErrorBlock error={new Error("Couldn't load integration health. Try again.")} onRetry={() => { void health.refetch(); }} /> : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link className="desk-button" to={staffTabPath("email-logs", false, makerspace.slug)}>Email log</Link>
+          <Link className="desk-button" to={consoleSessionHref(staffTabPath("email-logs", false, makerspace.slug))}>Email log</Link>
           {/* The Telegram card (superadmin only) sits on this same page, so jump to it in place. */}
           {isSuperadmin ? <button className="desk-button" type="button" onClick={() => {
             const card = document.getElementById("telegram-settings");

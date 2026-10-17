@@ -119,8 +119,8 @@ _INVENTORY_MANAGER_ACTIONS = {
 _MEMBERSHIP_ROLE_ACTIONS = {
     MakerspaceMembership.Role.SPACE_MANAGER: _SPACE_MANAGER_ACTIONS,
     MakerspaceMembership.Role.INVENTORY_MANAGER: _INVENTORY_MANAGER_ACTIONS,
-    # Kept as the raw legacy value so an unmigrated/null-FK membership remains
-    # session-compatible after the protected default is retired.
+    # Retained vocabulary for historical displays/migration tests. Null-primary
+    # memberships no longer grant authority after account separation.
     "print_manager": _PRINT_MANAGER_ACTIONS,
     MakerspaceMembership.Role.MACHINE_MANAGER: _MACHINE_MANAGER_ACTIONS,
 }
@@ -160,14 +160,9 @@ def actions_for_membership(membership) -> set:
     """Resolve role actions for a membership, failing closed on invalid role data."""
     if membership is None or getattr(membership, "status", "active") != "active":
         return set()
-    if membership.assigned_role_id is not None:
-        role = membership.assigned_role
-        if role.makerspace_id != membership.makerspace_id:
-            return set()
-        from .rbac_roles import stored_actions_for_membership
+    from .rbac_roles import stored_actions_for_membership
 
-        return expand_implied_actions(stored_actions_for_membership(membership))
-    return expand_implied_actions(_MEMBERSHIP_ROLE_ACTIONS.get(membership.role, set()))
+    return expand_implied_actions(stored_actions_for_membership(membership))
 
 
 def actions_for_organization_membership(membership) -> set:
@@ -198,9 +193,5 @@ def _action_scope_filters(action):
     from .rbac_roles import direct_role_filter
 
     assigned_filter = direct_role_filter(satisfying)
-    legacy_roles = [
-        role
-        for role, actions in _MEMBERSHIP_ROLE_ACTIONS.items()
-        if actions & satisfying
-    ]
-    return assigned_filter, legacy_roles
+    # Null-primary rows have no validated account/role context after the split.
+    return assigned_filter, []

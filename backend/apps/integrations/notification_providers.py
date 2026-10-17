@@ -34,10 +34,13 @@ class CallbackEvent:
     inbound: bool = False
     delivery_id: int | None = None
     delivery_attempt: int | None = None
+    identity_digest: str = ""
+    opt_in: bool = False
 
 
 class Provider(Protocol):
     def send(self, delivery, rendered: dict) -> ProviderResult: ...
+    def send_document(self, delivery, *, filename, pdf_bytes, caption) -> ProviderResult: ...
     def verify_callback(self, request) -> CallbackEvent | None: ...
     def test(self, target) -> ProviderResult: ...
 
@@ -68,5 +71,6 @@ def safe_error(result):
     # Provider text can contain destination ids, tokens or echoed message bodies.
     # Persist only a fixed code; sanitized_error is for typed adapter diagnostics.
     allowed = {"timeout", "rate_limited", "unavailable", "blocked", "invalid_endpoint",
-               "template_required", "not_configured", "provider_error", "quota_exceeded"}
+               "template_required", "not_configured", "provider_error", "quota_exceeded", "unsupported",
+               "document_render_failed", "document_size_exceeded", "document_not_authorized"}
     return result.error_code if result.error_code in allowed else "provider_error"

@@ -34,6 +34,7 @@ from django.utils import timezone
 from apps.presence.schedule import SCHEDULED_ENTRY as PRESENCE_SCHEDULED_ENTRY
 
 SCHEDULED_TASKS = (
+    ("missing-payment-bills", "apps.payments.tasks.issue_missing_bills_task", 5),
     PRESENCE_SCHEDULED_ENTRY,
     ("notification-contract-outbox", "apps.integrations.notification_tasks.sweep_notification_outbox", 1),
     ("subject-access-exports", "apps.data_export.subject_tasks.sweep_subject_exports_task", 60),

@@ -1,3 +1,5 @@
+from apps.accounts.account_kind_guards import require_member_account
+
 from collections import Counter
 from datetime import timedelta
 
@@ -45,6 +47,7 @@ def issue_direct_loan(
     kit_checklist=None,
 ):
     # The lapsed-term rule is about the BORROWER, not about who hands the tool over.
+    require_member_account(borrower)
     require_current_term(
         makerspace, require_active_member_presence(borrower, makerspace).membership
     )

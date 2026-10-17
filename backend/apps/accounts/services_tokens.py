@@ -1,4 +1,10 @@
+from django.db import transaction
+from apps.accounts.models import User
+
+
+@transaction.atomic
 def blacklist_outstanding_tokens(user):
+    User.objects.select_for_update(no_key=True).get(pk=user.pk)
     # Invalidate every refresh token issued before a password rotation so old
     # sessions cannot persist after the credential changes.
     from rest_framework_simplejwt.token_blacklist.models import (
@@ -20,6 +26,7 @@ def blacklist_outstanding_tokens(user):
         revoke_device_grant(grant)
 
 
+@transaction.atomic
 def blacklist_device_family(family, *, revoke_grant=False, reuse=False):
     """Revoke a native refresh family and blacklist every persisted refresh JTI."""
     from django.utils import timezone
@@ -30,6 +37,7 @@ def blacklist_device_family(family, *, revoke_grant=False, reuse=False):
 
     from apps.accounts.models_devices import DeviceGrant
 
+    User.objects.select_for_update(no_key=True).get(pk=family.user_id)
     now = timezone.now()
     updates = {"revoked_at": now}
     if reuse:
@@ -48,11 +56,13 @@ def blacklist_device_family(family, *, revoke_grant=False, reuse=False):
         )
 
 
+@transaction.atomic
 def revoke_device_grant(grant):
     from django.utils import timezone
 
     from apps.accounts.models_devices import DeviceGrant
 
+    User.objects.select_for_update(no_key=True).get(pk=grant.user_id)
     now = timezone.now()
     DeviceGrant.objects.filter(pk=grant.pk).update(
         status=DeviceGrant.Status.REVOKED, revoked_at=now

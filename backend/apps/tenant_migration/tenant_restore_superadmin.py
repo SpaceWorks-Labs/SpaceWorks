@@ -36,7 +36,7 @@ def create_target_superadmin(
     username = f"lane_d_admin_{run_uuid.hex}"
     User = get_user_model()
     existing_named = User.objects.using(using).filter(username=username).first()
-    email_owners = User.objects.using(using).filter(email__iexact=email)
+    email_owners = User.objects.using(using).filter(account_kind="platform", email__iexact=email)
     if existing_named is not None:
         email_owners = email_owners.exclude(pk=existing_named.pk)
     if email_owners.exists():
@@ -52,7 +52,7 @@ def create_target_superadmin(
     password = delivery["secret"]
     with transaction.atomic(using=using):
         email_owner = (
-            User.objects.using(using).select_for_update().filter(email__iexact=email).first()
+            User.objects.using(using).select_for_update().filter(account_kind="platform", email__iexact=email).first()
         )
         existing = (
             User.objects.using(using).select_for_update().filter(username=username).first()
@@ -65,7 +65,8 @@ def create_target_superadmin(
             )
         if existing is not None:
             if (
-                existing.email.lower() != email
+                existing.account_kind != "platform"
+                or existing.email.lower() != email
                 or not existing.is_superuser
                 or not existing.is_staff
                 or existing.role != User.Role.SUPERADMIN
@@ -74,6 +75,7 @@ def create_target_superadmin(
                 raise TenantRestoreRefused("Target superadmin provenance conflicts.")
             return existing
         user = User(
+            account_kind="platform",
             username=username,
             email=email,
             is_superuser=True,

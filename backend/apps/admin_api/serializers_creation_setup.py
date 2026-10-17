@@ -6,7 +6,10 @@ from apps.makerspaces.role_catalog import ROLE_CATALOG
 
 
 class FirstStaffInviteSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    """Create a separate tenant staff account, then invite it to set its password."""
+    name = serializers.CharField(max_length=200, required=False,
+                                 help_text="Staff display name; defaults to the email's local part.")
+    email = serializers.EmailField(max_length=254)
     role_slug = serializers.ChoiceField(choices=[role.slug for role in ROLE_CATALOG if role.granted_actions])
 
 
@@ -33,7 +36,10 @@ class CreationProfileSerializer(MakerspaceProfileSerializer):
 class MakerspaceCreationSetupSerializer(serializers.Serializer):
     profile = CreationProfileSerializer(required=False)
     modules = serializers.ListField(child=serializers.ChoiceField(choices=sorted(MODULE_KEYS)), max_length=60, required=False)
-    first_staff_invite = FirstStaffInviteSerializer(required=False)
+    first_staff_invite = FirstStaffInviteSerializer(
+        required=False, help_text="Atomically creates a separate staff account and its initial-password invitation. "
+        "Requires email onboarding; never attaches a member account with the same email.",
+    )
 
 
 class CreationInviteDeliverySerializer(serializers.Serializer):

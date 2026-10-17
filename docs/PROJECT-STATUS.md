@@ -80,6 +80,12 @@ into grouped sections and a test asserts every sidebar link resolves. `tests/tes
 walks every registered admin and forces an explicit scoped/global decision (via `NESTED_MAKERSPACE_LOOKUPS`
 / `GLOBAL_ADMIN_MODELS`) so a new admin can't silently leak across the superadmin hide/archive scoping.
 
+Hidden makerspaces remain hard-hidden for data and staff operations, with a narrow lifecycle list:
+platform superadmins may archive, unarchive, purge and review pending archive requests after recent
+control-session reauthentication. Hidden rows show governance fields only and expose no change page.
+Lifecycle decisions preserve the access flag and archive custody; purge removes live tenant custody
+while retaining encrypted artifacts, recipient reservations and recipient-use history.
+
 **Non-technical install:** the root `install.sh` curl flow on supported Linux families or Windows Git Bash
 (preflight → tagged source archive → published-image pull → `setup.sh` secrets/instance/live module ticks →
 version marker), with `SPACEWORKS_DIR` override and an existing-install update/module menu.

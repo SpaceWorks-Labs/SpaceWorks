@@ -112,6 +112,10 @@ core modules cannot be uninstalled at all.
 
 [Read the staff_admin module reference](MODULES-INVENTORY.md#staff_admin).
 
+Staff use separate, tenant-bound accounts created by a Space Manager or permitted superadmin.
+Password sign-in and admin-issued reset remain available without Member accounts, Membership,
+Email, staff invitations or MFA. Modules never turn a member into built-in staff.
+
 ### evidence_uploads
 
 [Read the evidence_uploads module reference](MODULES-INVENTORY.md#evidence_uploads).
@@ -198,7 +202,7 @@ backups preserve the original graph. Uninstall/purge retain the core money ledge
 
 Event managers and organization organizers can invite staff to one event or series with
 selected permissions for details, registrations, invitations, check-in and scheduling.
-These staff can sign in and see only their granted events; grants confer no makerspace
+These helpers use member accounts and can sign in to see only their granted events; grants confer no makerspace
 role or actions. Invitations expire after seven days and revocation applies immediately.
 Grants and invitation credentials are excluded from portable exports and imports;
 the destination must issue fresh access. Uninstall retains the rows, while events purge
@@ -339,7 +343,8 @@ on uninstall and travel as bounded resource configuration; Bookings/tenant purge
 them with resources. No artwork or PDF objects are stored. Without this feature,
 confirmations and arrival continue independently and pass routes refuse.
 
-`bookings.staff_grants` (off by default) delegates selected operations for one resource.
+`bookings.staff_grants` (off by default) delegates selected operations for one resource to
+member accounts, without creating tenant staff identity.
 Its four permissions cover descriptive editing, reservation management, check-in and page
 release. Pricing, rules, machine links, activation, visibility policy, finance and further
 delegation retain tenant permissions. Invites expire after seven days and recheck the
@@ -391,6 +396,9 @@ lacks feature-enum/editor integration; see the presence rule in [INVARIANTS.md](
 ### member_accounts
 
 [Read the member_accounts module reference](MODULES-WORKSHOPS.md#member_accounts).
+
+This controls the community account ecosystem. Staff/platform password doors and staff
+admin-issued recovery are independent; member self-service recovery never resets staff/platform.
 
 ## Notifications
 

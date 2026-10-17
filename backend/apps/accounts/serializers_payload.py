@@ -59,19 +59,19 @@ def user_payload(user, request=None):
     def _can_configure_machine_types(m):
         if is_superadmin and not rbac._id_in(m.makerspace_id, hidden_ids):
             return True
-        if m.assigned_role_id is not None:
-            return bool(
-                m.assigned_role
-                and m.assigned_role.makerspace_id == m.makerspace_id
-                and m.assigned_role.legacy_role == "space_manager"
-            )
-        return m.role == "space_manager"
+        from apps.accounts.rbac_roles import membership_roles
+
+        return any(role.slug == "space_manager" for role in membership_roles(m))
 
     # Resolve machine scopes in one batch rather than calling the per-actor helper for
     # each membership, which would put an N+1 behind /auth/me and /auth/login.
     from apps.machines import role_scope
 
     memberships = list(memberships)
+    # The reverse relation already identifies the account. Reuse it for the
+    # kind-aware role validator instead of fetching the same user for every row.
+    for membership in memberships:
+        membership.user = user
     if claim_context is not None:
         org_space_ids = {membership.makerspace_id for membership in memberships}
     organization_entries = (
@@ -146,6 +146,10 @@ def user_payload(user, request=None):
         "role": user.role,
         "is_superuser": user.is_superuser,
         "must_change_password": user.must_change_password,
+        "account_kind": user.account_kind,
+        "staff_makerspace": ({"id": user.staff_makerspace_id, "slug": user.staff_makerspace.slug,
+                              "name": user.staff_makerspace.name}
+                             if user.staff_makerspace_id else None),
         "makerspaces": membership_entries + org_only_entries,
     }
 

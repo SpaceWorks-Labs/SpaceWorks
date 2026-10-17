@@ -1,5 +1,7 @@
 '''Audited mutation boundary for bookings and their lifecycle.'''
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -77,6 +79,8 @@ def create_booking(
     space, *, starts_at, ends_at, member=None, name=None, email=None, phone=None,
     custom_answers=None, note='', actor=None, certification_override_reason='',
 ):
+    if member is not None:
+        require_member_account(member)
     from apps.bookings.admission import admission_status, validate_admission
     from apps.encryption.write_fence import assert_mapped_write_allowed
 

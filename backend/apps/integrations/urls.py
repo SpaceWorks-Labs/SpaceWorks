@@ -7,8 +7,10 @@ from .suppression_views import SuppressionDeleteView, SuppressionListView
 
 from .bounce_webhooks import BounceWebhookView
 from .views_timing import TimingPolicyView
+from .notification_media_views import NotificationMediaView
 
 urlpatterns = [
+    path("notification-media/<str:token>.pdf", NotificationMediaView.as_view(), name="notification-media"),
     path("makerspace/<int:makerspace_id>/bounce-webhook", BounceWebhookView.as_view(), name="email-bounce-webhook"),
     path("makerspace/<int:makerspace_id>/timing-policy", TimingPolicyView.as_view(), name="notification-timing-policy"),
     path("makerspace/<int:makerspace_id>/delivery-logs", DeliveryLogListView.as_view(), name="delivery-log-list"),

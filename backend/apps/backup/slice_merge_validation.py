@@ -11,7 +11,7 @@ from apps.backup.compound_archive import COMPOUND_ARCHIVE_FORMAT
 from apps.backup.digests import build_content_ledger, sha256_file
 from apps.backup.outer_manifest import manifest_digest, verify_outer_manifest
 from apps.backup.slice_merge_types import SliceMergeError
-from apps.data_export.datasets import DATASET_SPECS
+from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS
 
 
 def validate_outer(operation, component, manifest, ciphertext, fingerprint):

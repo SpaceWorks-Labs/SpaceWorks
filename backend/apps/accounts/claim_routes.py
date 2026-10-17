@@ -41,10 +41,23 @@ CLAIM_ROUTES = {
 
 def policy_for(view_name, method):
     """Fail closed at runtime even before the build guard reports route drift."""
+    if view_name == "notification-media":
+        return Refused("Media delivery requires its own single-use capability")
+    if view_name in STAFF_ACCOUNT_REFUSALS:
+        return Refused("Claim sessions cannot manage staff accounts")
     return CLAIM_ROUTES.get(
         (view_name, method.upper()),
         Refused("unclassified claim route"),
     )
+
+
+# Outside CLAIM_REACHABLE_PREFIXES: keep these explicit denials separate from the
+# exact reachable-route matrix so it does not acquire stale entries.
+STAFF_ACCOUNT_REFUSALS = frozenset({
+    "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
+    "admin-staff-account-deactivate", "admin-staff-account-reactivate",
+    "admin-staff-account-set-password", "admin-staff-account-resend-invite",
+})
 
 
 __all__ = (

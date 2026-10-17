@@ -9,6 +9,7 @@ class PaymentDocument(models.Model):
     class Kind(models.TextChoices):
         RECEIPT = "receipt", "Receipt"
         CREDIT_NOTE = "credit_note", "Credit note"
+        BILL = "bill", "Bill"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     payment = models.ForeignKey("payments.Payment", on_delete=models.CASCADE, related_name="documents")
@@ -19,13 +20,15 @@ class PaymentDocument(models.Model):
     number = models.CharField(max_length=80)
     kind = models.CharField(max_length=16, choices=Kind.choices)
     issuer = models.JSONField(default=dict)
+    branding_logo_key = models.CharField(max_length=300, blank=True, default="")
+    branding_logo_sha256 = models.CharField(max_length=64, blank=True, default="")
     # Label only, never contact details or embedded user IDs. Ownership is Payment.member.
     payer_label = models.CharField(max_length=150)
     payer_type = models.CharField(max_length=16)
     lines = models.JSONField(default=list)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3)
-    settlement_method = models.CharField(max_length=16)
+    settlement_method = models.CharField(max_length=16, blank=True)
     settlement_reference = models.CharField(max_length=64, blank=True)
     money_at = models.DateTimeField()
     issued_at = models.DateTimeField(auto_now_add=True)
@@ -36,7 +39,10 @@ class PaymentDocument(models.Model):
     class Meta:
         ordering = ["sequence"]
         constraints = [
-            models.UniqueConstraint(fields=["makerspace", "sequence"], name="document_space_sequence"),
+            models.UniqueConstraint(fields=["makerspace", "sequence"], condition=models.Q(
+                kind__in=["receipt", "credit_note"]), name="document_money_sequence"),
+            models.UniqueConstraint(fields=["makerspace", "sequence"], condition=models.Q(kind="bill"), name="document_bill_sequence"),
+            models.UniqueConstraint(fields=["payment"], condition=models.Q(kind="bill"), name="document_bill_once"),
             models.UniqueConstraint(fields=["makerspace", "number"], name="document_space_number"),
             models.UniqueConstraint(fields=["makerspace", "settlement"], condition=models.Q(settlement__isnull=False), name="document_settlement_once"),
             models.UniqueConstraint(fields=["makerspace", "refund"], condition=models.Q(refund__isnull=False), name="document_refund_once"),
@@ -48,6 +54,10 @@ class PaymentDocument(models.Model):
         ]
 
     def clean(self):
+        import re
+        if (bool(self.branding_logo_key) != bool(self.branding_logo_sha256) or
+                (self.branding_logo_sha256 and not re.fullmatch(r"[0-9a-f]{64}", self.branding_logo_sha256))):
+            raise ValidationError("Invalid document logo identity.")
         if sum(bool(source) for source in (self.settlement_id, self.refund_id, self.reverses_id)) > 1:
             raise ValidationError("A document must have only one financial source.")
         if (not isinstance(self.issuer, dict) or not isinstance(self.issuer.get("name"), str)
@@ -59,20 +69,27 @@ class PaymentDocument(models.Model):
         for source in (self.settlement, self.refund, self.reverses):
             if source and source.payment_id != self.payment_id:
                 raise ValidationError("Document sources must refer to the same payment.")
-        if self.currency != self.payment.currency or self.payment.status not in ("paid_online", "paid_offline"):
+        if self.currency != self.payment.currency:
+            raise ValidationError("Document must match the payment's currency.")
+        if self.kind == "bill":
+            if (self.payment.status != "pending" or self.amount != self.payment.amount or
+                    self.settlement_id or self.refund_id or self.reverses_id):
+                raise ValidationError("A bill must match a pending charge without a financial source.")
+        elif self.payment.status not in ("paid_online", "paid_offline"):
             raise ValidationError("Document must match a collected payment's currency.")
         if self.reverses:
-            if self.kind == self.reverses.kind or self.amount != self.reverses.amount:
+            if ({self.kind, self.reverses.kind} != {"receipt", "credit_note"}
+                    or self.amount != self.reverses.amount):
                 raise ValidationError("A reversal must offset the original document exactly.")
         elif self.refund:
             if self.kind != "credit_note" or self.refund.status != "succeeded" or self.amount != self.refund.amount:
                 raise ValidationError("A credit note must match a succeeded refund.")
-        elif self.kind != "receipt" or self.amount != self.payment.amount:
+        elif self.kind not in ("receipt", "bill") or self.amount != self.payment.amount:
             raise ValidationError("A receipt must match the full collected amount.")
         if self.settlement and (self.kind != "receipt" or self.amount != self.settlement.amount):
             raise ValidationError("A settlement receipt must match its settlement.")
         try:
-            if not self.lines or not isinstance(self.lines, list) or any(
+            if not self.lines or not isinstance(self.lines, list) or len(self.lines) > 200 or any(
                 not isinstance(line, dict) or not isinstance(line.get("label"), str) or
                 not line["label"].strip() or
                 not all(Decimal(line[key]).is_finite() for key in ("quantity", "unit_amount", "total")) or

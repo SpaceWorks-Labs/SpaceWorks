@@ -1,5 +1,7 @@
 """Transactional namespace lifecycle. The same locks are used by portable imports."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 import hashlib
 import re
 from datetime import timedelta
@@ -42,6 +44,7 @@ def name_available(handle, *, now=None):
 
 @transaction.atomic
 def claim_handle(membership, value):
+    require_member_account(membership.user)
     from django.contrib.auth import get_user_model
     from .profile_services import profile_for
 

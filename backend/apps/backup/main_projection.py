@@ -46,6 +46,16 @@ def project_readable_main_dump(
 
 
 def _apply_projection(using, rules, makerspace_ids):
+    # Deferred account guards read the CURRENT exact-tenant GUC. Finish the whole
+    # tenant (shells, memberships and their constraint events) before moving on.
+    # This is an unserved reconstruction clone; a failed build discards it.
+    for owner in sorted(set(makerspace_ids)):
+        _apply_projection_scope(using, rules, [owner])
+    if not makerspace_ids:
+        _apply_projection_scope(using, rules, [])
+
+
+def _apply_projection_scope(using, rules, makerspace_ids):
     boundaries = boundary_rules(rules)
     with transaction.atomic(using=using):
         connection = connections[using]
@@ -67,6 +77,10 @@ def _apply_projection(using, rules, makerspace_ids):
                 marker = _mark_queryset(cursor, using, affected, f"table_{index}")
                 table_markers.append((rule, marker))
             for rule, marker in boundary_markers:
+                if rule.disposition == BoundaryDisposition.INERT_SHELL_TO_SLICE:
+                    from .staff_shells import project_staff_shells
+                    project_staff_shells(cursor, marker)
+                    continue
                 _apply_marker(cursor, rule.source_model, marker, field=(
                     rule.field
                     if rule.disposition == BoundaryDisposition.PROJECT_NULL_TO_SLICE
@@ -80,6 +94,11 @@ def _apply_projection(using, rules, makerspace_ids):
                     cursor.execute(f"DELETE FROM {table}")
             for table in sorted(EMPTIED_NON_MODEL_TABLES):
                 cursor.execute(f"DELETE FROM {cursor.db.ops.quote_name(table)}")
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+            cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+            # Also support callers with an enclosing transaction/savepoint.
+            for _rule, marker in [*boundary_markers, *table_markers]:
+                cursor.execute(f"DROP TABLE {cursor.db.ops.quote_name(marker)}")
 
 
 def _install_sequence_high_water(using, facts):
@@ -151,7 +170,17 @@ def _apply_marker(cursor, model, marker, field=None):
     pk = quote(model._meta.pk.column)
     marker_pk = quote("pk")
     marker_table = quote(marker)
-    if field is None:
+    if field is None and model._meta.label == "makerspaces.MakerspaceMembership":
+        cursor.execute(f"SELECT DISTINCT target.makerspace_id FROM {table} target "
+                       f"JOIN {marker_table} ids ON target.{pk} = ids.{marker_pk}")
+        owners = [row[0] for row in cursor.fetchall()]
+        for owner in owners:
+            cursor.execute("SELECT set_config('app.account_retirement_makerspace_id', %s, true)", [str(owner)])
+            cursor.execute(f"DELETE FROM {table} target USING {marker_table} ids "
+                           f"WHERE target.{pk} = ids.{marker_pk} AND target.makerspace_id = %s", [owner])
+            cursor.execute("SET CONSTRAINTS accounts_membership_valid IMMEDIATE")
+            cursor.execute("SET CONSTRAINTS accounts_membership_valid DEFERRED")
+    elif field is None:
         cursor.execute(
             f"DELETE FROM {table} AS target USING {marker_table} AS ids "
             f"WHERE target.{pk} = ids.{marker_pk}"

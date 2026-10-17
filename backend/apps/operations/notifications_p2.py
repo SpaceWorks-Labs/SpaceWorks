@@ -136,7 +136,7 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
 
 def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner, to_email,
                               subject, text, stream, audience, feature, sync=False, persist_body=True,
-                              address_owner=True):
+                              address_owner=True, document_reference=None):
     """Keep a pre-Phase-2 direct email (welcome, verification, invitation, payment
     document) that the members/payments matrix never governed and whose email cell
     defaults OFF. It is sent after commit unless the owner's own envelope will
@@ -162,12 +162,20 @@ def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner
             return
         if scoped(EmailLog, space.pk).filter(source_metadata__p2_direct=key).exists():
             return
-        dispatch_email(makerspace=space, to_email=to_email, subject=subject, text_body=text,
+        if address_owner and owner:
+            owner.refresh_from_db()
+        address = owner.email if owner and address_owner else to_email
+        if not address:
+            return
+        metadata = {"p2_direct": key, "address_owner": address_owner}
+        if document_reference:
+            metadata["document"] = document_reference
+        dispatch_email(makerspace=space, to_email=address, subject=subject, text_body=text,
             stream=stream, event=event, audience=audience, feature=feature, sync=sync,
             persist_body=persist_body, recipient_id=owner.pk if owner and address_owner else None,
-            source_kind="notification.direct" if envelope else "",
-            source_id=envelope.pk if envelope else None,
-            source_metadata={"p2_direct": key, "address_owner": address_owner})
+            source_kind="notification.direct" if envelope else "payments.document" if document_reference else "",
+            source_id=envelope.pk if envelope else row.pk if document_reference else None,
+            source_metadata=metadata)
 
     transaction.on_commit(send, robust=True)
     return key

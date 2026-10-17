@@ -48,9 +48,25 @@ class ScopeObservation:
 
 
 def lookup(view_name, method):
+    # This provider fetch is authorized solely by a single-use media grant. It is
+    # outside protected prefixes; public scopes must never substitute for its token.
+    if view_name == "notification-media":
+        return None
+    if view_name in STAFF_ACCOUNT_EXCLUSIONS:
+        return None
     if not view_name or not method:
         return None
     return SCOPE_REGISTRY.get((view_name, method.upper()))
+
+
+# Session-only lifecycle routes lie outside the HMAC protected prefixes. Explicit
+# exclusion also refuses deployments that extend those prefixes; legacy:v1 never
+# grants staff lifecycle authority.
+STAFF_ACCOUNT_EXCLUSIONS = frozenset({
+    "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
+    "admin-staff-account-deactivate", "admin-staff-account-reactivate",
+    "admin-staff-account-set-password", "admin-staff-account-resend-invite",
+})
 
 
 def _request_match(request):

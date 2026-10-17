@@ -193,6 +193,8 @@ def _apply_target_fields(label, source, row):
 
 
 def _remap_foreign_keys(model, source, row, job, pk_map, target, references):
+    from .portable_staff import apply_staff_role
+    staff = apply_staff_role(model, source, row, target)
     for field in model._meta.local_concrete_fields:
         if not field.is_relation or field.related_model is None:
             continue
@@ -200,6 +202,13 @@ def _remap_foreign_keys(model, source, row, job, pk_map, target, references):
         if source_value is None:
             continue
         edge_policy = FK_POLICIES.get((model._meta.label, field.name))
+        if staff and (model._meta.label, field.name) in {
+            ("makerspaces.MakerspaceMembership", "assigned_role"),
+            ("makerspaces.MembershipAdditionalRole", "role"),
+        }:
+            continue
+        if staff and model._meta.label == "machines.MembershipMachineTypeScope":
+            edge_policy = None
         if edge_policy and edge_policy.disposition is ReferenceDisposition.DROP_ROW:
             return False
         if edge_policy and edge_policy.disposition is ReferenceDisposition.REMAP_TARGET_MEMBER:

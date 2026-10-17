@@ -33,7 +33,7 @@ export function LandingPage() {
     state={makerspacesQuery.isError ? { status: "error", error: "Couldn't load spaces. Try again.", onRetry: () => { void makerspacesQuery.refetch(); } } : { status: "ready" }}
     hero={<LandingHero search={searchInput} onSearch={setSearchInput} shown={filtered.length} total={total} />}
     isEmpty={!loading && !filtered.length} empty={{ message: emptyMessage, action: searchQuery ? { label: "Clear search", onClick: clear } : undefined }}
-    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "About", href: "/about" }, { label: "License", href: LICENSE_URL, external: true }, { label: "Staff sign-in", href: "/admin" }] }}>
+    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "About", href: "/about" }, { label: "License", href: LICENSE_URL, external: true }, { label: "Platform sign-in", href: "/admin" }] }}>
     <h2 className="title-panel mb-4 md:mb-6 min-[1680px]:text-2xl">All spaces</h2>
     {loading ? <SpaceCardSkeletons /> : filtered.length
       ? <div className="sw-space-grid">{filtered.map(space => <SpaceCard key={space.slug} space={space} />)}</div>

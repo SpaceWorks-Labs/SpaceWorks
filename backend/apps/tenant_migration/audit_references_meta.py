@@ -36,6 +36,13 @@ S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 from .target_projection_w7_events import EVENT_AUDIT_EDGES
 
 AUDIT_META_REFERENCES = {
+    **_reference(S, None,
+                 ("notification.media_grant_cleaned", "grant_id"),
+                 ("notification.media_grant_issued", "delivery_id"),
+                 ("notification.media_grant_consumed", "delivery_id")),
+    **_reference(R, "payments.PaymentDocument",
+                 ("notification.media_grant_issued", "document_id"),
+                 ("notification.media_grant_consumed", "document_id")),
     **_reference(R, "bookings.BookableSpace", ("booking.space_cloned", "source_space_id")),
     **_reference(R, "bookings.Booking", ("booking.restored", "booking_id")),
     **_reference(R, "events.EventCertificateArtwork", ("event.certificate_template_saved", "artwork_id")),

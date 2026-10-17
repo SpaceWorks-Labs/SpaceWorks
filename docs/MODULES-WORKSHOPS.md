@@ -160,12 +160,12 @@ Required by the members-only events path. Bookings can run without this module.
   records, and identity can come from `member_accounts` or an external OIDC provider. What goes is the
   *enrolment and community* layer — no join requests to approve, no referrals, no profiles, no
   directory, no member cards, no plans. Waivers stay (they are liability evidence, so publishing,
-  accepting and witnessing one is core), and so do STAFF invitations, end to end: issue, claim,
-  approve, decline. `payments.membership` and `charges.membership` become inert.
+  accepting and witnessing one is core). Separate tenant staff creation, initial-password onboarding
+  and admin-issued reset remain available; email invitations additionally need Email + `staff.invitations`. `payments.membership` and `charges.membership` become inert.
 - **Deliberately does not require `member_accounts`.** Identity can come from external OIDC or a staff-created
   person record, so the two are independent switches.
 - **It decides who may submit a borrow request, and installing it closes account-less requests.** With this
-  module on, submitting requires an active member of the makerspace. With it off, any signed-in account may
+  module on, submitting requires an active member of the makerspace. With it off, any signed-in member account may
   submit — a request is only a proposal that staff must accept, and waiver acceptance cannot be recorded
   without a membership row anyway. Turning it ON therefore forces `anonymous_requests_enabled` OFF (audited,
   never silent): the account-less path bypasses the membership check entirely, so leaving both on would let

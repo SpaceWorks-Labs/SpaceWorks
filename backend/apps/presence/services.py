@@ -1,4 +1,6 @@
 """Transactional presence writers. Lock tenant, then account, then session."""
+
+from apps.accounts.account_kind_guards import require_member_account
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -50,6 +52,7 @@ def _end(session, actor, reason, now):
 
 def _create(user, space, membership, duration, *, actor, status, project=None,
             hide_on_display=None, claim=None, registration=None):
+    require_member_account(user)
     now = timezone.now()
     expiry = now + timedelta(minutes=duration)
     if registration:
@@ -104,6 +107,7 @@ def staff_check_in(actor, user, space, duration_minutes, **options):
 
 def _start(user, space, duration, *, actor, staff, latitude=None, longitude=None,
            accuracy=None, status=None, project_id=None, hide_on_display=None):
+    require_member_account(user)
     with tenant_write(space.pk):
         claim = _claim(user, space)
         context = claim_context(user)

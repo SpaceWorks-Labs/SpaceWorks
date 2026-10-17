@@ -26,10 +26,8 @@ from apps.accounts.tokens import validate_auth_generation
 
 
 VERIFICATION_ONLY_SURFACE = "verification_only"
-# One-release compatibility shim: the next release rejects tokens whose surface claim
-# is absent outright. During this release they receive member authority, never the old
-# unrestricted behavior; staff with an old token must sign in again.
-TREAT_MISSING_SURFACE_AS_MEMBER_FOR_ONE_RELEASE = True
+# Account-split cutover rejects the pre-kind and surface-less token generations.
+TREAT_MISSING_SURFACE_AS_MEMBER_FOR_ONE_RELEASE = False
 # A staff PASSWORD session. `staff` carries a mandatory trusted-origin binding, because
 # it was defined for browser social sessions -- so reusing it for password login would
 # break every origin-less staff caller (management commands, server-to-server, tests).
@@ -38,7 +36,7 @@ TREAT_MISSING_SURFACE_AS_MEMBER_FOR_ONE_RELEASE = True
 # It is NOT weaker than `member` for these users: it is only ever minted for an actor who
 # already passed assert_staff_authority, and RBAC still authorises every request.
 STAFF_API_SURFACE = "staff_api"
-_KNOWN_SESSION_SURFACES = {"member", "staff", STAFF_API_SURFACE, VERIFICATION_ONLY_SURFACE}
+_KNOWN_SESSION_SURFACES = {"member", "delegated", "platform", "staff", STAFF_API_SURFACE, VERIFICATION_ONLY_SURFACE}
 
 
 class SpaceWorksJWTAuthentication(JWTAuthentication):
@@ -55,6 +53,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         if user.is_tenant_dump_stub:
             raise AuthenticationFailed("Account is not available.")
         validate_auth_generation(token)
+        from apps.accounts.surface_policy import enforce_request
+        enforce_request(user, token, request)
         from apps.accounts.mfa_policy import assert_verified
         assert_verified(user, token)
         from apps.backup.recovery import assert_principal_allowed
@@ -78,10 +78,6 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             raise PermissionDenied(
                 "Verify the account email before accessing member APIs."
             )
-        if surface == "member" and not _member_surface_path_allowed(
-            request.path
-        ):
-            raise PermissionDenied("Member sessions cannot access staff APIs.")
         grant_id = token.get("device_grant_id")
         if grant_id is None:
             from apps.accounts.web_sessions import validate_session
@@ -90,6 +86,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
                 raise PermissionDenied("Native makerspace selection requires a device grant.")
             _assert_source_gate(request)
             return authenticated
+        if user.account_kind != "member":
+            raise AuthenticationFailed("Invalid device authorization.")
         family_id = token.get("device_family_id")
         if not family_id:
             raise AuthenticationFailed("Invalid device authorization.")

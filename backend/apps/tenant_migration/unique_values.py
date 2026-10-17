@@ -46,3 +46,16 @@ def collision_policy(model_label, field_name):
     if policy and policy.disposition is PRESERVE:
         return policy
     return None
+
+
+# User identity is resolved by kind, outside EXPORTED_MODELS' tenant-row risk guard.
+# P4's materializer must preserve these boundaries rather than adopt staff by email.
+USER_IDENTITY_UNIQUE_RULES = {
+    "username": "Globally allocated; target resolves username collisions.",
+    "uniq_member_email": "Resolve only an existing member, never a staff/platform account.",
+    "uniq_member_phone_e164": "Member-only identity; source proofs never travel.",
+    "uniq_member_telegram_id": "Member-only identity; source proofs never travel.",
+    "uniq_member_checkin_id": "Retired member identity; never target authority.",
+    "uniq_staff_space_email": "Fresh staff identity in the remapped tenant, never email adoption.",
+    "uniq_platform_email": "Platform principals remain inert provenance, never tenant authority.",
+}

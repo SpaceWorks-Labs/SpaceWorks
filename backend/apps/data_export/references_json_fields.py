@@ -2,6 +2,8 @@
 
 JSON_REFERENCE_FIELDS = frozenset(
     {
+        # Channel enum names carry no destination, endpoint or account identifiers.
+        ("notifications.NotificationPreference", "channels"),
         ("apiclients.ApiClient", "scopes"),
         ("apiclients.ApiClient", "allowed_origins"),
         ("apiclients.ApiKeyRequest", "allowed_origins"),

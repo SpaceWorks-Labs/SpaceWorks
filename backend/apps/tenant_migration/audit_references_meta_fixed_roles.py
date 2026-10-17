@@ -6,6 +6,8 @@ R = AuditReferenceDisposition.REMAP
 S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 
 FIXED_ROLE_AUDIT_EDGES = {
+    ("staff.account_created", "membership_id"): AuditReference(R, "makerspaces.MakerspaceMembership"),
+    ("staff.account_created", "machine_type_ids"): AuditReference(R, "machines.MachineType"),
     **{(action, "removed_machine_type_ids"): AuditReference(R, "machines.MachineType")
        for action in ("staff.invitation_accepted", "membership.joined", "membership.approved",
                       "membership.adopted_from_import")},

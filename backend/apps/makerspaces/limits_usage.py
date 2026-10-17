@@ -60,6 +60,7 @@ def _staff(makerspace) -> int:
 
     return MakerspaceMembership.objects.filter(
         makerspace=makerspace,
+        user__account_kind="staff",
         user__is_active=True,
         user__access_status=User.AccessStatus.ACTIVE,
     ).count()
@@ -70,7 +71,7 @@ def _members(makerspace) -> int:
     from apps.makerspaces.models import MakerspaceMembership
 
     return MakerspaceMembership.objects.filter(
-        makerspace=makerspace, status="active", user__is_active=True,
+        makerspace=makerspace, status="active", user__is_active=True, user__account_kind="member",
         user__access_status=User.AccessStatus.ACTIVE,
     ).count()
 

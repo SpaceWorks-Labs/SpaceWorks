@@ -1,5 +1,7 @@
 """Self-checkout issue workflow and active-QR guard."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from datetime import timedelta
 
 from django.db import transaction
@@ -34,6 +36,7 @@ def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit
     # By pk, not by the instance the caller handed us: require_feature() trusts a
     # Makerspace argument as-is, so a stale in-memory copy would pass a gate the stored
     # row has already closed.
+    require_member_account(requester)
     current = require_feature(makerspace.pk, "inventory.self_checkout")
     if not is_servable(current):
         raise RequestValidationError("Makerspace is not available.")

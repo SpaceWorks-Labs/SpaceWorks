@@ -59,6 +59,9 @@ BEGIN
     RAISE EXCEPTION 'the merge role context is not an active locked component';
   END IF;
   IF TG_OP = 'INSERT' THEN
+    IF TG_TABLE_NAME = 'accounts_user' AND to_jsonb(NEW)->>'account_kind' = 'staff' THEN
+      RAISE EXCEPTION 'carried staff must reverse an existing registered shell';
+    END IF;
     EXECUTE format(
       'SELECT EXISTS (SELECT 1 FROM %I.%I staged '
       'WHERE staged.__b1_component_id = $1::uuid '
@@ -66,6 +69,11 @@ BEGIN
       stage_schema, TG_TABLE_NAME
     ) INTO permitted USING component_value, NEW;
   ELSIF TG_OP = 'UPDATE' THEN
+    IF TG_TABLE_NAME = 'accounts_user' AND to_jsonb(OLD)->>'account_kind' = 'staff' THEN
+      IF NOT public.backup_b1_staff_shell_restore(to_jsonb(OLD), to_jsonb(NEW)) THEN
+        RAISE EXCEPTION 'staff shell updates require the complete registered inverse';
+      END IF;
+    END IF;
     permitted := true;
     FOR changed IN
       SELECT old_value.key AS column_name, old_value.value AS before_value,
@@ -90,6 +98,35 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.backup_b1_staff_shell_restore(old_row jsonb, new_row jsonb)
+RETURNS boolean LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
+DECLARE
+  stage_schema text := current_setting('app.b1_merge_schema', true);
+  permitted boolean := false;
+BEGIN
+  IF current_user <> 'spaceworks_b1_merge' OR stage_schema IS NULL
+     OR stage_schema !~ '^b1_merge_[0-9a-f_]+$'
+     OR old_row->>'account_kind' <> 'staff' OR new_row->>'account_kind' <> 'staff'
+     OR old_row->>'staff_makerspace_id' IS NOT NULL OR old_row->>'retired_at' IS NULL
+     OR old_row->>'is_active' <> 'false' OR new_row->>'retired_at' IS NOT NULL
+     OR old_row->>'id' IS DISTINCT FROM new_row->>'id' THEN RETURN false; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.backup_b1restorecomponentstate component
+    WHERE component.operation_id::text = current_setting('app.b1_merge_operation', true)
+      AND component.component_id::text = current_setting('app.b1_merge_component', true)
+      AND component.makerspace_id_snapshot::text = new_row->>'staff_makerspace_id'
+      AND component.state = 'merging'
+  ) THEN RETURN false; END IF;
+  EXECUTE format(
+    'SELECT EXISTS (SELECT 1 FROM %I.backup_b1_shells shell '
+    'JOIN %I.accounts_user staged ON staged.id = (shell.old_row->>''id'')::bigint '
+    'AND staged.__b1_component_id = shell.component_id '
+    'WHERE shell.component_id::text = $1 AND shell.old_row = $2 '
+    'AND to_jsonb(staged) - ''__b1_component_id'' = $3)', stage_schema, stage_schema
+  ) INTO permitted USING current_setting('app.b1_merge_component', true), old_row, new_row;
+  RETURN permitted;
+END $$;
 """
 
 
@@ -129,6 +166,10 @@ def protect_target_tables(schema, tables, *, using="default"):
                 cursor.execute(
                     f"GRANT SELECT ({quote(primary[0])}) ON TABLE {target} TO {MERGE_ROLE}"
                 )
+                if table == "accounts_user":
+                    # The handler proves every column equals the PII-free shell
+                    # before the guarded inverse can replace the occupied row.
+                    cursor.execute(f"GRANT SELECT ON TABLE {target} TO {MERGE_ROLE}")
                 cursor.execute(f"DROP TRIGGER IF EXISTS {WRITE_TRIGGER} ON {target}")
                 cursor.execute(
                     f"CREATE TRIGGER {WRITE_TRIGGER} BEFORE INSERT OR UPDATE OR DELETE "

@@ -36,7 +36,7 @@ class MembershipListCreateView(RecentReauthenticationMixin, APIView):
     def get(self, request, makerspace_id):
         makerspace = member_makerspace(request.user, makerspace_id)
         memberships = (
-            MakerspaceMembership.objects.filter(makerspace=makerspace)
+            MakerspaceMembership.objects.filter(makerspace=makerspace, user__account_kind="member")
             .select_related("user", "makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
             .order_by("user__username")
         )
@@ -67,6 +67,9 @@ class MembershipListCreateView(RecentReauthenticationMixin, APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         roles = resolve_role_set(makerspace, data)
+        if any(role.slug != "member" for role in roles):
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"roles": "Use the staff-accounts lifecycle API to create staff."})
         with transaction.atomic():
             # Authority checks lock the actor membership; acquire its makerspace
             # first, matching assignment and lifecycle writers' lock order.

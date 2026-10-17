@@ -136,7 +136,7 @@ def send(delivery_id):
             template = whatsapp_template(row)
             from .notification_wa_window import in_session_window
             in_window = in_session_window(row.endpoint)
-            if not in_window and template is None:
+            if not in_window and template is None and envelope.source_kind != "payments.document":
                 return record_result(row, ProviderResult(False, error_code="template_required"))
             rendered["whatsapp_template"] = ({"name": template.template_name, "variables": template.variables,
                                                "locale": template.locale} if template else None)
@@ -146,7 +146,11 @@ def send(delivery_id):
             result = ProviderResult(False, error_code="quota_exceeded")
         elif row.endpoint_id:
             provider = provider_for(row.endpoint.configuration)
-            result = provider.send(row, rendered) if provider else ProviderResult(False, error_code="not_configured")
+            if provider:
+                from .notification_document_dispatch import send_document
+                result = send_document(provider, row, rendered)
+            else:
+                result = ProviderResult(False, error_code="not_configured")
         else:
             result = send_builtin(row, rendered)
     except TimeoutError:

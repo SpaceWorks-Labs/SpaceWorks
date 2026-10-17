@@ -14,6 +14,12 @@
     RETYPE each makerspace slug exactly to confirm purge.
   </p>
 
+  {% for row in impacts %}
+    <p>Advisory unsettled charges for {{ row.object.name }}:
+      {{ row.owned_pending }} owned pending, {{ row.routed_pending }} routed pending,
+      {{ row.total_pending }} total pending. Counts may change before purge.</p>
+  {% endfor %}
+
   <table>
     <thead>
       <tr>

@@ -30,6 +30,9 @@ def apply_user_closure(rows, closure):
                 external_checkin_user_id="",
                 is_tenant_dump_stub=False,
             )
+            if source.get("account_kind") == "staff":
+                values.update(password="!tenant-import-staff", must_change_password=True,
+                              credential_generation=0)
         rewritten.append(MappingProxyType(values))
     result["accounts.User"] = tuple(rewritten)
     result["makerspaces.MembershipRequest"] = tuple(
@@ -107,6 +110,10 @@ def user_ref_from_closure(closure, pk):
 
 def _stub_values(ref):
     return {
+        "account_kind": "member",
+        "staff_makerspace_id": None,
+        "retired_at": None,
+        "credential_generation": 0,
         "username": f"__tenant_stub__{ref}",
         "password": f"!tenant-dump-stub-v{STUB_SCHEMA_VERSION}:{ref}",
         "first_name": "",

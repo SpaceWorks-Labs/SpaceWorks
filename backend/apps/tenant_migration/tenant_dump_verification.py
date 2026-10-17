@@ -92,6 +92,8 @@ def verify_projection_database(
     verify_tables_empty(using, {"spaceworks_cache"})
     verify_source_disposition_tables_empty(using)
     verify_cross_tenant_projection(using, makerspace_id)
+    from .staff_postconditions import verify_staff_transport
+    verify_staff_transport(using, makerspace_id, exclusive=True)
     actual = mapped_raw_digest(mapped_rows(using, mapped_identities))
     if actual != expected_mapped_digest:
         raise TenantDumpVerificationError(

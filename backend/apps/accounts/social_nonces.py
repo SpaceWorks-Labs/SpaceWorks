@@ -22,9 +22,7 @@ from apps.accounts.attestation import (
 )
 from apps.makerspaces.cors import (
     member_origin_is_registered,
-    staff_origin_is_registered,
 )
-from apps.makerspaces.origin_scope import AMBIGUOUS_STAFF_ORIGIN_SCOPE, staff_origin_scope
 
 
 class SocialAuthUnavailable(Exception):
@@ -87,17 +85,14 @@ def provider_settings(provider, client_platform):
 def create_social_nonce(
     request, *, provider, surface, delivery, client_platform, challenge=None
 ):
+    if surface != SocialSurface.MEMBER:
+        raise SocialNonceRejected
     provider_settings(provider, client_platform)
     origin = request_origin(request)
     grant = getattr(request, "device_grant", None)
     attestation_challenge = None
     if delivery == SocialDelivery.WEB:
-        if surface == SocialSurface.STAFF:
-            if not staff_origin_is_registered(origin):
-                raise SocialNonceRejected
-            if staff_origin_scope(request) is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
-                raise SocialNonceRejected
-        elif not member_origin_is_registered(origin):
+        if not member_origin_is_registered(origin):
             raise SocialNonceRejected
         grant = None
     else:
@@ -147,6 +142,7 @@ def consume_social_nonce(
         )
         valid = bool(
             row
+            and surface == SocialSurface.MEMBER
             and row.consumed_at is None
             and row.expires_at > now
             and row.provider == provider

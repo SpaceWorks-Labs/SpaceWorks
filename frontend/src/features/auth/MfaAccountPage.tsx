@@ -1,3 +1,5 @@
+import { currentSessionContext } from "../../lib/api/sessionContext";
+import { useOptionalTenant } from "../../lib/tenant";
 import { reauthenticationSessionKey } from "./reauthenticationApi";
 import { PasswordlessMfaProof } from "./PasswordlessMfaProof";
 import { useEffect, useState } from "react";
@@ -11,6 +13,12 @@ import { MfaFlow } from "./MfaFlow";
 import type { MfaChallenge } from "./mfaApi";
 
 export function MfaAccountPage() {
+  const context = currentSessionContext();
+  const tenant = useOptionalTenant();
+  const signInHref = context.startsWith("staff:") && tenant?.mode !== "single"
+    ? `/m/${encodeURIComponent(context.slice(6))}/admin` : context === "member" ? "/member"
+    // A single-tenant /admin would resolve to that tenant's staff context; keep platform explicit.
+    : context === "platform" ? "/admin?context=platform" : "/admin";
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
@@ -54,11 +62,11 @@ export function MfaAccountPage() {
         {codes ? <MfaRecoveryCodes codes={codes} /> : null}
         {enroll.error || change.error ? <ErrorBlock error={(enroll.error ?? change.error)!} /> : null}
       </div>}
-      primary={codes ? { label: "I've saved my codes", onClick: () => { setCodes(undefined); setNotice("Your recovery codes are saved. Sign in again to continue."); } } : !ready || !available ? { label: "Staff sign-in", href: "/admin" } : {
+      primary={codes ? { label: "I've saved my codes", onClick: () => { setCodes(undefined); setNotice("Your recovery codes are saved. Sign in again to continue."); } } : !ready || !available ? { label: "Sign in", href: signInHref } : {
         label: enabled ? "Regenerate recovery codes" : "Enroll authenticator", pending: busy, disabled: (needsPassword && !password) || status.isLoading,
         disabledReason: passwordAvailable ? "Confirm your current password to continue." : "Managing an enrolled authenticator requires a current password.",
         onClick: () => enabled ? change.mutate("recovery") : enroll.mutate() }}
-      footer={<div className="grid gap-4"><div className="flex flex-wrap gap-4"><Link to="/admin" className="inline-flex min-h-11 items-center rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Staff sign-in</Link><Link to="/member" className="inline-flex min-h-11 items-center rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Member sign-in</Link></div>
+      footer={<div className="grid gap-4"><div className="flex flex-wrap gap-4"><Link to={signInHref} className="inline-flex min-h-11 items-center rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Return to sign-in</Link><Link to="/member" className="inline-flex min-h-11 items-center rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Member sign-in</Link></div>
         {ready && enabled && !status.data?.required ? <DangerZone title="Disable MFA" consequence="Your account will use password sign-in without an authenticator."
           action={{ label: "Disable MFA", disabled: !password || busy, onClick: () => setConfirmDisable(true) }} /> : null}</div>} />
     <ConfirmDialog open={confirmDisable} title="Disable MFA?" message="Your account will no longer require an authenticator." confirmLabel="Disable MFA" tone="danger" pending={change.isPending}

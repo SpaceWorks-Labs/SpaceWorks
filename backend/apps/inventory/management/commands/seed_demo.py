@@ -1,6 +1,7 @@
+from ._seed_demo_fixtures import seed_machine_service, seed_staff, seed_user
+
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from decimal import Decimal
 
 from apps.accounts.models import User
 from apps.backup.custody import initialize_custody_state
@@ -14,11 +15,9 @@ from apps.inventory.models import (
     PublicAvailabilityMode,
     TrackingMode,
 )
-from apps.makerspaces.models import Makerspace, MakerspaceMembership
+from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import EVERYTHING
-from apps.machines.models import Machine, MachineConsumablePool, MachineServiceRequest, MachineType
-from apps.machines.service_workflow import submit as submit_service_request
 
 
 DEMO_SPACES = [
@@ -108,21 +107,13 @@ class Command(BaseCommand):
             if created:
                 apply_profile(makerspace, EVERYTHING, actor=superadmin)
             ensure_default_categories(makerspace)
-            manager = self._user(
-                spec["manager"],
-                f"{spec['manager']}@makerspace.local",
-                password,
-                User.Role.SPACE_MANAGER,
-            )
-            MakerspaceMembership.objects.update_or_create(
-                makerspace=makerspace,
-                user=manager,
-                defaults={"role": MakerspaceMembership.Role.SPACE_MANAGER},
-            )
+            seed_staff(makerspace, superadmin, spec["manager"], password)
+            member = self._user(f"{makerspace.slug}_member", f"{makerspace.slug}-member@makerspace.local",
+                                password, User.Role.REQUESTER)
             box = self._box(makerspace, "Starter Inventory", spec["location"])
             products_written += self._products(makerspace, box)
             assets_written += self._assets(makerspace, box)
-            machine_services_written += self._machine_service(makerspace, manager)
+            machine_services_written += self._machine_service(makerspace, member)
 
         self._sync_legacy_hmac_client()
         self.stdout.write(
@@ -137,31 +128,7 @@ class Command(BaseCommand):
         )
         self.stdout.write(self.style.WARNING(f"Demo password for all accounts: {password}"))
 
-    def _user(self, username, email, password, role, **flags):
-        user, created = User.objects.get_or_create(username=username, defaults={"email": email})
-        # CLI access already overrides application rules; this assertion makes an
-        # improbable collision loud instead of silently changing a person record.
-        if not created and user.is_walk_in:
-            raise CommandError(f"Cannot seed {username!r}: the existing user is a walk-in.")
-        user.email = email
-        user.role = role
-        user.access_status = User.AccessStatus.ACTIVE
-        user.must_change_password = False
-        user.is_staff = flags.get("is_staff", role == User.Role.SUPERADMIN)
-        user.is_superuser = flags.get("is_superuser", role == User.Role.SUPERADMIN)
-        user.set_password(password)
-        user.save(
-            update_fields=[
-                "email",
-                "role",
-                "access_status",
-                "must_change_password",
-                "is_staff",
-                "is_superuser",
-                "password",
-            ]
-        )
-        return user
+    _user = staticmethod(seed_user)
 
     def _box(self, makerspace, label, location):
         box, _ = Box.objects.update_or_create(
@@ -239,55 +206,8 @@ class Command(BaseCommand):
             )
         return 3
 
-    def _machine_service(self, makerspace, requester):
-        printer_type = MachineType.objects.get(makerspace__isnull=True, slug="3d_printer")
-        machine, _ = Machine.objects.update_or_create(
-            makerspace=makerspace,
-            name="Demo 3D Printer",
-            defaults={
-                "machine_type": printer_type,
-                "location": "Fabrication Bench",
-                "notes": "Seeded kernel machine-service printer.",
-                "is_public": True,
-                "type_payload": {"model": "Prusa MK4"},
-                "created_by": requester,
-            },
-        )
-        MachineConsumablePool.objects.get_or_create(
-            makerspace=makerspace,
-            machine=machine,
-            material="PLA",
-            color="Black",
-            brand="Demo",
-            lot_code="DEMO-PLA",
-            defaults={
-                "initial_grams": Decimal("1000.00"),
-                "remaining_grams": Decimal("1000.00"),
-                "low_threshold_grams": Decimal("200.00"),
-                "created_by": requester,
-            },
-        )
-        if MachineServiceRequest.objects.filter(
-            makerspace=makerspace, title="Demo 3D print request"
-        ).exists():
-            return 0
-        submit_service_request(
-            machine,
-            requester,
-            actor=requester,
-            requester_name=requester.username,
-            contact_email=requester.email,
-            contact_phone="",
-            title="Demo 3D print request",
-            description="Seeded machine-service sample.",
-            capability_payload={
-                "requested_material": "PLA",
-                "requested_color": "Black",
-                "quantity": 1,
-                "estimated_grams": "25.00",
-            },
-        )
-        return 1
+    _machine_service = staticmethod(seed_machine_service)
+
     def _sync_legacy_hmac_client(self):
         if not settings.HMAC_CLIENT_ID or not settings.HMAC_SECRET:
             return

@@ -36,6 +36,8 @@ class MakerspaceBillingSettings(models.Model):
     reminder_days_after = models.JSONField(default=reminder_after_default, blank=True)
     max_reminders = models.PositiveSmallIntegerField(default=2, validators=[MaxValueValidator(20)])
     number_prefix = models.CharField(max_length=32, blank=True, default="")
+    bill_prefix = models.CharField(max_length=32, default="BILL-")
+    payment_instructions = models.TextField(max_length=2000, blank=True, default="")
     legal_name = models.CharField(max_length=150, blank=True, default="")
     address = models.TextField(max_length=1000, blank=True, default="")
     tax_id = models.CharField(max_length=64, blank=True, default="")
@@ -43,14 +45,21 @@ class MakerspaceBillingSettings(models.Model):
     account_codes = models.JSONField(default=default_account_codes, validators=[validate_account_codes], blank=True)
     # Internal sequence, never exposed as an editable API field. Rolled back with issue.
     next_document_number = models.PositiveBigIntegerField(default=1)
+    next_bill_number = models.PositiveBigIntegerField(default=1)
 
     class Meta:
-        constraints = [models.CheckConstraint(condition=models.Q(next_document_number__gt=0), name="billing_document_counter_positive")]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(next_document_number__gt=0), name="billing_document_counter_positive"),
+            models.CheckConstraint(condition=models.Q(next_bill_number__gt=0), name="billing_bill_counter_positive"),
+        ]
 
     def clean(self):
         validate_account_codes(self.account_codes)
-        if any(ord(char) < 32 or char in "/\\" for char in self.number_prefix):
-            raise ValidationError({"number_prefix": "Use a prefix without control characters or slashes."})
+        for name in ("number_prefix", "bill_prefix"):
+            if any(ord(char) < 32 or ord(char) == 127 or char in "/\\" for char in getattr(self, name)):
+                raise ValidationError({name: "Use a prefix without control characters or slashes."})
+        if self.bill_prefix == self.number_prefix:
+            raise ValidationError({"bill_prefix": "Bill and receipt prefixes must differ."})
         for name in ("reminder_days_before", "reminder_days_after"):
             values = getattr(self, name)
             if (not isinstance(values, list) or len(values) > 20 or

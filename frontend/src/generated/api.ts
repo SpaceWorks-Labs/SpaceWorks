@@ -96,6 +96,7 @@ export const openApiTags = [
   "Server bookings",
   "Server events",
   "Social auth",
+  "Staff accounts",
   "Staff invitations",
   "Staff lists",
   "Stock transfers",
@@ -487,6 +488,13 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/spaces/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/policy",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/deactivate/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/reactivate/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/resend-invite/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/set-password/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/resend",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/revoke",
@@ -733,6 +741,7 @@ export const openApiPaths = [
   "/api/v1/integrations/makerspace/{makerspace_id}/whatsapp/twilio/templates/refresh",
   "/api/v1/integrations/makerspace/{makerspace_id}/whatsapp/twilio/{generation}/inbound",
   "/api/v1/integrations/makerspace/{makerspace_id}/whatsapp/twilio/{generation}/status/{delivery_id}",
+  "/api/v1/integrations/notification-media/{token}.pdf",
   "/api/v1/integrations/push/devices",
   "/api/v1/integrations/push/devices/{device_id}",
   "/api/v1/integrations/telegram/test-alert",
@@ -944,6 +953,8 @@ export type AccountingJournalReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<JournalLine>;
 };
+
+export type AccountKindEnum = "member" | "staff" | "platform";
 
 export type AccountProfile = {
   "display_name"?: string;
@@ -1439,6 +1450,12 @@ export type AuthMembership = {
 
 export type AuthMembershipSourceEnum = "membership" | "organization";
 
+export type AuthStaffMakerspace = {
+  "id": number;
+  "slug": string;
+  "name": string;
+};
+
 export type AuthUserPayload = {
   "id": number;
   "username": string;
@@ -1449,6 +1466,8 @@ export type AuthUserPayload = {
   "role": string;
   "is_superuser": boolean;
   "must_change_password": boolean;
+  "account_kind": AccountKindEnum;
+  "staff_makerspace": AuthStaffMakerspace | null;
   "makerspaces": Array<AuthMembership>;
   "event_grants"?: Array<GrantedEventEntry>;
   "booking_grants"?: Array<GrantedBookingEntry>;
@@ -1577,6 +1596,8 @@ export type BillingPolicyError = HardwareRequestError | BillingPolicyValidationE
 
 export type BillingPolicyValidationError = {
   "number_prefix"?: Array<string>;
+  "bill_prefix"?: Array<string>;
+  "payment_instructions"?: Array<string>;
   "legal_name"?: Array<string>;
   "address"?: Array<string>;
   "tax_id"?: Array<string>;
@@ -1595,6 +1616,8 @@ export type BillingSettings = {
   "reminder_days_after": Array<number>;
   "max_reminders": number;
   "number_prefix"?: string;
+  "bill_prefix"?: string;
+  "payment_instructions"?: string;
   "legal_name"?: string;
   "address"?: string;
   "tax_id"?: string;
@@ -2635,7 +2658,7 @@ export type ContainerScanHistoryItem = {
 
 export type ContentTypeEnum = "image/png" | "image/jpeg";
 
-export type ContextEnum = "issue" | "return" | "inventory_check";
+export type Context396Enum = "member" | "staff" | "platform";
 
 export type ContractChallenge = {
   "challenge_id": number;
@@ -4063,6 +4086,7 @@ export type FieldValidationError = {
 };
 
 export type FirstStaffInvite = {
+  "name"?: string;
   "email": string;
   "role_slug": RoleSlugEnum;
 };
@@ -4070,6 +4094,8 @@ export type FirstStaffInvite = {
 export type FontEnum = "sans" | "serif";
 
 export type ForgotPasswordRequest = {
+  "context"?: Context396Enum;
+  "makerspace"?: string;
   "email": string;
 };
 
@@ -5070,10 +5096,12 @@ export type LogError = {
 export type LoginRequest = {
   "username": string;
   "password": string;
+  "context"?: Context396Enum;
+  "makerspace"?: string;
   "surface"?: LoginRequestSurfaceEnum;
 };
 
-export type LoginRequestSurfaceEnum = "member" | "staff";
+export type LoginRequestSurfaceEnum = "member" | "staff" | "delegated";
 
 export type LoginResponse = {
   "user": AuthUserPayload;
@@ -5081,14 +5109,10 @@ export type LoginResponse = {
   "surface": LoginResponseSurfaceEnum;
 };
 
-export type LoginResponseSurfaceEnum = "member" | "staff" | "staff_api" | "verification_only";
+export type LoginResponseSurfaceEnum = "member" | "staff" | "staff_api" | "delegated" | "platform" | "verification_only";
 
 export type LogMachineConsumption = {
   "quantity": string;
-};
-
-export type LogoutResponse = {
-  "detail": string;
 };
 
 export type LogUsage = {
@@ -7043,6 +7067,8 @@ export type OrganizationSummary = {
 export type OrientationEnum = "portrait" | "landscape";
 
 export type OtpResetPasswordConfirm = {
+  "context"?: Context396Enum;
+  "makerspace"?: string;
   "email": string;
   "code": string;
   "new_password": string;
@@ -7489,6 +7515,13 @@ export type PaginatedScheduleList = {
   "results": Array<Schedule>;
 };
 
+export type PaginatedStaffAccountList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<StaffAccount>;
+};
+
 export type PaginatedStaffInvitationList = {
   "count": number;
   "next"?: string | null;
@@ -7680,6 +7713,8 @@ export type PatchedBillingSettings = {
   "reminder_days_after"?: Array<number>;
   "max_reminders"?: number;
   "number_prefix"?: string;
+  "bill_prefix"?: string;
+  "payment_instructions"?: string;
   "legal_name"?: string;
   "address"?: string;
   "tax_id"?: string;
@@ -8400,6 +8435,11 @@ export type PatchedSpacePhotoUpdate = {
   "caption"?: string;
 };
 
+export type PatchedStaffAccountChange = {
+  "roles"?: Array<string>;
+  "machine_type_ids"?: Array<number>;
+};
+
 export type PatchedStaffGrantUpdate = {
   "permissions"?: Array<Permissions5d1Enum>;
   "role_label"?: RoleLabelEnum | BlankEnum;
@@ -8499,9 +8539,10 @@ export type PaymentDocument = {
   "money_at": string;
   "amount": string;
   "currency": string;
+  "status": string;
 };
 
-export type PaymentDocumentKindEnum = "receipt" | "credit_note";
+export type PaymentDocumentKindEnum = "receipt" | "credit_note" | "bill";
 
 export type PaymentFilterError = HardwareRequestError | PaymentFilterValidationError;
 
@@ -9858,9 +9899,11 @@ export type QrResolveResult = {
 
 export type QrScan = {
   "payload": string;
-  "context": ContextEnum;
+  "context": QrScanContextEnum;
   "request_id"?: number | null;
 };
+
+export type QrScanContextEnum = "issue" | "return" | "inventory_check";
 
 export type QrScanResult = {
   "qr": QrCode;
@@ -10096,6 +10139,7 @@ export type ReferralOutcome = {
 
 export type RefreshResponse = {
   "access": string;
+  "user": AuthUserPayload;
 };
 
 export type Refund = {
@@ -10772,6 +10816,10 @@ export type ServiceStart = {
   "planned_quantity"?: string;
 };
 
+export type SessionContext = {
+  "context"?: string;
+};
+
 export type SetStatus = {
   "status": string;
 };
@@ -10956,6 +11004,70 @@ export type SpeakerInviteResponse = {
 
 export type SponsorTierEnum = "platinum" | "gold" | "silver" | "partner" | "community_partner";
 
+export type StaffAccount = {
+  "id": number;
+  "username": string;
+  "display_name"?: string;
+  "email"?: string;
+  "roles": Array<string>;
+  "machine_type_ids": Array<number>;
+  "is_active"?: boolean;
+  "must_change_password"?: boolean;
+  "mfa_enabled": boolean;
+  "last_login"?: string | null;
+  "created_at": string;
+  "invitation_pending": boolean;
+  "can": StaffAccountCapabilities;
+};
+
+export type StaffAccountCapabilities = {
+  "change_roles": boolean;
+  "set_password": boolean;
+  "deactivate": boolean;
+  "reactivate": boolean;
+  "resend_invite": boolean;
+};
+
+export type StaffAccountCreate = {
+  "display_name": string;
+  "email"?: string;
+  "username"?: string;
+  "roles": Array<string>;
+  "machine_type_ids"?: Array<number>;
+};
+
+export type StaffAccountCreated = {
+  "account": StaffAccount;
+  "invitation_sent": boolean;
+};
+
+export type StaffAccountDeactivate = {
+  "reason"?: string;
+};
+
+export type StaffAccountInvitationResult = {
+  "invitation_sent": boolean;
+};
+
+export type StaffAccountPassword = {
+  "password"?: string;
+  "generate"?: boolean;
+  "reset_mfa"?: boolean;
+};
+
+export type StaffAccountPasswordResult = {
+  "generated_password": string | null;
+};
+
+export type StaffAccountPolicy = {
+  "creatable_roles": Array<string>;
+  "can_manage_space_managers": boolean;
+  "superadmin_access_enabled": boolean;
+  "email_onboarding_available": boolean;
+  "machine_types": Array<StaffMachineTypeChoice>;
+  "roles": Array<Role>;
+};
+
 export type StaffBookingInput = {
   "certification_override_reason"?: string;
   "starts_at": string;
@@ -11074,6 +11186,11 @@ export type StaffInvitationDelivery = {
   "created_at": string;
   "accept_url": string;
   "delivery_status": string;
+};
+
+export type StaffMachineTypeChoice = {
+  "id": number;
+  "name": string;
 };
 
 export type StaffMembership = {

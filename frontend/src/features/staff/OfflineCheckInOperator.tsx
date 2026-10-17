@@ -1,3 +1,4 @@
+import { offlineAccountScope } from "../../lib/api/sessionTokens";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DangerZone, ScanWorkbench } from "../../components/ui";
@@ -21,7 +22,7 @@ import {
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 export function OfflineCheckInOperator({
-  scope,
+  scope: resourceScope,
   download,
   synchronize,
   onSynchronized,
@@ -33,6 +34,7 @@ export function OfflineCheckInOperator({
   onSynchronized?: () => void | Promise<void>;
   autoDownload?: boolean;
 }) {
+  const scope = resourceScope.startsWith("staff:") ? offlineAccountScope(resourceScope) : resourceScope;
   const [state, setState] = useState<OfflineCheckInState | null>(null);
   const [resolved, setResolved] = useState<OfflineRosterRegistration | null>(null);
   const [scanning, setScanning] = useState(false);

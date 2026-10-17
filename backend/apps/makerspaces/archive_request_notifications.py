@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlencode
 
 from django.db import transaction
 from django.urls import reverse
@@ -23,12 +24,11 @@ def _send_created(archive_request_id):
         archive_request = MakerspaceArchiveRequest.objects.select_related(
             "makerspace"
         ).get(pk=archive_request_id)
-        review_path = reverse(
-            "admin:makerspaces_makerspacearchiverequest_changelist"
-        )
+        review_path = reverse("admin:makerspaces_makerspace_changelist")
+        review_query = urlencode({"q": archive_request.makerspace.slug})
         body = (
             f"{archive_request.makerspace.name} has requested archival.\n\n"
-            f"Review the request in the control plane: {review_path}?status__exact=pending"
+            f"Review the request in the control plane: {review_path}?{review_query}"
         )
         recipients = User.objects.filter(
             is_active=True,

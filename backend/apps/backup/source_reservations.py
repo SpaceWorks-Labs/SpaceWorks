@@ -158,6 +158,9 @@ def capture_source_reservations(
         rule_catalog.append(unique.definition_payload())
     sequences = _bind_sequence_rules(sequence_facts(using), unique_rules)
     relationships = relationship_fences(using, rules, makerspace_components)
+    from .staff_shell_fences import staff_username_fences
+    supplemental = staff_username_fences(using, makerspace_components)
+    fences.extend(supplemental)
     return ReservationCapture(
         run_salt=salt,
         registry_digest=_digest({
@@ -165,6 +168,7 @@ def capture_source_reservations(
             "unique_rules": rule_catalog,
             "sequence_facts": sequences,
             "relationship_fences": relationships,
+            "staff_shell_fences": supplemental,
         }),
         commitments=tuple(sorted(commitments, key=_sort_fact)),
         broad_fences=tuple(sorted(fences, key=_sort_fact)),

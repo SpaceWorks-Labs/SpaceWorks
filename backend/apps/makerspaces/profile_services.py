@@ -1,5 +1,7 @@
 """Reading and writing a member's own profile, and the member-visible directory."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import transaction
 
 from apps.audit import services as audit
@@ -16,6 +18,7 @@ def profile_for(membership):
     a stable id to hang project rows and image keys off. It is empty and invisible, so
     creating one publishes nothing.
     """
+    require_member_account(membership.user)
     profile, _ = MemberProfile.objects.get_or_create(membership=membership)
     return profile
 
@@ -144,6 +147,7 @@ def profile_activity(membership, *, local_only=False):
 @transaction.atomic
 def save_profile(membership, data):
     """Apply a partial profile update, replacing the project list when one is sent."""
+    require_member_account(membership.user)
     MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
     profile = MemberProfile.objects.select_for_update().filter(
         membership=membership

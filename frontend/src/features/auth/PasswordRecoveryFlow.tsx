@@ -7,11 +7,16 @@ import {
   confirmOtpPasswordReset,
   isRecoveryUnavailable,
   requestPasswordReset,
+  type RecoveryContext,
 } from "./passwordRecovery";
 type RecoveryStep = "request" | "confirm" | "success" | "unavailable";
 
-export function PasswordRecoveryFlow() {
-  const [step, setStep] = useState<RecoveryStep>("request");
+export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", initialStep = "request" }: {
+  recoveryContext?: RecoveryContext;
+  signInHref?: string;
+  initialStep?: "request" | "confirm";
+}) {
+  const [step, setStep] = useState<RecoveryStep>(initialStep);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -31,7 +36,7 @@ export function PasswordRecoveryFlow() {
     setPending(true);
     setError("");
     try {
-      const result = await requestPasswordReset({ email });
+      const result = await requestPasswordReset({ email: email.trim(), ...recoveryContext });
       setAcknowledgement(result.detail);
       setCooldown(RESEND_COOLDOWN_SECONDS);
       if (!isResend) setStep("confirm");
@@ -49,7 +54,7 @@ export function PasswordRecoveryFlow() {
     setPending(true);
     setError("");
     try {
-      await confirmOtpPasswordReset({ email, code, new_password: newPassword });
+      await confirmOtpPasswordReset({ email: email.trim(), code, new_password: newPassword, ...recoveryContext });
       setStep("success");
     } catch {
       // All server rejections intentionally share one message. Showing password-policy
@@ -60,33 +65,35 @@ export function PasswordRecoveryFlow() {
     }
   };
   const canConfirm = /^\d{6}$/.test(code)
+    && Boolean(email.trim())
     && newPassword.length >= 8
     && newPassword === confirmPassword
     && !pending;
   const titles = { request: "Reset password", confirm: "Enter your recovery code", success: "Password updated", unavailable: "Password recovery unavailable" };
-  const body = step === "request" ? "Enter your account email to request a six-digit recovery code."
-    : step === "confirm" ? acknowledgement
-    : step === "success" ? "Your password has been updated. You can now sign in."
+  const body = step === "request" ? recoveryContext ? "Enter your account username or email to request a six-digit recovery code." : "Enter your account email to request a six-digit recovery code."
+    : step === "confirm" ? acknowledgement || "Enter your username or email and the six-digit recovery code from your email."
+    : step === "success" ? `Your password has been updated. You can now sign in.${recoveryContext ? " Authenticator verification is still required if enabled for your account." : ""}`
     : "Password recovery is unavailable on this deployment — contact your makerspace staff";
-  return <CenteredCardLayout state={{ status: "ready" }} eyebrow="Account access"
+  return <CenteredCardLayout state={{ status: "ready" }} eyebrow={recoveryContext ? recoveryContext.context === "staff" ? "Staff account access" : "Platform account access" : "Account access"}
     media={{ icon: step === "success" ? "Check" : step === "confirm" ? "Mail" : "KeyRound", tone: step === "success" ? "success" : "accent" }}
     title={titles[step]} body={<p role={step === "unavailable" ? "alert" : undefined}>{body}</p>}
-    primary={step === "success" || step === "unavailable" ? { label: step === "success" ? "Go to sign in" : "Back to sign in", href: "/admin" } : {
+    primary={step === "success" || step === "unavailable" ? { label: step === "success" ? "Go to sign in" : "Back to sign in", href: signInHref } : {
       label: step === "request" ? "Request recovery code" : "Update password", pending,
       pendingLabel: step === "request" ? "Requesting…" : "Updating…", disabled: step === "confirm" && !canConfirm,
       disabledReason: "Enter the six-digit code and matching passwords.",
       onClick: () => (document.getElementById("password-recovery-form") as HTMLFormElement)?.requestSubmit(),
     }}
-    escape={step === "request" ? { label: "Back to sign in", href: "/admin" } : step === "confirm" ? {
+    escape={step === "request" ? { label: "Back to sign in", href: signInHref } : step === "confirm" ? {
       label: cooldown > 0 ? `Request another code in ${cooldown}s` : "Request another code",
-      disabled: pending || cooldown > 0, disabledReason: "Wait before requesting another code.", onClick: () => void requestCode(true),
+      disabled: pending || cooldown > 0 || !email.trim(), disabledReason: "Enter your account identifier and wait before requesting another code.", onClick: () => void requestCode(true),
     } : undefined}
     content={step === "request" || step === "confirm" ? <form id="password-recovery-form" className="grid gap-2"
       onSubmit={(event) => { event.preventDefault(); if (step === "request" && !pending) void requestCode(false); else if (canConfirm) void submitConfirmation(); }}>
-      {step === "request" ? <label className="grid gap-2 text-sm font-semibold" htmlFor="recovery-email">Email
-        <input id="recovery-email" className="desk-input w-full" name="email" autoComplete="email" type="email" required
+      {step === "request" || recoveryContext ? <label className="grid gap-2 text-sm font-semibold" htmlFor="recovery-email">{recoveryContext ? "Username or email" : "Email"}
+        <input id="recovery-email" className="desk-input w-full" name="email" autoComplete={recoveryContext ? "username" : "email"} type={recoveryContext ? "text" : "email"} required
           value={email} onChange={(event) => setEmail(event.target.value)} />
-      </label> : <>
+      </label> : null}
+      {step === "confirm" ? <>
         <p className="text-sm text-muted">Email delivery runs on a schedule and may take a few minutes.</p>
         <label className="mt-3 grid gap-2 text-sm font-semibold" htmlFor="recovery-code">Six-digit code
           <input id="recovery-code" className="desk-input w-full" autoComplete="one-time-code" inputMode="numeric"
@@ -94,7 +101,7 @@ export function PasswordRecoveryFlow() {
         </label>
         <NewPasswordFields idPrefix="otp-reset" newPassword={newPassword} confirmPassword={confirmPassword}
           onNewPasswordChange={setNewPassword} onConfirmPasswordChange={setConfirmPassword} />
-      </>}
+      </> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
     <button type="submit" disabled={pending} hidden aria-hidden="true" tabIndex={-1} />
     </form> : undefined} />;

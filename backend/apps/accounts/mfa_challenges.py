@@ -29,6 +29,11 @@ def start(user, *, context):
     assert_available()
     user = User.objects.select_for_update().get(pk=user.pk)
     active(user)
+    from apps.accounts.surface_policy import assert_surface
+    assert_surface(user, context.get("surface"), request=None)
+    context = {**context, "kind": user.account_kind,
+               "makerspace": str(user.staff_makerspace_id) if user.staff_makerspace_id else None,
+               "credential_generation": user.credential_generation}
     row, _ = UserMFA.objects.get_or_create(user=user)
     raw = secrets.token_urlsafe(32)
     challenge = MFAChallenge.objects.create(
@@ -53,6 +58,9 @@ def _locked(raw, request):
     if challenge is None:
         raise AuthenticationFailed("Invalid or expired MFA challenge.")
     active(user)
+    from apps.accounts.surface_policy import assert_surface, validate_account_token
+    validate_account_token(user, challenge.context)
+    assert_surface(user, challenge.context.get("surface"), request=request)
     from apps.accounts.social_nonces import request_origin
     origin = request_origin(request)
     if challenge.context.get("surface") == "control":
@@ -63,6 +71,7 @@ def _locked(raw, request):
     valid = (challenge.consumed_at is None and challenge.expires_at > timezone.now()
              and challenge.attempts < settings.MFA_MAX_ATTEMPTS
              and challenge.auth_generation == current_auth_generation()
+             and challenge.context.get("credential_generation") == user.credential_generation
              and challenge.credential_fingerprint == credential_fingerprint(user, user.email)
              and challenge.mfa_version == row.version
              and challenge.context.get("origin", "") == origin)

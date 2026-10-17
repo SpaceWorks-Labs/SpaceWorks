@@ -19,6 +19,14 @@ def validated_roles(membership, roles):
         raise ValidationError({"role_ids": "Choose built-in roles from this makerspace."})
     if not slugs <= COMBINABLE_ROLE_SLUGS and len(values) != 1:
         raise ValidationError({"role_ids": "Space Manager and Member must be assigned alone."})
+    if membership.user_id:
+        kind = membership.user.account_kind
+        if ((kind == "member" and slugs != {"member"})
+                or (kind == "staff" and ("member" in slugs
+                    or membership.user.retired_at is not None
+                    or membership.user.staff_makerspace_id != membership.makerspace_id))
+                or kind == "platform"):
+            raise ValidationError({"role_ids": "The role set does not match this account's kind and makerspace."})
     order = {slug: index for index, slug in enumerate(BUILTIN_ROLE_SLUGS)}
     return sorted(values, key=lambda role: order[role.slug])
 

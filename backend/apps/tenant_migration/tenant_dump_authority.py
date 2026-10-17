@@ -10,6 +10,7 @@ from .authority_wp4 import AUTHORITY_ENTRIES as WP4_AUTHORITY_ENTRIES
 from .catalog_broadcasts import authority_entries as broadcast_authority
 
 from .catalog_profiles import authority_entries as profile_authority
+from .catalog_account_context import AUTHORITY_ENTRIES as ACCOUNT_CONTEXT_AUTHORITY
 
 def _build(entries):
     result = {}
@@ -22,6 +23,7 @@ def _build(entries):
 
 AUTHORITY_FIELD_OVERRIDES = _build((
     *AUTHORITY_ENTRIES,
+    *ACCOUNT_CONTEXT_AUTHORITY,
     *profile_authority(authority, D),
     (("bookings.BookingResourcePage", "released"), authority(D.RESET, "Target staff explicitly release imported resource content.")),
     (("bookings.BookingResourcePageSection", "visibility"), authority(D.PRESERVE, "Editorial intent travels behind reset release.")),

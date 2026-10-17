@@ -128,6 +128,9 @@ def send(delivery_id):
     try:
         from .notification_sources import render
         rendered = render(envelope)
+        if row.channel not in {"in_app", "native_push"}:
+            from .notification_links import external_links
+            rendered = external_links(envelope.makerspace, rendered)
         if row.channel == "whatsapp":
             from .notification_resolution import whatsapp_template
             template = whatsapp_template(row)

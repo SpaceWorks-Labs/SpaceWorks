@@ -36,7 +36,7 @@ def audit_target_dispositions(models=MODELS):
     dispositions = {}
     for label, model_disposition in models.items():
         key = normalize_audit_target_type(label)
-        if label in {"presence.PresenceSession", "presence.PresenceSettings", "presence.PresencePreference", "operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule", "events.EventCertificateArtwork", "events.EventPage", "bookings.BookingResourcePage"}:
+        if label in {"presence.PresenceSession", "presence.PresenceSettings", "presence.PresencePreference", "operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule", "events.EventCertificateArtwork", "events.EventPage", "bookings.BookingResourcePage", "events.EventTicketType", "events.EventCategory", "bookings.BookableSpacePhoto"}:
             # Preferences can be deleted; unpromoted artwork reservations do not
             # travel. Their immutable audit history still survives projection.
             # Keep the source ID as typed provenance, never a live target binding
@@ -49,6 +49,9 @@ def audit_target_dispositions(models=MODELS):
                     "events.EventCertificateArtwork": "audit_unpromoted_artwork_target",
                     "events.EventPage": "audit_website_page_target",
                     "bookings.BookingResourcePage": "audit_website_page_target",
+                    "events.EventTicketType": "audit_deletable_ticket_target",
+                    "events.EventCategory": "audit_deletable_category_target",
+                    "bookings.BookableSpacePhoto": "audit_deletable_gallery_target",
                 }.get(label, "audit_wp4_preference_target"),
             )
         elif isinstance(model_disposition, Exported):

@@ -54,8 +54,7 @@ def body(subject, text, link="", html=""):
 def staff_link(space, tab):
     # Bind navigation to the source tenant, rather than a browser's last-picked
     # makerspace. These are ordinary authenticated console routes, never grants.
-    from apps.makerspaces.website_directory import public_url
-    return public_url(space, "admin", tab)
+    return f"/m/{space.slug}/admin/{tab}"
 
 
 def template(space, stream, audience, event, context, *, link=""):

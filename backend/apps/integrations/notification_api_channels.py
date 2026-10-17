@@ -61,6 +61,8 @@ class ChannelSettingsView(APIView):
                 raise ValidationError({"room_enabled": "This channel has no staff rooms."})
             if data.get("personal_enabled") and channel == "webhook":
                 raise ValidationError({"personal_enabled": "Webhooks are staff destinations."})
+            from .notification_config_validation import validate_configuration
+            validate_configuration(row, data)
             rotate = any(key in data for key in ("credentials", "integration_identity", "provider"))
             for key, value in data.items():
                 if key not in {"credentials", "templates"}:

@@ -46,6 +46,25 @@ def workspace_identity(team_id):
     return "slack:" + hashlib.sha256(team_id.encode()).hexdigest()
 
 
+def validate_credentials(values, identity, *, personal=False):
+    """App-only credentials bootstrap OAuth; installed credentials bind a workspace."""
+    required = {"client_id", "client_secret", "signing_secret"}
+    installed = {"bot_token", "team_id"}
+    if (not isinstance(values, dict) or set(values) - required - installed
+            or any(not isinstance(values.get(key), str) or not values[key].strip() for key in required)):
+        raise ValueError("not_configured")
+    if installed & set(values):
+        if any(not isinstance(values.get(key), str) or not values[key].strip() for key in installed):
+            raise ValueError("not_configured")
+        expected = workspace_identity(values["team_id"])
+        if identity != expected:
+            raise ValueError("not_configured")
+        return expected
+    if identity or personal:
+        raise ValueError("not_configured")
+    return ""
+
+
 class SlackProvider:
     channel = "slack"
 

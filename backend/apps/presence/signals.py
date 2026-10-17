@@ -1,5 +1,5 @@
 """Invalidate current display generations in the same transaction as a change."""
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete, post_save, pre_delete
 
 from .cache import bump_version
 from .models import PresencePreference, PresenceSession, PresenceSettings
@@ -33,6 +33,9 @@ def register():
     from apps.events.models import Event, EventRegistration
     from apps.makerspaces.models import MakerspaceMembership, MemberProject, MemberProfile
     from django.contrib.auth import get_user_model
+    # Django SET_NULL runs before post_delete, erasing the session -> project
+    # lookup. Invalidate while those links still exist, in the delete transaction.
+    pre_delete.connect(changed, sender=MemberProject, dispatch_uid="presence.project.pre_delete", weak=False)
     for model in (PresenceSession, PresencePreference, PresenceSettings, MemberProject, MemberProfile,
                   Event, EventRegistration, MakerspaceMembership, get_user_model()):
         for signal in (post_save, post_delete):

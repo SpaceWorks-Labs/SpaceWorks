@@ -1,4 +1,5 @@
 """Machine-service parity on the existing printing notification category."""
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.hardware_requests.notifications_p2 import content, fanout, revision
 from apps.integrations.destinations import NotificationScope
@@ -73,7 +74,7 @@ def notify_service(row, event):
     if event not in EVENTS:
         raise ValueError("Unknown machine service event")
     from .service_printing_emails import _projection, _is_printer_request
-    link = f"/m/{row.makerspace.slug}/member"
+    link = local_link(row.makerspace, "member")
     if _is_printer_request(row) and event in {"submitted", "accepted", "rejected", "started", "completed"}:
         # Preserve authored printer templates; authenticated navigation replaces
         # bearer tracking credentials for all personal chat/native transports.

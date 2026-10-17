@@ -4,6 +4,7 @@ from datetime import timezone as datetime_timezone
 from django.utils import timezone
 from django.utils.html import escape
 
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.integrations.email_templates import hardware_context, render
 from apps.integrations.email_templates_registry import bag
@@ -57,7 +58,7 @@ def deliver(makerspace, loan, reminder, message, local_tz):
         event="overdue_escalated" if staff else "return_reminder", kind=KIND,
         source=loan.pk, version=version, subject=loan,
         owner=None if staff else loan.requester, own=None if staff else content(rendered,
-            link=f"/m/{makerspace.slug}/member"), staff=content(rendered) if staff else None,
+            link=local_link(makerspace, "member")), staff=content(rendered) if staff else None,
         context={"due_at": loan.return_due_at.isoformat(), "kind": reminder.kind,
                  "offset_seconds": reminder.offset_seconds})
 

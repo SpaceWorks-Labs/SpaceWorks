@@ -1,4 +1,5 @@
 """API request outcomes contain navigation, never client secrets."""
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, scoped, staff_link
@@ -33,7 +34,7 @@ def content(row, audience):
     if row.resolution_note:
         text += f"\n\nNote: {row.resolution_note}"
     return body(f"{row.makerspace.name} API access request {row.status}",
-                text + "\n\nNo API secret is included in this notification.", f"/m/{row.makerspace.slug}/member")
+                text + "\n\nNo API secret is included in this notification.", local_link(row.makerspace, "member"))
 
 
 def render(envelope):

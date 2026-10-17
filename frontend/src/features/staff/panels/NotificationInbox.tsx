@@ -15,7 +15,7 @@ export function NotificationInbox({ makerspace, canManageMembers = false }: { ma
   const myChannels: Action | undefined = hasChannels ? { label: "My channels", icon: "Settings", onClick: () => setChannels(true) } : undefined;
   const announcement: Action | undefined = canBroadcast ? { label: "Send announcement", onClick: () => setCompose(true) } : undefined;
   return <>
-    <PersonalInbox makerspaceId={makerspace.id} announcement={announcement ?? myChannels}
+    <PersonalInbox makerspaceId={makerspace.id} makerspaceSlug={makerspace.slug} announcement={announcement ?? myChannels}
       overflow={announcement && myChannels ? [myChannels] : undefined} />
     {canBroadcast ? <Modal open={compose} onClose={() => setCompose(false)} title="Send announcement">
       {compose ? <BroadcastComposer makerspaceId={makerspace.id} /> : null}

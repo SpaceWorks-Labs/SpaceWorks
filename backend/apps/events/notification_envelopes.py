@@ -21,6 +21,7 @@ from uuid import uuid4
 
 from django.db import transaction
 
+from apps.integrations.notification_links import local_link
 from apps.integrations.email_templates import render
 from apps.integrations.email_templates_fablab import events_context
 from apps.integrations.email_templates_registry_fablab_defaults import EVENTS_REQUESTER_BODIES
@@ -66,8 +67,8 @@ def _staff_link(space, event):
 
 def _owner_link(space, registration):
     if registration is not None and registration.status in ("registered", "attended"):
-        return f"/m/{space.slug}/member/events/{registration.pk}/ticket"
-    return f"/m/{space.slug}/member"
+        return local_link(space, "member", f"events/{registration.pk}/ticket")
+    return local_link(space, "member")
 
 
 def _context(event, registration, event_name):
@@ -183,5 +184,5 @@ def certificate_envelope(certificate, event_name):
             source_kind="events.certificate", source_id=str(certificate.pk), revision=str(certificate.revision),
             subject=certificate, context={"event_id": event.pk, "certificate_id": certificate.pk},
             rendered={"subject": subject, "text": text.format(title=event.title), "html": "",
-                      "link": f"/m/{space.slug}/member"},
+                      "link": local_link(space, "member")},
         )

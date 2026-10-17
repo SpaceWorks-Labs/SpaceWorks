@@ -18,6 +18,7 @@ toggle, grant) before every send, retry and deferred release.
 import logging
 from django.db import transaction
 
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.bookings.models import Booking
 from apps.integrations.destinations import NotificationScope
@@ -87,7 +88,7 @@ def requester_content(row, event, context):
     # With a reason the plain-text body carries it; the authored HTML would silently omit it.
     return {"subject": message["subject"], "text": _with_reason(message["text_body"], row, event),
             "html": "" if reasoned else message["html_body"],
-            "link": f"/m/{row.space.makerspace.slug}/member/bookings"}
+            "link": local_link(row.space.makerspace, "member", "bookings")}
 
 
 def staff_content(row, event, context):

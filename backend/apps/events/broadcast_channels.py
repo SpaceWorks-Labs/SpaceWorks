@@ -14,6 +14,7 @@ import logging
 
 from celery import shared_task
 from django.db import transaction
+from apps.integrations.notification_links import local_link
 
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 200
@@ -39,7 +40,7 @@ def _emit(campaign, account):
             source_kind="events.broadcast", source_id=str(campaign.pk), revision="1", subject=campaign,
             context={"campaign_id": campaign.pk, "event_id": campaign.event_id},
             rendered={"subject": values["subject"], "text": values["text_body"], "html": "",
-                      "link": f"/m/{campaign.makerspace.slug}/member"},
+                      "link": local_link(campaign.makerspace, "member")},
         )
         for channel in SKIPPED_CHANNELS:
             NotificationDelivery.objects.get_or_create(envelope=envelope, channel=channel, defaults={

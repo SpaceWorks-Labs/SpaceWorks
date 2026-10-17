@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListLayout } from "../../components/layouts";
 import { ErrorBlock, ListRow, RelativeTime, StatusPill, type Action, type IconName } from "../../components/ui";
@@ -6,7 +7,10 @@ import { RouteLink } from "../../components/ui/RouteLink";
 import { memberRequest, staffRequest } from "../../lib/api";
 import { opsQueryState, useOpsTabs } from "../staff/opsPresentation";
 import { inboxUnreadKey, personalRecipientKey } from "./personalQueryKeys";
+import { useOptionalTenant } from "../../lib/tenant";
+import { inboxRoute, isInboxLink } from "./inboxLinks";
 export { inboxUnreadKey } from "./personalQueryKeys";
+export { isInboxLink } from "./inboxLinks";
 
 export type InboxRow = {
   id: number; feature: string; event: string; title: string; summary: string; link: string;
@@ -21,9 +25,6 @@ const familyIcons: Record<string, IconName> = { hardware_requests: "Wrench", pri
   bookings: "Calendar", maintenance: "Wrench", members: "User", payments: "Info", stock: "Wrench",
   certifications: "CheckCircle", devices: "Settings", api_access: "Settings" };
 
-export function isInboxLink(value: string): boolean {
-  return value.startsWith("/") && !value.startsWith("//") && !/[\\\x00-\x1f\x7f]/.test(value);
-}
 function dateGroup(value: string) {
   const date = new Date(value);
   const today = new Date();
@@ -44,9 +45,12 @@ function serverPageSize(data: Page<unknown>, page: number) {
   return Math.max(1, Math.round((data.count - length) / (page - 1)));
 }
 
-export function PersonalInbox({ makerspaceId, member = false, announcement, overflow }: {
-  makerspaceId: number; member?: boolean; announcement?: Action; overflow?: Action[];
+export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, announcement, overflow }: {
+  makerspaceId: number; makerspaceSlug?: string; member?: boolean; announcement?: Action; overflow?: Action[];
 }) {
+  const tenant = useOptionalTenant();
+  const { slug } = useParams();
+  const linkSlug = makerspaceSlug || slug || tenant?.slug || "";
   const client = useQueryClient();
   const send = member ? memberRequest : staffRequest;
   const mode = member ? "member" : "staff";
@@ -88,6 +92,7 @@ export function PersonalInbox({ makerspaceId, member = false, announcement, over
       empty={{ message: unread ? "You're all caught up." : "No notifications yet. Activity from your space shows up here." }}
       filtered={Boolean(feature)} filteredEmpty={{ message: "No notifications in this family. Try another family.", action: { label: "Clear filters", onClick: () => setFeature("") } }}
       body={{ kind: "rows", rows: rows.data?.results.map(row => {
+        const link = inboxRoute(row.link, tenant?.mode ?? "central", linkSlug);
         const group = dateGroup(row.created_at);
         const showGroup = previousGroup !== group;
         previousGroup = group;
@@ -98,7 +103,7 @@ export function PersonalInbox({ makerspaceId, member = false, announcement, over
               meta={<><span>{families[row.feature] ?? row.feature.replace(/_/g, " ")} · <RelativeTime date={row.created_at} /></span>
                 <span className="mt-1 block line-clamp-2 whitespace-pre-wrap break-words">{row.summary}</span></>}
               right={<div className="flex flex-wrap items-center gap-2">{!row.read_at ? <StatusPill label="Unread" tone="accent" /> : null}
-                {isInboxLink(row.link) ? <RouteLink className="desk-button" href={row.link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>Open</RouteLink> : null}
+                {isInboxLink(link) ? <RouteLink className="desk-button" href={link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>Open</RouteLink> : null}
                 {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}</div>} />
             {row.summary ? <div className="mx-4 mb-4">
               <button className="desk-button-ghost" aria-expanded={Boolean(expanded[row.id])}

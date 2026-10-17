@@ -1,6 +1,7 @@
 """Member certification notices and type-scoped staff notices."""
 from django.utils import timezone
 
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.hardware_requests.notifications_p2 import content, fanout, revision
 from apps.integrations.destinations import NotificationScope
@@ -68,7 +69,7 @@ def notify(grant, event, *, include_staff=True):
     else:
         own = {"subject": f"Certification {event}",
                "text": f"Your certification {certification.name[:160]}: {event}. Expiry: {expiry}."}
-    own["link"] = f"/m/{space.slug}/member"
+    own["link"] = local_link(space, "member")
     return fanout(space=space, feature="certifications", stream="certifications",
         event=event, kind=KIND, source=grant.pk, version=version(grant), subject=grant,
         owner=grant.membership.user, own=own, staff=content(staff) if include_staff else None,

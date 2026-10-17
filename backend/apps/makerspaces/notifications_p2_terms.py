@@ -1,6 +1,7 @@
 """Renewal notices reserve an intent alongside the term/claim mutation."""
 from django.utils import timezone
 
+from apps.integrations.notification_links import local_link
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.integrations.email_templates_registry_helpers import bag
 from apps.operations.notifications_p2 import fanout, revision, safe_notification, scoped, template
@@ -65,7 +66,7 @@ def term_body(term, event):
     space = term.membership.makerspace
     return template(space, "membership", "requester", event,
         {"makerspace": bag(name=space.name), "event_name": event,
-         "subject": bag(id=term.membership_id, status=term.status)}, link=f"/m/{space.slug}/member")
+         "subject": bag(id=term.membership_id, status=term.status)}, link=local_link(space, "member"))
 
 
 def render(envelope):

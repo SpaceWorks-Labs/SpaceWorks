@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.integrations.notify import NotificationResult
 from apps.events.models import Event, EventRegistration
@@ -64,13 +65,11 @@ def _eligible(makerspace, schedule, now):
 
 def _recipient(makerspace, member_id):
     from apps.accounts.models import User
-    from apps.integrations import recipients
+    from .notification_envelopes import _owner_allowed
     from apps.notifications.inbox import eligible_owner
     if not member_id or not eligible_owner(makerspace, member_id):
         return None
-    if recipients.has_selection(makerspace, "events", "reminder") and not recipients.requester_selected(
-        makerspace, "events", "reminder",
-    ):
+    if not _owner_allowed(makerspace, "reminder"):
         return None
     return User.objects.filter(pk=member_id).first()
 
@@ -102,7 +101,7 @@ def dispatch_event_reminder(makerspace, schedule, message, now, local_tz):
                   "starts_at": row.event.starts_at.isoformat()},
          rendered={"subject": template["subject"], "text": template["text_body"],
                    "html": template.get("html_body", ""),
-                   "link": f"/m/{makerspace.slug}/member/events/{row.pk}/ticket"})
+                   "link": local_link(makerspace, "member", f"events/{row.pk}/ticket")})
     return NotificationResult(True, {"envelope": 1})
 
 

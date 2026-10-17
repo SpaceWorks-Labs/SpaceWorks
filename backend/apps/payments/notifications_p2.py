@@ -1,6 +1,7 @@
 """Ledger-backed personal notices, independent of the removable payment rail."""
 from django.utils import timezone
 
+from apps.integrations.notification_links import local_link
 from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, direct_mail_unless_routed, fanout, revision, safe_notification, scoped, staff_link, template
@@ -72,7 +73,6 @@ def eligible(envelope):
 
 def rendered(payment, event, audience, refund=None):
     from apps.makerspaces.local_time import to_local
-    from apps.makerspaces.platform import member_payment_return_url
     subject = bag(id=payment.pk, status=payment.status)
     if audience != "staff":
         subject = bag(id=payment.pk, status=payment.status,
@@ -80,7 +80,7 @@ def rendered(payment, event, audience, refund=None):
             due_date=to_local(payment.makerspace, payment.due_at).date().isoformat() if payment.due_at else "")
     return template(payment.makerspace, "payments", audience, event,
         {"makerspace": bag(name=payment.makerspace.name), "event_name": event, "subject": subject},
-        link=member_payment_return_url(payment.makerspace) if audience != "staff" else staff_link(payment.makerspace, "payments"))
+        link=local_link(payment.makerspace, "member") if audience != "staff" else staff_link(payment.makerspace, "payments"))
 
 
 def render(envelope):
@@ -113,11 +113,10 @@ def document_eligible(envelope):
 
 
 def document_body(document):
-    from apps.makerspaces.platform import member_payment_return_url
     return body(f"{document.get_kind_display()} {document.number}",
         f"Your {document.get_kind_display().lower()} {document.number} is available.\n"
         f"{document.currency.upper()} {document.amount}\nSign in to download the PDF.",
-        member_payment_return_url(document.makerspace))
+        local_link(document.makerspace, "member"))
 
 
 def render_document(envelope):

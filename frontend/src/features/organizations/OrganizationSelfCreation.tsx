@@ -48,6 +48,6 @@ function EligibleOrganizationSelfCreation({ onCreated }: { onCreated?: (id: numb
       <div className="flex justify-end py-5"><button className="desk-button-primary w-full sm:w-auto" disabled={create.isPending || !name.trim() || !slug.trim()}>{create.isPending ? "Creating…" : "Create private organization"}</button></div>
     </form>}
     {create.error ? <div className="py-5"><ErrorText message={create.error.message} /></div> : null}
-    {create.isSuccess ? <p role="status" className="py-5 text-sm text-ink">Organization created. <Link className="font-semibold text-brand-ink underline-offset-4 hover:underline" to="/admin/organizations?sign-in=staff">Sign in to manage your organization</Link></p> : null}
+    {create.isSuccess ? <p role="status" className="py-5 text-sm text-ink">Organization created. <Link className="font-semibold text-brand-ink underline-offset-4 hover:underline" to="/admin/organizations">Manage your organization</Link></p> : null}
   </div>;
 }

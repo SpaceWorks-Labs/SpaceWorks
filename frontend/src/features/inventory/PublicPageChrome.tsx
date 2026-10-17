@@ -27,7 +27,7 @@ export function publicPageChrome(slug: string, name: string, path: (part?: strin
     footer: { credit: "Powered by Space Works", links: [
       { label: "About", href: "/about" },
       { label: "License", href: LICENSE_URL, external: true },
-      { label: "Staff sign-in", href: "/admin" },
+      { label: "Staff sign-in", href: path("admin") },
       ...support,
     ] },
   };

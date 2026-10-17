@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import type { ReactNode } from "react";
 import { ListRow, RelativeTime, Skeleton, ErrorBlock, type Action } from "../../../components/ui";
 import type { DashboardLayoutProps } from "../../../components/layouts/DashboardLayout";
@@ -19,7 +20,7 @@ export function DashboardActivity({ makerspace, guestOnly, singleTenantLocked, c
 }) {
   const query = `makerspace=${makerspace.id}`;
   const activity = useStaffGet<Paginated<AuditEntry>>(["audit", query], `/admin/audit-logs?${query}`);
-  const all: Action = { label: "See all activity →", href: staffTabPath("audit", guestOnly, makerspace.slug, singleTenantLocked) };
+  const all: Action = { label: "See all activity →", href: consoleSessionHref(staffTabPath("audit", guestOnly, makerspace.slug, singleTenantLocked)) };
   // The backend withholds actions its presentation catalogue does not describe; a dashboard rail
   // full of "Unrecognized audit action" says nothing, so only described activity is shown here
   // (the Audit log page still lists every row).
@@ -47,7 +48,7 @@ export function DashboardDueBack({ makerspace, guestOnly, singleTenantLocked, ch
   const dated = loans.results.filter(row => row.return_due_at && Number.isFinite(Date.parse(row.return_due_at)));
   const overdue = dated.filter(row => Date.parse(row.return_due_at!) < now).slice(0, 5);
   const soon = dated.filter(row => Date.parse(row.return_due_at!) >= now && Date.parse(row.return_due_at!) <= now + 3 * 86400000).slice(0, 5);
-  const href = `${staffTabPath("requests", guestOnly, makerspace.slug, singleTenantLocked)}?queue=active&ordering=return_due_at`;
+  const href = consoleSessionHref(`${staffTabPath("requests", guestOnly, makerspace.slug, singleTenantLocked)}?queue=active&ordering=return_due_at`);
   const rows = (items: HardwareRequest[]) => <div className="grid gap-3">{items.map(row => <ListRow key={row.id}
     title={row.requester_display || row.requester_username} identity={{ kind: "date", date: row.return_due_at! }}
     href={`${href}&id=${row.id}`} meta={`Request #${row.id} · ${row.items.map(item => `${item.product_name} × ${item.issued_quantity}`).join(", ")}`}

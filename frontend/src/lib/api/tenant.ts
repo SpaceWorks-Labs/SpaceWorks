@@ -64,7 +64,7 @@ export async function tenantPublicRequestBlob(slug: string, path: string): Promi
     return response.blob();
   };
   return withOptionalSession(
-    async () => blob(await staffFetch(path, { headers }, true)),
+    async () => blob(await staffFetch(path, { headers }, true, "member")),
     async () => blob(await fetch(`${API_V1_URL}${path}`, { headers })),
   );
 }

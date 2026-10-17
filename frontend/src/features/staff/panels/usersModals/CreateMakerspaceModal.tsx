@@ -29,7 +29,6 @@ export function CreateMakerspaceModal({ open, form, pending, error, onChange, on
       const hoursError = form.profile.opening_hours === undefined ? null : validateHours(hoursDraft(form.profile.opening_hours));
       if (hoursError) return hoursError;
     }
-    if (form.first_staff_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.first_staff_email.trim())) return "Enter a valid staff email.";
     return null;
   };
   return <FlowLayout presentation="dialog" open={open} title="Create makerspace" state={{ status: "ready" }}

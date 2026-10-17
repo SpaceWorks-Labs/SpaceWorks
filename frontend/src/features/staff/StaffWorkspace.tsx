@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { Link, Navigate, useLocation } from "react-router-dom";
 
 import { StaffShell } from "./StaffShell";
@@ -98,8 +99,8 @@ export function StaffWorkspace({
     staffSubPathFromPath(location.pathname, guestOnly),
   );
   const activeTabPath = activeTab
-    ? staffTabPath(activeTab, guestOnly, activeMakerspace?.slug, singleTenantLocked, keptSubPath)
-    : staffTabPath(defaultTab, guestOnly, activeMakerspace?.slug, singleTenantLocked);
+    ? staffTabPath(activeTab, guestOnly, isSuperadmin ? undefined : activeMakerspace?.slug, singleTenantLocked, keptSubPath)
+    : staffTabPath(defaultTab, guestOnly, isSuperadmin ? undefined : activeMakerspace?.slug, singleTenantLocked);
   // Super Admin is GLOBAL authority and must win over any local membership row: a superuser who
   // also holds a membership would otherwise be announced as "Member". The deleted sidebar
   // prioritised it the same way.
@@ -127,7 +128,7 @@ export function StaffWorkspace({
               title="Access denied"
               description="You don't have permission to view this page, or it isn't enabled for this makerspace."
               action={
-                <Link className="desk-button-primary" to={activeTabPath}>
+                <Link className="desk-button-primary" to={consoleSessionHref(activeTabPath)}>
                   Go to {TAB_LABELS[activeTab] ?? "your workspace"}
                 </Link>
               }

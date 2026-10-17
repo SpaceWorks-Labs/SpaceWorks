@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { CenteredCardLayout } from "../../components/layouts";
-import { fetchMe, logout, refreshAccessToken, staffRequest, type StaffAuthUser } from "../../lib/api";
+import { fetchMe, refreshAccessToken, staffRequest, type StaffAuthUser } from "../../lib/api";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { bookingStaffGrantKeys, type BookingStaffGrant } from "./bookingStaffGrantsApi";
 import { eventErrorText } from "./eventUi";
@@ -30,11 +30,7 @@ export function BookingStaffInvitePage() {
     try { window.sessionStorage.removeItem(INVITE_STORAGE_KEY); } catch { /* Storage may be unavailable. */ }
     navigate("/", { replace: true });
   };
-  const openStaff = useMutation({ mutationFn: () => logout(), onSuccess: () => {
-    // A member token cannot acquire staff authority in place. A fresh staff login
-    // also runs the space's staff MFA policy before opening any booking operations.
-    client.clear(); navigate("/admin/assigned-events");
-  } });
+  const openStaff = () => navigate("/admin/assigned-events");
   const redeem = useMutation({ mutationFn: () => staffRequest<BookingStaffGrant>("/admin/booking-staff-invites/redeem/", {
     method: "POST", body: JSON.stringify({ token }),
   }), onSuccess: async () => {
@@ -71,15 +67,14 @@ export function BookingStaffInvitePage() {
   return <CenteredCardLayout width={480} state={{ status: restoring ? "loading" : "ready" }}
     media={{ banner: redeem.isSuccess ? "success" : "accent" }}
     title="Booking resource staff invitation"
-    body={redeem.isSuccess ? <p role="status">Your resource staff access is active. Sign in to the staff console to use it.</p>
+    body={redeem.isSuccess ? <p role="status">Your resource staff access is active. Open your helper workspace to use it.</p>
       : "Sign in with the invited account and verify its email before accepting. This invitation can be used once."}
     content={<div className="grid gap-3 empty:hidden">
       {!token ? <p className="text-sm text-danger" role="alert">The invitation link is missing its token. Open the original invitation link again.</p> : null}
       {user && !redeem.isSuccess ? <p className="text-sm text-ink">Signed in as {user.username}.</p> : null}
       {redeem.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(redeem.error)}</p> : null}
-      {openStaff.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(openStaff.error)}</p> : null}
     </div>}
-    primary={redeem.isSuccess ? { label: "Sign in to staff console", pending: openStaff.isPending, pendingLabel: "Opening sign-in...", onClick: () => openStaff.mutate() }
+    primary={redeem.isSuccess ? { label: "Open helper workspace", onClick: openStaff }
       : user ? { label: "Accept staff invitation", pending: redeem.isPending, pendingLabel: "Accepting...", onClick: () => redeem.mutate(),
         disabled: !token, disabledReason: !token ? "Open the original invitation link again." : undefined }
       : cancelAction}

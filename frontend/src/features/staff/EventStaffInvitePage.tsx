@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Skeleton } from "../../components/ui";
 import { CenteredCardLayout } from "../../components/layouts";
-import { fetchMe, logout, refreshAccessToken, staffRequest, type StaffAuthUser } from "../../lib/api";
+import { fetchMe, refreshAccessToken, staffRequest, type StaffAuthUser } from "../../lib/api";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { eventStaffGrantKeys, type EventStaffGrant } from "./eventStaffGrantsApi";
 import { eventErrorText } from "./eventUi";
@@ -31,11 +31,7 @@ export function EventStaffInvitePage() {
     try { window.sessionStorage.removeItem(INVITE_STORAGE_KEY); } catch { /* Storage may be unavailable. */ }
     navigate("/", { replace: true });
   };
-  const openStaff = useMutation({ mutationFn: () => logout(), onSuccess: () => {
-    // A member token cannot acquire staff authority in place. A fresh staff login
-    // also runs the space's staff MFA policy before opening any event operations.
-    client.clear(); navigate("/admin/assigned-events");
-  } });
+  const openStaff = () => navigate("/admin/assigned-events");
   const redeem = useMutation({ mutationFn: () => staffRequest<EventStaffGrant>("/admin/event-staff-invites/redeem/", {
     method: "POST", body: JSON.stringify({ token }),
   }), onSuccess: async () => {
@@ -70,7 +66,7 @@ export function EventStaffInvitePage() {
     onAuthenticated={() => { void authenticated(); }} />;
   const cancelAction = { label: "Cancel invitation", onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish." : undefined };
   const primary = redeem.isSuccess
-    ? { label: "Sign in to staff console", pending: openStaff.isPending, pendingLabel: "Opening sign-in…", onClick: () => openStaff.mutate() }
+    ? { label: "Open helper workspace", onClick: openStaff }
     : user ? { label: "Accept staff invitation", pending: redeem.isPending, pendingLabel: "Accepting…", disabled: !token,
       disabledReason: !token ? "The invitation link is missing its token." : undefined, onClick: () => redeem.mutate() }
     : cancelAction;
@@ -82,7 +78,7 @@ export function EventStaffInvitePage() {
       {!token ? <p className="text-sm text-danger" role="alert">The invitation link is missing its token. Open the original invitation link again.</p> : null}
       {user && !redeem.isSuccess ? <p className="text-sm text-ink">Signed in as {user.username}.</p> : null}
       {redeem.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(redeem.error)}</p> : null}
-      {redeem.isSuccess ? <div className="grid gap-3 rounded-xl border border-line bg-surface p-4 text-sm text-ink" role="status"><p>Your event staff access is active. Sign in to the staff console to use it.</p>{openStaff.error ? <p className="text-danger" role="alert">{eventErrorText(openStaff.error)}</p> : null}</div> : null}
+      {redeem.isSuccess ? <div className="grid gap-3 rounded-xl border border-line bg-surface p-4 text-sm text-ink" role="status"><p>Your event staff access is active. Open your helper workspace to use it.</p></div> : null}
     </div>}
     primary={primary}
     escape={user && !redeem.isSuccess ? cancelAction : undefined} />;

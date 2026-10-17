@@ -43,7 +43,6 @@ export function makerspacePayload(form: MakerspaceForm) {
     creation_setup: {
       ...(form.profile ? { profile: form.profile } : {}),
       ...(form.modules ? { modules: form.modules } : {}),
-      ...(form.first_staff_email?.trim() ? { first_staff_invite: { email: form.first_staff_email.trim(), role_slug: form.first_staff_role ?? "space_manager" } } : {}),
     },
     ...(form.install_profile_id ? { install_profile_id: form.install_profile_id } : {}),
     name: form.name.trim(),

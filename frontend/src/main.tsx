@@ -12,6 +12,7 @@ import "./index.css";
 import { cleanupLegacyAccessToken } from "./lib/api";
 import { queryClient } from "./lib/queryClient";
 import { TenantProvider } from "./lib/tenant";
+import { SessionBoundary } from "./lib/SessionBoundary";
 import { initializeTheme } from "./lib/theme";
 import { pruneExpiredOfflineStates } from "./features/staff/eventCheckInOfflineStore";
 import { listQueues } from "./features/kiosk/offlineQueueStore";
@@ -30,10 +31,12 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <QueryClientProvider client={queryClient}>
       <TenantProvider>
         <BrowserRouter>
+          <SessionBoundary>
           <WebAnalytics />
           <PwaRegistration />
           <ToastHost />
           <App />
+          </SessionBoundary>
         </BrowserRouter>
       </TenantProvider>
     </QueryClientProvider>

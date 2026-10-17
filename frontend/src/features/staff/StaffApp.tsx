@@ -1,6 +1,7 @@
 import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
 import { Card } from "../../components/ui";
 import { ChangePasswordGate } from "./ChangePasswordGate";
+import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { LoginPanel } from "./LoginPanel";
 import { MfaFlow } from "../auth/MfaFlow";
 import { MakerspacePicker } from "./MakerspacePicker";
@@ -44,7 +45,8 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
     setUser,
     signOut,
     singleTenantLocked,
-    socialLoginSucceeded,
+    delegated,
+    delegatedAuthenticated,
     tenant,
     user,
   } = useStaffSession(guestOnly);
@@ -55,14 +57,16 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   // MfaFlow is a whole page (CenteredCardLayout owns the main landmark and the h1).
   if (mfaChallenge) return <MfaFlow key={mfaChallenge.challenge} challenge={mfaChallenge} onComplete={mfaCompleted} onCancel={() => setMfaChallenge(undefined)} />;
 
+  if (!user && delegated) return <MemberAuthPanel surface="delegated" eyebrow="Helper & organization workspace" onAuthenticated={() => { void delegatedAuthenticated(); }} />;
+
   if (!user) {
     return (
       <LoginPanel
         error={login.error?.message}
         guestOnly={guestOnly}
+        platform={tenant.mode === "central" && !routeMakerspaceSlug}
         isPending={login.isPending}
         onSubmit={login.mutate}
-        onSocialSuccess={socialLoginSucceeded}
       />
     );
   }

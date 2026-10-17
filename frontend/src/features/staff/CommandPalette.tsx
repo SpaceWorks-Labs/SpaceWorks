@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -59,10 +60,10 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
 
   const run = (command?: Command) => {
     if (!command) return;
-    const path = staffTabPath(command.tab, guestOnly, makerspaceSlug, singleTenantLocked);
+    const path = staffTabPath(command.tab, guestOnly, isSuperadmin ? undefined : makerspaceSlug, singleTenantLocked);
     const query = command.query ? new URLSearchParams(command.query).toString() : "";
     close();
-    navigate(path + (query ? `?${query}` : ""));
+    navigate(consoleSessionHref(path + (query ? `?${query}` : "")));
   };
   return <>
     {controlledOpen === undefined ? <button type="button" className="desk-button-ghost ml-5" onClick={() => setOpen(true)} aria-haspopup="dialog">Search and commands <kbd>Ctrl/⌘ K</kbd></button> : null}

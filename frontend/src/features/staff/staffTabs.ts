@@ -1,3 +1,4 @@
+import { currentSessionContext } from "../../lib/api/sessionContext";
 import { featureEnabled } from "../../lib/features";
 import type { Makerspace } from "./panels/shared";
 import { readStorage, removeStorage, writeStorage } from "../../lib/safeStorage";
@@ -115,23 +116,23 @@ export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?:
   });
 }
 
-export function readStoredMakerspace() {
-  const value = Number(readStorage(STAFF_SELECTED_MAKERSPACE_KEY));
+export function readStoredMakerspace(context = currentSessionContext()) {
+  const value = Number(readStorage(`${STAFF_SELECTED_MAKERSPACE_KEY}:${context}`));
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 export function readStoredStaffTab() {
-  return pathToTab(readStorage(STAFF_ACTIVE_TAB_KEY));
+  return pathToTab(readStorage(`${STAFF_ACTIVE_TAB_KEY}:${currentSessionContext()}`));
 }
 
-export function persistSelectedMakerspace(value: number | null) {
-  if (value === null) removeStorage(STAFF_SELECTED_MAKERSPACE_KEY);
-  else writeStorage(STAFF_SELECTED_MAKERSPACE_KEY, String(value));
+export function persistSelectedMakerspace(value: number | null, context = currentSessionContext()) {
+  if (value === null) removeStorage(`${STAFF_SELECTED_MAKERSPACE_KEY}:${context}`);
+  else writeStorage(`${STAFF_SELECTED_MAKERSPACE_KEY}:${context}`, String(value));
 }
 
-export function persistStaffTab(tab: string) {
-  if (tab) writeStorage(STAFF_ACTIVE_TAB_KEY, tab);
-  else removeStorage(STAFF_ACTIVE_TAB_KEY);
+export function persistStaffTab(tab: string, context = currentSessionContext()) {
+  if (tab) writeStorage(`${STAFF_ACTIVE_TAB_KEY}:${context}`, tab);
+  else removeStorage(`${STAFF_ACTIVE_TAB_KEY}:${context}`);
 }
 
 export function staffBasePath(guestOnly: boolean) {

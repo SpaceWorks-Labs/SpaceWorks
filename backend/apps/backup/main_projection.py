@@ -46,6 +46,16 @@ def project_readable_main_dump(
 
 
 def _apply_projection(using, rules, makerspace_ids):
+    # Deferred account guards read the CURRENT exact-tenant GUC. Finish the whole
+    # tenant (shells, memberships and their constraint events) before moving on.
+    # This is an unserved reconstruction clone; a failed build discards it.
+    for owner in sorted(set(makerspace_ids)):
+        _apply_projection_scope(using, rules, [owner])
+    if not makerspace_ids:
+        _apply_projection_scope(using, rules, [])
+
+
+def _apply_projection_scope(using, rules, makerspace_ids):
     boundaries = boundary_rules(rules)
     with transaction.atomic(using=using):
         connection = connections[using]
@@ -84,6 +94,11 @@ def _apply_projection(using, rules, makerspace_ids):
                     cursor.execute(f"DELETE FROM {table}")
             for table in sorted(EMPTIED_NON_MODEL_TABLES):
                 cursor.execute(f"DELETE FROM {cursor.db.ops.quote_name(table)}")
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+            cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+            # Also support callers with an enclosing transaction/savepoint.
+            for _rule, marker in [*boundary_markers, *table_markers]:
+                cursor.execute(f"DROP TABLE {cursor.db.ops.quote_name(marker)}")
 
 
 def _install_sequence_high_water(using, facts):

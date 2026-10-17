@@ -142,6 +142,7 @@ class DirectLoanMemberListView(generics.ListAPIView):
             makerspace=makerspace,
             status="active",
             user__is_active=True,
+            user__account_kind=User.AccountKind.MEMBER,
             user__access_status=User.AccessStatus.ACTIVE,
         ).order_by("user__display_name", "user__username")
 
@@ -152,6 +153,7 @@ def _borrower_for_makerspace(makerspace, borrower_id):
         user_id=borrower_id,
         status="active",
         user__is_active=True,
+        user__account_kind=User.AccountKind.MEMBER,
         user__access_status=User.AccessStatus.ACTIVE,
     ).first()
     if membership is None:

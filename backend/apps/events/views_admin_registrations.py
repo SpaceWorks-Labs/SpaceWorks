@@ -100,7 +100,8 @@ class EventRegistrationListView(APIView):
         serializer = EventStaffRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if event.registration_audience != "members":
-            account = get_object_or_404(User.objects.filter(is_active=True, access_status=User.AccessStatus.ACTIVE), pk=serializer.validated_data["member_id"])
+            account = get_object_or_404(User.objects.filter(account_kind=User.AccountKind.MEMBER,
+                is_active=True, access_status=User.AccessStatus.ACTIVE), pk=serializer.validated_data["member_id"])
         else:
             account = get_object_or_404(
                 MakerspaceMembership.objects.select_related('user').filter(
@@ -108,6 +109,7 @@ class EventRegistrationListView(APIView):
                     user_id=serializer.validated_data['member_id'],
                     status='active',
                     user__is_active=True,
+                    user__account_kind=User.AccountKind.MEMBER,
                     # Account standing, not just the membership row: a restricted or
                     # suspended account is blocked everywhere else and must be blocked here
                     # too, or the console becomes the way around an access restriction.

@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import connection, transaction
 
 from apps.audit import services as audit
 from .lifecycle_authority import require_platform_superadmin
@@ -25,6 +25,11 @@ def purge(makerspace, actor):
         from .staff_retirement import retire_staff_accounts
         retire_staff_accounts(locked, actor=actor)
         _delete_object_graph(locked)
+        # A bulk admin action can purge several tenants inside one transaction.
+        # Evaluate this tenant's deferred deletion guards before the next GUC.
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+            cursor.execute("SET CONSTRAINTS ALL DEFERRED")
 
     audit.record(actor, "makerspace.purged", makerspace=None, target=None, meta=meta)
     from apps.makerspaces import lifecycle as lifecycle_barrel

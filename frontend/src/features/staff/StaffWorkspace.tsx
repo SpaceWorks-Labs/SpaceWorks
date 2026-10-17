@@ -111,7 +111,9 @@ export function StaffWorkspace({
 
   // A stale hardware bookmark for a machine-only actor returns to their allowed tab.
   const normalizedDeniedTabs = new Set(["requests"]);
-  const normalizeDenied = routeTabDenied && !!routeTab && normalizedDeniedTabs.has(routeTab);
+  const normalizeDenied = routeTabDenied && !!routeTab && (
+    normalizedDeniedTabs.has(routeTab) || (isSuperadmin && routeTab === "dashboard")
+  );
   if ((!routeTabDenied || normalizeDenied) && location.pathname !== activeTabPath) {
     return <Navigate replace to={activeTabPath + location.search} />;
   }

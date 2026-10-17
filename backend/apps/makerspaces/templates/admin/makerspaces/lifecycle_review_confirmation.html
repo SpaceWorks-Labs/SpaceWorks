@@ -9,7 +9,14 @@
       <h2>Request {{ row.id }}</h2>
       <p>{{ row.requested_at }} - {{ row.username }}</p>
       {{ row.reason|linebreaksbr }}
-
+      {% if row.impact %}
+        <p>Unsettled-charge counts are advisory and may change before archival. Archiving does not block on unsettled charges.</p>
+        <dl>
+          <dt>Owned pending</dt><dd>{{ row.impact.owned_pending }}</dd>
+          <dt>Routed pending</dt><dd>{{ row.impact.routed_pending }}</dd>
+          <dt>Total pending</dt><dd>{{ row.impact.total_pending }}</dd>
+        </dl>
+      {% endif %}
     </section>
   {% empty %}<p>No pending archive requests.</p>{% endfor %}
   {% if not approve %}<label for="resolution_note">Reason for declining</label>

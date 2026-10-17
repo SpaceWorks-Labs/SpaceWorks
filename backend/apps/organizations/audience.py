@@ -14,6 +14,7 @@ def usable_spaces():
 
 def active_accounts(queryset=None):
     return (queryset if queryset is not None else User.objects.all()).filter(
+        account_kind=User.AccountKind.MEMBER,
         is_active=True, access_status="active", is_tenant_dump_stub=False,
     )
 

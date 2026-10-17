@@ -37,7 +37,7 @@ def scoped_account(space, account_id, *, present=False):
     known = Q(makerspace_memberships__makerspace=space)
     if present:
         known |= Q(presence_sessions__makerspace=space)
-    return get_object_or_404(get_user_model().objects.filter(known).distinct(), pk=account_id)
+    return get_object_or_404(get_user_model().objects.filter(known, account_kind="member").distinct(), pk=account_id)
 
 
 class StaffPresenceView(APIView):

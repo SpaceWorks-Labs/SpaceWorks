@@ -36,8 +36,8 @@ def display_name(user):
 
 
 def candidates_q(event):
-    """Accounts the event's staff can see: this space's members/staff and this event's registrants."""
-    return (Q(makerspace_memberships__makerspace_id=event.makerspace_id,
+    """Community accounts known through membership, registration or a delegate grant."""
+    return Q(account_kind="member") & (Q(makerspace_memberships__makerspace_id=event.makerspace_id,
               makerspace_memberships__status="active")
             | Q(event_registrations__event_id=event.pk)
             | Q(event_staff_grants__event_id=event.pk, event_staff_grants__revoked_at__isnull=True))
@@ -101,7 +101,7 @@ def assign_speaker(event, *, actor, user, name="", section_slug="", grant_check_
     account = User.objects.filter(candidates_q(event), pk=getattr(user, "pk", user),
                                   is_active=True, access_status="active").distinct().first()
     if account is None:
-        raise ValidationError({"user_id": "Choose an account from this event's members, staff or registrants."})
+        raise ValidationError({"user_id": "Choose a member account known to this event."})
     speaker = _create(makerspace=event.makerspace, event=event, user=account,
                       section=_section(event, section_slug), display_name=(name or display_name(account))[:200],
                       linked_via=EventSpeaker.LinkedVia.STAFF_ASSIGNED, grants_check_in=grant_check_in,

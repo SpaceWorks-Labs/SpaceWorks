@@ -63,7 +63,7 @@ export function StaffShell(props: Props) {
   const hasGrants = Boolean(user.event_grants?.length || user.booking_grants?.length);
   // A grant-only console (event/booking grants, no makerspace actions) has no makerspace-wide
   // search, commands or job tray: those read makerspace-scoped data the account cannot see.
-  const makerspaceTools = !!space && !props.grantOnly;
+  const makerspaceTools = !!space && !props.grantOnly && !props.isSuperadmin;
   const workspace: ShellWorkspace | undefined = space ? { name: space.name, subtitle: [space.public_code || space.slug, props.roleName].filter(Boolean).join(" · "),
     avatar: { kind: "avatar", name: space.name, seed: space.slug }, menu, locked: singleTenantLocked || props.makerspaces.length === 1 } : props.isSuperadmin ? {
       name: "Choose a space", subtitle: "Super Admin", avatar: { kind: "icon", icon: "Settings", tone: "neutral" },

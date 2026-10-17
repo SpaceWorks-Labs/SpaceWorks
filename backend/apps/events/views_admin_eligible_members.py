@@ -48,6 +48,7 @@ class EventEligibleMemberListView(APIView):
             ], many=True).data)
         memberships = MakerspaceMembership.objects.select_related('user').filter(
             makerspace=event.makerspace, status='active', user__is_active=True,
+            user__account_kind=User.AccountKind.MEMBER,
             user__access_status=User.AccessStatus.ACTIVE,
         ).exclude(user_id__in=registered).order_by(
             'user__display_name', 'user__username'

@@ -1,9 +1,12 @@
-"""Tenant-local resource reports; legacy tenant utilisation stays unchanged."""
+"""Tenant-local resource reports retain their whole-window overlap contract."""
 
-from .report_definitions_existing import EXISTING_REPORT_DEFINITIONS
 from .report_types import ReportDefinition
 
-UTILIZATION_FIELDS = next(d.fields for d in EXISTING_REPORT_DEFINITIONS if d.key == "booking-utilization")
+UTILIZATION_FIELDS = (
+    "space_id", "space_name", "kind", "is_active", "booked", "completed", "no_show",
+    "cancelled", "upcoming", "reserved_hours", "completed_hours", "window_hours",
+    "reservation_utilization_percent", "no_show_rate_percent",
+)
 ARRIVAL_FIELDS = ("arrived_reservations", "confirmed_without_recorded_arrival")
 RESOURCE_UTILIZATION_FIELDS = (*UTILIZATION_FIELDS, *ARRIVAL_FIELDS)
 RESERVATION_FIELDS = (

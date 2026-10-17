@@ -34,6 +34,8 @@ def report_data(
         # Export-only: the generic JSON analytics path must never become a second list.
         raise ReportNotFound()
     kwargs = dict(limit=_normalized_limit(limit), date_range=date_range, **(report_filters or {}))
+    if report_key == "booking-top-members":
+        kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue"}:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
@@ -72,6 +74,8 @@ def report_rows(
         raise ReportNotFound()
     _authorize_subject(actor, makerspace_id, definition, report_filters)
     kwargs = dict(limit=limit, date_range=date_range, **(report_filters or {}))
+    if report_key == "booking-top-members":
+        kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue"}:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS

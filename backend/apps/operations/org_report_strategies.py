@@ -197,6 +197,36 @@ STRATEGIES.update({
 })
 
 
+STRATEGIES.update({
+    "booking-utilization": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("period",),
+        ("period", "booked", "completed", "no_show", "cancelled", "upcoming", "reserved_hours", "completed_hours",
+         "window_hours", "reservation_utilization_percent", "no_show_rate_percent", "cancellation_rate_percent",
+         "reservations", "terminal_reservations"),
+        breakdown=("space_id", "space_name", "kind", "is_active"), ordering=("period",),
+    ),
+    "event-signups": _strategy(
+        AggregationKind.GROUP_SUM, ("period",), ("period", "registrations", "cumulative_registrations"),
+        breakdown=("event_id", "title"), ordering=("period",),
+    ),
+    "event-revenue": _strategy(
+        AggregationKind.GROUP_SUM, ("period", "currency"),
+        ("period", "currency", "charge_count", "charged_amount", "promo_discount_amount", "collected_amount",
+         "refunded_amount", "outstanding_amount", "net_amount"), breakdown=("event_id", "title"), ordering=("period", "currency"),
+    ),
+    "event-funnel": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("period",),
+        ("period", "registrations", "confirmed", "attended", "confirmation_rate_percent", "attendance_rate_percent"),
+        breakdown=("event_id", "title"), ordering=("period",),
+    ),
+    "event-feedback-scores": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("event_id", "period", "question_id"),
+        ("event_id", "title", "period", "question_id", "score_count", "score_total", "average_score"),
+        ordering=("event_id", "period", "question_id"),
+    ),
+})
+
+
 def organization_strategy(report_key: str) -> OrganizationAggregationStrategy:
     try:
         return STRATEGIES[report_key]

@@ -42,6 +42,9 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "overdue-loans", "longest-loans", "qr-scan-actors",
     "active-loans", "returns", "top-borrowers",
     "machine-usage-members", "machine-usage-heatmap",
+    "booking-top-members",
+    # Tenant-local hour-of-week cells are intentionally not organization totals.
+    "booking-occupancy",
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
     "event-registrations", "event-feedback", "event-attendance-pdf",
     # Financial detail and accounting custody stay tenant-local. Different local

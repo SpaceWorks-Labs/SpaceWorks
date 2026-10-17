@@ -117,7 +117,7 @@ class ReportCatalogView(APIView):
                 continue
             if not rbac.can(request.user, definition.required_action, makerspace.id):
                 continue
-            if definition.key == "machine-usage-members" and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
+            if definition.key in {"machine-usage-members", "booking-top-members"} and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
                 continue
             missing = [key for key in definition.required_modules if not module_enabled(makerspace, key)]
             if definition.required_feature:

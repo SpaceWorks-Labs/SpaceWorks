@@ -72,6 +72,15 @@ for _module in ("machines", "machine_service", "printing", "maintenance"):
     REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(_coverage.kind, tuple(dict.fromkeys((*_coverage.reports, *_MACHINE_AREA_REPORT_KEYS))))
 
 
+REPORT_MODULE_COVERAGE["bookings"] = ModuleReportCoverage("substantive", (
+    *REPORT_MODULE_COVERAGE["bookings"].reports, "booking-occupancy", "booking-lead-time", "booking-top-members",
+))
+REPORT_MODULE_COVERAGE["events"] = ModuleReportCoverage("substantive", (
+    *REPORT_MODULE_COVERAGE["events"].reports, "event-signups", "event-revenue", "event-funnel",
+    "event-checkin-times", "event-feedback-scores",
+))
+
+
 @checks.register(checks.Tags.models)
 def check_report_module_coverage(app_configs=None, **kwargs):
     errors = []

@@ -34,6 +34,10 @@ NUMERIC_FIELDS = frozenset({
     "completed_amount", "failed_partial_amount", "total_used", "failed_count_amount", "failed_grams_amount",
     "samples", "median_minutes", "p90_minutes", "p95_minutes", "job_count", "error_count", "days_until_expiry",
     "submitted", "accepted", "in_progress", "collected", "failed",
+    "reservation_utilization_percent", "no_show_rate_percent", "cancellation_rate_percent", "reservations", "terminal_reservations",
+    "occupied_hours", "window_hours", "occupancy_percent", "booking_count", "cumulative_registrations",
+    "charge_count", "charged_amount", "promo_discount_amount", "confirmation_rate_percent", "checkin_count",
+    "score_count", "score_total", "average_score",
 })
 
 

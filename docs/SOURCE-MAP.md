@@ -129,6 +129,14 @@ carry source kind/id/metadata through lifecycle dispatch, deferral and retry.
 definitions/builders/typed contracts are `report_definitions_events.py`,
 `reports_event_exports.py`, `serializers_reports_events_detail.py`.
 
+Booking/event analytics (1f-2 D/E): `operations/report_definitions_de.py` registers
+the new builders and organization combiners; `report_fields_de.py` owns their allowlists.
+`reports_booking_trends.py` provides booking-utilization v2; `reports_booking_analytics.py`
+owns occupancy, lead-time and member rankings. `reports_event_analytics.py`,
+`reports_event_revenue.py` and `reports_event_quality.py` own signup/funnel, money,
+and check-in/feedback measures respectively. `org_report_de.py` combines count/sum/rate
+inputs. Measurement boundaries and per-key fields are in `docs/report-builders-de.md`.
+
 Booking resource reports (BK-E): `bookings/report_subject.py` registers the typed
 `bookable_space` policy; `report_features.py` projects request-local UI capabilities.
 `operations/report_definitions_bookings.py` registers four tenant-only reports;

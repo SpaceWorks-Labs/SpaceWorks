@@ -23,6 +23,7 @@ from .serializers_reports_machine_analytics import (
     MachineDowntimeReportSerializer, MaintenanceActivityV2ReportSerializer, MachineServiceV2ReportSerializer,
     ServiceQueueTimesReportSerializer, PrinterJobsReportSerializer, MachineErrorsReportSerializer, WarrantyExpiryReportSerializer,
 )
+from .serializers_reports_de import DE_REPORT_SERIALIZERS, BookingUtilizationV2ReportSerializer
 from .serializers_reports_events_detail import EventRegistrationReportSerializer, EventFeedbackReportSerializer
 from .serializers_reports_bookings import (
     BookingResourceUtilizationReportSerializer, BookingReservationReportSerializer, BookingAnswerReportSerializer,
@@ -54,6 +55,8 @@ ANALYTICS_REPORT_RESPONSE = PolymorphicProxySerializer(
         MachineUsageMembersReportSerializer, MachineUsageHeatmapReportSerializer, MachineDowntimeReportSerializer,
         MachineServiceV2ReportSerializer, ServiceQueueTimesReportSerializer, PrinterJobsReportSerializer,
         MachineErrorsReportSerializer, WarrantyExpiryReportSerializer,
+        BookingUtilizationV2ReportSerializer,
+        *DE_REPORT_SERIALIZERS,
         MemberActivityReportSerializer,
         FabLabHealthReportSerializer,
         PaymentReconciliationReportSerializer,

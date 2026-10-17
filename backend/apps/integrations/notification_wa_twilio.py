@@ -76,6 +76,10 @@ class TwilioWhatsAppProvider:
                 return ProviderResult(False, error_code="template_required")
         return self._send(endpoint.destination, payload, delivery.pk)
 
+    def send_document(self, delivery, *, filename, pdf_bytes, caption):
+        from .notification_wa_documents import twilio_document
+        return twilio_document(self, delivery, filename=filename, pdf_bytes=pdf_bytes, caption=caption)
+
     def verify_callback(self, request):
         from .notification_wa_twilio_callbacks import verify_callback
         try:

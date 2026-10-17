@@ -36,7 +36,8 @@ def retry_delay(value):
         return 60
 
 
-def api(method, url, *, token="", auth="Bearer", data=None, form=False, target=None):
+def api(method, url, *, token="", auth="Bearer", data=None, form=False, target=None,
+        raw_body=None, content_type="application/octet-stream", raw_response=False):
     if target is None:
         try:
             target = resolve_webhook_target(url)
@@ -52,6 +53,9 @@ def api(method, url, *, token="", auth="Bearer", data=None, form=False, target=N
     if data is not None:
         body = (urlencode(data) if form else json.dumps(data)).encode()
         headers["Content-Type"] = "application/x-www-form-urlencoded" if form else "application/json"
+    if raw_body is not None:
+        body = raw_body
+        headers["Content-Type"] = content_type
     connection = _PinnedHTTPSConnection(target, target.addresses[0])
     try:
         connection.request(method, target.request_target, body=body, headers=headers)
@@ -71,16 +75,19 @@ def api(method, url, *, token="", auth="Bearer", data=None, form=False, target=N
         if response.status in (401, 403, 404):
             raise ProviderFailure("invalid_endpoint")
         if not 200 <= response.status < 300 or len(raw) > 1024 * 1024:
-            raise ProviderFailure("provider_error")
+            raise ProviderFailure("provider_error", retryable=response.status < 300,
+                                  ambiguous=method == "POST" and response.status < 300)
+        if raw_response:
+            return {}
         value = json.loads(raw) if raw else {}
         if not isinstance(value, dict):
-            raise ProviderFailure("provider_error")
+            raise ProviderFailure("provider_error", retryable=method == "POST", ambiguous=method == "POST")
         return value
     except (TimeoutError, OSError, http.client.HTTPException):
         # The server may have accepted a POST before the connection broke.
         raise ProviderFailure("timeout", retryable=True, ambiguous=method == "POST") from None
     except (ValueError, UnicodeError):
-        raise ProviderFailure("provider_error") from None
+        raise ProviderFailure("provider_error", retryable=method == "POST", ambiguous=method == "POST") from None
     finally:
         connection.close()
 

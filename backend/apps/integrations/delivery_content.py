@@ -9,6 +9,8 @@ class EmailContent:
     subject: str
     text_body: str
     html_body: str = ""
+    # Authorized references only. PDF bytes exist solely inside the transport.
+    attachments: tuple = ()
 
 
 def recipient_address(log):
@@ -23,9 +25,9 @@ def content(log):
     return EmailContent(log.to_email, log.subject, log.text_body, log.html_body)
 
 
-def render(log, *, subject, text_body, html_body="", to_email=None):
+def render(log, *, subject, text_body, html_body="", to_email=None, attachments=()):
     # Ordinary assignments to mapped fields invalidate the decrypted-value cache;
     # strict PII reads then reject that plaintext, even on an unsaved instance.
     log._rendered_email = EmailContent(
-        log.to_email if to_email is None else to_email, subject, text_body, html_body,
+        log.to_email if to_email is None else to_email, subject, text_body, html_body, tuple(attachments),
     )

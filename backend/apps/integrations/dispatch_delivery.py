@@ -97,10 +97,16 @@ def _deliver(log):
         )
         if rendered.html_body:
             msg.attach_alternative(rendered.html_body, "text/html")
+        if rendered.attachments:
+            from apps.payments.document_delivery import render_attachment
+            for reference in rendered.attachments:
+                msg.attach(*render_attachment(reference, makerspace_id=log.makerspace_id,
+                                              recipient_id=log.recipient_id))
         msg.send()
     except Exception as exc:
+        from apps.payments.document_delivery import DocumentDeliveryError
         log.status = EmailLog.Status.FAILED
-        log.error = sanitize_email_error(exc)
+        log.error = str(exc) if isinstance(exc, DocumentDeliveryError) else sanitize_email_error(exc)
         logger.error(
             "email_delivery_failed",
             extra={"email_log_id": log.pk, "error_class": type(exc).__name__},

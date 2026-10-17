@@ -22,7 +22,8 @@ def prepare(log):
     from .notification_links import external_links
     content = external_links(row.envelope.makerspace, content)
     render_email(log, to_email=row.envelope.recipient.email, subject=content.get("subject", "Space Works"),
-                 text_body=content.get("text", ""), html_body=content.get("html", ""))
+                 text_body=content.get("text", ""), html_body=content.get("html", ""),
+                 attachments=_attachments(row.envelope))
     return True
 
 
@@ -36,3 +37,10 @@ def register_email_source():
     register("notification.envelope", DeliverySource(prepare, digestible=False, retry=retry))
     from .notification_direct_mail import KIND, prepare as prepare_direct
     register(KIND, DeliverySource(prepare_direct, digestible=False))
+    from apps.payments.document_delivery import prepare_document_email
+    register("payments.document", DeliverySource(prepare_document_email, digestible=False))
+
+
+def _attachments(envelope):
+    from apps.payments.document_delivery import attachment_references
+    return attachment_references(envelope)

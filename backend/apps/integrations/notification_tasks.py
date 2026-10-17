@@ -45,6 +45,11 @@ def deliver_envelope(envelope_id):
 
 @shared_task
 def sweep_notification_outbox():
+    from .notification_media import cleanup_grants
+    try:
+        cleanup_grants()
+    except Exception as exc:
+        logger.warning("notification_media_cleanup_unavailable", extra={"failure_type": type(exc).__name__})
     now = timezone.now()
     due = NotificationEnvelope.objects.filter(
         Q(available_at=None) | Q(available_at__lte=now),

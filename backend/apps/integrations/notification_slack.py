@@ -17,9 +17,14 @@ from .notification_slack_oauth import read_state, redirect_uri, state_for, pkce,
 def slack_api(method, *, token="", data=None):
     value = api("POST", f"https://slack.com/api/{method}", token=token, data=data)
     if value.get("ok") is not True:
+        if method == "files.completeUploadExternal" and value.get("ok") is not False:
+            raise ProviderFailure("timeout", retryable=True, ambiguous=True)
         error = value.get("error")
         if error in {"ratelimited", "rate_limited"}:
             raise ProviderFailure("rate_limited", retryable=True, retry_after=60)
+        if error in {"internal_error", "fatal_error", "service_unavailable", "request_timeout"}:
+            raise ProviderFailure("unavailable", retryable=True,
+                                  ambiguous=method in {"files.completeUploadExternal", "chat.postMessage"})
         if error in {"user_not_found", "user_not_visible", "account_inactive", "channel_not_found",
                      "cannot_dm_bot", "users_not_found", "invalid_auth", "token_revoked", "not_authed"}:
             raise ProviderFailure("invalid_endpoint")
@@ -127,6 +132,10 @@ class SlackProvider:
         return failure_result(self.channel, lambda: self.send_personal(delivery.endpoint,
             message_text(rendered), str(delivery.pk)))
 
+    def send_document(self, delivery, *, filename, pdf_bytes, caption):
+        from .notification_chat_documents import slack_document
+        return slack_document(self, delivery, filename=filename, pdf_bytes=pdf_bytes, caption=caption)
+
     def send_room(self, text, destination=None):
         self.config.refresh_from_db()
         return failure_result(self.channel, lambda: room(self.config, destination, text))
@@ -156,7 +165,7 @@ class SlackProvider:
 def install_url(config, challenge, code):
     creds = credentials_for(config)
     return "https://slack.com/oauth/v2/authorize?" + urlencode({"client_id": creds["client_id"],
-        "scope": "chat:write,im:write", "redirect_uri": redirect_uri("slack", config.makerspace_id, challenge.pk),
+        "scope": "chat:write,im:write,files:write", "redirect_uri": redirect_uri("slack", config.makerspace_id, challenge.pk),
         "state": state_for(challenge, code, purpose="install"),
         "code_challenge": pkce(code), "code_challenge_method": "S256"})
 

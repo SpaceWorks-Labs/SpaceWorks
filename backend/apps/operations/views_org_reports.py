@@ -96,7 +96,9 @@ class OrganizationAnalyticsView(APIView):
         description=(
             "Requires an active organization membership carrying the report's action. "
             "Authorization and the owned-makerspace set are resolved server-side; a "
-            "combined total is always returned together with its per-makerspace breakdown."
+            "combined total is always returned together with its per-makerspace breakdown. "
+            "A chart_spec projected onto the aggregation strategy's total fields accompanies "
+            "combinable charts; null means a table-only combined projection."
         ),
         request=None,
         parameters=[

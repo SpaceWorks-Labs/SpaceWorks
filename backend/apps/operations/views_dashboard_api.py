@@ -14,7 +14,11 @@ from apps.operations.views_dashboard_counts import DashboardSerializer, build_da
 
 @extend_schema(
     tags=["Dashboard"],
-    summary="Staff operations dashboard counts",
+    summary="Staff operations counts, action-scoped widgets and handover queues",
+    description=("Preserves the existing counters and adds report-backed widgets with chart specs. "
+                 "Widgets require their own actions and source modules plus reports; machine data "
+                 "uses assigned machine types. Handover-only actors receive queue tiles only. "
+                 "Native staff sessions use local membership authority, without organization grants."),
     request=None,
     responses={
         200: DashboardSerializer,
@@ -37,7 +41,8 @@ class DashboardView(APIView):
             pk=makerspace_id,
         )
         if _is_guest_only(request.user, makerspace.id):
-            raise PermissionDenied()
+            from .dashboard_handover import queue_only_dashboard
+            return Response(queue_only_dashboard(request.user, makerspace))
         if not (
             rbac.can(request.user, rbac.Action.VIEW_INVENTORY, makerspace.id)
             or rbac.can(request.user, rbac.Action.MANAGE_PRINTING, makerspace.id)

@@ -496,6 +496,23 @@ holds canonical `ReportDefinition`s (module-gated, `report_scope.eligible_makers
 contract; **aggregate output groups by `makerspace_id` and never flattens cross-tenant data**. Per-makerspace
 report rows are gated by query-level scope (no per-row Python check → no N+1).
 
+**Role dashboards (analytics 1f-4) reuse those reports.** `dashboard_widgets.WIDGETS`
+declares actions, source modules, report keys, kind and a default 30-local-day period.
+The existing dashboard counters remain compatible; `widgets` adds report-service data
+and the canonical typed `chart_spec`. Every widget requires both its declared action
+and its report's action, source modules plus `reports`, and a servable tenant.
+Identity-bearing widgets additionally require `VIEW_AUDIT` and their domain action;
+hard-hidden superadmin access is checked per action. Machine widgets forward the actor
+to the builders' `role_scope.manage_scope_for()` boundary, including consumable pools
+and cost: Inventory Manager alone does not gain machine-report authority.
+Handover-only actors get `scope_mode=handover`, empty `widgets` and `queue_tiles`
+(`ready_to_issue`, `due_returns`, `pickups`) without invoking analytics. Direct loans'
+linked requests are counted once in these queues. Native staff use the same widgets
+under local membership authority; `is_native_session` cuts organization grants in RBAC.
+The dashboard's tenant discovery remains local-membership-based. Organization charts
+use only the existing strategy-backed endpoint, retain the breakdown beside the total,
+and project `chart_spec` onto the strategy's combined fields (no fake tenant dimension).
+
 **Platform-service metering has one anonymous exception to `makerspace_id` grouping.**
 Only `platform-services`, with a server-owned active-superadmin `PlatformContext`, may use
 `operations/platform_scope.hidden_platform_service_bucket`: hidden tenants' platform-provider usage
@@ -790,6 +807,24 @@ the gate — `member_may_see_own_charges` admits an account with no membership t
 here, because a loan deposit is raised against a BORROWER who needs an active account rather than
 a membership. It preserves every account-status clause and still refuses a revoked member, which
 is a deliberate pre-existing contract.
+
+**Personal usage (analytics 1f-4)** is `GET /member/makerspaces/<id>/my-usage`, next to
+activity. It accepts no target member: every source is filtered by `request.user` and
+the server-resolved tenant, without invoking staff reports. An active membership plus
+the `membership` module enables non-payment usage; otherwise an eligible caller receives
+only `payments` with `usage_available=false`. Payments use `member_may_see_own_charges`
+and `member_payment_queryset`, preserving own-charge and collaborative-event routing
+without requiring membership or the online rail module. Revoked/inactive memberships
+are refused here, including the separate rejoining-admission exception. Recovery and
+archived payment surfaces remain in payments; my-usage requires a servable tenant.
+Loan counts represent handovers, deduplicating a direct loan's workflow request; monthly
+returns count ReturnEvents by event time, including partial returns; only legacy direct
+returns without events fall back to `returned_at`, and quantities are never inferred. Machine hours use
+only attributed `MachineUsageEntry.member` rows, never staff/contact identity inference.
+Monthly charts use the tenant timezone; cancelled bookings are excluded; events count
+attended registrations. Paid and outstanding amounts remain partitioned by currency.
+Responses are private/no-store and carry typed chart specs. Web and native member grants
+share this contract; a claim session stays tenant-local through the existing claim policy.
 
 **A pending payment no longer refuses a tenant dump (2026-09-06, owner decision D5).** Both
 refusals are gone — `tenant_dump_cross_tenant` and `_source_row_allowed`. What makes carrying an

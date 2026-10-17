@@ -50,6 +50,11 @@ def build_dashboard(
     revoking other granted actions.
     """
     from apps.operations import views_dashboard
+    from .dashboard_handover import handover_home, queue_only_dashboard
+    from .dashboard_widgets import build_widgets
+
+    if actor is not None and rbac.is_handout_only(actor, makerspace.pk):
+        return queue_only_dashboard(actor, makerspace)
 
     def scope(queryset, field="makerspace_id"):
         return rbac.scope_by_makerspace(actor, queryset, makerspace_field=field) if actor is not None else queryset
@@ -71,7 +76,7 @@ def build_dashboard(
         counts = {
             key: 0
             for key in DashboardSerializer().fields
-            if key != "scope_mode"
+            if key not in {"scope_mode", "widgets", "queue_tiles"}
         }
         counts["scope_mode"] = "full"
         counts["outstanding_by_currency"] = {}
@@ -257,4 +262,6 @@ def build_dashboard(
             counts.update(programme_counts(makerspace, events=include_events, bookings=include_bookings, actor=actor))
         except Exception as exc:
             logger.error("Dashboard programme aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+    counts["widgets"] = build_widgets(actor, makerspace) if actor is not None else []
+    counts["queue_tiles"] = handover_home(actor, makerspace) if actor is not None else {}
     return counts

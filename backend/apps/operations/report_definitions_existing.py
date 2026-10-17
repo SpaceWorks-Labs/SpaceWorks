@@ -12,6 +12,9 @@ def _legacy(key, fields, *, exportable=True, summary=False, chart_hint="bar", id
         title=key.replace("-", " ").title(), chart_hint=chart_hint,
         identity_bearing=identity_bearing,
         deployment_aggregate=not identity_bearing, schedulable=not identity_bearing,
+        required_modules=("request_workflow",) if key == "top-borrowers" else (),
+        chart_spec=chart("holder", (("requests", "loans"), ("items_borrowed", "units")),
+                         tenant=False, top=10) if key == "top-borrowers" else None,
     )
 
 

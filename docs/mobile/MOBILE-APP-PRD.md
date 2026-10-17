@@ -254,6 +254,29 @@ intended shape, final codes ship with 1d)
 custom scheme fallback `spaceworks://`. All links are **in-app paths**. Never open arbitrary external
 URLs from a push or a link.
 
+**Dashboard and personal usage contracts — backend phase 1f-4.** Native panels remain
+planned; frontend chart panels are phase 1f-5. Staff Home reads
+`GET /api/v1/admin/makerspace/{id}/dashboard` with the native staff bearer and matching
+`X-Makerspace-Id`. Existing count fields remain; `widgets` contains only authorized
+report-backed entries (`key`, `title`, `kind`, `required_action`, `required_modules`,
+`report_keys`, `default_period` in local days, `data`, `chart_spec`). Use this server
+list rather than mapping roles in the app. Machine data follows assigned machine types;
+native sessions gain no organization-derived authority. Handover-only staff receive
+`scope_mode: handover`, empty `widgets` and three `queue_tiles`: `ready_to_issue`,
+`due_returns`, `pickups`. The app should show this queue home without analytics panels.
+
+Member Home may read `GET /api/v1/member/makerspaces/{id}/my-usage` using the member
+bearer. It returns only the caller's loans (count, returned count, currently out and
+monthly trend), attributed machine hours (monthly and top machines), bookings (count
+and monthly trend), attended events, and payment totals. Each series carries `rows`
+and `chart_spec`; money stays grouped by currency. Non-payment sections require an
+active membership, the `membership` module and the relevant source modules. When that
+gate is off, eligible borrowers still receive `payments` with `usage_available: false`,
+even without a membership or online payment rail. Revoked members are refused. There
+is no target-member parameter, and this response must be cached only within the current
+session/makerspace and cleared on sign-out or makerspace switch. The existing
+membership-gated `/activity` contract remains unchanged.
+
 ## 8. Phases
 
 Each phase ends with **tests green in CI, a commit (or a few small ones) per repo, and a short phase

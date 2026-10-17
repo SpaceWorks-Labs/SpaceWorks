@@ -151,9 +151,12 @@ def _json_value(value):
 
 
 def _payload(report_key, strategy, breakdown, total):
+    from .report_registry import REPORT_REGISTRY
+    from .org_report_charts import combined_chart_spec
     return {
         "report_key": report_key,
         "strategy": strategy,
         "breakdown": breakdown,
         "total": {"rows": total},
+        "chart_spec": combined_chart_spec(REPORT_REGISTRY[report_key], organization_strategy(report_key)),
     }

@@ -50,6 +50,19 @@ builders own their measurements. `org_machine_reports.py` combines partitioned n
 `serializers_reports_machine_analytics.py`. The field and measurement handoff is
 `docs/report-machines-1f2.md`; focused tests are `backend/tests/analytics/test_c_*_m1f2.py`.
 
+Role dashboards (1f-4): `operations/dashboard_widgets.py` declares and gates report-backed
+widgets, while `dashboard_counts.py` preserves the legacy count contract and
+`dashboard_handover.py` serves queue-only handover homes. `serializers_dashboard.py`
+describes the additive widget/chart and queue payload. `org_report_charts.py` projects
+existing strategy-backed organization charts onto combined fields; `org_reports.py`
+keeps combined data inseparable from its tenant breakdown.
+Personal usage lives beside member activity: `makerspaces/member_usage_views.py` owns
+the membership-versus-core-payments boundary at `/member/makerspaces/<id>/my-usage`,
+`member_usage_service.py` owns authenticated-user-only facts, and
+`member_usage_serializers.py` documents the summary/chart response. Claim policy is in
+`accounts/claim_routes_member.py`. Tests: `analytics/test_dashboards_m1f4.py`,
+`test_my_usage_m1f4.py` and `test_dashboard_native_org_m1f4.py`.
+
 `inventory/models_tracking.py` defines stock observations; `availability_stock.observe_stock`
 reads authoritative quantity buckets, while `stock_snapshots.py` gates tenant fan-out and
 `tasks.py` exposes the daily task. `data_export/classification_m1f1.py` classifies new facts;

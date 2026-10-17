@@ -1,6 +1,25 @@
 """Typed dashboard counters, including optional programme families."""
 
 from rest_framework import serializers
+from .serializers_report_chart import ReportChartSpecSerializer
+
+
+class DashboardWidgetSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    title = serializers.CharField()
+    required_action = serializers.CharField()
+    required_modules = serializers.ListField(child=serializers.CharField())
+    kind = serializers.ChoiceField(choices=["count", "trend", "top_n", "heatmap", "queue"])
+    report_keys = serializers.ListField(child=serializers.CharField())
+    default_period = serializers.IntegerField(help_text="Inclusive local calendar days.")
+    data = serializers.DictField(child=serializers.JSONField())
+    chart_spec = ReportChartSpecSerializer(allow_null=True)
+
+
+class DashboardQueueSerializer(serializers.Serializer):
+    ready_to_issue = serializers.IntegerField(required=False)
+    due_returns = serializers.IntegerField(required=False)
+    pickups = serializers.IntegerField(required=False)
 
 
 class DashboardSerializer(serializers.Serializer):
@@ -8,7 +27,9 @@ class DashboardSerializer(serializers.Serializer):
     pending_event_registrations = serializers.IntegerField(required=False, default=0)
     pending_bookings = serializers.IntegerField(required=False, default=0)
     upcoming_bookings = serializers.IntegerField(required=False, default=0)
-    scope_mode = serializers.ChoiceField(choices=["machine", "full"])
+    scope_mode = serializers.ChoiceField(choices=["machine", "full", "handover"])
+    widgets = DashboardWidgetSerializer(many=True, required=False)
+    queue_tiles = DashboardQueueSerializer(required=False)
     overdue_loans = serializers.IntegerField(required=False, default=0)
     pending_requests = serializers.IntegerField(required=False, default=0)
     awaiting_issue = serializers.IntegerField(required=False, default=0)
@@ -29,4 +50,3 @@ class DashboardSerializer(serializers.Serializer):
     outstanding_by_currency = serializers.DictField(
         child=serializers.CharField(), required=False, default=dict
     )
-

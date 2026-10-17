@@ -38,13 +38,12 @@ def organization_membership_data(organization, scope, *, limit, date_range=None,
     """
     if not isinstance(organization, Organization) or not organization.pk:
         raise TypeError("A server-resolved organization is required.")
-    from apps.operations.org_reports import _validate_inputs
+    from apps.operations.org_reports import _payload, _validate_inputs
     from apps.operations.report_registry import REPORT_REGISTRY
     _validate_inputs(REPORT_REGISTRY["organization-membership"], scope, limit)
     rows = _cohorts(organization.pk, date_range, grain)
-    return {"report_key": "organization-membership", "strategy": "weighted_rate",
-            "breakdown": [{"makerspace_id": pk, "rows": rows[:limit]} for pk in scope.makerspace_ids],
-            "total": {"rows": rows[:limit]}}
+    return _payload("organization-membership", "weighted_rate",
+                    [{"makerspace_id": pk, "rows": rows[:limit]} for pk in scope.makerspace_ids], rows[:limit])
 
 
 def build_organization_membership(makerspace_id, *, limit=None, date_range=None, grain="day", platform_context=None):

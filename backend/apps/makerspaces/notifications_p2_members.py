@@ -9,6 +9,7 @@ from apps.integrations.email_templates_fablab import membership_context
 from apps.operations.notifications_p2 import body, direct_mail_unless_routed, fanout, revision, safe_notification, scoped, staff_link, template
 from .models import MakerspaceMembership, MembershipRequest
 from .platform import feature_enabled
+from .membership_gating import is_staff_invitation
 
 MEMBERSHIP = "membership.lifecycle"
 REQUEST = "membership.application"
@@ -16,6 +17,18 @@ PERSONAL_EVENTS = {"joined", "verified", "cancelled"}
 REQUEST_EVENTS = {"request_pending": {"requested", "awaiting_vouches"},
                   "declined": {"revoked"}, "awaiting_payment": {"awaiting_payment"},
                   "payment_due": {"awaiting_payment"}, "invitation": {"invited"}}
+
+
+def account_notice(row, event):
+    """RBAC invitations and activation are core; community lifecycle stays gated."""
+    if isinstance(row, MembershipRequest):
+        return event == "invitation" and is_staff_invitation(row)
+    return event in {"joined", "approved", "member_joined"} and bool(rbac.actions_for_membership(row))
+
+
+def routing(row, event):
+    # Account mail has no community matrix category, like dedicated staff invites.
+    return ("", "account") if account_notice(row, event) else ("members", "membership")
 
 
 def member_revision(row, event):
@@ -34,13 +47,13 @@ def request_revision(row, event):
 
 def _member(envelope):
     return scoped(MakerspaceMembership, envelope.makerspace_id).select_related(
-        "user", "makerspace", "activated_by", "verified_by",
+        "user", "makerspace", "activated_by", "verified_by", "assigned_role",
     ).filter(pk=envelope.source_id).first()
 
 
 def _request(envelope):
     return scoped(MembershipRequest, envelope.makerspace_id).select_related(
-        "user", "makerspace", "invited_by", "decided_by",
+        "user", "makerspace", "invited_by", "decided_by", "assigned_role",
     ).filter(pk=envelope.source_id).first()
 
 
@@ -86,6 +99,8 @@ def member_eligible(envelope):
     row = _member(envelope)
     if row is None or row.status != "active" or envelope.event not in PERSONAL_EVENTS | {"member_joined", "approved"}:
         return False
+    if envelope.stream == "account" and not account_notice(row, envelope.event):
+        return False
     proof_id = envelope.context.get("verification_id")
     expected = revision(row.pk, proof_id) if envelope.event == "verified" else member_revision(row, envelope.event)
     if envelope.revision != expected:
@@ -120,6 +135,8 @@ def member_eligible(envelope):
 def request_eligible(envelope):
     row = _request(envelope)
     if row is None or row.state not in REQUEST_EVENTS.get(envelope.event, set()):
+        return False
+    if envelope.stream == "account" and not account_notice(row, envelope.event):
         return False
     if envelope.revision != request_revision(row, envelope.event):
         return False
@@ -206,10 +223,12 @@ def notify_member(row, event, *, owner=True, staff=True):
         if proof_id is None:
             raise ValueError("Member verification requires its audit event")
     version = revision(row.pk, proof_id) if proof_id else member_revision(row, event)
-    result = fanout(row=row, space=row.makerspace, feature="members", stream="membership", event=event,
+    feature, stream = routing(row, event)
+    result = fanout(row=row, space=row.makerspace, feature=feature, stream=stream, event=event,
         source_kind=MEMBERSHIP, revision=version,
         owner=row.user if owner else None, owner_body=member_body(row, event, "requester"),
         staff_body=member_body(row, event, "staff"), staff=staff, context={"verification_id": proof_id},
+        staff_feature="members", staff_stream="membership",
         staff_context=membership_context(row.makerspace, event, user=row.user) if event == "member_joined" else
             {"makerspace": bag(name=row.makerspace.name), "event_name": event,
              "subject": bag(id=row.pk, status=row.status)})
@@ -218,15 +237,17 @@ def notify_member(row, event, *, owner=True, staff=True):
         own = member_body(row, event, "requester")
         direct_mail_unless_routed(space=row.makerspace, source_kind=MEMBERSHIP, row=row, revision=version,
             event=event, owner=row.user, to_email=(row.user.email or "").strip(), subject=own["subject"],
-            text=own["text"], stream="membership", audience="member", feature="members")
+            text=own["text"], stream=stream, audience="member", feature=feature)
     return result
 
 
 @safe_notification
 def notify_request(row, event):
-    return fanout(row=row, space=row.makerspace, feature="members", stream="membership", event=event,
+    feature, stream = routing(row, event)
+    return fanout(row=row, space=row.makerspace, feature=feature, stream=stream, event=event,
         source_kind=REQUEST, revision=request_revision(row, event), owner=row.user,
         owner_body=request_body(row, event, "requester"), staff_body=request_body(row, event, "staff"),
+        staff_feature="members", staff_stream="membership",
         staff=event != "invitation", staff_context=membership_context(row.makerspace, event, request=row)
         if event == "request_pending" else {"makerspace": bag(name=row.makerspace.name), "event_name": event,
                                           "subject": bag(id=row.pk, status=row.state)})
@@ -236,6 +257,7 @@ def notify_request(row, event):
 def notify_invitation(row):
     # Only the explicit account link can receive personal chat; an unclaimed
     # invitation keeps the existing email/share path and carries no chat bearer.
+    feature, stream = routing(row, "invitation")
     if row.user_id and row.user.email_verified_at:
         result = notify_request(row, "invitation")
         # The invitation email was always sent; keep it unless the envelope emails.
@@ -243,12 +265,12 @@ def notify_invitation(row):
             revision=request_revision(row, "invitation"), event="invitation", owner=row.user,
             to_email=row.invite_email, subject="Makerspace membership invitation",
             text="You have been invited to join this makerspace. Sign in with this email to claim the invitation.",
-            stream="membership", audience="member", feature="", address_owner=False)
+            stream=stream, audience="member", feature=feature, address_owner=False)
         return result
     from apps.integrations.email import send_makerspace_email
     return send_makerspace_email(row.makerspace, "Makerspace membership invitation",
         "You have been invited to join this makerspace. Sign in with this email to claim the invitation.",
-        [row.invite_email], stream="membership", event="invitation", audience="member")
+        [row.invite_email], stream=stream, event="invitation", audience="member")
 
 
 def register():

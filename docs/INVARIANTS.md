@@ -320,16 +320,16 @@ return early), so a test asserting `storage_bytes_used` must force managed mode 
   the test fails before trusting it.
 - **A presigned upload is a hole in all three row-walking mechanisms, and it is a PLATFORM property,
   not a bug in any one endpoint.** `presigned_upload` hands out write access to a key before any row
-  claims it, and in POST mode (the default; MinIO) it targets the **final** key. An unattached upload
-  is therefore invisible to `limits.add_storage` (charged at attach), to `recompute_storage` (sums
+  claims it. Public-image POST and PUT now both target **staging**; promotion validates a bounded
+  snapshot's size, MIME and image bytes, then conditionally creates the final key exactly once.
+  Replays cannot replace that final object; attachment charges its winning size. An unattached upload
+  remains invisible to `limits.add_storage` (charged at attach), to `recompute_storage` (sums
   rows) and to every purge collector (enumerates rows) simultaneously. `MemberImagePresignThrottle`
   caps the one presign an ordinary member can reach — per **account**, POST-only, so a member who
   spends their uploads does not lose the ability to *clear* an image, the one action that frees
-  storage. That bounds the damage; it does not eliminate orphans. **Eliminating them means either
-  presigning into the `staging/` prefix in POST mode too (so an unclaimed object never enters the
-  served namespace and a bucket lifecycle rule can expire it) or a sweeper for unclaimed keys** —
-  both touch every image path in the system and are their own phase. Do not add a new member-reachable
-  presign without a per-account cap.
+  storage. That bounds the damage; it does not eliminate orphans. Staging also needs a bucket
+  lifecycle rule or a sweeper for unclaimed keys; staging alone does not delete abandoned bytes.
+  Do not add a new member-reachable presign without a per-account cap.
 
 **Rate limits are global only when their cache is global.** `CACHES` must stay configured to use
 Django's `RedisCache` when `CACHE_URL` or an explicitly set `CELERY_BROKER_URL` supplies Redis; a
@@ -351,8 +351,8 @@ URLs. Upload validation: strict magic-sniff for PDF/image; the private maker/CAD
 (`apps/maker_file_formats.py`) accepts STL/OBJ/3MF/STEP/etc. on ext+MIME (+signature for 3MF/STEP);
 public-image + evidence buckets stay strictly image-only.
 
-**Evidence object retention bounds live bytes without weakening evidence-row immutability.** Evidence is
-the deliberate exception to the generic POST wording above: both POST and PUT presigns target
+**Evidence object retention bounds live bytes without weakening evidence-row immutability.** Evidence,
+like public images, uses both POST and PUT presigns targeting
 `staging/<final-key>`, and an attaching workflow promotes to the never-client-writable final key. The
 deployment default is 365 days; a makerspace override must be between 30 and 3650 days. The global
 `EVIDENCE_OBJECT_EXPIRY_ENABLED` switch ships false, and policy GET/PATCH plus preview remain available
@@ -847,6 +847,11 @@ omitted from discovery — even when it was issued while the module was on. Befo
 issued module-off could never be listed, approved or declined, and a referral stayed claimable after the
 module was switched off. Module gates are **additive `AND`s** — `refer_membership` still checks
 `referrals_enabled` and `can_refer`.
+
+Staff invitation and activation/welcome owner mail uses the core `account` stream without the
+community `members` category. Its source still rechecks the live role, owner, sender and revision;
+the envelope or compatibility outbox owns the email leg exactly once. Community mail and existing
+membership staff summaries retain their membership category and gates.
 
 **Membership plans, terms and invitation requests (forward plan phase 6, 2026-09-04).** Plans are optional
 and never an access state: a `MembershipTerm` expiring changes neither `MakerspaceMembership.status` nor

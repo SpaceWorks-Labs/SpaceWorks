@@ -186,7 +186,7 @@ def presigned_upload(object_key, content_type):
             }
         return _public_client().generate_presigned_post(
             Bucket=settings.PUBLIC_IMAGE_BUCKET,
-            Key=object_key,
+            Key=staging_key(object_key),
             Fields={'Content-Type': content_type},
             Conditions=[
                 {'Content-Type': content_type},
@@ -208,25 +208,6 @@ def _object_size_after_upload(object_key, attempts=10, delay_seconds=0.2):
 
 
 def finalize_upload(object_key):
-    max_bytes = settings.PUBLIC_IMAGE_MAX_BYTES
-    if settings.STORAGE_PRESIGN_METHOD != 'put':
-        return shared._finalize_result(
-            object_key,
-            _object_size_after_upload(object_key),
-        )
-    final_size = object_size(object_key)
-    if final_size is not None:
-        delete_object(staging_key(object_key))
-        return shared._finalize_result(object_key, final_size)
-    upload_staging_key = staging_key(object_key)
-    size = object_size(upload_staging_key)
-    if size is None:
-        return shared._finalize_result(object_key, None)
-    if not 1 <= size <= max_bytes:
-        return shared._finalize_result(object_key, size)
-    copy_object(upload_staging_key, object_key)
-    delete_object(upload_staging_key)
-    final_size = object_size(object_key)
-    if final_size is None or not 1 <= final_size <= max_bytes:
-        delete_object(object_key)
-    return shared._finalize_result(object_key, final_size)
+    from apps.inventory.public_image_promotion import finalize
+
+    return finalize(sys.modules[__name__], object_key)

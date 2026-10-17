@@ -31,12 +31,18 @@ def token_fingerprint(raw):
     return hmac.new(settings.SECRET_KEY.encode(), raw.encode(), hashlib.sha256).hexdigest()
 
 
+@transaction.atomic
 def issue_device_token_pair(user, grant, *, family=None):
     from apps.backup.recovery import assert_token_issuance_allowed
+    from apps.accounts.surface_policy import assert_surface
 
+    assert_surface(user, "member")
+    if grant.user_id != user.pk:
+        raise AuthenticationFailed("Invalid device authorization.")
     assert_token_issuance_allowed(user)
     family = family or DeviceRefreshFamily.objects.create(grant=grant, user=user)
     refresh = SpaceWorksRefreshToken.for_user(user, web_session=False)
+    refresh["surface"] = "member"
     refresh["device_grant_id"] = str(grant.pk)
     refresh["device_family_id"] = str(family.pk)
     raw = str(refresh)
@@ -74,6 +80,10 @@ def rotate_device_refresh(raw):
         if row is None or str(row.family_id) != str(family_id):
             raise AuthenticationFailed("Invalid device refresh token.")
         family, grant, user = row.family, row.family.grant, row.family.user
+        from apps.accounts.surface_policy import validate_account_token
+        validate_account_token(user, claims)
+        if user.account_kind != "member" or grant.user_id != user.pk:
+            raise AuthenticationFailed("Invalid device refresh token.")
         unusable = bool(
             row.rotated_at or row.blacklisted_at or family.revoked_at
             or str(grant.pk) != str(grant_id)

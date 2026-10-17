@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth import logout
 from django.db import models
 from django.http import HttpResponseForbidden
@@ -26,20 +25,6 @@ class AdminSuperuserOnlyMiddleware:
             self.admin_login_path = f"{self.admin_prefix}login/"
 
     def __call__(self, request):
-        if self._password_login_blocked(request):
-            # `/control/login/` is Django's own AdminSite login, so `LoginView`'s check
-            # never sees it. Refused BEFORE the form authenticates, so no session is
-            # minted; existing sessions are left alone, because a login-method switch is a
-            # policy change and not a revocation (phase 11 report, A2).
-            #
-            # This is enforced only while a superadmin can still get in another way -- see
-            # `_password_login_blocked`. Social sign-in issues JWTs for the React console
-            # and never creates a Django session, so blocking this unconditionally would
-            # make the one page that can re-enable passwords permanently unreachable the
-            # moment the last admin session expired.
-            return HttpResponseForbidden(
-                "Password sign-in is not available on this deployment."
-            )
         if self._is_admin_path(request.path):
             user = getattr(request, "user", None)
             if getattr(user, "is_authenticated", False) and self._has_access(user):
@@ -69,38 +54,20 @@ class AdminSuperuserOnlyMiddleware:
         return path == self.admin_root or path.startswith(self.admin_prefix)
 
     def _password_login_blocked(self, request):
-        """Whether this control-plane login must be refused.
+        """Member method switches never remove the platform password door.
 
-        Two conditions, and the second is what stops the fix becoming the lockout:
-
-        1. Password sign-in is switched off. (`password_login_enabled` fails OPEN, like
-           every other capability read on an auth path.)
-        2. `/control/` is reachable without a password at all — i.e. this deployment has
-           a `PLATFORM_ADMIN_SSO` path. Today it does not: social sign-in mints JWTs for
-           the React console and never a Django session, so with no second route the
-           switch would seal the only page that can undo it. Until such a route exists,
-           the control plane keeps its password door and the switch governs the
-           application surfaces, which is what it is actually for.
-
-        The consequence is stated rather than hidden: with `password_enabled=False` a
-        superadmin can still sign in at `/control/`. That surface is superadmin-only,
-        rate-limited by django-axes, and not proxied on the public port unless the operator
-        opts in (`CONTROL_PLANE_PROXY`), so it is the platform's break-glass entry — the same role Platform Email
-        plays for the superadmin-access toggle.
+        In particular, PLATFORM_ADMIN_SSO=False keeps its password fallback;
+        configuring SSO does not turn a member setting into platform policy.
         """
-        if request.method != "POST" or request.path != self.admin_login_path:
-            return False
-        if not settings.PLATFORM_ADMIN_SSO:
-            return False
-        from apps.accounts.login_methods import password_login_enabled
-
-        return not password_login_enabled()
+        return False
 
     def _has_access(self, user):
         from apps.accounts.models import User
 
         return bool(
             user.is_active
+            and user.account_kind == User.AccountKind.PLATFORM
+            and user.retired_at is None
             and user.is_superuser
             and getattr(user, "access_status", None) == User.AccessStatus.ACTIVE
             # The generated first-run credential must rotate before reaching the admin too,
@@ -219,6 +186,8 @@ class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
             user
             and user.is_authenticated
             and user.is_active
+            and user.account_kind == User.AccountKind.PLATFORM
+            and user.retired_at is None
             and user.is_superuser
             and getattr(user, "access_status", None) == User.AccessStatus.ACTIVE
             and not getattr(user, "must_change_password", False)

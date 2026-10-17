@@ -61,7 +61,7 @@ def transition_walk_in_to_account(
     hooks = tuple(_REVOCATION_HOOKS.values())
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
-        if not locked.is_walk_in:
+        if locked.account_kind != "member" or not locked.is_walk_in:
             raise WalkInTransitionError("This user is not a walk-in record.")
 
         with connection.cursor() as cursor:

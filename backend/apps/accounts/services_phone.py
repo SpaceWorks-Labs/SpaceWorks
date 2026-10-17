@@ -9,7 +9,7 @@ so an SMS code is a weaker factor than a password:
 
 * Phone login is MEMBER SURFACE ONLY. It never mints a staff session. Staff hold
   destructive powers (purge, role grants, inventory writes) and must come through
-  password or a social provider from the trusted staff origin.
+  password on their own login context.
 * A number must be verified through LINK before it can ever be used to sign in, so
   possession has been proven at least once by someone already holding the account.
 * The login start endpoint always returns the same generic acknowledgement, so it
@@ -76,18 +76,21 @@ def _digest(code, phone_e164):
 
 def _issue(user, phone_e164, purpose):
     """Create a challenge and attempt delivery. Returns (challenge, sent)."""
+    if user.account_kind != "member":
+        raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
     now = timezone.now()
     with transaction.atomic():
         if PhoneVerificationChallenge.objects.filter(
+            user=user,
             phone_e164=phone_e164,
             purpose=purpose,
             last_sent_at__gte=now - RESEND_COOLDOWN,
         ).exists():
             raise ChallengeCooldown
-        # Supersede this number's outstanding challenges for the SAME purpose. Scoping
-        # by number rather than by user is what makes the cooldown above meaningful for
-        # the login flow, where the caller is anonymous.
+        # Bind supersession and cooldown to the account as well as number/purpose.
+        # A number on another account must never redirect or consume its proof.
         PhoneVerificationChallenge.objects.filter(
+            user=user,
             phone_e164=phone_e164,
             purpose=purpose,
             consumed_at__isnull=True,
@@ -152,7 +155,8 @@ def start_link(user, raw_phone):
     if not sms_configured():
         raise SmsUnavailable
     current = User.objects.filter(pk=user.pk).first()
-    if current is None or current.is_walk_in or is_anonymous_requester(current):
+    if (current is None or current.account_kind != "member"
+            or current.is_walk_in or is_anonymous_requester(current)):
         raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
     phone_e164 = normalize_or_none(raw_phone)
     if phone_e164 is None:
@@ -192,6 +196,8 @@ def confirm_link(user, raw_phone, code):
     failure = None
     with transaction.atomic():
         locked_user = User.objects.select_for_update().get(pk=user.pk)
+        if locked_user.account_kind != "member":
+            raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
         challenge = _confirm(
             PhoneVerificationChallenge.objects.filter(
                 user=locked_user, purpose=PhoneChallengePurpose.LINK
@@ -228,7 +234,7 @@ def confirm_link(user, raw_phone, code):
         # held until the write below, so this stays in the same transaction.
         elif (
             User.objects.select_for_update()
-            .filter(phone_e164=phone_e164, phone_verified_at__isnull=False)
+            .filter(account_kind="member", phone_e164=phone_e164, phone_verified_at__isnull=False)
             .exclude(pk=locked_user.pk)
             .exists()
         ):

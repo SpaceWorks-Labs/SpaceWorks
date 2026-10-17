@@ -79,7 +79,7 @@ def _new_user(display_name, email, phone):
     someone deliberately revoked, through the one form whose entire purpose is naming a
     stranger.
     """
-    if email and User.objects.filter(email__iexact=email).exists():
+    if email and User.objects.filter(account_kind="member", email__iexact=email).exists():
         raise ValidationError(
             {"email": "An account already uses that email. Add them from the members list."}
         )
@@ -87,6 +87,7 @@ def _new_user(display_name, email, phone):
     def create(username):
         user = User(
             username=username,
+            account_kind="member",
             display_name=display_name[:200],
             email=email,
             # Free-text contact only. NEVER `phone_e164`: that column is a login

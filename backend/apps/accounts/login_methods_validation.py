@@ -1,7 +1,6 @@
 """Validate the complete proposed policy, including simultaneous provider removals."""
 
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 
 from apps.accounts.models import User
 from apps.accounts.models_oidc import enabled_providers
@@ -29,32 +28,29 @@ def _stranded(policy, candidates, *, social_settings=None):
     available = available_providers(policy, social_settings=social_settings)
     admins, users = set(), set()
     for user in candidates:
+        # Member switches never control privileged password sign-in. Legacy
+        # social links cannot count as staff/platform recovery credentials.
+        if user.account_kind != User.AccountKind.MEMBER:
+            continue
         if policy.password_enabled and user.has_usable_password():
             continue
         surviving = {identity.provider for identity in user.social_identities.all()} & available
-        if user.is_superuser or user.role == User.Role.SUPERADMIN:
-            if not surviving - {"github"}:
-                admins.add(user.pk)
-        elif not surviving:
+        if not surviving:
             users.add(user.pk)
     return admins, users
 
 
 def validate_login_methods(proposed, *, current=None, social_settings=None,
                            current_social_settings=None):
-    """Fail closed on writes; phone and GitHub cannot rescue a staff session.
+    """Protect member credentials without applying member switches to staff.
 
     Only accounts the change NEWLY strands are refused: an account that already has no way
     in under `current` (e.g. a superadmin created without a password) must not block an
     unrelated edit. `current=None` (first install) judges the proposed state alone.
     """
-    if not proposed.password_enabled and not proposed.social_enabled:
-        raise ValidationError(
-            "Password and social sign-in cannot both be off: phone sign-in issues "
-            "member sessions only, so nobody could reach the staff console."
-        )
-    candidates = list(User.objects.filter(is_active=True).filter(
-        Q(social_identities__isnull=False) | Q(is_superuser=True) | Q(role=User.Role.SUPERADMIN)
+    candidates = list(User.objects.filter(
+        account_kind=User.AccountKind.MEMBER, retired_at__isnull=True,
+        is_active=True, social_identities__isnull=False,
     ).distinct().prefetch_related("social_identities"))
     admins, users = _stranded(proposed, candidates, social_settings=social_settings)
     if current is not None:
@@ -62,13 +58,7 @@ def validate_login_methods(proposed, *, current=None, social_settings=None,
             current, candidates, social_settings=current_social_settings
         )
         admins, users = admins - before_admins, users - before_users
-    stranded_admins, stranded_users = len(admins), len(users)
-    if stranded_admins:
-        raise ValidationError(
-            f"This change would lock out {stranded_admins} superadmin(s). Keep password "
-            "sign-in with a usable password. Link a provider that is configured, enabled "
-            "and staff-capable (Google, Apple or OIDC) first. Phone and GitHub are member-only."
-        )
+    stranded_users = len(users)
     if stranded_users:
         raise ValidationError(
             f"This change would lock out {stranded_users} account(s) with no remaining "

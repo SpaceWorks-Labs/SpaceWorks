@@ -31,10 +31,14 @@ def registered_sources():
 
 
 def has_authority(actor, *, makerspace_ids=None):
+    if getattr(actor, "account_kind", None) != "member":
+        return False
     return any(source.has_authority(actor, makerspace_ids=makerspace_ids)
                for source in registered_sources())
 
 
 def payload_entries(actor, *, makerspace_ids=None):
+    if getattr(actor, "account_kind", None) != "member":
+        return {source.key: [] for source in registered_sources()}
     return {source.key: source.entries(actor, makerspace_ids=makerspace_ids)
             for source in registered_sources()}

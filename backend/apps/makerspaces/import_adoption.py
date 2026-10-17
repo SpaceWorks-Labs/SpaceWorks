@@ -42,8 +42,8 @@ def _member_role(makerspace):
 
 
 def _validate_address_proof(user, pending):
-    """Require the proven address; every occupying User, including walk-ins, counts."""
-    current = User.objects.filter(pk=user.pk).first()
+    """Require a member account with the proven address, including walk-ins."""
+    current = User.objects.filter(pk=user.pk, account_kind="member").first()
     if (
         current is None
         or current.email_verified_at is None
@@ -210,7 +210,7 @@ def adopt_pending_membership(user, pending):
 
 def adopt_pending_memberships_for_user(user):
     """Discover proven-email imports without letting one tenant block the account."""
-    if not user.email or user.email_verified_at is None:
+    if user.account_kind != "member" or not user.email or user.email_verified_at is None:
         return []
     pending_rows = list(
         PendingImportedMembership.objects.filter(

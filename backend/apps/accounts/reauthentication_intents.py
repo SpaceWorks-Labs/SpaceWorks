@@ -42,6 +42,8 @@ def _new(request, purpose, *, provider="", nonce="", verifier="", redirect_uri="
         credential_fingerprint=versions(request.user)["credential_fingerprint"],
         auth_generation=versions(request.user)["auth_generation"],
         context={"purpose": purpose, "session_id": sid, "surface": surface,
+                 "kind": request.user.account_kind,
+                 "makerspace": str(request.user.staff_makerspace_id) if request.user.staff_makerspace_id else None,
                  "origin": request_origin(request), "provider": provider,
                  "nonce_digest": _digest(nonce), "redirect_uri": redirect_uri},
         pending_secret=encrypt_value(verifier) if verifier else "",
@@ -61,6 +63,8 @@ def _consume(request, raw, purpose):
     valid = (row and row.consumed_at is None and row.expires_at > now
              and row.context.get("purpose") == purpose and row.context.get("session_id") == sid
              and row.context.get("surface") == surface and row.context.get("origin") == request_origin(request)
+             and row.context.get("kind") == request.user.account_kind
+             and row.context.get("makerspace") == (str(request.user.staff_makerspace_id) if request.user.staff_makerspace_id else None)
              and row.auth_generation == versions(request.user)["auth_generation"]
              and row.credential_fingerprint == versions(request.user)["credential_fingerprint"]
              and str(row.mfa_version) == (versions(request.user)["mfa_version"] or str(uuid.UUID(int=0))))
@@ -91,6 +95,7 @@ def _provider(key):
 
 @transaction.atomic
 def start_social(request, *, provider, redirect_uri):
+    _member(request)
     _trusted_origin(request)
     if not SocialIdentity.objects.filter(user=request.user, provider=provider).exists():
         raise PermissionDenied("Use an identity already linked to this account.")
@@ -113,6 +118,7 @@ def start_social(request, *, provider, redirect_uri):
 
 
 def complete_social(request, *, state, nonce, id_token="", code="", totp=""):
+    _member(request)
     # Commit intent consumption even when a provider refuses freshness. Replaying
     # a failed response must never turn it into a new authentication attempt.
     with transaction.atomic():
@@ -169,6 +175,7 @@ def _trusted_origin(request):
 
 
 def start_email(request):
+    _member(request)
     _trusted_origin(request)
     if request.user.has_usable_password() or request.user.email_verified_at is None or not request.user.email:
         raise PermissionDenied("A verified email address on a passwordless account is required.")
@@ -195,6 +202,12 @@ def start_email(request):
 
 @transaction.atomic
 def confirm_email(request, token):
+    _member(request)
     _consume(request, token, "enrollment_email")
     stamp(request, field="enrollment_confirmed_at")
     return {"confirmed": True}
+
+
+def _member(request):
+    if request.user.account_kind != "member":
+        raise AuthenticationFailed("Identity verification failed.")

@@ -12,6 +12,8 @@ def surviving_identities(user, identities):
     from apps.accounts.login_methods_validation import available_providers
     from apps.accounts.models_login_methods import PlatformLoginMethods
 
+    if user.account_kind != "member":
+        return identities.none()
     identities = identities.filter(provider__in=available_providers(PlatformLoginMethods.load()))
     if user.is_superuser or user.role == "superadmin":
         return identities.filter(staff_capable_provider_filter())

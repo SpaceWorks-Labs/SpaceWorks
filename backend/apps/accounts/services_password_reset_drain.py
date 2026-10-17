@@ -139,7 +139,10 @@ def prepare_delivery(claim, *, now=None):
         # Envelope -> User is the declared lock order shared with confirmation.
         user = (
             User.objects.select_for_update()
-            .filter(email__iexact=envelope.email_normalized)
+            .filter(
+                pk=envelope.user_id, account_kind=User.AccountKind.MEMBER,
+                email__iexact=envelope.email_normalized,
+            )
             .first()
         )
         if not _recoverable(user):
@@ -215,7 +218,6 @@ def _finish_claimed_terminal(envelope, claim, status, now):
         status=PasswordResetEnvelopeStatus.CLAIMED,
     ).update(
         status=status,
-        user=None,
         digest=new_dummy_digest(envelope.email_normalized),
         digest_is_live=False,
         credential_fingerprint="",
@@ -231,6 +233,7 @@ def _finish_claimed_terminal(envelope, claim, status, now):
 def _recoverable(user):
     return bool(
         user is not None
+        and user.account_kind == User.AccountKind.MEMBER
         and not user.is_tenant_dump_stub
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE

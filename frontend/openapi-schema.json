@@ -25994,6 +25994,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_makerspace_archive_requests_create",
+                "description": "Requires local MANAGE_MAKERSPACE authority on a live makerspace, including when superadmin access is disabled. A platform superadmin reviews the request through the control-panel lifecycle list.",
                 "summary": "Request makerspace archival",
                 "parameters": [
                     {
@@ -26082,7 +26083,7 @@
                                 }
                             }
                         },
-                        "description": ""
+                        "description": "A pending request exists, the cooldown applies, or the space is unavailable."
                     }
                 }
             }
@@ -32391,6 +32392,18 @@
                 "operationId": "api_v1_admin_makerspace_payment_documents_retrieve",
                 "summary": "List scoped payment documents",
                 "parameters": [
+                    {
+                        "in": "query",
+                        "name": "kind",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "bill",
+                                "credit_note",
+                                "receipt"
+                            ]
+                        }
+                    },
                     {
                         "in": "path",
                         "name": "makerspace_id",
@@ -45937,6 +45950,1061 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_list",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "include_inactive",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0",
+                                "1"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStaffAccountList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffAccountCreated"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/": {
+            "patch": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_partial_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStaffAccountChange"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStaffAccountChange"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStaffAccountChange"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffAccount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/deactivate/": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_deactivate_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountDeactivate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountDeactivate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountDeactivate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffAccount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/reactivate/": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_reactivate_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffAccount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/resend-invite/": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_resend_invite_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffAccountInvitationResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/set-password/": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_set_password_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountPassword"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountPassword"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffAccountPassword"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffAccountPasswordResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/policy": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_staff_accounts_policy_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffAccountPolicy"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations": {
             "get": {
                 "operationId": "api_v1_admin_makerspaces_staff_invitations_list",
@@ -45997,6 +47065,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_makerspaces_staff_invitations_create",
+                "description": "Retired writer. Create a separate staff account through staff-accounts.",
                 "parameters": [
                     {
                         "in": "path",
@@ -46035,17 +47104,8 @@
                         "jwtAuth": []
                     }
                 ],
+                "deprecated": true,
                 "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/StaffInvitationDelivery"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
                     "400": {
                         "description": "Validation failed, or the makerspace module this route belongs to is off."
                     },
@@ -48018,8 +49078,7 @@
         "/api/v1/admin/memberships/{id}": {
             "delete": {
                 "operationId": "api_v1_admin_memberships_destroy",
-                "description": "Remove a single makerspace membership (un-assign a delegable role).\n\nScope contract (mirrors the create path's non-escalation model): a Space Manager may\nrevoke ONLY delegable-role memberships within their MANAGE_MAKERSPACE scope; a superadmin\nmay revoke any, except inside a superadmin-hidden makerspace (governance hard-block ->\n404). 404-before-403: out-of-scope existence is hidden as 404, a delegable-scope actor\naiming at a SPACE_MANAGER gets 403.",
-                "summary": "Revoke a makerspace staff membership",
+                "summary": "Deactivate a staff account",
                 "parameters": [
                     {
                         "in": "path",
@@ -48040,13 +49099,67 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": "Membership revoked."
+                        "description": "No response body"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     },
                     "403": {
-                        "description": "A Space Manager membership can only be revoked by a superadmin."
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     },
                     "404": {
-                        "description": "Membership not found or outside the actor's makerspace scope."
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -61293,7 +62406,7 @@
         "/api/v1/admin/users/booking-managers": {
             "get": {
                 "operationId": "api_v1_admin_users_booking_managers_list",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "parameters": [
                     {
                         "name": "page",
@@ -61328,7 +62441,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_users_booking_managers_create",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "tags": [
                     "Admin users"
                 ],
@@ -61374,7 +62487,7 @@
         "/api/v1/admin/users/event-managers": {
             "get": {
                 "operationId": "api_v1_admin_users_event_managers_list",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "parameters": [
                     {
                         "name": "page",
@@ -61409,7 +62522,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_users_event_managers_create",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "tags": [
                     "Admin users"
                 ],
@@ -61455,7 +62568,7 @@
         "/api/v1/admin/users/handover": {
             "get": {
                 "operationId": "api_v1_admin_users_handover_list",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "parameters": [
                     {
                         "name": "page",
@@ -61490,7 +62603,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_users_handover_create",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "tags": [
                     "Admin users"
                 ],
@@ -61536,7 +62649,7 @@
         "/api/v1/admin/users/inventory-managers": {
             "get": {
                 "operationId": "api_v1_admin_users_inventory_managers_list",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "parameters": [
                     {
                         "name": "page",
@@ -61571,7 +62684,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_users_inventory_managers_create",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "tags": [
                     "Admin users"
                 ],
@@ -61617,7 +62730,7 @@
         "/api/v1/admin/users/machine-managers": {
             "get": {
                 "operationId": "api_v1_admin_users_machine_managers_list",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "parameters": [
                     {
                         "name": "page",
@@ -61652,7 +62765,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_users_machine_managers_create",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "tags": [
                     "Admin users"
                 ],
@@ -61698,7 +62811,7 @@
         "/api/v1/admin/users/space-managers": {
             "get": {
                 "operationId": "api_v1_admin_users_space_managers_list",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "parameters": [
                     {
                         "name": "page",
@@ -61733,7 +62846,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_users_space_managers_create",
-                "summary": "List or create staff memberships",
+                "summary": "List legacy staff memberships",
                 "tags": [
                     "Admin users"
                 ],
@@ -62703,7 +63816,8 @@
         "/api/v1/auth/forgot-password": {
             "post": {
                 "operationId": "api_v1_auth_forgot_password_create",
-                "summary": "Request an emailed password reset code",
+                "description": "Select member, staff (with makerspace slug) or platform. Unknown and unavailable accounts receive the same acknowledgement. Staff/platform require a trusted origin and Platform Email.",
+                "summary": "Request a context-bound emailed password reset code",
                 "tags": [
                     "Auth"
                 ],
@@ -62831,16 +63945,28 @@
                 "tags": [
                     "Auth"
                 ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/LogoutResponse"
-                                }
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionContext"
                             }
                         },
-                        "description": ""
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionContext"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionContext"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "Logged out of the selected account context."
                     },
                     "401": {
                         "description": "Refresh token could not be blacklisted."
@@ -64218,6 +65344,25 @@
                 "tags": [
                     "Auth"
                 ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionContext"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionContext"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionContext"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "content": {
@@ -64241,7 +65386,7 @@
         "/api/v1/auth/reset-password": {
             "post": {
                 "operationId": "api_v1_auth_reset_password_create",
-                "summary": "Confirm an OTP or coexisting legacy password reset link",
+                "summary": "Confirm a context-bound OTP (legacy UID/token links are member-only)",
                 "tags": [
                     "Auth"
                 ],
@@ -73954,6 +75099,69 @@
                 }
             }
         },
+        "/api/v1/integrations/notification-media/{token}.pdf": {
+            "get": {
+                "operationId": "api_v1_integrations_notification_media_.pdf_retrieve",
+                "description": "Live payer, endpoint consent, installation, preferences and tenant write gates are checked. HEAD returns 405 without consuming. All responses are private and no-store.",
+                "summary": "Consume a single-use provider document grant",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "token",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Notification contract"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "405": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/integrations/push/devices": {
             "post": {
                 "operationId": "api_v1_integrations_push_devices_create",
@@ -79299,6 +80507,18 @@
                 "summary": "List scoped payment documents",
                 "parameters": [
                     {
+                        "in": "query",
+                        "name": "kind",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "bill",
+                                "credit_note",
+                                "receipt"
+                            ]
+                        }
+                    },
+                    {
                         "in": "path",
                         "name": "makerspace_id",
                         "schema": {
@@ -82342,6 +83562,16 @@
                                 "schema": {
                                     "type": "string",
                                     "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
                                 }
                             }
                         },
@@ -90958,6 +92188,15 @@
                     "detail"
                 ]
             },
+            "AccountKindEnum": {
+                "enum": [
+                    "member",
+                    "staff",
+                    "platform"
+                ],
+                "type": "string",
+                "description": "* `member` - member\n* `staff` - staff\n* `platform` - platform"
+            },
             "AccountProfile": {
                 "type": "object",
                 "properties": {
@@ -93101,6 +94340,25 @@
                 "type": "string",
                 "description": "* `membership` - membership\n* `organization` - organization"
             },
+            "AuthStaffMakerspace": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ]
+            },
             "AuthUserPayload": {
                 "type": "object",
                 "properties": {
@@ -93132,6 +94390,17 @@
                     "must_change_password": {
                         "type": "boolean"
                     },
+                    "account_kind": {
+                        "$ref": "#/components/schemas/AccountKindEnum"
+                    },
+                    "staff_makerspace": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AuthStaffMakerspace"
+                            }
+                        ],
+                        "nullable": true
+                    },
                     "makerspaces": {
                         "type": "array",
                         "items": {
@@ -93152,6 +94421,7 @@
                     }
                 },
                 "required": [
+                    "account_kind",
                     "display_name",
                     "email",
                     "email_verified",
@@ -93161,6 +94431,7 @@
                     "must_change_password",
                     "phone",
                     "role",
+                    "staff_makerspace",
                     "username"
                 ]
             },
@@ -93754,6 +95025,18 @@
                             "type": "string"
                         }
                     },
+                    "bill_prefix": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "payment_instructions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "legal_name": {
                         "type": "array",
                         "items": {
@@ -93835,6 +95118,14 @@
                     "number_prefix": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "bill_prefix": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "payment_instructions": {
+                        "type": "string",
+                        "maxLength": 2000
                     },
                     "legal_name": {
                         "type": "string",
@@ -98220,14 +99511,14 @@
                 "type": "string",
                 "description": "* `image/png` - image/png\n* `image/jpeg` - image/jpeg"
             },
-            "ContextEnum": {
+            "Context396Enum": {
                 "enum": [
-                    "issue",
-                    "return",
-                    "inventory_check"
+                    "member",
+                    "staff",
+                    "platform"
                 ],
                 "type": "string",
-                "description": "* `issue` - issue\n* `return` - return\n* `inventory_check` - inventory_check"
+                "description": "* `member` - member\n* `staff` - staff\n* `platform` - platform"
             },
             "ContractChallenge": {
                 "type": "object",
@@ -98743,6 +100034,7 @@
                 "properties": {
                     "event": {
                         "type": "string",
+                        "description": "Document text uses document_issued; PDF templates use document_issued.document for receipts, credit notes and bills. Both bindings may coexist.",
                         "maxLength": 64
                     },
                     "audience": {
@@ -98762,6 +100054,7 @@
                             "type": "string",
                             "maxLength": 64
                         },
+                        "description": "Safe context keys include document_kind and document_number. Meta PDF templates start with __document_header__; Twilio PDF templates include __document_media__ bound to a fixed-origin media URL. Approval is verified with the provider; browser writes cannot approve templates.",
                         "maxItems": 30
                     },
                     "approved": {
@@ -104278,9 +105571,22 @@
             "ForgotPasswordRequest": {
                 "type": "object",
                 "properties": {
+                    "context": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Context396Enum"
+                            }
+                        ],
+                        "default": "member"
+                    },
+                    "makerspace": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
                     "email": {
                         "type": "string",
-                        "format": "email"
+                        "maxLength": 254
                     }
                 },
                 "required": [
@@ -108273,6 +109579,14 @@
                         "type": "string",
                         "writeOnly": true
                     },
+                    "context": {
+                        "$ref": "#/components/schemas/Context396Enum"
+                    },
+                    "makerspace": {
+                        "type": "string",
+                        "maxLength": 150,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
                     "surface": {
                         "$ref": "#/components/schemas/LoginRequestSurfaceEnum"
                     }
@@ -108285,10 +109599,11 @@
             "LoginRequestSurfaceEnum": {
                 "enum": [
                     "member",
-                    "staff"
+                    "staff",
+                    "delegated"
                 ],
                 "type": "string",
-                "description": "* `member` - member\n* `staff` - staff"
+                "description": "* `member` - member\n* `staff` - staff\n* `delegated` - delegated"
             },
             "LoginResponse": {
                 "type": "object",
@@ -108314,21 +109629,12 @@
                     "member",
                     "staff",
                     "staff_api",
+                    "delegated",
+                    "platform",
                     "verification_only"
                 ],
                 "type": "string",
-                "description": "* `member` - member\n* `staff` - staff\n* `staff_api` - staff_api\n* `verification_only` - verification_only"
-            },
-            "LogoutResponse": {
-                "type": "object",
-                "properties": {
-                    "detail": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "detail"
-                ]
+                "description": "* `member` - member\n* `staff` - staff\n* `staff_api` - staff_api\n* `delegated` - delegated\n* `platform` - platform\n* `verification_only` - verification_only"
             },
             "MFAChallenge": {
                 "type": "object",
@@ -116545,9 +117851,22 @@
             "OtpResetPasswordConfirm": {
                 "type": "object",
                 "properties": {
+                    "context": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Context396Enum"
+                            }
+                        ],
+                        "default": "member"
+                    },
+                    "makerspace": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
                     "email": {
                         "type": "string",
-                        "format": "email"
+                        "maxLength": 254
                     },
                     "code": {
                         "type": "string",
@@ -118533,6 +119852,37 @@
                     }
                 }
             },
+            "PaginatedStaffAccountList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StaffAccount"
+                        }
+                    }
+                }
+            },
             "PaginatedStaffInvitationList": {
                 "type": "object",
                 "required": [
@@ -119304,6 +120654,14 @@
                     "number_prefix": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "bill_prefix": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "payment_instructions": {
+                        "type": "string",
+                        "maxLength": 2000
                     },
                     "legal_name": {
                         "type": "string",
@@ -122165,6 +123523,25 @@
                     }
                 }
             },
+            "PatchedStaffAccountChange": {
+                "type": "object",
+                "properties": {
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 6
+                    },
+                    "machine_type_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                }
+            },
             "PatchedStaffGrantUpdate": {
                 "type": "object",
                 "properties": {
@@ -122584,6 +123961,10 @@
                     "currency": {
                         "type": "string",
                         "maxLength": 3
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -122594,16 +123975,18 @@
                     "kind",
                     "money_at",
                     "number",
-                    "payment"
+                    "payment",
+                    "status"
                 ]
             },
             "PaymentDocumentKindEnum": {
                 "enum": [
                     "receipt",
-                    "credit_note"
+                    "credit_note",
+                    "bill"
                 ],
                 "type": "string",
-                "description": "* `receipt` - Receipt\n* `credit_note` - Credit note"
+                "description": "* `receipt` - Receipt\n* `credit_note` - Credit note\n* `bill` - Bill"
             },
             "PaymentFilterError": {
                 "oneOf": [
@@ -128180,7 +129563,7 @@
                         "type": "string"
                     },
                     "context": {
-                        "$ref": "#/components/schemas/ContextEnum"
+                        "$ref": "#/components/schemas/QrScanContextEnum"
                     },
                     "request_id": {
                         "type": "integer",
@@ -128191,6 +129574,15 @@
                     "context",
                     "payload"
                 ]
+            },
+            "QrScanContextEnum": {
+                "enum": [
+                    "issue",
+                    "return",
+                    "inventory_check"
+                ],
+                "type": "string",
+                "description": "* `issue` - issue\n* `return` - return\n* `inventory_check` - inventory_check"
             },
             "QrScanResult": {
                 "type": "object",
@@ -129084,10 +130476,14 @@
                 "properties": {
                     "access": {
                         "type": "string"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/AuthUserPayload"
                     }
                 },
                 "required": [
-                    "access"
+                    "access",
+                    "user"
                 ]
             },
             "Refund": {
@@ -131969,6 +133365,17 @@
                     }
                 }
             },
+            "SessionContext": {
+                "type": "object",
+                "properties": {
+                    "context": {
+                        "type": "string",
+                        "default": "member",
+                        "maxLength": 156,
+                        "pattern": "^(?:member|platform|staff:[-a-zA-Z0-9_]+)$"
+                    }
+                }
+            },
             "SetStatus": {
                 "type": "object",
                 "properties": {
@@ -132620,6 +134027,260 @@
                 ],
                 "type": "string",
                 "description": "* `platinum` - platinum\n* `gold` - gold\n* `silver` - silver\n* `partner` - partner\n* `community_partner` - community_partner"
+            },
+            "StaffAccount": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "description": "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+                        "pattern": "^[\\w.@+-]+$",
+                        "maxLength": 150
+                    },
+                    "display_name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "email": {
+                        "title": "Email address",
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "email",
+                                "maxLength": 254
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
+                    "machine_type_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "readOnly": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "title": "Active",
+                        "description": "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
+                    },
+                    "must_change_password": {
+                        "type": "boolean"
+                    },
+                    "mfa_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "last_login": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "invitation_pending": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "can": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StaffAccountCapabilities"
+                            }
+                        ],
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "can",
+                    "created_at",
+                    "id",
+                    "invitation_pending",
+                    "machine_type_ids",
+                    "mfa_enabled",
+                    "roles",
+                    "username"
+                ]
+            },
+            "StaffAccountCapabilities": {
+                "type": "object",
+                "properties": {
+                    "change_roles": {
+                        "type": "boolean"
+                    },
+                    "set_password": {
+                        "type": "boolean"
+                    },
+                    "deactivate": {
+                        "type": "boolean"
+                    },
+                    "reactivate": {
+                        "type": "boolean"
+                    },
+                    "resend_invite": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "change_roles",
+                    "deactivate",
+                    "reactivate",
+                    "resend_invite",
+                    "set_password"
+                ]
+            },
+            "StaffAccountCreate": {
+                "type": "object",
+                "properties": {
+                    "display_name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "email": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "email",
+                                "default": "",
+                                "maxLength": 254
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "username": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 6
+                    },
+                    "machine_type_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                },
+                "required": [
+                    "display_name",
+                    "roles"
+                ]
+            },
+            "StaffAccountCreated": {
+                "type": "object",
+                "properties": {
+                    "account": {
+                        "$ref": "#/components/schemas/StaffAccount"
+                    },
+                    "invitation_sent": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "account",
+                    "invitation_sent"
+                ]
+            },
+            "StaffAccountDeactivate": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    }
+                }
+            },
+            "StaffAccountInvitationResult": {
+                "type": "object",
+                "properties": {
+                    "invitation_sent": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "invitation_sent"
+                ]
+            },
+            "StaffAccountPassword": {
+                "type": "object",
+                "properties": {
+                    "password": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 1024
+                    },
+                    "generate": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "reset_mfa": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                }
+            },
+            "StaffAccountPasswordResult": {
+                "type": "object",
+                "properties": {
+                    "generated_password": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "generated_password"
+                ]
+            },
+            "StaffAccountPolicy": {
+                "type": "object",
+                "properties": {
+                    "creatable_roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "can_manage_space_managers": {
+                        "type": "boolean"
+                    },
+                    "superadmin_access_enabled": {
+                        "type": "boolean"
+                    },
+                    "email_onboarding_available": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "can_manage_space_managers",
+                    "creatable_roles",
+                    "email_onboarding_available",
+                    "superadmin_access_enabled"
+                ]
             },
             "StaffBookingInput": {
                 "type": "object",

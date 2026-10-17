@@ -93,7 +93,7 @@ class TenantDumpCatalogError(AssertionError):
 # BK-B: nullable cancellation timestamp and prior reservation state.
 # BK-G: reconcile the integrated Lane E/BK-C graph plus the scalar pass template.
 # Literal reconstruction reproduces b90ce9de before the later merged model additions.
-CATALOG_SCHEMA_SHA256 = "008ddfef20f7254115ee460361f58d889f5fb76a7c7a790ba81ec6eafdd69eb9"
+CATALOG_SCHEMA_SHA256 = "e187a0d1cfd2dc8768c8c6db9acdee7c1c93052e28e5993092c798174c95c2da"
 # Native authority/attestation and phone challenge binding: literal reconstruction
 # reproduced preceding pins; credentials, grants and challenges remain DROP.
 # BK-D adds typed booking campaign/delivery history. Literal reconstruction
@@ -109,6 +109,7 @@ CATALOG_SCHEMA_SHA256 = "008ddfef20f7254115ee460361f58d889f5fb76a7c7a790ba81ec6e
 # Re-blessed for install-time built-in provider switches (platform-only, dropped on import).
 # Integration 2026-10-16: re-pinned after merging yuyu-parity + setup-areas (see the catalog guard test).
 # Fixed roles: MembershipAdditionalRole + MembershipMachineTypeScope added, role machine scopes removed.
+# Mobile programme 2026-10-17: native app identity, account deletion/restore, member push, analytics tracking.
 
 
 def catalog_models(apps_registry=apps):

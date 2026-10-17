@@ -82,3 +82,6 @@ from .models_endpoints import ChannelConfiguration, NotificationEndpoint, Notifi
 
 __all__ += ["NotificationDelivery", "NotificationEnvelope", "ChannelConfiguration", "NotificationEndpoint",
             "NotificationEndpointChallenge", "WhatsAppTemplate"]
+from .models_notification_media import NotificationMediaGrant
+
+__all__ += ["NotificationMediaGrant"]

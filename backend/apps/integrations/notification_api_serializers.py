@@ -20,9 +20,24 @@ class StrictSerializer(serializers.Serializer):
 
 @extend_schema_serializer(component_name="ContractWhatsAppTemplate")
 class TemplateSerializer(serializers.ModelSerializer):
+    event = serializers.CharField(max_length=64, help_text="Document text uses document_issued; PDF templates use "
+        "document_issued.document for receipts, credit notes and bills. Both bindings may coexist.")
     audience = serializers.ChoiceField(choices=["staff", "requester", "member"])
     template_name = serializers.RegexField(r"^[A-Za-z0-9_.:-]{1,255}$")
-    variables = serializers.ListField(child=serializers.CharField(max_length=64), max_length=30)
+    variables = serializers.ListField(child=serializers.CharField(max_length=64), max_length=30,
+        help_text="Safe context keys include document_kind and document_number. Meta PDF templates start with "
+        "__document_header__; Twilio PDF templates include __document_media__ bound to a fixed-origin media URL. "
+        "Approval is verified with the provider; browser writes cannot approve templates.")
+
+    def validate(self, attrs):
+        names = attrs.get("variables", [])
+        markers = {"__document_header__", "__document_media__"} & set(names)
+        if markers and (len(markers) != 1 or len(names) != len(set(names))
+                or attrs.get("event") != "document_issued.document" or attrs.get("audience") == "staff"
+                or "__document_header__" in markers and names[0] != "__document_header__"):
+            raise serializers.ValidationError({"variables": "Use one personal document media binding; "
+                "Meta's document header must be the first variable."})
+        return attrs
 
     class Meta:
         model = WhatsAppTemplate

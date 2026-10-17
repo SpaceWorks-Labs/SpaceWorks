@@ -82,6 +82,10 @@ class MetaWhatsAppProvider:
             and self._ready() and self._endpoint_valid(endpoint)
             and eligible_owner(config.makerspace, endpoint.user_id))
 
+    def send_document(self, delivery, *, filename, pdf_bytes, caption):
+        from .notification_wa_documents import meta_document
+        return meta_document(self, delivery, filename=filename, pdf_bytes=pdf_bytes, caption=caption)
+
     def verify_callback(self, request):
         from .notification_wa_meta_callbacks import callback_event
         return callback_event(self.configuration, request)

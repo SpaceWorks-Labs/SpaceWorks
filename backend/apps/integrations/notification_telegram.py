@@ -150,6 +150,20 @@ class TelegramProvider:
                                                                    "error_class": type(exc).__name__})
             return ProviderResult(False, retryable=True, error_code="unavailable")
 
+    def send_document(self, delivery, *, filename, pdf_bytes, caption):
+        from .notification_document_transport import personal_destination, validate_document
+        from .notification_slack_http import failure_result, ProviderFailure
+        from .notification_telegram_transport import send_document
+
+        def send():
+            personal_destination(self.configuration, delivery)
+            validate_document(filename, pdf_bytes)
+            if not self._endpoint_current(delivery.endpoint):
+                raise ProviderFailure("invalid_endpoint")
+            return send_document(self._token(), delivery.endpoint.destination,
+                filename=filename, pdf_bytes=pdf_bytes, caption=caption)
+        return failure_result("telegram", send)
+
 
 def register_telegram_provider():
     register_provider("telegram", "telegram", TelegramProvider)

@@ -55,16 +55,16 @@ def error_result(status, payload, retry_after=None):
     return failure("provider_error")
 
 
-def graph(configuration, method, resource, *, payload=None, params=None):
+def graph(configuration, method, resource, *, payload=None, params=None, files=None, form=None):
     values = credentials(configuration)
     version = getattr(settings, "WHATSAPP_META_GRAPH_VERSION", "v25.0")
     if (not values or not isinstance(version, str) or not re.fullmatch(r"v[0-9]{1,3}\.0", version)
-            or not re.fullmatch(r"[0-9]{1,64}/(?:messages|message_templates)", resource)):
+            or not re.fullmatch(r"[0-9]{1,64}/(?:messages|message_templates|media)", resource)):
         return failure("not_configured"), None
     try:
         response = requests.request(method, f"https://graph.facebook.com/{version}/{resource}",
             headers={"Authorization": f"Bearer {values['access_token']}"},
-            json=payload, params=params, timeout=(5, 15), allow_redirects=False)
+            json=payload, params=params, files=files, data=form, timeout=(5, 15), allow_redirects=False)
     except requests.Timeout:
         result = failure("timeout", retryable=True, ambiguous=method == "POST")
     except requests.RequestException:

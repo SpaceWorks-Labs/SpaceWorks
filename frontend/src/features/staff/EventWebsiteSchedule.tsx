@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
 import type { EventWebsite, WebsiteSession, WebsiteTarget } from "../events/websiteTypes";
-import { useWebsiteDelay } from "./eventWebsiteApi";
-import { eventErrorText } from "./eventUi";
+import { EventWebsiteDelays } from "./EventWebsiteDelays";
 import { programmeWarnings } from "../events/websiteProgramme";
 import { websiteCard, websiteCheck, websiteInput, websiteLabel, websiteLegend } from "./eventWebsiteFormStyles";
 
@@ -9,19 +7,6 @@ function localInput(value: string) {
   if (!value || Number.isNaN(Date.parse(value))) return "";
   const date = new Date(value);
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
-
-function SessionDelay({ target, slug, minutes, disabled }: { target: WebsiteTarget; slug: string; minutes: number; disabled: boolean }) {
-  const [value, setValue] = useState(minutes);
-  useEffect(() => setValue(minutes), [minutes]);
-  const delay = useWebsiteDelay(target);
-  return <div className="grid gap-2 rounded-xl border border-line bg-surface p-3 sm:col-span-2">
-    <div className="flex flex-wrap items-end gap-2">
-      <label className={`${websiteLabel} flex-1 basis-40`}>Delay in minutes<input className={websiteInput} type="number" min={0} max={1440} value={value} onChange={(e) => setValue(Number(e.target.value))} disabled={disabled} /></label>
-      <button className="desk-button" type="button" disabled={disabled || delay.isPending} onClick={() => delay.mutate({ slug, minutes: value })}>{delay.isPending ? "Updating…" : "Update live delay"}</button>
-    </div>
-    {delay.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(delay.error)}</p> : null}
-  </div>;
 }
 
 export function EventWebsiteSchedule({ page, target, onChange, disabled, saved }: {
@@ -39,7 +24,7 @@ export function EventWebsiteSchedule({ page, target, onChange, disabled, saved }
       <h4 className="font-semibold">Programme overlap warnings</h4>
       <ul className="list-inside list-disc">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
     </div> : null}
-    {page.sessions.map((row, index) => <fieldset disabled={disabled} key={index} className={`${websiteCard} ${row.visibility === "draft" ? "border-dashed" : ""}`}>
+    {page.sessions.map((row, index) => <fieldset disabled={disabled} key={row.session_id ?? index} className={`${websiteCard} ${row.visibility === "draft" ? "border-dashed" : ""}`}>
       <legend className={websiteLegend}>Session {index + 1}</legend>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={websiteLabel}>Session slug<input className={`${websiteInput} code-text`} value={row.slug} required pattern="[a-zA-Z0-9_-]+" maxLength={80} onChange={(e) => update(index, { slug: e.target.value })} /></label>
@@ -52,10 +37,10 @@ export function EventWebsiteSchedule({ page, target, onChange, disabled, saved }
             : <p className="text-sm text-muted">Add a speaker section to assign speakers.</p>}
         </fieldset>
         <label className={websiteLabel}>Session visibility<select className={websiteInput} value={row.visibility} onChange={(e) => update(index, { visibility: e.target.value as WebsiteSession["visibility"] })}><option value="draft">Draft</option><option value="published">Published</option></select></label>
-        <SessionDelay target={target} slug={row.slug} minutes={row.delay_minutes ?? 0} disabled={!saved || disabled || page.inherited} />
       </div>
       <button className="desk-button-danger-outline justify-self-start" type="button" onClick={() => onChange({ ...page, sessions: page.sessions.filter((_, n) => n !== index) })}>Remove session {index + 1}</button>
     </fieldset>)}
+    <EventWebsiteDelays page={page} target={target} disabled={!saved || disabled} />
     {!page.sessions.length ? <p className="rounded-2xl border border-dashed border-line p-6 text-center text-sm text-muted">No sessions yet. Add your first session.</p> : null}
     <button className="desk-button justify-self-start" type="button" disabled={disabled || page.sessions.length >= 200} onClick={() => onChange({ ...page, sessions: [...page.sessions, { slug: `session-${page.sessions.length + 1}`, title: "", body: "", starts_at: "", ends_at: "", track: null, room: null, speakers: [], visibility: "draft" }] })}>Add session</button>
   </section>;

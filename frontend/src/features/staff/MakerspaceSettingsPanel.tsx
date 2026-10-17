@@ -44,6 +44,7 @@ import { staffTabPath } from "./staffTabs";
 import { ChannelSetupPanel } from "../notifications/ChannelSetupPanel";
 import { ChannelDeliveryLog } from "../notifications/ChannelDeliveryLog";
 import { PresencePrivacySettings } from "../presence/PresencePrivacySettings";
+import { PublicPageBuilder } from "../publicPages/PublicPageBuilder";
 
 type Props = {
   makerspace: Makerspace;
@@ -164,6 +165,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     </div>
   </SettingsRow>;
   const sections: SettingsLayoutSection[] = [
+    { id: "public-page", title: "Public page", rows: <PublicPageBuilder owner={{ kind: "makerspace", id: makerspace.id }} /> },
     { id: "general", title: "General", rows: <>
       <MakerspaceGeneralSettings {...shared} />
       <MakerspaceLocationSettings {...shared} />

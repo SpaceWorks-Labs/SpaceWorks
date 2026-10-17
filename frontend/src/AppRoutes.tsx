@@ -10,6 +10,7 @@ import { CenteredCardLayout, PublicLayout } from "./components/layouts";
 import { useTenant } from "./lib/tenant";
 import { publicFamilies, publicHome } from "./lib/publicHome";
 import { NotFoundPage } from "./features/NotFoundPage";
+import { FamilyProfileLink } from "./features/publicPages/FamilyProfileLink";
 // Every public surface below is its own chunk. The makerspace page (which holds the catalogue) and the staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
 // route is first visited, so a lending-only install never downloads events, bookings or
@@ -39,7 +40,8 @@ const ConsolePasswordResetPage = lazy(() => import("./features/auth/ConsolePassw
 const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
-const PublicProfilePage = lazy(() => import("./features/profile/PublicProfilePage").then((m) => ({ default: m.PublicProfilePage })));
+const PublicHandlePage = lazy(() => import("./features/publicPages/PublicHandlePage").then((m) => ({ default: m.PublicHandlePage })));
+const PublicEventCodePage = lazy(() => import("./features/events/PublicEventCodePage").then((m) => ({ default: m.PublicEventCodePage })));
 const PresenceNowPage = lazy(() => import("./features/presence/PresenceNowPage").then((m) => ({ default: m.PresenceNowPage })));
 const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsiteDetailPage").then((m) => ({ default: m.PublicWebsiteDetailPage })));
 
@@ -63,10 +65,10 @@ function FamilyHome() {
   if ((params.has("space") || params.has("confirmation")) && publicFamilies(bootstrap).includes("bookings")) return <PublicBookingsPage />;
   switch (publicHome(bootstrap)) {
     case "makerspace": return <MakerspacePage />;
-    case "events": return <PublicEventsPage />;
-    case "bookings": return <PublicBookingsPage />;
-    case "machines": return <PublicMachinesPage />;
-    case "membership": return <MemberArea />;
+    case "events": return <><PublicEventsPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
+    case "bookings": return <><PublicBookingsPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
+    case "machines": return <><PublicMachinesPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
+    case "membership": return <><MemberArea /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
     default: return <PublicLayout state={{ status: "ready" }} isEmpty empty={{ message: `${bootstrap.branding.display_name || bootstrap.makerspace.name} hasn't published anything yet. Check back soon.` }}
       makerspace={{ name: bootstrap.branding.display_name || bootstrap.makerspace.name, slug, homeHref }} headerAction={{ label: "Sign in", href: memberHref }} nav={[]}
       header={{ title: bootstrap.branding.display_name || bootstrap.makerspace.name }} footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
@@ -120,6 +122,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/items/:itemId" element={<PublicItemPage />} />
       <Route path="/checkout" element={<PublicSelfCheckoutPage />} />
       <Route path="/events" element={<PublicEventsPage />} />
+      <Route path="/e/:publicToken" element={<PublicEventCodePage />} />
+      <Route path="/o/:organizationSlug" element={<PublicOrganizationPage />} />
       <Route path="/events/:publicToken" element={<PublicEventDetailPage />} />
       <Route path="/events/:publicToken/schedule" element={<PublicWebsiteDetailPage view="schedule" />} />
       <Route path="/events/:publicToken/sessions/:sessionSlug" element={<PublicWebsiteDetailPage view="session" />} />
@@ -150,7 +154,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/scanner" element={<ScannerPage />} />
       <Route path="/kiosk/:stationToken" element={<KioskStationPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
-      <Route path="/:handle" element={<PublicProfilePage />} />
+      <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>;
   } else {
@@ -158,6 +162,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/" element={landing} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/o/:organizationSlug" element={<PublicOrganizationPage />} />
+      <Route path="/e/:publicToken" element={<PublicEventCodePage />} />
       <Route path="/m/:slug" element={<FamilyHome />} />
       <Route path="/m/:slug/items/:itemId" element={<PublicItemPage />} />
       <Route path="/m/:slug/checkout" element={<PublicSelfCheckoutPage />} />
@@ -194,7 +199,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/scanner" element={<ScannerPage />} />
       <Route path="/superadmin" element={<SuperadminPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
-      <Route path="/:handle" element={<PublicProfilePage />} />
+      <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>;
   }

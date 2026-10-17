@@ -45,7 +45,9 @@ def _reservation_spaces(actor, makerspace_id):
     makerspace = get_object_or_404(Makerspace.objects.all(), pk=makerspace_id)
     require_module(makerspace, "bookings")
     spaces = booking_authority.spaces_for(actor, "manage_reservations").filter(makerspace=makerspace)
-    if not spaces.exists():
+    # A Booking Manager of a makerspace with no spaces yet gets an empty queue, not a 403;
+    # only an actor with neither tenant booking authority nor a space grant here is refused.
+    if not spaces.exists() and not rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, makerspace.pk):
         raise PermissionDenied()
     return spaces
 

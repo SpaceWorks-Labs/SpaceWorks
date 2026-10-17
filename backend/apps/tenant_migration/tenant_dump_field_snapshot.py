@@ -6,6 +6,18 @@ override in tenant_dump_authority.py before the catalog guard will pass.
 """
 
 FIRST_PARTY_FIELD_NAMES = {
+    # Phase 1h (2026-10-17): SMS/WhatsApp addressed messaging channels.
+    "integrations.MakerspaceMessagingSettings": frozenset("id makerspace sms_account_sid sms_auth_token sms_from_number sms_sender_key updated_at use_platform_sender whatsapp_access_token whatsapp_app_secret whatsapp_business_account_id whatsapp_phone_number_id whatsapp_sender_key whatsapp_webhook_verify_token".split()),
+    "integrations.MessagingConsent": frozenset("action channel created_at id lifted_suppression_id makerspace phone_e164 phone_verified_at source user".split()),
+    "integrations.MessagingDelivery": frozenset("accepted_at attempts audience billed_segments channel context created_at delivered_at error_code estimated_segments event event_key failed_at feature id lease_token lease_until makerspace max_attempts next_attempt_at progress_rank provider provider_message_id provider_source quota_reserved_at read_at recipient_alias_hash recipient_phone_hash scope segments sender_key sent_at skip_reason source_id source_type status template_name user".split()),
+    "integrations.MessagingRecipientAlias": frozenset("alias_hash channel first_seen_at id phone_hash sender_key".split()),
+    "integrations.MessagingRecipientCorrelation": frozenset("alias_known channel confirmed_at id phone_hash probe_delivery probe_started_at sender_key state".split()),
+    "integrations.MessagingSenderCredential": frozenset("created_at id identity retired_at verify_token version webhook_secret wiped_at".split()),
+    "integrations.MessagingSenderIdentity": frozenset("active channel id makerspace owner retired_at sender_key".split()),
+    "integrations.MessagingSuppression": frozenset("channel created_at id lifted_at lifted_provider_at provider_at reason recipient_hash recipient_kind sender_key".split()),
+    "integrations.MessagingWebhookEvent": frozenset("attempts channel dedupe_id id kind makerspace next_attempt_at payload processed_at provider received_at sender_key state".split()),
+    "integrations.PlatformWhatsAppSettings": frozenset("access_token app_secret business_account_id id is_enabled phone_number_id updated_at webhook_verify_token".split()),
+    "integrations.WhatsAppTemplateBinding": frozenset("audience business_account_id event feature id is_active language makerspace needs_review parameters template_name".split()),
     # Mobile programme 1d/1f-1 (2026-10-17): account deletion/restore + analytics tracking.
     "accounts.AccountPurgeObject": frozenset("attempts bucket deleted_at id last_error makerspace object_key quota_released_at size_bytes user".split()),
     "accounts.AccountPurgeProgress": frozenset("done_at id makerspace user".split()),
@@ -156,7 +168,7 @@ FIRST_PARTY_FIELD_NAMES = {
     'integrations.RecipientMachineTypeScope': frozenset('id machine_type recipient'.split()),
     'integrations.RecipientMachineScope': frozenset('id machine recipient'.split()),
     'integrations.RecipientCategoryScope': frozenset('category id recipient'.split()),
-    'integrations.PlatformSmsSettings': frozenset('account_sid auth_token from_number id is_enabled provider updated_at'.split()),
+    'integrations.PlatformSmsSettings': frozenset('account_sid auth_token from_number id is_enabled notifications_enabled notifications_from_number provider updated_at'.split()),
     'integrations.DailyOtpSmsCounter': frozenset('count day id'.split()),
     'operations.PeriodicTaskRun': frozenset('id last_error last_run_at name'.split()),
     'operations.ReportMetricRollup': frozenset('bucket_start checksum computed_at dimension_key dimensions grain id makerspace metric_key report_key revision sample_count source_cutoff source_module value'.split()),

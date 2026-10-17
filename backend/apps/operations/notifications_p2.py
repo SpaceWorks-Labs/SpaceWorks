@@ -147,6 +147,10 @@ def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner
         return None
 
     def send():
+        # Admission can finish later in the same transaction. Resolve again
+        # after commit so a now-eligible owner envelope owns the email leg.
+        if envelope is not None and any(target.channel == "email" for target in resolve(envelope)):
+            return
         if scoped(EmailLog, space.pk).filter(source_metadata__p2_direct=key).exists():
             return
         dispatch_email(makerspace=space, to_email=to_email, subject=subject, text_body=text,

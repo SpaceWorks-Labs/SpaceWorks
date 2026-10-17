@@ -95,7 +95,7 @@ def _features(makerspace, delegated):
             "events": list(notification_catalog.FEATURE_EVENTS.get(feature, ())),
         }
         for feature in offered
-        if recipient_selection.feature_available(makerspace, feature)
+        if recipient_selection.category_available(makerspace, feature)
     ]
 
 
@@ -216,4 +216,3 @@ def payload(makerspace, actor, *, delegated, reach=None):
         ],
         "scope_options": _scope_options(makerspace, reach),
     }
-

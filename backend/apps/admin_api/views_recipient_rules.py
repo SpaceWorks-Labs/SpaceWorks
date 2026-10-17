@@ -92,7 +92,7 @@ class NotificationRecipientRulesView(APIView):
             raise PermissionDenied(
                 "Delegated recipient management is limited to maintenance alerts."
             )
-        if not recipient_selection.feature_available(makerspace, feature):
+        if not recipient_selection.category_available(makerspace, feature):
             return self._error(f"The {feature} module is not installed.")
         if event not in notification_catalog.FEATURE_EVENTS.get(feature, ()):
             return self._error(f"Unknown event '{event}' for feature '{feature}'.")

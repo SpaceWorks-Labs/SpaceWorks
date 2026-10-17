@@ -2,9 +2,11 @@
 
 from .target_projection_types import RowDisposition, RowPolicy
 from .projection_wp4 import ROW_POLICIES as WP4_ROW_POLICIES
+from .catalog_p2_presence import DROP_MODELS as PRESENCE_DROPS
 
 
 ROW_POLICIES = {
+    **{label: RowPolicy(RowDisposition.DROP, reason) for label, reason in PRESENCE_DROPS.items()},
     "events.EventCertificateArtwork": RowPolicy(
         RowDisposition.DROP,
         "Unpromoted upload reservations have no durable artwork or portable authority.",

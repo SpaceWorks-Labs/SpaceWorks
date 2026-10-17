@@ -84,7 +84,6 @@ ENTRIES = (
     P("presence.ended_claim_revoked", "Presence ended claim revoked", ("claim_session_id",)),
     P("presence.ended_membership_revoked", "Presence ended membership revoked"),
     P("presence.started", "Presence started"),
-    P("presence.superseded", "Presence superseded"),
     P("report.downloaded", "Report downloaded"),
     P("report.previewed", "Report previewed"),
 )

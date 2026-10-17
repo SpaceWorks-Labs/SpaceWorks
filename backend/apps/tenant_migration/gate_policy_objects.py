@@ -11,6 +11,9 @@ LIFECYCLE_EXEMPTIONS = {
 
 
 OBJECT_MUTATION_PARTICIPANTS = {
+    "apps.bookings.services_gallery.presign_photo": "Called by the tenant-resolved gallery upload route behind the authenticated source-gate assertion.",
+    "apps.bookings.services_gallery.cleanup_unattached": "Failed gallery attachment cleanup runs inside the tenant-resolved photo route's source-gate boundary.",
+    "apps.bookings.services_gallery.delete_photo": "Photo removal and post-commit storage release run through the tenant-resolved gallery route.",
     "apps.makerspaces.website_assets.delete_object": "Private website rollback/replacement cleanup belongs to the tenant-resolved durable website transaction or post-commit cleanup.",
     "apps.makerspaces.website_assets.copy_object": "Called only by an authorized domain clone/COW adapter inside clone_transaction and its tenant source gate.",
     "apps.data_export.subject_services.run_subject_export": (

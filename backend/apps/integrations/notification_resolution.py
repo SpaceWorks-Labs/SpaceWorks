@@ -9,6 +9,7 @@ from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.notifications.models_preferences import NotificationPreference
 from apps.notifications.preferences import mandatory_email, personal_enabled
 from .notification_sources import source_eligible
+from apps.hardware_requests.notifications_p2_email import allowed as EQUIPMENT_EMAIL_POLICY
 
 LEGACY_STAFF_EMAIL_SOURCES = {
     "hardware_requests": {"hardware.request", "hardware.loan_reminder", "hardware.problem_report", "hardware.charge"},
@@ -41,6 +42,9 @@ def eligible(envelope):
     space.refresh_from_db()
     custody = envelope.stream == "backup" and envelope.event in {"archive_custody_alarm", "tenant_exit_custody_alarm"}
     owner_ok = eligible_owner(space, envelope.recipient_id)
+    if not owner_ok and envelope.source_kind == "membership.application":
+        from apps.makerspaces.notifications_p2_members import reapplication_owner_eligible
+        owner_ok = reapplication_owner_eligible(envelope)
     if mandatory_email(envelope.stream, envelope.event):
         from apps.accounts.models import User
         owner_ok = User.objects.filter(pk=envelope.recipient_id, is_active=True, access_status="active",
@@ -50,7 +54,9 @@ def eligible(envelope):
     if not source_eligible(envelope):
         return False
     from .recipients import feature_available
-    if not custody and not mandatory_email(envelope.stream, envelope.event) and not feature_available(space, envelope.feature):
+    if not custody and not mandatory_email(envelope.stream, envelope.event) and not feature_available(
+        space, envelope.feature, source_kind=envelope.source_kind,
+    ):
         return False
     if envelope.audience == "staff" and envelope.source_kind != "notification.digest":
         from .destinations import NotificationScope
@@ -62,14 +68,17 @@ def eligible(envelope):
 
 
 def email_eligible(envelope):
+    from apps.hardware_requests.notifications_p2_email import proven_address
+    if EQUIPMENT_EMAIL_POLICY(envelope) is False:
+        return False
     user = envelope.recipient
     user.refresh_from_db()
     if envelope.source_kind in {"bookings.lifecycle", "bookings.reminder"}:
         from apps.bookings.notification_owner_mailbox import email_reserved
         if email_reserved(envelope):
             return False
-    verified = user.email_verified_at or legacy_staff_email_allowed(envelope)
-    return bool(user.email and verified and not email_module_blocks(
+    verified = user.email_verified_at or proven_address(envelope) or legacy_staff_email_allowed(envelope)
+    return bool((user.email or "").strip() and verified and not email_module_blocks(
         envelope.makerspace, envelope.stream, envelope.event,
     ) and not blocked_reason(envelope.makerspace, user.email, user_id=user.pk,
                             feature=envelope.feature, stream=envelope.stream, event=envelope.event))

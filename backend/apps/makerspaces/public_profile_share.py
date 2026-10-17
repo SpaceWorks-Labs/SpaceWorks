@@ -6,6 +6,7 @@ the iterator on each read, rather than caching an unfiltered publication list.
 
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from .models_profiles import PublicHandle
 from .public_profile_access import resolve_public_profile, profile_is_public, _request_tenant_ids
@@ -31,6 +32,7 @@ class PublicProfileShareView(PublicProfileBase):
         302: OpenApiResponse(description="Redirect to the current public handle."), **ERRORS,
     })
     def get(self, request, handle):
+        self.cache_headers()
         claim, redirected = resolve_public_profile(handle, request)
         if redirected:
             return Response(status=302, headers={"Location": f"/share/profiles/{claim.handle}/"})
@@ -50,7 +52,11 @@ def sitemap_profile_urls(request, *, spaces=None):
     if spaces is None:
         from .website_directory import sitemap_spaces
         spaces = sitemap_spaces(request)
-    scopes = _request_tenant_ids(request)
+    try:
+        scopes = _request_tenant_ids(request)
+    except NotFound:
+        # An unscoped host or origin publishes no profiles; it must not 404 the shared sitemap.
+        return
     claims = PublicHandle.objects.select_related("profile__membership__user", "profile__membership__makerspace")
     claims = claims.filter(profile__membership__makerspace__in=spaces)
     if scopes:

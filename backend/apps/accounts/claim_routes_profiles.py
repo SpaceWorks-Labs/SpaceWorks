@@ -2,6 +2,14 @@
 from .claim_route_types import AnonymousRead, Allowed, ID, ReadOnly, Refused, RowOwnership
 
 PROFILE_CLAIM_ROUTES = {
+    **{("member-event-history", method): Refused(
+        "Event history can include foreign-hosted registrations.",
+        ownership=RowOwnership.MIXED_REFUSED,
+    ) for method in ("GET", "HEAD")},
+    ("member-event-history", "OPTIONS"): AnonymousRead(),
+    ("member-event-speaker-claim", "POST"): Refused(
+        "Speaker invitations require a full account session."),
+    ("member-event-speaker-claim", "OPTIONS"): AnonymousRead(),
     **{(name, method): AnonymousRead() for name in (
         "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github",
     ) for method in ("GET", "HEAD", "OPTIONS")},

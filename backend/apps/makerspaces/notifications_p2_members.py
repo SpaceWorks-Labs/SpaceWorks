@@ -43,6 +43,22 @@ def _request(envelope):
     ).filter(pk=envelope.source_id).first()
 
 
+def reapplication_owner_eligible(envelope):
+    """A revoked member still owns their fresh admission, never their old access."""
+    if envelope.audience not in {"member", "requester"}:
+        return False
+    row = _request(envelope)
+    if (row is None or row.kind != "request" or row.user_id != envelope.recipient_id
+            or row.requested_by_id != envelope.recipient_id or not request_eligible(envelope)):
+        return False
+    user = row.user
+    if not user.is_active or user.access_status != "active" or user.is_tenant_dump_stub:
+        return False
+    membership = scoped(MakerspaceMembership, row.makerspace_id).filter(user=user).first()
+    return bool(membership and membership.status == "revoked" and membership.receives_notifications
+                and row.created_at >= (membership.revoked_at or membership.created_at))
+
+
 def activation_authorized(row):
     actor = row.activated_by
     if actor and actor.pk == row.user_id:

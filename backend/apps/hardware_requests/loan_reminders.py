@@ -102,17 +102,15 @@ def build_reminder(makerspace, reminder, now, local_tz):
 
 def dispatch_reminder(makerspace, reminder, message, now, local_tz):
     from apps.hardware_requests.loan_reminder_notifications import deliver_loan_reminder
-    from apps.notifications.emit import emit_notification
 
     # Revalidate after the shared source gate too, just before outbound delivery.
     loan = _current(makerspace, reminder)
     if loan is None:
         return
     result = deliver_loan_reminder(makerspace, loan, reminder, message, local_tz)
-    if reminder.kind == "escalation":
-        emit_notification(makerspace, title=message.title, event=message.event,
-                          body=message.body, level=message.level)
-    elif reminder.offset_seconds == 0 and result and result.scheduled:
+    # Escalations already reserve staff-only envelopes. A legacy feed mirror
+    # would create a second staff alert outside that source-backed identity.
+    if reminder.kind == "borrower" and reminder.offset_seconds == 0 and result and result.scheduled:
         _rows(HardwareRequest, makerspace).filter(pk=loan.pk, return_due_at=reminder.due_at).update(
             return_reminder_sent_at=now,
         )

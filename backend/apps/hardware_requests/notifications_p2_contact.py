@@ -65,14 +65,19 @@ OWNER_KIND = "hardware.owner_mailbox"
 
 
 def owner_needs_direct(envelope):
-    """Legacy parity for an owner whose mailbox is proven by the request's verified
-    contact snapshot but not by `email_verified_at`, which the personal resolver
-    requires. True only when the envelope's own email leg cannot carry the mail
-    and every other email rule would have allowed it; mandatory return reminders
-    therefore keep reaching borrowers who never ran the email OTP."""
+    """Compatibility fallback only while the shared owner-proof policy is absent.
+
+    Once installed, the resolver owns both delivery and refusal. A fallback must
+    never acquire a second route around its mute, suppression or consent checks.
+    """
     from apps.integrations.models_endpoints import ChannelConfiguration
     from apps.integrations.notification_resolution import eligible, selected_policy
-    from .notifications_p2_email import proven_address
+    from .notifications_p2_email import allowed, proven_address
+    from apps.integrations import notification_resolution
+    # The installed resolver owns refusals as well as successful deliveries.
+    # Falling back after a mute/suppression refusal would bypass that policy.
+    if getattr(notification_resolution, "EQUIPMENT_EMAIL_POLICY", None) is allowed:
+        return False
     user = envelope.recipient
     user.refresh_from_db()
     if user.email_verified_at or not user.email or not proven_address(envelope):

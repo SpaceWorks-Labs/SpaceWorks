@@ -127,6 +127,9 @@ def _emit(row, event, recipient_id, audience, source_kind, rendered):
 
 
 def notify_booking_status(booking, event, *, sync=False):
+    if event not in BOOKING_NOTIFICATION_EVENTS:
+        from apps.integrations.notify import NotificationResult
+        return NotificationResult(False)
     makerspace = booking.space.makerspace
     row = rbac.scope_notification_policy(
         Booking.objects.all(), makerspace_id=makerspace.pk, field="space__makerspace_id",
@@ -147,9 +150,14 @@ def notify_booking_status(booking, event, *, sync=False):
 
     def build():
         emails = ()
-        if row.member_id is None and owner_on and row.email:
+        # Guest mail is built after commit; reload its live gates just like the
+        # personal worker does, rather than capturing the emission-time toggle.
+        live = rbac.scope_notification_policy(
+            Booking.objects.all(), makerspace_id=makerspace.pk, field="space__makerspace_id",
+        ).select_related("space__makerspace").get(pk=row.pk)
+        if live.member_id is None and requester_enabled(live, event) and live.email:
             member = render(makerspace, "bookings", "requester", event, context)
-            emails = (EmailDelivery(to_email=row.email, subject=member["subject"],
+            emails = (EmailDelivery(to_email=live.email, subject=member["subject"],
                                     text_body=_with_reason(member["text_body"], row, event),
                                     html_body=member["html_body"], audience="requester", stream="bookings"),)
         # `text` is the STAFF summary: chat rooms are a staff surface.

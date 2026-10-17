@@ -55,12 +55,17 @@ FEATURE_MODULES = {
     NotificationFeature.PAYMENTS: "request_workflow",
     NotificationFeature.STOCK: "procurement",
     NotificationFeature.CERTIFICATIONS: "machines",
+    NotificationFeature.PRESENCE: "presence",
 }
 
 
-def feature_available(makerspace, feature) -> bool:
+def feature_available(makerspace, feature, *, source_kind="") -> bool:
     """False when the feature's module is not installed for this makerspace."""
-    key = FEATURE_MODULES.get(feature)
+    # These categories are shared by independent domain families. Their registered
+    # source still checks the particular job type/revision before every delivery.
+    key = {"machines.service": "machine_service", "operations.stocktake": "stocktake"}.get(
+        source_kind, FEATURE_MODULES.get(feature),
+    )
     if key is None or makerspace is None:
         return True
     try:
@@ -78,6 +83,20 @@ def feature_available(makerspace, feature) -> bool:
         return True
 
 
+def category_available(makerspace, feature):
+    """A shared category is configurable while any owning family is installed.
+
+    Actual deliveries still pass the exact source gate in feature_available and
+    the registered source predicate; showing a category grants no delivery reach.
+    """
+    alternatives = {"printing": "machines.service", "stock": "operations.stocktake"}
+    return feature_available(makerspace, feature) or (
+        feature in alternatives and feature_available(
+            makerspace, feature, source_kind=alternatives[feature],
+        )
+    )
+
+
 def selection_rows(makerspace, feature, event):
     """Selected recipients for one (feature, event), or [] when none are selected.
 
@@ -88,7 +107,7 @@ def selection_rows(makerspace, feature, event):
     """
     if feature not in SELECTABLE_FEATURES or not event:
         return []
-    if not feature_available(makerspace, feature):
+    if not category_available(makerspace, feature):
         return []
     try:
         from apps.integrations import recipients

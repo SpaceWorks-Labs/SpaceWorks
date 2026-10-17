@@ -123,7 +123,10 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
                 notify_member_joined,
                 send_member_welcome,
             )
-            send_member_welcome(membership, source=source)
+            # Approval already emitted the owner's welcome through the decision
+            # adapter above, including its compatibility email fallback.
+            if source != "approval":
+                send_member_welcome(membership, source=source)
             notify_member_joined(membership)
             from apps.makerspaces.membership_payments import (
                 create_for_active_membership,

@@ -49,7 +49,6 @@ NON_LITERAL_META_ACTIONS = frozenset({
     "makerspace.purged",
     "membership.adopted_from_import",
     "notification.recipients_selected",
-    "presence.started",
     "qr.rebound",
 })
 

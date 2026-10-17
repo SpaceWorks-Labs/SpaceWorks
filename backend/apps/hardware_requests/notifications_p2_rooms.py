@@ -42,9 +42,7 @@ def eligible_room(log):
     space.refresh_from_db()
     if not is_servable(space):
         return False
-    # The machine source owns printer vs generic module eligibility. The shared
-    # personal resolver still needs the corresponding source-aware gate (report).
-    if kind != "machines.service" and not feature_available(space, log.feature):
+    if not feature_available(space, log.feature, source_kind=kind):
         return False
     if not is_notification_enabled(space, log.feature, log.channel):
         return False

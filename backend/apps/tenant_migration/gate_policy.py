@@ -1,6 +1,7 @@
 """Compatibility imports for the split source-gate policy catalogs."""
 
 from .gate_policy_http import (
+    WA_TWILIO_PARTICIPANTS,
     HTTP_EXEMPTIONS,
     HTTP_ANONYMOUS_EXEMPTIONS,
     HTTP_ANONYMOUS_PARTICIPANTS,

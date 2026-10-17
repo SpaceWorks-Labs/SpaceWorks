@@ -5,10 +5,10 @@ from .notification_enums import NotificationChannel
 
 def available_channels(space, feature):
     from .notification_catalog import is_notification_enabled
-    from .recipients import feature_available
+    from .recipients import category_available
     from .dispatch_channels import channel_module_blocks
     from apps.makerspaces.platform import feature_enabled, module_enabled
-    if not feature_available(space, feature):
+    if not category_available(space, feature):
         return []
     configs = {row.channel: row for row in ChannelConfiguration.objects.filter(makerspace=space)}
     result = []

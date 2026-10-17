@@ -8,6 +8,17 @@ from rest_framework.exceptions import ValidationError
 from .printable_fonts import font_markup, script
 
 
+def document_paragraph(text, style, *, bold=False):
+    """The document path shapes font runs separately, including mixed-script words.
+
+    Both printable surfaces share the coverage/cluster selection in font_markup;
+    the flowable retains logical cluster text for extraction and accessibility.
+    """
+    from .printable_paragraph import UnicodeParagraph
+    font_markup(str(text), "sans", bold, logical=True)
+    return UnicodeParagraph(text, style, bold=bold)
+
+
 def text_box(canvas, text, element, *, origin_x=0, origin_y=0, area_height_mm):
     from reportlab.lib.colors import HexColor
     from reportlab.lib.styles import ParagraphStyle

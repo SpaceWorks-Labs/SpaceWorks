@@ -16,7 +16,7 @@ FIELDS = ("date", "document_number", "kind", "payment_id", "subject_type", "curr
 def build_accounting_journal(makerspace_id, *, limit=None, date_range=None, subject_type=None, status=None):
     ids = scoped_ids(makerspace_id)
     mappings = {row.makerspace_id: row.account_codes for row in MakerspaceBillingSettings.objects.filter(makerspace_id__in=ids)}
-    documents = PaymentDocument.objects.filter(makerspace_id__in=ids).select_related("makerspace", "payment").order_by("money_at", "sequence")
+    documents = PaymentDocument.objects.filter(makerspace_id__in=ids, kind__in=["receipt", "credit_note"]).select_related("makerspace", "payment").order_by("money_at", "sequence")
     if subject_type:
         documents = documents.filter(payment__subject_type=subject_type)
     if status:

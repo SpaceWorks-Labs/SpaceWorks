@@ -2,7 +2,7 @@
 
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, time
 import json
 from threading import RLock
 from unittest.mock import patch
@@ -138,10 +138,10 @@ def _value_from_record(record, proxy, field):
     if isinstance(field, CompositePrimaryKey):
         return [_value_from_record(record, proxy, item) for item in field]
     value = record[field.attname]
-    # DjangoJSONEncoder truncates datetime microseconds to milliseconds. Besides
+    # DjangoJSONEncoder truncates datetime/time microseconds to milliseconds. Besides
     # losing source data, .000123 becomes .000, then no fraction after restore,
     # so the independently reconstructed row no longer has its source digest.
-    if isinstance(value, datetime) and value.microsecond % 1000:
+    if isinstance(value, (datetime, time)) and value.microsecond % 1000:
         return value.isoformat()
     return value if is_protected_type(value) else field.value_to_string(proxy)
 

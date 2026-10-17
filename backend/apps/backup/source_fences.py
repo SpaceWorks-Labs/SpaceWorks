@@ -15,9 +15,10 @@ def broad_unique_fence(rule, component_counts):
         "table": rule.table,
         "columns": [item.source_column for item in rule.components],
         "operations": ["insert", "update"],
-        "component_ids": [
+        # Tenant ordering does not imply UUID ordering; sign the canonical list.
+        "component_ids": sorted(
             item["component_id"] for item in component_counts if item["count"]
-        ],
+        ),
     }
     return {**definition, "definition_sha256": digest(definition)}
 
@@ -124,7 +125,7 @@ def _relationship_fact(
         "columns": list(columns),
         "operations": list(operations),
         "dependency_kind": dependency_kind,
-        "component_ids": list(component_ids),
+        "component_ids": sorted(component_ids),
         **(extra or {}),
     }
     return {**definition, "definition_sha256": digest(definition)}

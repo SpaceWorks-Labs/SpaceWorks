@@ -39,6 +39,10 @@ class AuthUserPayload(serializers.Serializer):
     role = serializers.CharField()
     is_superuser = serializers.BooleanField()
     must_change_password = serializers.BooleanField()
+    account_kind = serializers.ChoiceField(choices=("member", "staff", "platform"))
+    staff_makerspace = inline_serializer(name="AuthStaffMakerspace", fields={
+        "id": serializers.IntegerField(), "slug": serializers.CharField(), "name": serializers.CharField(),
+    }, allow_null=True)
     makerspaces = serializers.ListField(child=AuthMembershipSerializer)
 
     def get_fields(self):
@@ -58,8 +62,10 @@ LoginRequestSerializer = inline_serializer(
     fields={
         "username": serializers.CharField(),
         "password": serializers.CharField(write_only=True),
+        "context": serializers.ChoiceField(choices=("member", "staff", "platform"), required=False),
+        "makerspace": serializers.SlugField(required=False, max_length=150),
         "surface": serializers.ChoiceField(
-            choices=("member", "staff"), required=False
+            choices=("member", "staff", "delegated"), required=False
         ),
     },
 )
@@ -68,13 +74,13 @@ LoginResponseSerializer = inline_serializer(
     fields={
         "access": serializers.CharField(),
         "surface": serializers.ChoiceField(
-            choices=("member", "staff", "staff_api", "verification_only")
+            choices=("member", "staff", "staff_api", "delegated", "platform", "verification_only")
         ),
         "user": UserPayloadSerializer,
     },
 )
 RefreshResponseSerializer = inline_serializer(
-    name="RefreshResponse", fields={"access": serializers.CharField()}
+    name="RefreshResponse", fields={"access": serializers.CharField(), "user": AuthUserPayload()}
 )
 LogoutResponseSerializer = inline_serializer(
     name="LogoutResponse", fields={"detail": serializers.CharField()}

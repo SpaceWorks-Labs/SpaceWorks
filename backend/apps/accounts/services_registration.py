@@ -53,7 +53,7 @@ def issue_challenge(user):
         locked_user = User.objects.select_for_update().get(pk=user.pk)
         # Staff typed this address as contact data; it is not identity proof. Returning
         # quietly preserves the endpoint's account-enumeration-safe acknowledgement.
-        if locked_user.is_walk_in:
+        if locked_user.account_kind != "member" or locked_user.is_walk_in:
             return None
         email = _normalize_email(locked_user.email)
         if EmailVerificationChallenge.objects.filter(
@@ -108,6 +108,8 @@ def confirm_challenge(user, code):
     refused_walk_in = False
     with transaction.atomic():
         locked_user = User.objects.select_for_update().get(pk=user.pk)
+        if locked_user.account_kind != "member":
+            raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
         email = _normalize_email(locked_user.email)
         # Resolve ONLY the caller's own newest usable challenge for their current email.
         # A foreign user has no matching row, so guessing IDs cannot burn a victim's attempts.
@@ -179,7 +181,7 @@ def register_member(display_name, email, phone, password):
     now = timezone.now()
     with transaction.atomic():
         user = (
-            User.objects.select_for_update().filter(email__iexact=email).first()
+            User.objects.select_for_update().filter(account_kind="member", email__iexact=email).first()
         )
         if _self_registration_is_releasable(user, now):
             _release_self_registration(user, now)
@@ -191,6 +193,7 @@ def register_member(display_name, email, phone, password):
                 with transaction.atomic():
                     user = User(
                         username=f"member_{uuid.uuid4().hex}",
+                        account_kind="member",
                         display_name=display_name,
                         email=email,
                         phone=phone,
@@ -203,7 +206,7 @@ def register_member(display_name, email, phone, password):
             except IntegrityError:
                 user = (
                     User.objects.select_for_update()
-                    .filter(email__iexact=email)
+                    .filter(account_kind="member", email__iexact=email)
                     .first()
                 )
 

@@ -146,6 +146,10 @@ def user_payload(user, request=None):
         "role": user.role,
         "is_superuser": user.is_superuser,
         "must_change_password": user.must_change_password,
+        "account_kind": user.account_kind,
+        "staff_makerspace": ({"id": user.staff_makerspace_id, "slug": user.staff_makerspace.slug,
+                              "name": user.staff_makerspace.name}
+                             if user.staff_makerspace_id else None),
         "makerspaces": membership_entries + org_only_entries,
     }
 

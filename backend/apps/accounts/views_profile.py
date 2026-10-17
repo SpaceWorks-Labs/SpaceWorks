@@ -23,9 +23,11 @@ from apps.accounts.schemas_auth import (
 )
 from apps.accounts.serializers import LoginSerializer, SpaceWorksTokenRefreshSerializer, user_payload
 from apps.accounts.tokens import SpaceWorksRefreshToken
+from apps.accounts.models import User
 
 
 from .views_refresh import _assert_staff_refresh_scope, _refresh_surface
+from .session_context import SessionContextSerializer, cookie_name, decode_cookie, request_context
 
 class LogoutView(APIView):
     permission_classes = [AllowAny]
@@ -34,19 +36,29 @@ class LogoutView(APIView):
         tags=["Auth"],
         summary="Log out and clear refresh cookie",
         auth=[],
-        request=None,
+        request=SessionContextSerializer,
         responses={
-            200: LogoutResponseSerializer,
+            204: OpenApiResponse(description="Logged out of the selected account context."),
             401: OpenApiResponse(description="Refresh token could not be blacklisted."),
             403: OpenApiResponse(description="CSRF check failed."),
         },
     )
     def post(self, request, *args, **kwargs):
-        cookie = request.COOKIES.get(settings.AUTH_REFRESH_COOKIE)
+        context = request_context(request)
+        cookie = request.COOKIES.get(cookie_name(context))
         assert_csrf(request, surface=_refresh_surface(cookie) if cookie else None)
+        actor = None
         if cookie:
+            try:
+                token = decode_cookie(cookie, context)
+            except TokenError as exc:
+                raise InvalidToken("Invalid refresh cookie.") from exc
+            actor = User.objects.filter(pk=token.get("user_id"), account_kind=token.get("kind")).first()
+            if actor is not None:
+                from apps.accounts.surface_policy import validate_account_token, assert_surface
+                validate_account_token(actor, token)
+                assert_surface(actor, token.get("surface"), request)
             _assert_staff_refresh_scope(request, cookie)
-        actor = audit_events.user_from_refresh_token(cookie)
         if cookie:
             try:
                 # A claim refresh will not decode as a plain RefreshToken, and logout
@@ -56,7 +68,7 @@ class LogoutView(APIView):
                 except TokenError:
                     refresh = SpaceWorksRefreshToken(cookie)
                 refresh.blacklist()
-                if refresh.get("sid"):
+                if actor is not None and refresh.get("sid"):
                     from apps.accounts.web_sessions import revoke_session
                     revoke_session(actor, refresh["sid"])
             except TokenError:
@@ -67,8 +79,8 @@ class LogoutView(APIView):
             target=actor,
             meta={"had_refresh_cookie": bool(cookie)},
         )
-        response = Response({"detail": "Logged out."})
-        clear_refresh_cookies(response)
+        response = Response(status=204)
+        clear_refresh_cookies(response, context=context)
         return response
 
 

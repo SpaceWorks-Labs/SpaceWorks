@@ -13,7 +13,8 @@ def _is_superadmin(actor):
 
 
 def organizer_series_q(actor, *, prefix=""):
-    if actor is None or not getattr(actor, "is_authenticated", False) or _is_superadmin(actor):
+    if (actor is None or not getattr(actor, "is_authenticated", False)
+            or getattr(actor, "account_kind", None) != "member"):
         return Q(pk__in=[])
     organization = f"{prefix}organizers__organization"
     membership = f"{organization}__memberships"
@@ -41,6 +42,7 @@ def can_manage_series(actor, series):
         return False
     memberships = OrganizationMembership.objects.filter(
         user=actor,
+        user__account_kind="member",
         status=OrganizationMembership.Status.ACTIVE,
         organization__is_active=True,
         organization__organized_event_series__series=series,

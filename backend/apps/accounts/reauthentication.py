@@ -30,7 +30,10 @@ def binding(request):
     active(user)
     token = getattr(request, "auth", None)
     if token is not None:
-        if token.get("device_grant_id") or token.get("surface") not in {"staff", "staff_api", "member"}:
+        from apps.accounts.surface_policy import assert_surface, validate_account_token
+        validate_account_token(user, token)
+        assert_surface(user, token.get("surface"), request=request)
+        if token.get("device_grant_id") or token.get("surface") not in {"staff", "staff_api", "member", "delegated", "platform"}:
             raise PermissionDenied("Use a browser session to verify your identity.")
         from apps.accounts.web_sessions import validate_session
         row = validate_session(user, token)
@@ -40,7 +43,7 @@ def binding(request):
     if not getattr(request, "session", None) or not request.session.session_key:
         raise PermissionDenied("A current browser session is required.")
     from apps.accounts.control_mfa import session_verified
-    if not user.is_superuser or not session_verified(request):
+    if user.account_kind != "platform" or not user.is_superuser or not session_verified(request):
         raise PermissionDenied("Complete the control-panel MFA gate first.")
     return "control:" + request.session.session_key, "control"
 
@@ -50,7 +53,9 @@ def versions(user):
     # Linked identities are credentials too. Include row identity so an unlink/
     # relink cannot resurrect a proof made before the credential was revoked.
     identities = list(user.social_identities.order_by("pk").values_list("pk", "provider", "provider_sub"))
-    fingerprint = hashlib.sha256((credential_fingerprint(user, user.email) + "\0" + json.dumps(identities)).encode()).hexdigest()
+    identity = (str(user.pk), user.account_kind, str(user.staff_makerspace_id), user.credential_generation)
+    fingerprint = hashlib.sha256((credential_fingerprint(user, user.email) + "\0"
+                                  + json.dumps([identity, identities])).encode()).hexdigest()
     return {"auth_generation": current_auth_generation(),
             "credential_fingerprint": fingerprint,
             "mfa_version": str(row.version) if row else ""}

@@ -20,6 +20,7 @@ def _organization_authority_memberships(actor, *, makerspace_ids=None):
     filters = (
         Q(
             user=actor,
+            user__account_kind="member",
             status=OrganizationMembership.Status.ACTIVE,
             organization__is_active=True,
             organization__makerspace_links__makerspace__superadmin_access_enabled=True,

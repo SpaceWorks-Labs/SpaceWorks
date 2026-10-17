@@ -17,6 +17,7 @@ def organizer_event_q(actor, *, event_prefix=""):
     """Return the narrow SQL predicate for events organized by this actor's org."""
     if (
         actor is None
+        or getattr(actor, "account_kind", None) != "member"
         or not getattr(actor, "is_authenticated", False)
         or _is_superadmin(actor)
     ):
@@ -60,6 +61,7 @@ def can_manage_event(actor, event) -> bool:
         return False
     memberships = OrganizationMembership.objects.filter(
         user=actor,
+        user__account_kind="member",
         status=OrganizationMembership.Status.ACTIVE,
         organization__is_active=True,
         organization__organized_events__event=event,

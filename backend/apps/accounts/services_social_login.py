@@ -22,7 +22,8 @@ from apps.makerspaces.servability import servable_queryset
 
 def assert_social_user_active(user):
     if (
-        user.is_tenant_dump_stub
+        user.account_kind != "member"
+        or user.is_tenant_dump_stub
         or not user.is_active
         or user.access_status != User.AccessStatus.ACTIVE
     ):
@@ -74,6 +75,10 @@ def issue_social_session(
     user, *, surface, delivery, nonce_row, staff_scope=None,
     verified_attestation=None,
 ):
+    if surface != SocialSurface.MEMBER:
+        from apps.accounts.services_social_identity import SocialResolutionError
+
+        raise SocialResolutionError("social_invalid", 403)
     assert_social_user_active(user)
     # Provider authentication is sufficient by platform policy, on web and native alike.
     user._mfa_provider_verified = True
@@ -99,8 +104,6 @@ def issue_social_session(
 
     refresh = SpaceWorksRefreshToken.for_user(user)
     refresh["surface"] = surface
-    if surface == SocialSurface.STAFF:
-        refresh["staff_scope"] = staff_scope or "platform"
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
 

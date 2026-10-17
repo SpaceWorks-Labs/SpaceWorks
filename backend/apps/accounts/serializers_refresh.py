@@ -44,20 +44,12 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
                     self.error_messages["no_active_account"],
                     code="no_active_account",
                 )
-            if refresh.get("surface") in ("staff", "staff_api"):
-                from apps.accounts.services_social_identity import SocialResolutionError
-                from apps.accounts.services_social_login import assert_staff_authority
-                from types import SimpleNamespace
-
-                scope = refresh.get("staff_scope")
-                # Revalidate the scope bound at issuance; refresh never widens it.
-                scoped_request = SimpleNamespace(headers={}, selected_makerspace_id=(
-                    None if scope in (None, "platform") else scope
-                ))
-                try:
-                    assert_staff_authority(user, scoped_request)
-                except SocialResolutionError as exc:
-                    raise PermissionDenied("Staff access is required.") from exc
+            from apps.accounts.surface_policy import validate_account_token
+            validate_account_token(user, refresh)
+            from apps.accounts.session_context import validate_context
+            requested = self.context.get("session_context")
+            if requested is not None:
+                validate_context(refresh, requested)
             from apps.accounts.mfa_policy import assert_verified
             assert_verified(user, refresh)
             from apps.accounts.web_sessions import validate_session
@@ -74,7 +66,9 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
             from apps.accounts.web_sessions import extend_session
             extend_session(_user, refresh)
             refresh.outstand()
-            data = {"access": str(refresh.access_token)}
+            from apps.accounts.serializers_payload import user_payload
+            data = {"access": str(refresh.access_token),
+                    "user": user_payload(_user, request=self.context.get("request"))}
             data["refresh"] = str(refresh)
             return data
 

@@ -1,7 +1,4 @@
 from django.conf import settings
-from django.contrib.auth import authenticate
-from django.db import transaction
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema, PolymorphicProxySerializer
 from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
 from rest_framework import status
@@ -17,38 +14,17 @@ from apps.accounts.attestation import (
     consume_attestation_challenge, create_challenge, verify_attestation,
 )
 from apps.accounts.login_methods import password_login_enabled
-from apps.accounts.models import User
-from apps.accounts.models_devices import (
-    DeviceGrant,
-    NativeAppRegistration,
-)
-from apps.accounts.serializers import user_payload
+from apps.accounts.models_devices import DeviceGrant
 from apps.accounts.serializers_device import (
     DeviceChallengeResponseSerializer, DeviceGrantSerializer,
     DeviceIdentitySerializer, DeviceLoginSerializer,
     DeviceLogoutResponseSerializer, DeviceRefreshResponseSerializer,
     DeviceRefreshSerializer, DeviceTokenResponseSerializer,
 )
-from apps.accounts.services_device_tokens import (
-    assert_mobile_grant_creation_enabled,
-    issue_device_token_pair,
-    rotate_device_refresh,
-)
+from apps.accounts.services_device_tokens import rotate_device_refresh
 from apps.accounts.services_tokens import revoke_device_grant
 from apps.accounts.throttles import DeviceLoginThrottle, DeviceLoginUserThrottle
 from apps.hardware_requests.exceptions import ErrorSerializer
-
-
-def _require_mobile_module():
-    """Refuse a new device grant when the deployment does not run mobile apps.
-
-    Checked at grant CREATION only. Existing grants keep working and are revoked
-    deliberately, never as a side effect of a capability toggle -- an operator turning
-    the module off should stop new pairings, not silently brick every phone already in
-    a member's pocket. AuthenticationFailed rather than 404 so the native client's
-    existing failure path handles it.
-    """
-    assert_mobile_grant_creation_enabled()
 
 
 def _reject_browser_headers(request):
@@ -64,6 +40,7 @@ class IsDeviceAccessToken(BasePermission):
         _reject_browser_headers(request)
         return bool(
             request.user and request.user.is_authenticated
+            and request.user.account_kind == "member"
             and getattr(request, "device_grant", None)
             and request.auth and request.auth.get("token_type") == "access"
         )
@@ -137,69 +114,18 @@ class DeviceLoginView(APIView):
         except AttestationRejected as exc:
             _audit_login_failure(data, 'attestation_rejected')
             raise AuthenticationFailed("Invalid device credentials or attestation.") from exc
-        # A switch that does not actually switch is worse than no switch: an operator
-        # believes the password door is closed. Refuse before any credential lookup.
+        # Device login is member-only, so the member password switch applies here.
         if not password_login_enabled():
             _audit_login_failure(data, 'password_login_disabled')
             raise AuthenticationFailed("Invalid device credentials or attestation.")
-        username = data["username"]
-        if not User.objects.filter(username=username).exists():
-            matches = User.objects.filter(email__iexact=username, is_active=True).exclude(email="")
-            if matches.count() == 1:
-                username = matches.first().username
-        user = authenticate(request=request, username=username, password=data["password"])
-        if (
-            not user
-            or user.is_tenant_dump_stub
-            or user.access_status != User.AccessStatus.ACTIVE
-        ):
-            _audit_login_failure(data, 'invalid_credentials')
-            raise AuthenticationFailed("Invalid device credentials or attestation.")
-        _require_mobile_module()
-        from apps.accounts.mfa_policy import needs_challenge
-        from apps.accounts.mfa_challenges import start
-        from apps.accounts.mfa_sessions import context, device_context
-        if needs_challenge(user):
-            response = Response(start(user, context=context(request, surface="member",
-                device=device_context(challenge, verified))))
-            response["Cache-Control"] = "no-store"
-            return response
-        now = timezone.now()
+        from apps.accounts.services_device_login import password_login, DevicePasswordRejected
         try:
-            with transaction.atomic():
-                registration = (
-                    NativeAppRegistration.objects.select_for_update()
-                    .filter(
-                        pk=challenge.registration_id,
-                        status=NativeAppRegistration.Status.APPROVED,
-                    )
-                    .first()
-                )
-                if registration is None:
-                    # Raise a marker instead of auditing here: this raise rolls the
-                    # transaction back, which would take the audit row with it and leave
-                    # the rejection with no trace at all.
-                    raise _RegistrationNotApproved()
-                grant = DeviceGrant.objects.create(
-                    registration=registration,
-                    user=user, platform=challenge.platform, app_id=challenge.app_id,
-                    signing_identity=challenge.signing_identity, environment=challenge.environment,
-                    attestation_subject_fingerprint=audit_events.fingerprint(verified.subject),
-                    attested_at=now, last_used_at=now,
-                )
-                access, refresh, _ = issue_device_token_pair(user, grant)
-        except _RegistrationNotApproved:
-            # Outside the rolled-back transaction, so this one survives.
-            _audit_login_failure(data, 'registration_not_approved')
-            raise AuthenticationFailed(
-                "Invalid device credentials or attestation."
-            )
-        request.device_grant = grant
-        audit_events.record_auth_event(user, "auth.device_login_succeeded", target=user,
-            meta={"grant_hash": audit_events.fingerprint(grant.pk)})
-        return Response({"access": access, "refresh": refresh,
-            "user": user_payload(user, request=request),
-            "device_grant": DeviceGrantSerializer(grant).data})
+            return password_login(request, data, challenge, verified)
+        except DevicePasswordRejected as exc:
+            # Password failure counters have committed before this public refusal.
+            _audit_login_failure(data, exc.reason)
+            raise
+
 
 
 class DeviceRefreshView(APIView):
@@ -240,6 +166,8 @@ class DeviceGrantListView(APIView):
 
     @extend_schema(tags=["Device auth"], request=None, responses={200: DeviceGrantSerializer(many=True), 401: OpenApiResponse(ErrorSerializer)})
     def get(self, request):
+        from apps.accounts.surface_policy import assert_surface
+        assert_surface(request.user, "member")
         grants = DeviceGrant.objects.filter(user=request.user).order_by("-last_used_at")
         return Response(DeviceGrantSerializer(grants, many=True).data)
 
@@ -249,6 +177,8 @@ class DeviceGrantDetailView(APIView):
 
     @extend_schema(tags=["Device auth"], request=None, responses={204: None, 401: OpenApiResponse(ErrorSerializer), 404: OpenApiResponse(ErrorSerializer)})
     def delete(self, request, grant_id):
+        from apps.accounts.surface_policy import assert_surface
+        assert_surface(request.user, "member")
         grant = DeviceGrant.objects.filter(pk=grant_id, user=request.user).first()
         if grant is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -256,10 +186,6 @@ class DeviceGrantDetailView(APIView):
         audit_events.record_auth_event(request.user, "auth.device_grant_revoked", target=request.user,
             meta={"grant_hash": audit_events.fingerprint(grant.pk)})
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class _RegistrationNotApproved(Exception):
-    """Internal marker: roll back the grant transaction, then audit outside it."""
 
 
 def _audit_login_failure(data, reason):

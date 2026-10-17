@@ -67,7 +67,7 @@ class RecentReauthenticationAdminMixin:
 @never_cache
 def control_reauthentication(request):
     from apps.accounts.control_mfa import session_verified
-    if not request.user.is_superuser or not session_verified(request):
+    if request.user.account_kind != "platform" or not request.user.is_superuser or not session_verified(request):
         return redirect("/mfa/control/")
     destination = request.GET.get("next", "/control/")
     if not url_has_allowed_host_and_scheme(destination, {request.get_host()}, require_https=request.is_secure()):

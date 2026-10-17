@@ -19,7 +19,7 @@ from apps.accounts.password_reset_crypto import (
     normalize_email,
     otp_digest,
 )
-from apps.accounts.services_tokens import blacklist_outstanding_tokens
+from apps.accounts.credential_revocation import revoke_sessions_only
 
 RESEND_COOLDOWN = timedelta(seconds=60)
 MAX_ATTEMPTS = 5
@@ -48,7 +48,7 @@ class PasswordResetCooldown(Exception):
 
 
 def request_password_reset(email, *, now=None):
-    """Upsert the anonymous queue envelope without resolving an account.
+    """Queue recovery for a member account, with a generic public acknowledgement.
 
     A request already pending, claimed, or delivering is deliberately a no-op. In
     particular, generation fencing cannot un-send mail, so delivery owns the row until
@@ -58,13 +58,16 @@ def request_password_reset(email, *, now=None):
     requested_at = now or timezone.now()
     cooled_down = False
     with transaction.atomic():
-        envelope, created = _lock_or_create(normalized, requested_at)
-        if not created and envelope.status in REENTRANT_STATUSES:
+        user = User.objects.filter(
+            account_kind=User.AccountKind.MEMBER, email__iexact=normalized,
+        ).first()
+        envelope, created = _lock_or_create(user, normalized, requested_at) if user else (None, False)
+        if envelope is not None and not created and envelope.status in REENTRANT_STATUSES:
             if envelope.requested_at > requested_at - RESEND_COOLDOWN:
                 cooled_down = True
             else:
                 _reenter_pending(envelope, normalized, requested_at)
-        elif not created and envelope.status not in BLOCKED_STATUSES:
+        elif envelope is not None and not created and envelope.status not in BLOCKED_STATUSES:
             # Fail closed if a future state is added without defining its resend rule.
             cooled_down = True
         audit_events.record_auth_event(
@@ -81,20 +84,21 @@ def request_password_reset(email, *, now=None):
     return envelope
 
 
-def _lock_or_create(normalized, requested_at):
+def _lock_or_create(user, normalized, requested_at):
     envelope = (
         PasswordResetEnvelope.objects.select_for_update()
-        .filter(email_normalized__iexact=normalized)
+        .filter(user_id=user.pk)
         .first()
     )
     if envelope is not None:
         return envelope, False
     try:
-        # The savepoint is important: a concurrent first insert may win the functional
-        # unique constraint. Rolling back only this savepoint keeps the outer transaction
+        # The savepoint is important: a concurrent first insert may win the unique
+        # account constraint. Rolling back only this savepoint keeps the outer transaction
         # usable so it can lock the winner.
         with transaction.atomic():
             envelope = PasswordResetEnvelope.objects.create(
+                user=user,
                 email_normalized=normalized,
                 email_fingerprint=audit_events.fingerprint(normalized),
                 digest=new_dummy_digest(normalized),
@@ -105,7 +109,7 @@ def _lock_or_create(normalized, requested_at):
         return envelope, True
     except IntegrityError:
         envelope = PasswordResetEnvelope.objects.select_for_update().get(
-            email_normalized__iexact=normalized
+            user_id=user.pk
         )
         return envelope, False
 
@@ -116,7 +120,6 @@ def _reenter_pending(envelope, normalized, requested_at):
     envelope.digest = new_dummy_digest(normalized)
     envelope.digest_is_live = False
     envelope.credential_fingerprint = ""
-    envelope.user = None
     envelope.expires_at = None
     envelope.consumed_at = None
     envelope.attempts = 0
@@ -146,7 +149,12 @@ def confirm_password_reset(email, code, new_password, *, now=None):
     with transaction.atomic():
         envelope = (
             PasswordResetEnvelope.objects.select_for_update()
-            .filter(email_normalized__iexact=normalized)
+            .filter(
+                email_normalized__iexact=normalized,
+                user_id__in=User.objects.filter(
+                    account_kind=User.AccountKind.MEMBER, email__iexact=normalized,
+                ).values("pk"),
+            )
             .first()
         )
         stored_digest = (
@@ -179,7 +187,9 @@ def confirm_password_reset(email, code, new_password, *, now=None):
             and attempts_before < MAX_ATTEMPTS
         )
         if stage_one_passes:
-            user = User.objects.select_for_update().filter(pk=envelope.user_id).first()
+            user = User.objects.select_for_update().filter(
+                pk=envelope.user_id, account_kind=User.AccountKind.MEMBER,
+            ).first()
             if not _credential_state_matches(user, envelope, normalized):
                 _discard_locked(envelope, confirmed_at, superseded=True)
             else:
@@ -191,6 +201,7 @@ def confirm_password_reset(email, code, new_password, *, now=None):
                     user.set_password(new_password)
                     user.must_change_password = False
                     user.save(update_fields=["password", "must_change_password"])
+                    revoke_sessions_only(user, reason="member.password_reset", actor=user)
                     envelope.status = PasswordResetEnvelopeStatus.CONSUMED
                     envelope.consumed_at = confirmed_at
                     envelope.terminal_at = confirmed_at
@@ -217,7 +228,6 @@ def confirm_password_reset(email, code, new_password, *, now=None):
         raise serializers.ValidationError(password_failure)
     if confirmed_user is None:
         raise serializers.ValidationError(failure)
-    blacklist_outstanding_tokens(confirmed_user)
     return confirmed_user
 
 
@@ -229,7 +239,8 @@ def _credential_state_matches(user, envelope, normalized):
     except ValueError:
         return False
     return bool(
-        not user.is_tenant_dump_stub
+        user.account_kind == User.AccountKind.MEMBER
+        and not user.is_tenant_dump_stub
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
         and not user.is_walk_in

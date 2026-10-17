@@ -28,7 +28,7 @@ def active_grants(actor, *, makerspace_id=None):
     rows = EventStaffGrant.objects.none()
     # Discovery must permit the existing forced-password login/rotation gate.
     # Mutation authority separately checks _active, which refuses that credential.
-    if not _active_account(actor) or organizer_authority._is_superadmin(actor):
+    if not _active_account(actor) or getattr(actor, "account_kind", None) != "member":
         return rows
     rows = EventStaffGrant.objects.filter(user=actor, revoked_at__isnull=True).filter(
         Q(event__makerspace_id=F("makerspace_id"))

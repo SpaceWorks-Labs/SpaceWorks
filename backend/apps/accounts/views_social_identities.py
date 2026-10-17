@@ -33,6 +33,8 @@ class SocialProviderListLinkView(APIView):
     @extend_schema(tags=["Social auth"], request=SocialLinkSerializer,
         responses={200: SocialIdentitySerializer, **errors(400, 401, 403, 404, 409, 503)})
     def post(self, request):
+        if request.user.account_kind != "member":
+            return _error("social_invalid", 403)
         serializer = SocialLinkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data

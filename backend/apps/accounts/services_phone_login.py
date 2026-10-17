@@ -26,6 +26,7 @@ def start_login(raw_phone):
     if phone_e164 is None:
         return None
     user = User.objects.filter(
+        account_kind="member",
         phone_e164=phone_e164,
         phone_verified_at__isnull=False,
         is_tenant_dump_stub=False,
@@ -56,7 +57,7 @@ def confirm_login(raw_phone, code):
     with transaction.atomic():
         challenge = _confirm(
             PhoneVerificationChallenge.objects.filter(
-                purpose=PhoneChallengePurpose.LOGIN
+                purpose=PhoneChallengePurpose.LOGIN, user__account_kind="member"
             ),
             code,
             phone_e164,
@@ -71,6 +72,7 @@ def confirm_login(raw_phone, code):
                 User.objects.select_for_update()
                 .filter(
                     pk=challenge.user_id,
+                    account_kind="member",
                     phone_e164=phone_e164,
                     phone_verified_at__isnull=False,
                     is_tenant_dump_stub=False,

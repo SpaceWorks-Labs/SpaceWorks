@@ -35,7 +35,8 @@ def active_grants(actor, *, makerspace_id=None, space_ids=None):
     from apps.makerspaces.module_registry import module_available
     rows = BookingSpaceStaffGrant.objects.none()
     # Forced-password login can discover authority; writes still require active().
-    if not active_account(actor) or not module_available("bookings"):
+    if (not active_account(actor) or getattr(actor, "account_kind", None) != "member"
+            or not module_available("bookings")):
         return rows
     rows = BookingSpaceStaffGrant.objects.filter(
         user=actor, revoked_at__isnull=True, space__makerspace_id=F("makerspace_id"),

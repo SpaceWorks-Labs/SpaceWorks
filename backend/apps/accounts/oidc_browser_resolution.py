@@ -19,6 +19,8 @@ from apps.makerspaces.models import MakerspaceMembership
 
 
 def resolve_browser_identity(attempt, claims, *, allow_user_creation, staff_validator=None):
+    if attempt.surface != SocialSurface.MEMBER:
+        raise SocialResolutionError("social_invalid", 403)
     if attempt.intended_user_id is None:
         return resolve_social_identity(
             provider=attempt.provider,
@@ -54,7 +56,7 @@ def _transition_bound_walk_in(attempt, claims):
             )
             email_users = list(
                 User.objects.select_for_update()
-                .filter(email__iexact=asserted_email)
+                .filter(account_kind="member", email__iexact=asserted_email)
                 .exclude(email="")
             ) if asserted_email else []
             current_identity = (
@@ -62,6 +64,8 @@ def _transition_bound_walk_in(attempt, claims):
                 .filter(user=target, provider=attempt.provider)
                 .first()
             )
+            if target.account_kind != "member":
+                raise SocialResolutionError("social_invalid", 403)
             if membership is None or not target.is_walk_in:
                 raise SocialResolutionError("identity_conflict", 409)
             if not verified or not asserted_email or target.email.lower() != asserted_email:

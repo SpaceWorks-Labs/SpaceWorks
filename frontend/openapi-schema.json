@@ -72146,6 +72146,7 @@
             },
             "put": {
                 "operationId": "api_v1_integrations_makerspace_personal_preferences_update",
+                "description": "Replace selections for supplied categories only. Omitted categories retain saved choices or product defaults.",
                 "parameters": [
                     {
                         "in": "path",
@@ -123655,6 +123656,14 @@
                         "type": "boolean"
                     },
                     "session": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PresenceSession"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "renewable": {
                         "allOf": [
                             {
                                 "$ref": "#/components/schemas/PresenceSession"

@@ -8767,6 +8767,7 @@ export type PreferenceResponse = {
 export type PresenceCurrent = {
   "active": boolean;
   "session": PresenceSession | null;
+  "renewable"?: PresenceSession | null;
   "presets"?: Array<number>;
   "personal_opt_out_allowed": boolean;
   "names_displayed": boolean;

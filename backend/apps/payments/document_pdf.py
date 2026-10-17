@@ -112,7 +112,7 @@ def _render(document):
         footer = text(f"{document.number} - Page {pdf.page}", small)
         footer.wrap(170 * mm, 10 * mm)
         footer.drawOn(canvas, 20 * mm, 11 * mm)
-    SimpleDocTemplate(output, rightMargin=20 * mm, leftMargin=20 * mm, topMargin=18 * mm,
+    SimpleDocTemplate(output, invariant=1, rightMargin=20 * mm, leftMargin=20 * mm, topMargin=18 * mm,
                       bottomMargin=23 * mm, title=document.number, pageCompression=1).build(
         story, onFirstPage=page_footer, onLaterPages=page_footer, canvasmaker=partial(Canvas, invariant=1))
     return output.getvalue()

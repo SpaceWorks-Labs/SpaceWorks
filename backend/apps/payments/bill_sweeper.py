@@ -24,7 +24,9 @@ def issue_missing_bills(*, makerspace_id=None, limit=200):
     for space in spaces.iterator(chunk_size=100):
         try:
             with fanout_tenant_write(space.pk, operation="issue_missing_bills", counts=counts) as allowed:
-                if not allowed or not feature_enabled(space, "billing.documents"):
+                if not allowed:
+                    continue
+                if not feature_enabled(space, "billing.documents"):
                     continue
                 ids = list(Payment.objects.filter(makerspace=space, status="pending")
                            .exclude(documents__kind="bill").order_by("pk").values_list("pk", flat=True)[:limit])

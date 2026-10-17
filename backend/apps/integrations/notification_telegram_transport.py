@@ -88,7 +88,7 @@ def call(token, method, payload, *, filename=None, pdf_bytes=None):
     except error.URLError as exc:
         timed_out = isinstance(exc.reason, (TimeoutError, socket.timeout))
         return _failure("timeout" if timed_out else "unavailable", retryable=True,
-                        ambiguous=method != "getMe"), None
+                        ambiguous=method == "sendDocument" or (timed_out and method != "getMe")), None
     except Exception:
         return _failure("provider_error"), None
 

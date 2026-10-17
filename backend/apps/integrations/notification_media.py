@@ -17,7 +17,7 @@ from apps.payments.document_delivery import (
     DocumentDeliveryError, attachment_references, authorized_document, render_attachment,
 )
 from apps.tenant_migration.gate_errors import SourceMigrationGateError
-from apps.tenant_migration.gate_runtime import tenant_write
+from apps.tenant_migration.gate_runtime import fanout_tenant_write, tenant_write
 from .models_contract import NotificationDelivery
 from .models_notification_media import NotificationMediaGrant
 
@@ -105,20 +105,28 @@ def cleanup_grants(limit=500):
     spent = Q(expires_at__lte=now) | Q(consumed_at__isnull=False)
     seeds = list(NotificationMediaGrant.objects.filter(spent).order_by("pk").values_list(
         "pk", "delivery__makerspace_id")[:limit])
+    counts = {"deleted": 0, "skipped": 0, "failed": 0}
     for pk, space_id in seeds:
         try:
-            with tenant_write(space_id):
-                rows = rbac.scope_notification_policy(NotificationMediaGrant.objects.select_for_update(),
-                    makerspace_id=space_id, field="delivery__makerspace_id").filter(pk=pk).filter(spent)
-                grant = rows.first()
-                if grant is not None:
-                    grant.delete()
-                    from apps.makerspaces.models import Makerspace
-                    audit.record(None, "notification.media_grant_cleaned", makerspace=Makerspace.objects.get(pk=space_id),
-                                 meta={"grant_id": pk})
+            with fanout_tenant_write(space_id, operation="notification_media_cleanup", counts=counts) as allowed:
+                if not allowed:
+                    continue
+                with transaction.atomic():
+                    rows = rbac.scope_notification_policy(NotificationMediaGrant.objects.select_for_update(),
+                        makerspace_id=space_id, field="delivery__makerspace_id").filter(pk=pk).filter(spent)
+                    grant = rows.first()
+                    if grant is not None:
+                        grant.delete()
+                        from apps.makerspaces.models import Makerspace
+                        audit.record(None, "notification.media_grant_cleaned", makerspace=Makerspace.objects.get(pk=space_id),
+                                     meta={"grant_id": pk})
+                counts["deleted"] += int(grant is not None)
         except (SourceMigrationGateError, TenantNotRestored):
+            counts["skipped"] += 1
             continue
         except Exception as exc:
+            counts["failed"] += 1
             logger.warning("notification_media_cleanup_failed", extra={
                 "grant_id": pk, "failure_type": type(exc).__name__,
             })
+    return counts

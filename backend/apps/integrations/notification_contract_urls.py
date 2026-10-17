@@ -2,13 +2,11 @@ from django.urls import path
 
 from .notification_api_channels import ChannelListView, ChannelSettingsView
 from .notification_api_delivery import ContractDeliveryListView, ContractTestView
-from .notification_media_views import NotificationMediaView
 from .notification_api_personal import (
     EndpointListView, EndpointRevokeView, EndpointStartView, EndpointVerifyView, PersonalSelectionView,
 )
 
 urlpatterns = [
-    path("notification-media/<str:token>.pdf", NotificationMediaView.as_view(), name="notification-media"),
     path("makerspace/<int:makerspace_id>/channels", ChannelListView.as_view(), name="contract-channels"),
     path("makerspace/<int:makerspace_id>/channels/<str:channel>", ChannelSettingsView.as_view(), name="contract-channel"),
     path("makerspace/<int:makerspace_id>/personal/endpoints", EndpointListView.as_view(), name="contract-endpoints"),

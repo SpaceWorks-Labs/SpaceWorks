@@ -5,7 +5,7 @@ import unicodedata
 
 from rest_framework.exceptions import ValidationError
 
-from .printable_fonts import font_markup, script
+from .printable_fonts import font_markup, font_runs
 
 
 def document_paragraph(text, style, *, bold=False):
@@ -30,12 +30,11 @@ def text_box(canvas, text, element, *, origin_x=0, origin_y=0, area_height_mm):
     width, height = element["width_mm"] * mm, element["height_mm"] * mm
     text = str(text or "-")
     rtl = any(unicodedata.bidirectional(char) in ("R", "AL") for char in text)
-    # ReportLab's word shaper assumes TrueType glyph tables across font runs.
-    # A word starting in TrueType and switching to CID (e.g. W中) crashes.
-    # Use native widths for that case, retaining shaping for separate script
-    # words. ReportLab already skips shaping words starting in the CID font.
-    shaping = not any(script(word[0]) != "cjk" and any(script(char) == "cjk" for char in word)
-                      for word in text.replace("\xa0", "").split())
+    # ReportLab shapes a whole word with its first font. With mixed-font words
+    # it can paint a glyph from the wrong cmap. Keep native widths for those
+    # words; single-font complex-script words still shape.
+    shaping = all(len(font_runs(word, element["font"], element["bold"])) <= 1
+                  for word in text.split())
     size = element["font_size_pt"]
     # Shrink within the supported range, then refuse instead of silently losing text.
     while size >= 6:

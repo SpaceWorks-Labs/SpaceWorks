@@ -4,10 +4,6 @@ from .gate_policy_replay import REPLAY_TASK_PARTICIPANTS, REPLAY_FANOUT_PARTICIP
 
 
 TASK_EXEMPTIONS = {
-    "apps.integrations.notification_tasks.sweep_notification_outbox": (
-        "Only enqueues deliver_envelope ids and writes nothing; each delivery task resolves its "
-        "envelope's tenant through TASK_TENANT_RESOLVERS and is gated there."
-    ),
     "apps.operations.tasks_platform.run_platform_problem_checks_task": (
         "Read-only platform monitoring; writes only a disposable deployment cache marker."
     ),
@@ -82,6 +78,9 @@ TASK_TENANT_RESOLVERS = {
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.integrations.notification_tasks.sweep_notification_outbox": (
+        "Enqueues tenant-resolved delivery tasks; media cleanup uses per-tenant skip-and-count gates."
+    ),
     "apps.payments.tasks.issue_missing_bills_task": "Bill recovery gates each tenant before discovering or issuing documents.",
     "apps.integrations.broadcasts_worker.broadcast_batch": "Typed adapter resolves one tenant; shared source and PII fences precede campaign/outbox locks.",
     "apps.integrations.broadcasts_worker.resume_broadcasts": "Campaign/outbox recovery uses per-tenant skip-and-count boundaries.",
@@ -141,6 +140,9 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.integrations.notification_media.cleanup_grants": (
+        "Expired and consumed disclosure grants are deleted and audited inside each tenant gate."
+    ),
     "apps.payments.bill_sweeper.issue_missing_bills": "Core bill recovery uses per-tenant skip-and-count source gates.",
     "apps.makerspaces.profile_github_tasks.refresh_public_calendars": (
         "Public calendars refresh under the existing per-tenant GitHub source boundary; cache only."

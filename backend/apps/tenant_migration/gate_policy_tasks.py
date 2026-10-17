@@ -82,6 +82,7 @@ TASK_TENANT_RESOLVERS = {
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.payments.tasks.issue_missing_bills_task": "Bill recovery gates each tenant before discovering or issuing documents.",
     "apps.integrations.broadcasts_worker.broadcast_batch": "Typed adapter resolves one tenant; shared source and PII fences precede campaign/outbox locks.",
     "apps.integrations.broadcasts_worker.resume_broadcasts": "Campaign/outbox recovery uses per-tenant skip-and-count boundaries.",
     "apps.data_export.subject_tasks.sweep_subject_exports_task": (
@@ -140,6 +141,7 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.payments.bill_sweeper.issue_missing_bills": "Core bill recovery uses per-tenant skip-and-count source gates.",
     "apps.makerspaces.profile_github_tasks.refresh_public_calendars": (
         "Public calendars refresh under the existing per-tenant GitHub source boundary; cache only."
     ),

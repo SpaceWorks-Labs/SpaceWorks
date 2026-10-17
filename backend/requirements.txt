@@ -26,7 +26,7 @@ requests>=2.32,<3
 httpx[http2]==0.28.1
 openpyxl>=3.1,<4
 Pillow
-reportlab[shaping]>=4.4.9,<5
+reportlab[shaping]>=4.5.1,<5
 python-bidi>=0.6,<0.7
 arabic-reshaper>=3,<4
 python-dateutil>=2.9,<3
@@ -38,3 +38,9 @@ dnspython>=2.7,<3
 stripe==15.3.1
 # Imported only when SENTRY_DSN is set (config/settings.py); pinned so pip-audit tracks it.
 sentry-sdk[django,celery]>=2.30,<3
+
+# Static Noto coverage, grapheme clusters and CJK instancing.
+fonttools>=4.60,<5
+regex>=2025.9.18
+# PDF glyph/extraction regression checks (alongside pytest above).
+pypdf>=6,<7

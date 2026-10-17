@@ -93,6 +93,15 @@ def create_payment(
     )
     from apps.payments.notifications import notify_payment
     notify_payment(payment, "charge_raised")
+    # An optional document must never poison the required debt transaction.
+    try:
+        with transaction.atomic():
+            from apps.payments.documents import issue_bill
+            issue_bill(payment, actor=created_by)
+    except Exception as exc:
+        logger.error("payment_bill_issue_failed", extra={
+            "payment_id": payment.pk, "failure_type": type(exc).__name__,
+        })
     return payment
 
 

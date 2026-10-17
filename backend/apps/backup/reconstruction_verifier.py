@@ -200,10 +200,12 @@ def _insert_fixture(cursor, model, item):
         values.append(field.get_db_prep_save(value, connection=cursor.db))
     table = cursor.db.ops.quote_name(model._meta.db_table)
     placeholders = ", ".join(["%s"] * len(values))
-    cursor.execute(
-        f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})",
-        values,
-    )
+    from apps.payments.document_import import document_import_rows
+    with document_import_rows(cursor, model, [item["pk"]]):
+        cursor.execute(
+            f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})",
+            values,
+        )
 
 
 def _apply_boundary_deltas(cursor, root):

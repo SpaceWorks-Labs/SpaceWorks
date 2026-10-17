@@ -3,7 +3,7 @@
 from .insertion_errors import ArchiveFormatError
 
 
-PRIVATE_FIELDS = frozenset({"object_key"})
+PRIVATE_FIELDS = frozenset({"object_key", "branding_logo_key"})
 PUBLIC_FIELDS = frozenset({"image_key", "avatar_key", "logo_key", "cover_image_key"})
 OBJECT_FIELDS = PRIVATE_FIELDS | PUBLIC_FIELDS
 

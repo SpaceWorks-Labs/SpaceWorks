@@ -5,6 +5,8 @@ import shutil
 import sys
 
 from apps.operations.printable_fonts import BUNDLED_FONT_ROOT, font_paths, font_markup, register_fonts
+from apps.operations.printable_text_fonts import FontScope
+from apps.operations.printable_paragraph import UnicodeParagraph
 
 
 def verify(*, bundle=False):
@@ -37,6 +39,18 @@ def verify(*, bundle=False):
     canvas.save()
     if not output.getvalue().startswith(b"%PDF-"):
         raise RuntimeError("Printable runtime did not produce a PDF.")
+    # Fail the build if the billing mixed-run/embedded-subset path is unavailable.
+    output = BytesIO()
+    with FontScope():
+        canvas = Canvas(output, invariant=1)
+        for index, value in enumerate(("Latin Ελληνικά Кириллица", "العربية हिन्दी বাংলা தமிழ்",
+                "ខ្មែរ မြန်မာ ລາວ ไทย සිංහල", "中文 繁體 日本語 한국어", "עברית 123 Latin")):
+            paragraph = UnicodeParagraph(value, ParagraphStyle("billing", fontSize=10, leading=14))
+            paragraph.wrap(450, 100)
+            paragraph.drawOn(canvas, 30, 750 - index * 50)
+        canvas.save()
+    if not output.getvalue().startswith(b"%PDF-"):
+        raise RuntimeError("Billing font runtime did not produce a PDF.")
 
 
 if __name__ == "__main__":

@@ -39,14 +39,8 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         # A credential change also locks User. Hold that same lock through both
         # verification and minting so an unenrolled login cannot pick up the new
         # credential's version between these reads without proving its factor.
-        from apps.accounts.models import User
-        # NO KEY UPDATE remains compatible with FK inserts by concurrent native
-        # logins; FOR UPDATE here could deadlock their shared FK-lock upgrades.
-        locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
-        for attr in ("_mfa_verified_version", "_mfa_provider_verified", "_mfa_source"):
-            if hasattr(user, attr):
-                setattr(locked, attr, getattr(user, attr))
-        user = locked
+        from apps.accounts.credential_locks import lock_token_issuance
+        user = lock_token_issuance(user)
         if getattr(user, "is_tenant_dump_stub", False):
             from rest_framework.exceptions import AuthenticationFailed
 

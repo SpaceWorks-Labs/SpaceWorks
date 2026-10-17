@@ -71,6 +71,7 @@ class SocialDeviceGrantRetryRequired(Exception):
     """The pre-grant inputs were burned before device issuance could finish."""
 
 
+@transaction.atomic
 def issue_social_session(
     user, *, surface, delivery, nonce_row, staff_scope=None,
     verified_attestation=None,
@@ -79,6 +80,8 @@ def issue_social_session(
         from apps.accounts.services_social_identity import SocialResolutionError
 
         raise SocialResolutionError("social_invalid", 403)
+    from apps.accounts.credential_locks import lock_token_issuance
+    user = lock_token_issuance(user)
     assert_social_user_active(user)
     # Provider authentication is sufficient by platform policy, on web and native alike.
     user._mfa_provider_verified = True

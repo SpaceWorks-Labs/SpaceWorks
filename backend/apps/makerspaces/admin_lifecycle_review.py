@@ -36,8 +36,8 @@ class MakerspaceLifecycleReviewMixin:
                     "id": item.pk, "requested_at": item.requested_at,
                     "username": item.requested_by.username if item.requested_by else "",
                     "reason": item.reason,
-                    "impact": lifecycle.archive_impact(item.makerspace)
-                    if approve and item.makerspace.superadmin_access_enabled else None,
+                    **({"impact": lifecycle.archive_impact(item.makerspace)}
+                       if approve and item.makerspace.superadmin_access_enabled else {}),
                 } for item in pending],
                 "approve": approve, "opts": self.model._meta, "action_name": action,
                 "action_checkbox_name": ACTION_CHECKBOX_NAME,

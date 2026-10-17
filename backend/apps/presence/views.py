@@ -48,10 +48,12 @@ class PresenceCurrentView(MemberPresenceView):
     def get(self, request, makerspace_slug):
         space = public_space(request, makerspace_slug)
         session = services.current_session(request.user, space)
+        renewable = None if session else services.renewable_session(request.user, space)
         policy = settings_for(space)
         hidden = (session.hide_on_display if session else PresencePreference.objects.filter(
             makerspace=space, account=request.user, hide_on_display=True).exists())
-        return Response(PresenceCurrentSerializer({"active": bool(session), "session": session, "presets": presets(space),
+        return Response(PresenceCurrentSerializer({"active": bool(session), "session": session, "renewable": renewable,
+            "presets": presets(space),
             "personal_opt_out_allowed": policy.allow_personal_opt_out,
             "names_displayed": policy.show_names and not (policy.allow_personal_opt_out and hidden)}).data)
 
@@ -63,7 +65,7 @@ class PresenceEndView(MemberPresenceView):
         services.end_session(request.user, space)
         policy = settings_for(space)
         hidden = PresencePreference.objects.filter(makerspace=space, account=request.user, hide_on_display=True).exists()
-        return Response({"active": False, "session": None, "personal_opt_out_allowed": policy.allow_personal_opt_out,
+        return Response({"active": False, "session": None, "renewable": None, "personal_opt_out_allowed": policy.allow_personal_opt_out,
                          "names_displayed": policy.show_names and not (policy.allow_personal_opt_out and hidden)})
 
 

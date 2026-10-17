@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StatusPill } from "../../components/ui";
-import { DEFAULT_PRESETS, usePresenceCurrent, usePresenceMutations, type PresenceSession } from "./api";
+import { DEFAULT_PRESETS, usePresenceCurrent, usePresenceMutations } from "./api";
 import { PresenceCheckInSheet } from "./PresenceCheckInSheet";
 import { PresenceRenewPrompt } from "./PresenceRenewPrompt";
 import { clockTime, displayDisclosure, minutesLeft, presenceErrorText, presetLongLabel, STATUS_LABELS, timeLeftLabel } from "./presenceCopy";
@@ -28,19 +28,17 @@ function PresencePanelBody({ slug, spaceName, member, claim, selfCheckIn, sheetO
   const [ownOpen, setOwnOpen] = useState(false);
   const open = sheetOpen ?? ownOpen;
   const setOpen = onSheetOpenChange ?? setOwnOpen;
-  // The current endpoint only returns live sessions; keep the last one so an expired
-  // session can still be renewed inside the server's grace window.
-  const [recent, setRecent] = useState<PresenceSession | null>(null);
+  // The server supplies renewable history, including after reopening the page.
+  // A later poll returning null also withdraws the prompt after a staff/user end.
   const reported = current.data?.active ? current.data.session : null;
-  useEffect(() => { if (reported) setRecent(reported); }, [reported]);
   // Between polls a session can lapse locally; treat it as expired straight away.
   const live = reported && minutesLeft(reported, now) > 0 ? reported : null;
-  const session = live ?? recent;
+  const session = reported ?? current.data?.renewable ?? null;
   const phase = renewPhase(session, now);
   useRenewNotification(session, phase, spaceName);
   const [permission, setPermission] = useState(webNotifyPermission);
   const presets = current.data?.presets?.length ? current.data.presets : DEFAULT_PRESETS;
-  const optOutAllowed = current.data?.personal_opt_out_allowed ?? recent?.personal_opt_out_allowed;
+  const optOutAllowed = current.data?.personal_opt_out_allowed ?? session?.personal_opt_out_allowed;
   const showSession = session && (live || phase === "expired");
   const error = renew.error ?? end.error;
 
@@ -63,8 +61,8 @@ function PresencePanelBody({ slug, spaceName, member, claim, selfCheckIn, sheetO
         <div className="flex flex-wrap gap-2">{presets.map((minutes) => <button key={minutes} type="button" className="desk-button" disabled={renew.isPending}
           onClick={() => renew.mutate(minutes)}>{presetLongLabel(minutes)}</button>)}</div></div> : null}
       <div className="flex flex-wrap gap-2">
-        {live ? <button type="button" className="desk-button" disabled={end.isPending} onClick={() => end.mutate(undefined, { onSuccess: () => setRecent(null) })}>{end.isPending ? "Ending…" : "End check-in"}</button>
-          : <button type="button" className="desk-button" onClick={() => { setRecent(null); setOpen(true); }}>Check in again</button>}
+        {live ? <button type="button" className="desk-button" disabled={end.isPending} onClick={() => end.mutate()}>{end.isPending ? "Ending…" : "End check-in"}</button>
+          : <button type="button" className="desk-button" onClick={() => setOpen(true)}>Check in again</button>}
         {live && permission === "default" ? <button type="button" className="desk-button" onClick={() => void requestWebNotify().then(setPermission)}>Notify me before it ends</button> : null}
       </div>
     </div> : null}

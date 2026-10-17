@@ -11,7 +11,7 @@ export type PresenceSession = {
 };
 /** `personal_opt_out_allowed` / `names_displayed` at the top level are a requested contract
  * addition (so the sheet knows the rule before the first check-in); read them when present. */
-export type PresenceCurrent = { active: boolean; session: PresenceSession | null; presets?: number[];
+export type PresenceCurrent = { active: boolean; session: PresenceSession | null; renewable?: PresenceSession | null; presets?: number[];
   personal_opt_out_allowed?: boolean; names_displayed?: boolean };
 export type PresenceProject = { id: number; title: string; public_visible: boolean };
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
@@ -65,10 +65,10 @@ export function usePresenceCurrent(slug: string, enabled: boolean) {
 export function usePresenceMutations(slug: string) {
   const client = useQueryClient();
   const settle = (data: PresenceCurrent) => client.setQueryData(presenceKeys.member(slug), (old: PresenceCurrent | undefined) => ({ ...old, ...data }));
-  const onSession = (session: PresenceSession) => settle({ active: session.active, session });
+  const onSession = (session: PresenceSession) => settle({ active: session.active, session, renewable: null });
   return {
     start: useMutation({ mutationFn: (input: PresenceStartInput) => presenceApi.start(slug, input), onSuccess: onSession }),
     renew: useMutation({ mutationFn: (minutes: number) => presenceApi.renew(slug, minutes), onSuccess: onSession }),
-    end: useMutation({ mutationFn: () => presenceApi.end(slug), onSuccess: () => settle({ active: false, session: null }) }),
+    end: useMutation({ mutationFn: () => presenceApi.end(slug), onSuccess: () => settle({ active: false, session: null, renewable: null }) }),
   };
 }

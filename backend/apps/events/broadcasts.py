@@ -51,6 +51,10 @@ def recipients(campaign):
 
 
 def eligible(campaign, account):
+    from .broadcast_channels import legacy_email_eligible
+    # Rechecked by delivery preparation on every retry as well as by the batch.
+    if not legacy_email_eligible(campaign, account):
+        return False
     if not account.email_verified_at or not account.email or not eligible_owner(campaign.makerspace, account.pk):
         return False
     try:

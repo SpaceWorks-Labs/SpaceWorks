@@ -35,7 +35,8 @@ section tabs and event badges; `edit/` owns handle, consent, family switches, ti
 
 `presence/models.py` owns sessions/settings/preferences, with account/member compatibility in
 migration 0003. `policy.py` owns module/account/staff/duration/project checks; `geofence.py` owns
-hard self-check-in validation. `services.py` owns transactional start/renew/end/staff paths and
+hard self-check-in validation. `services.py` owns transactional start/renew/end/staff paths;
+`renewal.py` shares renewal eligibility/deadlines between the current-session hint and the writer, and
 `services_claim.py` retains claim-session revocation/deadlines. `event_attendance.py` is the live
 post-commit event-ticket adapter, called by events/services_checkin.py.
 `privacy.py` writes tenant/personal display policy; `display.py` projects the allow-list TV rows,
@@ -164,7 +165,7 @@ audit, retention, encryption and route-registry adapters. Names are relative to 
 ### `backend/apps/presence/`
 
 `cache.py`, `display.py`, `event_attendance.py`, `notifications.py`, `policy.py`, `privacy.py`,
-`purge.py`, `schedule.py`, `schema.py`, `services_claim.py`, `signals.py`, `tasks.py`, `views_public.py`,
+`purge.py`, `renewal.py`, `schedule.py`, `schema.py`, `services_claim.py`, `signals.py`, `tasks.py`, `views_public.py`,
 `views_staff.py`.
 
 ### `backend/apps/presence/migrations/`
@@ -230,4 +231,3 @@ audit, retention, encryption and route-registry adapters. Names are relative to 
 `EventSpeakerForms.tsx`, `EventSpeakersPanel.tsx`, `EventTicketRow.tsx`, `MemberEventsSection.tsx`,
 `SettingsHub.tsx`, `SpacePhotosSection.tsx`, `bookingQueueApi.ts`, `eventCategoriesApi.ts`,
 `eventDrawerTabs.ts`, `eventSpeakersApi.ts`, `settingsHubCatalog.ts`, `spacePhotosApi.ts`.
-

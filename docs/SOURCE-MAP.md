@@ -74,8 +74,8 @@ the existing `verification.py` exports. Regression coverage is `backend/tests/an
 Frontend analytics (1f-5) lives in `features/staff/panels/`: `reportAreas.ts` groups only
 server-catalog entries into nine areas, `ReportAreaSections.tsx` mounts the selected
 report query, and `AnalyticsData.tsx` pairs charts with complete source-table toggles
-(including rows omitted by chart axes or top-N display). `analyticsApi.ts` owns the
-local serializer contracts, scoped query keys under the existing `operations-report`
+(including rows omitted by chart axes or top-N display). `analyticsApi.ts` imports the
+generated serializer types and owns scoped query keys under the existing `operations-report`
 invalidation prefix, and matrix-to-record projection. `charts/wireChartSpec.ts` adapts
 the backend F1 spec into the existing accessible chart kit, preserving tenant, currency,
 measurement-unit and negative-value rules. Null specs retain the table presentation.
@@ -95,13 +95,15 @@ every makerspace breakdown, with period/grain controls and nullable combined cha
 add services/usage charts and paginated tenant drill-down to `PlatformDashboardPanel`.
 Hidden service buckets have one anonymous label and no tenant identifiers; scoped
 catalog/report 403s remain explicit blocks. The two platform fallback specs mirror the
-registry because the current platform response omits chart metadata. Local report,
-dashboard, member, organization and picker DTOs await coordinator OpenAPI regeneration.
+registry for cached responses predating chart metadata; current platform responses include
+the canonical `chart_spec`. Report, dashboard, member, organization and picker contracts
+now import `frontend/src/generated/api.ts`; widget JSON is projected at the chart boundary.
 Vitest panel suites live beside these components, with registry fixtures and shared
 fetch/provider helpers in `src/test/reportChartCases.ts` and `analyticsFixtures.tsx`.
 
-Addressed messaging frontend (1h-D): `features/messaging/messagingApi.ts` owns the local
-serializer-matched TypeScript contracts and tenant-specific TanStack Query keys;
+Addressed messaging frontend (1h-D): `features/messaging/messagingApi.ts` imports the generated
+serializer TypeScript contracts (refining untyped WhatsApp parameter JSON for the editor)
+and owns tenant-specific TanStack Query keys;
 `MessagingFeedback.tsx` provides inline errors and exact-value copy controls.
 `features/staff/MakerspaceMessagingSettings.tsx` and `MessagingTestSend.tsx` own sender
 credentials, source/availability indicators, callback setup and caller-only diagnostics.

@@ -1,23 +1,5 @@
-export type DashboardCounts = {
-  upcoming_events?: number;
-  pending_event_registrations?: number;
-  pending_bookings?: number;
-  upcoming_bookings?: number;
-  scope_mode: "machine" | "full" | "handover";
-  overdue_loans?: number;
-  pending_requests?: number;
-  awaiting_issue?: number;
-  open_problem_reports?: number;
-  low_stock?: number;
-  pending_prints?: number;
-  active_prints?: number;
-  prints_awaiting_collection?: number;
-  failed_emails?: number;
-  stocktakes_awaiting_approval?: number;
-  warranty_expiring?: number;
-  maintenance_overdue?: number;
-  pending_payments?: number;
-};
+import type { Dashboard } from "../../../generated/api";
+export type DashboardCounts = Omit<Dashboard, "widgets" | "queue_tiles" | "outstanding_by_currency">;
 
 // Tiles keep their semantic intent; only emphasis is a filled attention pill.
 // Numbers and labels otherwise sit on neutral panels.

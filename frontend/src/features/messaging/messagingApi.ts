@@ -1,41 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { memberRequest, staffRequest } from "../../lib/api";
 
-// Local contracts mirror integrations/messaging/serializers.py until client regeneration.
-export type MessagingChannel = "sms" | "whatsapp";
-export type MessagingSource = "own" | "platform" | "none";
-export type MessagingSettings = {
-  use_platform_sender: boolean;
-  sms_account_sid: string;
-  sms_from_number: string;
-  whatsapp_phone_number_id: string;
-  whatsapp_business_account_id: string;
-  sms_auth_token_set: boolean;
-  whatsapp_access_token_set: boolean;
-  whatsapp_app_secret_set: boolean;
-  whatsapp_webhook_verify_token: string;
-  effective_source: Record<MessagingChannel, MessagingSource>;
-  platform_available: Record<MessagingChannel, boolean>;
-  webhook_urls: Record<MessagingChannel, Record<string, string>>;
-};
-export type MessagingSettingsWrite = Partial<Pick<MessagingSettings, "use_platform_sender" | "sms_account_sid" | "sms_from_number" | "whatsapp_phone_number_id" | "whatsapp_business_account_id"> & {
-  sms_auth_token: string; whatsapp_access_token: string; whatsapp_app_secret: string;
-}>;
-export type MessagingCatalogEntry = {
-  feature: string; event: string; audience: "member" | "staff";
-  allowed_projection_keys: string[]; supported_languages: string[];
-};
-export type WhatsAppBindingWrite = {
-  feature: string; event: string; audience: "member" | "staff";
-  template_name: string; language: string; parameters: string[]; is_active: boolean;
-};
-export type WhatsAppBinding = WhatsAppBindingWrite & { id: number; business_account_id: string; needs_review: boolean };
-export type WhatsAppBindingPage = { count: number; next: string | null; previous: string | null; results: WhatsAppBinding[] };
-export type MessagingTestWrite = { channel: MessagingChannel; feature?: string; event?: string };
-export type MessagingTestResult = { delivery_id: number; status: string; skip_reason: string };
-export type MemberMessagingChannel = { available: boolean; consented: boolean; phone_verified: boolean; phone_masked: string; suppressed: boolean };
-export type MemberMessaging = Record<MessagingChannel, MemberMessagingChannel>;
-export type MessagingConsentWrite = { makerspace: number; channel: MessagingChannel; action: "opted_in" | "opted_out" };
+import type { MemberMessaging, MessagingSettings, MessagingTest, WhatsAppBinding as GeneratedWhatsAppBinding,
+  WhatsAppBindingPage as GeneratedWhatsAppBindingPage, PatchedMessagingSettings, ConsentWrite } from "../../generated/api";
+export type { MemberMessaging, MessagingSettings, MessagingCatalogEntry,
+  MessagingChannel as MemberMessagingChannel, MessagingTestResponse as MessagingTestResult } from "../../generated/api";
+export type MessagingChannel = MessagingTest["channel"];
+export type MessagingSource = MessagingSettings["effective_source"][string];
+export type MessagingTestWrite = MessagingTest;
+export type MessagingSettingsWrite = Pick<PatchedMessagingSettings,
+  "use_platform_sender" | "sms_account_sid" | "sms_from_number" | "whatsapp_phone_number_id" |
+  "whatsapp_business_account_id" | "sms_auth_token" | "whatsapp_access_token" | "whatsapp_app_secret">;
+// OpenAPI leaves parameters as unknown JSON; the binding editor handles ordered BODY variable names.
+export type WhatsAppBinding = Omit<GeneratedWhatsAppBinding, "parameters"> & { parameters: string[] };
+export type WhatsAppBindingWrite = Pick<WhatsAppBinding,
+  "feature" | "event" | "audience" | "template_name" | "language" | "parameters" | "is_active">;
+export type WhatsAppBindingPage = Omit<GeneratedWhatsAppBindingPage, "results"> & { results: WhatsAppBinding[] };
+export type MessagingConsentWrite = ConsentWrite;
 
 export const messagingLabels = { sms: "SMS", whatsapp: "WhatsApp" };
 export const messagingSettingsKey = (id: number) => ["messaging-settings", id] as const;

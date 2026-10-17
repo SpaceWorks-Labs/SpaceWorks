@@ -1097,10 +1097,15 @@ unpinned; each now has a test under `tests/payments/`:
 **Native clients use attested device grants, never browser-token shortcuts.** Device login starts with a
 short-lived attestation challenge and creates a revocable `DeviceGrant`; access tokens carry
 `device_grant_id`, refresh tokens rotate in a grant family, and replay revokes that family. Native
-makerspace selection uses `X-Makerspace-Id` only with a valid grant and active scoped membership. Push
+staff makerspace selection requires `X-Makerspace-Id`, a valid grant and active local membership;
+core own-charge surfaces retain their account-only ownership exception. Push
 tokens are encrypted with an HMAC dedup fingerprint, owned by a device grant, and disabled when a provider
-reports them invalid. Native Stripe PaymentSheet delegates to the same Payment/Connect resolution and
-idempotency rules as web checkout.
+reports them invalid. Native Stripe PaymentSheet and Razorpay Orders delegate to the same
+Payment/provider resolution as web checkout, with rail-specific idempotency/recovery.
+Password/social issuance may snapshot staff authority; phone issuance remains member-only.
+`session_authority=native_staff` still requires current local actions and a selected makerspace
+matching URL/body targets. Refresh cannot promote a member grant, organization grants never
+supply native authority, and both forms of superadmin are refused at device grant issuance.
 
 - **Sign-out follows the credential's scope.** Device logout revokes that grant, its refresh
   families and its push devices; per-session revoke invalidates the selected browser or device
@@ -1168,9 +1173,9 @@ they differ only in configuration. Load-bearing details:
 **Social identity is global; authorization remains per makerspace.** `SocialIdentity(provider, sub)` links
 Google/Apple to the global `User`; it never grants a role. Provider JWTs are server-verified against bounded,
 cached static JWKS endpoints and one-time origin/device-bound nonces. Auto-linking is allowed only when both
-provider and local email are verified; staff social login never creates an account or membership. Social
-tokens carry `surface=member|staff`: member tokens are rejected by staff APIs, while staff tokens require
-the exact trusted staff origin and matching tenant scope on access and refresh. Provider secrets remain
+provider and local email are verified; staff social login never creates an account or membership. Browser
+social tokens carry `surface=member|staff`: browser member tokens are rejected by staff APIs, while
+browser staff tokens require the exact trusted staff origin and matching tenant scope on access and refresh. Provider secrets remain
 write-only/encrypted, and unconfigured social auth is omitted from public config.
 
 **Phone is a login identity on a SEPARATE column, and only when VERIFIED (phase 18).**

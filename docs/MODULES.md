@@ -90,7 +90,7 @@ core modules cannot be uninstalled at all.
 [machine_service](#machine_service) · [printing](#printing) · [maintenance](#maintenance) —
 **Events**: [events](#events) — **Bookings**: [bookings](#bookings) —
 **Membership**: [membership](#membership)
-**Notifications**: [notifications](#notifications) · [email](#email) · [telegram](#telegram) ·
+**Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) —
 **Payments**: [payments](#payments) — **Accounts**: [member_accounts](#member_accounts) —
 **Mobile apps**: [mobile](#mobile) · **Backup & custody**: [backup](#backup) · **Connected devices**: [devices](#devices)
@@ -444,6 +444,9 @@ state/sharing and drop schedules, so neither restores source disclosure rules.
 ### payments
 
 [Read the payments module reference](MODULES-PLATFORM.md#payments).
+Native Stripe/Razorpay flows and the current provider-provisioning limitation:
+[mobile integration operator guide](mobile-integration.md#payments-stripe-and-razorpay).
+The module gates the online rail; core charge history, receipts and desk settlement remain available.
 
 ## Mobile apps
 
@@ -451,7 +454,10 @@ state/sharing and drop schedules, so neither restores source disclosure rules.
 
 [Read the mobile module reference](MODULES-PLATFORM.md#mobile).
 Configure branded app registrations, identity, associations and readiness with the
-[mobile integration operator guide](mobile-integration.md).
+[mobile integration operator guide](mobile-integration.md). Native staff grants require
+active local membership actions; phone login stays member-only. Member push follows personal
+inbox eligibility and active local membership. Core logout-all, account deletion/restore and
+messaging consent are not purchased by this module; SMS/WhatsApp each have their own opt-in key.
 
 ## Backup & custody
 

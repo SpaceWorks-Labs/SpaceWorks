@@ -87,3 +87,119 @@ trust. Only public application proxies serve these routes; control-only listener
 After changing signers, verify the published documents and allow their short cache to expire before
 shipping. Test real-device attestation, login and links before release: readiness is configuration
 validation, not evidence of a successful provider round trip.
+
+## Payments (Stripe and Razorpay)
+
+The payment provider is per makerspace (`MakerspacePaymentSettings.provider`, default
+`stripe`, alternative `razorpay`). The Space Manager chooses the rail for that space;
+apps consume the resolved vendor and never select it or store merchant secrets.
+**Current provisioning limitation:** the staff settings serializer, React settings panel
+and /control/ form expose Stripe credentials only. They do not expose `provider` or the
+Razorpay fields. There is no supported provider-selector/Razorpay-settings API in this
+snapshot. Arrange provisioning with the deployment maintainer before promising Razorpay
+onboarding; do not send invented fields to the Stripe settings endpoint or put them in app builds.
+
+Credentials live on the server's per-makerspace payment-settings row. The Space Manager's
+web console payment settings uses GET/PATCH
+`/api/v1/admin/makerspace/{makerspace_id}/payment-settings`, authorized by
+`MANAGE_MAKERSPACE`. Stripe fields are `stripe_publishable_key`, `stripe_secret_key`,
+`stripe_webhook_secret` and `default_currency` (lowercase three-letter code).
+Credential inputs are write-only; GET returns `*_set` booleans and
+`effective_mode` (`raw`, `connect` or `unavailable`), never saved keys.
+The protected /control/ Payments > Makerspace payment settings form is an operator alternative
+for these Stripe fields. Secret keys and webhook secrets are encrypted at rest.
+The Razorpay model fields are `razorpay_key_id` (public), `razorpay_key_secret` and
+`razorpay_webhook_secret` (encrypted through their model setters). They are not yet exposed
+by either settings form above. Do not write raw secrets directly into encrypted database columns.
+
+Own Stripe credentials take precedence. Managed deployments can alternatively use Stripe
+Connect: configure platform publishable/secret/webhook keys and `stripe_connect_client_id`
+in /control/ Platform Stripe Connect settings (or the superadmin
+`/api/v1/admin/platform/payment-settings` API), then let the manager POST
+`/api/v1/admin/makerspace/{makerspace_id}/payment-settings/connect/onboard` and open the
+returned `{authorize_url}`. The callback is `/api/v1/payments/connect/callback`.
+An active connected account with charges enabled is required. Connect is dormant on self-host;
+Razorpay always uses the makerspace's own account, with no Connect fallback/application fee.
+
+Install the opt-in `payments` module and enable `payments.enabled` and the relevant
+`payments.loans|machines|bookings|events|membership` capability. Credentials must resolve too.
+Recording a debt is separate: `charges.enabled` and the corresponding `charges.<domain>`
+control it without a rail/module/credential requirement. Removing online payments leaves the
+core ledger, manual settlement, history and receipts readable. Deployment tombstoning of
+`payments_rail` removes checkout, native intents and webhook routes; tenant module/capability
+toggles alone do not remove the callbacks for money already taken.
+
+Configure these exact HTTPS webhook URLs in the provider dashboards (no trailing slash).
+`public_code` is the makerspace's public code, not its database ID or slug:
+
+| Rail | URL | Signature secret / verification |
+| --- | --- | --- |
+| Own Stripe | `/api/v1/webhooks/stripe/{public_code}` | That row's `stripe_webhook_secret`; verifies `Stripe-Signature` over raw request bytes. Use the endpoint's webhook signing secret, not the Stripe API secret key. |
+| Managed Stripe Connect | `/api/v1/webhooks/stripe/connect` | Platform `stripe_webhook_secret`; same raw-body `Stripe-Signature` verification, scoped to the connected account. |
+| Own Razorpay | `/api/v1/webhooks/razorpay/{public_code}` | That row's `razorpay_webhook_secret`; HMAC-SHA256 of raw body checked against `X-Razorpay-Signature`. This webhook secret is separate from `razorpay_key_secret`. Preserve `X-Razorpay-Event-Id` through proxies for deduplication. |
+
+Stripe settlement handles `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+`checkout.session.expired`, `checkout.session.async_payment_failed`, `payment_intent.succeeded`
+and `payment_intent.payment_failed`; refund handling accepts `charge.refunded`,
+`charge.refund.updated`, `refund.created`, `refund.updated`, `refund.failed`.
+Connect additionally handles `account.updated` and `account.application.deauthorized`.
+Razorpay handles `payment_link.paid` for hosted checkout, `order.paid` / `payment.captured`
+for native Orders, `payment.failed`, and refund state from refund entities (`refund.processed`
+for successful refund callbacks). Subscribe to the events used by the rails you offer.
+Valid events return 200 `{detail:"Verified."}` even when ignored; invalid configuration,
+signature or payload returns 400; unknown/unservable tenants return 404. Signature checking
+requires unchanged raw body bytes. Do not change providers or remove old webhook credentials
+while collections are unsettled: Razorpay callbacks require the selected provider to remain
+Razorpay, and changing configuration can strand settlement. Inspect pending online rails first.
+
+The apps use an attested device bearer and matching `X-Makerspace-Id`, then POST with no body:
+`/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/mobile-intent`.
+Only a pending charge owned by the caller is eligible. Response dispatch is by `vendor`:
+
+- Stripe: `{vendor:"stripe",payment_id,client_secret,publishable_key}`; optional nullable
+  `customer_id` / `ephemeral_key` are declared in the schema but currently not returned.
+  Configure the native PaymentSheet from these runtime values.
+- Razorpay: `{vendor:"razorpay",payment_id,key_id,order_id,amount_minor,currency,name,description}`.
+  Configure native Checkout with the key, Order ID and the integer minor-unit amount as returned.
+  The server recovers/reuses a matching Order instead of creating a new one on every retry.
+
+409 `payment_rail_conflict` means another online rail already owns the charge; 503
+`payments_unavailable` means the online rail is disabled, unconfigured or failed.
+The SDK callback never settles the ledger. After completion/cancellation, refetch
+GET `/api/v1/member/makerspaces/{makerspace_id}/payments` and locate the payment ID;
+there is no member payment-detail endpoint. `paid_online` / `paid_offline` are settled,
+`waived` / `canceled` are terminal, and a failed attempt can remain `pending`.
+
+Test in a separate staging makerspace with no real debt or live credentials:
+
+1. Provision matching provider test/sandbox keys and the test webhook endpoint's signing
+   secret; for Razorpay, the provisioning limitation above must be resolved by the maintainer.
+   There is no `test_mode` request parameter or separate mobile test endpoint: mode comes
+   from the provider credentials. Keep live and test keys/webhook secrets separate.
+2. Enable the source domain and charge capabilities with the online rail initially off.
+   Create a small charge through its real booking/event/membership/loan/service workflow;
+   this leaves a pending debt without a hosted checkout. Then enable the payment module/rail
+   capabilities and verify `online_payment_available:true` for the owning test member.
+3. Sign in on an approved test native registration and request the mobile intent. Complete
+   the SDK's sandbox flow. Verify delivery/signature acceptance in the provider webhook
+   dashboard and the server's payment row becoming `paid_online` before calling it successful.
+4. Exercise cancellation/failure (must not become paid), repeat the intent request (reuse),
+   resend the same provider webhook (no duplicate settlement), and try a charge with a live
+   hosted checkout (409). Also verify disabled/unconfigured rails return 503.
+5. Check member history and payment documents, staff reconciliation and the audit trail.
+   Switch to live credentials only after sandbox flows pass and pending test rails are closed.
+
+Reconciliation lives in the staff payments console and GET
+`/api/v1/admin/makerspace/{makerspace_id}/payments` (`VIEW_FINANCE`; receipt recording can
+use `for_recording=true` with `RECORD_PAYMENT`). The report registry's
+`payment-reconciliation` and ledger/cash-book reports retain currency partitions.
+Desk settlement uses POST `.../payments/{payment_id}/mark-offline` with
+`{settlement:{method,reference?,received_at}}` (received_at is an ISO datetime), and corrections
+use `.../amend-settlement`;
+waiver is `.../waive`. Online refunds use `.../refund` only with the rail installed;
+offline refunds and deposit releases remain ledger operations. Inspect `payment.*` audits
+for late captures. For `payment.double_paid_refund_required`, use the audited provider
+payment ID to refund excess in the provider dashboard; do not overwrite the original charge.
+Member documents use GET `.../payment-documents` and GET
+`.../payment-documents/{document_id}/download-url` in their member makerspace scope.
+The download grant is user-bound and expires after five minutes.

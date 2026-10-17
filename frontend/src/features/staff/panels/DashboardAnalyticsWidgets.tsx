@@ -1,7 +1,7 @@
 import { StatCard } from "../../../components/ui";
 import { DashboardLayout } from "../../../components/layouts";
 import { AnalyticsData } from "./AnalyticsData";
-import { analyticsRows, type DashboardAnalytics, type DashboardWidget } from "./analyticsApi";
+import { analyticsRows, analyticsMeta, type DashboardAnalytics, type DashboardWidget } from "./analyticsApi";
 import { staffTabPath } from "../staffTabs";
 import { wireChartSpec } from "./charts/wireChartSpec";
 import type { ChartRecord } from "./charts/chartSpec";
@@ -22,7 +22,7 @@ export function DashboardAnalyticsWidgets({ widgets, reportsHref, makerspaceId }
       <p className="my-2 text-sm text-muted">{widget.kind === "queue" ? "Operational queue" : widget.kind === "count" ? "Current counts" : `Last ${widget.default_period} calendar days`}</p>
       {widget.kind === "count" && spec ? <div className="grid gap-3 sm:grid-cols-2">{rows.flatMap((row, index) => spec.value_fields.map(field =>
         <StatCard key={`${index}:${field.field}`} label={`${String(row[spec.x.field] ?? "")} ${field.label ?? field.field}`} value={`${row[field.field] ?? "Unknown"} ${field.unit_field ? row[field.unit_field] ?? "" : field.unit}`} />))}</div> : null}
-      <AnalyticsData title={widget.title} rows={rows} spec={spec} meta={widget.data.meta} />
+      <AnalyticsData title={widget.title} rows={rows} spec={spec} meta={analyticsMeta(widget.data)} />
       {widget.report_keys[0] ? <a className="desk-button mt-3" href={`${reportsHref}?report=${encodeURIComponent(widget.report_keys[0])}`}>Open in reports</a> : null}
     </section>;
   })}</div>;

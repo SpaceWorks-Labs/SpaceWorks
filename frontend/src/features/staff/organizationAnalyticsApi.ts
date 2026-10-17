@@ -2,17 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import type { ReportKey } from "./panels/operationsReportsConfig";
-import { periodParams, type AnalyticsPeriod, type ReportChartSpec } from "./panels/analyticsApi";
-import type { ChartRecord } from "./panels/charts/chartSpec";
+import { periodParams, type AnalyticsPeriod } from "./panels/analyticsApi";
 import { organizationReportGrains } from "./organizationReportChoices";
-
-export type OrganizationReportRows = { rows: ChartRecord[] };
-export type OrganizationReportBreakdown = OrganizationReportRows & { makerspace_id: number };
-export type OrganizationReportResponse = {
-  report_key: string; strategy: "sum" | "group_sum" | "row_union" | "weighted_rate" | "global_rank" | "distinct_person";
-  breakdown: OrganizationReportBreakdown[];
-  total: OrganizationReportRows; chart_spec?: ReportChartSpec | null;
-};
+import type { OrganizationReportResponse } from "../../generated/api";
+export type { OrganizationReportResponse, OrganizationReportRows, OrganizationReportBreakdown } from "../../generated/api";
 
 const ORGANIZATION_ANALYTICS_PATH =
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}";

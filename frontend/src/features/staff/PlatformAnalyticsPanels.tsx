@@ -42,7 +42,7 @@ function PlatformReport({ reportKey, title, period }: {
       : "Business activity, module adoption, growth and app adoption exclude hidden makerspaces. Money and consumption stay separated by currency and unit."}</p>
     {query.isLoading ? <p role="status">Loading {title.toLowerCase()}…</p> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
       <AnalyticsData title={title} rows={rows} spec={spec}
-        hint={query.data?.chart_hint ?? (reportKey === "platform-services" ? "stacked_bar" : "multi_line")} meta={query.data?.meta} />
+        hint={reportKey === "platform-services" ? "stacked_bar" : "multi_line"} meta={query.data?.meta} />
     </DataState>}
   </section>;
 }

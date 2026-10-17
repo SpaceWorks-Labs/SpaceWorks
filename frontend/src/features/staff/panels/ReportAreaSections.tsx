@@ -1,4 +1,4 @@
-import { analyticsRows, periodParams, useAnalyticsReport, type AnalyticsPeriod } from "./analyticsApi";
+import { analyticsRows, analyticsMeta, periodParams, useAnalyticsReport, type AnalyticsPeriod } from "./analyticsApi";
 import { AnalyticsData } from "./AnalyticsData";
 import { DataState } from "./OperationsReportState";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
@@ -19,7 +19,7 @@ export function ReportChartResult({ report, base, period, filters = {}, makerspa
   const rows = analyticsRows(query.data).map(row => makerspaceId !== undefined ? { makerspace_id: makerspaceId, ...row } : row);
   return <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
     <button type="button" className="desk-button mb-3" disabled={query.isFetching} onClick={() => void query.refetch()}>Refresh report</button>
-    <AnalyticsData title={report.title} rows={rows} spec={report.chart_spec} hint={report.chart_hint} meta={query.data?.meta} />
+    <AnalyticsData title={report.title} rows={rows} spec={report.chart_spec} hint={report.chart_hint} meta={analyticsMeta(query.data)} />
   </DataState>;
 }
 

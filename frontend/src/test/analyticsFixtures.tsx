@@ -15,7 +15,8 @@ export const chartSpec = (x = "period", values = ["count"], options: Partial<Rep
 export const reportItem = (key: string, options: Partial<ReportCatalogItem> = {}): ReportCatalogItem => ({
   key, title: key.replace(/-/g, " "), fields: ["period", "count"], exportable: false, summary: false,
   required_modules: [], available: true, unavailable_reason: null, grains: ["day", "week", "month"],
-  chart_hint: "line", aggregate_supported: true, chart_spec: chartSpec(), ...options,
+  chart_hint: "line", aggregate_supported: true, chart_spec: chartSpec(),
+  identity_bearing: false, allowed_formats: ["csv", "xlsx"], schedulable: true, previewable: true, condition_metrics: [], ...options,
 });
 export const reportData = (rows = [{ period: "2026-10-01", count: 7 }]): AnalyticsReport => ({ typed_rows: rows, rows: [] });
 export const space = {

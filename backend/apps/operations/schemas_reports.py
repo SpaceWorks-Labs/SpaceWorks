@@ -30,6 +30,8 @@ from .serializers_reports_bookings import (
 )
 from apps.operations.serializers_reports_payments import PaymentCashBookSerializer
 from apps.operations.serializers_reports_membership import MemberRetentionReportSerializer, MembershipRevenueReportSerializer
+from apps.operations.serializers_reports_membership import MembershipGrowthReportSerializer
+from apps.operations.serializers_reports_finance import PaymentsAgeingReportSerializer
 from apps.operations.serializers_reports_finance import (
     PaymentsLedgerReportSerializer, RevenueOverTimeReportSerializer,
     CashBookReportSerializer, AccountingJournalReportSerializer,
@@ -68,6 +70,8 @@ ANALYTICS_REPORT_RESPONSE = PolymorphicProxySerializer(
         GenericAnalyticsReportSerializer,
         MemberRetentionReportSerializer,
         MembershipRevenueReportSerializer,
+        MembershipGrowthReportSerializer,
+        PaymentsAgeingReportSerializer,
         EventRegistrationReportSerializer,
         EventFeedbackReportSerializer,
         BookingResourceUtilizationReportSerializer,

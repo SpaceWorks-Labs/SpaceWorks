@@ -10,7 +10,7 @@ from apps.operations.reports_finance_sources import finance_sources
 LEDGER_FIELDS = ("date", "row_kind", "row_id", "payment_id", "document_number", "subject_type",
                  "payer_type", "payer_id", "status", "currency", "amount", "collected_amount",
                  "owed_amount", "refunded_amount", "method", "reference", "effective", "refund_status")
-REVENUE_FIELDS = ("period", "currency", "subject_type", "collected_amount", "owed_amount",
+REVENUE_FIELDS = ("period", "currency", "subject_type", "rail", "collected_amount", "owed_amount",
                   "refunded_amount", "waived_amount", "net_amount")
 CASH_FIELDS = ("period", "currency", "method", "collected_amount", "refunded_amount", "net_amount")
 
@@ -44,23 +44,40 @@ def _period(space, at, grain):
     return day.isoformat()
 
 
-def _summary(makerspace_id, *, grain, date_range, cash_only=False, subject_type=None, status=None):
+def _rail(row):
+    if row["row_kind"] == "online_settlement":
+        return "online"
+    if row["row_kind"] in ("manual_settlement", "legacy_settlement"):
+        return "offline"
+    if row["row_kind"] == "refund":
+        # Refunds retain their own settlement method, independently of how the
+        # original charge was collected (an online charge can be refunded in cash).
+        return "online" if row.get("method") in ("stripe", "razorpay") else "offline"
+    # A debt or waiver has no collection rail. Never guess from Payment.provider.
+    return "unallocated"
+
+
+def _summary(makerspace_id, *, grain, date_range, cash_only=False, subject_type=None, status=None, actor=None):
     groups = {}
     columns = ("collected_amount", "refunded_amount") if cash_only else (
         "collected_amount", "owed_amount", "refunded_amount", "waived_amount")
     dimension = "method" if cash_only else "subject_type"
-    for space, row in finance_sources(makerspace_id, date_range=date_range, subject_type=subject_type, status=status):
+    for space, row in finance_sources(makerspace_id, date_range=date_range, subject_type=subject_type, status=status, actor=actor):
         if not row["effective"]:
             continue
         if row["row_kind"] == "refund" and row.get("refund_status") != "succeeded":
+            continue
+        if not cash_only and not any(row.get(column, 0) for column in columns):
             continue
         if cash_only and (row["row_kind"] not in ("manual_settlement", "legacy_settlement", "refund") or
                           row.get("method") not in ("cash", "upi", "bank_transfer", "card_machine", "cheque", "other", "unknown")):
             continue
         period = _period(space, row["date"], grain)
-        key = (space.pk, period, row["currency"], row.get(dimension, ""))
+        rail = _rail(row)
+        key = (space.pk, period, row["currency"], row.get(dimension, ""), "" if cash_only else rail)
         target = groups.setdefault(key, dict(makerspace_id=space.pk, period=period, currency=row["currency"],
-                                             **{dimension: key[-1]}, **{column: Decimal("0.00") for column in columns}))
+                                             **{dimension: key[3]}, **({} if cash_only else {"rail": rail}),
+                                             **{column: Decimal("0.00") for column in columns}))
         for column in columns:
             target[column] += row.get(column, 0)
     records = []
@@ -71,11 +88,11 @@ def _summary(makerspace_id, *, grain, date_range, cash_only=False, subject_type=
     return records
 
 
-def build_revenue_over_time(makerspace_id, *, limit=None, date_range=None, grain="day", subject_type=None, status=None):
+def build_revenue_over_time(makerspace_id, *, limit=None, date_range=None, grain="day", subject_type=None, status=None, actor=None):
     return _result(REVENUE_FIELDS, _summary(makerspace_id, grain=grain, date_range=date_range,
-                   subject_type=subject_type, status=status), makerspace_id, limit)
+                   subject_type=subject_type, status=status, actor=actor), makerspace_id, limit)
 
 
-def build_cash_book(makerspace_id, *, limit=None, date_range=None, grain="day", subject_type=None, status=None):
+def build_cash_book(makerspace_id, *, limit=None, date_range=None, grain="day", subject_type=None, status=None, actor=None):
     return _result(CASH_FIELDS, _summary(makerspace_id, grain=grain, date_range=date_range, cash_only=True,
-                   subject_type=subject_type, status=status), makerspace_id, limit)
+                   subject_type=subject_type, status=status, actor=actor), makerspace_id, limit)

@@ -2,6 +2,7 @@ from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
 from apps.operations.report_fields_de import UTILIZATION_FIELDS
 from apps.operations.reports_de_common import chart
+from apps.operations.report_charts_fg import RECONCILIATION_CHART
 
 
 def _legacy(key, fields, *, exportable=True, summary=False, chart_hint="bar", identity_bearing=False):
@@ -52,11 +53,12 @@ EXISTING_REPORT_DEFINITIONS = (
         ),
         required_action=rbac.Action.VIEW_FINANCE, title="Payment reconciliation",
         chart_hint="stacked_bar",
-        # v4 counts effective refund correction heads; v3 added succeeded refund
+        chart_spec=RECONCILIATION_CHART,
+        # v5 publishes the F1 chart spec; v4 counts effective refund correction heads; v3 added succeeded refund
         # totals; v2 split settled money by method, so the
         # column set and the row grain both changed. Deliberately NOT module-gated -- a
         # space with the payments module uninstalled still tracks and settles money, and
         # this is where it reconciles the cash box.
-        version=4,
+        version=5,
     ),
 )

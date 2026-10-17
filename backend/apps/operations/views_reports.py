@@ -87,10 +87,12 @@ class AnalyticsView(APIView):
         require_action(request.user, definition.required_action, makerspace.id)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
+        # Membership/money builders resolve calendar labels per space, including
+        # organization runs; only subject adapters take pre-resolved instants.
         response = Response(reports.report_data(
             report_key, makerspace.id,
             actor=request.user,
-            limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in {"member-retention", "membership-revenue"} | MACHINE_REPORT_KEYS else None),
+            limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in MACHINE_REPORT_KEYS else None),
             report_filters=_report_filters(request, report_key), grain=_grain_param(request, definition),
         ))
         if definition.subject_kind or request.query_params.get("subject_kind"):

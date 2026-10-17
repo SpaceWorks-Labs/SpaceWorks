@@ -70,6 +70,36 @@ STRATEGIES = {
     "mobile-auth": _strategy(
         AggregationKind.GROUP_SUM, MOBILE_AUTH_GROUPS, MOBILE_AUTH_FIELDS, ordering=MOBILE_AUTH_GROUPS,
     ),
+    "membership-growth": _strategy(
+        AggregationKind.GROUP_SUM, ("period",),
+        ("period", "new_members", "activated_members", "revoked_members", "active_members"), ordering=("period",),
+        text=(("period", "local calendar label; counts are memberships, not distinct people"),),
+    ),
+    "member-retention": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("cohort_month", "months_after_join"),
+        ("cohort_month", "months_after_join", "cohort_members", "eligible_members", "retained_members", "retention_percent", "churned_members", "reactivated_members"),
+        ordering=("cohort_month", "months_after_join"), text=(("retention_percent", "summed retained / summed eligible memberships"),),
+    ),
+    "membership-revenue": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("period", "currency", "plan_id", "plan_name"),
+        ("period", "currency", "plan_id", "plan_name", "recurring_members", "mrr", "arr", "arpu", "churned_members", "reactivated_members"),
+        ordering=("period", "currency", "plan_id"), text=(("arpu", "summed MRR / summed recurring memberships"), ("plan_id", "distinct plans never merge by label")),
+    ),
+    "revenue-over-time": _strategy(
+        AggregationKind.GROUP_SUM, ("period", "currency", "subject_type", "rail"),
+        ("period", "currency", "subject_type", "rail", "collected_amount", "owed_amount", "refunded_amount", "waived_amount", "net_amount"),
+        ordering=("period", "currency", "subject_type", "rail"), text=(("period", "local calendar label"), ("currency", "group and carry"), ("rail", "group and carry")),
+    ),
+    "cash-book": _strategy(
+        AggregationKind.GROUP_SUM, ("period", "currency", "method"),
+        ("period", "currency", "method", "collected_amount", "refunded_amount", "net_amount"),
+        ordering=("period", "currency", "method"), text=(("currency", "group and carry"), ("method", "group and carry")),
+    ),
+    "payments-ageing": _strategy(
+        AggregationKind.GROUP_SUM, ("currency", "age_bucket"),
+        ("currency", "age_bucket", "payment_count", "outstanding_amount"), ordering=("currency", "age_bucket"),
+        text=(("currency", "group and carry"), ("age_bucket", "0-30, 31-60, 61-90, over 90 local days")),
+    ),
     "payment-cash-book": _strategy(
         AggregationKind.GROUP_SUM, ("currency", "method"),
         ("currency", "method", "collected_amount", "refunded_amount", "net_amount"),

@@ -94,6 +94,13 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"commun
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"machine-service"}
 
 
+# Phase 1f F/G adds explicit local-period strategies and exposed denominators.
+# These totals count memberships (a person in two spaces contributes twice).
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {
+    "member-retention", "membership-revenue", "revenue-over-time", "cash-book",
+}
+
+
 class OrganizationReportScopeError(ValueError):
     """Base error for a report definition the organization dashboard cannot use."""
 

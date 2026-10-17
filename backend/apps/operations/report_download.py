@@ -20,7 +20,9 @@ def _export_response(request, definition, makerspace_id, *, platform_context=Non
     local_space = None
     if makerspace_id is not None:
         local_space = _makerspace_for_report_view(request.user, makerspace_id, definition.key)
-    local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in {"member-retention", "membership-revenue"} | MACHINE_REPORT_KEYS)
+    # Membership/money builders resolve calendar labels in each source space; machine
+    # builders still need makerspace-local ranges.
+    local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in MACHINE_REPORT_KEYS)
     date_range = _date_range(request, local_space if local_dates else None)
     report_filters = _report_filters(request, definition.key)
     grain = _grain_param(request, definition)

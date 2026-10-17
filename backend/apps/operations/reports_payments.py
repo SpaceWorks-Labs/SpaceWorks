@@ -12,6 +12,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 
+from apps.accounts import rbac
 from apps.operations.report_registry import ReportResult
 from apps.operations.report_scope import scoped_ids
 from apps.payments.models import ManualSettlement, Payment, Refund
@@ -39,9 +40,12 @@ def build_payment_reconciliation(
     date_range=None,
     subject_type=None,
     status=None,
+    actor=None,
 ):
     aggregate = makerspace_id is None
     queryset = Payment.objects.filter(makerspace_id__in=scoped_ids(makerspace_id))
+    queryset = (rbac.scope_by_action(actor, rbac.Action.VIEW_FINANCE, queryset) if actor is not None
+                else rbac.scope_for_scheduled_work(queryset))
     if subject_type:
         queryset = queryset.filter(subject_type=subject_type)
     if status:

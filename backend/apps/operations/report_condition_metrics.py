@@ -38,6 +38,7 @@ NUMERIC_FIELDS = frozenset({
     "occupied_hours", "window_hours", "occupancy_percent", "booking_count", "cumulative_registrations",
     "charge_count", "charged_amount", "promo_discount_amount", "confirmation_rate_percent", "checkin_count",
     "score_count", "score_total", "average_score",
+    "activated_members", "owed_amount", "waived_amount",
 })
 
 

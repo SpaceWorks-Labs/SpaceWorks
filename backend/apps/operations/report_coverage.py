@@ -81,6 +81,15 @@ REPORT_MODULE_COVERAGE["events"] = ModuleReportCoverage("substantive", (
 ))
 
 
+# These associations document coverage; the payment ledger is permanently core,
+# and membership analytics do not require the optional member sign-in module.
+REPORT_MODULE_COVERAGE.update({
+    "membership": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["membership"].reports, "membership-growth", "member-retention", "membership-revenue")),
+    "member_accounts": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["member_accounts"].reports, "membership-growth", "member-retention", "membership-revenue")),
+    "payments": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["payments"].reports, "revenue-over-time", "payments-ageing", "cash-book")),
+})
+
+
 @checks.register(checks.Tags.models)
 def check_report_module_coverage(app_configs=None, **kwargs):
     errors = []

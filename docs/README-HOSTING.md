@@ -18,12 +18,14 @@ instances. Their names and grants cannot be edited, and roles cannot be created 
 
 A membership has a primary role and optional additional roles. **Space Manager and Member must each
 stand alone**; the other five combine freely, such as Event Manager + Booking Manager. The console
-assigns the complete set with checkboxes. Invitations still carry one built-in role; add others after
-acceptance. Only a global superadmin can grant Space Manager or modify a membership holding it.
-Every other assignment must stay within the actor's own action ceiling.
+assigns the complete set on a separate tenant staff account with checkboxes. Initial-setup invitations
+snapshot the full role set and machine scopes. With platform access on, only the superadmin manages
+Space Managers; with it off, another local Space Manager may manage them. Never self or the last active
+Space Manager. Members cannot receive built-in staff roles. Staff resets are admin-issued; staff and
+platform sign-in uses password (+ local authenticator MFA), while delegated helpers use member accounts.
 
 Machine Manager types are assigned **per person**, not per role or individual machine. Save the role
-first, then choose types from the membership's **Machine types** control in Users or Members.
+and types together under **Staff & roles**; member accounts cannot become Machine Managers.
 No selected types means no machines. A type includes machines added to it later; **All machine types**
 selects today's available types, so newly created types need explicit assignment. Space Manager is
 exempt and covers future types too. Existing direct type authority and per-machine operator grants
@@ -37,8 +39,8 @@ irreversible migration: read [the fixed-role upgrade procedure](update-recovery.
 before running migrations.
 
 **Organizations reach across makerspaces.** A network, a university or a chain can be registered as an
-organization, linked to any number of makerspaces as owner, manager or affiliate, and given staff whose
-authority applies in every one of them — without a separate login or a membership row per space. An
+organization, linked to any number of makerspaces as owner, manager or affiliate, and grant member
+accounts specific actions across those spaces without tenant staff accounts or memberships. An
 organization grant confers **actions, never identity**: an organization administrator can hold
 `manage_events` across the network's spaces while being Space Manager of none of them, and staff lists
 still show only that space's own people, with a separate read-only view of which organizations reach in.
@@ -156,3 +158,11 @@ Three things are deliberate, because this moves real accountability records:
 - **The source is archived, not deleted** — and archives are outside the purge guarantee.
 
 Both sides are driven from the staff console; nothing here needs a shell.
+
+Tenant staff travel as new accounts of the imported makerspace with built-in roles, remapped machine
+types, active/deactivated status and staff notification preferences. They never adopt an existing
+target member or staff identity, even with the same email. Passwords, MFA, sessions, device grants,
+chat endpoints and invitations are omitted: a target administrator issues passwords and each chat
+connection proves ownership again. Platform audit actors remain inert provenance. See the permanent
+[account-split portability contract](account-split-portability.md) for PORTABLE, sovereign Lane D,
+purge retirement and the separate sealed-slice deployment-backup rules.

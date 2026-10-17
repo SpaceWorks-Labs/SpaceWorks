@@ -1,7 +1,8 @@
-# Account split: P4 portability and retention contract
+# Account split: portability and retention contract
 
-This note records the D10/D11 and V3/V4/V5/V9/V11 changes. The P6 documentation
-pass should fold it into the permanent invariants and source map.
+Permanent D10/D11 and V3/V4/V5/V9/V11 contract for tenant migration and deployment
+backup. See [Account kinds](INVARIANTS.md#account-kinds-member--staff--platform) for
+authentication/lifecycle rules and [SOURCE-MAP.md](SOURCE-MAP.md) for implementation ownership.
 
 PORTABLE archives and sovereign Lane D dumps carry tenant-owned staff identities,
 their primary and additional built-in roles, machine-type scopes, membership
@@ -48,6 +49,9 @@ binding; account unlink remains local and delivery statuses remain delivery-boun
 Signed opt-outs and delivery callbacks remain effective with delivery/modules off;
 new proofs require the channel and notification module gates.
 
-P4 changes the endpoint uniqueness contract and adds a projected preference model.
-The coordinator must regenerate the catalog digest after combining lane migrations;
-P4 deliberately does not change `CATALOG_SCHEMA_SHA256` or generated OpenAPI files.
+The export field/reference/authority catalogs classify account kind and staff ownership,
+credential omissions, role/scoping remaps and staff preferences together. Import and
+independent postconditions must agree; a new account edge or credential field requires
+an explicit disposition before it can travel. This contract does not authorize a Space
+Manager to obtain a PORTABLE global-identity archive; existing disclosure approval and
+source/target migration gates still apply.

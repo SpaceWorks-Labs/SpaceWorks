@@ -735,3 +735,31 @@ registers artwork keys embedded in issuance JSON; the normal retention/purge reg
 also include concrete artwork and revision rows. Frontend shared design controls live in
 `components/print-layout/`; `EventCertificateDesigner.tsx` and
 `eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.
+
+
+Addressed messaging foundation (1h-A) lives in `integrations/models_messaging_settings.py`
+(platform/tenant credentials, sender ownership/versions and WhatsApp template bindings),
+`models_messaging_consent.py` (immutable ledger and shared recipient protection), and
+`models_messaging_delivery.py` (delivery and normalized durable callback inbox contracts).
+The models barrel re-exports all concrete models. Migration `0034_messaging_m1h` installs
+the consent mutation/write-fence triggers; notifications `0006_messaging_m1h` updates
+personal preference choices.
+
+`integrations/messaging/resolver.py` owns credential precedence, sender keys and exact
+callback URLs; `senders.py` owns reservation, rotation and retired-credential wiping.
+`locks.py::lock_whatsapp_sender` is the shared sender serialization seam for delivery,
+callback correlation and re-consent. `protections.py` defines phone/alias hashes and
+suppression lookup; `consent.py` owns admission, live consent and re-consent lifting/reset.
+`settings_service.py` and `templates.py` own audited staff mutations; `templates_provider.py`
+checks authoritative Meta approval/shape. `projections.py` is the reviewed event/audience
+variable and SMS default catalogue. `transport.py` defines SendResult and classifies
+provider outcomes; `twilio.py`, `whatsapp.py` and `segments.py` implement provider sends
+and SMS accounting. Existing `sms/` retains OTP's bool behavior.
+
+The three `messaging/views_*` modules, serializers and URL lists supply the staff and
+member APIs. `admin_messaging.py` exposes platform settings/templates only.
+`messaging/purge.py` supplies independent module purge and account departure hooks.
+`data_export/classification_messaging.py` and `tenant_migration/catalog_messaging.py`
+classify history, credentials and inert target projection. `tasks_messaging_settings.py`
+is registered through integrations tasks and both schedulers. The core scope validator
+is `integrations/notification_scope_contract.py`; the optional inbox re-exports it.

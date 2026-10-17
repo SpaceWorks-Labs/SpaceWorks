@@ -176,3 +176,6 @@ from .projection_wp4 import FIELD_PROJECTION
 TARGET_FIELD_PROJECTION.update(FIELD_PROJECTION)
 from .catalog_broadcasts import projections as broadcast_projections
 TARGET_FIELD_PROJECTION.update(broadcast_projections(TargetField))
+
+from .catalog_messaging import projections as messaging_projections
+TARGET_FIELD_PROJECTION.update(messaging_projections(TargetField))

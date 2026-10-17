@@ -55,6 +55,8 @@ def _profiles(user, makerspace_id):
 
 
 def scrub_tenant(user, makerspace_id, *, username, address):
+    from apps.integrations.messaging.purge import purge_user
+    purge_user(user, makerspace_id)
     _profiles(user, makerspace_id)
     _scrub(_rows("hardware_requests.HardwareRequest", requester=user, makerspace_id=makerspace_id), {
         "requester_username": username, "requester_name": "",

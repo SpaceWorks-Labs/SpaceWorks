@@ -616,7 +616,7 @@ role does not count. Space packs no longer export roles: legacy empty `roles: []
 removed, while nonempty role sections are refused. Membership and per-person authority never travel
 in a pack; portable tenant imports reduce memberships to Member and drop additional roles/type links.
 
-**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 34
+**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 36
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
 `requires_modules`, `default_enabled`, `is_core`, `frontend_exposed`, `frontend_workflows`), and the
 lists that used to be hand-kept in parallel now **derive** from it: `models.DEFAULT_ENABLED_MODULES`,
@@ -638,7 +638,7 @@ unregistered, if the derived lists change, or if a migration-referenced callable
 `member_accounts`, `mobile` and `payments` once carried it too and are now opt-in for new
 makerspaces (existing rows kept them through `0057`). Everything else is off in the registry default. Guided setup explicitly installs the chosen
 areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 14 / `lending` 17 /
-`recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 34 — pinned by
+`recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 36 — pinned by
 `tests/modules/test_combo_profiles.py`).
 `ModuleDefinition.default_enabled` defaults to **False** and core must not set it (core is on by
 definition; two sources for one fact is the drift the registry exists to remove). `backup`, whose key
@@ -4804,3 +4804,63 @@ releases would therefore not just lose history, it would eventually strand that 
   Runner installation defaults to No, supports Linux/systemd only, and requires all external-contributor
   workflow approvals plus repository/workflow restrictions: Docker access is effectively root.
   See `docs/self-hosting.md#security` for the required operator settings.
+
+
+## Addressed messaging channels
+
+SMS and WhatsApp address a verified person, never a room destination. Their independent
+`sms` and `whatsapp` modules and matrix cells default off. Their availability checks
+must never fall through to `mobile.push`. Consent settings are core account surfaces,
+including when `notifications` is off or tombstoned. Sending requires an active local
+membership; account-only owners retain their existing inbox/email/push behavior.
+
+Own sender configuration takes precedence, including incomplete or unreadable credentials
+(which make the channel unavailable). Platform notification sending requires both the
+platform operator switch and the tenant's `use_platform_sender`. Provider ownership is
+reserved by a unique non-secret sender key. Ownership and callback credential versions
+are separate; rotation retires the previous version, callbacks accept retired secrets
+for fourteen days, and the scheduler then wipes secrets while retaining version history.
+Tenant secrets are write-only in the API and absent from /control/. Superadmin's global
+bypass respects `superadmin_access_enabled`; explicit local role authority still applies.
+Control-plane tenant display contains only configuration/effective-source state.
+
+Consent is an append-only per-tenant/channel ledger. Live consent requires the latest
+row by id to be opted_in and its encrypted phone snapshot AND verification timestamp to
+match User. Phone A -> B -> A never resurrects consent after reverification. Opt-in
+requires verification; opt-out does not. Writes lock User, serializing identity changes
+and account departure. Database triggers allow only mapped phone maintenance under the
+existing registered `app.pii_fence_operation`, and DELETE under
+`app.allow_immutable_delete`; the purge flag never authorizes history UPDATEs. Archive
+appends account_archive opted_out rows; purge deletes consent and addressed deliveries.
+Portable consent is inert (opted_out); imported template bindings are inactive/reviewable.
+
+Suppressions are deployment-keyed phone/provider-alias HMACs, scoped to channel + sender,
+never User ids. Suppressions explicitly record phone/alias kind so unmapped alias
+STOPs can be queried without guessing from a digest. Each delivery snapshots the
+addressed phone HMAC for late callbacks, even after User changes phone. Inbound START never grants consent. In-app re-consent lifts the resolved
+sender's phone suppression and every mapped alias suppression and records all lifted ids.
+Shared sender protection survives tenant/channel purge; the other channel and OTP survive.
+
+WhatsApp correlation uses probing/confirmed/blocked and alias_known. A sender/phone may
+submit only one logical probe before verified identity correlation; an ambiguous probe
+outcome is never retried. Other deliveries defer and expire after 72 hours without
+confirmation. A new unmapped alias STOP blocks correlations whose alias is unknown;
+in-app re-consent resets only blocked rows. Every operation affecting whether an alias
+STOP is matchable takes `lock_whatsapp_sender(sender_key)` FIRST, before row locks:
+unmapped STOP, probe claim, verified confirmation and blocked-row re-consent reset. The
+transaction-scoped PostgreSQL advisory lock covers tenants sharing a platform sender.
+This bounds exposure to one logical probe, even with concurrent deliveries or missing callbacks.
+
+Only reviewed lifecycle event/audience variables enter delivery context. Contacts, free
+text, notes, remarks and public tokens are excluded; no recipient phone or message body
+is stored on deliveries. Approved Meta templates permit positional text BODY parameters
+only, validated against the current WABA; changing WABA requires binding review. Provider
+errors store codes only. Progress rank is monotonic; delivered/read evidence wins over a
+failure in either arrival order, while failed_at records every observed failure.
+
+OTP remains platform-only on its original bool transport. Notification SMS requires a
+distinct platform notification number; tenants may use neither the OTP AccountSid nor
+its number. The two numbers must not share a Twilio Messaging Service. SMS estimates
+count GSM-7 extension septets and UCS-2 UTF-16 units, use conservative 152/66 multipart
+limits, and cap at three segments using ASCII '...' followed by a recount. Provider
+billed segments remain separate from estimates.

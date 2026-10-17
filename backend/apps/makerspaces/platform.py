@@ -157,6 +157,7 @@ def feature_enabled(makerspace, key):
 
 def bootstrap_payload(makerspace):
     from apps.makerspaces.editions import current_edition
+    from apps.integrations.messaging.resolver import resolve_sender
 
     modules = sorted(key for key in available_modules(makerspace) if is_frontend_exposed(key))
     if not feature_enabled(makerspace, "loans.enabled"):
@@ -231,6 +232,8 @@ def bootstrap_payload(makerspace):
         "theme": theme,
         "branding": branding,
         "email_enabled": email_enabled(),
+        "messaging": {channel: module_enabled(makerspace, channel) and resolve_sender(makerspace, channel) is not None
+                      for channel in ("sms", "whatsapp")},
         "public_api": {
             "base_url": "/api/v1",
             "publishable_key": makerspace.public_api_key,

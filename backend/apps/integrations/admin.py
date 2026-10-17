@@ -36,3 +36,5 @@ class PlatformEmailSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAd
     # in the admin. The React superadmin Platform Email panel is the write surface.
     exclude = ("smtp_password",)
     readonly_fields = ("updated_at",)
+
+from apps.integrations import admin_messaging  # noqa: F401

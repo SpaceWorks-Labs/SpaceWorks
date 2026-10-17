@@ -591,6 +591,7 @@ if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
 CELERY_BEAT_SCHEDULE = {
+    "messaging-credential-wipe": {"task": "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task", "schedule": crontab(hour=2, minute=15)},
     "inventory-stock-snapshot": {"task": "apps.inventory.tasks.snapshot_stock_task", "schedule": crontab(hour=0, minute=15)},
     "member-push-recovery": {
         "task": "apps.notifications.tasks.sweep_member_push",
@@ -1311,3 +1312,7 @@ SPECTACULAR_SETTINGS.setdefault("APPEND_COMPONENTS", {}).setdefault("securitySch
                    "(when present), body. X-Client-Id and X-Timestamp also required; "
                    "see API client protocol.",
 }
+
+# Addressed notifications require an operator-owned absolute callback origin.
+MESSAGING_WEBHOOK_BASE_URL = env("MESSAGING_WEBHOOK_BASE_URL", default="").rstrip("/")
+WHATSAPP_GRAPH_VERSION = env("WHATSAPP_GRAPH_VERSION", default="v23.0")

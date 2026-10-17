@@ -1,0 +1,69 @@
+"""Channel-only purge preserves shared phone/alias protection and the other rail."""
+from contextlib import contextmanager
+
+from django.db import connection, transaction
+
+from apps.integrations.models import (
+    MakerspaceMessagingSettings, MessagingConsent, MessagingDelivery, MessagingSenderIdentity,
+    MessagingWebhookEvent, WhatsAppTemplateBinding,
+)
+from .locks import advisory_lock
+
+
+@contextmanager
+def consent_purge():
+    """The existing immutable-history DELETE hatch, never an UPDATE permission."""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT current_setting('app.allow_immutable_delete', true)")
+        previous = cursor.fetchone()[0] or ""
+        cursor.execute("SELECT set_config('app.allow_immutable_delete', 'on', true)")
+        try:
+            yield
+        finally:
+            cursor.execute("SELECT set_config('app.allow_immutable_delete', %s, true)", [previous])
+
+
+@transaction.atomic
+def purge_channel(makerspace, channel):
+    if channel not in {"sms", "whatsapp"}:
+        raise ValueError("Unsupported addressed channel.")
+    advisory_lock("messaging-settings")
+    counts = {}
+    with consent_purge():
+        counts["messaging_consents"] = MessagingConsent.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
+    counts["messaging_deliveries"] = MessagingDelivery.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
+    MessagingWebhookEvent.objects.filter(makerspace=makerspace, channel=channel).delete()
+    MessagingSenderIdentity.objects.filter(makerspace=makerspace, channel=channel).delete()
+    values = ({"sms_account_sid": "", "sms_auth_token": "", "sms_from_number": "", "sms_sender_key": None}
+              if channel == "sms" else {"whatsapp_phone_number_id": "", "whatsapp_business_account_id": "",
+              "whatsapp_access_token": "", "whatsapp_app_secret": "", "whatsapp_webhook_verify_token": "", "whatsapp_sender_key": None})
+    MakerspaceMessagingSettings.objects.filter(makerspace=makerspace).update(**values)
+    if channel == "whatsapp":
+        WhatsAppTemplateBinding.objects.filter(makerspace=makerspace).delete()
+    return counts
+
+
+def sms_delete(makerspace, cursor):
+    return purge_channel(makerspace, "sms")
+
+
+def whatsapp_delete(makerspace, cursor):
+    return purge_channel(makerspace, "whatsapp")
+
+
+def purge_user(user, makerspace_id):
+    with consent_purge():
+        MessagingConsent.objects.filter(user=user, makerspace_id=makerspace_id).delete()
+    MessagingDelivery.objects.filter(user=user, makerspace_id=makerspace_id).delete()
+
+
+def archive_consents(user, spaces):
+    from apps.audit.services import record
+    from .consent import live_consent
+    for space in spaces:
+        for channel in ("sms", "whatsapp"):
+            if live_consent(space, user, channel):
+                row = MessagingConsent.objects.create(makerspace=space, user=user, channel=channel,
+                    action="opted_out", source="account_archive", phone_e164=user.phone_e164 or "",
+                    phone_verified_at=user.phone_verified_at)
+                record(user, "messaging.consent_archived", makerspace=space, target=row, meta={"fields": ["action", "source"]})

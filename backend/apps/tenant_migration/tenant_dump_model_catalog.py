@@ -93,6 +93,9 @@ PROJECTED_MODEL_LABELS |= frozenset({"inventory.InventoryStockSnapshot", "machin
 
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
+from .catalog_messaging import PROJECTED_LABELS as MESSAGING_PROJECTED_LABELS
+PROJECTED_MODEL_LABELS |= MESSAGING_PROJECTED_LABELS
+
 EXPLICIT_DROP_MODEL_REASONS = {
     "makerspaces.MembershipAdditionalRole": "Source additional roles must not grant target staff authority.",
     "machines.MembershipMachineTypeScope": "Source membership scopes must not grant target machine authority.",

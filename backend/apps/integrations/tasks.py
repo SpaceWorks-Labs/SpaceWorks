@@ -125,3 +125,5 @@ def _claim_notification_log(log_id):
         log.error = ""
         log.save(update_fields=["status", "error", "updated_at"])
         return log
+
+from .tasks_messaging_settings import wipe_messaging_credentials_task  # noqa: F401

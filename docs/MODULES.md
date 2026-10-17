@@ -1,6 +1,6 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **34 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
+Space Works ships **36 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
 default** (`backup`), and the rest opt-in. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
@@ -373,6 +373,14 @@ history and their owned cover images while preserving the core payment ledger.
 ### email
 
 [Read the email module reference](MODULES-PLATFORM.md#email).
+
+### sms
+
+[Read the SMS module reference](MODULES-PLATFORM.md#sms).
+
+### whatsapp
+
+[Read the WhatsApp module reference](MODULES-PLATFORM.md#whatsapp).
 
 ### telegram
 

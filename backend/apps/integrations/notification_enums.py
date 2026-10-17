@@ -37,6 +37,8 @@ class NotificationChannel(models.TextChoices):
     DISCORD = "discord", "Discord"
     WEBHOOK = "webhook", "Signed webhook"
     NATIVE_PUSH = "native_push", "Native push"
+    SMS = "sms", "SMS"
+    WHATSAPP = "whatsapp", "WhatsApp"
 
 
 class NonEmailNotificationChannel(models.TextChoices):
@@ -46,6 +48,8 @@ class NonEmailNotificationChannel(models.TextChoices):
     DISCORD = "discord", "Discord"
     WEBHOOK = "webhook", "Signed webhook"
     NATIVE_PUSH = "native_push", "Native push"
+    SMS = "sms", "SMS"
+    WHATSAPP = "whatsapp", "WhatsApp"
 
 
 class ChatNotificationChannel(models.TextChoices):
@@ -105,6 +109,8 @@ class NotificationDeliveryStatus(models.TextChoices):
 # out — overstating what the toggle does. Tenant email is gated by
 # `dispatch.email_module_blocks`, which knows about the exemptions; this table does not.
 CHANNEL_MODULE_KEYS = {
+    "sms": "sms",
+    "whatsapp": "whatsapp",
     "in_app": "notifications",
     "telegram": "telegram",
     "slack": "slack",

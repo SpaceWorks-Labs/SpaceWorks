@@ -191,6 +191,10 @@ DATASET_SPECS.update({
     "machines.MachineStatusEvent": ("machines/status_events.csv", P(("makerspace",), ("machine__makerspace",))),
     "machines.ConsumableCostRecord": ("machines/consumable_costs.csv", P(("makerspace",))),
 })
+DATASET_SPECS.update({
+    "integrations.WhatsAppTemplateBinding": ("messaging/whatsapp_templates.csv", P(("makerspace",))),
+    "integrations.MessagingConsent": ("messaging/consents.csv", P(("makerspace",))),
+})
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs
 DATASET_SPECS.update(wp3_dataset_specs(P))

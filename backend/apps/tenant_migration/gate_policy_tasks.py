@@ -4,6 +4,11 @@ from .gate_policy_replay import REPLAY_TASK_PARTICIPANTS, REPLAY_FANOUT_PARTICIP
 
 
 TASK_EXEMPTIONS = {
+    "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task": (
+        "Deployment-local callback credential retention: wipes expired verification material "
+        "on operational credential versions, never tenant settings or portable domain rows. "
+        "Must continue after source migration and channel uninstall."
+    ),
     "apps.accounts.tasks.revoke_apple_tokens_task": "Platform-global Apple credential revocation; no tenant writes.",
     "apps.operations.tasks_platform.run_platform_problem_checks_task": (
         "Read-only platform monitoring; writes only a disposable deployment cache marker."

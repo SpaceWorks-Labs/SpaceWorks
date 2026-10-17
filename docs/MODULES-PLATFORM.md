@@ -208,3 +208,53 @@ Opt-in, no dependencies; installed only by the `full`/`everything` profiles.
   to device managers. Printer jobs and label delivery controls arrive with their adapter lanes.
 
 ---
+
+
+### sms
+
+Opt-in and default off. Sends reviewed lifecycle notifications to individual members
+and staff who have an active local membership, a verified phone and explicit consent.
+The notification matrix also defaults off. A tenant may configure its own Twilio
+sender or permit the enabled platform notification sender. An incomplete own sender
+never falls back to platform credentials. Login/verification/recovery SMS is independent
+of this module and always uses the platform OTP number.
+
+Uninstalling stops notifications and retains configuration/history. An explicit SMS
+purge removes only that tenant's SMS credentials, sender reservations and credential
+versions, consent, deliveries and routed webhook events. WhatsApp, platform settings
+and shared sender-level suppression/alias protection survive.
+
+The platform notification number must differ from the OTP number. A tenant may use
+neither the OTP AccountSid nor its number. Never put notification and OTP numbers in
+the same Twilio Messaging Service. SpaceWorks always supplies an explicit From number.
+Configure the number's inbound webhook with the exact URL shown in messaging settings;
+Advanced Opt-Out enables signed OptOutType. START at Twilio does not renew app consent.
+
+### whatsapp
+
+Opt-in and default off. Sends approved Meta templates to explicitly consented members
+and staff with active local memberships. Only positional text BODY parameters from a
+reviewed event/audience projection are accepted. Binding creation checks the approved
+Meta template; media, headers, buttons and named parameters are refused. Bindings are
+specific to the sender's business account and audience. Changing that business account
+marks bindings inactive and needing review until validated and saved again.
+
+Each sender configuration needs its own Meta app: the operator's app for the platform
+sender or the tenant's app for an own sender. In Meta, verify the business number,
+register it with the Cloud API (`POST /{phone_number_id}/register`, two-step PIN),
+subscribe the WABA to the app (`subscribed_apps`), subscribe the app's `messages` field,
+and configure the exact callback URL and verify token displayed in settings. Use a
+system-user token with `whatsapp_business_messaging` and `whatsapp_business_management`
+(template checks). Tokens and app secrets are encrypted and write-only.
+
+Uninstalling retains history. An explicit WhatsApp purge removes only this tenant's
+WhatsApp credentials, sender identities/versions, bindings, consent, delivery and routed
+webhook events. SMS, platform settings, shared suppressions, recipient aliases and
+sender/phone correlation protection survive. Re-enabling requires configuration again
+after purge. Member consent settings remain accessible without the inbox module.
+
+A new sender/phone can submit at most one logical probe before verified correlation.
+An ambiguous probe response is never retried. Other deliveries defer and eventually
+skip after 72 hours without confirmation. Unknown alias-only STOPs block correlations
+whose alias is unknown; in-app re-consent permits a fresh probe. The sender advisory
+lock orders STOP, probe claims, confirmation and blocked-row reset across tenants.

@@ -286,4 +286,7 @@ def _delete_object_graph(makerspace):
         ExternalTenantReference.objects.filter(makerspace=makerspace).delete()
         from apps.bookings.models_arrival import BookingCheckInEvent
         BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace).delete()
+        from apps.integrations.messaging.purge import purge_channel
+        purge_channel(makerspace, "sms")
+        purge_channel(makerspace, "whatsapp")
         makerspace.delete()

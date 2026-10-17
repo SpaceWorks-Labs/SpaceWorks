@@ -7,7 +7,7 @@ from apps.integrations.notification_catalog import FEATURE_EVENTS, is_notificati
 from apps.integrations.notification_rules import ALWAYS_ON
 from apps.makerspaces.platform import feature_enabled, module_enabled
 
-PERSONAL_CHANNELS = ("email", "in_app", "native_push")
+PERSONAL_CHANNELS = ("email", "in_app", "native_push", "sms", "whatsapp")
 STREAM_FEATURES = {"hardware": "hardware_requests", "membership": "members", "api": "api_access"}
 
 
@@ -42,7 +42,11 @@ def channel_available(makerspace, feature, channel):
         return module_enabled(makerspace, "email")
     if channel == "in_app":
         return feature_enabled(makerspace, "notifications.member_inbox")
-    return feature_enabled(makerspace, "mobile.push")
+    if channel == "sms":
+        return module_enabled(makerspace, "sms")
+    if channel == "whatsapp":
+        return module_enabled(makerspace, "whatsapp")
+    return channel == "native_push" and feature_enabled(makerspace, "mobile.push")
 
 
 def preference_cells(makerspace, user):

@@ -82,6 +82,8 @@ DEFAULT_CHANNEL_STATE = {
 
 # Hardware/printing already emit directly; their matrix inbox is explicitly opt-in.
 for _feature, _channels in DEFAULT_CHANNEL_STATE.items():
+    _channels[C.SMS] = False
+    _channels[C.WHATSAPP] = False
     _channels[C.IN_APP] = _feature not in {F.HARDWARE_REQUESTS, F.PRINTING}
 
 

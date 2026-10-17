@@ -161,4 +161,6 @@ def _depart(user, spaces, organizations, now):
         _revoke_locked(user, membership, by_id[membership.makerspace_id], "Account deletion", self_leave=True)
     for organization in organizations:
         self_departure(organization, user=user)
+    from apps.integrations.messaging.purge import archive_consents
+    archive_consents(user, spaces)
     revoke(user, now)

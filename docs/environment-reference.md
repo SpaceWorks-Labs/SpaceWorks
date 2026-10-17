@@ -301,3 +301,16 @@ Shared multi-tenant staff sites also populate `PLATFORM_STAFF_ORIGINS`. Set exte
 `VITE_API_URL=https://<API-domain>/api`. The installer writes `ENABLE_HTTPS`,
 `TRUST_X_FORWARDED_PROTO`, `TRUSTED_PROXY_COUNT`, `PLATFORM_DOMAIN_SUFFIX`, `BEHIND_TRUSTED_PROXY`,
 `PLATFORM_ORIGIN_HOST` and `INFRA_HOSTS` to match the selected edge/proxy topology.
+
+
+## Addressed messaging
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `MESSAGING_WEBHOOK_BASE_URL` | empty | Operator-owned absolute externally reachable origin (scheme and host, optional deployment prefix). Required for SMS/WhatsApp notification senders to resolve. Callback paths shown in settings use `/api/v1/integrations/messaging/`. Twilio signatures use this configured base, never forwarded headers. |
+| `WHATSAPP_GRAPH_VERSION` | `v23.0` | Pinned Meta Graph version for template checks and approved-template sends; must match `v<number>.<number>`. |
+
+Provider credentials live encrypted in the platform or tenant settings, not environment
+variables. OTP SMS keeps its existing independent platform configuration. Retired callback
+credentials are accepted for fourteen days and wiped by `messaging-credential-wipe` in
+both Celery beat and `run_scheduled_tasks`.

@@ -98,6 +98,7 @@ class MakerspaceAdmin(
                     "frontend_domain",
                     "hidden_from_central_directory",
                     "default_loan_days",
+                    "messaging_status",
                 )
             },
         ),
@@ -119,8 +120,18 @@ class MakerspaceAdmin(
             },
         ),
     )
-    readonly_fields = ("logo_preview", "cover_preview")
+    readonly_fields = ("logo_preview", "cover_preview", "messaging_status")
     inlines = (MakerspaceMembershipInline,)
+
+    @admin.display(description="Addressed messaging")
+    def messaging_status(self, obj):
+        from apps.integrations.messaging.settings_service import settings_payload
+        if not obj.pk:
+            return "Not configured"
+        if not obj.superadmin_access_enabled:
+            return "Tenant access disabled"
+        data = settings_payload(obj)
+        return "; ".join(f"{channel}: {source}" for channel, source in data["effective_source"].items())
 
     def save_model(self, request, obj, form, change):
         """Initialise archive-custody state for makerspaces created via /control/.

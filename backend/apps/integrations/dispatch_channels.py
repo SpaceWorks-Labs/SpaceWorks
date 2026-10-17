@@ -121,7 +121,7 @@ def dispatch_channel(
     specific room rather than to "Slack". Quota is charged per row, because N rooms is N
     real sends and that is what costs.
     """
-    if channel not in NonEmailNotificationChannel.values:
+    if channel in {"sms", "whatsapp"} or channel not in NonEmailNotificationChannel.values:
         raise ValueError(f"Unsupported notification channel: {channel}")
 
     # Push resolves its recipients at delivery time, so the alert's subject has to travel

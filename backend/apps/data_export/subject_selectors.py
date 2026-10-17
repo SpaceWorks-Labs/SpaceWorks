@@ -13,6 +13,8 @@ from .datasets import DATASET_SPECS
 
 
 SUBJECT_PATHS = {
+    "integrations.MessagingConsent": ("user",),
+    "integrations.MessagingDelivery": ("user",),
     "accounts.DeviceActivityDay": ("grant__user",),
     "notifications.MemberPushDelivery": ("inbox_row__user",),
     "integrations.PushDeliveryAttempt": ("recipient",),

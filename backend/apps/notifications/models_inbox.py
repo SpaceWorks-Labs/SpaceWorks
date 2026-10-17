@@ -41,7 +41,7 @@ class MemberNotificationPreference(models.Model):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     feature = models.CharField(max_length=32)
-    channel = models.CharField(max_length=16)
+    channel = models.CharField(max_length=16, choices=[(key, key) for key in ("email", "in_app", "native_push", "sms", "whatsapp")])
     enabled = models.BooleanField(default=True)
     daily_digest = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)

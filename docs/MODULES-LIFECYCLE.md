@@ -37,13 +37,16 @@ modules.
 | `lending` | 17 | A tool library: the full lending lifecycle, no machines |
 | `recommended` | 20 | Core plus the inventory lifecycle, reports and machines (the default) |
 | `cloud` | 25 | A managed box: everything that runs on a single Django process, no worker or beat |
-| `everything` / `full` | 34 | All modules |
+| `everything` / `full` | 36 | All modules, including the opt-in SMS and WhatsApp channels |
 | `events` | 12 | An events programme: events, notifications, email, member accounts, payments, reports (core is present but hidden by the `events` edition) |
 | `bookings` | 12 | Bookable rooms and resources: bookings, notifications, email, member accounts, payments, reports (core hidden by the `bookings` edition) |
 
 **Installing without a profile** gives you **7 modules**: the six core ones plus `backup`.
 Member accounts and mobile apps are opt-in; installing `mobile` also installs its
 `member_accounts` dependency.
+
+The new `sms` and `whatsapp` notification modules default off. Only `everything` / `full`
+includes them; curated profile sizes stay unchanged.
 
 ## Deleting a module's data
 

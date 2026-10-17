@@ -23,6 +23,7 @@ def _fields(label, names, path, classification, indexes):
 from .registry_7b import printer_pii_fields
 
 SOURCE_FIELDS = (
+    *_fields("integrations.MessagingConsent", ("phone_e164",), "makerspace_id", "source", ((32,), ("none",))),
     *printer_pii_fields(PiiField),
     *_fields("hardware_requests.HardwareRequest", ("requester_username", "requester_name", "requester_contact_email", "requester_contact_phone"), "makerspace_id", "source", ((150, 200, 254, 32), ("none", "bloom", "bloom_exact", "none"))),
     *_fields("events.EventRegistration", ("name", "email", "phone"), "event.makerspace_id", "source", ((200, 254, 32), ("none", "event_exact", "none"))),

@@ -70,7 +70,7 @@ GROUPS = (
     GroupDefinition(
         GROUP_NOTIFICATIONS, "Notifications",
         "The in-app inbox and every outbound channel: email, Telegram, Slack, "
-        "Mattermost and Discord. API-client issuance sits here.",
+        "Mattermost, Discord, SMS and WhatsApp. API-client issuance sits here.",
     ),
     GroupDefinition(
         GROUP_REPORTS, "Reports",

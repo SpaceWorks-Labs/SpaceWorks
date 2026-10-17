@@ -41,10 +41,11 @@ def proven_address(envelope):
     """An existing contact proof can prove the SAME owner's mailbox, never another."""
     if envelope.source_kind not in {"hardware.request", "hardware.loan_reminder"} or envelope.audience != "requester":
         return False
-    return rbac.scope_notification_policy(HardwareRequest.objects.all(),
+    row = rbac.scope_notification_policy(HardwareRequest.objects.all(),
         makerspace_id=envelope.makerspace_id).filter(pk=envelope.source_id,
-        requester_id=envelope.recipient_id, requester_contact_verified=True,
-        requester_contact_email=envelope.recipient.email).exists()
+        requester_id=envelope.recipient_id, requester_contact_verified=True).first()
+    # Scoped PII is ciphertext in SQL; the model accessor decrypts this owned row.
+    return bool(row and row.requester_contact_email == envelope.recipient.email)
 
 
 def render_email(envelope, fallback):

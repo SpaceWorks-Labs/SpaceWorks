@@ -20,8 +20,10 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
   if (!shown.length) return <p className="text-sm text-muted">There are no notifications to choose channels for in this space yet.</p>;
   return <form className="grid min-w-0 gap-3" aria-label="Where your notifications go" onSubmit={event => {
     event.preventDefault();
-    // The PUT replaces every category, so the whole list (defaults included) is sent.
-    save.mutate(draft, { onSuccess: data => setDraft(data.preferences) });
+    // Defaults may contain channels disabled by the tenant or source module.
+    save.mutate(draft.map(row => ({ ...row,
+      channels: row.channels.filter(channel => row.available_channels?.includes(channel)),
+    })), { onSuccess: data => setDraft(data.preferences) });
   }}>
     {shown.map(row => {
       const name = CATEGORY_LABELS[row.category] ?? row.category.replace(/_/g, " ");

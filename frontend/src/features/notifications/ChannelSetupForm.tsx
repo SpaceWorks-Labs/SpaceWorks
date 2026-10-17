@@ -4,6 +4,7 @@ import { Callout, Field } from "../../components/ui";
 import { CHANNEL_LABELS, defaultChannel, providerSpec, type ChannelSpec } from "./channelCatalog";
 import { useSaveChannel, type Channel, type ChannelWrite, type ProviderKey, type Quotas, type WhatsAppTemplate } from "./channelsApi";
 import { WhatsAppTemplatesEditor } from "./WhatsAppTemplatesEditor";
+import { SlackInstallation } from "./SlackInstallation";
 
 type Props = { makerspaceId: number; spec: ChannelSpec; row?: Channel; moduleInstalled: boolean };
 
@@ -26,13 +27,16 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
   const set = (patch: Partial<Channel>) => { setDraft(current => ({ ...current, ...patch })); setProblem(""); };
   const typed = Object.values(secrets).some(Boolean);
   const rotates = draft.provider !== initial.provider || draft.integration_identity !== initial.integration_identity || typed;
-  const chat = spec.providers.some(item => item.identityLabel);
+  const chat = spec.providers.some(item => item.identityLabel || item.derivedIdentity || item.installation);
 
   function submit() {
     const missing = provider.credentials.filter(field => !field.optional && !secrets[field.key]?.trim());
     if (typed && provider.identityCredential && !draft.integration_identity.trim()) missing.push({ key: provider.identityCredential, label: provider.identityLabel ?? "Identity" });
     if (typed && missing.length) return setProblem(`Enter every required credential to replace them: ${missing.map(field => field.label).join(", ")}.`);
-    if (draft.personal_enabled && chat && !draft.integration_identity.trim()) return setProblem(`Enter the ${provider.identityLabel?.toLowerCase()} before turning on personal messages.`);
+    if (draft.personal_enabled && chat && !draft.integration_identity.trim() && !(typed && provider.derivedIdentity))
+      return setProblem(provider.installation ? "Install the Slack app before turning on personal messages."
+        : provider.derivedIdentity ? "Enter every required credential before turning on personal messages."
+        : `Enter the ${provider.identityLabel?.toLowerCase()} before turning on personal messages.`);
     const body: ChannelWrite = { enabled: draft.enabled, personal_enabled: draft.personal_enabled };
     if (spec.rooms) body.room_enabled = draft.room_enabled;
     if (spec.key === "email") body.email_fallback = draft.email_fallback;
@@ -40,8 +44,12 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
     if (draft.provider !== initial.provider || (!row && draft.provider !== spec.providers[0].key)) body.provider = draft.provider;
     if (draft.integration_identity !== initial.integration_identity) body.integration_identity = draft.integration_identity.trim();
     if (typed) {
+      // Replacing app credentials starts a new installation, with personal delivery off.
+      if (provider.installation) body.personal_enabled = false;
       body.credentials = Object.fromEntries(Object.entries(secrets).filter(([, value]) => value.trim()).map(([key, value]) => [key, value.trim()]));
       if (provider.identityCredential) body.credentials[provider.identityCredential] = draft.integration_identity.trim();
+      if (provider.derivedIdentity === "mattermost") body.integration_identity = body.credentials.server_url.replace(/\/+$/, "");
+      if (provider.derivedIdentity === "discord") body.integration_identity = `${body.credentials.application_id}:${body.credentials.guild_id}`;
     }
     if (!sameQuotas(draft.quotas, initial.quotas)) body.quotas = Object.fromEntries(Object.entries(draft.quotas).filter(([, value]) => value)) as Quotas;
     if (spec.key === "whatsapp" && !sameTemplates(draft.templates, initial.templates)) body.templates = draft.templates.map(strip);
@@ -81,6 +89,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
           disabled={save.isPending} onChange={event => { setSecrets(current => ({ ...current, [field.key]: event.target.value })); setProblem(""); }} />
       </Field>)}
     </fieldset> : null}
+    {provider.installation ? <SlackInstallation makerspaceId={makerspaceId} configured={draft.credentials_set} /> : null}
     {spec.key !== "email" && spec.key !== "native_push" ? <div className="grid gap-3 sm:grid-cols-2">
       {(["daily_limit", "recipient_daily_limit"] as const).map(key => <Field key={key} label={key === "daily_limit" ? "Messages per day (optional)" : "Messages per person per day (optional)"}>
         <input className="desk-input" type="number" min={1} value={draft.quotas[key] ?? ""} disabled={save.isPending}

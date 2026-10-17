@@ -68,15 +68,21 @@ def _create(user, space, membership, duration, *, actor, status, project=None,
     for row in active:
         reason = "expired" if row.expires_at <= now else "superseded"
         _end(row, actor, reason, min(now, row.expires_at))
-    preference, _ = PresencePreference.objects.get_or_create(makerspace=space, account=user)
-    if hide_on_display is not None and preference.hide_on_display != hide_on_display:
+    if claim:
+        # Temporary authority may read the existing default, never persist consent.
+        preference = PresencePreference.objects.filter(makerspace=space, account=user).first()
+        hidden = hide_on_display if hide_on_display is not None else bool(preference and preference.hide_on_display)
+    else:
+        preference, _ = PresencePreference.objects.get_or_create(makerspace=space, account=user)
+        hidden = preference.hide_on_display if hide_on_display is None else hide_on_display
+    if not claim and hide_on_display is not None and preference.hide_on_display != hide_on_display:
         preference.hide_on_display = hide_on_display
         preference.save(update_fields=["hide_on_display"])
         audit.record(actor, "presence.preference_updated", makerspace=space, target=preference)
     session = PresenceSession.objects.create(
         account=user, member=user, makerspace=space, membership=membership,
         started_at=now, expires_at=expiry, status=status, project=project,
-        hide_on_display=preference.hide_on_display, created_via_claim_session=claim,
+        hide_on_display=hidden, created_via_claim_session=claim,
         event_registration=registration,
     )
     audit.record(actor, "presence.started", makerspace=space, target=session,

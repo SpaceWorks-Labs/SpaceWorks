@@ -141,6 +141,22 @@ are explicitly classified as excluded. Module purge removes the graph in depende
 
 ## Provider connection and deployment
 
+Settings PATCH validates replacement credentials against the provider contract and returns
+`400 {detail, code: "invalid_credentials"}` for incomplete credentials or mismatched identities.
+Slack accepts app-only `client_id`, `client_secret`, `signing_secret` as an installation bootstrap
+with personal delivery off. The manager starts `/slack/install/start` and completes its authenticated
+`/slack/oauth/callback`; the installation supplies `bot_token`, `team_id` and the opaque
+`workspace_identity(team_id)`. Mattermost setup requires `server_url`, `bot_token`, `client_id`,
+`client_secret`, `webhook_token`; identity is the validated HTTPS server origin. Discord requires
+`application_id`, `guild_id`, `bot_token`, `client_secret`, `public_key`; identity is
+`application_id:guild_id`. Both setup forms complete their provider installation endpoint after saving
+credentials. Twilio additionally requires `public_base_url`, an HTTPS API origin without a path.
+Unrelated switch changes do not resend credentials or advance installation generation.
+
+Envelope navigation uses tenant-bound local `/m/<slug>/...` paths so in-app delivery retains its
+Open action. External delivery converts those paths to the verified tenant domain or central
+canonical origin; inbox navigation never receives an absolute URL.
+
 - **Telegram:** encrypted `credentials.bot_token` and a nonempty installation identity are required
   for personal delivery. Start returns `https://t.me/<bot>?start=<opaque-code>`; only an original
   private human `/start` with equal positive chat/from IDs and the secret-token header proves it.

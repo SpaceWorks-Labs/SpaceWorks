@@ -2,6 +2,8 @@ import type { Channel, ChannelKey, ProviderKey } from "./channelsApi";
 
 export type CredentialField = { key: string; label: string; optional?: boolean; secret?: boolean; hint?: string };
 export type ProviderSpec = { key: ProviderKey; label: string; identityLabel?: string; identityHint?: string;
+  installation?: "slack";
+  derivedIdentity?: "mattermost" | "discord";
   /** A credential the adapter reads that is the identity itself: filled from it, not typed twice. */
   identityCredential?: string;
   credentials: CredentialField[] };
@@ -26,20 +28,22 @@ export const CHANNEL_SPECS: readonly ChannelSpec[] = [
       credentials: [secret("bot_token", "Bot token", "From @BotFather.")] }] },
   { key: "slack", label: "Slack", description: "Room alerts and direct messages from your Slack app to people who sign in with Slack.",
     rooms: true, personal: true, module: "slack", providers: [{ key: "slack", label: "Slack app",
-      identityLabel: "Workspace (team) ID", credentials: [plain("client_id", "Client ID"), secret("client_secret", "Client secret"),
-        secret("signing_secret", "Signing secret"), secret("bot_token", "Bot token")] }] },
+      installation: "slack", credentials: [plain("client_id", "Client ID"), secret("client_secret", "Client secret"),
+        secret("signing_secret", "Signing secret")] }] },
   { key: "mattermost", label: "Mattermost", description: "Room alerts and direct messages from your Mattermost bot to people who connect their account.",
     rooms: true, personal: true, module: "mattermost", providers: [{ key: "mattermost", label: "Mattermost bot",
-      identityLabel: "Server URL", identityHint: "https:// address of your Mattermost server.",
-      credentials: [secret("bot_token", "Bot token"), plain("client_id", "OAuth client ID"), secret("client_secret", "OAuth client secret")] }] },
+      derivedIdentity: "mattermost",
+      credentials: [plain("server_url", "Server URL", "HTTPS origin of your Mattermost server."), secret("bot_token", "Bot token"),
+        plain("client_id", "OAuth client ID"), secret("client_secret", "OAuth client secret"), secret("webhook_token", "Webhook token")] }] },
   { key: "discord", label: "Discord", description: "Room alerts and direct messages from your Discord bot to people who link their Discord account.",
     rooms: true, personal: true, module: "discord", providers: [{ key: "discord", label: "Discord bot",
-      identityLabel: "Application ID", credentials: [secret("bot_token", "Bot token"), plain("client_id", "OAuth client ID"),
+      derivedIdentity: "discord", credentials: [secret("bot_token", "Bot token"), plain("application_id", "Application ID"),
         secret("client_secret", "OAuth client secret"), plain("public_key", "Public key"), plain("guild_id", "Server (guild) ID")] }] },
   { key: "whatsapp", label: "WhatsApp", description: "Personal messages to people who opt in with their WhatsApp number. Outside a 24-hour reply window only approved templates are sent.",
     rooms: false, personal: true, module: null, providers: [
       { key: "twilio", label: "Twilio", identityLabel: "WhatsApp sender number", identityHint: "E.164, for example +14155550100.",
         credentials: [plain("account_sid", "Account SID"), secret("auth_token", "Auth token"),
+          plain("public_base_url", "Public callback base URL", "HTTPS origin of the API, without a path."),
           plain("api_key_sid", "API key SID", "Optional; the auth token still signs callbacks.", true),
           { ...secret("api_key_secret", "API key secret"), optional: true },
           plain("whatsapp_sender", "WhatsApp sender", "Leave empty when you use a Messaging Service.", true),

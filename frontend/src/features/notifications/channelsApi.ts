@@ -57,8 +57,16 @@ export function useChannels(makerspaceId: number, enabled = true) {
 export function useSaveChannel(makerspaceId: number, channel: ChannelKey) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: ChannelWrite) => staffRequest<Channel>(`${base(makerspaceId)}/channels/${channel}`,
-      { method: "PATCH", body: JSON.stringify(body) }),
+    mutationFn: async (body: ChannelWrite) => {
+      const saved = await staffRequest<Channel>(`${base(makerspaceId)}/channels/${channel}`,
+        { method: "PATCH", body: JSON.stringify(body) });
+      if (body.credentials && (channel === "mattermost" || channel === "discord")) {
+        const installed = await staffRequest<{ generation: number }>(`${base(makerspaceId)}/${channel}/installation`,
+          { method: "POST", body: JSON.stringify(body.credentials) });
+        return { ...saved, generation: installed.generation };
+      }
+      return saved;
+    },
     // Enabling or rotating a channel changes what every person may choose and may revoke
     // their connections, so the personal caches refetch too.
     onSuccess: () => client.invalidateQueries({ queryKey: ["notify-contract", makerspaceId] }),

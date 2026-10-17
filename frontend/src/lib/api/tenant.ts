@@ -1,11 +1,12 @@
 import {
   API_V1_URL,
-  authHeaders,
   cacheTenantPublishableKey,
   getTenantPublishableKey,
   publicHeaders,
+  staffFetch,
 } from "./client";
 import { apiError } from "./errors";
+import { withOptionalSession } from "./optionalSession";
 import { memberRequest, publicV1Request } from "./requests";
 import type { TenantBootstrap } from "./types";
 
@@ -57,10 +58,13 @@ export async function tenantMemberRequest<T>(
 }
 
 export async function tenantPublicRequestBlob(slug: string, path: string): Promise<Blob> {
-  const publishableKey = await tenantPublishableKey(slug);
-  const response = await fetch(`${API_V1_URL}${path}`, {
-    headers: { ...(await publicHeaders(publishableKey)), ...authHeaders() },
-  });
-  if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})));
-  return response.blob();
+  const headers = await publicHeaders(await tenantPublishableKey(slug));
+  const blob = async (response: Response) => {
+    if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})));
+    return response.blob();
+  };
+  return withOptionalSession(
+    async () => blob(await staffFetch(path, { headers }, true)),
+    async () => blob(await fetch(`${API_V1_URL}${path}`, { headers })),
+  );
 }

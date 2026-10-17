@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { getAccessToken, memberRequest, publicV1Request, StructuredApiError } from "../../lib/api";
+import { publicV1Request as profileRequest, StructuredApiError } from "../../lib/api";
 import { personalRecipientKey } from "../notifications/personalQueryKeys";
 
 /** Shapes of the frozen Phase 1b anonymous profile contract (public_profile_serializers.py). */
@@ -53,17 +53,6 @@ const base = (handle: string) => `/public/profiles/${encodeURIComponent(handle)}
 const notFound = (error: unknown) => error instanceof StructuredApiError && error.status === 404;
 // A missing profile cannot be retried into existence; other failures retry once.
 const retryUnlessMissing = (count: number, error: unknown) => !notFound(error) && count < 1;
-
-/** Identity personalizes ownership, but a refused optional session cannot hide a public profile. */
-async function profileRequest<T>(path: string): Promise<T> {
-  if (!getAccessToken()) return publicV1Request<T>(path);
-  try {
-    return await memberRequest<T>(path);
-  } catch (error) {
-    if (!(error instanceof StructuredApiError) || ![401, 403].includes(error.status)) throw error;
-  }
-  return publicV1Request<T>(path, { headers: { Authorization: "" } });
-}
 
 export function isProfileMissing(error: unknown) {
   return notFound(error);

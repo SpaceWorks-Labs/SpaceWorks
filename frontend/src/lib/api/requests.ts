@@ -1,5 +1,6 @@
 import { API_URL, API_V1_URL, authHeaders, publicHeaders, staffFetch } from "./client";
 import { apiError, messageForStatus } from "./errors";
+import { withOptionalSession } from "./optionalSession";
 import type { StaffAuthUser } from "./types";
 
 export async function fetchJson<T>(url: string): Promise<T> {
@@ -23,6 +24,18 @@ export async function publicV1Request<T>(
   options: RequestInit = {},
   publishableKey?: string,
 ): Promise<T> {
+  if ((options.method ?? "GET").toUpperCase() === "GET") {
+    const headers = { ...(await publicHeaders(publishableKey)), ...(options.headers ?? {}) };
+    return withOptionalSession(
+      () => memberRequest<T>(path, { ...options, headers }),
+      () => publicV1Json<T>(path, { ...options, headers: { ...headers, Authorization: "" } }, publishableKey),
+    );
+  }
+  // Mutations keep their existing auth requirements and are never retried anonymously.
+  return publicV1Json<T>(path, options, publishableKey);
+}
+
+async function publicV1Json<T>(path: string, options: RequestInit, publishableKey?: string): Promise<T> {
   const response = await fetch(`${API_V1_URL}${path}`, {
     ...options,
     headers: {

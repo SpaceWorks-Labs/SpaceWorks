@@ -95,10 +95,9 @@ class TwilioWhatsAppWebhookView(APIView):
     def post(self, request, makerspace_id, generation, kind, delivery_id=None):
         rows = rbac.scope_notification_policy(servable_queryset(ChannelConfiguration.objects.all(), relation="makerspace"),
             makerspace_id=makerspace_id)
-        config = get_object_or_404(rows, channel="whatsapp", provider="twilio", generation=generation,
-                                  enabled=True, personal_enabled=True)
+        config = get_object_or_404(rows, channel="whatsapp", provider="twilio", generation=generation)
         provider = TwilioWhatsAppProvider(config)
-        if not provider.active() or provider.verify_callback(request) is None:
+        if provider.verify_callback(request) is None:
             raise PermissionDenied("Invalid provider callback.")
         # Twilio retries the same inbound MessageSid. A short cache reservation
         # prevents those retries from extending the 24h session window repeatedly.
@@ -121,9 +120,13 @@ class TwilioWhatsAppWebhookView(APIView):
                 # acquiring it so a rotated installation cannot win a callback race.
                 config = rows.select_for_update(of=("self",)).get(pk=config.pk)
                 provider = TwilioWhatsAppProvider(config)
-                event = provider.verify_callback(request) if provider.active() else None
+                event = provider.verify_callback(request)
                 if event is None:
                     raise PermissionDenied("Invalid provider callback.")
+                # Delivery switches cannot discard STOP or in-flight delivery state.
+                # New consent proofs still require the live send/proof policy.
+                if event.proof and not provider.active():
+                    raise PermissionDenied("Account linking is unavailable.")
                 if event.state == "failed":
                     # A fast failure can arrive before the REST response marks
                     # acceptance. Failure proves Twilio accepted the message first;

@@ -40,7 +40,8 @@ def _read(client, bucket, key, limit):
 def normalize_logo(data):
     from PIL import Image
     with Image.open(BytesIO(data)) as image:
-        if image.format not in ("PNG", "JPEG") or image.width * image.height > 16_000_000:
+        # Every public-image logo format (PUBLIC_IMAGE_ALLOWED_MIME) is accepted, then normalised to PNG.
+        if image.format not in ("PNG", "JPEG", "WEBP") or image.width * image.height > 16_000_000:
             raise ValueError("Unsupported logo.")
         image.thumbnail((600, 300), Image.Resampling.LANCZOS)
         output = BytesIO()

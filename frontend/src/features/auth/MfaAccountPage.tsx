@@ -16,7 +16,9 @@ export function MfaAccountPage() {
   const context = currentSessionContext();
   const tenant = useOptionalTenant();
   const signInHref = context.startsWith("staff:") && tenant?.mode !== "single"
-    ? `/m/${encodeURIComponent(context.slice(6))}/admin` : context === "member" ? "/member" : "/admin";
+    ? `/m/${encodeURIComponent(context.slice(6))}/admin` : context === "member" ? "/member"
+    // A single-tenant /admin would resolve to that tenant's staff context; keep platform explicit.
+    : context === "platform" ? "/admin?context=platform" : "/admin";
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");

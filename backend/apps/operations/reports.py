@@ -43,6 +43,8 @@ def report_data(
     from .report_definitions_machines import MACHINE_REPORT_KEYS
     if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
         kwargs["actor"] = actor
+    if definition.summary and makerspace_id is None:
+        kwargs["limit"] = None  # Totals must include every eligible tenant.
     if definition.grains:
         kwargs["grain"] = grain
     if definition.platform_only:
@@ -58,6 +60,13 @@ def report_data(
                    meta={"report_key": definition.key})
     if definition.summary and isinstance(result, dict):
         return result
+    if definition.summary and makerspace_id is None and isinstance(result, ReportResult):
+        # The builder keeps per-tenant rows at deployment scope; the summary API has
+        # always answered with deployment totals, summed over every eligible tenant.
+        return {
+            field: sum(row.get(field) or 0 for row in result.records)
+            for field in result.field_order if field != "makerspace_id"
+        }
     if not isinstance(result, ReportResult):
         return {"rows": result, "typed_rows": typed_report_rows(report_key, result)}
     rows = _matrix(result, json=True)

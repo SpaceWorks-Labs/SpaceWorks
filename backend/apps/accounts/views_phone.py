@@ -92,10 +92,13 @@ class PhoneLoginStartView(APIView):
         serializer.is_valid(raise_exception=True)
         try:
             data = serializer.validated_data
-            start_login(
-                data["phone"], delivery=data["delivery"],
-                client_platform=data["client_platform"], challenge=data.get("challenge"),
-            )
+            if data["delivery"] == "device":
+                start_login(
+                    data["phone"], delivery="device",
+                    client_platform=data["client_platform"], challenge=data.get("challenge"),
+                )
+            else:
+                start_login(data["phone"])
         except SmsUnavailable:
             return Response(SMS_UNAVAILABLE, status=status.HTTP_404_NOT_FOUND)
         # Always the same body, always 200 -- whether the number is unknown, malformed,

@@ -41,7 +41,12 @@ class PortableArchive:
                     f"Archive columns drifted for {model_label}; "
                     f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}."
                 )
-            yield from reader
+            if model_label == "accounts.User":
+                from .archive_user_lifecycle import lifecycle_rows
+
+                yield from lifecycle_rows(self, reader)
+            else:
+                yield from reader
 
     def json(self, relative_path):
         path = self.root / relative_path

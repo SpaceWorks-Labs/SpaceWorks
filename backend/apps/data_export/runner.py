@@ -22,6 +22,7 @@ from .runner_queries import after_keyset, is_statement_timeout, key_value, selec
 from .reference_provenance import ReferenceProvenanceWriter
 from .references import SEMANTIC_REFERENCES, USER_EDGES, require_raw_user
 from .types import Fidelity, SemanticUserRef
+from .user_lifecycle import write_user_lifecycle
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,6 @@ def build_archive(
                 cursor.execute("SET LOCAL lock_timeout = %s", [timeout_ms])
                 cursor.execute("SELECT transaction_timestamp()")
                 snapshot_at = cursor.fetchone()[0]
-
             datasets = [
                 dataset for dataset in DATASETS.values()
                 if dataset.fidelity is fidelity and dataset.model != "accounts.User"
@@ -113,6 +113,7 @@ def build_archive(
                 user_rows = [row for row in user_rows if row.pk in approved_ids]
                 user_count = len(user_rows)
             if fidelity is Fidelity.PORTABLE:
+                write_user_lifecycle(root, user_rows)
                 # Re-read one dataset at a time inside the same repeatable-read
                 # snapshot. Approval must see the complete closure before any PII is
                 # written, but retaining every tenant row in memory would be unbounded.

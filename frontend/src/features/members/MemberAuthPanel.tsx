@@ -24,8 +24,10 @@ export function MemberAuthPanel({
   eyebrow,
   context,
   footer,
+  surface = "member",
 }: {
   onAuthenticated: () => void;
+  surface?: "member" | "delegated";
   makerspaceSlug?: string;
   tenantBrand?: { name: string; logo?: string };
   /** true inside another page (an action card, a ticket panel): no logo, no brand panel, no h1. */
@@ -89,7 +91,8 @@ export function MemberAuthPanel({
         const request = {
           username: email,
           password,
-          surface: "member",
+          surface,
+          context: "member",
         } satisfies PasswordLoginRequest;
         const result = await publicV1Request<PasswordLoginResponse | MfaChallenge>("/auth/login", {
           method: "POST",
@@ -97,7 +100,7 @@ export function MemberAuthPanel({
           body: JSON.stringify(request),
         });
         if (isMfaChallenge(result)) { setPassword(""); setMfaChallenge(result); return; }
-        setAccessToken(result.access);
+        setAccessToken(result.access, "member");
         if (result.surface === "verification_only") {
           setVerificationOnly(true);
           setNotice("Enter the verification code sent to your email.");
@@ -139,7 +142,7 @@ export function MemberAuthPanel({
     }
   };
   if (mfaChallenge) return <MfaFlow embedded={embedded} eyebrow={eyebrow} extra={footer} challenge={mfaChallenge} onCancel={() => setMfaChallenge(undefined)}
-    onComplete={(result) => { setAccessToken(result.access); setMfaChallenge(undefined); if (result.surface === "verification_only") setVerificationOnly(true); else onAuthenticated(); }} />;
+    onComplete={(result) => { setAccessToken(result.access, "member"); setMfaChallenge(undefined); if (result.surface === "verification_only") setVerificationOnly(true); else onAuthenticated(); }} />;
   if (verificationOnly) return <AuthStepCard embedded={embedded} eyebrow={eyebrow} footer={footer} state={{ status: "ready" }}
     media={{ icon: "Info", tone: "accent" }} title="Verify your email"
     body={<p>Enter the verification code sent to your email. This session can only verify the address until email ownership is confirmed.</p>}
@@ -160,7 +163,7 @@ export function MemberAuthPanel({
     onChange: (next: string) => { setMode(next as "login" | "signup"); setError(""); } } : undefined;
   const social = <SocialSignInButtons surface="member" onMfaChallenge={setMfaChallenge} email={email} makerspaceSlug={makerspaceSlug} onSuccess={(result) => {
     if (isMfaChallenge(result)) { setPassword(""); setMfaChallenge(result); return; }
-    setAccessToken(result.access); onAuthenticated();
+    setAccessToken(result.access, "member"); onAuthenticated();
   }} />;
   const legal = selfServeAccounts ? "One account works at every makerspace you join." : "This space does not run self sign-up. Ask a staff member to add you.";
   const form = <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (!pending) void submit(); }}>

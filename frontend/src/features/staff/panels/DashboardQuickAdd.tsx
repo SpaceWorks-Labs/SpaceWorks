@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { useState, type ReactNode } from "react";
 import { ListRow, Modal, type Action } from "../../../components/ui";
 import { quickCreateCommands } from "../quickCreate";
@@ -11,7 +12,7 @@ export function DashboardQuickAdd({ makerspace, allowedTabs, actions, isSuperadm
   const [open, setOpen] = useState(false);
   const commands = allowedTabs && actions ? quickCreateCommands(actions, allowedTabs, isSuperadmin) : [];
   const choices = commands.map(command => ({ label: command.label,
-    href: `${staffTabPath(command.tab, guestOnly, makerspace.slug, singleTenantLocked)}?${new URLSearchParams(command.query)}` }));
+    href: consoleSessionHref(`${staffTabPath(command.tab, guestOnly, makerspace.slug, singleTenantLocked)}?${new URLSearchParams(command.query)}`) }));
   const primary: Action | undefined = choices.length === 1 ? choices[0]
     : choices.length ? { label: "Quick add", icon: "Plus", onClick: () => setOpen(true) } : undefined;
   return <>{children(primary)}<Modal open={open} onClose={() => setOpen(false)} title="Quick add">

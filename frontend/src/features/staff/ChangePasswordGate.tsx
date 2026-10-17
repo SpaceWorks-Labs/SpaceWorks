@@ -25,7 +25,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
   });
   const mismatch = confirm.length > 0 && newPassword !== confirm;
   const canSubmit =
-    currentPassword.length > 0 && newPassword.length > 0 && !mismatch && !mutation.isPending;
+    currentPassword.length > 0 && newPassword.length > 0 && confirm === newPassword && !mismatch && !mutation.isPending;
   return (
     <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Lock", tone: "accent" }}
       eyebrow="Security" title="Set a new password" body={<p><strong>{username}</strong> is using a temporary password. Choose your own to continue.</p>}

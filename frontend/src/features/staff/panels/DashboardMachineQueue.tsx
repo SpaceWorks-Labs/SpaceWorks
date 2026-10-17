@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { machineStatusLabel } from "./machine/machineStatusLabel";
 import { useQuery } from "@tanstack/react-query";
 import { ListLayout } from "../../../components/layouts";
@@ -23,7 +24,8 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
   const printer = collectionResults(types.data).find(type => type.is_builtin && type.slug === "3d_printer" && type.makerspace === null);
   const jobs = useQuery({ queryKey: ["dashboard-print-queue", makerspaceId, queue, printer?.id], queryFn: () => staffRequest<Job[]>(`/admin/makerspaces/${makerspaceId}/machine-service/requests?status=${statuses[queue]}&machine_type_id=${printer!.id}`), enabled: enabled && !maintenance && !!printer });
   const schedules = useQuery({ queryKey: ["dashboard-maintenance-queue", makerspaceId, list.page], queryFn: () => staffRequest<{ count: number; results: Schedule[] }>(`/admin/makerspace/${makerspaceId}/maintenance-overdue?page=${list.page}`), enabled: enabled && maintenance });
-  const href = staffTabPath("machines", guest, slug, single);
+  const baseHref = staffTabPath("machines", guest, slug, single);
+  const href = consoleSessionHref(baseHref);
   const error = types.error ?? jobs.error ?? schedules.error;
   const scheduleRows = enabled && maintenance ? schedules.data?.results : undefined;
   const jobRows = enabled && !maintenance ? jobs.data : undefined;
@@ -36,10 +38,10 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
       {!enabled ? <p role="alert">This queue is unavailable because its module is disabled.</p> : null}
       {enabled && !maintenance && types.isSuccess && !printer ? <p>No built-in printer type is available in your scope.</p> : null}
       {scheduleRows?.map(row => <ListRow key={row.id} title={`${row.machine_name}: ${row.description}`}
-        href={`${href}?machine=${row.machine_id}&detail_tab=Maintenance`} meta={<>Due <RelativeTime date={row.next_due} /></>}
+        href={consoleSessionHref(`${baseHref}?machine=${row.machine_id}&detail_tab=Maintenance`)} meta={<>Due <RelativeTime date={row.next_due} /></>}
         right={<StatusPill label="Overdue" tone="danger" />} />)}
       {jobRows?.map(row => <ListRow key={row.id} title={row.title} right={<StatusBadge status={row.status} label={machineStatusLabel(row.status)} />}
-        href={printer ? `${staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}?view=queue&job_status=${statuses[queue]}` : undefined}
+        href={printer ? consoleSessionHref(`${staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}?view=queue&job_status=${statuses[queue]}`) : undefined}
         meta="Open printer queue" />)}
     </> }} pagination={enabled && maintenance ? { page: list.page, pageSize: 24, count: schedules.data?.count ?? 0, onChange: list.setPage } : undefined} />;
 }

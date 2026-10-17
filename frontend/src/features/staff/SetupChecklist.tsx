@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon, ProgressBar } from "../../components/ui";
@@ -18,7 +19,7 @@ export function SetupChecklist({ makerspace, owner, allowedTabs, guestOnly, sing
   const done = steps.filter(step => step.complete).length;
   if (steps.length && done === steps.length) return null;
   const next = steps.find(step => !step.complete && allowedTabs.includes(step.tab));
-  const href = (tab: string) => staffTabPath(tab, guestOnly, makerspace.slug, singleTenantLocked);
+  const href = (tab: string) => consoleSessionHref(staffTabPath(tab, guestOnly, makerspace.slug, singleTenantLocked));
   return <section className="rounded-xl border border-warn bg-warn-soft p-5 text-warn-ink" aria-labelledby="setup-heading">
     <div className="flex flex-wrap items-start gap-3">
       <Icon name="TriangleAlert" />

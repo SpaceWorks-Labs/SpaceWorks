@@ -6,7 +6,7 @@ import { StructuredApiError } from "./errors";
  * callback owns refresh-and-retry; the anonymous callback must omit Authorization.
  */
 export async function withOptionalSession<T>(authenticated: () => Promise<T>, anonymous: () => Promise<T>): Promise<T> {
-  if (!getAccessToken()) return anonymous();
+  if (!getAccessToken("member")) return anonymous();
   try {
     return await authenticated();
   } catch (error) {

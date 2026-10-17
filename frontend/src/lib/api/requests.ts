@@ -1,3 +1,4 @@
+import { currentSessionContext, type SessionContext } from "./sessionContext";
 import { API_URL, API_V1_URL, authHeaders, publicHeaders, staffFetch } from "./client";
 import { apiError, messageForStatus } from "./errors";
 import { withOptionalSession } from "./optionalSession";
@@ -41,7 +42,7 @@ async function publicV1Json<T>(path: string, options: RequestInit, publishableKe
     headers: {
       "Content-Type": "application/json",
       ...(await publicHeaders(publishableKey)),
-      ...authHeaders(),
+      ...authHeaders("member"),
       ...(options.headers ?? {}),
     },
   });
@@ -53,8 +54,8 @@ async function publicV1Json<T>(path: string, options: RequestInit, publishableKe
   return (await response.json()) as T;
 }
 
-export async function fetchMe(): Promise<StaffAuthUser> {
-  return staffRequest<StaffAuthUser>("/auth/me");
+export async function fetchMe(context = currentSessionContext(), surface?: "delegated"): Promise<StaffAuthUser> {
+  return staffRequest<StaffAuthUser>(`/auth/me${surface ? `?surface=${surface}` : ""}`, {}, context);
 }
 
 /** Fetch a binary/non-JSON authenticated resource as a Blob.
@@ -76,8 +77,9 @@ export async function staffRequestBlob(
 export async function staffRequest<T>(
   path: string,
   options: RequestInit = {},
+  context: SessionContext = currentSessionContext(),
 ): Promise<T> {
-  const response = await staffFetch(path, options);
+  const response = await staffFetch(path, options, false, context);
 
   if (!response.ok) {
     throw apiError(response.status, await response.json().catch(() => ({})));
@@ -94,7 +96,7 @@ export async function memberRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await staffFetch(path, options, true);
+  const response = await staffFetch(path, options, true, "member");
   if (!response.ok) {
     throw apiError(response.status, await response.json().catch(() => ({})));
   }
@@ -103,7 +105,7 @@ export async function memberRequest<T>(
 }
 
 export async function memberRequestBlob(path: string): Promise<Blob> {
-  const response = await staffFetch(path, {}, true);
+  const response = await staffFetch(path, {}, true, "member");
   if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})));
   return response.blob();
 }

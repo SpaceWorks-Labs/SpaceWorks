@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { plural } from "../../../lib/plural";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation, useSearchParams, useNavigate } from "react-router-dom";
@@ -106,8 +107,8 @@ function MachinesWorkspace({
   }, [allMachines, types]);
 
   const hrefFor = (machineType: MachineType) =>
-    staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked, machineTypeSegment(machineType));
-  const indexHref = staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked);
+    consoleSessionHref(staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked, machineTypeSegment(machineType)));
+  const indexHref = consoleSessionHref(staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked));
 
   const requestedTypeId = parseMachineTypeSegment(staffSubPathFromPath(location.pathname, guestOnly));
   // Both server-scoped sources must have SETTLED SUCCESSFULLY before an id can be called
@@ -169,7 +170,7 @@ function MachinesWorkspace({
   return <div onClickCapture={event => {
     if (event.button || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
     const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/"]');
-    if (link?.getAttribute('href')?.startsWith(indexHref)) { event.preventDefault(); navigate(link.getAttribute('href')!); }
+    if (link?.getAttribute('href')?.startsWith(indexHref.split("?")[0])) { event.preventDefault(); navigate(link.getAttribute('href')!); }
   }}>
     {shownType ? <MachineTypePage enabledFeatures={enabledFeatures} makerspaceId={makerspaceId} canManage={canManage}
       canConfigureMachineTypes={canConfigureMachineTypes} machineServiceEnabled={machineServiceEnabled} printingEnabled={printingEnabled}

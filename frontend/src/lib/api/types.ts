@@ -44,6 +44,8 @@ export type TenantBootstrap = {
 };
 
 export type StaffAuthUser = {
+  account_kind?: "member" | "staff" | "platform";
+  staff_makerspace?: { id: number; slug: string; name: string } | null;
   username: string;
   email_verified: boolean;
   role: string;
@@ -78,12 +80,14 @@ export type StaffAuthUser = {
   }[];
 };
 
-export type PasswordLoginRequestedSurface = "member" | "staff";
+export type PasswordLoginRequestedSurface = "member" | "staff" | "delegated";
 export type PasswordLoginSurface = PasswordLoginRequestedSurface | "verification_only";
 export type PasswordLoginRequest = {
   username: string;
   password: string;
   surface: PasswordLoginRequestedSurface;
+  context?: "member" | "staff" | "platform";
+  makerspace?: string;
 };
 export type PasswordLoginResponse<TUser = unknown> = {
   access: string;

@@ -1,3 +1,4 @@
+import { consoleSessionHref, currentSessionContext } from "../../lib/api/sessionContext";
 import { useState, type ReactNode } from "react";
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
@@ -27,7 +28,7 @@ export function StaffShell(props: Props) {
     queryKey: ["dashboard", space?.id], queryFn: skipToken, enabled: false,
   });
   const types = useQuery<MachineCollection<MachineType>>({ queryKey: machineKeys.types(space?.id ?? -1), queryFn: skipToken, enabled: false });
-  const path = (tab: string, subPath = "") => staffTabPath(tab, guestOnly, space?.slug, singleTenantLocked, subPath);
+  const path = (tab: string, subPath = "") => consoleSessionHref(staffTabPath(tab, guestOnly, props.isSuperadmin ? undefined : space?.slug, singleTenantLocked, subPath), props.isSuperadmin ? "platform" : currentSessionContext());
   // `requests` passes the tab gate for any hardware action, but each queue needs accept_request or
   // issue_request. With neither, the page would be a dead end: hide it and open the front desk instead.
   const noQueues = !visibleRequestTabs(guestOnly || props.handoutOnly, props.actions, props.isSuperadmin).length;
@@ -50,7 +51,7 @@ export function StaffShell(props: Props) {
       item.children = rows.slice(0, 8).map(type => ({ key: `machines:${type.id}`, label: type.name,
         href: path("machines", machineTypeSegment(type)), icon: Cog, onSelect: () => props.setTab("machines") }));
       if (rows.length > 8) item.children.push({ key: "machines:all", label: "All types →", href: path("machines"), icon: Cog });
-      const selectedType = item.children.find(child => child.href === location.pathname);
+      const selectedType = item.children.find(child => child.href?.split("?")[0] === location.pathname);
       if (selectedType) activeKey = selectedType.key;
     }
   }
@@ -75,7 +76,7 @@ export function StaffShell(props: Props) {
       compactNav={props.handoutOnly ? "bottom-tabs" : "drawer"} footerLinks={publicPage}
       search={makerspaceTools ? { label: "Search and commands", shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
       status={makerspaceTools ? <JobTrayPill makerspaceId={space.id} /> : null}
-      user={{ name: user.username, role: props.roleName, menu: [{ label: "Account & two-step sign-in", href: "/mfa" }, ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
+      user={{ name: user.username, role: props.roleName, menu: [{ label: "Account & two-step sign-in", href: `/mfa?context=${encodeURIComponent(currentSessionContext())}` }, ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
       {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
           Both pills share the job-status query keys, so this adds no polling. */}
       {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}

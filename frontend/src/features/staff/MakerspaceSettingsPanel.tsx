@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { useState } from "react";
 import { SettingsLayout, type SettingsLayoutSection } from "../../components/layouts";
@@ -221,7 +222,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
   // The hub goes first: search across every section here and the settings pages beside it.
   sections.unshift({ id: "start", title: "Start here", rows: <SettingsHub makerspace={settings.data ?? makerspace}
     sectionIds={sections.map(section => section.id)} allowedTabs={allowedTabs}
-    tabHref={tab => staffTabPath(tab, false, makerspace.slug, singleTenantLocked)} /> });
+    tabHref={tab => consoleSessionHref(staffTabPath(tab, false, makerspace.slug, singleTenantLocked))} /> });
   return <>
     {/* Every editor owns its own query, so the parent GET never gates the page: while it
         loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a

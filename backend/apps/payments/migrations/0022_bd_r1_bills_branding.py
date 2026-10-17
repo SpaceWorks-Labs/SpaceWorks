@@ -90,7 +90,11 @@ END; $$;
 
 def restore_guard(apps, schema_editor):
     old = import_module("apps.payments.migrations.0021_payment_documents").GUARD_SQL
-    schema_editor.execute(old.split("CREATE TRIGGER")[0].replace("CREATE FUNCTION", "CREATE OR REPLACE FUNCTION"))
+    # %ROWTYPE is literal PostgreSQL syntax, not a DB-API parameter marker.
+    schema_editor.execute(
+        old.split("CREATE TRIGGER")[0].replace("CREATE FUNCTION", "CREATE OR REPLACE FUNCTION"),
+        params=None,
+    )
 
 
 def avoid_legacy_prefix_collision(apps, schema_editor):

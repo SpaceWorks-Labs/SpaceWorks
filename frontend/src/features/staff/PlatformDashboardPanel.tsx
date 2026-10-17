@@ -1,9 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { DashboardLayout } from "../../components/layouts";
 import { type CalloutProps, DataTable, EmptyState, KeyValueCard, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { adminQueryState } from "./adminPresentation";
-import { getPlatformDashboard, getPlatformProblems, usageAmount } from "./platformMonitoringApi";
+import { getPlatformDashboard, getPlatformProblems, usageAmount, type Problem } from "./platformMonitoringApi";
 import { UsageTable } from "./TenantUsagePanel";
+
+// Tenant repair screens use control's separate platform session and authority.
+const problemHref = (problem: Problem) => problem.makerspace_id === null
+  ? consoleSessionHref(problem.fix_url, "platform")
+  : `/control/makerspaces/makerspace/${problem.makerspace_id}/change/`;
 
 export function PlatformDashboardPanel() {
   const dashboard = useQuery({ queryKey: ["platform-dashboard"], queryFn: getPlatformDashboard, refetchInterval: 60_000 });
@@ -15,7 +21,7 @@ export function PlatformDashboardPanel() {
   const state = dashboard.isLoading && problems.isLoading ? adminQueryState(dashboard, "platform dashboard") : { status: "ready" as const };
   const callout: CalloutProps | undefined = dashboard.isError
     ? { size: "banner", tone: "danger", lead: "Couldn't load the platform dashboard.", body: dashboard.error.message, action: { label: "Retry", onClick: () => { void dashboard.refetch(); } } }
-    : attention ? { size: "banner", tone: "danger", lead: attention.message, body: "Review this check before your next deployment change.", action: { label: "Inspect", href: attention.fix_url } } : undefined;
+    : attention ? { size: "banner", tone: "danger", lead: attention.message, body: "Review this check before your next deployment change.", action: { label: "Inspect", href: problemHref(attention) } } : undefined;
   return <DashboardLayout header={{ title: "Platform", eyebrow: "Space Works",
     subtitle: "Hidden tenants are excluded. Usage totals cover live, available tenants.",
     meta: data ? <>Checked <RelativeTime date={data.checked_at} /></> : undefined,
@@ -33,13 +39,13 @@ export function PlatformDashboardPanel() {
           : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <>Checked <RelativeTime date={problems.data.checked_at} />. </> : null}Checks also run every 15 minutes through the platform scheduler.</p>
             {problems.data?.results.map((row, index) => <ListRow key={`${row.key}:${row.makerspace_id}:${index}`} title={row.message}
               meta={<StatusPill tone={row.status === "error" ? "danger" : row.status === "warn" ? "warn" : "success"} label={row.status === "ok" ? "OK" : row.status === "warn" ? "Warning" : "Error"} />}
-              right={<a className="desk-button" href={row.fix_url}>Inspect</a>} />)}</div>,
+              right={<a className="desk-button" href={problemHref(row)}>Inspect</a>} />)}</div>,
         isEmpty: Boolean(problems.data && !problems.data.results.length) },
       ...(data ? [
         { title: "Tenant usage", empty: { message: "No tenant usage yet. Check again after a space is active." }, isEmpty: !data.tenants.length,
           content: <div className="grid gap-3">{data.tenants.map(tenant => <details key={tenant.id} className="rounded-xl border border-line bg-panel p-4">
             <summary className="min-h-11 cursor-pointer rounded-control py-2 font-display text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{tenant.name}</summary>
-            <a className="desk-button mb-4" href={`/m/${tenant.slug}/admin/usage`}>Open usage page</a><UsageTable data={tenant.usage} />
+            <UsageTable data={tenant.usage} />
           </details>)}</div> },
         { title: "Scheduler freshness", empty: { message: "No scheduler records yet. Check the scheduled runner." }, isEmpty: !data.scheduler.length,
           content: <section id="scheduler"><p className="mb-4 text-sm text-muted">For missing executions, check the host's beat and worker services, or its scheduled cron runner. For failed executions, inspect worker logs. Freshness records show beat completions and cron attempts.</p>

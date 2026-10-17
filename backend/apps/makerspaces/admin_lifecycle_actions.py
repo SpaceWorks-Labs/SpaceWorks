@@ -13,6 +13,13 @@ from django.template.response import TemplateResponse
 from apps.makerspaces.models import MakerspaceArchiveRequest
 
 
+def visible_archive_impacts(makerspaces):
+    from apps.makerspaces import lifecycle
+
+    return [{"object": space, **lifecycle.archive_impact(space)}
+            for space in makerspaces if space.superadmin_access_enabled]
+
+
 class MakerspaceLifecycleActionsMixin:
     @admin.action(description="Archive selected makerspaces")
     def archive_makerspaces(self, request, queryset):
@@ -92,6 +99,7 @@ class MakerspaceLifecycleActionsMixin:
                 **self.admin_site.each_context(request),
                 "title": "Purge selected makerspaces",
                 "queryset": makerspaces,
+                "impacts": visible_archive_impacts(makerspaces),
                 "opts": self.model._meta,
                 "action_name": "purge_makerspaces",
                 "action_checkbox_name": ACTION_CHECKBOX_NAME,

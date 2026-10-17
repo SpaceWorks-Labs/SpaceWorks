@@ -36,7 +36,7 @@ class MembershipListCreateView(RecentReauthenticationMixin, APIView):
     def get(self, request, makerspace_id):
         makerspace = member_makerspace(request.user, makerspace_id)
         memberships = (
-            MakerspaceMembership.objects.filter(makerspace=makerspace)
+            MakerspaceMembership.objects.filter(makerspace=makerspace, user__account_kind="member")
             .select_related("user", "makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
             .order_by("user__username")
         )

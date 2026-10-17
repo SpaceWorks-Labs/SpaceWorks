@@ -98,6 +98,7 @@ class MachineServiceRequestListCreateView(APIView):
                 status="active",
                 user_id=data["requester_id"],
                 user__is_active=True,
+                user__account_kind=User.AccountKind.MEMBER,
                 user__access_status=User.AccessStatus.ACTIVE,
             )
         )

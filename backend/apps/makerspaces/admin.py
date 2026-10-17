@@ -181,8 +181,14 @@ class MakerspaceAdmin(
         # disable ordinary deletes to preserve history, which blocks a whole-space
         # purge even though lifecycle.purge() deletes the complete graph safely.
         objs = list(objs)
+        from .admin_lifecycle_actions import visible_archive_impacts
+        warnings = [
+            f"Advisory unsettled charges for {row['object'].name}: {row['owned_pending']} owned pending, "
+            f"{row['routed_pending']} routed pending, {row['total_pending']} total pending. Counts may change."
+            for row in visible_archive_impacts(objs)
+        ]
         return (
-            [f"{self.opts.verbose_name}: {obj}" for obj in objs],
+            [f"{self.opts.verbose_name}: {obj}" for obj in objs] + warnings,
             {self.opts.verbose_name_plural: len(objs)},
             set(),
             [],

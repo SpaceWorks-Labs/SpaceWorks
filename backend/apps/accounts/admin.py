@@ -84,6 +84,15 @@ class UserAdmin(StaffLifecycleAdminMixin, SuperuserOnlyModelAdmin, DjangoUserAdm
     filter_horizontal = ()
     inlines = (MakerspaceMembershipInline,)
 
+    def get_search_results(self, request, queryset, search_term):
+        # Django autocomplete calls the RELATED User admin, not the source form.
+        # Keep staff/platform identities out of organization community grants.
+        if (request.GET.get("app_label"), request.GET.get("model_name"), request.GET.get("field_name")) == (
+            "organizations", "organizationmembership", "user",
+        ):
+            queryset = queryset.filter(account_kind="member")
+        return super().get_search_results(request, queryset, search_term)
+
     def user_change_password(self, request, id, form_url=""):
         """Make the inherited password form an explicit account transition."""
         user = self.get_object(request, id)

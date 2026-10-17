@@ -38,6 +38,7 @@ def _members(actor, space):
     require(actor, space, "manage_reservations")
     return MakerspaceMembership.objects.select_related("user").filter(
         makerspace_id=space.makerspace_id, status="active", user__is_active=True,
+        user__account_kind=User.AccountKind.MEMBER,
         user__access_status=User.AccessStatus.ACTIVE, user__is_tenant_dump_stub=False,
     )
 

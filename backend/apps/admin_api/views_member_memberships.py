@@ -77,7 +77,7 @@ class AdminMembershipRosterView(APIView):
     def get(self, request):
         makerspace = _makerspace(request.user, request.query_params.get("makerspace_id"))
         active = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceWaiver.objects.filter(makerspace=makerspace, is_active=True)).first()
-        queryset = MakerspaceMembership.objects.filter(makerspace=makerspace).select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch()).order_by("user__username")
+        queryset = MakerspaceMembership.objects.filter(makerspace=makerspace, user__account_kind="member").select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch()).order_by("user__username")
         queryset = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, queryset)
         selected_id = identity_filter(request.query_params)
         if selected_id is not None:

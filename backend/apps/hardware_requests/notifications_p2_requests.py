@@ -1,4 +1,5 @@
 """Source-backed hardware lifecycle and financial notices."""
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.integrations.email_templates import hardware_context, render
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -51,7 +52,7 @@ def notify_request(row, event, room_text=None):
     own = render(row.makerspace, "hardware", "requester", KEYS[event], hardware_context(row, staff=False))
     # Bearer URLs are never channel content. All account delivery navigates to the
     # authenticated member page; existing templates keep their editable wording.
-    link = f"/m/{row.makerspace.slug}/member"
+    link = local_link(row.makerspace, "member")
     staff = render(row.makerspace, "hardware", "staff", event, hardware_context(row, staff=True))
     summary = room_text(row) if room_text else (
         f"Hardware request #{row.pk} {event.replace('_', ' ')}. Review in the staff console.")

@@ -104,8 +104,10 @@ def mark_attended_with_event(
         },
     )
     services.notify_event_lifecycle(event, "registration_attended", locked.pk)
-    if (source in {EventCheckInEvent.Source.QR, EventCheckInEvent.Source.VENUE_STATION}
-            and attended_at is None):
+    # Station sync always supplies a reported timestamp, even for live scans.
+    # The bridge rechecks reported/recorded freshness and attendance after commit.
+    if (source == EventCheckInEvent.Source.VENUE_STATION
+            or (source == EventCheckInEvent.Source.QR and attended_at is None)):
         from apps.presence.event_attendance import event_attendance
 
         transaction.on_commit(lambda: event_attendance(locked), robust=True)

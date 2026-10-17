@@ -72,6 +72,11 @@ def object_closure():
 
 
 def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
+    # Share the compound archive's field-specific bucket declarations. A public
+    # gallery uses object_key too; field spelling alone cannot select its bucket.
+    from .object_ownership_registry import FIELD_OBJECT_RULES
+
+    buckets = {(rule.model_label, rule.field_name): rule.bucket.value for rule in FIELD_OBJECT_RULES}
     if model._meta.label == "events.EventCertificateArtwork":
         queryset = queryset.filter(promoted_at__isnull=False)
     spec = DATASET_SPECS.get(model._meta.label)
@@ -95,7 +100,7 @@ def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
                     "makerspace_id": owner, "module_key": module_key,
                 }
             continue
-        bucket_kind = "public_image" if field.name != "object_key" else "private"
+        bucket_kind = buckets[(model._meta.label, field.name)]
         value_paths = [
             path if path in {"pk", "id"} else f"{path}_id"
             for path in ownership_paths

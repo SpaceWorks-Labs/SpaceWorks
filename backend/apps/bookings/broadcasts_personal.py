@@ -9,6 +9,7 @@ import logging
 
 from django.utils import timezone
 
+from apps.integrations.notification_links import local_link
 from apps.integrations.broadcasts_templates import render
 from apps.makerspaces.platform import member_area_url
 
@@ -36,7 +37,7 @@ def personal_content(campaign, account):
             "booking_url": member_area_url(campaign.makerspace),
         })
     return {"subject": values["subject"], "text": values["text_body"], "html": values.get("html_body", ""),
-            "link": f"/m/{campaign.makerspace.slug}/member/bookings"}
+            "link": local_link(campaign.makerspace, "member", "bookings")}
 
 
 def emit_personal(campaign, account):

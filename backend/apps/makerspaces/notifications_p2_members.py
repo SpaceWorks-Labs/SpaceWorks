@@ -1,6 +1,7 @@
 """Membership lifecycle intents with explicit owners and live source checks."""
 from django.utils import timezone
 
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.integrations.email_templates_registry_helpers import bag
@@ -148,7 +149,7 @@ def request_eligible(envelope):
 
 
 def member_body(row, event, audience):
-    link = f"/m/{row.makerspace.slug}/member"
+    link = local_link(row.makerspace, "member")
     if audience == "staff":
         if event == "member_joined":
             return template(row.makerspace, "membership", audience, event,
@@ -171,17 +172,17 @@ def request_body(row, event, audience):
     if event == "request_pending":
         return template(row.makerspace, "membership", audience, event,
             membership_context(row.makerspace, event, request=row),
-            link=staff_link(row.makerspace, "members") if audience == "staff" else f"/m/{row.makerspace.slug}/member")
+            link=staff_link(row.makerspace, "members") if audience == "staff" else local_link(row.makerspace, "member"))
     if event in {"declined", "awaiting_payment", "payment_due"}:
         return template(row.makerspace, "membership", audience, event,
             {"makerspace": bag(name=row.makerspace.name), "event_name": event,
              "subject": bag(id=row.pk, status=row.state)},
-            link=staff_link(row.makerspace, "members") if audience == "staff" else f"/m/{row.makerspace.slug}/member")
+            link=staff_link(row.makerspace, "members") if audience == "staff" else local_link(row.makerspace, "member"))
     if audience == "staff":
         return body("Membership application update", f"Membership application #{row.pk}: {event.replace('_', ' ')}.", staff_link(row.makerspace, "members"))
     text = ("You have been invited to join this makerspace. Sign in to review the invitation."
             if event == "invitation" else f"Your membership application at {row.makerspace.name}: {event.replace('_', ' ')}.")
-    return body("Membership update", text, f"/m/{row.makerspace.slug}/member")
+    return body("Membership update", text, local_link(row.makerspace, "member"))
 
 
 def render_member(envelope):

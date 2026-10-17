@@ -3,6 +3,7 @@
 import logging
 from functools import wraps
 
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.integrations import recipients
@@ -90,7 +91,7 @@ def notify_family(makerspace, feature, event, subject, *, data, scope=None,
                 own_context = {**context, "subject": requester_subject or subject}
                 own = render(makerspace, stream, "requester", event, own_context)
                 inbox = (InboxDelivery(member_id, own["subject"], own["text_body"],
-                                       f"/m/{makerspace.slug}/member"),)
+                                       local_link(makerspace, "member")),)
                 if owner_email:
                     emails.append(EmailDelivery(to_email=owner_email, subject=own["subject"],
                                             text_body=own["text_body"], html_body=own["html_body"],

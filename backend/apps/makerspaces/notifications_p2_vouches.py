@@ -1,6 +1,7 @@
 """Vouch notices carry private navigation, not voucher identities."""
 from django.utils import timezone
 
+from apps.integrations.notification_links import local_link
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, scoped
 from .models import MembershipVouch
@@ -32,7 +33,7 @@ def eligible(envelope):
 def content(row, audience):
     text = (f"A vouch was recorded for membership application #{row.request_id}." if audience == "staff"
             else f"A vouch was recorded for your membership application at {row.makerspace.name}.")
-    return body("Membership application update", text, f"/m/{row.makerspace.slug}/member")
+    return body("Membership application update", text, local_link(row.makerspace, "member"))
 
 
 def render(envelope):

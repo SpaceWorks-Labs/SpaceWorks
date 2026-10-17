@@ -2,6 +2,7 @@
 
 import logging
 
+from apps.integrations.notification_links import local_link
 from apps.integrations.email_templates import render
 from django.db import transaction
 
@@ -22,7 +23,7 @@ def emit_reminder(row, schedule, account):
                  source_kind=REMINDER_SOURCE, source_id=str(row.pk), revision=str(row.calendar_sequence), subject=row,
                  context={"booking_id": row.pk, "offset_seconds": schedule.offset_seconds},
                  rendered={"subject": message["subject"], "text": message["text_body"], "html": message["html_body"],
-                           "link": f"/m/{makerspace.slug}/member/bookings"})
+                           "link": local_link(makerspace, "member", "bookings")})
             from .notification_owner_mailbox import notify_owner
             notify_owner(envelope)
     except Exception:

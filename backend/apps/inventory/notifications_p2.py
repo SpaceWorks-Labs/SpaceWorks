@@ -1,4 +1,5 @@
 """Inventory threshold and one-shot watch envelope sources."""
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.hardware_requests.notifications_p2 import content, fanout, revision
 from apps.integrations.destinations import NotificationScope
@@ -65,7 +66,7 @@ def notify_watch(row, message):
         event="back_available", kind=WATCH, source=row.pk, subject=row,
         version=revision(row.created_at, row.ready_at), owner=row.user,
         own={"subject": message.title, "text": message.body,
-             "link": f"/m/{row.makerspace.slug}/items/{row.product_id}"},
+             "link": local_link(row.makerspace, "items", str(row.product_id))},
         context={"product_id": row.product_id})
 
 

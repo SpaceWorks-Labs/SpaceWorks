@@ -1,4 +1,5 @@
 """Member broadcast envelopes; the persisted source and live segment grant authority."""
+from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -39,7 +40,7 @@ def eligible(envelope):
 
 def render(envelope):
     row = load(envelope)
-    return body(row.title, row.body, f"/m/{row.makerspace.slug}/member")
+    return body(row.title, row.body, local_link(row.makerspace, "member"))
 
 
 @safe_notification
@@ -49,7 +50,7 @@ def notify_broadcast(row, *, user_id, segment):
     user = User.objects.get(pk=user_id)
     return fanout(row=row, space=row.makerspace, feature="members", stream="membership", event="broadcast",
         source_kind=SOURCE, revision=broadcast_revision(row), owner=user,
-        owner_body=body(row.title, row.body, f"/m/{row.makerspace.slug}/member"),
+        owner_body=body(row.title, row.body, local_link(row.makerspace, "member")),
         staff=False, context={"segment": segment})
 
 

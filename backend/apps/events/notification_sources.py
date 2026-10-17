@@ -8,12 +8,14 @@ the grant, a campaign is still live with its original sender's authority.
 
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.makerspaces.platform import module_enabled
+from apps.makerspaces.servability import is_servable
 
 
 def _event(envelope):
     from .models import Event
     event = Event.objects.select_related("makerspace").filter(pk=envelope.context.get("event_id")).first()
-    return event if event is not None and module_enabled(event.makerspace, "events") else None
+    return event if (event is not None and is_servable(event.makerspace)
+                     and module_enabled(event.makerspace, "events")) else None
 
 
 def _current_lifecycle(envelope, event):
@@ -37,6 +39,7 @@ def _current_lifecycle(envelope, event):
 
 
 def lifecycle_eligible(envelope):
+    from .notification_envelopes import _owner_allowed
     event = _event(envelope)
     if event is None:
         return False
@@ -50,7 +53,8 @@ def lifecycle_eligible(envelope):
         from .notifications import _organizer_spaces
         return _organizer_spaces(event.pk, event.makerspace_id).filter(makerspace_id=envelope.makerspace_id).exists()
     return bool(envelope.audience == "requester" and registration
-                and registration.member_id == envelope.recipient_id)
+                and registration.member_id == envelope.recipient_id
+                and _owner_allowed(envelope.makerspace, envelope.event))
 
 
 def grant_eligible(envelope):
@@ -64,11 +68,14 @@ def grant_eligible(envelope):
 def reminder_eligible(envelope):
     from django.utils import timezone
     from .models import Event, EventRegistration
+    from .notification_envelopes import _owner_allowed
     event = _event(envelope)
     if event is None or event.status != Event.Status.PUBLISHED or event.starts_at <= timezone.now():
         return False
     if event.starts_at.isoformat() != envelope.context.get("starts_at"):
         return False  # rescheduled: the new start gets its own reminder
+    if envelope.audience != "requester" or not _owner_allowed(envelope.makerspace, envelope.event):
+        return False
     return EventRegistration.objects.filter(
         pk=envelope.context.get("registration_id"), event=event, member_id=envelope.recipient_id,
         status=EventRegistration.Status.REGISTERED).exists()

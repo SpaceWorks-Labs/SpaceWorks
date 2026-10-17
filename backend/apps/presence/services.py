@@ -9,7 +9,8 @@ from apps.audit import services as audit
 from apps.tenant_migration.gate_runtime import tenant_write
 from .geofence import require_inside
 from .models import PresencePreference, PresenceSession, PresenceSettings
-from .policy import PresenceError, owned_project, require_account, require_staff, validate_duration
+from .policy import PresenceError, owned_project, presets, require_account, require_staff, validate_duration
+from .renewal import renewal_expiry
 from .services_claim import (
     _validate_claim_scope, end_sessions_for_claim, end_sessions_for_membership, expire_claim_presence,
 )
@@ -26,11 +27,11 @@ def _lock_account(user, space):
     return user, space
 
 
-def _claim(user, space):
+def _claim(user, space, *, for_update=True):
     context = claim_context(user)
     if context is None:
         return None
-    claim = validated_claim_session(token_payload_for_context(context, user.pk), for_update=True)
+    claim = validated_claim_session(token_payload_for_context(context, user.pk), for_update=for_update)
     _validate_claim_scope(claim, user, space)
     return claim
 
@@ -141,6 +142,21 @@ def current_session(user, makerspace):
     return rows.order_by("-started_at", "-pk").first()
 
 
+def renewable_session(user, space):
+    """Return only the latest session, expired but still eligible for renewal."""
+    require_account(user, space)
+    claim = _claim(user, space, for_update=False)
+    row = PresenceSession.objects.filter(account=user, makerspace=space).order_by("-started_at", "-pk").first()
+    now = timezone.now()
+    if row is None or row.expires_at > now:
+        return None
+    try:
+        renewal_expiry(row, space, now=now, duration_minutes=presets(space)[0], claim=claim)
+    except PresenceError:
+        return None
+    return row
+
+
 def renew_session(user, space, duration_minutes):
     with tenant_write(space.pk):
         claim = _claim(user, space)
@@ -148,25 +164,7 @@ def renew_session(user, space, duration_minutes):
         require_account(user, space)
         validate_duration(space, duration_minutes)
         row = PresenceSession.objects.select_for_update().filter(account=user, makerspace=space).order_by("-started_at", "-pk").first()
-        if row is None or (claim and row.created_via_claim_session_id != claim.pk):
-            raise PresenceError("session_required", "Check in before renewing.")
-        if row.ended_at is not None and row.end_reason != "expired":
-            raise PresenceError("session_ended", "Check in again after ending your presence.")
-        if row.expires_at < timezone.now() - timedelta(minutes=10):
-            raise PresenceError("session_expired", "This session has expired. Check in again with your current location.")
-        expiry = timezone.now() + timedelta(minutes=duration_minutes)
-        if row.event_registration_id:
-            from apps.events.models import EventRegistration
-            from apps.makerspaces.platform import module_enabled
-            registration = EventRegistration.objects.select_related("event").get(pk=row.event_registration_id)
-            if (not module_enabled(space, "events") or registration.status != "attended"
-                    or registration.event.status != "published"):
-                raise PresenceError("event_session", "This event attendance is no longer current.")
-            expiry = min(expiry, registration.event.ends_at)
-        if claim:
-            expiry = min(expiry, claim.absolute_expires_at)
-        if expiry <= timezone.now():
-            raise PresenceError("presence_expired", "The check-in authorization has expired.")
+        expiry = renewal_expiry(row, space, now=timezone.now(), duration_minutes=duration_minutes, claim=claim)
         row.expires_at, row.expiry_reminded_at = expiry, None
         row.ended_at, row.ended_by, row.end_reason = None, None, ""
         row.revision += 1

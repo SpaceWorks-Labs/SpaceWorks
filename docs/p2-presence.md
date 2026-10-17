@@ -97,9 +97,9 @@ All methods have drf-spectacular request/response/error declarations.
 |---|---|---|
 | GET | `/api/v1/public/makerspaces/<slug>/presence/now/` | Anonymous TV array; fields described above. |
 | POST | `/api/v1/public/<slug>/presence-sessions` | `duration_minutes`, optional `status`, `project_id`, `hide_on_display`, `latitude`, `longitude`, `accuracy`; returns current session. |
-| GET | `/api/v1/public/<slug>/presence-sessions/current` | `{active, session, presets, personal_opt_out_allowed, names_displayed}`; policy is present even without a session. |
+| GET | `/api/v1/public/<slug>/presence-sessions/current` | `{active, session, renewable, presets, personal_opt_out_allowed, names_displayed}`; policy is present even without a session. `renewable` is the latest expired session within the ten-minute grace period, or null; it shares the renewal writer's end-reason, claim-provenance and event/deadline checks. An active session makes it null. Renewal rechecks authority on POST. |
 | POST | `/api/v1/public/<slug>/presence-sessions/current/renew` | `duration_minutes`; returns renewed session. |
-| POST | `/api/v1/public/<slug>/presence-sessions/current/end` | No body; `{active:false, session:null, personal_opt_out_allowed, names_displayed}`. |
+| POST | `/api/v1/public/<slug>/presence-sessions/current/end` | No body; `{active:false, session:null, renewable:null, personal_opt_out_allowed, names_displayed}`. |
 | GET | `/api/v1/public/<slug>/presence-sessions/projects` | Paginated own project options `{id,title,public_visible}`. |
 | GET, PATCH | `/api/v1/public/<slug>/presence-sessions/preferences` | `hide_on_display`; PATCH also changes current sessions. |
 | GET | `/api/v1/admin/makerspace/<id>/presence-sessions/current` | Paginated present roster; account identity/name, role, status and session times; no contacts. |

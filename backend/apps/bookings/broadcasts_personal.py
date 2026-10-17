@@ -9,15 +9,14 @@ from django.utils import timezone
 
 from apps.integrations.notification_links import local_link
 from apps.integrations.broadcasts_templates import render
+from apps.integrations.broadcasts_preferences import has_personal_choice as category_has_personal_choice
 from apps.makerspaces.platform import member_area_url
 
 from .notification_sources import BROADCAST_SOURCE
 
 
 def has_personal_choice(makerspace, account):
-    from apps.integrations.notification_resolution import policy_rows
-    from apps.notifications.models_preferences import NotificationPreference
-    return policy_rows(NotificationPreference, makerspace).filter(user=account, category="bookings").exists()
+    return category_has_personal_choice(makerspace, account, "bookings")
 
 
 def personal_content(campaign, account):

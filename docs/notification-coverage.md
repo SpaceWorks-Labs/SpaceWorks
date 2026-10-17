@@ -49,7 +49,7 @@ payment and loan owners do not acquire a universal membership requirement.
 | Event check-in `registration_attended` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — attended registration source [E] |
 | Event series `series_published`, `series_cancelled`, `series_completed`, `series_generation_failed` | Authorized event staff; affected series registration owners | Staff personal + rooms; owner personal for publication/cancellation/completion; generation failure staff-only and never deferred | TRUE — series fan-out; generation failure staff-only [E] |
 | Event start `reminder` | Explicit watcher/member/owner | Personal; preserve existing address eligibility and authenticated document links; no rooms | TRUE — account-only reminder source, no membership dependency [E] |
-| Event broadcast campaign | Live campaign audience only | Personal selected channels; email retains verified-email/module/unsubscribe gates; live original sender authority + resource + audience rechecked every batch; no staff-room campaign bodies | TRUE — channel envelopes; legacy worker owns email; no periodic channel-task resume [E] |
+| Event broadcast campaign | Live campaign audience only | Personal selected channels; email retains verified-email/module/unsubscribe gates; live original sender authority + resource + audience rechecked every batch; no staff-room campaign bodies | TRUE — batch cursor and envelopes commit together; saved selections use personal email/fallback, others keep legacy email; both recheck live policy on retry [E] |
 | Event bulk invitation | Explicit invitee | Verified email / manually shared invite for unknown accounts; proven accounts may receive private navigation notices; never room bearers | RETAINED — verified-email/share path; optional account-linked notice not added [E] |
 | Event certificate creation/render/reissue/revoke | Certificate registration owner | Personal navigation notice to authenticated document; no bearer or recipient details in rooms | TRUE — owner navigation notices with live certificate state [E] |
 | Booking `created`, `confirmed`, `rejected`, `cancelled`, `restored`, `completed`, `no_show` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — staff/owner/grant envelopes, legacy rooms and same-owner contact email compatibility [B] |
@@ -118,7 +118,8 @@ Code ownership for the status column (all paths under `backend/apps/`):
   preserves the owner's same verified contact mailbox separately from the shared resolver.
 - **[E] Events:** `events/notifications.py`, `notification_envelopes.py`, `notification_sources.py`,
   `broadcast_channels.py`, `reminders.py` and `services_certificates.py`. Staff in-app/push and
-  campaign email are pre-skipped in envelopes because existing paths own them. Invitations retain
+  default campaign email are pre-skipped in envelopes because existing paths own them; saved
+  campaign selections use the personal resolver for all channels, including email fallback. Invitations retain
   their existing delivery; account-only history/reminders do not acquire a Membership dependency.
 - **[B] Bookings:** `bookings/notifications.py`, `notification_sources.py`, `reminder_envelopes.py`,
   `broadcasts_personal.py`, `notification_owner_mailbox.py`, `services_arrival.py`. The email-only

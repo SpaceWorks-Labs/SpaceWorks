@@ -88,6 +88,7 @@ class PresenceSessionSerializer(serializers.ModelSerializer):
 class PresenceCurrentSerializer(serializers.Serializer):
     active = serializers.BooleanField()
     session = PresenceSessionSerializer(allow_null=True)
+    renewable = PresenceSessionSerializer(allow_null=True, required=False)
     presets = serializers.ListField(child=serializers.IntegerField(), required=False)
     personal_opt_out_allowed = serializers.BooleanField()
     names_displayed = serializers.BooleanField()

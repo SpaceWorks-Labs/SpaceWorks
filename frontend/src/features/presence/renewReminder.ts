@@ -15,7 +15,7 @@ export function renewPhase(session: Pick<PresenceSession, "expires_at" | "ended_
   const left = minutesLeft(session, now);
   if (left > RENEW_WINDOW_MINUTES) return "none";
   if (left > 0) return "soon";
-  return left > -RENEW_WINDOW_MINUTES ? "expired" : "gone";
+  return new Date(session.expires_at).getTime() >= now - RENEW_WINDOW_MINUTES * 60_000 ? "expired" : "gone";
 }
 
 /** A clock that re-renders often enough for minute-granularity countdowns. */

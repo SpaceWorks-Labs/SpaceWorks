@@ -19,6 +19,7 @@ USER_PROJECTIONS = {
             "date_joined",
             "account_kind",
             "staff_makerspace",
+            "is_active",
         }
     ),
 }

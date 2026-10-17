@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.utils.crypto import salted_hmac
 
 from apps.accounts import rbac
-from .models_endpoints import NotificationEndpoint, NotificationEndpointChallenge
+from .models_endpoints import NotificationEndpointChallenge
 from .notification_proofs import digest
 from .notification_providers import CallbackEvent, EndpointProof
 from .notification_wa_meta_http import PHONE, credentials, error_result
@@ -95,16 +95,11 @@ def destination(value):
     return number if PHONE.fullmatch(number) else None
 
 
-def endpoint_for(configuration, number):
+def destination_digest(configuration, number):
     if not number:
-        return None
-    subject_digest = salted_hmac("notification.endpoint.identity.v1",
+        return ""
+    return salted_hmac("notification.endpoint.identity.v1",
         f"{configuration.pk}:{configuration.generation}:{number}", algorithm="sha256").hexdigest()
-    return rbac.scope_notification_policy(NotificationEndpoint.objects.all(),
-        makerspace_id=configuration.makerspace_id).filter(configuration=configuration,
-        channel="whatsapp", provider="meta", integration_generation=configuration.generation,
-        integration_identity=configuration.integration_identity, identity_digest=subject_digest,
-        verification_state="verified", revoked_at=None).first()
 
 
 def message_text(row):
@@ -135,7 +130,7 @@ def callback_event(configuration, request):
         if (not isinstance(state, str) or state not in {"sent", "delivered", "read", "failed"}
                 or not isinstance(provider_id, str) or not 0 < len(provider_id) <= 255):
             return None
-        endpoint = endpoint_for(configuration, destination(row.get("recipient_id")))
+        identity = destination_digest(configuration, destination(row.get("recipient_id")))
         errors = row.get("errors", [])
         stopped = state == "failed" and isinstance(errors, list) and any(
             isinstance(error, dict) and error.get("code") == 131050 for error in errors)
@@ -148,18 +143,20 @@ def callback_event(configuration, request):
         delivery_id, attempt = referenced_delivery(configuration, row.get("biz_opaque_callback_data"))
         return CallbackEvent(provider_id=provider_id, state=state,
             delivery_id=delivery_id, delivery_attempt=attempt,
-            endpoint_id=endpoint.pk if endpoint and stopped else None, opt_out=stopped)
+            identity_digest=identity if stopped else "", opt_out=stopped)
     number = destination(row.get("from") if kind == "messages" else row.get("wa_id"))
     if not number:
         return None
-    endpoint = endpoint_for(configuration, number)
+    identity = destination_digest(configuration, number)
     if kind == "user_preferences":
-        return (CallbackEvent(endpoint_id=endpoint.pk, opt_out=True)
-                if endpoint and row.get("value") == "stop" else None)
+        if row.get("value") in {"stop", "start"}:
+            return CallbackEvent(identity_digest=identity, opt_out=row["value"] == "stop",
+                                 opt_in=row["value"] == "start")
+        return None
     text = message_text(row)
     # A signed opt-out is honoured even when its timestamp is missing or skewed.
     if text.casefold() in STOP_WORDS:
-        return CallbackEvent(endpoint_id=endpoint.pk, opt_out=True) if endpoint else None
+        return CallbackEvent(identity_digest=identity, opt_out=True)
     moment = inbound_time(row.get("timestamp"))
     if moment is None or not isinstance(row.get("id"), str) or not row["id"]:
         return None
@@ -174,4 +171,4 @@ def callback_event(configuration, request):
     if challenge:
         return CallbackEvent(proof=EndpointProof(code=text, destination=number,
             integration_identity=configuration.integration_identity, subject=number, private=True))
-    return CallbackEvent(endpoint_id=endpoint.pk) if endpoint else None
+    return CallbackEvent(identity_digest=identity, opt_in=text.casefold() in {"start", "unstop", "yes"})

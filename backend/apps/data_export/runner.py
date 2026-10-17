@@ -22,6 +22,7 @@ from .runner_queries import after_keyset, is_statement_timeout, key_value, selec
 from .reference_provenance import ReferenceProvenanceWriter
 from .references import SEMANTIC_REFERENCES, USER_EDGES, require_raw_user
 from .types import Fidelity, SemanticUserRef
+from .runner_users import _read_users
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,9 @@ def build_archive(
                 cursor.execute("SELECT transaction_timestamp()")
                 snapshot_at = cursor.fetchone()[0]
 
+            from apps.accounts.models import User
+            closure.update(User.objects.filter(account_kind="staff", staff_makerspace_id=job.makerspace_id,
+                                               retired_at__isnull=True).values_list("pk", flat=True))
             datasets = [
                 dataset for dataset in DATASETS.values()
                 if dataset.fidelity is fidelity and dataset.model != "accounts.User"
@@ -209,25 +213,6 @@ def _read_dataset(dataset, tenant_id, closure, page_size, deadline, monotonic):
                 f"{dataset.path} row {page[-1].pk} has an unexpected null keyset value."
             )
     return rows, count
-
-
-def _read_users(dataset, closure, page_size, deadline, monotonic):
-    model = apps.get_model("accounts.User")
-    queryset = model.objects.filter(pk__in=closure, retired_at__isnull=True)
-    cursor_values, rows = None, []
-    while True:
-        _check_deadline(dataset.path, len(rows), deadline, monotonic)
-        page_query = queryset
-        if cursor_values is not None:
-            page_query = page_query.filter(after_keyset(dataset.keyset, cursor_values))
-        page = list(page_query.order_by(*dataset.keyset)[:page_size])
-        if not page:
-            break
-        rows.extend(page)
-        cursor_values = tuple(key_value(page[-1], name) for name in dataset.keyset)
-        if any(value is None for value in cursor_values):
-            raise ExportIntegrityError("global/users.csv contains a null keyset value.")
-    return rows, len(rows)
 
 
 def _collect_user_ids(dataset, rows, closure):

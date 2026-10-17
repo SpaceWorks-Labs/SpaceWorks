@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from apps.backup.main_projection_registry import boundary_rules, table_rules
 from apps.backup.slice_merge_types import SliceMergeError
-from apps.data_export.datasets import DATASET_SPECS
+from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS
 from apps.data_export.restore_hooks import strip_download_bearer as strip_data_export_download_bearer
 from apps.tenant_migration.restore_hooks import strip_download_bearer as strip_tenant_dump_download_bearer
 
@@ -30,6 +30,11 @@ def slice_fixtures(root):
             preimage = item.get("row_preimage")
             if preimage:
                 model = apps.get_model(preimage["model"])
+                if item.get("disposition") == "inert_shell_to_slice":
+                    from .staff_shells import shell_fixture
+                    if item.get("row_postimage") != shell_fixture(preimage):
+                        raise SliceMergeError("A staff shell inverse has an unexpected projected shape.")
+                    preimage = {**preimage, "_shell_preimage": item["row_postimage"]}
                 scrub = _BEARER_SCRUBBERS.get(model._meta.label)
                 if scrub:
                     # Scrub boundary bearers before staging for verify_staged_rows equality
@@ -50,6 +55,17 @@ def slice_deltas(root):
             identity = (item["model"], item["field"], item["disposition"])
             if identity not in declared:
                 raise ValueError
+            if item["disposition"] == "inert_shell_to_slice":
+                from .staff_shells import shell_fixture
+                preimage = item["row_preimage"]
+                if item.get("row_postimage") != shell_fixture(preimage):
+                    raise ValueError
+                model = apps.get_model(item["model"])
+                for name, value in preimage["fields"].items():
+                    result.append((model, {"row_pk": item["row_pk"], "field": name,
+                        "old_value": item["row_postimage"]["fields"][name], "new_value": value,
+                        "staff_shell": True}))
+                continue
             if "field_preimage" in item:
                 result.append((apps.get_model(item["model"]), {
                     "row_pk": item["row_pk"], "field": item["field"],

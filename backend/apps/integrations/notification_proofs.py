@@ -89,12 +89,16 @@ def consume(configuration, proof, *, expected_user_id=None, expected_challenge_i
             identity_digest = salted_hmac("notification.endpoint.identity.v1",
                 f"{config.pk}:{config.generation}:{proof.subject}", algorithm="sha256").hexdigest()
             if NotificationEndpoint.objects.filter(configuration=config, identity_digest=identity_digest,
-                    revoked_at=None).exclude(user=challenge.user).exists():
+                    revoked_at=None, user=challenge.user).exists():
                 valid = False
         if valid:
             from apps.notifications.inbox import eligible_owner
             from apps.makerspaces.servability import is_servable
-            valid = eligible_owner(config.makerspace, challenge.user_id) and is_servable(config.makerspace)
+            from apps.makerspaces.platform import module_enabled
+            from .dispatch_channels import channel_module_blocks
+            valid = (eligible_owner(config.makerspace, challenge.user_id) and is_servable(config.makerspace)
+                     and module_enabled(config.makerspace, "notifications")
+                     and not channel_module_blocks(config.makerspace, config.channel))
         if valid:
             NotificationEndpoint.objects.filter(makerspace=config.makerspace, user=challenge.user,
                 channel=config.channel, revoked_at=None).update(revoked_at=now, verification_state="revoked")
@@ -124,22 +128,21 @@ def verified_callback(configuration, request, *, expected_user_id=None, expected
         endpoint = consume(configuration, event.proof, expected_user_id=expected_user_id,
                            expected_challenge_id=expected_challenge_id)
         if event.inbound:
-            with tenant_write(configuration.makerspace_id):
-                NotificationEndpoint.objects.filter(pk=endpoint.pk, revoked_at=None).update(last_inbound_at=timezone.now())
+            _destination_event(configuration, event, identity_digest=endpoint.identity_digest)
         return endpoint
     if expected_user_id is not None:
         raise ValidationError({"proof": "A verified account-link proof is required."})
-    with tenant_write(configuration.makerspace_id):
-        if event.endpoint_id and (event.opt_out or event.inbound):
-            rows = NotificationEndpoint.objects.filter(pk=event.endpoint_id, configuration=configuration,
-                integration_generation=configuration.generation, revoked_at=None)
-            if event.opt_out:
-                for endpoint in rows:
-                    revoke(endpoint, actor=endpoint.user)
-            elif event.inbound:
-                rows.update(last_inbound_at=timezone.now())
+    with tenant_write(configuration.makerspace_id), transaction.atomic():
+        destination_changed = _destination_event(configuration, event)
         from .notification_delivery import apply_callback
-        return apply_callback(configuration, event)
+        delivery_changed = apply_callback(configuration, event)
+        return bool(delivery_changed or destination_changed)
+
+
+def _destination_event(configuration, event, *, identity_digest=""):
+    """A signed destination event applies to every account binding, atomically."""
+    from .notification_destination_events import apply_destination_event
+    return apply_destination_event(configuration, event, identity_digest=identity_digest)
 
 
 def revoke(endpoint, *, actor):

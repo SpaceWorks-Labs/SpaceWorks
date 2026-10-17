@@ -7,6 +7,9 @@ AUTHORITY_ENTRIES = (
     *((('accounts.StaffInvitation', field), authority(
         D.DROP, 'Initial-password role/scope/generation proofs are deployment-local and never travel.',
     )) for field in ('role_snapshot', 'machine_scope_snapshot', 'credential_generation')),
+    *((('notifications.NotificationPreference', field), authority(
+        D.PRESERVE, 'Carried staff category/channel choices do not carry provider endpoints or proof.',
+    )) for field in ('makerspace', 'user', 'category', 'channels', 'email_fallback')),
     *((('makerspaces.MakerspaceMembership', field), authority(
         (D.PRESERVE, D.RESET),
         'Tenant staff roles and notification choices travel; member authority resets to Member.',

@@ -112,11 +112,12 @@ TARGET_FIELD_PROJECTION = {
         allow_superadmin_override=True,
         reason="Feature installation is target superadmin policy.",
     ),
-    ("makerspaces.MakerspaceMembership", "receives_notifications"): _default(
-        "Imported memberships start with the target notification default."
+    ("makerspaces.MakerspaceMembership", "receives_notifications"): TargetField(
+        use_model_default=True, condition=("_staff_account", False),
+        reason="Member memberships start with the target notification default."
     ),
     ("makerspaces.MakerspaceMembership", "role"): TargetField(
-        "custom",
+        "custom", condition=("_staff_account", False),
         reason="The target Member role has no legacy enum identity; its scalar fallback is CUSTOM.",
     ),
     ("makerspaces.MakerspaceMembership", "can_refer"): _default(

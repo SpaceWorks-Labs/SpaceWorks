@@ -104,11 +104,21 @@ def resolve_identities(archive, job, pk_map, required):
             continue
         seen_count += 1
         decision = _required_decision(job, source_id)
+        if source.get("account_kind") == "platform" and (
+            decision.identity_resolution != decision.IdentityResolution.CREATE_WALK_IN
+            or decision.target_user_id is not None
+        ):
+            raise IdentityResolutionError("Platform provenance must become a new inert stub.")
+        if source.get("_staff_account"):
+            from .portable_staff import validate_staff_decision
+            validate_staff_decision(source, decision)
         if decision.identity_resolution == decision.IdentityResolution.LINK_EXISTING:
             if decision.target_user is None:
                 raise IdentityResolutionError(
                     f"Source user {source_id} has an incomplete LINK_EXISTING decision."
                 )
+            if decision.target_user.account_kind != "member" or decision.target_user.retired_at is not None:
+                raise IdentityResolutionError("Member identities may link only to live member accounts.")
         elif decision.identity_resolution == decision.IdentityResolution.CREATE_WALK_IN:
             if decision.target_user_id is not None:
                 raise IdentityResolutionError(
@@ -153,7 +163,14 @@ def resolve_identities(archive, job, pk_map, required):
                     }
                 )
             continue
-        _create_walk_in(source, pk_map.lookup(user_model, source_id))
+        if source.get("_staff_account"):
+            from .portable_staff import create_staff_identity
+            create_staff_identity(source, pk_map.lookup(user_model, source_id), job.target_makerspace)
+        elif source.get("account_kind") == "platform":
+            from .portable_staff import create_provenance_stub
+            create_provenance_stub(source, pk_map.lookup(user_model, source_id))
+        else:
+            _create_walk_in(source, pk_map.lookup(user_model, source_id))
         created += 1
     return IdentityResolutionReport(
         linked,

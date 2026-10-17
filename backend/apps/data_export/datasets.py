@@ -30,6 +30,7 @@ DATASET_SPECS = {
     "makerspaces.MembershipAdditionalRole": ("members/additional_roles.csv", P(("membership__makerspace",), ("role__makerspace",))),
     "machines.MembershipMachineTypeScope": ("members/member_machine_type_scopes.csv", P(("membership__makerspace",), ("machine_type__makerspace",))),
     "notifications.MemberNotificationPreference": ("notifications/member_preferences.csv", P(("makerspace",))),
+    "notifications.NotificationPreference": ("notifications/personal_preferences.csv", P(("makerspace",))),
     "operations.SavedView": ("preferences/saved_views.csv", P(("makerspace",))),
     "makerspaces.MakerspaceLoanPolicy": ("makerspace/loan_policy.csv", P(("makerspace",))),
     "apiclients.ApiClient": ("makerspace/api_clients.csv", P(("makerspace",))),

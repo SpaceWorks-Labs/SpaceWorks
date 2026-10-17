@@ -72,7 +72,8 @@ def closure_digest(identities):
 
 def compute_pending_closure(makerspace):
     """Compute the exact projected identity list shown to the source superadmin."""
-    closure = set()
+    closure = set(User.objects.filter(account_kind="staff", staff_makerspace=makerspace,
+                                      retired_at__isnull=True).values_list("pk", flat=True))
     for dataset in DATASETS.values():
         if dataset.fidelity is not Fidelity.PORTABLE or dataset.model == "accounts.User":
             continue
@@ -82,7 +83,7 @@ def compute_pending_closure(makerspace):
             emit, contributes = export_row_policy(dataset.model, row)
             if emit and contributes:
                 closure.update(_row_user_ids(dataset.model, row))
-    users = apps.get_model("accounts.User").objects.filter(pk__in=closure)
+    users = apps.get_model("accounts.User").objects.filter(pk__in=closure, retired_at__isnull=True)
     identities = canonical_identities(users)
     return {"digest": closure_digest(identities), "identities": identities}
 

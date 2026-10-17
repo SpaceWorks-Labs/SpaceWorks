@@ -30,6 +30,8 @@ def purge(makerspace, actor):
             raise ValidationError("Cannot purge a makerspace that is not archived.")
         if not locked.superadmin_access_enabled:
             raise ValidationError("Cannot purge a hidden makerspace.")
+        from .staff_retirement import retire_staff_accounts
+        retire_staff_accounts(locked, actor=actor)
         _delete_object_graph(locked)
 
     audit.record(actor, "makerspace.purged", makerspace=None, target=None, meta=meta)

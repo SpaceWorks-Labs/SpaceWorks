@@ -55,8 +55,6 @@ def _apply_projection(using, rules, makerspace_ids):
             boundary_markers = []
             for index, rule in enumerate(boundaries):
                 affected = boundary_queryset(rule, using, makerspace_ids)
-                if rule.disposition == BoundaryDisposition.INERT_SHELL_TO_SLICE and affected.exists():
-                    raise BackupBuildError("Staff inert-shell projection requires account-split P4.")
                 marker = _mark_queryset(cursor, using, affected, f"boundary_{index}")
                 boundary_markers.append((rule, marker))
             table_markers = []
@@ -69,6 +67,10 @@ def _apply_projection(using, rules, makerspace_ids):
                 marker = _mark_queryset(cursor, using, affected, f"table_{index}")
                 table_markers.append((rule, marker))
             for rule, marker in boundary_markers:
+                if rule.disposition == BoundaryDisposition.INERT_SHELL_TO_SLICE:
+                    from .staff_shells import project_staff_shells
+                    project_staff_shells(cursor, marker)
+                    continue
                 _apply_marker(cursor, rule.source_model, marker, field=(
                     rule.field
                     if rule.disposition == BoundaryDisposition.PROJECT_NULL_TO_SLICE
@@ -153,7 +155,17 @@ def _apply_marker(cursor, model, marker, field=None):
     pk = quote(model._meta.pk.column)
     marker_pk = quote("pk")
     marker_table = quote(marker)
-    if field is None:
+    if field is None and model._meta.label == "makerspaces.MakerspaceMembership":
+        cursor.execute(f"SELECT DISTINCT target.makerspace_id FROM {table} target "
+                       f"JOIN {marker_table} ids ON target.{pk} = ids.{marker_pk}")
+        owners = [row[0] for row in cursor.fetchall()]
+        for owner in owners:
+            cursor.execute("SELECT set_config('app.account_retirement_makerspace_id', %s, true)", [str(owner)])
+            cursor.execute(f"DELETE FROM {table} target USING {marker_table} ids "
+                           f"WHERE target.{pk} = ids.{marker_pk} AND target.makerspace_id = %s", [owner])
+            cursor.execute("SET CONSTRAINTS accounts_membership_valid IMMEDIATE")
+            cursor.execute("SET CONSTRAINTS accounts_membership_valid DEFERRED")
+    elif field is None:
         cursor.execute(
             f"DELETE FROM {table} AS target USING {marker_table} AS ids "
             f"WHERE target.{pk} = ids.{marker_pk}"

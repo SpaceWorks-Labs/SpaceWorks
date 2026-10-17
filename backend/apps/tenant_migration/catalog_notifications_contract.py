@@ -10,7 +10,7 @@ FIELD_NAMES = {
     "notifications.NotificationPreference": frozenset("id makerspace user category channels email_fallback updated_at".split()),
 }
 OMITTED_MODELS = {label: "Source-local notification credentials, proof, policy or delivery telemetry; target reconnects with fresh consent."
-                  for label in FIELD_NAMES}
+                  for label in FIELD_NAMES if label != "notifications.NotificationPreference"}
 USER_FIELDS = frozenset({
     ("integrations.NotificationEnvelope", "recipient"),
     ("integrations.NotificationEndpoint", "user"),

@@ -5,6 +5,13 @@ const listeners = new Set<(context: SessionContext) => void>();
 
 /** Delegation chooses credentials, never permissions; the API checks the grant. */
 export function contextForRoute(pathname: string, search = "", tenantSlug = ""): SessionContext {
+  const staffTool = /^\/m\/([^/]+)\/(?:kiosk\/[^/]+|scanner)\/?$/.exec(pathname);
+  if (staffTool) return `staff:${staffTool[1]}`;
+  if (/^\/scanner\/?$/.test(pathname) || /^\/kiosk\/[^/]+\/?$/.test(pathname)) {
+    if (tenantSlug) return `staff:${tenantSlug}`;
+    const explicit = new URLSearchParams(search).get("context");
+    if (explicit && /^staff:[a-zA-Z0-9_-]+$/.test(explicit)) return explicit as SessionContext;
+  }
   const scoped = /^\/m\/([^/]+)\/(?:admin|guest-admin)(?:\/|$)/.exec(pathname);
   const consoleRoute = Boolean(scoped) || /^\/(?:admin|guest-admin)(?:\/|$)/.test(pathname);
   if (consoleRoute && !scoped && new URLSearchParams(search).get("context") === "platform") return "platform";

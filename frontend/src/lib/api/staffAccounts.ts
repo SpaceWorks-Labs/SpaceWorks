@@ -1,4 +1,5 @@
 import { staffRequest } from "./requests";
+import type { StaffRole } from "../../features/staff/panels/rolesApi";
 
 export const STAFF_ROLE_NAMES = {
   space_manager: "Space Manager", inventory_manager: "Inventory Manager", machine_manager: "Machine Manager",
@@ -14,6 +15,8 @@ export type StaffAccount = {
 export type StaffAccountPolicy = {
   creatable_roles: StaffRoleKey[]; can_manage_space_managers: boolean;
   superadmin_access_enabled: boolean; email_onboarding_available: boolean;
+  machine_types: { id: number; name: string }[];
+  roles: StaffRole[];
 };
 export type StaffAccountDraft = {
   display_name: string; email?: string; username?: string; roles: StaffRoleKey[]; machine_type_ids: number[];

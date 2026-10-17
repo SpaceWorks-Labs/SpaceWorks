@@ -5,6 +5,7 @@ existing action check. Names are explicit so a new URL cannot inherit authority.
 """
 
 MEMBERSHIP_ROUTES = frozenset("""
+backup-recovery-state
 admin-backup-archive-rehydrate admin-backup-destination admin-backup-destination-probe
 admin-backup-destination-push admin-backup-destination-retire admin-backup-destination-uploads
 admin-backup-destinations admin-certification-grant-renew admin-certification-grant-revoke
@@ -63,6 +64,8 @@ user-restore-access user-restrict
 """.split())
 
 DELEGABLE_ROUTES = frozenset("""
+kiosk-station-operator-lease kiosk-station-work-package kiosk-station-evidence-prepare
+kiosk-station-command-online payment-document-download
 accepted-requests accountability-dashboard active-loans admin-accessible-booking-spaces
 admin-accessible-events admin-api-client admin-api-client-rotate-secret admin-api-client-scopes
 admin-api-clients admin-api-key-requests admin-api-settings admin-archive-recipient-compromise

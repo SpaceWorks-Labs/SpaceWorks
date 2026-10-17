@@ -5,6 +5,7 @@
 import { API_V1_URL, staffRequest, StructuredApiError } from "../../lib/api";
 import type { UploadResponse } from "../staff/panels/EvidenceUpload";
 import type { KitExpectation } from "../inventory/KitChecklist";
+import { currentSessionContext } from "../../lib/api/sessionContext";
 
 export type KioskBootstrap = {
   station: { id: number; name: string; kind: "scanner" | "handover" };
@@ -40,6 +41,12 @@ export type KioskWorkPackage = {
 
 const STATION_HEADERS = { "Content-Type": "application/json", "X-Station-CSRF": "1" };
 
+function operatorRequest<T>(path: string, options: RequestInit) {
+  const context = currentSessionContext();
+  if (!context.startsWith("staff:")) return Promise.reject(new Error("Open this Station in its tenant staff context."));
+  return staffRequest<T>(path, { ...options, credentials: "include", cache: "no-store" }, context);
+}
+
 function stationPath(token: string, suffix: string) {
   return `/kiosk-stations/${encodeURIComponent(token)}/${suffix}`;
 }
@@ -63,13 +70,13 @@ export async function endKioskSession(token: string) {
 }
 
 export function takeOperatorLease(token: string) {
-  return staffRequest<KioskLease>(stationPath(token, "operator-lease/"), {
+  return operatorRequest<KioskLease>(stationPath(token, "operator-lease/"), {
     method: "POST", headers: STATION_HEADERS,
   });
 }
 
 export function runOnlineCommand<T>(token: string, lease: string, kind: string, payload: object) {
-  return staffRequest<{ kind: string; result: T }>(stationPath(token, "commands/online/"), {
+  return operatorRequest<{ kind: string; result: T }>(stationPath(token, "commands/online/"), {
     method: "POST",
     headers: leaseHeaders(lease),
     body: JSON.stringify({ version: 1, kind, payload }),
@@ -81,13 +88,13 @@ function leaseHeaders(lease: string) {
 }
 
 export function loadWorkPackage(token: string, lease: string, kind: KioskWorkPackage["kind"], id: number) {
-  return staffRequest<KioskWorkPackage>(stationPath(token, "work-package/"), {
+  return operatorRequest<KioskWorkPackage>(stationPath(token, "work-package/"), {
     method: "POST", headers: leaseHeaders(lease), body: JSON.stringify({ kind, id }),
   });
 }
 
 export function prepareEvidence(token: string, lease: string, body: object) {
-  return staffRequest<UploadResponse>(stationPath(token, "evidence/prepare/"), {
+  return operatorRequest<UploadResponse>(stationPath(token, "evidence/prepare/"), {
     method: "POST", headers: leaseHeaders(lease), body: JSON.stringify(body),
   });
 }

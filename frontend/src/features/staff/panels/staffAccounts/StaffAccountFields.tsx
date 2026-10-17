@@ -1,15 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { Field, ErrorText } from "../../../../components/ui";
+import { Field } from "../../../../components/ui";
 import { STAFF_ROLE_NAMES, type StaffAccountDraft, type StaffRoleKey } from "../../../../lib/api/staffAccounts";
-import { collectionResults, getMachineTypes, machineKeys } from "../../machinesApi";
 import { RoleSetPicker } from "../RoleSetPicker";
 
-export function StaffAccountFields({ space, draft, onChange, roles, identity = false, pending = false }: {
-  space: number; draft: StaffAccountDraft; onChange: (draft: StaffAccountDraft) => void;
+export function StaffAccountFields({ machineTypes, draft, onChange, roles, identity = false, pending = false }: {
+  machineTypes: { id: number; name: string }[]; draft: StaffAccountDraft; onChange: (draft: StaffAccountDraft) => void;
   roles: StaffRoleKey[]; identity?: boolean; pending?: boolean;
 }) {
   const machineManager = draft.roles.includes("machine_manager");
-  const types = useQuery({ queryKey: machineKeys.types(space), queryFn: () => getMachineTypes(space), enabled: machineManager });
   const choices = Object.entries(STAFF_ROLE_NAMES).map(([slug, name], index) => ({
     id: index + 1, slug: slug as StaffRoleKey, name, exclusive: slug === "space_manager",
   }));
@@ -30,9 +27,7 @@ export function StaffAccountFields({ space, draft, onChange, roles, identity = f
     {machineManager ? <fieldset className="grid gap-2">
       <legend className="text-sm font-semibold">Assigned machine types</legend>
       <p className="text-sm text-muted">No selected types means no machines. A type includes machines added to it later.</p>
-      {types.isPending ? <p role="status">Loading machine types…</p> : null}
-      {types.error ? <ErrorText message={types.error.message} /> : null}
-      {collectionResults(types.data).map(type => <label key={type.id} className="flex min-h-11 items-center gap-3 text-sm">
+      {machineTypes.map(type => <label key={type.id} className="flex min-h-11 items-center gap-3 text-sm">
         <input type="checkbox" checked={draft.machine_type_ids.includes(type.id)} onChange={e => onChange({ ...draft,
           machine_type_ids: e.target.checked ? [...draft.machine_type_ids, type.id] : draft.machine_type_ids.filter(id => id !== type.id),
         })} />{type.name}

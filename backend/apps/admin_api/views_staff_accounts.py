@@ -21,6 +21,8 @@ from apps.admin_api.serializers_staff_accounts import (
     StaffAccountPolicySerializer, StaffAccountSerializer,
 )
 from apps.makerspaces.role_catalog import BUILTIN_ROLE_SLUGS
+from apps.machines.member_scope_services import assignable_machine_types
+from apps.admin_api.serializers_roles import RoleSerializer, role_queryset
 from apps.hardware_requests.exceptions import ErrorSerializer
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 409, 423, 429, 503)}
@@ -93,6 +95,8 @@ class StaffAccountPolicyView(StaffAccountBase):
         response = Response({"creatable_roles": [key for key in BUILTIN_ROLE_SLUGS
             if key != "member" and (key != "space_manager" or managers)],
             "can_manage_space_managers": managers,
+            "machine_types": list(assignable_machine_types(space).values("id", "name")),
+            "roles": RoleSerializer(role_queryset().filter(makerspace=space), many=True).data,
             "superadmin_access_enabled": space.superadmin_access_enabled,
             "email_onboarding_available": onboarding_available(space)})
         response["Cache-Control"] = "private, no-store"

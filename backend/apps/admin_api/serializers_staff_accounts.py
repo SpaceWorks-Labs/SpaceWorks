@@ -9,6 +9,7 @@ from apps.accounts.models import StaffInvitation, User
 from apps.accounts.staff_account_policy import require_authority, role_keys
 from apps.accounts.services_staff_invitations import onboarding_available
 from apps.makerspaces.models import MakerspaceMembership
+from apps.admin_api.serializers_roles import RoleSerializer
 
 
 class StaffAccountCreateSerializer(serializers.Serializer):
@@ -130,8 +131,15 @@ class StaffAccountInvitationResultSerializer(serializers.Serializer):
     invitation_sent = serializers.BooleanField()
 
 
+class StaffMachineTypeChoiceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
 class StaffAccountPolicySerializer(serializers.Serializer):
     creatable_roles = serializers.ListField(child=serializers.CharField())
     can_manage_space_managers = serializers.BooleanField()
     superadmin_access_enabled = serializers.BooleanField()
     email_onboarding_available = serializers.BooleanField()
+    machine_types = StaffMachineTypeChoiceSerializer(many=True)
+    roles = RoleSerializer(many=True)

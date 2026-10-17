@@ -186,6 +186,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/stats" element={<PublicStatsPage />} />
       <Route path="/m/:slug/now" element={<PresenceNowPage />} />
       <Route path="/m/:slug/kiosk/:stationToken" element={<KioskStationPage />} />
+      <Route path="/m/:slug/scanner" element={<ScannerPage />} />
       <Route path="/kiosk/:slug" element={<PublicDeskKioskPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/admin/*" element={<StaffApp />} />

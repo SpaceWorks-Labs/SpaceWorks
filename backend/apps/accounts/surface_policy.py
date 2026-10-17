@@ -6,6 +6,16 @@ from apps.accounts.delegated_routes import DELEGABLE, SHARED_ACCOUNT_UTILITY, ro
 
 
 PLATFORM_ROUTES = frozenset("""
+backup-recovery-state
+admin-module-groups admin-module-install admin-module-uninstall admin-space-pack-profiles
+admin-makerspace-provision-subdomain user-restrict user-restore-access
+admin-organization-list admin-organization-detail admin-organization-links
+admin-organization-link-delete admin-organization-memberships admin-organization-membership-detail
+admin-organization-invitations admin-organization-invitation-revoke
+tenant-migration-disclosure-closure tenant-migration-disclosure-approvals
+tenant-migration-disclosure-revoke tenant-migration-exports tenant-migration-export-detail
+tenant-migration-export-download-url tenant-migration-source-quiesce
+tenant-migration-source-archive tenant-migration-source-recover
 admin-makerspaces admin-makerspace admin-platform-dashboard admin-platform-email-settings
 admin-platform-payment-settings admin-platform-social-auth-settings admin-platform-problems
 admin-platform-backup-settings admin-deployment-backups admin-backup-destinations
@@ -110,6 +120,12 @@ def enforce_request(user, token, request):
             raise PermissionDenied("Platform account context is required.")
         return
     if classification == SHARED_ACCOUNT_UTILITY:
+        return
+    # This mixed-audience download revalidates its signed, user-bound grant and
+    # own-charge/VIEW_FINANCE authority in the view, including on every retry.
+    if name == "payment-document-download":
+        if invalid:
+            raise PermissionDenied("Invalid document scope.")
         return
     if classification is None and request.path.startswith("/api/v1/auth/"):
         raise PermissionDenied("Unknown account route.")

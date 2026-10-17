@@ -3,6 +3,7 @@
 from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime, time
 import hashlib
 import json
 
@@ -211,7 +212,7 @@ def mapped_raw_digest(rows_by_label):
                 value = row[model._meta.get_field(item.field_name).attname]
                 payload = json.dumps(
                     value,
-                    cls=DjangoJSONEncoder,
+                    cls=_RawDigestEncoder,
                     ensure_ascii=False,
                     sort_keys=True,
                     separators=(",", ":"),
@@ -224,6 +225,10 @@ def mapped_raw_digest(rows_by_label):
 
 class _RawDigestEncoder(DjangoJSONEncoder):
     def default(self, value):
+        # Distinct physical timestamps must have distinct reconstruction digests.
+        # Retain the existing encoding for values already exact to milliseconds.
+        if isinstance(value, (datetime, time)) and value.microsecond % 1000:
+            return value.isoformat()
         if isinstance(value, (bytes, bytearray, memoryview)):
             return {"__bytes__": bytes(value).hex()}
         return super().default(value)

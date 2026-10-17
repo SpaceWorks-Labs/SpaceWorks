@@ -33,7 +33,7 @@ def _render(document):
     from apps.operations.printable_pdf import document_paragraph
     from apps.makerspaces.theme_validation import HEX_COLOR
     from .document_pdf_assets import load_logo
-    from .document_snapshot import bill_status, local_date, DEFAULT_ACCENT
+    from .document_snapshot import bill_status, local_date, payment_navigation, DEFAULT_ACCENT
 
     issuer = document.issuer
     accent = issuer.get("accent_color", DEFAULT_ACCENT)
@@ -85,13 +85,14 @@ def _render(document):
         details.extend([text(f"Due {local_date(document, issuer.get('due_at'))}"), text("How to pay", bold=True)])
         if issuer.get("payment_instructions"):
             details.append(text(issuer["payment_instructions"]))
-        navigation = issuer.get("payment_navigation", "")
+        # Financial details stay frozen; navigation follows the current tenant.
+        from .models import Payment
+        payment = Payment.objects.select_related("makerspace", "via_makerspace").get(pk=document.payment_id)
+        navigation = payment_navigation(payment)
         if navigation:
             details.append(text(f"Sign in to view this charge: {navigation}", small))
         from .availability import online_payments_enabled_for
         # The URL is authenticated navigation, never a stored provider checkout bearer.
-        from .models import Payment
-        payment = Payment.objects.select_related("makerspace").get(pk=document.payment_id)
         if payment.status == "pending" and online_payments_enabled_for(payment):
             details.append(text("Pay online from your signed-in payments page.", small))
     else:

@@ -50,6 +50,10 @@ def require_action(user, action, makerspace_id):
 
 
 def require_user_access_mutation(actor, target):
+    if target.account_kind != "member":
+        raise PermissionDenied(
+            "Staff and platform accounts cannot use community access changes."
+        )
     hidden_memberships = target.makerspace_memberships.filter(
         makerspace__superadmin_access_enabled=False,
     ).values_list("makerspace_id", flat=True)

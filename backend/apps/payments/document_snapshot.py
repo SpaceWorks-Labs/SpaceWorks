@@ -1,4 +1,4 @@
-"""Immutable presentation inputs; only a bill's status is resolved live."""
+"""Immutable financial inputs, plus live bill status and payment navigation."""
 
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 

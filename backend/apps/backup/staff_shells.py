@@ -7,6 +7,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 import json
 
 from apps.makerspaces.staff_retirement import shell_values
+from .raw_projection import concrete_record_payload
 from .slice_merge_types import SliceMergeError
 
 SHELL_TIMESTAMP = datetime(1970, 1, 1, tzinfo=UTC)
@@ -40,10 +41,12 @@ def shell_fixture(preimage):
 
 
 def staff_fixture(model, record):
-    fields = {field.name: record[field.attname] for field in model._meta.concrete_fields
+    # Use the same lossless datetime conversion as raw reconstruction digests.
+    normalized = concrete_record_payload(model, record)
+    fields = {field.name: normalized[field.column] for field in model._meta.concrete_fields
               if not field.primary_key}
-    return json.loads(json.dumps({"model": model._meta.label_lower,
-        "pk": record[model._meta.pk.attname], "fields": fields}, cls=DjangoJSONEncoder))
+    return {"model": model._meta.label_lower,
+            "pk": normalized[model._meta.pk.column], "fields": fields}
 
 
 def project_staff_shells(cursor, marker):

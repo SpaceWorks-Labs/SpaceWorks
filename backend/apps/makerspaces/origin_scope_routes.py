@@ -14,6 +14,9 @@ REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 # QR under its selected header. An unknown payload adds no target; the view 404s.
 QR_PAYLOAD_ROUTES = {"qr-resolve", "qr-scan"}
 
+# Only these creation routes take their authoritative tenant from the body.
+BODY_SCOPED_ROUTES = {"qr-boxes", "qr-containers", "qr-tools"}
+
 MAKERSPACE_KWARG_ROUTES = {
     "website-origins": "makerspace_id",
     'admin-booking-machine-types': 'makerspace_id',
@@ -175,7 +178,13 @@ def _authoritative_route_targets(request, view=None):
         or url_name in MODEL_LOOKUPS or url_name in TARGET_SET_LOOKUPS
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
         or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES
-        or url_name in QR_PAYLOAD_ROUTES)
+        or url_name in QR_PAYLOAD_ROUTES or url_name in BODY_SCOPED_ROUTES)
+    if url_name in BODY_SCOPED_ROUTES:
+        body = getattr(request, "data", {})
+        target = _positive_int(body.get("makerspace_id")) if hasattr(body, "get") else None
+        invalid = target is None
+        if target is not None:
+            targets.add(target)
     if url_name in QR_PAYLOAD_ROUTES:
         resolved = _qr_payload_makerspace_id(request)
         if resolved is not None:

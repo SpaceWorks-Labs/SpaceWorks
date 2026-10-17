@@ -19,10 +19,7 @@ from apps.accounts.attestation import (
 )
 from apps.accounts.login_methods import password_login_enabled
 from apps.accounts.models import User
-from apps.accounts.models_devices import (
-    DeviceGrant,
-    NativeAppRegistration,
-)
+from apps.accounts.models_devices import DeviceGrant, NativeAppRegistration
 from apps.accounts.serializers import user_payload
 from apps.accounts.serializers_attestation import ATTESTATION_DESCRIPTION
 from apps.accounts.serializers_device import (
@@ -42,6 +39,7 @@ from apps.accounts.services_device_grants import (
     audit_grant_refusal, authority_for_login,
 )
 from apps.accounts.throttles import DeviceLoginThrottle, DeviceLoginUserThrottle
+from apps.accounts.session_issuance import lock_session_user
 from apps.hardware_requests.exceptions import ErrorSerializer
 
 
@@ -180,6 +178,7 @@ class DeviceLoginView(APIView):
         now = timezone.now()
         try:
             with transaction.atomic():
+                user = lock_session_user(user)
                 assert_grant_user_allowed(user)
                 registration = (
                     NativeAppRegistration.objects.select_for_update()

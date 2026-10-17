@@ -19,6 +19,7 @@ from apps.accounts.models_devices import (
 )
 from apps.accounts.services_tokens import blacklist_device_family
 from apps.accounts.tokens import SpaceWorksRefreshToken
+from apps.accounts.session_issuance import lock_session_user
 
 
 def mobile_grant_creation_enabled():
@@ -38,9 +39,11 @@ def token_fingerprint(raw):
     return hmac.new(settings.SECRET_KEY.encode(), raw.encode(), hashlib.sha256).hexdigest()
 
 
+@transaction.atomic
 def issue_device_token_pair(user, grant, *, family=None):
     from apps.backup.recovery import assert_token_issuance_allowed
 
+    user = lock_session_user(user)
     assert_token_issuance_allowed(user)
     family = family or DeviceRefreshFamily.objects.create(grant=grant, user=user)
     refresh = SpaceWorksRefreshToken.for_user(user, web_session=False)
@@ -72,7 +75,7 @@ def rotate_device_refresh(raw):
 
     replay = False
     result = None
-    # Match Stage A's User -> credential order. This lookup is only discovery;
+    # Match all issuers' User -> registration/credential order. This lookup is only discovery;
     # the joined token/family owner is checked again after obtaining the lock.
     owner_id = DeviceRefreshToken.objects.filter(jti=jti, token_fingerprint=token_fingerprint(raw)).values_list(
         "family__user_id", flat=True).first()

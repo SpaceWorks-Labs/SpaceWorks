@@ -11,6 +11,7 @@ from apps.accounts.services_device_tokens import issue_device_token_pair, assert
 from apps.accounts.services_social_login import assert_staff_authority
 from apps.accounts.services_device_grants import assert_grant_user_allowed, authority_for_login
 from apps.accounts.tokens import SpaceWorksRefreshToken
+from apps.accounts.session_issuance import lock_session_user
 
 
 def context(request, *, surface, staff_scope=None, device=None):
@@ -32,6 +33,8 @@ def device_context(challenge, verified, grant=None, *, login_method=None):
 
 def issue_session(user, data, request):
     from apps.accounts.serializers import user_payload
+    # The MFA service already holds User; keep it first for native issuance too.
+    user = lock_session_user(user)
     surface = data["surface"]
     if surface == "control":
         return {"mfa_version": str(user._mfa_verified_version)}

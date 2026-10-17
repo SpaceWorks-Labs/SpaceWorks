@@ -18,6 +18,7 @@ from apps.accounts.password_reset_crypto import credential_fingerprint
 from apps.accounts.services_mfa import active, consume_code, enable
 from apps.accounts.tokens import current_auth_generation
 from apps.accounts.services_device_grants import DeviceSuperadminNotSupported, audit_grant_refusal
+from apps.accounts.session_issuance import lock_session_user
 from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 
@@ -28,7 +29,7 @@ def digest(raw):
 @transaction.atomic
 def start(user, *, context):
     assert_available()
-    user = User.objects.select_for_update().get(pk=user.pk)
+    user = lock_session_user(user)
     active(user)
     row, _ = UserMFA.objects.get_or_create(user=user)
     raw = secrets.token_urlsafe(32)

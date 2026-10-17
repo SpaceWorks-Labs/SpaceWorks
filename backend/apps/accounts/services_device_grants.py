@@ -14,6 +14,7 @@ from apps.accounts.services_device_tokens import (
     assert_mobile_grant_creation_enabled, issue_device_token_pair,
 )
 from apps.accounts.services_staff_authority import has_local_staff_authority
+from apps.accounts.session_issuance import lock_session_user
 
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
         assert_mobile_grant_creation_enabled()
         now = timezone.now()
         with transaction.atomic():
+            user = lock_session_user(user)
             assert_grant_user_allowed(user)
             registration = (
                 NativeAppRegistration.objects.select_for_update()

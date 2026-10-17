@@ -1041,6 +1041,18 @@ charges all create the same immutable `Payment` subject rows. Reconciliation is 
 RBAC, reports/dashboard aggregates never flatten tenants, and offline/waive actions audit the actor and
 best-effort expire live online sessions.
 
+**Per-makerspace provider setup.** Space Managers select Stripe or Razorpay and provision
+their own credentials through the staff payment-settings API/panel (`MANAGE_MAKERSPACE`,
+scoped through RBAC, including `superadmin_access_enabled`). Provider/credential writes require
+recent server-owned session reauthentication. All credential inputs are write-only, including
+public keys; responses contain set booleans and exact per-space webhook URLs. Omission preserves
+a credential, `""` clears it, and secret setters encrypt it. Audits contain field names only.
+Provider selection is checked again under the checkout coordination settings-row lock and
+returns 409 `payment_provider_conflict` if the other vendor has a pending collection with a
+live hosted/native handle (the same handle/expiry rule as tenant-migration preflight).
+Razorpay rotation/clearing likewise refuses pending Razorpay collections. Bare debts do not
+block selection. This does not change charge tracking or the online-payment availability gates.
+
 **Refunds and loan charges (forward plan phase 6, 2026-09-04; owner decision 7 defaulted to "charging
 allowed, off by default").** A `Payment` row never changes for a refund: refunds are `payments.Refund`
 ledger lines on a `paid_online` Payment, the sum of PENDING+SUCCEEDED refunds never exceeds
@@ -1987,11 +1999,19 @@ continued changes return `deletion_retry` without a partial deletion.
 The account lock uses `no_key=True`, serializing obligation writers while allowing
 unrelated foreign-key references. Browser and device refresh rotation lock the User
 before token/family rows, so credential revocation cannot invert that lock order.
+All session issuers take User before registration/credential rows too, including
+password, first-device phone/social and MFA completion. Under that lock they recheck
+active/deletion state and the authenticated password/restoration snapshot before
+creating any grant, refresh family or browser session. Phone login discovers its
+challenge without locking, then takes User before locking and revalidating that exact
+challenge; failed attempts and consumption still commit before attestation/issuance.
 
 Membership revocation reuses `_revoke_locked(self_leave=True)`. Organization self-departure
 requires no governor authority, suspends only the subject's membership, preserves the
 last governor and audits `organization.member_departed`. Stage A revokes device grants,
 refresh families, browser sessions, outstanding/API tokens and reauthentication proofs;
+revokes and audits EventStaffGrant and BookingSpaceStaffGrant rows, including accounts
+whose only tenant participation is a resource grant (those tenants join discovery);
 deactivates push destinations; deletes MFA secrets/recovery codes; sets an unusable
 password and `is_active=False`; stamps `deletion_requested_at` and
 `deletion_purge_after` using `ACCOUNT_DELETION_RETENTION_DAYS` (default 90); and audits
@@ -2029,7 +2049,10 @@ and its `deleted_at` stamp commit first. The ordinary `limits.free_storage` quot
 and `quota_released_at` stamp then commit together in a separate transaction. Missing
 objects count as deleted. A storage failure or gate closure leaves durable pending work;
 tenant progress cannot finish until every quota stamp exists. Purge never substitutes a
-best-effort `release_public_image_on_commit` callback for this journal.
+best-effort `release_public_image_on_commit` callback for this journal. Storage
+reconciliation counts each journal's recorded size until `quota_released_at` is
+stamped, even after byte deletion. It holds Makerspace through its snapshot and
+total write, matching the scrub/quota-release lock order.
 
 Only after all tenants finish and every AppleRevocation is terminal are global identity
 fields cleared and `account_purged_at` set. The username becomes `deleted_<uuid hex>` and
@@ -4228,8 +4251,10 @@ namespace/key lock is still granted; a runtime that cannot retain the transactio
 Acquisition or transaction setup failure raises the typed `SourceMigrationGateUnavailable` before dispatch;
 HTTP returns 503 and tasks fail, so an unknown or unsupported runtime refuses the write. Release is one
 idempotent rollback/close per acquired reference, and nested boundaries retain independent shared references.
-`assert_write_allowed` therefore supports three shapes: inside an existing `atomic()` it takes the shared
-lock in that transaction, at a request/task boundary it uses the already-held dedicated lock transaction,
+`assert_write_allowed` therefore supports three shapes: at a request/task boundary it reuses the
+already-held dedicated lock transaction, INCLUDING inside nested application `atomic()` blocks (never
+reacquiring on another connection behind a queued exclusive migration lock); without a boundary,
+inside an existing `atomic()` it takes the shared lock in that transaction,
 and a direct non-atomic call takes a temporary dedicated lock transaction. External I/O inside an
 application lock-holding transaction stays banned; the separate lock-only transaction does not contain
 application writes or external I/O.
@@ -4883,6 +4908,8 @@ STOP is matchable takes `lock_whatsapp_sender(sender_key)` FIRST, before row loc
 unmapped STOP, probe claim, verified confirmation and blocked-row re-consent reset. The
 transaction-scoped PostgreSQL advisory lock covers tenants sharing a platform sender.
 This bounds exposure to one logical probe, even with concurrent deliveries or missing callbacks.
+Definitive provider non-acceptance releases a probing reservation so repaired credentials
+or a later delivery can probe again; ambiguous outcomes and confirmed/blocked rows never do.
 
 Only reviewed lifecycle event/audience variables enter delivery context. Contacts, free
 text, notes, remarks and public tokens are excluded; no recipient phone or message body
@@ -4919,8 +4946,13 @@ UPDATE with attempts < max_attempts and a fresh token/90-second lease. Completio
 fenced by that token, and acceptance never lowers observed webhook progress. Source-gate
 protection spans provider I/O using a dedicated boundary, not a long SQL transaction.
 
-WhatsApp sender locking precedes row locks in claim, callback confirmation, unmapped STOP
-and re-consent. Callback correlation uses the submitted phone hash and provider message ID
+Tenant mutations acquire the source gate FIRST (reusing any existing boundary), then the
+WhatsApp sender lock, then delivery/correlation rows; callback event rows precede delivery
+rows. Consent uses gate -> sender -> tenant -> User -> suppression/correlation rows;
+recovery and STOP consent annotations follow the same gate-before-sender order.
+Sender-only inbound protection requires no tenant gate. WhatsApp sender locking precedes
+row locks in claim, callback confirmation, unmapped STOP and re-consent. Callback correlation
+uses the submitted phone hash and provider message ID
 or echoed delivery ID, never the user's later phone. Alias confirmation is atomic with its
 mapping; phone-only confirmation requires no unmapped alias suppression. An ambiguous
 probe is never resubmitted, including after a worker crashes with an expired probe lease.
@@ -4938,6 +4970,9 @@ callbacks retry. Status writes hold the tenant source gate but ignore module swi
 sender-level STOP/alias protection needs no tenant gate and is never abandoned. Inbound
 START cannot lift suppression. 21610 suppresses provider_opt_out; invalid-number errors
 suppress permanent_failure. Template failures record template_rejected, never provider text.
+Twilio error protection and its server-owned inbox payload marker commit together BEFORE
+the gated status transaction. The hashed status recipient also protects early callbacks
+before delivery correlation. Status retries never replay that protection after re-consent.
 
 Both beat and run_scheduled_tasks run messaging-recovery every five minutes. Recovery
 bounds pending/sending age at seven days, enforces attempts_exhausted, expires waiting

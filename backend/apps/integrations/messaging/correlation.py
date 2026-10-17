@@ -36,6 +36,15 @@ def map_alias(sender_key, alias_hash, phone_hash):
         record(None, "messaging.alias_correlated", target=row, meta={"fields": ["phone_hash"]})
 
 
+def release_probe(delivery):
+    """Release only a definitively unsubmitted probe, under sender/delivery locks."""
+    rows = MessagingRecipientCorrelation.objects.filter(channel="whatsapp", sender_key=delivery.sender_key,
+        phone_hash=delivery.recipient_phone_hash, state="probing", probe_delivery=delivery)
+    if rows.delete()[0]:
+        record(None, "messaging.probe_released", makerspace=delivery.makerspace,
+               meta={"delivery_id": delivery.pk, "fields": ["probe_delivery"]})
+
+
 def confirm_probe(delivery, *, alias_hash="", phone_hash=""):
     addressed = delivery.recipient_phone_hash
     if not addressed or (phone_hash and phone_hash != addressed):

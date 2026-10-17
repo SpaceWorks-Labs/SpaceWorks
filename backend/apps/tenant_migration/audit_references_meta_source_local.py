@@ -16,6 +16,8 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("encryption.write_fence_opened", "operation_id"),
         # MessagingWebhookEvent is deployment-local replay state, dropped from tenant dumps.
         ("messaging.webhook_abandoned", "event_id"),
+        # MessagingDelivery is omitted runtime telemetry; keep only inert source provenance.
+        ("messaging.probe_released", "delivery_id"),
         ("payment.checkout_created", "subject_id"),
         ("payment.created", "subject_id"),
         ("payment.double_paid_refund_required", "event_id"),

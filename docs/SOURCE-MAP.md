@@ -35,6 +35,13 @@ delivery keeps `notifications/member_push.py` and its fenced lease helpers.
 `integrations/email.py` stamps connection provenance, `dispatch_delivery.py` retains
 provider IDs and `views_bounce.py` handles exact correlation and replay protection.
 
+Addressed template values share domain adapters without importing the optional inbox:
+`payments/notification_projections.py` owns audience-specific payment bags and local due
+dates; `machines/service_printing_projection.py` owns the kernel-to-printing projection
+(including capability quantity and printing status). Payment and printing notification
+adapters reuse these helpers; `integrations/messaging/sources.py` selects the audience
+and passes only reviewed scalar keys to the outbox projection.
+
 `machines/models_tracking.py`, `status_tracking.py` and `consumable_costs.py` own immutable
 status/cost facts. `service_manual_usage.py` contains typed manual logging behind the
 `service_consumable_pools.py` compatibility wrapper; `usage_attribution.py` validates

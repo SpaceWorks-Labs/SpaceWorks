@@ -144,6 +144,7 @@ def _attempt(request):
 
 def _depart(user, spaces, organizations, now):
     from apps.accounts.account_deletion_credentials import revoke
+    from apps.accounts.account_deletion_grants import revoke_resource_grants
     from apps.makerspaces.membership_admission_payments import close_admission
     from apps.makerspaces.membership_revocation import _revoke_locked
     from apps.organizations.services_governance import self_departure
@@ -161,6 +162,7 @@ def _depart(user, spaces, organizations, now):
         _revoke_locked(user, membership, by_id[membership.makerspace_id], "Account deletion", self_leave=True)
     for organization in organizations:
         self_departure(organization, user=user)
+    revoke_resource_grants(user, now)
     from apps.integrations.messaging.purge import archive_consents
     archive_consents(user, spaces)
     revoke(user, now)

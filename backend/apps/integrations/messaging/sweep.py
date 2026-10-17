@@ -21,35 +21,34 @@ logger = logging.getLogger(__name__)
 
 def _recover(row_id, now):
     snapshot = MessagingDelivery.objects.get(pk=row_id)
-    with transaction.atomic():
+    with tenant_write(snapshot.makerspace_id):
         if snapshot.channel == "whatsapp":
             lock_whatsapp_sender(snapshot.sender_key)
-        with tenant_write(snapshot.makerspace_id):
-            row = MessagingDelivery.objects.select_for_update().get(pk=row_id)
-            if row.status not in {"pending", "sending"}:
-                return
-            # Do not steal a live provider submission's lease.
-            if (row.status == "sending" and row.lease_until and row.lease_until >= now
-                and row.created_at >= now - timedelta(days=7)):
-                return
-            reason = ""
-            if row.created_at < now - timedelta(days=7):
-                reason = "stale"
-            elif row.attempts >= row.max_attempts:
-                reason = "attempts_exhausted"
-            correlation = MessagingRecipientCorrelation.objects.filter(channel="whatsapp", sender_key=row.sender_key,
-                phone_hash=row.recipient_phone_hash).first() if row.channel == "whatsapp" else None
-            if correlation and correlation.state != "confirmed" and (correlation.state == "blocked" or (
-                correlation.probe_started_at and correlation.probe_started_at <= now - timedelta(hours=72)
-            )):
-                row.status, row.skip_reason = "skipped", "identity_unconfirmed"
-            elif reason:
-                observe(row, "failed", at=now, error_code=reason)
-            else:
-                transaction.on_commit(lambda: schedule_delivery(row.pk), robust=True)
-                return True
-            row.lease_token = row.lease_until = None
-            save_outcome(row, "messaging.delivery_recovered")
+        row = MessagingDelivery.objects.select_for_update().get(pk=row_id)
+        if row.status not in {"pending", "sending"}:
+            return
+        # Do not steal a live provider submission's lease.
+        if (row.status == "sending" and row.lease_until and row.lease_until >= now
+            and row.created_at >= now - timedelta(days=7)):
+            return
+        reason = ""
+        if row.created_at < now - timedelta(days=7):
+            reason = "stale"
+        elif row.attempts >= row.max_attempts:
+            reason = "attempts_exhausted"
+        correlation = MessagingRecipientCorrelation.objects.filter(channel="whatsapp", sender_key=row.sender_key,
+            phone_hash=row.recipient_phone_hash).first() if row.channel == "whatsapp" else None
+        if correlation and correlation.state != "confirmed" and (correlation.state == "blocked" or (
+            correlation.probe_started_at and correlation.probe_started_at <= now - timedelta(hours=72)
+        )):
+            row.status, row.skip_reason = "skipped", "identity_unconfirmed"
+        elif reason:
+            observe(row, "failed", at=now, error_code=reason)
+        else:
+            transaction.on_commit(lambda: schedule_delivery(row.pk), robust=True)
+            return True
+        row.lease_token = row.lease_until = None
+        save_outcome(row, "messaging.delivery_recovered")
 
 
 def _retention(space_id, now):

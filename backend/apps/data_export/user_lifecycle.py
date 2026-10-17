@@ -23,6 +23,8 @@ def write_user_lifecycle(root, users):
                 name: value.isoformat() if value else "" for name, value in values.items()
             }
     if records:
-        (root / LIFECYCLE_PATH).write_text(
+        path = root / LIFECYCLE_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
             json.dumps(records, sort_keys=True, separators=(",", ":")), encoding="utf-8",
         )

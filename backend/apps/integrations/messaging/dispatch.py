@@ -33,7 +33,7 @@ def enqueue_addressed_messages(makerspace, *, feature, event, event_key, payload
             if (feature, event, audience) not in PROJECTION_KEYS:
                 continue
             candidate = MessagingDelivery(makerspace=makerspace, user_id=user_id,
-                source_type=source_type, source_id=source_id)
+                source_type=source_type, source_id=source_id, feature=feature, event=event, audience=audience)
             context = projection_context(candidate, payload)
             for channel in channels:
                 row, created = MessagingDelivery.objects.get_or_create(makerspace=makerspace,

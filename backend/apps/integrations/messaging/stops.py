@@ -96,6 +96,8 @@ def _append_stop_consent(event, space_id, user_id, phone):
     from .resolver import resolve_sender
 
     with tenant_write(space_id):
+        if event.channel == "whatsapp":
+            lock_whatsapp_sender(event.sender_key)
         user = User.objects.select_for_update().get(pk=user_id)
         if recipient_hash("phone", user.phone_e164) != phone:
             return
@@ -115,7 +117,4 @@ def _append_stop_consent(event, space_id, user_id, phone):
 def annotate_stop(pk):
     """Separate commit avoids inversion of SMS suppression and User consent locks."""
     event = MessagingWebhookEvent.objects.get(pk=pk)
-    with transaction.atomic():
-        if event.channel == "whatsapp":
-            lock_whatsapp_sender(event.sender_key)
-        append_stop_consents(event)
+    append_stop_consents(event)

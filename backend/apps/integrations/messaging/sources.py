@@ -111,6 +111,18 @@ def projection_context(delivery, payload):
     context["makerspace"] = delivery.makerspace
     source = current_source(delivery)
     if source is not None:
+        if delivery.source_type == "payment":
+            from apps.payments.notification_projections import payment_subject
+            refund_id = (payload.data or {}).get("refund_id")
+            refund = source.refunds.filter(pk=refund_id).first() if refund_id else None
+            context["subject"] = payment_subject(source, audience=delivery.audience, refund=refund)
+            return context
+        if delivery.source_type == "machine_service_request" and delivery.feature == "printing":
+            from apps.machines.service_printing_projection import printing_projection
+            from apps.integrations.email_templates_registry_helpers import bag
+            printed = printing_projection(source)
+            context["print_request"] = bag(id=printed.id, status=printed.status, quantity=printed.quantity)
+            return context
         name = {"hardware_request": "request", "machine_service_request": "print_request",
                 "booking": "booking", "registration": "registration", "event": "event",
                 "schedule": "schedule", "maintenance_log": "log", "machine": "machine",

@@ -39,6 +39,8 @@ def tenant_ids(user):
             result.update(rows.values_list(path, flat=True))
     # These global/personal tables are intentionally not subject-export datasets.
     for label, owner, tenant in (
+        ("events.EventStaffGrant", "user", "makerspace"),
+        ("bookings.BookingSpaceStaffGrant", "user", "makerspace"),
         ("integrations.MessagingConsent", "user", "makerspace"),
         ("integrations.MessagingDelivery", "user", "makerspace"),
         ("payments.Payment", "member", "via_makerspace"),

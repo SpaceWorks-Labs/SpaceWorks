@@ -1,6 +1,7 @@
 """Anonymous phone-login half of the OTP service."""
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts import audit_events
@@ -14,6 +15,7 @@ from apps.integrations.sms import sms_configured
 from .services_phone import (
     ChallengeCooldown,
     GENERIC_CONFIRM_ERROR,
+    MAX_FAILED_ATTEMPTS,
     SmsUnavailable,
     _confirm,
     _issue,
@@ -71,13 +73,22 @@ def confirm_login_challenge(raw_phone, code, *, delivery):
     phone_e164 = normalize_or_none(raw_phone)
     if phone_e164 is None:
         raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
+    candidates = PhoneVerificationChallenge.objects.filter(
+        purpose=PhoneChallengePurpose.LOGIN,
+        attestation_challenge__isnull=(delivery == "web"),
+    )
+    # Discovery only. Revalidate this exact challenge under User -> challenge
+    # locks, the same order departure uses when consuming outstanding proofs.
+    candidate = candidates.filter(
+        phone_e164=phone_e164, consumed_at__isnull=True,
+        failed_attempts__lt=MAX_FAILED_ATTEMPTS, expires_at__gt=timezone.now(),
+    ).order_by("-created_at").values("pk", "user_id").first()
     user = None
     with transaction.atomic():
+        owner = (User.objects.select_for_update(no_key=True).filter(pk=candidate["user_id"]).first()
+                 if candidate else None)
         challenge = _confirm(
-            PhoneVerificationChallenge.objects.filter(
-                purpose=PhoneChallengePurpose.LOGIN,
-                attestation_challenge__isnull=(delivery == "web"),
-            ),
+            candidates.filter(pk=candidate["pk"], user=owner) if owner else candidates.none(),
             code,
             phone_e164,
             on_failure=lambda row: audit_events.record_auth_event(
@@ -87,18 +98,11 @@ def confirm_login_challenge(raw_phone, code, *, delivery):
             ),
         )
         if challenge is not None:
-            user = (
-                User.objects.select_for_update()
-                .filter(
-                    pk=challenge.user_id,
-                    phone_e164=phone_e164,
-                    phone_verified_at__isnull=False,
-                    is_tenant_dump_stub=False,
-                    is_active=True,
-                    access_status=User.AccessStatus.ACTIVE,
-                )
-                .first()
-            )
+            if (owner.phone_e164 == phone_e164 and owner.phone_verified_at is not None
+                    and not owner.is_tenant_dump_stub and owner.is_active
+                    and owner.deletion_requested_at is None
+                    and owner.access_status == User.AccessStatus.ACTIVE):
+                user = owner
             if user is None:
                 audit_events.record_auth_event(
                     challenge.user, "auth.phone_login_failed",

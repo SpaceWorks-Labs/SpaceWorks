@@ -59,6 +59,7 @@ def twilio_payload(params, kind):
     billed = int(segments) if len(segments) <= 5 and segments.isascii() and segments.isdigit() and 0 <= int(segments) <= 32767 else None
     return f"{message_id}:{status}", {"message_id": message_id, "status": status,
         "error_code": code(params.get("ErrorCode")), "billed_segments": billed,
+        "phone_hash": phone_hash(params.get("To")),
         "timestamp": timestamp(params.get("Timestamp") or params.get("DateSent"))}
 
 

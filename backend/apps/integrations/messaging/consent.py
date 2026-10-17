@@ -1,5 +1,4 @@
 """Explicit per-tenant consent, serialized with phone changes and account deletion."""
-from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException, NotFound
 
@@ -74,12 +73,11 @@ def grant_consent(*, user, makerspace_id, channel, action, source="member_settin
     raise error
 
 
-@transaction.atomic
 def _grant(user, space, channel, action, source, sender):
-    if sender and channel == "whatsapp":
-        lock_whatsapp_sender(sender.sender_key)
-    # Lock order: sender advisory lock, source gate, tenant, User, suppression rows.
+    # Lock order: source gate, sender advisory lock, tenant, User, suppression rows.
     with tenant_write(space.pk):
+        if sender and channel == "whatsapp":
+            lock_whatsapp_sender(sender.sender_key)
         space = Makerspace.objects.select_for_update().get(pk=space.pk)
         user = User.objects.select_for_update().get(pk=user.pk)
         member_space(user, space.pk)

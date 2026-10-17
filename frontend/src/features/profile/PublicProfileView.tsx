@@ -15,7 +15,7 @@ const TIMELINE_KINDS: TimelineKind[] = ["experience", "education", "volunteering
  */
 export function profileTabs(profile: PublicProfile, owner: boolean): Tab[] {
   const tabs: Tab[] = [{ key: "profile", label: "Profile" }];
-  if (profile.show_events) tabs.push({ key: "activities", label: "Activities" });
+  if (profile.show_events || profile.show_speaking) tabs.push({ key: "activities", label: "Activities" });
   if (profile.show_projects || owner) tabs.push({ key: "projects", label: "Projects" });
   for (const kind of TIMELINE_KINDS) {
     if (owner || profile.timeline.some(entry => entry.kind === kind)) tabs.push({ key: kind, label: TIMELINE_COPY[kind].title });

@@ -137,6 +137,7 @@ class PersonalSelectionView(APIView):
         return self.response(contract_space(request.user, makerspace_id), request.user)
 
     @extend_schema(tags=["Personal notification contract"], request=PreferencesSerializer,
+                   description="Replace selections for supplied categories only. Omitted categories retain saved choices or product defaults.",
                    responses={200: PreferencesSerializer, **errors(400, 401, 403, 404, 423, 503)})
     def put(self, request, makerspace_id):
         space = contract_space(request.user, makerspace_id)
@@ -148,10 +149,11 @@ class PersonalSelectionView(APIView):
             if set(preference["channels"]) - set(available_channels(space, preference["category"])):
                 raise ValidationError({"channels": "Choose channels enabled by this makerspace for the category."})
         with tenant_write(space.pk), transaction.atomic():
-            # Complete replacement; omitted categories resume their documented defaults.
-            policy_rows(NotificationPreference, space).filter(user=request.user).delete()
+            # Replace supplied categories only; absence is neither opt-out nor reset.
             for preference in preferences:
-                NotificationPreference.objects.create(makerspace=space, user=request.user, **preference)
+                policy_rows(NotificationPreference, space).update_or_create(
+                    makerspace=space, user=request.user, category=preference["category"],
+                    defaults={key: preference[key] for key in ("channels", "email_fallback")})
             audit.record(request.user, "notification.channel_preferences_updated", makerspace=space,
                          target=space, meta={"categories": [p["category"] for p in preferences]})
         return self.response(space, request.user)

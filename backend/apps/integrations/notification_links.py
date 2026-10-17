@@ -11,6 +11,14 @@ def local_link(space, kind, tail=""):
     return path + (f"?{url.query}" if url.query else "")
 
 
+def payment_link(space, *, external=False):
+    """Ledger navigation survives archival; live spaces retain their canonical domain."""
+    from apps.makerspaces.platform import member_payment_return_url
+
+    url = member_payment_return_url(space)
+    return url if external else urlsplit(url).path
+
+
 def external_links(space, rendered):
     from apps.notifications.inbox import safe_link
     from django.utils.html import escape
@@ -25,7 +33,8 @@ def external_links(space, rendered):
         owned = link.startswith(("/admin/", "/member/", "/items/")) or link in {"/admin", "/member"}
     if owned:
         kind, _, tail = link[1:].partition("/")
-        value["link"] = public_url(space, kind, tail)
+        value["link"] = (payment_link(space, external=True) if link == "/member/archived"
+                         else public_url(space, kind, tail))
         if not tail:
             value["link"] = value["link"].rstrip("/")
         # link is inbox metadata; outbound transports only consume body fields.

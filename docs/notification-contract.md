@@ -65,7 +65,7 @@ The views still enforce tenant/account standing and ownership.
 | POST | `/personal/challenges/{challenge_id}/verify` | Optional opaque provider code/state; provider verifies independently | Endpoint |
 | DELETE | `/personal/endpoints/{id}` | â€” | revoked=true |
 | GET | `/personal/preferences` | â€” | preferences: Selection[] |
-| PUT | `/personal/preferences` | preferences: Selection[] (complete replacement) | preferences: Selection[] |
+| PUT | `/personal/preferences` | preferences: Selection[] (replace supplied categories) | preferences: Selection[] |
 | GET | `/personal/deliveries?page=` | â€” | count, next, previous, results: Delivery[] |
 | POST | `/channels-test` | channel and exactly one of endpoint_id/room_id | accepted, provider_id, retryable, error_code, sanitized_error |
 
@@ -94,8 +94,14 @@ Selection = category, channels[] and email_fallback, plus read-only available_ch
 in responses. The tenant's enabled choices are exposed to personal clients; selecting
 a disabled channel is rejected. Duplicate categories/channels and
 unknown fields are rejected. Legacy email unsubscribes still defeat optional email fallback.
+PUT replaces each supplied category's selection, including an explicit empty channels list.
+Categories absent from the request keep their existing rows; if no row exists, they keep
+resolving product defaults. Clients submit only edited, available categories, so saving
+another category never turns a disabled module into a durable opt-out.
 Manager defaults are Telegram when personal Telegram is enabled and verified; otherwise
 email. Members default email plus in-app. Availability gates still apply.
+Presence defaults to in-app/native push with no email fallback for every audience, before
+any expiry or preference write. Explicit personal selections still win.
 Delivery = id, envelope_id, channel, state, attempt_count, next_attempt_at, last_error,
 retryable, event, feature, created_at, updated_at. All list endpoints use the standard
 page size 24 and return count, next, previous and results.
@@ -258,8 +264,8 @@ Verified against the merged Phase 3 wiring tree (`3fd2c82e`) on 2026-10-17:
   account email is unverified; the shared resolver has not adopted `proven_address`. A different
   contact mailbox is not a personal endpoint. `source_ready` conservatively refuses affected owner
   intents when an email mute would otherwise leak through; selected chat can be suppressed too.
-- Presence expiry is catalogued with default in-app/push, but `NotificationFeature` omits presence
-  from the personal editor and staff room-rule options. Room live-source enforcement covers equipment;
+- Presence expiry is a personal category with default in-app/native push and no email fallback.
+  It has no staff-room delivery. Room live-source enforcement covers equipment;
   other converted room summaries retain legacy retry semantics. Scheduled-report legacy status is not
   provider acknowledgement. Revoked memberships still refuse application-owner personal notices.
 - Event campaign channel tasks still have no periodic lost-task resume; legacy campaign workers own

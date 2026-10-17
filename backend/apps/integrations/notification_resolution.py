@@ -53,6 +53,13 @@ def eligible(envelope):
         return False
     if not source_eligible(envelope):
         return False
+    if envelope.audience == "requester" and not mandatory_email(envelope.stream, envelope.event):
+        from .destinations import NotificationScope
+        from .recipients import has_selection, requester_selected
+        scope = NotificationScope.from_dict(envelope.scope)
+        if (has_selection(space, envelope.feature, envelope.event, scope)
+                and not requester_selected(space, envelope.feature, envelope.event, scope)):
+            return False
     from .recipients import feature_available
     if not custody and not mandatory_email(envelope.stream, envelope.event) and not feature_available(
         space, envelope.feature, source_kind=envelope.source_kind,
@@ -68,6 +75,9 @@ def eligible(envelope):
 
 
 def email_eligible(envelope):
+    from .notification_direct_mail import reserved
+    if reserved(envelope):
+        return False
     from apps.hardware_requests.notifications_p2_email import proven_address
     if EQUIPMENT_EMAIL_POLICY(envelope) is False:
         return False
@@ -101,20 +111,28 @@ def legacy_staff_email_allowed(envelope):
             envelope.event, NotificationScope.from_dict(envelope.scope)))
 
 
-def endpoint_eligible(endpoint, envelope):
+def endpoint_current(endpoint):
+    """Effective provider proof, shared by delivery and the connection API."""
     if endpoint is None:
         return False
-    endpoint.refresh_from_db()
     config = endpoint.configuration
-    config.refresh_from_db()
-    return bool(endpoint.user_id == envelope.recipient_id
-                and endpoint.makerspace_id == envelope.makerspace_id
+    return bool(endpoint.makerspace_id == config.makerspace_id
+                and endpoint.channel == config.channel
                 and endpoint.verification_state == "verified" and endpoint.verified_at
                 and endpoint.consented_at and endpoint.revoked_at is None
                 and config.enabled and config.personal_enabled
                 and endpoint.provider == config.provider
                 and endpoint.integration_generation == config.generation
                 and endpoint.integration_identity == config.integration_identity)
+
+
+def endpoint_eligible(endpoint, envelope):
+    if endpoint is None:
+        return False
+    endpoint.refresh_from_db()
+    endpoint.configuration.refresh_from_db()
+    return bool(endpoint.user_id == envelope.recipient_id
+                and endpoint.makerspace_id == envelope.makerspace_id and endpoint_current(endpoint))
 
 
 def selected_policy(envelope):

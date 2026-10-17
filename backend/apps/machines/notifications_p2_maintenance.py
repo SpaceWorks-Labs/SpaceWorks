@@ -67,6 +67,9 @@ def notify(instance, event_name, *, log_id=None, sync=False, due_reason=""):
     rendered = render(space, "maintenance", "staff", event_name, context, machine_type=machine.machine_type)
     if due_reason:
         rendered["text_body"] = due_reason + "\n\n" + rendered["text_body"]
+        from django.utils.html import escape
+        if rendered.get("html_body"):
+            rendered["html_body"] = f"<p>{escape(due_reason)}</p>" + rendered["html_body"]
     return fanout(space=space, feature="maintenance", stream="maintenance", event=event_name,
         kind=KIND, source=instance.pk, version=version(instance), subject=instance,
         staff=content(rendered), scope=NotificationScope(machine=machine),

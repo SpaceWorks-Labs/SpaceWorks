@@ -53,7 +53,7 @@ def bookings_delete(makerspace, cursor):
     # Summaries can reference other domains: remove booking entries, then let
     # shared digest delivery rebuild the survivors; do not delete foreign mail.
     rbac.scope_notification_policy(EmailLog.objects.all(), makerspace_id=makerspace.pk).filter(
-        source_kind__in=["booking_broadcast", "bookings.booking", "bookings.owner_mailbox"]).delete()
+        source_kind__in=["booking_broadcast", "bookings.booking", "bookings.owner_mailbox", "bookings.guest_mailbox"]).delete()
     campaigns, campaign_labels = _delete(BookingBroadcast.objects.filter(makerspace=makerspace))
     grants, grant_labels = _delete(BookingSpaceStaffGrant.objects.filter(makerspace=makerspace))
     invites, invite_labels = _delete(BookingSpaceStaffGrantInvite.objects.filter(makerspace=makerspace))

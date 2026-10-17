@@ -25,9 +25,9 @@ export type ChannelWrite = Partial<Pick<Channel, "enabled" | "room_enabled" | "p
 
 export type Endpoint = { id: number; channel: ChannelKey; provider: ProviderKey; integration_generation: number;
   verification_state: "verified" | "revoked"; verified_at: string | null; consented_at: string | null;
-  consent_version: string; revoked_at: string | null; created_at: string };
+  consent_version: string; revoked_at: string | null; created_at: string; effective_valid: boolean };
 export type ChallengeStart = { channel: ChannelKey; consent: true; consent_version: string; phone_number?: string };
-export type Challenge = { challenge_id: number; expires_at: string; connect_url?: string; instructions?: string };
+export type Challenge = { challenge_id: number; expires_at: string; connect_url?: string; instructions?: string; oauth_state?: string };
 export type Selection = { category: string; channels: ChannelKey[]; email_fallback: boolean; available_channels?: ChannelKey[] };
 export type Delivery = { id: number; envelope_id: number; channel: ChannelKey; state: "retrying" | "accepted" | "sent"
   | "delivered" | "read" | "failed" | "skipped"; attempt_count: number; next_attempt_at: string | null; last_error: string;
@@ -83,6 +83,12 @@ export function useTestChannel(makerspaceId: number) {
 export function useEndpoints(makerspaceId: number, member = false) {
   return useQuery({ queryKey: channelKeys.endpoints(makerspaceId),
     queryFn: () => sender(member)<Page<Endpoint>>(`${base(makerspaceId)}/personal/endpoints`) });
+}
+
+export function useOAuthReturn(makerspaceId: number, state: string | null, member = false) {
+  return useQuery({ queryKey: [...channelKeys.personal(makerspaceId), "oauth-return", state], enabled: !!state, retry: false,
+    queryFn: () => sender(member)<{ oauth_return: Pick<Challenge, "challenge_id" | "expires_at"> }>(
+      `${base(makerspaceId)}/personal/endpoints?oauth_state=${encodeURIComponent(state ?? "")}`) });
 }
 
 export function useStartChallenge(makerspaceId: number, member = false) {

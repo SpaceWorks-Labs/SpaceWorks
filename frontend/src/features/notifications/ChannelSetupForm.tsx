@@ -5,6 +5,7 @@ import { CHANNEL_LABELS, defaultChannel, providerSpec, type ChannelSpec } from "
 import { useSaveChannel, type Channel, type ChannelWrite, type ProviderKey, type Quotas, type WhatsAppTemplate } from "./channelsApi";
 import { WhatsAppTemplatesEditor } from "./WhatsAppTemplatesEditor";
 import { SlackInstallation } from "./SlackInstallation";
+import { WhatsAppApprovalRefresh } from "./WhatsAppApprovalRefresh";
 
 type Props = { makerspaceId: number; spec: ChannelSpec; row?: Channel; moduleInstalled: boolean };
 
@@ -97,6 +98,9 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
       </Field>)}
     </div> : null}
     {spec.key === "whatsapp" ? <WhatsAppTemplatesEditor templates={draft.templates} disabled={save.isPending} onChange={templates => set({ templates })} /> : null}
+    {spec.key === "whatsapp" && draft.provider === "twilio" ? <WhatsAppApprovalRefresh makerspaceId={makerspaceId}
+      disabled={save.isPending || !row?.credentials_set || rotates || !sameTemplates(draft.templates, initial.templates)}
+      onRefresh={templates => set({ templates })} /> : null}
     {rotates && row ? <Callout size="inline" tone="warn" lead="Saving reconnects this channel."
       body={`Changing the provider, ${provider.identityLabel?.toLowerCase() ?? "identity"} or credentials disconnects everyone's personal ${CHANNEL_LABELS[spec.key]} connection. They will need to connect again.`} /> : null}
     {problem ? <p role="alert" className="text-sm text-danger">{problem}</p> : null}

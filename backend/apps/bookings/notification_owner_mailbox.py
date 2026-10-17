@@ -97,6 +97,8 @@ def prepare(log):
             envelope.feature, envelope.stream, envelope.event, "requester"):
         return False
     content = render(envelope)
+    from apps.integrations.notification_links import external_links
+    content = external_links(envelope.makerspace, content)
     set_content(log, to_email=log.to_email, subject=content["subject"], text_body=content["text"],
                 html_body=content.get("html", ""))
     return True

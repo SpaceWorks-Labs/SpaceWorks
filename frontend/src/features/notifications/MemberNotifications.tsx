@@ -10,8 +10,8 @@ export function MemberNotifications({ makerspaceId, features }: { makerspaceId: 
   const inbox = features.includes("notifications.member_inbox");
   useLiveUpdates(inbox);
   const [search, setSearch] = useSearchParams();
-  // A provider sign-in (Slack, Discord, Mattermost) returns with ?notify_challenge=… to finish connecting.
-  const section = search.get("section") || (search.has("notify_challenge") ? "channels" : "notices");
+  // Providers return the signed state; the settings screen retrieves its server-issued challenge.
+  const section = search.has("state") ? "channels" : search.get("section") || "notices";
   const setSection = (value: string) => { const next = new URLSearchParams(search); next.set("section", value); setSearch(next); };
   const tabs = [{ key: "notices", label: "Notices", href: "#notices" }, ...(inbox && features.includes("membership.broadcasts") ? [{ key: "announcements", label: "Announcements", href: "#announcements" }] : []),
     { key: "channels", label: "Channels", href: "#channels" },

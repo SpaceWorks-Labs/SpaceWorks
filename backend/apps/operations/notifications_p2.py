@@ -125,7 +125,8 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
             dispatch_channel(makerspace=space, channel=channel, feature=feature,
                 event=event, text_body=room_text, scope=scope,
                 payload={"p2_intent": key, "source_kind": source_kind,
-                         "source_id": str(row.pk), "revision": revision})
+                         "source_id": str(row.pk), "revision": revision,
+                         "context": context, "scope": scope.as_dict()})
     return NotificationResult(bool(envelopes))
 
 
@@ -148,6 +149,9 @@ def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner
         return None
 
     def send():
+        from apps.integrations.notification_resolution import eligible
+        if envelope is not None and not eligible(envelope):
+            return
         # Admission can finish later in the same transaction. Resolve again
         # after commit so a now-eligible owner envelope owns the email leg.
         if envelope is not None and any(target.channel == "email" for target in resolve(envelope)):
@@ -157,7 +161,9 @@ def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner
         dispatch_email(makerspace=space, to_email=to_email, subject=subject, text_body=text,
             stream=stream, event=event, audience=audience, feature=feature, sync=sync,
             persist_body=persist_body, recipient_id=owner.pk if owner and address_owner else None,
-            source_metadata={"p2_direct": key})
+            source_kind="notification.direct" if envelope else "",
+            source_id=envelope.pk if envelope else None,
+            source_metadata={"p2_direct": key, "address_owner": address_owner})
 
     transaction.on_commit(send, robust=True)
     return key

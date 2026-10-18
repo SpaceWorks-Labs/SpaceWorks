@@ -37,9 +37,6 @@ for argument in "$@"; do
   esac
 done
 
-OPS_DIR="${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}"
-POINTER="$OPS_DIR/database-pointer.env"
-RECORD="$OPS_DIR/compose-topology.json"
 if [[ "$TOPOLOGY" == "bundled" ]]; then
   STATIC_ENV="${SPACEWORKS_STATIC_ENV_FILE:-$ROOT/.env}"
   COMPOSE_FILES=("$ROOT/docker-compose.prod.yml")
@@ -47,6 +44,10 @@ else
   STATIC_ENV="${SPACEWORKS_STATIC_ENV_FILE:-/etc/spaceworks/cloud.env}"
   COMPOSE_FILES=("$ROOT/docker-compose.cloud.yml")
 fi
+source "$WRAPPER_SCRIPT_DIR/installer/host-paths.sh"
+resolve_host_paths || exit $?
+POINTER="$OPS_DIR/database-pointer.env"
+RECORD="$OPS_DIR/compose-topology.json"
 LAYER="${SPACEWORKS_COMPOSE_LAYER:-}"
 # The Compose layer chosen at setup persists here across updates.
 if [[ -z "$LAYER" && -f "$ROOT/.spaceworks-layer" ]]; then
@@ -85,6 +86,11 @@ if [[ "$LAYER" != "none" ]]; then
   RECORD="$OPS_DIR/compose-topology-$LAYER.json"
 fi
 if [[ "$TOPOLOGY" == bundled ]]; then
+  saved_profiles="$(deployment_value COMPOSE_PROFILES)"
+  if [[ -n "$saved_profiles" ]]; then
+    [[ "$saved_profiles" =~ ^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$ ]] || { echo 'Invalid saved Compose profiles.' >&2; exit 64; }
+    export COMPOSE_PROFILES="$saved_profiles${COMPOSE_PROFILES:+,$COMPOSE_PROFILES}"
+  fi
   append_deployment_layers "$LAYER" "$ROOT"
   if [[ "$DEPLOYMENT_SUFFIX" == *-control-tunnel* ]]; then
     require_tunnel_engine || exit 64

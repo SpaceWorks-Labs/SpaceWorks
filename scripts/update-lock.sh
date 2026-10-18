@@ -4,6 +4,9 @@
 
 acquire_update_lock() {
   local now owner_pid="" owner_started="" age="unknown"
+  if [[ "$(uname -s)" == Linux ]] && ! command -v flock >/dev/null 2>&1; then
+    die 'Linux updates require flock from util-linux before any host changes.'
+  fi
   now="$(date +%s)"
   if ! mkdir "$LOCK_DIR" 2>/dev/null; then
     if [[ -f "$LOCK_DIR/owner" ]]; then
@@ -33,12 +36,18 @@ acquire_update_lock() {
   printf '%s %s\n' "$$" "$now" > "$LOCK_DIR/owner"
   UPDATE_LOCK_HELD=1
 
+  # Pre-H1 has no shared authority directory yet. Its transition verifies the
+  # old release/DB and makes the backup before provisioning that root-owned lock.
+  if [[ "${SPACEWORKS_LEGACY_LOCK_ONLY:-0}" == 1 && ! -f "$OPS_DIR/operation.lock" ]]; then
+    return 0
+  fi
   mkdir -p "$OPS_DIR" || die "Cannot access $OPS_DIR. Run bash scripts/init-host-orchestration.sh as the install owner, then rerun the update."
   if command -v flock >/dev/null 2>&1; then
     [[ ! -e "$OPS_DIR/operation.lock" || -w "$OPS_DIR/operation.lock" ]] \
       || die "The host operation lock is not writable. Run bash scripts/init-host-orchestration.sh as the install owner, then retry."
     exec 8>"$OPS_DIR/operation.lock"
     flock -n 8 || die "Another backup, restore, verification, or update is running."
+    SPACEWORKS_OPERATION_LOCK_HELD=1
   else
     say "Host flock is unavailable; using the PID/timestamp update lock. Dead owners are recovered automatically; use --override-lock only after verifying no update is active."
   fi

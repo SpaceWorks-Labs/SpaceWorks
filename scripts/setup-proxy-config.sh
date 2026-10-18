@@ -23,7 +23,7 @@ server {
         access_log off;
         error_log /dev/null;
         proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
@@ -36,7 +36,7 @@ server {
         proxy_buffering off;
         proxy_cache off;
         proxy_read_timeout 3600s;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
@@ -47,7 +47,7 @@ server {
         client_max_body_size 20g;
         proxy_read_timeout 3600s;
         proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
@@ -55,7 +55,7 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
@@ -70,13 +70,19 @@ server {
     server_name files.@DOMAIN@;
     ssl_certificate /etc/letsencrypt/live/@DOMAIN@/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/@DOMAIN@/privkey.pem;
-    client_max_body_size 128m;
+    # 20 GiB archive ceiling plus POST multipart framing; app/store policy remains authoritative.
+    client_max_body_size 20481m;
+    client_body_timeout 3600s;
 
     location / {
         proxy_pass http://127.0.0.1:9000;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_send_timeout 3600s;
+        proxy_read_timeout 3600s;
         proxy_request_buffering off;
         proxy_buffering off;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;

@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # Privileged host supervisor for an app-recorded Phase 5A restore intent.
+set +x
 set -euo pipefail
+umask 077
 
 RESTORE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${SPACEWORKS_UPDATE_INSTALL_DIR:-$(cd "$RESTORE_SCRIPT_DIR/.." && pwd)}"
 cd "$ROOT"
 export SPACEWORKS_UPDATE_INSTALL_DIR="$ROOT"
+source "$RESTORE_SCRIPT_DIR/installer/restore-owner.sh"
+require_restore_root "$RESTORE_SCRIPT_DIR/restore.sh" "$@"
 
 COMPOSE=("$RESTORE_SCRIPT_DIR/spaceworks-compose.sh" bundled)
 source "$RESTORE_SCRIPT_DIR/spaceworks-repository.sh"
 source "$RESTORE_SCRIPT_DIR/compose-deployment.sh"
 deployment_services
-OPS_DIR="${SPACEWORKS_OPS_HOST_DIR:-$(repository_env_value SPACEWORKS_OPS_HOST_DIR)}"
-OPS_DIR="${OPS_DIR:-/var/lib/spaceworks/ops}"
+source "$RESTORE_SCRIPT_DIR/installer/host-paths.sh"
+resolve_host_paths || exit $?
 RESTORE_ID="${1:-}"
 OPS_WORK_DIR="$OPS_DIR/work"
 IDENTITY_FILE="${BACKUP_AGE_IDENTITY_FILE:-$OPS_WORK_DIR/age-identity.txt}"
@@ -36,8 +40,10 @@ reprovision_grants() {
 }
 
 [[ $# == 1 ]] || die "Usage: scripts/restore.sh <restore-uuid>"
-[[ "$RESTORE_ID" =~ ^[0-9a-fA-F-]{36}$ ]] || die "Usage: scripts/restore.sh <restore-uuid>"
+[[ "$RESTORE_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || die "Usage: scripts/restore.sh <restore-uuid>"
+RESTORE_ID="$(printf '%s' "$RESTORE_ID" | tr '[:upper:]' '[:lower:]')"
 command -v docker >/dev/null 2>&1 || die "Docker is required."
+[[ "$(uname -s)" == Linux ]] || die 'Destructive restore requires Linux or a WSL2 Linux shell.'
 command -v flock >/dev/null 2>&1 || die "In-place restore must run under WSL2 (not native Git Bash/Windows). WSL2 supplies the Linux flock, AF_UNIX sockets, and root-owned-file trust semantics that fence destructive host orchestration; start Docker Desktop's WSL2 integration, open this install from a WSL2 shell, and rerun scripts/restore.sh there."
 [[ -d "$OPS_DIR" ]] || die "$OPS_DIR is missing; run setup on this host first."
 [[ -f "$IDENTITY_FILE" ]] || die "The age identity file is missing: $IDENTITY_FILE"
@@ -55,6 +61,8 @@ JOURNAL="$WORK/swap-journal.jsonl"
 PRE_DB="$WORK/pre-restore.dump"
 CONTROL_RECORD="$WORK/restore-control.json"
 DESTRUCTIVE_MARKER="$WORK/destructive-started"
+source "$RESTORE_SCRIPT_DIR/installer/restore-work.sh"
+validate_restore_workspace || die 'Restore workspace is not an owned canonical path.'
 mkdir -p "$BUNDLE"
 if [[ "$(id -u)" == "0" ]]; then
   chown -R 10001:10001 "$WORK"
@@ -84,22 +92,26 @@ cleanup() {
   set +e
   if [[ "$finished" == 0 ]]; then
     if [[ "$destructive" == 1 ]]; then
+      restart_allowed=0
       say "Restore failed after database replacement; rolling objects and database back."
       control stage "$RESTORE_ID" rolling_back >/dev/null 2>&1 || true
-      control rollback-objects "$RESTORE_ID" >/dev/null 2>&1 || true
+      objects_rolled_back=0
       rollback_grants_ready=0
       if ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-        'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
-        < "$PRE_DB" >/dev/null 2>&1 && reprovision_grants >/dev/null 2>&1; then
+        'pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
+        < "$PRE_DB" >/dev/null 2>&1 && reprovision_grants >/dev/null 2>&1 \
+        && prove_restore_database >/dev/null 2>&1; then
         rollback_grants_ready=1
+        control rollback-objects "$RESTORE_ID" >/dev/null 2>&1 && objects_rolled_back=1
       fi
-      if [[ "$rollback_grants_ready" == 1 ]]; then
+      if [[ "$rollback_grants_ready" == 1 && "$objects_rolled_back" == 1 ]]; then
         RESTORE_CONTROL_TAG="${MAKERSPACE_IMAGE_TAG:-}"
         control reconcile-journal "$RESTORE_ID" \
           --journal "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/swap-journal.jsonl" \
-          >/dev/null 2>&1 || true
-        control fail "$RESTORE_ID" --message "Privileged host restore failed; inspect $JOURNAL." \
-          >/dev/null 2>&1 || true
+          >/dev/null 2>&1 && control fail "$RESTORE_ID" \
+          --message "Privileged host restore failed; inspect the private operation journal." \
+          >/dev/null 2>&1 && restart_allowed=1
+        [[ "$restart_allowed" != 1 ]] || retain_rolled_back_restore || restart_allowed=0
       else
         say "Rollback database grants could not be reprovisioned; Django remains stopped."
         restart_allowed=0
@@ -120,8 +132,7 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   prior_metadata="$(control describe "$RESTORE_ID" 2>/dev/null | tail -n 1 || true)"
   prior_stage="$(printf '%s' "$prior_metadata" | sed -n 's/.*"stage": "\([a-z_]*\)".*/\1/p')"
   if [[ "$prior_stage" == "completed" || "$prior_stage" == "restored_quarantined" ]]; then
-    rm -f -- "$DESTRUCTIVE_MARKER"
-    finished=1
+    reconcile_completed_restore_work || die 'Completed restore cleanup needs private recovery.'
     say "A completed restore marker was reconciled; no rollback was required."
     exit 0
   fi
@@ -131,8 +142,9 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   "${COMPOSE[@]}" stop backend worker beat live >/dev/null
   backend_stopped=1
   workers_stopped=1
+  restart_allowed=0
   ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-    'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
+    'pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
     < "$PRE_DB"
   if ! reprovision_grants; then
     restart_allowed=0
@@ -144,6 +156,9 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   control rollback-objects "$RESTORE_ID" >/dev/null
   control fail "$RESTORE_ID" --message \
     "Interrupted destructive restore was rolled back from the durable host journal." >/dev/null
+  prove_restore_database
+  retain_rolled_back_restore || die 'Rolled-back work retained; terminal cleanup could not be proven.'
+  restart_allowed=1
   rm -f -- "$DESTRUCTIVE_MARKER"
   finished=1
   restart_backend
@@ -157,15 +172,19 @@ kind="$(printf '%s' "$metadata" | sed -n 's/.*"kind": "\([a-z_]*\)".*/\1/p')"
 requested_by="$(printf '%s' "$metadata" | sed -n 's/.*"requested_by": \([0-9]*\).*/\1/p')"
 [[ -n "$archive_id" && -n "$kind" && -n "$requested_by" ]] || die "Could not read restore metadata."
 
-backend_container="$(${COMPOSE[@]+"${COMPOSE[@]}"} ps -q "$APP_SERVICE")"
+backend_container="$(${COMPOSE[@]+"${COMPOSE[@]}"} ps -a -q "$APP_SERVICE")"
 image_id="$(docker inspect --format '{{.Image}}' "$backend_container")"
 oci_digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image_id" 2>/dev/null || true)"
+source "$RESTORE_SCRIPT_DIR/installer/capacity.sh"
+require_operation_capacity restore || die 'Insufficient measured capacity before archive export.'
 control export-archive "$RESTORE_ID" --output "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar.age" >/dev/null
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T "$APP_SERVICE" age -d \
+require_operation_capacity restore "$ARCHIVE" || die 'Insufficient capacity before archive decryption.'
+${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management age -d \
   -i "${IDENTITY_FILE/$OPS_DIR/\/var\/lib\/spaceworks\/ops}" \
   -o "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar" \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar.age"
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T "$APP_SERVICE" python - \
+require_operation_capacity restore "$ARCHIVE" "$PLAIN" || die 'Insufficient measured extraction/rollback capacity.'
+${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management python - \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar" \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/bundle" <<'PY'
 import pathlib
@@ -219,14 +238,14 @@ if [[ "$kind" == "rollback_in_place" ]]; then
   ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
     'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db"' && createdb -U "$POSTGRES_USER" '"$temp_db"
   ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-    'pg_restore --no-owner --no-acl -U "$POSTGRES_USER" -d '"$temp_db" \
+    'pg_restore --exit-on-error --no-owner --no-acl -U "$POSTGRES_USER" -d '"$temp_db" \
     < "$BUNDLE/database.dump"
   reprovision_grants "$temp_db"
   say "Computing every-table diff in one live snapshot; choose before the console countdown expires."
   decision="$(control diff-wait "$RESTORE_ID" --archive-database-name "$temp_db" | tail -n 1)"
   ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
     'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db" >/dev/null 2>&1 || true
-  [[ "$decision" != "abort" ]] || { finished=1; say "Restore aborted without destructive effect."; exit 0; }
+  [[ "$decision" != "abort" ]] || { finished=1; seal_terminal_restore_work aborted; say "Restore aborted without destructive effect."; exit 0; }
 else
   decision="reset"
 fi
@@ -243,7 +262,7 @@ backend_stopped=1
 destructive=1
 say "Replacing the database."
 ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-  'psql -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()" >/dev/null && pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
+  'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()" >/dev/null && pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
   < "$BUNDLE/database.dump"
 reprovision_grants
 
@@ -268,6 +287,7 @@ fi
 rm -f -- "$DESTRUCTIVE_MARKER"
 finished=1
 control cleanup-rollback "$RESTORE_ID" >/dev/null
+cleanup_completed_restore_plaintext || die 'Completed restore plaintext cleanup failed; private work was retained.'
 restart_backend
 restart_workers
 say "Restore supervisor completed."

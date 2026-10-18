@@ -104,6 +104,9 @@ deployment_services() {
   IMAGE_SERVICES=(orchestration-init migrate orchestration-ready backend live worker beat)
   ROLLBACK_SERVICES=(backend live worker beat)
   RUN_ONCE_SERVICES=(orchestration-init migrate orchestration-ready)
+  if [[ ",$(deployment_value COMPOSE_PROFILES)," == *,clamav,* ]]; then
+    IMAGE_SERVICES+=(clamav)
+  fi
   if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
     IMAGE_SERVICES+=(api-edge)
     ROLLBACK_SERVICES+=(api-edge)

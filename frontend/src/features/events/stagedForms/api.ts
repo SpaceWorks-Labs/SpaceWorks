@@ -1,30 +1,16 @@
-import { useRef } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { memberRequest } from "../../../lib/api";
+import { privateKey, usePrivateCommand, usePrivateQuery } from "./privateQueries";
 import type { CommandResult, Page, StageAssignment, StageResponse, StageScope } from "./types";
+import type { stagePayload } from "./formPayload";
 
-export const stageKey = (scope: StageScope) => ["event-stages", window.location.host, scope.actorId, scope.makerspaceId, scope.eventId] as const;
+export const stageKey = (scope: StageScope) => privateKey("event-stages", scope);
 export const stagePath = (scope: StageScope) => `/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}`;
 export function useStageAssignments(scope: StageScope, page: number) {
-  return useQuery({ queryKey: [...stageKey(scope), "assignments", page], gcTime: 0, retry: false,
-    queryFn: () => memberRequest<Page<StageAssignment>>(`${stagePath(scope)}/stage-forms/?page=${page}`, { cache: "no-store" }) });
+  return usePrivateQuery<Page<StageAssignment>>([...stageKey(scope), "assignments", page], `${stagePath(scope)}/stage-forms/?page=${page}`);
 }
 export function useStageResponse(scope: StageScope, responseId: number) {
-  return useQuery({ queryKey: [...stageKey(scope), "response", responseId], gcTime: 0, retry: false,
-    queryFn: () => memberRequest<StageResponse>(`${stagePath(scope)}/stage-responses/${responseId}/`, { cache: "no-store" }),
-    refetchOnWindowFocus: false });
+  return usePrivateQuery<StageResponse>([...stageKey(scope), "response", responseId], `${stagePath(scope)}/stage-responses/${responseId}/`);
 }
-export function useStageCommand(scope: StageScope, responseId: number) {
-  const client = useQueryClient();
-  const pending = useRef<{ body: string; operation: string } | null>(null);
-  return useMutation({ retry: false, gcTime: 0,
-    mutationFn: async (payload: { submit: boolean; body: Record<string, unknown> }) => {
-      const encoded = JSON.stringify(payload);
-      if (pending.current?.body !== encoded) pending.current = { body: encoded, operation: crypto.randomUUID() };
-      const operation = pending.current.operation;
-      return memberRequest<CommandResult>(`${stagePath(scope)}/stage-responses/${responseId}/${payload.submit ? "submit/" : ""}`, {
-        method: payload.submit ? "POST" : "PUT", cache: "no-store", headers: { "Idempotency-Key": operation },
-        body: JSON.stringify({ ...payload.body, operation_id: operation }),
-      });
-    }, onSuccess: async () => { pending.current = null; await client.invalidateQueries({ queryKey: stageKey(scope) }); } });
+export type StageAnswerCommand = ReturnType<typeof stagePayload> & { expected_version: number; expected_assignment_version: number };
+export function useStageCommand(scope: StageScope) {
+  return usePrivateCommand<StageAnswerCommand, CommandResult>(stageKey(scope));
 }

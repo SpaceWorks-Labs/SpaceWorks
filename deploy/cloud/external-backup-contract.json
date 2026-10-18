@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "status": "external daily recovery job required; not a free-web task",
+  "schedule": "daily in a separately authorized external job",
+  "requirements": [
+    "Query the real PG16/17 server major and use apps.backup.postgres_client.client_binary with that major.",
+    "Use the shared connection helper and a temporary mode-0600 PGPASSFILE; never URL/password argv or PGPASSWORD.",
+    "Use app-only registered schema capture for shared provider databases; never silently include auth/storage/realtime schemas.",
+    "Stream/encrypt with an escrowed age recipient, retain independent signing/config/PII keys and object custody.",
+    "Upload to independent private offsite storage with separately scoped credentials, then fully re-read and verify SHA-256.",
+    "Record actual DB and object recovery points, retention, drill and key readability; independent snapshots are not an atomic recovery set.",
+    "Use an eligible existing portable tenant dump only after scratch/transport/anchor-absence qualification and its supported supervised target import."
+  ],
+  "not_equivalent": [
+    "Raw SQL backup is not a compound H1 archive.",
+    "Ordinary tenant archives remain archive-and-purge records and cannot be restored.",
+    "Supabase Free durability is not an included automatic DB backup guarantee."
+  ],
+  "owners": {
+    "I": "docs/deploy/cloud-free.md and cloud recovery runbooks",
+    "Q": "live external job, SHA-256 read-back and offline recovery drill evidence"
+  }
+}

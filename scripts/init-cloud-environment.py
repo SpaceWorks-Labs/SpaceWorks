@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Root-only entrypoint for D7 Cloud static configuration initialization."""
+"""Host-cloud initialization and offline-first managed deployment setup."""
 
 import argparse
 import json
@@ -10,10 +10,6 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "backend"))
-
-from apps.backup.cloud_environment import init_from_current_environment  # noqa: E402
-from apps.backup.host_supervisor import supervise_run  # noqa: E402
 
 
 def render_compose_config(compose_path, static_env, pointer_path):
@@ -31,12 +27,13 @@ def render_compose_config(compose_path, static_env, pointer_path):
         env=scrubbed,
         capture_output=True,
         text=True,
+        timeout=60,
         check=True,
     )
     return completed.stdout
 
 
-def main(argv=None):
+def host_main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("init-from-current-environment",))
     parser.add_argument("--run-id", required=True)
@@ -45,8 +42,12 @@ def main(argv=None):
     parser.add_argument("--static-env", default="/etc/spaceworks/cloud.env")
     parser.add_argument("--compose", default=str(ROOT / "docker-compose.cloud.yml"))
     args = parser.parse_args(argv)
-    if os.geteuid() != 0:
+    if not hasattr(os, "geteuid") or os.geteuid() != 0:
         raise RuntimeError("Cloud environment initialization must run as root.")
+    sys.path.insert(0, str(ROOT / "backend"))
+    from apps.backup.host_supervisor import supervise_run
+    from cloud_setup.host_commit import commit_host_environment
+
     ops = Path(args.ops_dir)
     with supervise_run(
         ops,
@@ -59,16 +60,28 @@ def main(argv=None):
         begun = session.ledger.begin(
             "cloud-config-initialization", {"source": "invoking-environment"}
         )
-        result = init_from_current_environment(
-            compose_path=args.compose,
-            static_env_path=args.static_env,
-            pointer_path=ops / "database-pointer.env",
-            topology_record_path=ops / "compose-topology.json",
-            compose_renderer=render_compose_config,
-        )
+        result = commit_host_environment(ops=ops, static_env=args.static_env, compose=args.compose, renderer=render_compose_config)
         session.ledger.finish(begun, result)
     print(json.dumps(result, sort_keys=True))
+    return 0
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "init-from-current-environment":
+        try:
+            return host_main(argv)
+        except Exception:
+            print(json.dumps({"status": "failed", "code": "host_initialization_failed", "action": "Inspect the private host ledger; resume under the same operation lock."}), file=sys.stderr)
+            return 78
+    if not argv or argv[0] in {"--help", "-h"}:
+        parser = argparse.ArgumentParser(description="Space Works deployment setup. Host: init-from-current-environment. Managed: wizard, validate, render, bootstrap. Run ACTION --help for options; help imports no Django.")
+        parser.add_argument("action", nargs="?", choices=("init-from-current-environment", "wizard", "validate", "render", "bootstrap"))
+        parser.parse_args(argv or ["--help"])
+        return 0
+    from cloud_setup.cli import main as managed_main
+    return managed_main(argv)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -1,7 +1,12 @@
+{{- include "spaceworks.validate" . -}}
+{{- $releaseValues := deepCopy .Values -}}
+{{- if eq .Values.deploymentMode "host" -}}
+{{- $_ := set $releaseValues "databasePointerSecret" (required "migrationPointerSecret required in host mode" .Values.migrationPointerSecret) -}}
+{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "spaceworks.name" . }}-migrate
+  name: {{ include "spaceworks.name" . }}-{{ if eq .Values.deploymentMode "host" }}migrate{{ else }}release{{ end }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "-5"
@@ -16,29 +21,25 @@ spec:
       securityContext:
         {{- include "spaceworks.podSecurity" . | nindent 8 }}
       containers:
-        - name: migrate
+        - name: release
           image: {{ include "spaceworks.backendImage" . | quote }}
-          # Maintenance credentials do not bypass H1 admission or set runtime ownership.
+          {{- if eq .Values.deploymentMode "host" }}
           args: [--role, migrate, python, manage.py, migrate, --noinput]
+          {{- else }}
+          args: [--role, migrate, python, -m, scripts.run_cloud_role, release]
+          {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}
           envFrom:
             - secretRef:
                 name: {{ required "runtimeSecret is required" .Values.runtimeSecret | quote }}
+            {{- if eq .Values.deploymentMode "managed" }}
+            - secretRef:
+                name: {{ required "releaseSecret is required only in finite managed release" .Values.releaseSecret | quote }}
+            {{- end }}
           env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ required "migrationPointerSecret is required" .Values.migrationPointerSecret | quote }}
-                  key: DATABASE_URL
-            - name: SPACEWORKS_DB_POINTER_GENERATION
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.migrationPointerSecret | quote }}
-                  key: SPACEWORKS_DB_POINTER_GENERATION
-            - name: SPACEWORKS_HOST_MARKER_PATH
-              value: /run/spaceworks-host/restore-marker.json
+            {{- include "spaceworks.env" (dict "Values" $releaseValues) | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

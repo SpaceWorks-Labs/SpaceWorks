@@ -1,0 +1,54 @@
+{
+  "app_id": "REPLACE_APP_ID",
+  "definition": {
+    "name": "spaceworks-worker",
+    "type": "WORKER",
+    "regions": [
+      "fra"
+    ],
+    "scalings": [
+      {
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "instance_types": [
+      {
+        "type": "small"
+      }
+    ],
+    "env": [
+      {
+        "key": "SPACEWORKS_DEPLOYMENT_MODE",
+        "value": "managed"
+      },
+      {
+        "key": "SPACEWORKS_DEPLOYMENT_PROFILE",
+        "value": "full"
+      },
+      {
+        "key": "CLOUD_TASK_PROFILE",
+        "value": "brokerless"
+      },
+      {
+        "key": "CLOUD_SCHEDULER",
+        "value": "loop"
+      },
+      {
+        "key": "SPACEWORKS_SECRET_FILE_MODE",
+        "value": "inline"
+      }
+    ],
+    "docker": {
+      "image": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "args": [
+        "--role",
+        "worker",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "worker"
+      ]
+    }
+  }
+}

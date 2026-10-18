@@ -1,9 +1,11 @@
+{{- include "spaceworks.validate" . -}}
 {{- $root := . -}}
 {{- $jobs := list
-  (dict "name" "backend" "role" "backend" "enabled" true "args" (list "sh" "-c" (printf "python manage.py collectstatic --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers %v --config python:config.gunicorn_metrics" .Values.workers)))
-  (dict "name" "live" "role" "backend" "enabled" true "args" (list "gunicorn" "config.wsgi:application" "--bind" "0.0.0.0:8000" "--worker-class" "gthread" "--threads" "20" "--timeout" "0" "--config" "python:config.gunicorn_metrics"))
-  (dict "name" "worker" "role" "worker" "enabled" .Values.worker.enabled "args" (list "celery" "-A" "config" "worker" "--loglevel=info"))
-  (dict "name" "beat" "role" "beat" "enabled" .Values.beat.enabled "args" (list "celery" "-A" "config" "beat" "--loglevel=info" "--schedule" "/var/lib/celery/celerybeat-schedule")) -}}
+  (dict "name" "backend" "role" "backend" "enabled" true "runner" "web")
+  (dict "name" "live" "role" "backend" "enabled" .Values.live.enabled "runner" "live")
+  (dict "name" "worker" "role" "worker" "enabled" .Values.worker.enabled "runner" "worker")
+  (dict "name" "beat" "role" "beat" "enabled" .Values.beat.enabled "runner" "beat")
+  (dict "name" "scheduler" "role" "cron" "enabled" (eq .Values.scheduler "loop") "runner" "scheduler") -}}
 {{- range $jobs }}
 {{- if .enabled }}
 ---
@@ -12,7 +14,7 @@ kind: Deployment
 metadata:
   name: {{ include "spaceworks.name" $root }}-{{ .name }}
 spec:
-  replicas: {{ if eq .name "beat" }}1{{ else }}{{ $root.Values.replicas }}{{ end }}
+  replicas: {{ if or (eq .name "beat") (eq .name "scheduler") }}1{{ else if and (eq .name "worker") (eq $root.Values.deploymentMode "managed") }}{{ $root.Values.worker.replicas }}{{ else }}{{ $root.Values.replicas }}{{ end }}
   strategy:
     type: Recreate
   selector:
@@ -21,20 +23,49 @@ spec:
     metadata:
       labels: {app: {{ include "spaceworks.name" $root }}-{{ .name }}}
       annotations:
-        spaceworks/pointer-generation: {{ required "rolloutGeneration is required" $root.Values.rolloutGeneration | quote }}
+        spaceworks/config-generation: {{ required "rolloutGeneration is required" $root.Values.rolloutGeneration | quote }}
     spec:
       automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
       securityContext:
         {{- include "spaceworks.podSecurity" $root | nindent 8 }}
+      {{- if eq $root.Values.deploymentMode "host" }}
+      # Only disposable scratch volumes are mounted here. Never chown host authority.
+      initContainers:
+        - name: scratch-owner
+          image: {{ include "spaceworks.backendImage" $root | quote }}
+          command: ["/bin/chown", "10001:10001", "/run/metrics", "/var/lib/celery"]
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL], add: [CHOWN]}
+          volumeMounts:
+            - {name: metrics, mountPath: /run/metrics}
+            - {name: celery, mountPath: /var/lib/celery}
+      {{- end }}
       containers:
         - name: {{ .name }}
           image: {{ include "spaceworks.backendImage" $root | quote }}
           imagePullPolicy: {{ $root.Values.imagePullPolicy }}
-          # Preserve the image ENTRYPOINT: the H1 marker is checked before exec.
-          args: {{ concat (list "--role" .role) .args | toJson }}
+          {{- if eq $root.Values.deploymentMode "host" }}
+          {{- if eq .name "backend" }}
+          args: [--role, backend, sh, -c, {{ printf "python manage.py collectstatic --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers %v --config python:config.gunicorn_metrics" $root.Values.workers | quote }}]
+          {{- else if eq .name "live" }}
+          args: [--role, backend, gunicorn, config.wsgi:application, --bind, "0.0.0.0:8000", --worker-class, gthread, --threads, "20", --timeout, "0", --config, "python:config.gunicorn_metrics"]
+          {{- else if eq .name "worker" }}
+          args: [--role, worker, celery, -A, config, worker, --loglevel=info]
+          {{- else if eq .name "beat" }}
+          args: [--role, beat, celery, -A, config, beat, --loglevel=info, --schedule, /var/lib/celery/celerybeat-schedule]
+          {{- else }}
+          args: [--role, {{ .role }}, python, -m, scripts.run_cloud_role, {{ .runner }}]
+          {{- end }}
+          {{- else }}
+          args: [--role, {{ .role }}, python, -m, scripts.run_cloud_role, {{ .runner }}]
+          {{- end }}
           envFrom:
             - secretRef:
-                name: {{ required "runtimeSecret is required" $root.Values.runtimeSecret | quote }}
+                name: {{ required "runtimeSecret is required; no maintenance credentials" $root.Values.runtimeSecret | quote }}
           env:
             {{- include "spaceworks.env" $root | nindent 12 }}
           securityContext:
@@ -42,9 +73,12 @@ spec:
             capabilities: {drop: [ALL]}
           {{- if or (eq .name "backend") (eq .name "live") }}
           ports: [{name: http, containerPort: 8000}]
+          startupProbe:
+            httpGet: {path: /api/v1/health/readiness/, port: http}
+            periodSeconds: 5
+            failureThreshold: 60
           readinessProbe:
             httpGet: {path: /api/v1/health/readiness/, port: http}
-            initialDelaySeconds: 10
             periodSeconds: 10
           {{- end }}
           resources:
@@ -53,34 +87,22 @@ spec:
             {{- include "spaceworks.mounts" $root | nindent 12 }}
       volumes:
         {{- if eq .name "beat" }}
-        {{- include "spaceworks.beatVolumes" $root | nindent 8 }}
+        {{- if eq $root.Values.deploymentMode "host" }}
+        - name: host-gate
+          persistentVolumeClaim:
+            claimName: {{ required "hostGate.existingClaim required" $root.Values.hostGate.existingClaim | quote }}
+            readOnly: true
+        {{- end }}
+        - name: metrics
+          emptyDir: {}
+        - name: scratch
+          emptyDir: {sizeLimit: {{ $root.Values.scratchSize | quote }}}
+        - name: celery
+          persistentVolumeClaim:
+            claimName: {{ required "beat.existingClaim must be writable by uid 10001" $root.Values.beat.existingClaim | quote }}
+        {{- include "spaceworks.configVolumes" $root | nindent 8 }}
         {{- else }}
         {{- include "spaceworks.volumes" $root | nindent 8 }}
         {{- end }}
 {{- end }}
 {{- end }}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ include "spaceworks.name" . }}-frontend
-spec:
-  replicas: {{ .Values.replicas }}
-  selector:
-    matchLabels: {app: {{ include "spaceworks.name" . }}-frontend}
-  template:
-    metadata:
-      labels: {app: {{ include "spaceworks.name" . }}-frontend}
-    spec:
-      automountServiceAccountToken: false
-      containers:
-        - name: frontend
-          image: {{ printf "%s:%s" .Values.frontendImage .Values.imageTag | quote }}
-          ports: [{name: http, containerPort: 80}]
-          env:
-            {{- range $name, $value := .Values.frontendEnv }}
-            - name: {{ $name }}
-              value: {{ $value | quote }}
-            {{- end }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}

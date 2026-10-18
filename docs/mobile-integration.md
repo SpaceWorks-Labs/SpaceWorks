@@ -3,6 +3,11 @@
 Use this guide for the deployment's Android and iOS apps. An approved registration must have
 **Makerspace left blank**: tenant-scoped rows remain inert. Create a separate row for each platform
 and environment. Development registrations never publish association files or a production minimum.
+Only one deployment-global registration may be approved for each platform/environment pair.
+Together the production Android and Apple rows describe the deployment's one logical app.
+Rotate Android distribution signers on the same row; keep both old and new digests during rollout.
+To replace a package or bundle ID, revoke its previous registration before approving the replacement;
+revocation permanently revokes that registration's device grants. Pending and revoked rows preserve history.
 
 ## Server values in /control/
 
@@ -11,6 +16,7 @@ Do not enable a public control-plane proxy just to configure an app.
 
 | Value | /control/ model and field | Meaning |
 | --- | --- | --- |
+| App display name | Accounts → Platform attestation settings → App display name | Deployment-owned name shared by Android and iOS; required, up to 100 characters, default SpaceWorks. This is independent of tenant branding. |
 | Android package / Apple bundle ID | Accounts → Native app registrations → App ID | Exact identifier compiled into the app; for example org.example.spaceworks. |
 | Platform and environment | Native app registrations → Platform, Environment | Apple or Android; development or production. |
 | Approval | Native app registrations → Status | Approved permits the global app to authenticate. Revoking also permanently revokes its grants. |
@@ -43,6 +49,14 @@ all its eligible production registrations to be ready. Login requirements are se
 from optional push, Apple revocation and associations. The superadmin API presents the same report at
 GET /api/v1/admin/platform/mobile-readiness. Checks read configuration only; they do not probe providers
 or reveal secret values. Save operations are audited; reading the report is not audited.
+
+The public `GET /api/v1/config` native object includes `app_display_name` and
+`app_identity: {android: {app_id, signing_identities} | null, ios: {app_id, signing_identities} | null}`.
+Only approved global **production** registrations publish identities. Signers are normalized Android
+distribution SHA-256 hex digests or the Apple App ID Prefix. Missing or invalid identities return null.
+The existing `min_app_version` and `providers` fields remain. These are public configuration values;
+verifier labels, service-account JSON, private keys and tokens are never included. Editing the display
+name with credential inputs left blank preserves existing encrypted credentials.
 
 ## Reconciled account and notification authority
 

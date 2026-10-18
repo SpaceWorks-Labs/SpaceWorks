@@ -6,8 +6,6 @@ import re
 
 from django.utils.crypto import salted_hmac
 
-from apps.accounts import rbac
-from .models_contract import NotificationDelivery
 from .notification_providers import CallbackEvent, EndpointProof
 from .notification_wa_twilio_config import ConfigurationError, callback_path, phone, sid
 
@@ -16,7 +14,7 @@ from .notification_wa_twilio_config import ConfigurationError, callback_path, ph
 STATES = {"accepted": "accepted", "queued": "accepted", "sending": "accepted", "sent": "sent",
           "delivered": "delivered", "read": "read", "failed": "failed", "undelivered": "failed",
           "canceled": "failed"}
-SINGLE_FIELDS = {"AccountSid", "MessageSid", "MessageStatus", "SmsStatus", "From", "To", "Body", "MessagingServiceSid", "OptOutType", "ErrorCode", "NumSegments"}
+SINGLE_FIELDS = {"AccountSid", "MessageSid", "MessageStatus", "SmsStatus", "From", "To", "Body", "MessagingServiceSid", "OptOutType", "ErrorCode", "NumSegments", "Timestamp", "DateSent"}
 
 
 def authenticated_form(config, credentials, request):
@@ -90,12 +88,14 @@ def verify_callback(config, credentials, request):
     state = STATES.get(params.get("MessageStatus", params.get("SmsStatus", "")))
     if not state or not _business_matches(credentials, params, "From"):
         return None
-    delivery = rbac.scope_notification_policy(NotificationDelivery.objects.all(),
-        makerspace_id=config.makerspace_id).select_related("endpoint").filter(pk=int(match[1]),
-        channel="whatsapp", provider="twilio", integration_generation=config.generation,
-        integration_identity=config.integration_identity, endpoint__configuration=config).first()
-    if not delivery or not delivery.endpoint or (delivery.provider_id and delivery.provider_id != params["MessageSid"]):
+    try:
+        if not params.get("To", "").startswith("whatsapp:"):
+            return None
+        phone(params["To"])
+    except ConfigurationError:
         return None
-    if params.get("To") != "whatsapp:" + phone(delivery.endpoint.destination):
-        return None
-    return CallbackEvent(provider_id=params["MessageSid"], state=state, delivery_id=delivery.pk)
+    # Authentication must survive deletion of the account, endpoint and delivery.
+    # Correlation is a separate, exact-target check during journal processing.
+    from .messaging.webhook_payloads import timestamp
+    return CallbackEvent(provider_id=params["MessageSid"], state=state, delivery_id=int(match[1]),
+        provider_timestamp=timestamp(params.get("Timestamp") or params.get("DateSent")))

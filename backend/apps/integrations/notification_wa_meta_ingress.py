@@ -49,7 +49,8 @@ def _retry_failure(configuration, row, event):
         if delivery.state not in {"accepted", "sent", "held"} and not (delivery.state == "retrying" and delivery.claim_until):
             continue
         if delivery.attempt_count >= MAX_ATTEMPTS:
-            changed = apply_callback(configuration, CallbackEvent(provider_id=row["id"], state="failed", delivery_id=delivery.pk)) or changed
+            changed = apply_callback(configuration, CallbackEvent(provider_id=row["id"], state="failed",
+                delivery_id=delivery.pk, provider_timestamp=event.provider_timestamp)) or changed
             continue
         error = row["errors"][0]
         delivery.state, delivery.retryable = "retrying", True

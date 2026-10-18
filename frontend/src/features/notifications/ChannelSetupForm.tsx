@@ -6,6 +6,7 @@ import { useSaveChannel, type Channel, type ChannelWrite, type ProviderKey, type
 import { WhatsAppTemplatesEditor } from "./WhatsAppTemplatesEditor";
 import { SlackInstallation } from "./SlackInstallation";
 import { WhatsAppApprovalRefresh } from "./WhatsAppApprovalRefresh";
+import { ChannelCallbackURLs } from "./ChannelCallbackURLs";
 
 type Props = { makerspaceId: number; spec: ChannelSpec; row?: Channel; moduleInstalled: boolean };
 
@@ -107,6 +108,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
           disabled={save.isPending} onChange={event => { setSecrets(current => ({ ...current, [field.key]: event.target.value })); setProblem(""); }} />
       </Field>)}
     </fieldset> : null}
+    {addressed ? <ChannelCallbackURLs urls={save.data?.callback_urls ?? row?.callback_urls} /> : null}
     {provider.installation ? <SlackInstallation makerspaceId={makerspaceId} configured={draft.credentials_set} /> : null}
     {spec.key !== "email" && spec.key !== "native_push" ? <div className="grid gap-3 sm:grid-cols-2">
       {(["daily_limit", "recipient_daily_limit"] as const).map(key => <Field key={key} label={key === "daily_limit" ? "Messages per day (optional)" : "Messages per person per day (optional)"}>

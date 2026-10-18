@@ -73,7 +73,8 @@ def claim(delivery_id):
             return None
         if row.claim_until and row.claim_until <= now and row.channel in {"sms", "whatsapp", "native_push"}:
             row.state, row.retryable, row.last_error = "held", False, "unknown_provider_outcome"
-            row.save(update_fields=["state", "retryable", "last_error", "updated_at"])
+            row.claim_until, row.next_attempt_at = None, None
+            row.save(update_fields=["state", "retryable", "last_error", "claim_until", "next_attempt_at", "updated_at"])
             return None
         if row.attempt_count >= MAX_ATTEMPTS:
             row.state, row.retryable, row.claim_until, row.next_attempt_at = "failed", False, None, None

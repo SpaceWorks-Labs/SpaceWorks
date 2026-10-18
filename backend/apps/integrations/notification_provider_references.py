@@ -18,3 +18,18 @@ def remember(delivery):
     elif not row.phone_hash and delivery.recipient_phone_hash:
         row.phone_hash = delivery.recipient_phone_hash
         row.save(update_fields=["phone_hash"])
+
+
+def retired_target_known(receipt, event):
+    """An exact permanent reference can settle facts for a deleted target only."""
+    from .models_contract import NotificationDelivery
+    rows = NotificationProviderReference.objects.filter(provider=receipt.provider,
+        sender_key=receipt.sender_key, provider_id=event.provider_id, ambiguous=False,
+        makerspace_reference=receipt.makerspace_reference, generation=receipt.generation)
+    if event.delivery_id is not None:
+        rows = rows.filter(delivery_reference=event.delivery_id)
+    if event.delivery_attempt is not None:
+        rows = rows.filter(attempt=event.delivery_attempt)
+    reference = rows.first()
+    return bool(receipt.protection_applied and reference and reference.delivery_reference
+        and not NotificationDelivery.objects.filter(pk=reference.delivery_reference).exists())

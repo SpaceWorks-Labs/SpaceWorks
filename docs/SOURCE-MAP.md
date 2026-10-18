@@ -41,7 +41,9 @@ TanStack Query hooks in `accountDeletionApi.ts`. Privacy disclosure is in
 `docs/privacy-account-deletion.md`.
 Mobile analytics prerequisites (1f-1): `accounts/models_activity.py` owns grant/day and
 anonymous attestation outcomes; `device_activity.py` records validated authentication
-activity. `integrations/models_tracking.py` owns staff push attempts, anonymous SMS
+activity. `accounts/authentication_device.py` validates native grants and locks User before
+DeviceGrant for the revocation-safe heartbeat used by `authentication.py`.
+`integrations/models_tracking.py` owns staff push attempts, anonymous SMS
 outcomes and tenant-bound bounce replay identities. Staff delivery uses `push.py`; member
 delivery uses `notifications/member_push.py`, `envelope_push_leases.py` and
 `envelope_push_transport.py` beneath the canonical envelope delivery. The older lease helpers
@@ -393,6 +395,8 @@ JWT lineage over the existing token ledger. Subject export routes/jobs live in
 existing field classification. `subject_boundary.py` reuses source-gate boundaries.
 Frontend account controls live in `features/members/MemberAccount*.tsx` with
 `memberAccountApi.ts`; staff plan controls use `MembershipRenewalFields.tsx`.
+`features/auth/SignOutEverywhere.tsx` calls account-wide logout from member Security
+and all account MFA settings, independently of membership self-service.
 See [member-account-renewals.md](member-account-renewals.md) for policy and limits.
 
 Member-account deletion lives in the `accounts/account_deletion*` service modules

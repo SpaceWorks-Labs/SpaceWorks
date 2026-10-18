@@ -41,7 +41,7 @@ class MetaWebhookView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [MetaWebhookThrottle]
 
-    def configuration(self, makerspace_id, generation, phone_number_id):
+    def configuration(self, makerspace_id, generation, phone_number_id, *, request=None, verify_token=None):
         if type(makerspace_id) is not int or makerspace_id < 1 or not ID.fullmatch(phone_number_id):
             return None
         from .notification_sender import callback_configurations
@@ -49,6 +49,11 @@ class MetaWebhookView(APIView):
         for config in rows:
             values = credentials(config)
             if values and values["phone_number_id"] == phone_number_id:
+                if request is not None and verified_payload(config, request) is None:
+                    continue
+                if verify_token is not None and (len(verify_token) > 8000 or not hmac.compare_digest(
+                        verify_token.encode(), values["webhook_verify_token"].encode())):
+                    continue
                 return config
         return None
 
@@ -60,9 +65,9 @@ class MetaWebhookView(APIView):
                   **errors(400, 403, 404, 429, 503)})
     def get(self, request, makerspace_id, generation, phone_number_id):
         try:
-            config = self.configuration(makerspace_id, generation, phone_number_id)
-            values = credentials(config) if config else {}
             token = request.query_params.get("hub.verify_token", "")
+            config = self.configuration(makerspace_id, generation, phone_number_id, verify_token=token)
+            values = credentials(config) if config else {}
             challenge = request.query_params.get("hub.challenge", "")
             valid = bool(values and phone_number_id == values["phone_number_id"]
                 and request.query_params.get("hub.mode") == "subscribe"
@@ -81,7 +86,7 @@ class MetaWebhookView(APIView):
         request=MetaWebhookSerializer, responses={200: MetaWebhookResultSerializer, **errors(400, 403, 404, 423, 429, 503)},
         description="Signed batch of messages/statuses/user_preferences. WABA and phone number must match the configured installation and URL generation.")
     def post(self, request, makerspace_id, generation, phone_number_id):
-        config = self.configuration(makerspace_id, generation, phone_number_id)
+        config = self.configuration(makerspace_id, generation, phone_number_id, request=request)
         if config is None:
             return Response({"detail": "Webhook verification failed.", "code": "invalid_webhook"}, status=403)
         payload = verified_payload(config, request)

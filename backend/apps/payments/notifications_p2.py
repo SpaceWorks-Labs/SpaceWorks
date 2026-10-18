@@ -95,6 +95,8 @@ def notify_payment(payment, event, *, refund=None, requester_only=False, reminde
         staff_body=rendered(payment, event, "staff"), staff=not requester_only and event not in OWNER_ONLY,
         context={"refund_id": refund.pk if refund else None, "reminder_id": reminder.pk if reminder else None,
                  "occurrence": str(occurrence) if occurrence is not None else None},
+        owner_context={"makerspace": bag(name=payment.makerspace.name), "event_name": event,
+                       "subject": payment_subject(payment, audience="requester", refund=refund)},
         staff_context={"makerspace": bag(name=payment.makerspace.name), "event_name": event,
                        "subject": payment_subject(payment, audience="staff")})
 

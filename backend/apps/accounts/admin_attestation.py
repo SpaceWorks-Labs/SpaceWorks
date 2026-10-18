@@ -21,7 +21,7 @@ class PlatformAttestationSettingsForm(forms.ModelForm):
 
     class Meta:
         model = PlatformAttestationSettings
-        fields = ()
+        fields = ("app_display_name",)
 
     def clean_play_integrity_service_account_raw(self):
         raw = self.cleaned_data["play_integrity_service_account_raw"]
@@ -52,7 +52,7 @@ class PlatformAttestationSettingsForm(forms.ModelForm):
 class PlatformAttestationSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdmin, ModelAdmin):
     audit_action = "platform.attestation_settings_updated"
     form = PlatformAttestationSettingsForm
-    fields = ("play_integrity_service_account_raw", "clear_play_integrity_credentials", "updated_at")
+    fields = ("app_display_name", "play_integrity_service_account_raw", "clear_play_integrity_credentials", "updated_at")
     readonly_fields = ("updated_at",)
 
     def has_add_permission(self, request):

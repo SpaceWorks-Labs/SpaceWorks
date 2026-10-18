@@ -17,10 +17,11 @@ export type Page<T> = { count: number; next: string | null; previous: string | n
 export type WhatsAppTemplate = { feature?: string; event: string; audience: "staff" | "requester" | "member"; locale: string;
   template_name: string; variables: string[]; approved?: boolean; needs_review?: boolean };
 export type Quotas = { daily_limit?: number; recipient_daily_limit?: number };
+export type CallbackURLs = Partial<Record<"inbound_url" | "status_url" | "status_url_template" | "webhook_url", string>>;
 export type Channel = { channel: ChannelKey; enabled: boolean; room_enabled: boolean; personal_enabled: boolean;
   provider: ProviderKey; email_fallback: boolean; integration_identity: string; generation: number;
   quotas: Quotas; credentials_set: boolean; templates: WhatsAppTemplate[];
-  use_platform_sender?: boolean; sender_key?: string; credential_version?: number; activation_hold?: boolean };
+  use_platform_sender?: boolean; sender_key?: string; credential_version?: number; activation_hold?: boolean; callback_urls?: CallbackURLs };
 export type ChannelWrite = Partial<Pick<Channel, "enabled" | "room_enabled" | "personal_enabled" | "email_fallback"
   | "provider" | "integration_identity" | "quotas" | "use_platform_sender" | "activation_hold">> & { credentials?: Record<string, string>;
   templates?: Omit<WhatsAppTemplate, "approved" | "needs_review">[] };

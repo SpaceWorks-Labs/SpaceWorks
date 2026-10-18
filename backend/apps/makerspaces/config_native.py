@@ -1,8 +1,10 @@
 """Public native login discovery; credentials and verifier configuration stay private."""
 
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
-from apps.accounts.native_app_identity import min_app_versions
+from apps.accounts.native_app_identity import eligible_registrations, min_app_versions, registration_signing_identities
+from apps.accounts.models_attestation import PlatformAttestationSettings
 
 from apps.accounts.login_methods import (
     password_login_enabled, phone_login_enabled, provider_login_enabled,
@@ -43,12 +45,33 @@ class NativeProvidersSerializer(serializers.Serializer):
     oidc = NativeOidcSerializer(many=True)
 
 
+class NativeAppIdentitySerializer(serializers.Serializer):
+    app_id = serializers.CharField()
+    signing_identities = serializers.ListField(child=serializers.CharField())
+
+
+class NativeAppIdentitiesSerializer(serializers.Serializer):
+    android = NativeAppIdentitySerializer(allow_null=True)
+    ios = NativeAppIdentitySerializer(allow_null=True)
+
+
 class NativeConfigSerializer(serializers.Serializer):
+    app_display_name = serializers.CharField()
+    app_identity = NativeAppIdentitiesSerializer()
     min_app_version = NativeMinVersionSerializer()
     providers = NativeProvidersSerializer()
 
 
 def native_config():
+    display_name = PlatformAttestationSettings.objects.filter(pk=1).values_list("app_display_name", flat=True).first()
+    identities = {"android": None, "ios": None}
+    for row in eligible_registrations(production=True):
+        try:
+            signers = registration_signing_identities(row)
+        except ValidationError:
+            continue  # Invalid legacy rows cannot advertise a usable app identity.
+        key = "ios" if row.platform == "apple" else row.platform
+        identities[key] = {"app_id": row.app_id, "signing_identities": signers}
     providers = {
         "password": password_login_enabled(),
         "phone": bool(member_accounts_enabled() and phone_login_enabled() and sms_configured()),
@@ -75,6 +98,8 @@ def native_config():
             for row in enabled_providers() if provider_login_enabled(row.provider_key)
         ]
     return {
+        "app_display_name": display_name or "SpaceWorks",
+        "app_identity": identities,
         "min_app_version": min_app_versions(),
         "providers": providers,
     }

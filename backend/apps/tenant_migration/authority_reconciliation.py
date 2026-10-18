@@ -1,6 +1,7 @@
 """Authorization sources added by the account/messaging/push/workflow union."""
 
 SOURCE_PATHS = (
+    "accounts/authentication_device.py",
     "accounts/account_deletion_presence.py",
     "accounts/credential_revocation.py",
     "accounts/credential_revocation_helpers.py",

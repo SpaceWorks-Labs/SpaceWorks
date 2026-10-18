@@ -39,6 +39,7 @@ def inbound(receipt, data):
         return receipt.protection_applied
     from .notification_proofs import apply_verified_event, digest
     from .notification_whatsapp_consent import proof_receipt
+    from .notification_callback_times import provider_time
     from .notification_destination_events import live_destination
     from .notification_wa_window import inbound_time
     from rest_framework.exceptions import ValidationError
@@ -57,7 +58,8 @@ def inbound(receipt, data):
         with tenant_write(config.makerspace_id), proof_receipt(receipt.received_at):
             try:
                 apply_verified_event(config, CallbackEvent(identity_digest=identity,
-                    opt_out=bool(data.get("stop")), proof=proof))
+                    opt_out=bool(data.get("stop")), proof=proof),
+                    decision_at=provider_time(data.get("timestamp")) or receipt.received_at)
             except ValidationError:
                 # An expired nonce is a rejected proof, never a reason to replay it.
                 continue

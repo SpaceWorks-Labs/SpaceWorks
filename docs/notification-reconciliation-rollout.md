@@ -45,6 +45,13 @@ original fingerprints and the historical migration/import helpers.
 
 ## Retirement and sending are separate holds
 
+Barrier establishment, canonical routing, sign-offs, successful verification and activation
+append audit entries in the same database transaction as their checkpoints. Pass
+`--operator-id <active-platform-superadmin-id>` to attribute a command to that operator;
+omitting it records system attribution. Metadata contains only routing state, watermarks,
+counts and review flags, never snapshot contents or verifier credentials. An audit failure
+rolls back its checkpoint.
+
 Integrations **0043 is deliberately not supplied**. A separate destructive retirement forward
 must be prepared and tested only after replay and cross-lane reconciliation sign-off.
 Retain `MakerspaceMessagingSettings`, `WhatsAppTemplateBinding`, `MessagingDelivery`, historical

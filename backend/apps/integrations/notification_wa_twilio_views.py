@@ -95,7 +95,7 @@ class TwilioWhatsAppWebhookView(APIView):
     def post(self, request, makerspace_id, generation, kind, delivery_id=None):
         from .notification_sender import callback_configurations
         from .notification_ingress import accept_callback
-        from .messaging.webhook_payloads import phone_hash
+        from .messaging.webhook_payloads import phone_hash, timestamp
         from .notification_cutover import boundary
         with boundary():
             config = None
@@ -109,12 +109,12 @@ class TwilioWhatsAppWebhookView(APIView):
             params = request.POST
             protection = {"stop": event.opt_out,
                 "phone_hash": phone_hash(params.get("From") if kind == "inbound" else params.get("To")),
-                "error_code": params.get("ErrorCode", "")}
+                "error_code": params.get("ErrorCode", ""),
+                "timestamp": timestamp(params.get("Timestamp") or params.get("DateSent"))}
             # The provider MessageSid and event state identify a retry, not receipt time.
             identity = [params["MessageSid"], kind, event.state, params.get("ErrorCode", ""), event.opt_out, event.opt_in]
             moment = None
             if kind == "inbound":
-                from .messaging.webhook_payloads import timestamp
                 from .notification_wa_window import inbound_time
                 from django.utils import timezone
                 moment = inbound_time(timestamp(params.get("Timestamp"))) if params.get("Timestamp") else timezone.now()

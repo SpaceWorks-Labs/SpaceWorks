@@ -70,7 +70,8 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
             refresh.outstand()
             from apps.accounts.serializers_payload import user_payload
             data = {"access": str(refresh.access_token),
-                    "user": user_payload(_user, request=self.context.get("request"))}
+                    "user": user_payload(_user, request=self.context.get("request"),
+                                         session_authority=refresh["surface"])}
             data["refresh"] = str(refresh)
             return data
 

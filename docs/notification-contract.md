@@ -77,7 +77,12 @@ integration_identity, credentials (write-only map), quotas, templates, use_platf
 activation_hold. Imported sender conflicts require review before clearing activation_hold. Channel returns
 channel, enabled, room_enabled, personal_enabled, email_fallback, provider,
 integration_identity, generation, credentials_set, quotas, templates, use_platform_sender,
-sender_key, credential_version and activation_hold.
+sender_key, credential_version, activation_hold and read-only callback_urls.
+The callback map derives from saved configuration: SMS returns `inbound_url` and `status_url`
+for the own or explicitly enabled platform sender; Twilio WhatsApp returns `inbound_url` and
+`status_url_template` with `{delivery_id}` filled automatically per send; Meta WhatsApp returns
+`webhook_url` bound to the current tenant, generation and phone-number ID. Incomplete setups
+return an empty map. URLs contain no credentials; provider signatures remain required.
 WhatsApp providers are exactly `twilio|meta`. Credentials/identity/provider updates advance
 the generation; old consent never becomes valid for a new installation. Channel module removal also invalidates installation authority; a module reinstall never
 restores old consent. The optional inbox is independent of core SMS/WhatsApp delivery. Quotas accept
@@ -140,6 +145,7 @@ API supports one, and report ambiguous timeouts explicitly. Callback correlation
 replace a different provider message ID already bound to the delivery.
 
 `CallbackEvent` carries provider_id/state, optional signed delivery_id/delivery_attempt correlation,
+optional provider_timestamp (never substituted with processing time),
 EndpointProof, endpoint_id, opt_out and inbound. EndpointProof contains code, destination,
 integration_identity, subject and explicit private=True. Signature/authentication checks
 happen in the adapter before returning an event; the shared handler never trusts raw

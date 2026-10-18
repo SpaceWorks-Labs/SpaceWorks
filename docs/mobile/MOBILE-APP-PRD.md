@@ -187,6 +187,17 @@ is authoritative. These are the rules the schema cannot express:
    `GET /config` publishes `native: {min_app_version:{android:string|null, ios:string|null},
    providers:{password:boolean, phone:boolean, google:{android_client_id,ios_client_id}|null,
    apple:{enabled:boolean}|null, oidc:[{key,display_name,client_id,issuer}]}}`.
+   The native object also contains `app_display_name: string` (deployment-owned, default `SpaceWorks`)
+   and `app_identity: {android: {app_id:string, signing_identities:string[]}|null,
+   ios: {app_id:string, signing_identities:string[]}|null}`. The Android package and Apple bundle
+   come only from approved global production registrations, one per platform/environment; absent
+   or invalid configuration yields null. Signers are public normalized Android distribution SHA-256
+   digests (1–5 for rotation) or one Apple App ID Prefix. Operators edit the display name in
+   `/control/` Platform attestation settings and identity/signers in Native app registrations.
+   This is one logical deployment app, independent of tenant branding. Update Android signers on
+   the same registration during rotation; revoke an old package/bundle registration before approving
+   its replacement. Credential inputs remain write-only, blank preserves the encrypted value, and
+   the public contract never includes credentials or verifier configuration keys.
    Read it on launch, show only enabled methods, and require an update below the platform minimum
    (compare dotted numeric components, not strings). Null means no minimum.
 6. Staff password sign-in MUST send `context:"staff"` and `makerspace:"<slug>"` to

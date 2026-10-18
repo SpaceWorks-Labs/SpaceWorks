@@ -119,7 +119,7 @@ def enforce_request(user, token, request):
     from apps.accounts.native_session import is_native_session
     native = is_native_session(user) or bool(token.get("device_grant_id"))
     if user.account_kind == "member" and native and (
-        classification == DELEGABLE or name in {
+        (classification == DELEGABLE and name != "payment-document-download") or name in {
             "auth-organization-invitation-redeem", "auth-organizations-self-service",
             "booking-staff-invite-redeem", "event-staff-invite-redeem",
         }

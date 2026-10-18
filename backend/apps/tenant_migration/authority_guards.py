@@ -81,6 +81,7 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "events" / "report_subject.py",
     APPS_DIR / "integrations" / "broadcasts_delivery.py",
     APPS_DIR / "operations" / "report_subjects.py",
+    APPS_DIR / "operations" / "views_platform_tenant_reports.py",
     APPS_DIR / "events" / "event_authority.py",
     APPS_DIR / "events" / "event_authority_page.py",
     APPS_DIR / "events" / "staff_grant_locks.py",

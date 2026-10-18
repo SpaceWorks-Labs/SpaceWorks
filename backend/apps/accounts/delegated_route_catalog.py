@@ -206,6 +206,8 @@ auth-reauth-phone-start auth-reauth-phone-confirm auth-reauth-social-factor
 
 PLATFORM_ONLY_ROUTES = frozenset("""
 admin-platform-mobile-readiness platform-analytics platform-analytics-makerspaces
+platform-tenant-report-catalog platform-tenant-analytics platform-tenant-dashboard
+platform-tenant-report-export
 """.split())
 
 TENANT_STAFF_ROUTES = frozenset("""

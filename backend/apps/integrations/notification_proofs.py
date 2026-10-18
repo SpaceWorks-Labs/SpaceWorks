@@ -118,6 +118,12 @@ def consume(configuration, proof, *, expected_user_id=None, expected_challenge_i
             valid = (eligible_owner(config.makerspace, challenge.user_id) and is_servable(config.makerspace)
                      and (config.channel == "whatsapp" or module_enabled(config.makerspace, "notifications"))
                      and not channel_module_blocks(config.makerspace, config.channel))
+        if valid and config.channel == "whatsapp":
+            from .models_messaging_consent import MessagingConsent
+            # User is locked above: a queued proof cannot undo a later withdrawal.
+            valid = not MessagingConsent.objects.filter(makerspace=config.makerspace,
+                user_id=challenge.user_id, channel="whatsapp", action="opted_out",
+                created_at__gte=observed_at).exists()
         if valid:
             NotificationEndpoint.objects.filter(makerspace=config.makerspace, user=challenge.user,
                 channel=config.channel, revoked_at=None).update(revoked_at=now, verification_state="revoked")
@@ -125,7 +131,7 @@ def consume(configuration, proof, *, expected_user_id=None, expected_challenge_i
                 channel=config.channel, provider=config.provider, destination=proof.destination,
                 provider_subject=proof.subject, identity_digest=identity_digest,
                 configuration=config, integration_identity=config.integration_identity,
-                integration_generation=config.generation, verified_at=now, consented_at=challenge.consented_at,
+                integration_generation=config.generation, verified_at=observed_at, consented_at=challenge.consented_at,
                 consent_version=challenge.consent_version)
             challenge.consumed_at, challenge.endpoint = now, endpoint
             challenge.save(update_fields=["consumed_at", "endpoint"])
@@ -151,27 +157,28 @@ def verified_callback(configuration, request, *, expected_user_id=None, expected
 
 
 @guarded(mutation=True)
-def apply_verified_event(configuration, event, *, expected_user_id=None, expected_challenge_id=None):
+def apply_verified_event(configuration, event, *, expected_user_id=None, expected_challenge_id=None,
+                         decision_at=None, observation=None):
     """Internal only: the event came from a verifier or the encrypted ingress journal."""
     if event.proof:
         endpoint = consume(configuration, event.proof, expected_user_id=expected_user_id,
                            expected_challenge_id=expected_challenge_id)
         if event.inbound:
-            _destination_event(configuration, event, identity_digest=endpoint.identity_digest)
+            _destination_event(configuration, event, identity_digest=endpoint.identity_digest, decision_at=decision_at)
         return endpoint
     if expected_user_id is not None:
         raise ValidationError({"proof": "A verified account-link proof is required."})
     with tenant_write(configuration.makerspace_id), transaction.atomic():
-        destination_changed = _destination_event(configuration, event)
+        destination_changed = _destination_event(configuration, event, decision_at=decision_at)
         from .notification_delivery import apply_callback
-        delivery_changed = apply_callback(configuration, event)
+        delivery_changed = apply_callback(configuration, event, observation=observation)
         return bool(delivery_changed or destination_changed)
 
 
-def _destination_event(configuration, event, *, identity_digest=""):
+def _destination_event(configuration, event, *, identity_digest="", decision_at=None):
     """A signed destination event applies to every account binding, atomically."""
     from .notification_destination_events import apply_destination_event
-    return apply_destination_event(configuration, event, identity_digest=identity_digest)
+    return apply_destination_event(configuration, event, identity_digest=identity_digest, decision_at=decision_at)
 
 
 @guarded(mutation=True)

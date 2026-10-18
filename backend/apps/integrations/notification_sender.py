@@ -1,5 +1,4 @@
 """Canonical sender ownership, explicit platform opt-in and retired verifier snapshots."""
-import copy
 from datetime import timedelta
 
 from django.db import transaction
@@ -124,24 +123,13 @@ def callback_configurations(makerspace_id, provider, generation):
     from .models_endpoints import ChannelConfiguration
     config = ChannelConfiguration.objects.filter(makerspace_id=makerspace_id,
         channel="whatsapp").first()
-    if config is None:
-        from django.db.models import Q
-        versions = NotificationCredentialVersion.objects.filter(makerspace_reference=makerspace_id,
-            provider=provider, generation=generation, wiped_at=None).filter(
-                Q(retired_at=None) | Q(retired_at__gte=timezone.now() - timedelta(days=14)))
-        return [ChannelConfiguration(pk=v.configuration_reference, makerspace_id=makerspace_id,
-            channel="whatsapp", provider=provider, generation=generation, credentials=v.credentials,
-            sender_key=v.sender_key, integration_identity=v.integration_identity,
-            credential_version=v.generation) for v in versions]
-    candidates = [config] if config.provider == provider and config.generation == generation else []
+    candidates = [config] if config and config.provider == provider and config.generation == generation else []
     from django.db.models import Q
-    version = config.credential_versions.filter(provider=provider, generation=generation, wiped_at=None).filter(
-        Q(retired_at=None) | Q(retired_at__gte=timezone.now() - timedelta(days=14))).first()
-    if version is None:
-        return candidates
-    previous = copy.copy(config)
-    previous.provider, previous.generation = version.provider, version.generation
-    previous.integration_identity, previous.sender_key = version.integration_identity, version.sender_key
-    previous.credentials, previous.credential_version = version.credentials, version.generation
-    previous.use_platform_sender = False
-    return candidates + [previous]
+    versions = NotificationCredentialVersion.objects.filter(makerspace_reference=makerspace_id,
+        provider=provider, generation=generation, wiped_at=None).filter(
+            Q(retired_at=None) | Q(retired_at__gte=timezone.now() - timedelta(days=14)))
+    # Retained installations keep their original PK, even after purge/recreation.
+    return candidates + [ChannelConfiguration(pk=v.configuration_reference, makerspace_id=makerspace_id,
+        channel="whatsapp", provider=provider, generation=generation, credentials=v.credentials,
+        sender_key=v.sender_key, integration_identity=v.integration_identity,
+        credential_version=v.generation) for v in versions]

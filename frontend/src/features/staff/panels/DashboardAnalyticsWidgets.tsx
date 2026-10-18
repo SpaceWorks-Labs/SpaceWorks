@@ -8,23 +8,23 @@ import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { wireChartSpec } from "./charts/wireChartSpec";
 import type { ChartRecord } from "./charts/chartSpec";
 
-export function DashboardAnalyticsWidgets({ widgets, reportsHref, makerspaceId }: {
-  widgets: DashboardWidget[]; reportsHref: string; makerspaceId: number;
+export function DashboardAnalyticsWidgets({ widgets, reportsHref, makerspaceId, analyticsBase }: {
+  widgets: DashboardWidget[]; reportsHref?: string; makerspaceId: number; analyticsBase?: string;
 }) {
   if (!widgets.length) return <p className="text-sm text-muted">No analytics widgets are available for your enabled modules and actions.</p>;
   return <div className="grid min-w-0 gap-6">{widgets.map(widget => <AnalyticsWidget key={widget.key}
-    widget={widget} reportsHref={reportsHref} makerspaceId={makerspaceId} />)}</div>;
+    widget={widget} reportsHref={reportsHref} makerspaceId={makerspaceId} analyticsBase={analyticsBase} />)}</div>;
 }
 
-function AnalyticsWidget({ widget, reportsHref, makerspaceId }: {
-  widget: DashboardWidget; reportsHref: string; makerspaceId: number;
+function AnalyticsWidget({ widget, reportsHref, makerspaceId, analyticsBase }: {
+  widget: DashboardWidget; reportsHref?: string; makerspaceId: number; analyticsBase?: string;
 }) {
   // Widget meta is a loose JSON object: deferred widgets carry their window, not rows.
   const widgetMeta = (analyticsMeta(widget.data) ?? {}) as Record<string, unknown>;
   const deferred = widgetMeta.deferred === true;
   const params = new URLSearchParams({ start: String(widgetMeta.start ?? ""),
     end: String(widgetMeta.end ?? ""), limit: "500" });
-  const query = useAnalyticsReport(`/admin/makerspace/${makerspaceId}/analytics`, widget.report_keys[0], params, deferred);
+  const query = useAnalyticsReport(analyticsBase ?? `/admin/makerspace/${makerspaceId}/analytics`, widget.report_keys[0], params, deferred);
   const data = deferred ? query.data : widget.data;
   const rows: ChartRecord[] = analyticsRows(data).map(row => ({ makerspace_id: makerspaceId, ...row }));
   // Widgets carry their report spec but no chart_hint. Money uses separate lines.
@@ -41,7 +41,7 @@ function AnalyticsWidget({ widget, reportsHref, makerspaceId }: {
         <StatCard key={`${index}:${field.field}`} label={`${String(row[spec.x.field] ?? "")} ${field.label ?? field.field}`} value={`${row[field.field] ?? "Unknown"} ${field.unit_field ? row[field.unit_field] ?? "" : field.unit}`} />))}</div> : null}
       <AnalyticsData title={widget.title} rows={rows} spec={spec} meta={analyticsMeta(data)} />
     </DataState>
-    {widget.report_keys[0] ? <a className="desk-button mt-3" href={reportHref(reportsHref, widget.report_keys[0])}>Open in reports</a> : null}
+    {reportsHref && widget.report_keys[0] ? <a className="desk-button mt-3" href={reportHref(reportsHref, widget.report_keys[0])}>Open in reports</a> : null}
   </section>;
 }
 

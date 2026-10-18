@@ -36,6 +36,7 @@ class CallbackEvent:
     delivery_attempt: int | None = None
     identity_digest: str = ""
     opt_in: bool = False
+    provider_timestamp: str | None = None
 
 
 class Provider(Protocol):

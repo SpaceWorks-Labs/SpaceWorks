@@ -31,23 +31,35 @@ def apply_callback(configuration, event, *, observation=None):
                 continue
             if row.provider_id and row.provider_id != event.provider_id:
                 continue
+            if observation and observation.get("phone_hash"):
+                expected = row.recipient_phone_hash
+                if not expected and row.endpoint_id:
+                    from .messaging.protections import recipient_hash
+                    expected = recipient_hash("phone", row.endpoint.destination)
+                if expected and expected != observation["phone_hash"]:
+                    continue
             if observation and not row.recipient_phone_hash and observation.get("phone_hash"):
                 row.recipient_phone_hash = observation["phone_hash"]
                 Delivery.objects.filter(pk=row.pk).update(recipient_phone_hash=row.recipient_phone_hash)
             row.provider_id = event.provider_id
             from .notification_provider_references import remember
             remember(row)
-            now = timezone.now()
-            if event.state == "failed":
-                Delivery.objects.filter(pk=row.pk).update(failed_at=row.failed_at or now)
+            from .notification_callback_times import provider_time
+            moment = provider_time(event.provider_timestamp or (observation or {}).get("timestamp"))
+            # Record facts even when a duplicate/lower-ranked status cannot change state.
+            # updated_at and the ingress journal record observation time independently.
+            facts = {"provider_id": event.provider_id, "updated_at": timezone.now()}
+            if moment and event.state in {"accepted", "sent", "delivered", "read", "failed", "retrying"}:
+                field = ("failed" if event.state == "retrying" else event.state) + "_at"
+                facts[field] = getattr(row, field) or moment
+            Delivery.objects.filter(pk=row.pk).update(**facts)
             if observation and row.channel == "whatsapp":
                 from .messaging.correlation import confirm_canonical_probe
                 confirm_canonical_probe(row, alias_hash=observation.get("alias_hash", ""),
                     phone_hash=observation.get("phone_hash", ""))
                 Delivery.objects.filter(pk=row.pk).update(recipient_alias_hash=row.recipient_alias_hash)
             # A read/delivered acknowledgement cannot be undone by a late failure.
-            if event.state == "failed" and (row.state in {"accepted", "sent", "held"}
-                    or (row.state == "retrying" and row.claim_until)):
+            if event.state == "failed" and row.state in {"accepted", "sent", "held", "retrying"}:
                 row.state, row.retryable = "failed", False
             elif RANK[event.state] > RANK[row.state] and event.state in SUCCESS:
                 row.state, row.retryable = event.state, False
@@ -56,9 +68,6 @@ def apply_callback(configuration, event, *, observation=None):
             row.next_attempt_at = None
             row.claim_until = None
             row.provider_id = event.provider_id
-            if event.state in {"accepted", "sent", "delivered", "read"}:
-                field = event.state + "_at"
-                Delivery.objects.filter(pk=row.pk).update(**{field: getattr(row, field) or now})
             row.save(update_fields=["state", "provider_id", "retryable", "next_attempt_at", "claim_until", "updated_at"])
             from apps.audit.services import record
             record(None, "notification.delivery_observed", makerspace=row.makerspace, target=row,

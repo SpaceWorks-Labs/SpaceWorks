@@ -70,7 +70,15 @@ def guarded(*, mutation=False, sending=False):
     return decorate
 
 
-def establish_barrier(*, drained=False, using="default"):
+def audit_checkpoint(current, action, *, actor=None, using="default", details=None):
+    from apps.audit.services import record
+    record(actor, "notification.cutover_" + action, target=current, using=using,
+        meta={"attribution": "operator" if actor else "system", "route": current.route,
+            "sending_enabled": current.sending_enabled, "receipt_watermark": current.receipt_watermark,
+            "replay_watermark": current.replay_watermark, **(details or {})})
+
+
+def establish_barrier(*, drained=False, using="default", actor=None):
     """Operator checkpoint after old application instances and handlers are drained."""
     if not drained:
         raise ValueError("Confirm old instances and provider calls have been drained")
@@ -84,10 +92,12 @@ def establish_barrier(*, drained=False, using="default"):
         current.receipt_watermark = NotificationIngress.objects.using(using).aggregate(n=Max("pk"))["n"] or 0
         current.snapshot = snapshot(using)
         current.save(using=using)
+        audit_checkpoint(current, "barrier_established", actor=actor, using=using,
+            details={"old_instances_drained": True})
         return current
 
 
-def switch_to_canonical(*, using="default"):
+def switch_to_canonical(*, using="default", actor=None):
     with boundary(using=using, exclusive=True), transaction.atomic(using=using):
         current = state(using)
         if not current.barrier_at or not current.copied_at:
@@ -95,10 +105,37 @@ def switch_to_canonical(*, using="default"):
         current.route, current.sending_enabled = "canonical", False
         current.replay_watermark = NotificationIngress.objects.using(using).aggregate(n=Max("pk"))["n"] or 0
         current.save(using=using)
+        audit_checkpoint(current, "canonical_routed", actor=actor, using=using)
         return current
 
 
-def activate(*, using="default"):
+def verify(*, signoffs, using="default", actor=None):
+    from .models_cutover import NotificationLegacyMapping
+    from .notification_conversion_snapshot import verify_reconciliation
+    with boundary(using=using, exclusive=True), transaction.atomic(using=using):
+        current = state(using)
+        reviewed = {key: signoffs.get(key) is True for key in ("producer_coverage", "push", "registries")}
+        if not all(reviewed.values()):
+            raise ValueError("Producer, push and registry sign-offs are required before verification")
+        if current.route != "canonical":
+            raise ValueError("Switch to canonical routing and replay first")
+        current.snapshot["_signoffs"] = reviewed
+        current.save(using=using, update_fields=["snapshot"])
+        verify_reconciliation(using)
+        current.replay_watermark = NotificationIngress.objects.using(using).aggregate(n=Max("pk"))["n"] or 0
+        current.snapshot["_verified"] = {"watermark": current.replay_watermark,
+            "receipt_count": NotificationIngress.objects.using(using).count(),
+            "mapping_count": NotificationLegacyMapping.objects.using(using).count(),
+            "verified_at": timezone.now().isoformat()}
+        current.reconciled_at = timezone.now()
+        current.save(using=using, update_fields=["reconciled_at", "replay_watermark", "snapshot"])
+        audit_checkpoint(current, "signoffs_recorded", actor=actor, using=using, details={"signoffs": reviewed})
+        audit_checkpoint(current, "verified", actor=actor, using=using,
+            details={key: current.snapshot["_verified"][key] for key in ("receipt_count", "mapping_count")})
+        return current
+
+
+def activate(*, using="default", actor=None):
     with boundary(using=using, exclusive=True), transaction.atomic(using=using):
         current = state(using)
         if current.sending_enabled and current.activated_at:
@@ -110,3 +147,5 @@ def activate(*, using="default"):
             raise ValueError("Canonical replay and retirement verification are required")
         current.sending_enabled, current.activated_at = True, timezone.now()
         current.save(using=using)
+        audit_checkpoint(current, "activated", actor=actor, using=using)
+        return current

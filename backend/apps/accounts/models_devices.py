@@ -54,6 +54,12 @@ class NativeAppRegistration(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
+                fields=['platform', 'environment'],
+                condition=models.Q(makerspace__isnull=True, status='approved'),
+                name='uniq_approved_deployment_app',
+                violation_error_message='Only one approved deployment app per platform and environment is allowed. Rotate signers on the existing registration, or revoke it before approving its replacement.',
+            ),
+            models.UniqueConstraint(
                 fields=['makerspace', 'app_id', 'platform', 'environment'],
                 nulls_distinct=False,
                 name='uniq_native_app_registration_scope',

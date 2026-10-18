@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
-from apps.accounts.rbac_superadmin import _superadmin_hidden_to_exclude
 from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
@@ -68,7 +67,7 @@ class PlatformAnalyticsMakerspacesView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="List makerspaces available for tenant analytics", request=None,
-        description="Paginated picker. A hidden makerspace requires an active local membership granting the selected report's action. Platform analytics always use their stricter visibility policy.",
+        description="Paginated platform picker. Hidden makerspaces are blocked. Each tenant read rechecks report actions and modules through explicit platform read routes.",
         parameters=[OpenApiParameter("report_key", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Tenant report key; defaults to summary."),
                     OpenApiParameter("page", OpenApiTypes.INT, OpenApiParameter.QUERY)],
         responses={200: AnalyticsMakerspacePageSerializer, **ERROR_RESPONSES},
@@ -79,7 +78,7 @@ class PlatformAnalyticsMakerspacesView(APIView):
         if definition.key == "organization-membership":
             raise reports.ReportNotFound()
         spaces = rbac.scope_by_action(request.user, definition.required_action, servable_queryset(Makerspace.objects.all()), field="id")
-        spaces = spaces.exclude(pk__in=_superadmin_hidden_to_exclude(request.user, definition.required_action))
+        spaces = spaces.filter(superadmin_access_enabled=True)
         spaces = spaces.filter(enabled_modules__contains=["reports"])
         for module in definition.required_modules:
             spaces = spaces.filter(enabled_modules__contains=[module])

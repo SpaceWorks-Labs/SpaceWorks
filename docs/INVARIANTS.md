@@ -716,6 +716,13 @@ The dashboard's tenant discovery remains local-membership-based. Organization ch
 use only the existing strategy-backed endpoint, retain the breakdown beside the total,
 and project `chart_spec` onto the strategy's combined fields (no fake tenant dimension).
 
+**The platform tenant picker uses explicit platform reads.** `/admin/platform/analytics/makerspaces/<id>/`
+provides `reports/catalog`, `analytics/<key>`, `dashboard` and `reports/<key>/export` through the
+canonical tenant handlers. Each read retains report RBAC, module checks and servability and
+hard-blocks hidden tenants; it grants no staff session, device grant or tenant credential access.
+Deferred dashboard widgets and exports use those same platform routes. Tenant staff accounts
+continue to use their separate fixed-tenant session.
+
 **Platform-service metering has one anonymous exception to `makerspace_id` grouping.**
 Only `platform-services`, with a server-owned active-superadmin `PlatformContext`, may use
 `operations/platform_scope.hidden_platform_service_bucket`: hidden tenants' platform-provider usage
@@ -1342,7 +1349,14 @@ supply native authority, and both forms of superadmin are refused at device gran
   `_revoke_locked` cleanup deactivates the user's active `PushDevice` rows there and stamps
   `invalidated_at`; their grants and push subscriptions in other makerspaces remain usable.
 
-**Native app configuration lives on the registration (phase 1e).** All native eligibility checks
+**Native app configuration lives on the registration (phase 1e).** Only one approved global
+identity per platform/environment is allowed (database constraint). The
+deployment-owned `PlatformAttestationSettings.app_display_name` is edited in `/control/` and
+published as `native.app_display_name` alongside `native.app_identity.{android,ios}` (production
+app ID and public signer list, or null). Editing the name preserves blank write-only credential
+inputs. Signer rotation updates the existing registration; replacing its app ID requires revoking
+the old registration before approving the new one.
+All native eligibility checks
 require an approved deployment-global registration (makerspace IS NULL); association files and
 minimum versions additionally require production. Registrations hold 1–5 Android distribution signer
 digests or exactly one Apple App ID Prefix. Challenges snapshot the complete list and retain the

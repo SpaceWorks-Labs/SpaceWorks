@@ -41,12 +41,13 @@ def apply(receipt, data):
     from .notification_delivery import apply_callback
     from apps.tenant_migration.gate_runtime import tenant_write
     with tenant_write(config.makerspace_id):
-        if event.state == "failed":
-            apply_callback(config, replace(event, state="accepted"))
         try:
             from .notification_whatsapp_consent import proof_receipt
+            from .notification_callback_times import provider_time
             with proof_receipt(receipt.received_at):
-                result = apply_verified_event(config, event)
+                result = apply_verified_event(config, event,
+                    decision_at=provider_time(event.provider_timestamp or data.get("protection", {}).get("timestamp"))
+                        or receipt.received_at, observation=data.get("protection"))
         except Exception as exc:
             from rest_framework.exceptions import ValidationError
             if event.proof and isinstance(exc, ValidationError):
@@ -69,14 +70,20 @@ def apply(receipt, data):
         if event.state:
             rows = NotificationDelivery.objects.filter(makerspace_id=receipt.makerspace_id,
                 channel=receipt.channel, provider=receipt.provider, integration_generation=receipt.generation,
-                integration_identity=receipt.integration_identity, provider_id=event.provider_id)
+                integration_identity=receipt.integration_identity, sender_key=receipt.sender_key,
+                provider_id=event.provider_id)
+            if event.delivery_id is not None:
+                rows = rows.filter(pk=event.delivery_id)
+            if event.delivery_attempt is not None:
+                rows = rows.filter(attempt_count=event.delivery_attempt)
             if event.delivery_id and event.delivery_attempt is not None:
                 stale = NotificationDelivery.objects.filter(pk=event.delivery_id, makerspace_id=receipt.makerspace_id,
                     channel=receipt.channel, provider=receipt.provider, integration_generation=receipt.generation,
                     integration_identity=receipt.integration_identity, attempt_count__gt=event.delivery_attempt)
                 if stale.exists():
                     return True
-            return rows.exists()  # A duplicate terminal observation is successfully replayed.
+            from .notification_provider_references import retired_target_known
+            return rows.exists() or retired_target_known(receipt, event)
         return bool(result or not event.proof)
 
 

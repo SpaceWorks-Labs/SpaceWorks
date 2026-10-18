@@ -1,7 +1,5 @@
 import re
 
-from django.utils import timezone
-from django.core.exceptions import ValidationError
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -18,11 +16,7 @@ from apps.accounts.claim_tenants import claim_tenant_matches
 from apps.accounts.claim_tokens import ClaimAccessToken
 from apps.accounts.claim_routes import CLAIM_REACHABLE_PREFIXES
 from apps.accounts.models import User
-from apps.accounts.native_app_identity import registration_is_eligible
-from apps.accounts.models_devices import (
-    DeviceGrant,
-    DeviceRefreshFamily,
-)
+from apps.accounts.authentication_device import heartbeat_device_grant, validated_device_grant
 from apps.accounts.tokens import validate_auth_generation
 
 
@@ -105,29 +99,7 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         family_id = token.get("device_family_id")
         if not family_id:
             raise AuthenticationFailed("Invalid device authorization.")
-        try:
-            grant = (
-                DeviceGrant.objects.select_related("registration")
-                .filter(pk=grant_id, user=user).first()
-            )
-            valid = bool(
-                grant and grant.status == DeviceGrant.Status.ACTIVE
-                and grant.revoked_at is None
-                and registration_is_eligible(grant.registration)
-                and user.is_active and user.access_status == User.AccessStatus.ACTIVE
-                and grant.authority == user.account_kind
-                and grant.credential_generation == user.credential_generation
-                and grant.staff_makerspace_id == user.staff_makerspace_id
-                and (user.account_kind != "staff" or grant.login_method == "password")
-                and (user.account_kind != "staff" or grant.registration.makerspace_id in (None, user.staff_makerspace_id))
-                and DeviceRefreshFamily.objects.filter(
-                    pk=family_id, grant=grant, user=user, revoked_at__isnull=True
-                ).exists()
-            )
-        except (ValidationError, ValueError, TypeError) as exc:
-            raise AuthenticationFailed("Invalid device authorization.") from exc
-        if not valid:
-            raise AuthenticationFailed("Device authorization is no longer active.")
+        grant = validated_device_grant(user, token)
         request.device_grant = grant
         request.native_app_registration = grant.registration
         # Read by rbac_organizations: a device session never carries org-derived authority.
@@ -150,7 +122,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
                 if key in kwargs and str(kwargs[key]) != str(selected):
                     raise PermissionDenied("Makerspace target does not match the selected makerspace.")
         _assert_source_gate(request)
-        DeviceGrant.objects.filter(pk=grant.pk).update(last_used_at=timezone.now())
+        grant = heartbeat_device_grant(user, token)
+        request.device_grant = grant
         from apps.accounts.device_activity import record_device_activity
         record_device_activity(grant, getattr(request, "selected_makerspace_membership", None))
         request.session_authority = "native_staff" if user.account_kind == "staff" else surface

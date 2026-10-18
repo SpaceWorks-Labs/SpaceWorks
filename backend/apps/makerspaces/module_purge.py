@@ -254,9 +254,10 @@ def _free_private_storage(makerspace, sizes, deleted_keys):
     if not sizes or not deleted_keys:
         return
     from .models_page_cleanup import PublicPageObjectCleanup
+    # The deletion callback may already have completed before this legacy path.
+    # Both pending and completed page receipts own their quota release exactly once.
     journaled = set(PublicPageObjectCleanup.objects.filter(
-        owner_kind="makerspace", owner_id=makerspace.pk, object_key__in=deleted_keys,
-        completed_at__isnull=True,
+        owner_kind__in=("makerspace", "event"), owner_id=makerspace.pk, object_key__in=deleted_keys,
     ).values_list("object_key", flat=True))
     freed = sum(
         size for key, size in sizes.items() if size and key in deleted_keys

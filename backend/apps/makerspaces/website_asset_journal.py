@@ -5,6 +5,7 @@ Pending debt counts against quota; attachment and counter charge commit together
 """
 
 from datetime import timedelta
+import psycopg2
 from django.db import connections, router
 from django.utils import timezone
 from .models_page_cleanup import PublicPageObjectCleanup as Cleanup
@@ -30,12 +31,16 @@ def reserve(page, key, size, copies):
         limits.add_storage(page.makerspace, size)
         transaction.set_rollback(True)
     alias = router.db_for_write(Cleanup)
-    isolated = connections[alias].copy(alias="website_cleanup_reservation")
+    source = connections[alias]
+    # Like the source-gate lock connection, this autonomous transaction must
+    # bypass Django's alias lifecycle and survive the domain pass's rollback.
+    # It only inserts FK-free debt: the tentative page/event may be uncommitted
+    # on the caller's connection, so never read domain rows through this one.
+    isolated = psycopg2.connect(**source.get_connection_params())
     now = timezone.now()
     try:
-        isolated.ensure_connection()
-        isolated.set_autocommit(True)
-        table = isolated.ops.quote_name(Cleanup._meta.db_table)
+        isolated.autocommit = True
+        table = source.ops.quote_name(Cleanup._meta.db_table)
         with isolated.cursor() as cursor:
             cursor.execute(f"""INSERT INTO {table}
                 (owner_kind, owner_id, page_id, object_key, size_bytes, storage_accounted, ownership_proven,

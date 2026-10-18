@@ -208,7 +208,7 @@ def set_release_locked(target, *, actor, released, revision):
             raise ValidationError({"revision": "Save a draft before releasing it."})
         validate_snapshot_window(target, page.draft_revision)
         if isinstance(target, EventSeries):
-            for occurrence in target.occurrences.filter(website_page__isnull=True).select_for_update().order_by("pk"):
+            for occurrence in target.occurrences.filter(website_page__isnull=True).select_for_update(of=("self",)).order_by("pk"):
                 validate_snapshot_window(occurrence, page.draft_revision, inherited=True)
         page.published_revision = page.draft_revision
         page.save(update_fields=["published_revision"])

@@ -29,7 +29,8 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("events.EventPage", "editorial_document"),
         ("events.EventPageRevision", "document"),
         ("makerspaces.MakerspacePublicPageRevision", "document"),
-        ("organizations.OrganizationPublicPageRevision", "document"),
+        # Organization revisions are deployment-only omitted models, outside
+        # the tenant export JSON registry; their links use typed reference rows.
         ("events.EventPage", "section_order"),
         ("events.EventPage", "section_enabled"),
         ("events.Event", "badge_template"),

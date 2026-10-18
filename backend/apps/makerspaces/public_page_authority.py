@@ -1,7 +1,9 @@
 """Identity is narrower than effective actions for page ownership (P4).
 
-Tenant lock order: write fence -> tenant -> account -> local membership/role ->
-page -> namespace/storage. Never lock nullable joined FKs with select_for_update.
+Tenant lock order: write fence -> tenant -> local membership -> account -> role
+-> page -> namespace/storage. Membership revocation's deferred account constraint
+locks User at commit, so never hold User while waiting for its membership.
+Never lock nullable joined FKs with select_for_update.
 """
 
 from django.contrib.auth import get_user_model
@@ -25,16 +27,17 @@ def lock_local_manager(owner_id, actor):
         raise NotFound()
     assert_write_allowed(owner_id)
     space = get_object_or_404(Makerspace.objects.select_for_update(), pk=owner_id)
+    membership = MakerspaceMembership.objects.select_for_update().filter(
+        makerspace=space, user_id=actor.pk).first()
     actor = get_user_model().objects.select_for_update().get(pk=actor.pk)
     reject_platform(actor)
-    membership = MakerspaceMembership.objects.select_for_update().filter(
-        makerspace=space, user=actor, status="active").first()
     role = (MakerspaceRole.objects.select_for_update().filter(pk=membership.assigned_role_id).first()
             if membership else None)
     if (not actor.is_active or actor.access_status != "active" or actor.must_change_password or actor.account_kind != "staff"
             or actor.staff_makerspace_id != space.pk or not is_servable(space)
+            or membership is None or membership.status != "active"
             or role is None or role.slug != "space_manager" or role.makerspace_id != space.pk
-            or not rbac.can(actor, rbac.MANAGE_MAKERSPACE, space)):
+            or not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk)):
         raise PermissionDenied("Only this makerspace's local Space Manager may edit its page.")
     return space, actor
 
@@ -44,8 +47,7 @@ def lock_organization_governor(owner_id, actor):
     from apps.organizations.access import lock_governance_membership
     from apps.organizations.governance import MANAGE_ORGANIZATION_PROFILE
     reject_platform(actor)
-    organization = get_object_or_404(Organization.objects.select_for_update(), pk=owner_id,
-                                    memberships__user=actor, memberships__status="active")
+    organization = get_object_or_404(Organization.objects.select_for_update(), pk=owner_id)
     actor = get_user_model().objects.select_for_update().get(pk=actor.pk)
     reject_platform(actor)
     if not actor.is_active or actor.access_status != "active" or actor.must_change_password or not organization.is_active:

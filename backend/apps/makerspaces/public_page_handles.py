@@ -1,7 +1,8 @@
 """Typed namespace lifecycle. Caller holds owner/authority/page locks first.
 
-Member lock order remains account -> sorted names -> membership. Tenant/global
-page actions take tenant/org -> account -> authority -> page -> sorted names.
+Member lock order remains account -> sorted names -> membership. Tenant page
+actions take tenant -> local membership -> account -> role -> page -> sorted
+names; global pages take organization -> account -> governance -> page -> names.
 Imports must take the same owner locks before calling the shared name locks.
 """
 

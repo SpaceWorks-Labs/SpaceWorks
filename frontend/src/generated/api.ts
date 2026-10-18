@@ -71,6 +71,7 @@ export const openApiTags = [
   "Notification contract",
   "Notification delivery",
   "Notifications",
+  "Page editor",
   "Payments",
   "Personal notification contract",
   "Personal notifications",
@@ -86,6 +87,7 @@ export const openApiTags = [
   "Public machine service",
   "Public machines",
   "Public organizations",
+  "Public pages",
   "Public profiles",
   "Public requests",
   "Public websites",
@@ -446,6 +448,15 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/warranties",
   "/api/v1/admin/makerspaces",
   "/api/v1/admin/makerspaces/{id}",
+  "/api/v1/admin/makerspaces/{id}/public-page/",
+  "/api/v1/admin/makerspaces/{id}/public-page/assets/",
+  "/api/v1/admin/makerspaces/{id}/public-page/assets/{asset_id}/",
+  "/api/v1/admin/makerspaces/{id}/public-page/handle-availability/",
+  "/api/v1/admin/makerspaces/{id}/public-page/handle/",
+  "/api/v1/admin/makerspaces/{id}/public-page/preview/",
+  "/api/v1/admin/makerspaces/{id}/public-page/publish/",
+  "/api/v1/admin/makerspaces/{id}/public-page/revisions/",
+  "/api/v1/admin/makerspaces/{id}/public-page/unpublish/",
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-issues/",
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-machine-types/",
   "/api/v1/admin/makerspaces/{makerspace_id}/bookings/",
@@ -528,6 +539,15 @@ export const openApiPaths = [
   "/api/v1/admin/organizations/{id}/makerspaces/{makerspace_id}/",
   "/api/v1/admin/organizations/{id}/memberships/",
   "/api/v1/admin/organizations/{id}/memberships/{membership_id}/",
+  "/api/v1/admin/organizations/{id}/public-page/",
+  "/api/v1/admin/organizations/{id}/public-page/assets/",
+  "/api/v1/admin/organizations/{id}/public-page/assets/{asset_id}/",
+  "/api/v1/admin/organizations/{id}/public-page/handle-availability/",
+  "/api/v1/admin/organizations/{id}/public-page/handle/",
+  "/api/v1/admin/organizations/{id}/public-page/preview/",
+  "/api/v1/admin/organizations/{id}/public-page/publish/",
+  "/api/v1/admin/organizations/{id}/public-page/revisions/",
+  "/api/v1/admin/organizations/{id}/public-page/unpublish/",
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}",
   "/api/v1/admin/organized-events/",
   "/api/v1/admin/platform/backup-destinations",
@@ -834,11 +854,16 @@ export const openApiPaths = [
   "/api/v1/procurement/to-buy/{id}/move-to-printing",
   "/api/v1/procurement/to-buy/{id}/receipts",
   "/api/v1/procurement/to-buy/{id}/receipts/presign",
+  "/api/v1/public/event-codes/{public_token}/",
   "/api/v1/public/machine-service/3d-printer/requests/{public_token}/status",
   "/api/v1/public/makerspaces/",
   "/api/v1/public/makerspaces/{makerspace_slug}/presence/now/",
   "/api/v1/public/organizations/{slug}/",
   "/api/v1/public/organizations/{slug}/events/",
+  "/api/v1/public/organizations/{slug}/makerspaces/",
+  "/api/v1/public/organizations/{slug}/page/",
+  "/api/v1/public/organizations/{slug}/page/assets/{asset_id}/",
+  "/api/v1/public/page-handles/{handle}/",
   "/api/v1/public/profiles/{handle}/",
   "/api/v1/public/profiles/{handle}/activity",
   "/api/v1/public/profiles/{handle}/events",
@@ -886,6 +911,8 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/pass.pdf",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/reschedule/",
   "/api/v1/public/{makerspace_slug}/my-bookings/{public_token}/rotate-checkin/",
+  "/api/v1/public/{makerspace_slug}/page/",
+  "/api/v1/public/{makerspace_slug}/page/assets/{asset_id}/",
   "/api/v1/public/{makerspace_slug}/presence-sessions",
   "/api/v1/public/{makerspace_slug}/presence-sessions/current",
   "/api/v1/public/{makerspace_slug}/presence-sessions/current/end",
@@ -910,6 +937,8 @@ export const openApiPaths = [
   "/api/v1/webhooks/stripe/{public_code}",
   "/embed/{makerspace_slug}/{kind}/{public_token}/",
   "/robots.txt",
+  "/share/e/{public_token}/",
+  "/share/pages/{handle}/",
   "/share/profiles/{handle}/",
   "/share/{kind}/{public_token}/",
   "/sitemap.xml"
@@ -930,6 +959,13 @@ export type _StationRef = {
   "name": string;
   "kind": string;
 };
+
+export type About = {
+  "title": string;
+  "markdown": string;
+};
+
+export type AccentChoiceEnum = "inherit" | "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
 
 export type AcceptQuantity = {
   "item_id": number;
@@ -1260,6 +1296,23 @@ export type ApproveRequest = {
   "plan_id"?: number | null;
 };
 
+export type ArchiveCard = {
+  "title": string;
+  "starts_at": string;
+  "ends_at": string;
+  "event_url": string | null;
+  "kind": KindDa9Enum;
+  "description": string;
+  "timezone": string;
+  "host": ArchiveHost;
+};
+
+export type ArchiveCollection = {
+  "count": number;
+  "results": Array<ArchiveCard>;
+  "collection_url": string;
+};
+
 export type ArchiveCustodyReadiness = {
   "below_floor_makerspaces": number;
   "zero_recipient_makerspaces": number;
@@ -1279,6 +1332,11 @@ export type ArchivedPaymentSummary = {
   "makerspace": ArchivedPaymentMakerspace;
   "pending_count": number;
   "total_count": number;
+};
+
+export type ArchiveHost = {
+  "name": string;
+  "canonical_url": string;
 };
 
 export type ArchiveRecipient = {
@@ -1323,6 +1381,14 @@ export type ArchiveRequestValidationError = {
   "reason"?: Array<string>;
 };
 
+export type Asset = {
+  "id": number;
+  "alt_text": string;
+  "size_bytes": number;
+  "preview_url": string;
+  "pinned": boolean;
+};
+
 export type AssetChainGroup = {
   "asset_id": number | null;
   "asset_tag": string;
@@ -1353,6 +1419,17 @@ export type AssetGenerateResult = {
 export type AssetQrHistory = {
   "asset": number;
   "scans": Array<QrHistoryItem>;
+};
+
+export type AssetUploadInput = {
+  "version": number;
+  "file": string;
+  "alt_text": string;
+};
+
+export type AssetUploadResult = {
+  "asset": Asset;
+  "state": EditorState;
 };
 
 export type AssignableMachineType = {
@@ -1644,6 +1721,8 @@ export type BindingCreate = {
 };
 
 export type BlankEnum = "";
+
+export type BodyRenderingEnum = "restricted_v1" | "legacy_literal_v1";
 
 export type BookableSpaceAdmin = {
   "clone_enabled": boolean;
@@ -2802,6 +2881,13 @@ export type Count = {
   "count": number;
 };
 
+export type Cover = {
+  "url": string;
+  "alt": string;
+};
+
+export type CoverModeEnum = "inherit" | "asset" | "none";
+
 export type CreateBoxQr = {
   "makerspace_id": number;
   "label": string;
@@ -3082,13 +3168,13 @@ export type DeviceGrant = {
 };
 
 export type DeviceIdentity = {
-  "platform": PlatformEnum;
+  "platform": Platform3ddEnum;
   "app_id": string;
   "environment": EnvironmentEnum;
 };
 
 export type DeviceLogin = {
-  "platform": PlatformEnum;
+  "platform": Platform3ddEnum;
   "app_id": string;
   "environment": EnvironmentEnum;
   "username": string;
@@ -3238,6 +3324,7 @@ export type DiscoveryCard = {
   "description": string;
   "url": string;
   "image_url": string | null;
+  "image_alt": string;
   "date": string;
   "location": string;
   "availability": string;
@@ -3250,6 +3337,14 @@ export type DiscoveryCard = {
 export type DispositionEnum = "needs_fix" | "remove";
 
 export type DocTypeEnum = "manual" | "sop";
+
+export type Document = {
+  "schema_version": number;
+  "cover_mode": CoverModeEnum;
+  "cover_asset_id": number | null;
+  "accent_choice": AccentChoiceEnum | NullEnum | null;
+  "sections": Array<PublicPageSectionInput>;
+};
 
 export type DocumentFinalize = {
   "object_key": string;
@@ -3314,6 +3409,28 @@ export type DomainVerificationResponse = {
 export type DownloadGrant = {
   "url": string;
   "expires_in": number;
+};
+
+export type EditorCapabilities = {
+  "allowed_section_types": Array<SectionTypesEnum>;
+  "required_groups": Array<SectionTypesEnum>;
+  "palette_choices": PaletteChoices;
+  "can_edit_details": boolean;
+  "can_publish": boolean;
+  "suggested_handle": string | null;
+};
+
+export type EditorState = {
+  "kind": Kind33cEnum;
+  "owner_id": number;
+  "version": number;
+  "handle": string | null;
+  "draft_revision_id": string | null;
+  "published_revision_id": string | null;
+  "document": Document;
+  "assets": Array<Asset>;
+  "capabilities": EditorCapabilities;
+  "limits": PageLimits;
 };
 
 export type EducationEntry = {
@@ -3531,6 +3648,13 @@ export type EventBroadcastList = {
   "results": Array<EventBroadcast>;
 };
 
+export type EventCard = {
+  "title": string;
+  "starts_at": string;
+  "ends_at": string;
+  "event_url": string;
+};
+
 export type EventCheckInPage = {
   "count": number;
   "next": string | null;
@@ -3604,6 +3728,12 @@ export type EventCollaboratorReplace = {
   "slugs": Array<string>;
 };
 
+export type EventCollection = {
+  "count": number;
+  "results": Array<EventCard>;
+  "collection_url": string;
+};
+
 export type EventCreate = {
   "registration_audience"?: DefaultRegistrationAudienceEnum;
   "category_id"?: number | null;
@@ -3633,6 +3763,16 @@ export type EventCreate = {
 export type EventDuplicate = {
   "attach_series"?: boolean;
 };
+
+export type EventEditorialDocument = {
+  "schema_version": number;
+  "cover_mode": CoverModeEnum;
+  "cover_asset_id": number | null;
+  "accent_choice": AccentChoiceEnum | NullEnum | null;
+  "sections": Array<EventEditorialSectionInput>;
+};
+
+export type EventEditorialSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput;
 
 export type EventEligibility = {
   "eligible": boolean;
@@ -3948,6 +4088,16 @@ export type EvidenceUrlResponse = {
 };
 };
 
+export type ExplicitTeamEntry = {
+  "id": string;
+  "kind": ExplicitTeamEntryKindEnum;
+  "display_name": string;
+  "role": string;
+  "url"?: string;
+};
+
+export type ExplicitTeamEntryKindEnum = "explicit";
+
 export type FabLabHealthReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<FabLabHealthRow>;
@@ -3986,6 +4136,8 @@ export type FailedDeliveries = {
 };
 
 export type FailureCodeEnum = "deadline_exceeded" | "integrity_error" | "storage_error" | "quota_exceeded" | "internal_error";
+
+export type FamilyEnum = "inventory" | "events" | "bookings" | "machines" | "membership";
 
 export type Feature4d1Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
@@ -4101,6 +4253,21 @@ export type ForgotPasswordRequest = {
 
 export type FrontendDomainStatusEnum = "pending" | "verified" | "failed";
 
+export type FunctionalLink = {
+  "family": FamilyEnum;
+  "url": string;
+};
+
+export type Gallery = {
+  "title": string;
+  "items": Array<GalleryItem>;
+};
+
+export type GalleryItem = {
+  "asset_id": number;
+  "caption": string;
+};
+
 export type GenericAnalyticsReport = {
   "report_key"?: string;
   "rows": Array<Array<unknown>>;
@@ -4166,11 +4333,31 @@ export type Handle = {
   "handle": string;
 };
 
+export type HandleAvailability = {
+  "handle": string;
+  "available": boolean;
+};
+
+export type HandleInput = {
+  "version": number;
+  "handle": string;
+};
+
 export type HandleRead = {
   "handle": string;
   "claimed_at": string;
   "changed_at": string;
 };
+
+export type HandleResolution = {
+  "kind": HandleResolutionKindEnum;
+  "handle": string;
+  "canonical_url": string;
+  "redirected": boolean;
+  "content_url": string;
+};
+
+export type HandleResolutionKindEnum = "member" | "makerspace" | "organization";
 
 export type HardwareRequestError = {
   "detail": string;
@@ -4776,11 +4963,15 @@ export type KeyBe2Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost
 
 export type Kind21fEnum = "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
 
+export type Kind33cEnum = "makerspace" | "organization";
+
 export type Kind3bfEnum = "dev_room" | "bench" | "meeting" | "other";
 
 export type KindAf4Enum = "rules" | "amenity" | "faq" | "link" | "sponsor" | "gallery";
 
 export type KindB02Enum = "rollback_in_place" | "disaster";
+
+export type KindDa9Enum = "archive";
 
 export type KindE45Enum = "printer" | "label_printer" | "generic";
 
@@ -5065,6 +5256,13 @@ export type LendingHistoryResponse = {
 
 export type LevelEnum = "info" | "warning" | "critical";
 
+export type Link = {
+  "id": string;
+  "label": string;
+  "platform": LinkPlatformEnum;
+  "url": string;
+};
+
 export type LinkedViaEnum = "staff_assigned" | "claimed";
 
 export type LinkMachineConsumable = {
@@ -5076,6 +5274,13 @@ export type LinkMachineConsumable = {
   "note"?: string;
 };
 
+export type LinkPlatformEnum = "website" | "github" | "linkedin" | "instagram" | "youtube" | "x" | "other";
+
+export type Links = {
+  "title": string;
+  "entries": Array<Link>;
+};
+
 export type LoanDepositModeEnum = "none" | "fixed" | "per_product";
 
 export type LoanRenewal = {
@@ -5085,6 +5290,17 @@ export type LoanRenewal = {
 };
 
 export type LoanRenewalModeEnum = "off" | "auto";
+
+export type Location = {
+  "title": string;
+  "enabled_publicly": boolean;
+  "source": Source04fEnum;
+  "address"?: string;
+  "map_url"?: string;
+  "latitude"?: number | null;
+  "longitude"?: number | null;
+  "directions"?: string;
+};
 
 export type LocationKindEnum = "indoor" | "outdoor" | "other";
 
@@ -6367,6 +6583,18 @@ export type MemberSignUp = {
   "website"?: string;
 };
 
+export type MemberTeamEntry = {
+  "id": string;
+  "kind": MemberTeamEntryKindEnum;
+  "display_name": string;
+  "role": string;
+  "url"?: string;
+  "handle": string;
+  "avatar_url": string | null;
+};
+
+export type MemberTeamEntryKindEnum = "member";
+
 export type MemberTerm = {
   "plan_name": string;
   "starts_at": string;
@@ -6883,6 +7111,30 @@ export type OperatorCandidate = {
 
 export type OperatorEnum = "gt" | "gte" | "lt" | "lte" | "eq";
 
+export type OrganizationArchiveEvent = {
+  "kind": KindDa9Enum;
+  "title": string;
+  "description": string;
+  "starts_at": string;
+  "ends_at": string;
+  "timezone": string;
+  "host": OrganizationArchiveHost;
+  "event_url": string | null;
+};
+
+export type OrganizationArchiveHost = {
+  "name": string;
+  "canonical_url": string;
+};
+
+export type OrganizationArchiveList = {
+  "period": PeriodEnum;
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<OrganizationArchiveEvent>;
+};
+
 export type OrganizationCreate = {
   "name": string;
   "slug": string;
@@ -6923,6 +7175,8 @@ export type OrganizationDirectoryPage = {
   "previous": string | null;
   "results": Array<DirectoryOrganization>;
 };
+
+export type OrganizationEventCollection = PublicOrganizationEventList | OrganizationArchiveList;
 
 export type OrganizationEventHost = {
   "slug": string;
@@ -7053,6 +7307,20 @@ export type OrganizationSelfCreate = {
   "slug": string;
   "description"?: string;
   "website"?: string;
+};
+
+export type OrganizationSpace = {
+  "name": string;
+  "slug": string;
+  "logo_url": string | null;
+  "canonical_url": string;
+};
+
+export type OrganizationSpaceList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<OrganizationSpace>;
 };
 
 export type OrganizationSummary = {
@@ -7326,6 +7594,15 @@ export type PackSettings = {
   "presence_preset_minutes": unknown;
 };
 
+export type PageLimits = {
+  "document_bytes": number;
+  "sections": number;
+  "assets": number;
+  "upload_bytes": number;
+  "storage_bytes": number | null;
+  "storage_bytes_used": number;
+};
+
 export type PaginatedAdminRequestList = {
   "count": number;
   "next"?: string | null;
@@ -7586,6 +7863,25 @@ export type PairingCreate = {
   "target": {
   [key: string]: unknown;
 };
+};
+
+export type Palette = {
+  "fill": Array<number>;
+  "foreground": Array<number>;
+  "hover": Array<number>;
+  "active": Array<number>;
+  "soft": Array<number>;
+  "ink": Array<number>;
+  "pairs"?: Array<Array<string | number>>;
+};
+
+export type PaletteChoices = {
+  "inherit": string | null;
+  "maker_teal": string;
+  "workshop_orange": string;
+  "citron": string;
+  "sky_blue": string;
+  "warm_yellow": string;
 };
 
 export type PaperSizeEnum = "A4" | "LETTER" | "custom";
@@ -8630,6 +8926,8 @@ export type PendingClosure = {
   "identities": Array<ClosureIdentity>;
 };
 
+export type PeriodEnum = "upcoming" | "past";
+
 export type Permissions43eEnum = "edit_details" | "manage_reservations" | "check_in" | "publish_page";
 
 export type Permissions5d1Enum = "edit_details" | "manage_registrations" | "manage_invitations" | "check_in" | "publish_schedule";
@@ -8655,6 +8953,8 @@ export type PhoneStatus = {
   "phone_e164": string;
   "verified": boolean;
 };
+
+export type Platform3ddEnum = "apple" | "android";
 
 export type PlatformBackupHealth = {
   "automatic_enabled": boolean;
@@ -8702,8 +9002,6 @@ export type PlatformEmailSettings = {
   "from_email"?: string;
   "updated_at": string;
 };
-
-export type PlatformEnum = "apple" | "android";
 
 export type PlatformOffsiteHealth = {
   "name": string;
@@ -8896,7 +9194,25 @@ export type PresenceTVRow = {
   "since": string;
 };
 
+export type Presentation = {
+  "accent_choice": AccentChoiceEnum;
+  "resolved_theme": ResolvedTheme;
+};
+
 export type PresetEnum = "sheet" | "single";
+
+export type PreviewProjection = {
+  "schema_version": number;
+  "kind": Kind33cEnum;
+  "canonical_url": string;
+  "title": string;
+  "description": string;
+  "publication_token": string | null;
+  "cover": Cover | null;
+  "presentation": Presentation;
+  "sections": Array<ProjectedPublicPageSection>;
+  "draft": boolean;
+};
 
 export type PrinterPool = {
   "id": number;
@@ -9076,6 +9392,8 @@ export type ProfileWrite = {
   "projects"?: Array<ProjectWrite>;
 };
 
+export type ProjectedPublicPageSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection | PublicUpcomingEventsSection | PublicOrganizationEventsSection | PublicLinkedMakerspacesSection | PublicStatsSection | PublicLocationSection | PublicFunctionalContentSection;
+
 export type ProjectLink = {
   "label": string;
   "url": string;
@@ -9135,6 +9453,13 @@ export type ProvisionSubdomainRequest = {
 
 export type ProvisionSubdomainValidationError = {
   "label": Array<string>;
+};
+
+export type PublicAboutSection = {
+  "id": string;
+  "type": Type07aEnum;
+  "enabled": boolean;
+  "payload": About;
 };
 
 export type PublicActivity = {
@@ -9253,7 +9578,7 @@ export type PublicEvent = {
 }>;
   "promo_codes_enabled": boolean;
   "ticket_selection_required": boolean;
-  "website": Website | null;
+  "website": PublicWebsite | null;
   "public_token": string;
   "title": string;
   "description": string;
@@ -9279,6 +9604,64 @@ export type PublicEvent = {
   "title"?: string;
 } | null;
 };
+
+export type PublicEventCode = {
+  "participating_organizations": Array<ParticipatingOrganization>;
+  "audience_label": string | null;
+  "registration_audience": DefaultRegistrationAudienceEnum;
+  "category": {
+  "id"?: number;
+  "name"?: string;
+  "slug"?: string;
+} | null;
+  "tags": Array<string>;
+  "ticket_types": Array<{
+  "id"?: number;
+  "name"?: string;
+  "amount"?: string;
+  "audience"?: string;
+  "spots_left"?: number | null;
+}>;
+  "promo_codes_enabled": boolean;
+  "ticket_selection_required": boolean;
+  "website": PublicWebsite | null;
+  "public_token": string;
+  "title": string;
+  "description": string;
+  "starts_at": string;
+  "ends_at": string;
+  "location": string;
+  "location_kind": LocationKindEnum;
+  "custom_form": unknown | null;
+  "capacity": number;
+  "show_registration_count": boolean;
+  "registration_count": number | null;
+  "payment_amount": string;
+  "currency": string;
+  "availability": AvailabilityEnum;
+  "registration_requires_approval": boolean;
+  "effective_registration_cutoff_at": string | null;
+  "registration_open": boolean;
+  "image_url": string | null;
+  "status": StatusE90Enum;
+  "organizers": Array<EventOrganizerSummary>;
+  "series": {
+  "public_token"?: string;
+  "title"?: string;
+} | null;
+  "canonical_url": string;
+  "content_url": string;
+};
+
+export type PublicEventEditorialDocument = {
+  "schema_version": number;
+  "cover_mode": CoverModeEnum;
+  "cover_asset_id": number | null;
+  "accent_choice": AccentChoiceEnum | NullEnum | null;
+  "sections": Array<PublicEventEditorialSection>;
+};
+
+export type PublicEventEditorialSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection;
 
 export type PublicEventPage = {
   "count": number;
@@ -9311,6 +9694,35 @@ export type PublicEventVenue = {
   "photos": Array<PublicSpacePhoto>;
 };
 
+export type PublicFunctional = {
+  "links": Array<FunctionalLink>;
+};
+
+export type PublicFunctionalContentSection = {
+  "id": string;
+  "type": Type8daEnum;
+  "enabled": boolean;
+  "payload": PublicFunctional;
+};
+
+export type PublicGallery = {
+  "title": string;
+  "items": Array<PublicGalleryItem>;
+};
+
+export type PublicGalleryItem = {
+  "url": string | null;
+  "alt": string;
+  "caption": string;
+};
+
+export type PublicGallerySection = {
+  "id": string;
+  "type": TypeE4fEnum;
+  "enabled": boolean;
+  "payload": PublicGallery;
+};
+
 export type PublicImageAttachRequest = {
   "object_key": string;
 };
@@ -9340,6 +9752,45 @@ export type PublicInventoryError = {
 };
 
 export type PublicLandingPage6a0Enum = "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";
+
+export type PublicLinkedMakerspacesSection = {
+  "id": string;
+  "type": Type7e8Enum;
+  "enabled": boolean;
+  "payload": PublicLinkedSpaces;
+};
+
+export type PublicLinkedSpaces = {
+  "title": string;
+  "count": number;
+  "results": Array<SpaceCard>;
+  "collection_url": string;
+};
+
+export type PublicLinksSection = {
+  "id": string;
+  "type": Type3acEnum;
+  "enabled": boolean;
+  "payload": Links;
+};
+
+export type PublicLocation = {
+  "title": string;
+  "enabled_publicly": boolean;
+  "source"?: Source04fEnum;
+  "address"?: string;
+  "map_url"?: string;
+  "latitude"?: number | null;
+  "longitude"?: number | null;
+  "directions"?: string;
+};
+
+export type PublicLocationSection = {
+  "id": string;
+  "type": TypeF4fEnum;
+  "enabled": boolean;
+  "payload": PublicLocation;
+};
 
 export type PublicMachine = {
   "name": string;
@@ -9415,6 +9866,7 @@ export type PublicOrganization = {
   "catalogue_links": {
   [key: string]: string;
 };
+  "collections": unknown;
 };
 
 export type PublicOrganizationEvent = {
@@ -9436,7 +9888,7 @@ export type PublicOrganizationEvent = {
 }>;
   "promo_codes_enabled": boolean;
   "ticket_selection_required": boolean;
-  "website": Website | null;
+  "website": PublicWebsite | null;
   "public_token": string;
   "title": string;
   "description": string;
@@ -9461,14 +9913,119 @@ export type PublicOrganizationEvent = {
   "public_token"?: string;
   "title"?: string;
 } | null;
+  "event_url": string;
   "host": OrganizationEventHost;
 };
 
 export type PublicOrganizationEventList = {
+  "period": PeriodEnum;
   "count": number;
   "next": string | null;
   "previous": string | null;
   "results": Array<PublicOrganizationEvent>;
+};
+
+export type PublicOrganizationEvents = {
+  "title": string;
+  "upcoming": EventCollection;
+  "past": ArchiveCollection;
+};
+
+export type PublicOrganizationEventsSection = {
+  "id": string;
+  "type": TypeD44Enum;
+  "enabled": boolean;
+  "payload": PublicOrganizationEvents;
+};
+
+export type PublicPageAboutSectionInput = {
+  "id": string;
+  "type": Type07aEnum;
+  "enabled": boolean;
+  "payload": About;
+};
+
+export type PublicPageFunctionalContentSectionInput = {
+  "id": string;
+  "type": Type8daEnum;
+  "enabled": boolean;
+};
+
+export type PublicPageGallerySectionInput = {
+  "id": string;
+  "type": TypeE4fEnum;
+  "enabled": boolean;
+  "payload": Gallery;
+};
+
+export type PublicPageLinkedMakerspacesSectionInput = {
+  "id": string;
+  "type": Type7e8Enum;
+  "enabled": boolean;
+  "payload": Titled;
+};
+
+export type PublicPageLinksSectionInput = {
+  "id": string;
+  "type": Type3acEnum;
+  "enabled": boolean;
+  "payload": Links;
+};
+
+export type PublicPageLocationSectionInput = {
+  "id": string;
+  "type": TypeF4fEnum;
+  "enabled": boolean;
+  "payload": Location;
+};
+
+export type PublicPageOrganizationEventsSectionInput = {
+  "id": string;
+  "type": TypeD44Enum;
+  "enabled": boolean;
+  "payload": Titled;
+};
+
+export type PublicPageProjection = {
+  "schema_version": number;
+  "kind": Kind33cEnum;
+  "canonical_url": string;
+  "title": string;
+  "description": string;
+  "publication_token": string;
+  "cover": Cover | null;
+  "presentation": Presentation;
+  "sections": Array<ProjectedPublicPageSection>;
+};
+
+export type PublicPageSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput | PublicPageStatsSectionInput | PublicPageLocationSectionInput | PublicPageUpcomingEventsSectionInput | PublicPageLinkedMakerspacesSectionInput | PublicPageOrganizationEventsSectionInput | PublicPageFunctionalContentSectionInput;
+
+export type PublicPageStatsSectionInput = {
+  "id": string;
+  "type": TypeB6aEnum;
+  "enabled": boolean;
+  "payload": Stats;
+};
+
+export type PublicPageTeamSectionInput = {
+  "id": string;
+  "type": Type247Enum;
+  "enabled": boolean;
+  "payload": Team;
+};
+
+export type PublicPageTestimonialsSectionInput = {
+  "id": string;
+  "type": Type36dEnum;
+  "enabled": boolean;
+  "payload": Testimonials;
+};
+
+export type PublicPageUpcomingEventsSectionInput = {
+  "id": string;
+  "type": Type7f5Enum;
+  "enabled": boolean;
+  "payload": Titled;
 };
 
 export type PublicPrinterPool = {
@@ -9710,6 +10267,13 @@ export type PublicStatsRecentlyAdded = {
   "created_at": string;
 };
 
+export type PublicStatsSection = {
+  "id": string;
+  "type": TypeB6aEnum;
+  "enabled": boolean;
+  "payload": PublicStats;
+};
+
 export type PublicStatsStatusCounts = {
   "pending": number;
   "accepted": number;
@@ -9723,6 +10287,27 @@ export type PublicStatsStatusCounts = {
 export type PublicStatsToolsOut = {
   "name": string;
   "quantity_out": number;
+};
+
+export type PublicTeam = {
+  "title": string;
+  "entries": Array<PublicTeamEntry>;
+};
+
+export type PublicTeamEntry = ExplicitTeamEntry | MemberTeamEntry;
+
+export type PublicTeamSection = {
+  "id": string;
+  "type": Type247Enum;
+  "enabled": boolean;
+  "payload": PublicTeam;
+};
+
+export type PublicTestimonialsSection = {
+  "id": string;
+  "type": Type36dEnum;
+  "enabled": boolean;
+  "payload": Testimonials;
 };
 
 export type PublicTimeline = {
@@ -9775,9 +10360,43 @@ export type PublicTypeIntake = {
   "intake_schema": unknown;
 };
 
+export type PublicUpcoming = {
+  "title": string;
+  "count": number;
+  "results": Array<EventCard>;
+};
+
+export type PublicUpcomingEventsSection = {
+  "id": string;
+  "type": Type7f5Enum;
+  "enabled": boolean;
+  "payload": PublicUpcoming;
+};
+
 export type PublicVouch = {
   "handle": string;
   "display_name": string;
+};
+
+export type PublicWebsite = {
+  "editorial_document"?: PublicEventEditorialDocument | null;
+  "tagline"?: string;
+  "accent_color"?: string;
+  "section_order"?: Array<SectionOrderEnum>;
+  "section_enabled"?: WebsiteGroupVisibility;
+  "venue"?: WebsiteVenue | null;
+  "cover"?: Cover | null;
+  "presentation"?: Presentation;
+  "revision": number;
+  "released": boolean;
+  "inherited": boolean;
+  "sections": Array<WebsiteSection>;
+  "sessions": Array<WebsiteSession>;
+};
+
+export type PublishInput = {
+  "version": number;
+  "draft_revision_id": string;
 };
 
 export type PurposeEnum = "enroll" | "rotate" | "reactivate";
@@ -10435,6 +11054,12 @@ export type ResetPasswordResponse = {
 
 export type ResolutionCodeEnum = "acknowledged_no_change" | "replaced_online";
 
+export type ResolvedTheme = {
+  "theme_config": ThemeConfig;
+  "light": Palette;
+  "dark": Palette;
+};
+
 export type ResponseResultEnum = "pending" | "succeeded" | "retryable_failed" | "failed";
 
 export type RestoreCreate = {
@@ -10569,6 +11194,24 @@ export type RevenuePeriod = {
   "net_amount": string;
 };
 
+export type RevisionList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<RevisionMetadata>;
+};
+
+export type RevisionMetadata = {
+  "id": string;
+  "created_at": string;
+  "created_by_display": string | null;
+  "summary": RevisionSummary;
+};
+
+export type RevisionSummary = {
+  "section_types": Array<SectionTypesEnum>;
+};
+
 export type Revoke = {
   "reason"?: string;
 };
@@ -10641,6 +11284,11 @@ export type SavedViewList = {
   "results": Array<SavedView>;
 };
 
+export type SaveInput = {
+  "version": number;
+  "document": Document;
+};
+
 export type Schedule = {
   "id": number;
   "name": string;
@@ -10671,7 +11319,9 @@ export type SearchOutput = {
   "results": Array<SearchHit>;
 };
 
-export type SectionOrderEnum = "HERO" | "ABOUT" | "HIGHLIGHTS" | "SCHEDULE" | "SPEAKERS" | "SPONSORS" | "VENUE" | "FAQ" | "RESOURCES";
+export type SectionOrderEnum = "HERO" | "ABOUT" | "HIGHLIGHTS" | "SCHEDULE" | "SPEAKERS" | "SPONSORS" | "VENUE" | "FAQ" | "RESOURCES" | "EDITORIAL";
+
+export type SectionTypesEnum = "about" | "gallery" | "team" | "testimonials" | "links" | "stats" | "location" | "upcoming_events" | "linked_makerspaces" | "organization_events" | "functional_content";
 
 export type SegmentChoice = {
   "id": number;
@@ -10889,7 +11539,16 @@ export type SocialNonceResponse = {
   "expires_in": number;
 };
 
+export type Source04fEnum = "makerspace_public" | "entered";
+
 export type Source356Enum = "staff" | "member";
+
+export type SpaceCard = {
+  "name": string;
+  "canonical_url": string;
+  "slug": string;
+  "logo_url": string | null;
+};
 
 export type SpaceImageFinalizeRequest = {
   "object_key": string;
@@ -11281,6 +11940,13 @@ export type StationStatus = {
   "rotated_at"?: string;
 };
 
+export type Stats = {
+  "title": string;
+  "show_public_inventory_units": boolean;
+  "show_published_event_count": boolean;
+  "publish_public_member_count": boolean;
+};
+
 export type Status00eEnum = "ok" | "warn" | "error";
 
 export type Status0bfEnum = "working" | "visiting" | "attending_event" | "guest";
@@ -11366,7 +12032,7 @@ export type StocktakeScanInput = {
 };
 
 export type StocktakeScanResult = {
-  "type": TypeEnum;
+  "type": StocktakeScanResultTypeEnum;
   "container_id"?: number;
   "asset_id"?: number;
   "product_id"?: number;
@@ -11377,6 +12043,8 @@ export type StocktakeScanResult = {
   "name"?: string;
   "status"?: string;
 };
+
+export type StocktakeScanResultTypeEnum = "box" | "asset" | "product";
 
 export type StocktakeStatusEnum = "draft" | "counting" | "completed" | "approved" | "applied" | "cancelled";
 
@@ -11499,6 +12167,22 @@ export type TakenItemsReportRow = {
 
 export type TargetEnum = "spool" | "printer";
 
+export type Team = {
+  "title": string;
+  "entries": Array<TeamEntry>;
+};
+
+export type TeamEntry = {
+  "id": string;
+  "kind": TeamEntryKindEnum;
+  "role": string;
+  "display_name"?: string;
+  "url"?: string;
+  "profile_id"?: number;
+};
+
+export type TeamEntryKindEnum = "explicit" | "member";
+
 export type TelegramTestAlert = {
   "makerspace_id": number;
   "message"?: string;
@@ -11606,7 +12290,27 @@ export type TenantBootstrapPublicApi = {
   "inventory_path": string;
 };
 
+export type Testimonial = {
+  "id": string;
+  "quote": string;
+  "attribution": string;
+};
+
+export type Testimonials = {
+  "title": string;
+  "entries": Array<Testimonial>;
+};
+
 export type TextAlignEnum = "left" | "center";
+
+export type ThemeConfig = {
+  "mode"?: ThemeConfigModeEnum;
+  "logo_url"?: string;
+  "primary_color"?: string;
+  "accent_color"?: string;
+};
+
+export type ThemeConfigModeEnum = "system" | "light" | "dark";
 
 export type Ticket = {
   "id": number;
@@ -11695,6 +12399,10 @@ export type TimingPolicy = {
 };
 
 export type TimingPolicyChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook";
+
+export type Titled = {
+  "title": string;
+};
 
 export type ToBuyItem = {
   "id": number;
@@ -11792,6 +12500,24 @@ export type TwilioCallback = {
   "MessagingServiceSid"?: string;
 };
 
+export type Type07aEnum = "about";
+
+export type Type247Enum = "team";
+
+export type Type36dEnum = "testimonials";
+
+export type Type3acEnum = "links";
+
+export type Type7e8Enum = "linked_makerspaces";
+
+export type Type7f5Enum = "upcoming_events";
+
+export type Type8daEnum = "functional_content";
+
+export type TypeB6aEnum = "stats";
+
+export type TypeD44Enum = "organization_events";
+
 export type TypedError = {
   "detail": string;
   "code": string;
@@ -11834,7 +12560,9 @@ export type TypedManualUsageResponse = {
 
 export type TypedManualUsageResponseMeteringUnitEnum = "minutes" | "weight" | "volume" | "length" | "count";
 
-export type TypeEnum = "box" | "asset" | "product";
+export type TypeE4fEnum = "gallery";
+
+export type TypeF4fEnum = "location";
 
 export type UnsubscribeResult = {
   "detail": string;
@@ -11969,6 +12697,10 @@ export type VerificationStateEnum = "verified" | "revoked";
 
 export type VersionEnum = 1;
 
+export type VersionInput = {
+  "version": number;
+};
+
 export type Visibility68aEnum = "draft" | "published";
 
 export type VisibilityE49Enum = "draft" | "published";
@@ -12084,13 +12816,18 @@ export type WebhookResponse = {
 };
 
 export type Website = {
+  "editorial_document"?: EventEditorialDocument | null;
   "tagline"?: string;
   "accent_color"?: string;
   "section_order"?: Array<SectionOrderEnum>;
-  "section_enabled"?: {
-  [key: string]: boolean;
-};
+  "section_enabled"?: WebsiteGroupVisibility;
   "venue"?: WebsiteVenue | null;
+  "cover"?: Cover | null;
+  "presentation"?: Presentation;
+  "capabilities"?: WebsiteCapabilities;
+  "draft_revision_id"?: string | null;
+  "published_revision_id"?: string | null;
+  "delay_targets"?: Array<WebsiteDelayTarget>;
   "revision": number;
   "released": boolean;
   "inherited": boolean;
@@ -12100,24 +12837,30 @@ export type Website = {
 };
 
 export type WebsiteAsset = {
+  "pinned"?: boolean;
   "id": number;
   "alt_text": string;
   "size_bytes": number;
 };
 
 export type WebsiteAssetInput = {
+  "revision"?: number;
   "file": string;
   "alt_text": string;
   "replace_id"?: number;
 };
 
+export type WebsiteCapabilities = {
+  "can_edit_details": boolean;
+  "can_publish_schedule": boolean;
+};
+
 export type WebsiteContentInput = {
+  "editorial_document"?: EventEditorialDocument | null;
   "tagline"?: string;
   "accent_color"?: string;
   "section_order"?: Array<SectionOrderEnum>;
-  "section_enabled"?: {
-  [key: string]: boolean;
-};
+  "section_enabled"?: WebsiteGroupVisibility;
   "venue"?: WebsiteVenue | null;
   "revision": number;
   "sections": Array<WebsiteSectionInput>;
@@ -12125,7 +12868,32 @@ export type WebsiteContentInput = {
 };
 
 export type WebsiteDelayInput = {
+  "revision"?: number;
+  "session_id"?: string;
   "delay_minutes": number;
+};
+
+export type WebsiteDelayTarget = {
+  "session_id": string;
+  "working_slug": string | null;
+  "public_slug": string | null;
+  "working_present": boolean;
+  "public_present": boolean;
+  "working_delay_minutes": number | null;
+  "public_delay_minutes": number | null;
+};
+
+export type WebsiteGroupVisibility = {
+  "HERO": boolean;
+  "ABOUT": boolean;
+  "HIGHLIGHTS": boolean;
+  "SCHEDULE": boolean;
+  "SPEAKERS": boolean;
+  "SPONSORS": boolean;
+  "VENUE": boolean;
+  "FAQ": boolean;
+  "RESOURCES": boolean;
+  "EDITORIAL": boolean;
 };
 
 export type WebsiteOrigins = {
@@ -12153,6 +12921,7 @@ export type WebsiteSection = {
   "asset_id"?: number | null;
   "visibility"?: Visibility68aEnum;
   "position"?: number;
+  "body_rendering"?: BodyRenderingEnum;
   "image_url": string | null;
   "image_alt_text": string;
 };
@@ -12176,6 +12945,7 @@ export type WebsiteSectionInput = {
 };
 
 export type WebsiteSession = {
+  "session_id"?: string;
   "slug": string;
   "title": string;
   "body"?: string;
@@ -12185,12 +12955,14 @@ export type WebsiteSession = {
   "room"?: string | null;
   "speakers"?: Array<string>;
   "visibility"?: Visibility68aEnum;
+  "body_rendering"?: BodyRenderingEnum;
   "delay_minutes": number;
   "effective_starts_at": string;
   "effective_ends_at": string;
 };
 
 export type WebsiteSessionInput = {
+  "session_id"?: string;
   "slug": string;
   "title": string;
   "body"?: string;

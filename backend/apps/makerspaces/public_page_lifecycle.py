@@ -23,6 +23,12 @@ def enqueue_tenant_pages(makerspace, *, events_only=False):
             if not valid:
                 from django.core.exceptions import ValidationError
                 raise ValidationError("Cannot purge a page image without typed byte ownership.")
+            if model is EventPageAsset:
+                # Preserve the event owner and its checked import-key proof even
+                # when a raw purge bypasses the asset's ORM pre_delete receiver.
+                from .website_asset_journal import schedule
+                schedule(asset)
+                continue
             Cleanup.objects.update_or_create(object_key=asset.object_key, defaults={
                 "owner_kind": "makerspace", "owner_id": makerspace.pk, "page_id": asset.page_id,
                 "size_bytes": asset.size_bytes, "due_at": timezone.now(), "completed_at": None,

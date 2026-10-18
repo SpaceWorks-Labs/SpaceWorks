@@ -27,6 +27,9 @@ except ValueError as exc:
     raise ImproperlyConfigured(str(exc)) from exc
 SPACEWORKS_DEPLOYMENT_MODE = _deployment.mode
 SPACEWORKS_DEPLOYMENT_PROFILE = _deployment.profile
+if _deployment.mode == "managed":
+    from config.cloud_settings.secrets import materialize
+    materialize()
 CLOUD_TASK_PROFILE = env("CLOUD_TASK_PROFILE", default="")
 CLOUD_SCHEDULER = env("CLOUD_SCHEDULER", default="")
 # Imported after read_env: both read TOMBSTONED_APPS straight from the environment,
@@ -83,10 +86,12 @@ BEHIND_TRUSTED_PROXY = env.bool("BEHIND_TRUSTED_PROXY", default=False)
 PLATFORM_ORIGIN_HOST = env("PLATFORM_ORIGIN_HOST", default="")  # e.g. origin.space-works.tech; blank => resolution gate dormant
 DOMAIN_CHANGE_COOLDOWN_SECONDS = env.int("DOMAIN_CHANGE_COOLDOWN_SECONDS", default=0)  # 0 => no cooldown
 if BEHIND_TRUSTED_PROXY:
-    ALLOWED_HOSTS = ["*"]
+    if SPACEWORKS_DEPLOYMENT_MODE == "host":
+        ALLOWED_HOSTS = ["*"]  # Existing host domain middleware remains authoritative.
 PUBLIC_APP_BASE_URL = env("PUBLIC_APP_BASE_URL", default="").rstrip("/")
 STRIPE_CONNECT_REDIRECT_URI = env("STRIPE_CONNECT_REDIRECT_URI", default="")
 MANAGED_POSTGRES = env.bool("MANAGED_POSTGRES", default=False)
+DATABASE_CONNECTION_MODE = env("DATABASE_CONNECTION_MODE", default="direct")
 MANAGED_RESOURCE_LIMITS = {
     "products": 500,
     "assets": 2000,
@@ -215,6 +220,7 @@ MIDDLEWARE = [
     "config.request_id.RequestIdMiddleware",
     "apps.tenant_migration.middleware.SourceMigrationGateMiddleware",
     "apps.makerspaces.middleware.TenantHostValidationMiddleware",
+    "config.cloud_settings.forwarded_host.TrustedForwardedHostMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "apps.accounts.social_csp.SocialCspMiddleware",
     "csp.middleware.CSPMiddleware",
@@ -479,6 +485,8 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Makerspace <noreply@makerspace.local>")
 EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="")
+EMAIL_PROVIDER_CONFIG_FILE = env("EMAIL_PROVIDER_CONFIG_FILE", default="")
+EMAIL_PROVIDER_WEBHOOKS_ENABLED = env.bool("EMAIL_PROVIDER_WEBHOOKS_ENABLED", default=False)
 if EMAIL_PROVIDER:
     from config.cloud_settings.wiring import provider_email
     # E returns only validated Django email settings, never arbitrary globals.
@@ -1376,4 +1384,14 @@ except ValueError as exc:
 
 if SPACEWORKS_DEPLOYMENT_MODE == "managed" or CLOUD_TASK_PROFILE:
     from config.cloud_settings.wiring import cloud_task_modules
-    CELERY_IMPORTS = cloud_task_modules()
+    CELERY_IMPORTS = cloud_task_modules(tombstones=TOMBSTONED_APPS)
+
+from config.cloud_settings.configuration import deployment_settings
+globals().update(deployment_settings(env, _deployment))
+if SPACEWORKS_DEPLOYMENT_MODE == "managed" and not _deployment.is_free:
+    from apps.operations.cloud_jobs.catalog import beat_entries
+    # Preserve legacy calendar slots; new reviewed tasks alone acquire intervals.
+    for _name, _entry in beat_entries().items():
+        CELERY_BEAT_SCHEDULE.setdefault(_name, _entry)
+    if CLOUD_SCHEDULER == "beat":
+        CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.beat.DatabaseScheduler"

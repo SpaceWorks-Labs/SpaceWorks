@@ -114,3 +114,26 @@ ENTRIES = (
     P("report_schedule.skipped", "Report schedule skipped", ("schedule_id",)),
     P("report_schedule.updated", "Report schedule updated", ("report_key", "schedule_id")),
 )
+
+# Cloud actions: only reviewed non-personal metadata may reach staff.
+ENTRIES += (
+    P('cloud.task_finished', 'Cloud task finished', ('task_key', 'generation', 'status', 'code')),
+    P('cloud.task_started', 'Cloud task started', ('task_key', 'generation')),
+    P('cloud.task_uncertain', 'Cloud task uncertain', ('task_key', 'generation')),
+    P('cloud.tick_finished', 'Cloud tick finished', ('tick_id', 'duration_ms', 'completed', 'deferred', 'failed')),
+    P('cloud.tick_history_pruned', 'Cloud tick history pruned', ('count', 'retention_days')),
+    P('cloud.tick_started', 'Cloud tick started', ('tick_id',)),
+    P('deployment.capture_paused', 'Deployment capture paused', ('generation',)),
+    P('deployment.capture_resumed', 'Deployment capture resumed', ('generation',)),
+    P('deployment.managed_adopted', 'Deployment managed adopted', ('profile',)),
+    P('deployment.managed_initialized', 'Deployment managed initialized', ('profile',)),
+    P('email.budget_deferred', 'Email budget deferred', ()),
+    P('email.budget_reserved', 'Email budget reserved', ()),
+    P('email.budget_settled', 'Email budget settled', ()),
+    P('email.provider_observed', 'Email provider observed', ()),
+    P('email.redacted_proof_expired', 'Email redacted proof expired', ()),
+    P('email.transport_tested', 'Email transport tested', ()),
+    P('storage.capabilities_verification_failed', 'Storage capabilities verification failed', ()),
+    P('storage.capabilities_verified', 'Storage capabilities verified', ()),
+    P('storage.object_lock_probe_requested', 'Storage object lock probe requested', ()),
+)

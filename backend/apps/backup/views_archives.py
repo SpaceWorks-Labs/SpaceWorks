@@ -39,7 +39,7 @@ class DeploymentArchiveListCreateView(APIView):
         )[:30]
         return Response(BackupArchiveSerializer(rows, many=True).data)
 
-    @extend_schema(tags=["Backup"], summary="Request an age-encrypted full-deployment backup", request=BackupArchiveCreateSerializer, responses={202: BackupArchiveSerializer, 503: OpenApiResponse(description="The backup worker is unavailable."), **AUTH_ERRORS})
+    @extend_schema(tags=["Backup"], summary="Request an age-encrypted full-deployment backup", request=BackupArchiveCreateSerializer, responses={202: BackupArchiveSerializer, 409: OpenApiResponse(description="Managed host operation or unqualified writer drain is unavailable."), 503: OpenApiResponse(description="The backup worker is unavailable."), **AUTH_ERRORS})
     def post(self, request):
         archive = services.create_archive(request.user, scope=BackupArchive.Scope.DEPLOYMENT)
         if not _dispatch(archive):
@@ -68,7 +68,7 @@ class MakerspaceArchiveListCreateView(APIView):
         )[:30]
         return Response(BackupArchiveSerializer(rows, many=True).data)
 
-    @extend_schema(tags=["Backup"], summary="Request an age-encrypted makerspace backup", request=BackupArchiveCreateSerializer, responses={202: BackupArchiveSerializer, 400: MODULE_OFF, 404: NOT_FOUND, 503: OpenApiResponse(description="The backup worker is unavailable."), **AUTH_ERRORS})
+    @extend_schema(tags=["Backup"], summary="Request an age-encrypted makerspace backup", request=BackupArchiveCreateSerializer, responses={202: BackupArchiveSerializer, 409: OpenApiResponse(description="Managed host operation or unqualified writer drain is unavailable."), 400: MODULE_OFF, 404: NOT_FOUND, 503: OpenApiResponse(description="The backup worker is unavailable."), **AUTH_ERRORS})
     def post(self, request, makerspace_id):
         makerspace = self._makerspace(request, makerspace_id)
         archive = services.create_archive(

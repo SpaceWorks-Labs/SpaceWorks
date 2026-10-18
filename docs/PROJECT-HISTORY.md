@@ -431,3 +431,5 @@ One line per shipped batch. The rules these introduced live in `docs/INVARIANTS.
 Pending lane integration: 2026-10-10 phase 7d monitoring/notification/identity UI and module-health
 coverage drafted against 7a; local frontend checks complete, database verification and 7b/7c adapter
 UI integration outstanding. This entry is not a shipped-release claim.
+
+2026-10-18: cloud shared integration adds additive coordination/provider migrations, explicit settings/routes, encrypted provider API/admin wiring, durable-dispatch gates, private image staging, managed refusal/guard seams, image variants and scoped presentation. Acceptance, incoming programmes and remaining adapters are incomplete; no launch/recovery pass claimed.

@@ -5001,3 +5001,28 @@ releases would therefore not just lose history, it would eventually strand that 
   Runner installation defaults to No, supports Linux/systemd only, and requires all external-contributor
   workflow approvals plus repository/workflow restrictions: Docker access is effectively root.
   See `docs/self-hosting.md#security` for the required operator settings.
+
+
+## Explicit managed and free deployment boundaries (cloud integration)
+
+Missing selectors remain host/full. Managed privilege mode and product classification are separate inputs.
+Free requires managed and never applies its resource restrictions under full. Full has no tick route/schema.
+A managed binding is immutable and omitted from restored/portable tenant state; source identity cannot admit
+another deployment as normal. Recovery admission is uncached and process generations cannot silently advance.
+Direct/session transport retains advisory locks; transaction pooling is unsupported. Maintenance secrets belong
+only to finite qualified jobs. Shared libpq subprocesses use private temporary passfiles, never PGPASSWORD.
+
+Managed deployment/compound backup, restore/cutover/slice-merge controls refuse before effects. Ordinary tenant
+archives remain archive-and-purge custody records with no restore reader. Provider PITR/object durability,
+portable recovery and H1 recovery are separate guarantees. Unversioned managed capture needs complete durable
+writer/presign drain and reconciliation. Unknown writers/lost lock connections abort; age is not proof.
+
+Storage identity/history floors survive credential rotation and cannot be reset/deleted to bypass migration.
+POST can enforce upload-time byte ranges; PUT validates at finalization. New public-image staging is private;
+legacy locators remain until drained. Promotion is create-only; accepted evidence rows remain immutable.
+Provider configuration uses API_CLIENT_ENC_KEY and is write-only in API/admin. Free account-wide mail receipts
+survive log/tenant deletion; uncertain acceptance remains charged until independent reconciliation proves otherwise.
+
+Forwarded host requires independent ingress restriction, exact upstream Host and proxy-chain validation.
+Tenant projections omit infrastructure identities and global/provider totals. Unknown usage is never zero.
+Current implementation/acceptance limitations are explicit in the cloud guides and integration report.

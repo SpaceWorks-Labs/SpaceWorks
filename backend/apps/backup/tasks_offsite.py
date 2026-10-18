@@ -49,6 +49,10 @@ def rehydrate_backup_archive_task(self, archive_id, destination_id, actor_id=Non
 
 def dispatch_offsite_push():
     """Kick a push after a backup finished. Failure to enqueue is logged, never raised."""
+    from apps.operations.durable_dispatch import resident_delivery
+
+    if not resident_delivery():
+        return False
     try:
         push_offsite_backups_task.delay()
         return True

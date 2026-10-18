@@ -33,6 +33,8 @@ COMPOUND_ARCHIVE_FORMAT = "spaceworks-lane-e-e3-compound-v1"
 
 class CompoundCapture:
     def __init__(self, *, archive, root, modes, platform_recipients):
+        from .cloud_operations import require_host
+        require_host("deployment_backup_requires_host_supervisor")
         self.archive = archive
         self.capture_id = uuid.uuid4()
         self.root = Path(root)

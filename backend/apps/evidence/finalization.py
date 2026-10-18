@@ -59,7 +59,7 @@ def finalize_upload(evidence, max_bytes):
 
 def charge_storage_once(evidence, size):
     """Charge PUT-backed evidence once, at the consuming workflow's DB boundary."""
-    if settings.STORAGE_PRESIGN_METHOD != "put":
+    if not storage.uses_put_uploads():
         return
 
     from apps.makerspaces.limits import add_storage

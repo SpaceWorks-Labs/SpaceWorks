@@ -22,8 +22,10 @@ BATCH_SIZE = 200
 
 
 def enqueue(kind, pk):
+    from apps.operations.durable_dispatch import dispatch
+
     try:
-        broadcast_batch.delay(kind, pk)
+        dispatch(broadcast_batch, kind, pk)
     except Exception as exc:
         # The durable queued/sending row is recoverable by resume_broadcasts.
         logger.error("broadcast_enqueue_failed", extra={"kind": kind, "campaign_id": pk, "error_class": type(exc).__name__})

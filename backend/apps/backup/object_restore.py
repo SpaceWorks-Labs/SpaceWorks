@@ -3,7 +3,7 @@
 from datetime import timedelta
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -13,10 +13,13 @@ from django.utils import timezone
 from apps.backup import object_restore_versions, storage
 from apps.backup.models import RestoreOperation, RestoreRollbackObject
 from apps.backup.object_restore_versions import ObjectRestoreError
+from apps.backup.object_restore_validation import safe_restore_key as _safe_key
 from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 from apps.object_storage import delete_all_versions
 def restore_objects(restore, bundle_root, manifest, journal_path):
+    from .cloud_operations import require_host
+    require_host("deployment_restore_requires_host_supervisor")
     root = Path(bundle_root).resolve()
     journal = Path(journal_path)
     restored = []
@@ -283,13 +286,6 @@ def _journal(path, payload):
         handle.write(json.dumps({"at": timezone.now().isoformat(), **payload}, sort_keys=True) + "\n")
         handle.flush()
         os.fsync(handle.fileno())
-
-
-def _safe_key(value):
-    path = PurePosixPath(str(value))
-    if path.is_absolute() or not path.parts or ".." in path.parts:
-        raise ObjectRestoreError("Archive contains an unsafe object key.")
-    return path.as_posix()
 
 
 def _bucket(kind):

@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 """Receive resumable ciphertext; decryption belongs to asynchronous staging."""
 
 from datetime import timedelta
@@ -112,7 +113,7 @@ def _dispatch_staging(job_id, actor_id):
 
     if not settings.CELERY_TASK_ALWAYS_EAGER:
         try:
-            stage_import_job_task.delay(str(job_id), actor_id)
+            dispatch(stage_import_job_task, str(job_id), actor_id)
         except Exception:
             logger.exception(
                 "tenant_import_staging_dispatch_failed", extra={"job_id": str(job_id)},

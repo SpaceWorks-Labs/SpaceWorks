@@ -1,3 +1,4 @@
+from apps.evidence import storage
 """Per-photo state machine for abandoned-upload cleanup (claim / complete / release).
 
 Lock order everywhere: EvidencePhoto, EvidenceUploadFinalization,
@@ -134,7 +135,7 @@ def complete(current, *, cutoff, policy_days, sizes, outcomes, run_id):
         released = 0
         if state.object_expired_at is None:  # Mechanism A has not already credited it
             charged = (
-                settings.STORAGE_PRESIGN_METHOD != "put"
+                not storage.uses_put_uploads()
                 or finalization is None
                 or finalization.quota_charged
             )

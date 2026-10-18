@@ -38,6 +38,16 @@ class Command(BaseCommand):
         parser.add_argument("--limit", type=int, default=100, help="Rows per run. Default 100.")
 
     def handle(self, *args, **options):
+        from django.conf import settings
+        if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+            import time
+            from apps.integrations.mail_providers.outbox import drain
+            from apps.operations.cloud_runtime import writer
+            with writer("job") as fence:
+                result = drain(monotonic_deadline=time.monotonic() + settings.FREE_TICK_BUDGET_SECONDS,
+                               guard=fence, limit=20)
+            self.stdout.write(str(result["processed"]))
+            return
         cutoff = timezone.now() - timedelta(hours=options["max_age_hours"])
         # FAILED and SENDING both: `retry_email_log` refuses a SENDING row whose claim is
         # still fresh, so stalled ones are recovered and in-flight ones are left alone.

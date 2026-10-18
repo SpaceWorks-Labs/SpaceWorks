@@ -16,6 +16,14 @@ class TenantGateTask(Task):
     abstract = True
 
     def __call__(self, *args, **kwargs):
+        from apps.operations.cloud_runtime import managed, writer, check
+        check()
+        if managed():
+            with writer("worker"):
+                return self._call_scoped(*args, **kwargs)
+        return self._call_scoped(*args, **kwargs)
+
+    def _call_scoped(self, *args, **kwargs):
         resolver = TASK_TENANT_RESOLVERS.get(self.name)
         makerspace_id = (
             _resolve_makerspace_id(resolver, args, kwargs)

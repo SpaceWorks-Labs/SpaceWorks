@@ -14,6 +14,7 @@ SECRET_FIELDS = frozenset(
     {
         "telegram_bot_token",
         "smtp_password",
+        "email_provider_config",
         "slack_webhook_url",
         "mattermost_webhook_url",
         "discord_webhook_url",

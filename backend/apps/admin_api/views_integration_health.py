@@ -41,6 +41,7 @@ class IntegrationDeliveriesByStreamSerializer(HealthStatusSerializer):
 
 
 class IntegrationConfiguredHealthSerializer(HealthStatusSerializer):
+    provider = serializers.CharField(required=False)
     configured = serializers.BooleanField(required=False)
 
 
@@ -51,7 +52,11 @@ class IntegrationWorkerHealthSerializer(HealthStatusSerializer):
     stale = serializers.BooleanField(required=False)
 
 
+from .serializers_deployment import TenantDeploymentSerializer
+
+
 class IntegrationHealthSerializer(serializers.Serializer):
+    deployment = TenantDeploymentSerializer(required=False)
     status = serializers.ChoiceField(choices=("ok", "warn", "error"))
     email = IntegrationEmailHealthSerializer()
     deliveries_by_stream = IntegrationDeliveriesByStreamSerializer()
@@ -89,7 +94,8 @@ class IntegrationHealthView(APIView):
         )
         if not rbac.can(request.user, rbac.Action.MANAGE_MAKERSPACE, makerspace.id):
             raise PermissionDenied("Not allowed to manage this makerspace.")
-        serializer = IntegrationHealthSerializer(
-            integration_health.build_integration_health(makerspace)
-        )
+        from apps.operations.deployment_projection import deployment_projection
+        facts = integration_health.build_integration_health(makerspace)
+        facts["deployment"] = deployment_projection(makerspace=makerspace)
+        serializer = IntegrationHealthSerializer(facts)
         return Response(serializer.data)

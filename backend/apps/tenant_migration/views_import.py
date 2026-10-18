@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 from datetime import timedelta
 import logging
 
@@ -104,7 +105,7 @@ class TenantImportListCreateView(MigrationAPIView):
         # request; the stale-PENDING sweep stages those jobs from the scheduler instead.
         if not settings.CELERY_TASK_ALWAYS_EAGER:
             try:
-                stage_import_job_task.delay(str(job.pk), request.user.pk)
+                dispatch(stage_import_job_task, str(job.pk), request.user.pk)
             except Exception:
                 logger.exception(
                     "tenant_import_staging_dispatch_failed", extra={"job_id": str(job.pk)},
@@ -178,7 +179,7 @@ class TenantImportRunView(MigrationAPIView):
         if settings.CELERY_TASK_ALWAYS_EAGER:
             return Response(ImportJobSerializer(job).data, status=status.HTTP_202_ACCEPTED)
         try:
-            run_import_job_task.delay(
+            dispatch(run_import_job_task,
                 str(job.pk), request.user.pk, serializer.validated_data["target_identity"]
             )
         except Exception:

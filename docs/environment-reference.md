@@ -89,7 +89,7 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | Variable | Default | Notes |
 |---|---|---|
 | `CONN_HEALTH_CHECKS` | `True` |  |
-| `CONN_MAX_AGE` | `60` | Set 0 on a transaction pooler (Supabase :6543). |
+| `CONN_MAX_AGE` | `60` | Use direct/session transport; transaction pooling is unsupported. |
 | `DATABASE_URL` | read outside `settings.py` | Supplied by the atomic ops pointer under Compose; never put it in a static `.env`. |
 | `DISABLE_SERVER_SIDE_CURSORS` | `False` |  |
 | `MANAGED_POSTGRES` | `False` | True on hosts that forbid `session_replication_role` (Supabase, RDS). |
@@ -315,3 +315,6 @@ default to empty and must be configured together for manual Plausible analytics.
 not a Django setting. The operations reference describes their validation and backup policies.
 Station PINs also require the independent `EVENT_STATION_PIN_PEPPER` secret documented
 there; setup creates it once and upgrades must preserve it.
+
+Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
+Provider/cloud inputs and secret-file rules: [managed environment reference](deploy/cloud-environment.md). FREE_* caps apply only in the selected free profile.

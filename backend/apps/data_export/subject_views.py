@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 """Authenticated owner-only subject export API."""
 
 import logging
@@ -104,7 +105,7 @@ class SubjectExportListView(SubjectExportBaseView):
             self.throttled(request, throttle.wait())
         job = create_subject_export(request.user, space)
         try:
-            run_subject_export_task.delay(str(job.pk))
+            dispatch(run_subject_export_task, str(job.pk))
         except Exception:
             # Durable pending jobs are recovered by F1 even when the broker is down.
             logger.warning("subject_export_enqueue_failed", extra={"job_id": str(job.pk)})

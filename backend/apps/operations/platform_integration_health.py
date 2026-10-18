@@ -7,16 +7,12 @@ from apps.integrations.health import (
 
 def _smtp_snapshot(space):
     from apps.integrations.models import PlatformEmailSettings
-
-    if (space.smtp_host or "").strip():
-        space.get_smtp_password()
-        configured = True
-    else:
-        row = PlatformEmailSettings.objects.filter(pk=1).first()
-        configured = bool(row and (row.smtp_host or "").strip())
-        if configured:
-            row.get_smtp_password()
-    return {"status": "ok", "configured": configured}
+    from apps.integrations.mail_providers.selection import stored_config, environment_config
+    if stored_config(space, tenant=True) is not None:
+        return {"status": "ok", "configured": True}
+    row = PlatformEmailSettings.objects.filter(pk=1).first()
+    selected = stored_config(row) if row else None
+    return {"status": "ok", "configured": selected is not None or environment_config() is not None}
 
 
 def integration_snapshot(space):

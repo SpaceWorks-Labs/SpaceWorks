@@ -200,3 +200,19 @@ OMITTED_MODELS = {
         "Deployment offsite upload journal; archives are outside the purge guarantee."
     ),
 }
+
+# Explicit cloud deployment coordination; no source claims travel into a tenant.
+OMITTED_MODELS.update({
+    'backup.ManagedDeploymentState': "Deployment-local cloud coordination or delivery telemetry.",
+    'backup.ManagedCaptureState': "Deployment-local cloud coordination or delivery telemetry.",
+    'backup.ManagedWriterBoundary': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudTaskState': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudTickRun': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudTickRateWindow': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudEmailBudgetAccount': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudEmailReservation': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.StorageCapabilityState': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudUsageSample': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudObjectUsageReceipt': "Deployment-local cloud coordination or delivery telemetry.",
+    'integrations.EmailProviderWebhookReceipt': "Deployment-local cloud coordination or delivery telemetry.",
+})

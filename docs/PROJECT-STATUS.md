@@ -228,3 +228,16 @@ one-minute offline detection, signed-heartbeat recovery, bounded auth retention,
 notifications/templates, an identity Devices console and offline failure classification in module
 operational health. No public endpoint or report schema added. Printer/label UI requires 7b/7c,
 absent from this 7a-based lane. Generated API snapshots remain coordinator-owned.
+
+
+## Cloud integration in progress (2026-10-18)
+
+The cloud/integration tree contains runtime/database, storage, HTTP mail, jobs/tick, recipes and static/UI lanes.
+Shared models/migrations/settings/routes/mail/images/health/panels are being integrated. Defaults remain host/full.
+Additional managed/full and managed/free images declare amd64/arm64 with build-time static; no publication occurs here.
+
+This is not an AO24/AO25 or launch acceptance pass. VPS V remains separate. Incoming Events submission runtime
+and reimbursement are absent here, so their cloud programmes remain inactive. Complete free adapters, durable
+managed staging/drain/accounting, recipe/function-catalogue corrections and real provider recovery evidence remain
+required. The orchestrator regenerates OpenAPI/client/catalogue hash in Docker. See [hosting](deploy/cloud-overview.md),
+[free limits](deploy/cloud-free.md) and [recovery](deploy/cloud-recovery.md).

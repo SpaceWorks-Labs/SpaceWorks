@@ -5,7 +5,7 @@ each protocol keeps its own authentication and account surfaces still fail close
 """
 
 PROVIDER_ONLY_ROUTES = frozenset("""
-notification-media telegram-webhook email-bounce-webhook whatsapp-meta-webhook
+free_tick:tick notification-media telegram-webhook email-provider-webhook email-bounce-webhook whatsapp-meta-webhook
 whatsapp-twilio-inbound whatsapp-twilio-status notification-slack-oauth
 notification-slack-inbound notification-mattermost-oauth notification-mattermost-inbound
 notification-discord-oauth notification-discord-inbound stripe-connect-webhook

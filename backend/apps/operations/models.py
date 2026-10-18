@@ -212,3 +212,8 @@ class QrPrintBatchItem(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["batch", "qr_code"], name="uniq_qr_print_batch_item_qr"),
         ]
+
+from .models_cloud_jobs import CloudTaskState, CloudTickRun, CloudTickRateWindow  # noqa: F401,E402
+from .models_cloud_email import CloudEmailBudgetAccount, CloudEmailReservation  # noqa: F401,E402
+from .models_storage_capabilities import StorageCapabilityState  # noqa: F401,E402
+from .models_cloud_usage import CloudUsageSample, CloudObjectUsageReceipt  # noqa: F401,E402

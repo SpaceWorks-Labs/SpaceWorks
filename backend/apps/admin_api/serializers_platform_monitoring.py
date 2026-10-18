@@ -52,7 +52,11 @@ class FailedDeliveriesSerializer(serializers.Serializer):
     notifications = serializers.IntegerField()
 
 
+from .serializers_deployment import DeploymentSummarySerializer
+
+
 class PlatformDashboardSerializer(serializers.Serializer):
+    deployment = DeploymentSummarySerializer(required=False)
     checked_at = serializers.DateTimeField()
     tenants_by_state = serializers.DictField(child=serializers.IntegerField())
     usage_totals = serializers.DictField(child=serializers.IntegerField())

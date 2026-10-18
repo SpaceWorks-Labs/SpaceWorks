@@ -28,6 +28,11 @@ def scheduler_snapshot(now=None):
 
 
 def backup_snapshot():
+    from django.conf import settings
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        return {"automatic_enabled": False, "last_success_at": None,
+                "status": "deployment_backup_requires_host_supervisor", "started_at": None,
+                "finished_at": None, "has_error": False, "cadence_minutes": 1440}
     from apps.backup.models import PlatformBackupSettings
     from apps.backup.models_runs import BackupRun
 

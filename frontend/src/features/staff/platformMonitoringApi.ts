@@ -5,7 +5,10 @@ export type ResourceUsage = { key: string; label: string; used: number | null; l
 export type TenantUsage = { makerspace_id: number; managed: boolean; resources: ResourceUsage[] };
 export type Problem = { key: string; status: CheckStatus; message: string; fix_url: string; makerspace_id: number | null };
 export type Problems = { checked_at: string; status: CheckStatus; results: Problem[] };
+import type { DeploymentSummary } from "../deployment/types";
+
 export type PlatformDashboard = {
+  deployment?: DeploymentSummary;
   checked_at: string;
   tenants_by_state: Record<string, number>;
   usage_totals: Record<string, number>;

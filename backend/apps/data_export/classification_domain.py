@@ -117,3 +117,4 @@ EXPORTED_MODEL_FIELDS = {
     "warranty.Warranty": "id makerspace asset machine purchased_on warranty_expires_on vendor_name vendor_contact created_at updated_at",
     "warranty.WarrantyDocument": "id warranty object_key original_filename content_type size_bytes uploaded_by created_at",
 }
+EXPORTED_MODEL_FIELDS["makerspaces.Makerspace"] += " email_provider email_provider_config"

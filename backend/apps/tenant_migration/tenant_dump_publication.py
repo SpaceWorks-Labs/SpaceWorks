@@ -6,6 +6,7 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
+from .cloud_audit_guard import capture_scope
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -100,6 +101,7 @@ def register_unpublished_artifact(capture_id, encrypted_path):
     return key, digest
 
 
+@capture_scope
 def publish_tenant_dump(capture_id):
     """Atomically expose bytes and create their single-use download state."""
     raw_token = secrets.token_urlsafe(32)

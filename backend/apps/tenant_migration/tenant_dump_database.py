@@ -38,42 +38,14 @@ def scratch_database_name(makerspace_id, run_id):
     return name
 
 
-def _environment(database):
-    env = os.environ.copy()
-    values = {
-        "PGDATABASE": database.get("NAME"),
-        "PGUSER": database.get("USER"),
-        "PGPASSWORD": database.get("PASSWORD"),
-        "PGHOST": database.get("HOST"),
-        "PGPORT": database.get("PORT"),
-    }
-    env.update({key: str(value) for key, value in values.items() if value not in (None, "")})
-    return env
 
 
 def _run(command, *, database, extra_env=None, cwd=None):
-    environment = _environment(database)
-    environment.update(extra_env or {})
+    from apps.backup.cloud_database_tools import fixed_command
     try:
-        subprocess.run(
-            command,
-            env=environment,
-            cwd=cwd,
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
-    except (OSError, subprocess.CalledProcessError) as exc:
-        stderr = getattr(exc, "stderr", b"") or b""
-        logger.error(
-            "tenant_dump.postgres_command_failed",
-            extra={
-                "command": Path(command[0]).name,
-                "returncode": getattr(exc, "returncode", None),
-                "stderr": stderr.decode("utf-8", "replace")[-4000:],
-            },
-        )
-        raise TenantDumpBuildError("A Lane D scratch database operation failed.") from exc
+        return fixed_command(command, database=database, extra_env=extra_env, cwd=cwd)
+    except Exception:
+        raise TenantDumpBuildError("A Lane D database operation failed; verify TLS, privileges and client major.") from None
 
 
 def _register_alias(alias, name, database):

@@ -152,6 +152,168 @@
         "backend"
       ],
       "policy": "excluded"
+    },
+    "DATABASE_CONNECTION_MODE": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "DATABASE_MAINTENANCE_URL": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": true,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "SPACEWORKS_DEPLOYMENT_ID": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "STORAGE_CAPABILITIES_FILE": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "STORAGE_CAPABILITY_TTL_SECONDS": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "AWS_SESSION_TOKEN": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": true,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "EMAIL_PROVIDER_CONFIG_FILE": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "EMAIL_PROVIDER_WEBHOOKS_ENABLED": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "FREE_EMAIL_ACCOUNT_KEY": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "FREE_EMAIL_MONTHLY_CAP": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "FREE_EMAIL_RESET_TIMEZONE": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "FREE_EMAIL_ACCOUNTS": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": true,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "FREE_EMAIL_PROVIDER": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "FREE_MAX_PROMOTION_BYTES": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "FREE_TICK_INGRESS_LIMIT_PER_MINUTE": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "SPACEWORKS_SECRET_FILE_MODE": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "SPACEWORKS_EMAIL_PROVIDER_CONFIG_B64": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": true,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "SPACEWORKS_STORAGE_CAPABILITIES_B64": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": true,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "TRUST_FORWARDED_HOST": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "TRUSTED_EDGE_CIDRS": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "TRUSTED_EDGE_UPSTREAM_HOSTS": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "UPLOAD_SCAN_POLICY": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "CLAMD_HOST": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "CLAMD_PORT": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "CLAMD_TIMEOUT_SECONDS": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "CLAMD_MAX_SCAN_BYTES": {
+      "default": "see config/cloud_settings and cloud-environment.md",
+      "secret": false,
+      "roles": "selected consumer only",
+      "policy": "excluded"
+    },
+    "TRUSTED_EDGE_INGRESS_SECRET": {
+      "default": "unset; required only with trusted forwarded host",
+      "secret": true,
+      "roles": "authenticated edge/backend only",
+      "policy": "excluded"
     }
   },
   "reserved_by_owner": {
@@ -202,5 +364,6 @@
     "EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES": 104857600,
     "EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES": 1073741824,
     "EVENT_STAGE_FILE_RETENTION_DAYS": 365
-  }
+  },
+  "status": "shared_wiring_pending_acceptance"
 }

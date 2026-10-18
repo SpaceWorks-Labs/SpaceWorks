@@ -10,8 +10,8 @@ def free_settings(values) -> dict:
     mail_cap = values["FREE_EMAIL_DAILY_CAP"]
     if not 60 <= interval <= 86400:
         raise ValueError("FREE_TICK_INTERVAL_SECONDS must be between 60 and 86400.")
-    if not 1 <= budget <= 20:
-        raise ValueError("FREE_TICK_BUDGET_SECONDS must be between 1 and 20.")
+    if not 3 <= budget <= 20:
+        raise ValueError("FREE_TICK_BUDGET_SECONDS must be between 3 and 20.")
     if not 1 <= rate <= 60:
         raise ValueError("FREE_TICK_RATE_LIMIT_PER_MINUTE must be between 1 and 60.")
     for name, value in (

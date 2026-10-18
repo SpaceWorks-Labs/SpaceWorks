@@ -138,7 +138,8 @@ def _new_lock_connection():
     # one PostgreSQL backend and hold the source-gate advisory lock. Each call
     # must return a distinct connection so nested boundaries remain independent.
     params = connections["default"].get_connection_params()
-    return psycopg2.connect(**params)
+    from config.cloud_database import django_database_spec
+    return psycopg2.connect(**django_database_spec().kwargs())
 
 
 @contextmanager

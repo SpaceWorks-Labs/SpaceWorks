@@ -17,15 +17,22 @@ def dependency(module_name, attribute):
 
 
 def managed_database(database, env):
-    configure = dependency("config.cloud_database", "configure_database")
-    return configure(database=database, env=env)
+    configure = dependency("config.cloud_database.django", "managed_database_configuration")
+    import os
+    tls = {name: env(name, default="") for name in (
+        "PGSSLMODE", "PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY", "PGSSLCRL", "PGCHANNELBINDING",
+    )}
+    configured = configure(env("DATABASE_URL"), environ={**os.environ, **tls})
+    configured.update({k: database[k] for k in ("CONN_MAX_AGE", "CONN_HEALTH_CHECKS", "DISABLE_SERVER_SIDE_CURSORS")})
+    return configured
 
 
-def cloud_task_modules():
-    modules = dependency("apps.operations.cloud_jobs.discovery", "task_modules")
-    return tuple(modules())
+def cloud_task_modules(*, programmes=(), tombstones=()):
+    catalog = dependency("apps.operations.cloud_jobs.catalog", "periodic_catalog")
+    return tuple(sorted({task.path.rpartition(".")[0] for task in catalog(programmes=programmes, tombstones=tombstones)}))
 
 
 def provider_email(env):
-    configure = dependency("apps.integrations.mail_providers.settings", "email_settings")
-    return configure(env=env)
+    # E selects the transport per message; Django EMAIL_BACKEND remains the legacy fallback.
+    return {"EMAIL_PROVIDER_CONFIG_FILE": env("EMAIL_PROVIDER_CONFIG_FILE", default=""),
+            "EMAIL_PROVIDER_WEBHOOKS_ENABLED": env.bool("EMAIL_PROVIDER_WEBHOOKS_ENABLED", default=False)}

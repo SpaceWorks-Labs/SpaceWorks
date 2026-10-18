@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def enqueue(envelope_id):
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed():
+        return
     from .notification_tasks import deliver_envelope
     try:
         deliver_envelope.delay(envelope_id)

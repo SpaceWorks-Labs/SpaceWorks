@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 """Bounded retention jobs for tenant-import rows, archives, and object journals."""
 
 import logging
@@ -147,7 +148,7 @@ def resume_expired_finalizing_import_jobs(
     failures = 0
     for job in jobs:
         try:
-            run_import_job_task.delay(str(job["pk"]), job["actor_id"])
+            dispatch(run_import_job_task, str(job["pk"]), job["actor_id"])
         except Exception:
             failures += 1
             logger.exception(
@@ -187,7 +188,7 @@ def resume_stale_pending_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BAT
     failures = 0
     for job in jobs:
         try:
-            stage_import_job_task.delay(str(job["pk"]), job["actor_id"])
+            dispatch(stage_import_job_task, str(job["pk"]), job["actor_id"])
         except Exception:
             failures += 1
             logger.exception(
@@ -235,7 +236,7 @@ def resume_stalled_materializations(*, now=None, batch_size=DEFAULT_CLEANUP_BATC
             if not free:
                 continue
             request = job["run_request"]
-            run_import_job_task.delay(
+            dispatch(run_import_job_task,
                 str(job["pk"]), request.get("actor_id"), request.get("target_identity"),
             )
             dispatched += 1

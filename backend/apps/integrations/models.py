@@ -10,6 +10,7 @@ from .notification_enums import (
 from .models_email import (
     DailyEmailCounter,
     EmailLog,
+    EmailProviderWebhookReceipt,
     EmailNotificationMute,
     EmailTemplate,
     PlatformEmailSettings,
@@ -53,6 +54,7 @@ __all__ = [
     'DestinationMachineScope',
     'DestinationMachineTypeScope',
     'EmailLog',
+    'EmailProviderWebhookReceipt',
     'EmailSuppression',
     'EmailNotificationMute',
     'EmailTemplate',

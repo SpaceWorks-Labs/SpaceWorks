@@ -199,3 +199,22 @@ Portable dumps and provider recovery retain the approved distinct capabilities.
 Step 1 does not create a migration, change generated schema/client/catalog hash,
 publish a recipe/image, commit, stage or merge. Actual runtime tests and AO24/AO25
 remain later gates; no provider prices or free-allowance promises are certified here.
+
+
+## Integration step 2 schema update
+
+The provisional FreeTickRun/FreeTaskProgress/FreeTaskAttempt/FreeMailBudgetWindow/FreeMailReservation names
+are replaced by actual J/E journal/account models in deploy/contracts/models.json. Literal field snapshot:
+deploy/contracts/cloud-model-fields.json. No parallel provisional tables are registered. The final M database
+hook is config.cloud_database.django.managed_database_configuration; discovery consumes J's periodic_catalog.
+Source-local fields keep explicit export/portable-dump dispositions.
+
+Image targets are default full (legacy backend context), plus managed and free. Additional targets need
+BuildKit named context cloud_tooling pointing at the repository root, preserving scripts/cloud_setup under
+/app/scripts. Managed targets enter secret materialization/generation capture before M's role/admission
+entrypoint. Extra images are spaceworks-backend-managed and spaceworks-backend-free. Recipes must select
+matching verified immutable digests; no publication occurred here.
+
+Cross-owner blockers include M's SQL-function catalogue entry for operations_storage_capability_guard and
+finite diagnostic allowlist, J's launcher and domain/free adapters, and R's exact bootstrap argv/descriptor
+alignment. These are blockers, not implicit ownership overrides. Incoming programmes remain inactive until reviewed.

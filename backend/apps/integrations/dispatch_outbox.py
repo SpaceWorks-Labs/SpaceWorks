@@ -158,6 +158,9 @@ def dispatch_email(
         from apps.integrations.timing_dispatch import defer_log
         if defer_log(log, kind='email'):
             return log
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed(sync=sync, persist_body=persist_body):
+        return log
     if sync:
         return _deliver(log)
     transaction.on_commit(lambda lid=log.id: _enqueue(lid))
@@ -165,6 +168,9 @@ def dispatch_email(
 
 
 def _enqueue(log_id):
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed():
+        return
     from apps.integrations.tasks import deliver_email_task
 
     try:

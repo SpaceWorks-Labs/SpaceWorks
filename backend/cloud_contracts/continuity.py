@@ -1,0 +1,10 @@
+"""Versioned names shared by archive producers and offline recovery tools.
+
+These are continuity keys, never provider credentials or scheduling authority.
+"""
+CONTINUITY_SCHEMA_VERSION = 1
+CONTINUITY_KEYS = (
+    "SECRET_KEY", "API_CLIENT_ENC_KEY", "PII_MASTER_KEY", "PII_MASTER_KEY_PREVIOUS",
+    "PII_SEARCH_HASH_KEY", "HMAC_SECRET", "PUSH_TOKEN_HMAC_KEY", "CRON_SECRET",
+    "AUDIT_MAC_MASTER_KEY",
+)

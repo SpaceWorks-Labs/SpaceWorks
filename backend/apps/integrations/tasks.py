@@ -60,6 +60,10 @@ def _claim_log(log_id):
         log = EmailLog.objects.select_for_update().filter(pk=log_id).first()
         if log is None or log.status in (EmailLog.Status.SENT, EmailLog.Status.SKIPPED):
             return None
+        from .mail_providers.outbox import claim_due
+        from .mail_retry_policy import unresolved_acceptance
+        if unresolved_acceptance(log) or not claim_due(log):
+            return None
         from .broadcasts_delivery import attempt_limit
         from .broadcasts_registry import ADAPTERS
         # Duplicate tasks must leave exhausted failures available for manual retry.

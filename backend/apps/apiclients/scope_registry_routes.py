@@ -132,6 +132,13 @@ from .scope_registry_p2_presence import routes as presence_routes
 _ROUTE_DEFINITIONS += presence_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
 
 
+from django.conf import settings
+if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+    _ROUTE_DEFINITIONS += (("free_tick:tick", _WRITE, frozenset(), TARGET_GLOBAL, False, False),)
+if getattr(settings, "EMAIL_PROVIDER_WEBHOOKS_ENABLED", False):
+    _ROUTE_DEFINITIONS += (("email-provider-webhook", _WRITE, frozenset(), TARGET_GLOBAL, False, False),)
+
+
 def _build_registry():
     registry = {}
     for definition in _ROUTE_DEFINITIONS:

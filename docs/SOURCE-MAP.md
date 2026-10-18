@@ -474,3 +474,5 @@ using the handwritten contract in `lib/api/staffAccounts.ts`. Password secrets r
 dialog state, outside Query caches/storage. Staff offline rosters, jobs and toasts are context-bound;
 member offline cards/loans retain their separate lifecycle. Tests: `backend/tests/account_split/`
 and frontend `*.accountSplit.test.*`, `sessionContexts.test.ts`, `contextStores.test.ts`.
+
+Cloud shared integration: config/cloud_settings composes lane contracts; operations/models_cloud_*, models_storage_capabilities and cloud_quotas own deployment-local state/projections; operations/cloud_runtime owns generation admission; scripts/cloud_entrypoint composes protected managed files before M admission. Provider/operator guides live under docs/deploy/cloud-*.md.

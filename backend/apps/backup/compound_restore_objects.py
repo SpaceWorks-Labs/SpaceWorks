@@ -29,6 +29,8 @@ def validate_object_effects(effects):
 
 
 def restore_objects(object_store, artifact, manifest, effects):
+    from .cloud_operations import require_host
+    require_host("deployment_restore_requires_host_supervisor")
     restored = tuple(object_store.restore_main(
         artifact, manifest, effects
     ))

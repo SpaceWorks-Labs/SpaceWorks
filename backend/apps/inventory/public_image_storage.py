@@ -1,3 +1,4 @@
+from apps.storage_clients import s3_client
 from dataclasses import dataclass
 import logging
 import sys
@@ -30,7 +31,7 @@ class FinalizeResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -246,6 +247,9 @@ def finalize_error_message(result):
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            from .public_image_cloud import presign
+            return presign(sys.modules[__name__], object_key, content_type)
         if settings.STORAGE_PRESIGN_METHOD == "put":
             # Presigned PUT cannot enforce content-length at upload time; finalize HEADs staging.
             url = _public_client().generate_presigned_url(
@@ -277,6 +281,9 @@ def presigned_upload(object_key, content_type):
 
 
 def finalize_upload(object_key):
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        from .public_image_cloud import finalize
+        return finalize(sys.modules[__name__], object_key)
     from .public_image_promotion import finalize
 
     return finalize(sys.modules[__name__], object_key)

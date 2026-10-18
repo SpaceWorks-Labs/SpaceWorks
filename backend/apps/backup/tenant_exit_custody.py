@@ -111,10 +111,12 @@ def _record_breach(current, custody_lock, target, now):
 
 
 def _schedule_alarm(makerspace_id):
+    from apps.operations.durable_dispatch import dispatch
+
     try:
         from .tasks import deliver_tenant_exit_custody_alarms_task
 
-        deliver_tenant_exit_custody_alarms_task.delay(makerspace_id)
+        dispatch(deliver_tenant_exit_custody_alarms_task, makerspace_id)
     except Exception:
         logger.exception(
             "tenant_exit_custody_alarm_enqueue_failed",

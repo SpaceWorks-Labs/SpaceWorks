@@ -25,6 +25,10 @@ def retry_email_log(actor, log):
             assert_write_allowed(log.makerspace_id)
         assert_mapped_write_allowed(log.makerspace_id)
         locked = EmailLog.objects.select_for_update().get(pk=log.pk)
+        from .mail_providers.outbox import claim_due
+        from .mail_retry_policy import unresolved_acceptance, rearm_rejected_configuration
+        if unresolved_acceptance(locked) or (not claim_due(locked) and not rearm_rejected_configuration(locked)):
+            raise EmailRetryError("Delivery is deferred or requires acceptance reconciliation.")
         if locked.status == EmailLog.Status.SENDING and not sending_claim_is_stale(locked):
             raise EmailRetryError("This email is still sending; only stalled sends can be retried.")
         if locked.status not in (EmailLog.Status.FAILED, EmailLog.Status.SENDING):

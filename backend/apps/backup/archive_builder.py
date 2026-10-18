@@ -60,6 +60,10 @@ class ArchiveBuildResult:
 
 
 def build_archive(archive):
+    from .cloud_operations import require_deployment_archive
+    require_deployment_archive(archive.scope)
+    from .cloud_operations import require_managed_tenant_capture
+    require_managed_tenant_capture()
     if archive.scope == BackupArchive.Scope.DEPLOYMENT:
         assert_deployment_fully_restored()
         assert_producer_capability()

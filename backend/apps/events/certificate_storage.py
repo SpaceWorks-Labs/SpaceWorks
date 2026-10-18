@@ -1,3 +1,4 @@
+from apps.storage_clients import s3_client
 import hashlib
 
 import boto3
@@ -13,7 +14,7 @@ class CertificateStorageUnavailable(Exception):
 
 
 def _client(endpoint):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,

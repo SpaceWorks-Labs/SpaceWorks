@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -154,7 +155,7 @@ class MigrationExportListCreateView(MigrationAPIView):
         except Exception as exc:
             return protocol_error(exc)
         try:
-            run_migration_export_job_task.delay(str(job.pk))
+            dispatch(run_migration_export_job_task, str(job.pk))
         except Exception:
             export_services._fail_job(
                 job, DataExportJob.FailureCode.INTERNAL_ERROR,

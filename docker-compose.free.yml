@@ -26,6 +26,11 @@ services:
       FREE_DB_CAP_BYTES: ${FREE_DB_CAP_BYTES:?set verified database cap}
       FREE_OBJECT_CAP_BYTES: ${FREE_OBJECT_CAP_BYTES:?set verified object cap}
       FREE_EMAIL_DAILY_CAP: ${FREE_EMAIL_DAILY_CAP:?set verified mail cap and account budget config}
+      FREE_EMAIL_ACCOUNT_KEY: ${FREE_EMAIL_ACCOUNT_KEY:?set provider billing-account key}
+      FREE_EMAIL_RESET_TIMEZONE: ${FREE_EMAIL_RESET_TIMEZONE:-UTC}
+      MANAGED_POSTGRES: "True"
+      UPLOAD_SCAN_POLICY: none
+      GUNICORN_THREADS: "1"
       GUNICORN_WORKERS: "1"
     command: ["--role", "backend", "python", "-m", "scripts.run_cloud_role", "web"]
     restart: unless-stopped

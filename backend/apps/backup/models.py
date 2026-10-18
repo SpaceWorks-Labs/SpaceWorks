@@ -209,3 +209,5 @@ from .models_restore_reservations import (  # noqa: E402,F401
 )
 from .models_runs import BackupRun, BackupRunCoverage  # noqa: E402,F401
 from .models_offsite import BackupDestination, BackupDestinationUpload  # noqa: E402,F401
+
+from .managed.models import ManagedDeploymentState, ManagedCaptureState, ManagedWriterBoundary  # noqa: F401,E402

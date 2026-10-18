@@ -5,6 +5,7 @@ from .gate_policy_p2_wa_twilio import HTTP_ANONYMOUS_PARTICIPANTS as WA_TWILIO_P
 
 
 HTTP_EXEMPTIONS = {
+    "free_tick:tick": "Authenticated deployment coordination; each chunk retains its domain source gates.",
     "notification-media": (
         "Single-use GET resolves its tenant from the hashed media grant, then takes "
         "tenant_write for atomic consumption and audit; closed source gates refuse disclosure."
@@ -76,6 +77,7 @@ HTTP_EXEMPTIONS = {
 
 
 HTTP_ANONYMOUS_EXEMPTIONS = {
+    "apps.operations.cloud_jobs.tick_views.FreeTickView.post": "Free-only authenticated deployment coordination, with per-chunk source gates.",
     "apps.accounts.views_device.DeviceAttestationChallengeView.post": "Global device-attestation challenge state.",
     "apps.accounts.views_device.DeviceLoginView.post": "Global user and device-session state.",
     "apps.accounts.views_device.DeviceRefreshView.post": "Global device-session state.",
@@ -98,6 +100,7 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
 
 
 HTTP_ANONYMOUS_PARTICIPANTS = {
+    "apps.integrations.views_bounce.ProviderBounceWebhookView.post": "Signed opaque tenant receipt commits in tenant_write.",
     "apps.integrations.notification_wa_meta_views.MetaWebhookView.post": (
         "Raw Meta HMAC and URL generation bind one tenant; batch application, "
         "proofs, consent revocation and delivery updates commit under tenant_write."

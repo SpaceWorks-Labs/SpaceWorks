@@ -148,3 +148,6 @@ For installations predating generated station secrets, set `EVENT_STATION_PIN_PE
 once in the private `.env` (for example, generate with
 `python -c "import secrets; print(secrets.token_urlsafe(48))"`) before enabling PIN
 stations. Keep the existing value on upgrades; the updater preserves `.env`.
+
+Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
+Provider/cloud inputs and secret-file rules: [managed environment reference](deploy/cloud-environment.md). FREE_* caps apply only in the selected free profile.

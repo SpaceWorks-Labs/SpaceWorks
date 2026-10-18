@@ -67,6 +67,7 @@ INERT_SHELL_BOUNDARIES = frozenset({("accounts.User", "staff_makerspace")})
 
 PROJECT_GLOBAL_BOUNDARIES = frozenset({
     ("backup.BackupArchive", "makerspace"),
+    ("operations.CloudEmailReservation", "log"),
     ("backup.RestoreRollbackObject", "makerspace"),
     ("tenant_migration.TenantImportJob", "target_makerspace"),
 })
@@ -98,6 +99,10 @@ SPECIAL_TENANT_TABLES.update({label: TenantPredicate((path,))
 OMITTED_OPERATIONAL_MODELS = frozenset({
     "backup.DeploymentDatabaseIdentity", "sessions.Session",
     "integrations.NotificationMediaGrant",
+    'backup.ManagedDeploymentState', 'backup.ManagedCaptureState', 'backup.ManagedWriterBoundary',
+    'operations.CloudTaskState', 'operations.CloudTickRun', 'operations.CloudTickRateWindow',
+    'operations.CloudUsageSample', 'operations.CloudObjectUsageReceipt',
+    'integrations.EmailProviderWebhookReceipt',
 })
 
 

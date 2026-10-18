@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -126,7 +127,7 @@ class BulkImportJobListCreateView(APIView):
             rows=rows,
             mapping=serializer.validated_data.get("mapping") or {},
         )
-        process_bulk_import_job.delay(job.id)
+        dispatch(process_bulk_import_job, job.id)
         job.refresh_from_db()
         return Response(BulkImportJobSerializer(job).data, status=status.HTTP_201_CREATED)
 

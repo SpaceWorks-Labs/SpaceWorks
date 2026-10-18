@@ -15,6 +15,8 @@ OBJECT_FIELD_NAMES = frozenset({
 })
 
 NON_OBJECT_KEY_FIELDS = frozenset({
+    ("operations.CloudEmailReservation", "attempt_key"),  # stable mail replay identity
+    ("operations.CloudObjectUsageReceipt", "operation_key"),  # accounting idempotency, no object locator
     # Notification intent and delivery-target identities, never bucket locators.
     ("integrations.NotificationEnvelope", "dedup_key"),
     ("integrations.NotificationDelivery", "target_key"),

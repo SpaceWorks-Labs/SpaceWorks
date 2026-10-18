@@ -50,6 +50,8 @@ def run_compound_restore(
     require_root_owned=True,
 ):
     """Run/resume the target coordinator; no mutation precedes static admission."""
+    from .cloud_operations import require_host
+    require_host("compound_restore_requires_host_supervisor")
 
     with supervise_run(
         ops_dir,

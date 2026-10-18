@@ -52,9 +52,11 @@ export function MemberAccountPage() {
   const selfCreationVisible = useOrganizationSelfCreationVisible(!restoring && !signIn && !hasClaimSession());
   if (signIn && !restoring) return <MemberAuthPanel tenantBrand={data ? { name: data.branding?.display_name || data.makerspace.name, logo: data.branding?.logo_url || data.makerspace.logo_url || undefined } : undefined} makerspaceSlug={slug} onAuthenticated={() => { void authenticated(); }} />;
   const tabs = [["profile", "Profile"], ["security", "Security"], ["membership", "Membership"], ["data", "Your data"], ["deletion", "Delete account"]].filter(([key]) => ["security", "deletion"].includes(key) || (key === "data" ? selfExport : selfService)).map(([key, label]) => ({ key, label, href: `${location.pathname}?section=${key}` }));
-  const section = tabs.some(tab => tab.key === requestedSection) ? requestedSection : tabs[0]?.key || "profile";
-  // Organization self-creation is account-wide, so it rides on the first section rather than a gated tab.
-  const showSelfCreation = selfCreationVisible && section === (tabs[0]?.key || "profile");
+  // Security stays available without replacing the tenant's default account section.
+  const defaultSection = selfService ? "profile" : selfExport ? "data" : "deletion";
+  const section = tabs.some(tab => tab.key === requestedSection) ? requestedSection : defaultSection;
+  // Organization self-creation is account-wide, so it rides on the default section rather than a gated tab.
+  const showSelfCreation = selfCreationVisible && section === defaultSection;
   if (deleted) return <CenteredCardLayout state={{ status: "ready" }} title="Your account" body="Deletion request received." content={<AccountDeletionReceipt result={deleted} />} primary={{ label: "Return home", href: "/" }} />;
   return <MemberPortalTabs modules={data?.modules ?? []} active="account" user={{ name: "Your account", menu: [{ label: "Member area", href: home }], onSignOut: () => { void logout("member").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); setSignIn(true); }); } }}
     workspace={data ? { name: data.makerspace.name || "Space Works", subtitle: "Your account", avatar: data.branding?.logo_url || data.makerspace.logo_url ? { kind: "image", src: data.branding?.logo_url || data.makerspace.logo_url || "" } : { kind: "avatar", name: data.makerspace.name || "Space Works", seed: slug }, locked: true } : undefined}>

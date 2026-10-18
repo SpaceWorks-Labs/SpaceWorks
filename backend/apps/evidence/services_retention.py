@@ -25,6 +25,8 @@ from apps.evidence.retention_policy import object_candidates, preview_object_exp
 from apps.makerspaces import limits
 from apps.makerspaces.servability import servable_queryset
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
+from apps.storage_capabilities.chunks import FreeSweep
+from apps.storage_capabilities.budget import checkpoint, raise_if_fenced
 
 
 logger = logging.getLogger(__name__)
@@ -39,7 +41,7 @@ class ExpiryClaim:
     recorded_size: int
 
 
-def sweep_evidence_retention(*, dry_run=False, now=None, batch_size=None):
+def sweep_evidence_retention(*, dry_run=False, now=None, batch_size=None, cursor=None):
     now = now or timezone.now()
     summary = {
         "makerspaces_scanned": 0,
@@ -64,8 +66,10 @@ def sweep_evidence_retention(*, dry_run=False, now=None, batch_size=None):
         settings.EVIDENCE_RETENTION_BATCH_SIZE if batch_size is None else batch_size
     )
     batch_size = min(max(int(configured_batch_size), 1), 1000)
+    window = FreeSweep(summary, cursor)
+    batch_size = window.batch_size(batch_size)
     gate_counts = {"skipped": 0}
-    for makerspace in servable_queryset().order_by("pk").iterator(chunk_size=100):
+    for makerspace in window.makerspaces(servable_queryset().order_by("pk")):
         summary["makerspaces_scanned"] += 1
         if dry_run:
             preview = preview_object_expiry(makerspace, limit=batch_size, as_of=now)
@@ -78,6 +82,7 @@ def sweep_evidence_retention(*, dry_run=False, now=None, batch_size=None):
             counts=gate_counts,
         ) as should_process:
             if not should_process:
+                window.skip(makerspace.pk)
                 continue
             _sweep_makerspace(
                 makerspace,
@@ -85,6 +90,7 @@ def sweep_evidence_retention(*, dry_run=False, now=None, batch_size=None):
                 run_id=run_id,
                 batch_size=batch_size,
                 summary=summary,
+                window=window,
             )
     summary["makerspaces_skipped"] += gate_counts["skipped"]
     return _logged_summary(
@@ -100,13 +106,16 @@ def _logged_summary(summary, *, dry_run, **context):
     return summary
 
 
-def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
+def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
     queryset, policy_days, cutoff = object_candidates(makerspace, as_of=now)
+    queryset = window.candidates(queryset, makerspace.pk)
     candidate_ids = list(queryset.values_list("pk", flat=True)[: batch_size + 1])
     summary["photos_eligible"] += min(len(candidate_ids), batch_size)
     if len(candidate_ids) > batch_size:
         summary["continuation_required"] = True
     for evidence_id in candidate_ids[:batch_size]:
+        if not window.before_item(makerspace.pk, evidence_id):
+            return
         claim = _claim(evidence_id, now=now)
         if claim is None:
             continue
@@ -120,6 +129,7 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
                 "staging": storage.delete_object_strict(staged_key),
             }
             size = final_size or staged_size or claim.recorded_size
+            checkpoint()
             removed = _complete(
                 claim,
                 size=size,
@@ -143,6 +153,7 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
                 )
         except Exception as exc:  # per-object isolation keeps the bounded sweep moving
             _release(claim, exc)
+            raise_if_fenced(exc)
             summary["photos_failed"] += 1
             logger.warning(
                 "evidence_object_expiry_failed",
@@ -151,8 +162,8 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
                     "makerspace_id": claim.makerspace_id,
                     "error_type": type(exc).__name__,
                 },
-                exc_info=True,
             )
+    window.finish_page(makerspace.pk, candidate_ids[:batch_size], len(candidate_ids) > batch_size)
 
 
 def _claim(evidence_id, *, now):
@@ -221,7 +232,7 @@ def _complete(claim, *, size, policy_days, cutoff, outcomes, run_id):
         state.last_error = ""
         state.save()
         quota_was_charged = (
-            settings.STORAGE_PRESIGN_METHOD != "put"
+            not storage.uses_put_uploads()
             or finalization is None
             or finalization.quota_charged
         )
@@ -259,5 +270,5 @@ def _release(claim, exc):
             return
         state.claim_token = None
         state.claimed_at = None
-        state.last_error = f"{type(exc).__name__}: {exc}"[:500]
+        state.last_error = getattr(exc, "code", type(exc).__name__)[:500]
         state.save(update_fields=("claim_token", "claimed_at", "last_error", "updated_at"))

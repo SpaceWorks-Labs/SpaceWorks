@@ -8,7 +8,10 @@ from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
 
-from apps.object_storage import delete_all_versions
+from apps.object_storage import delete_all_versions, deletion_contract
+from apps.storage_capabilities import CapabilityError, capabilities_for
+from apps.storage_capabilities.budget import checkpoint, client_options
+from apps.storage_capabilities.deletion import assert_exact_absent, delete_owned_prefix, version_pages
 
 logger = logging.getLogger(__name__)
 # Shared by every uploader: apps.*.storage.staging_key() is f"staging/{final_key}".
@@ -27,37 +30,62 @@ class BackupStorageError(RuntimeError):
 class BackupVerificationError(BackupStorageError):
     pass
 
+
+class BackupObjectMissing(BackupStorageError):
+    pass
+
 def client(*, public_endpoint=False):
     endpoint = settings.AWS_S3_PUBLIC_ENDPOINT_URL if public_endpoint else settings.AWS_S3_ENDPOINT_URL
     return boto3.client(
         "s3",
         endpoint_url=endpoint,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID or None,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY or None,
+        aws_session_token=getattr(settings, "AWS_SESSION_TOKEN", None) or None,
         region_name=settings.AWS_S3_REGION_NAME,
         config=Config(
             signature_version=settings.AWS_S3_SIGNATURE_VERSION,
             s3={"addressing_style": settings.AWS_S3_ADDRESSING_STYLE},
+            **client_options(),
         ),
     )
+
+
+def private_client():
+    s3 = client()
+    capabilities_for(s3, settings.AWS_STORAGE_BUCKET_NAME, required=True, role="private")
+    return s3
 
 
 def upload_archive(key, path):
     try:
         with open(path, "rb") as handle:
-            client().upload_fileobj(
-                handle,
-                settings.AWS_STORAGE_BUCKET_NAME,
-                key,
-                ExtraArgs={"ContentType": "application/octet-stream"},
-            )
+            s3 = private_client()
+            bucket = settings.AWS_STORAGE_BUCKET_NAME
+            contract = capabilities_for(s3, bucket, required=True)
+            handle.seek(0, 2)
+            size = handle.tell()
+            handle.seek(0)
+            if contract is not None:
+                contract.validate_upload_limit(size)
+            free = getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
+            if free:
+                maximum = getattr(settings, "FREE_MAX_PROMOTION_BYTES", 16 * 1024 * 1024)
+                if type(maximum) is not int or maximum < 1 or size > maximum:
+                    raise CapabilityError("storage_free_promotion_requires_external_job")
+            checkpoint()
+            if free or (contract is not None and contract.multipart is not True):
+                s3.put_object(Bucket=bucket, Key=key, Body=handle,
+                              ContentLength=size, ContentType="application/octet-stream")
+            else:
+                s3.upload_fileobj(handle, bucket, key, ExtraArgs={"ContentType": "application/octet-stream"})
     except (BotoCoreError, ClientError, OSError) as exc:
         raise BackupStorageError("The encrypted backup archive could not be stored.") from exc
 
 
 def open_archive(key):
     try:
-        return client(public_endpoint=True).get_object(
+        return private_client().get_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key
         )["Body"]
     except (BotoCoreError, ClientError) as exc:
@@ -66,93 +94,47 @@ def open_archive(key):
 
 def delete_archive(key):
     try:
-        s3 = client()
+        s3 = private_client()
         delete_all_versions(
             s3, bucket=settings.AWS_STORAGE_BUCKET_NAME, key=key
         )
         return True
-    except (BotoCoreError, ClientError):
-        logger.exception("backup_archive_delete_failed", extra={"object_key": key})
+    except (BotoCoreError, ClientError, CapabilityError):
+        logger.warning("backup_archive_delete_failed")
         return False
 
 
 def delete_archive_prefix(prefix):
-    """Delete every retained version and current object below a staging prefix."""
+    """Delete a caller-owned staging directory and verify it is empty."""
     try:
-        s3 = client()
+        s3 = private_client()
         bucket = settings.AWS_STORAGE_BUCKET_NAME
-        key_marker = version_marker = None
-        found_versions = False
-        try:
-            while True:
-                params = {"Bucket": bucket, "Prefix": prefix}
-                if key_marker:
-                    params["KeyMarker"] = key_marker
-                if version_marker:
-                    params["VersionIdMarker"] = version_marker
-                page = s3.list_object_versions(**params)
-                objects = [
-                    {"Key": item["Key"], "VersionId": item["VersionId"]}
-                    for group in (
-                        page.get("Versions", []),
-                        page.get("DeleteMarkers", []),
-                    )
-                    for item in group
-                ]
-                if objects:
-                    found_versions = True
-                    s3.delete_objects(
-                        Bucket=bucket,
-                        Delete={"Objects": objects, "Quiet": True},
-                    )
-                if not page.get("IsTruncated"):
-                    break
-                key_marker = page.get("NextKeyMarker")
-                version_marker = page.get("NextVersionIdMarker")
-        except ClientError as exc:
-            code = exc.response.get("Error", {}).get("Code", "")
-            if code not in {"NotImplemented", "InvalidRequest", "501"}:
-                raise
-        if not found_versions:
-            continuation_token = None
-            while True:
-                params = {"Bucket": bucket, "Prefix": prefix}
-                if continuation_token:
-                    params["ContinuationToken"] = continuation_token
-                page = s3.list_objects_v2(**params)
-                objects = [
-                    {"Key": item["Key"]} for item in page.get("Contents", [])
-                ]
-                if objects:
-                    s3.delete_objects(
-                        Bucket=bucket,
-                        Delete={"Objects": objects, "Quiet": True},
-                    )
-                if not page.get("IsTruncated"):
-                    break
-                continuation_token = page.get("NextContinuationToken")
+        delete_owned_prefix(s3, bucket=bucket, prefix=prefix,
+                            never_versioned=deletion_contract(s3, bucket))
         return True
-    except (BotoCoreError, ClientError):
-        logger.exception(
-            "backup_archive_prefix_delete_failed", extra={"prefix": prefix}
-        )
+    except (BotoCoreError, ClientError, CapabilityError):
+        logger.warning("backup_archive_prefix_delete_failed")
         return False
 
 
 def ensure_versioning_or_quiescence(bucket):
-    """Return versioned when the backend can guarantee version IDs, else quiesced."""
+    """Inspect without provisioning or treating an outage as unversioned."""
     s3 = client()
     try:
+        contract = capabilities_for(s3, bucket, required=True)
+        if contract is not None:
+            if contract.versioning == "unknown":
+                raise CapabilityError("storage_versioning_unknown")
+            return "versioned" if contract.versioning == "enabled" else "quiesced"
+        checkpoint()
         status = s3.get_bucket_versioning(Bucket=bucket).get("Status")
         if status == "Enabled":
             return "versioned"
-        s3.put_bucket_versioning(
-            Bucket=bucket, VersioningConfiguration={"Status": "Enabled"}
-        )
-        status = s3.get_bucket_versioning(Bucket=bucket).get("Status")
-        return "versioned" if status == "Enabled" else "quiesced"
-    except (BotoCoreError, ClientError):
-        return "quiesced"
+        if status in {None, "Suspended"}:
+            return "quiesced"
+        raise CapabilityError("storage_versioning_unknown")
+    except (BotoCoreError, ClientError, CapabilityError) as exc:
+        raise BackupStorageError("Storage capture capability could not be verified.") from exc
 
 
 def download_object(bucket, key, destination, *, versioned):
@@ -169,7 +151,7 @@ def download_object(bucket, key, destination, *, versioned):
     """
     try:
         return _download_object(bucket, key, destination, versioned=versioned)
-    except BackupStorageError:
+    except BackupObjectMissing:
         if key.startswith(STAGING_PREFIX):
             raise
         staged = _download_object(
@@ -183,75 +165,51 @@ def download_object(bucket, key, destination, *, versioned):
 
 
 def assert_object_absent(bucket, key):
-    """Fail closed if a terminal retention tombstone still has any stored bytes."""
-    s3 = client()
+    """Inspect a retention tombstone using the verified bucket history class."""
     try:
-        page = s3.list_object_versions(Bucket=bucket, Prefix=key)
-        while True:
-            for group in (page.get("Versions", ()), page.get("DeleteMarkers", ())):
-                if any(item.get("Key") == key for item in group):
-                    raise BackupStorageError(
-                        f"Expired storage object {key} still has retained versions."
-                    )
-            if not page.get("IsTruncated"):
-                break
-            params = {
-                "Bucket": bucket,
-                "Prefix": key,
-                "KeyMarker": page.get("NextKeyMarker"),
-                "VersionIdMarker": page.get("NextVersionIdMarker"),
-            }
-            page = s3.list_object_versions(
-                **{name: value for name, value in params.items() if value is not None}
-            )
-    except ClientError as exc:
-        raise BackupStorageError(
-            f"Expired storage object {key} could not be inspected."
-        ) from exc
-    except BotoCoreError as exc:
-        raise BackupStorageError(
-            f"Expired storage object {key} could not be inspected."
-        ) from exc
-    try:
-        s3.head_object(Bucket=bucket, Key=key)
-    except ClientError as exc:
-        code = exc.response.get("Error", {}).get("Code")
-        status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        if code in {"404", "NoSuchKey", "NotFound"} or status == 404:
-            return
-        raise BackupStorageError(
-            f"Expired storage object {key} could not be inspected."
-        ) from exc
-    except BotoCoreError as exc:
-        raise BackupStorageError(
-            f"Expired storage object {key} could not be inspected."
-        ) from exc
-    raise BackupStorageError(f"Expired storage object {key} is still present.")
+        s3 = client()
+        assert_exact_absent(s3, bucket=bucket, key=key,
+                            never_versioned=deletion_contract(s3, bucket))
+    except (BotoCoreError, ClientError, CapabilityError) as exc:
+        raise BackupStorageError("Expired storage object absence could not be proved.") from exc
+
 
 def _download_object(bucket, key, destination, *, versioned):
     s3 = client()
     params = {"Bucket": bucket, "Key": key}
     version_id = ""
+    body = None
     try:
+        capabilities_for(s3, bucket, required=True)
         if versioned:
+            head_missing = False
             try:
+                checkpoint()
                 version_id = s3.head_object(**params).get("VersionId") or ""
             except ClientError as exc:
                 code = exc.response.get("Error", {}).get("Code")
                 status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
                 if code not in {"404", "NoSuchKey", "NotFound"} and status != 404:
                     raise
+                head_missing = True
                 version_id = _latest_retained_version(s3, bucket, key)
             if not version_id:
-                raise BackupStorageError(f"Version-enabled bucket returned no version id for {key}.")
+                if head_missing:
+                    raise BackupObjectMissing("Versioned object was not found.")
+                raise BackupStorageError("Version-enabled bucket returned no object version ID.")
             params["VersionId"] = version_id
+        checkpoint()
         response = s3.get_object(**params)
+        body = response["Body"]
         destination.parent.mkdir(parents=True, exist_ok=True)
         digest = hashlib.sha256()
         with destination.open("wb") as handle:
-            while chunk := response["Body"].read(1024 * 1024):
+            while chunk := body.read(1024 * 1024):
+                checkpoint()
                 handle.write(chunk)
                 digest.update(chunk)
+        if destination.stat().st_size != response["ContentLength"]:
+            raise BackupStorageError("Captured object size did not match storage metadata.")
         return {
             "key": key,
             "version_id": version_id,
@@ -266,29 +224,23 @@ def _download_object(bucket, key, destination, *, versioned):
         }
     except BackupStorageError:
         raise
-    except (BotoCoreError, ClientError, OSError) as exc:
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") in {"404", "NoSuchKey", "NotFound", "NoSuchVersion"}:
+            raise BackupObjectMissing("Storage object was not found.") from exc
+        raise BackupStorageError("Could not capture storage object.") from exc
+    except (BotoCoreError, OSError, CapabilityError) as exc:
         raise BackupStorageError(f"Could not capture storage object {key}.") from exc
+    finally:
+        if body is not None:
+            body.close()
 
 
 def _latest_retained_version(s3, bucket, key):
-    key_marker = version_marker = None
-    while True:
-        params = {"Bucket": bucket, "Prefix": key}
-        if key_marker:
-            params["KeyMarker"] = key_marker
-        if version_marker:
-            params["VersionIdMarker"] = version_marker
-        page = s3.list_object_versions(**params)
-        versions = [
-            item for item in page.get("Versions", []) if item.get("Key") == key
-        ]
-        if versions:
-            newest = max(versions, key=lambda item: item.get("LastModified"))
-            return newest.get("VersionId") or ""
-        if not page.get("IsTruncated"):
-            return ""
-        key_marker = page.get("NextKeyMarker")
-        version_marker = page.get("NextVersionIdMarker")
+    for page in version_pages(s3, bucket=bucket, prefix=key):
+        for item in page.get("Versions", ()):
+            if item.get("Key") == key:
+                return item.get("VersionId") or ""
+    return ""
 
 
 from .storage_promotion import create_final_from_staging, final_locator, object_exists, staging_locator, stream_verify, upload_staging  # noqa: E402,F401

@@ -22,6 +22,8 @@ from django.utils import timezone
 from apps.backup.models import DeploymentRecoveryState
 from apps.evidence import storage
 from apps.evidence.models import EvidenceAbandonedUploadReceipt
+from apps.storage_capabilities import CapabilityError
+from apps.storage_capabilities.budget import checkpoint, raise_if_fenced
 
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,8 @@ def reconcile_receipts(*, dry_run=False, now=None, batch_size=None):
         return _logged(summary, dry_run=False)
     configured = settings.EVIDENCE_RETENTION_BATCH_SIZE if batch_size is None else batch_size
     limit = min(max(int(configured), 1), 1000)
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+        limit = min(limit, 5)
     due = list(
         EvidenceAbandonedUploadReceipt.objects.filter(next_reconcile_at__lte=now)
         .order_by("next_reconcile_at", "pk")
@@ -64,6 +68,13 @@ def reconcile_receipts(*, dry_run=False, now=None, batch_size=None):
     )
     summary["has_more"] = len(due) > limit
     for pk, object_key in due[:limit]:
+        try:
+            checkpoint()
+        except CapabilityError as exc:
+            if exc.code != "storage_budget_exhausted":
+                raise
+            summary.update(has_more=True, budget_deferred=True)
+            break
         if _reconcile_receipt(pk, object_key, now=now):
             summary["receipts_reconciled"] += 1
         else:
@@ -77,15 +88,17 @@ def _reconcile_receipt(pk, object_key, *, now):
         storage.delete_object_strict(object_key)
         storage.delete_object_strict(storage.staging_key(object_key))
     except Exception as exc:  # per-receipt isolation; retried two sweeps later
+        raise_if_fenced(exc)
         receipts.reconcile_update(
             next_reconcile_at=now + FAILURE_BACKOFF,
-            last_error=f"{type(exc).__name__}: {exc}"[:500],
+            last_error=getattr(exc, "code", type(exc).__name__)[:500],
         )
         logger.warning(
             "evidence_abandoned_receipt_reconcile_failed",
             extra={"receipt_id": pk, "error_type": type(exc).__name__},
         )
         return False
+    checkpoint()
     receipts.reconcile_update(
         next_reconcile_at=now + SUCCESS_INTERVAL,
         last_reconciled_at=now,

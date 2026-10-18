@@ -9,6 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 def makerspace_mail_connection(makerspace):
+    from .mail_providers.connections import connection_for
+    from .mail_providers.selection import stored_config
+    # Explicit inheritance ignores stale SMTP fields; explicit broken config raises.
+    provider = getattr(makerspace, "email_provider", "")
+    if provider:
+        config = stored_config(makerspace, tenant=True)
+        return connection_for(config, makerspace) if config else platform_mail_connection()
     smtp_host = (makerspace.smtp_host or "").strip()
     if not smtp_host:
         return platform_mail_connection()
@@ -42,6 +49,15 @@ def platform_mail_connection():
     from apps.integrations.models import PlatformEmailSettings
 
     cfg = PlatformEmailSettings.load()
+    from .mail_providers.connections import connection_for
+    from .mail_providers.selection import environment_config, stored_config
+    if getattr(cfg, "email_provider", ""):
+        return connection_for(stored_config(cfg), cfg)
+    # A legacy DB SMTP host remains authoritative over environment provider config.
+    if not (cfg.smtp_host or "").strip():
+        config = environment_config()
+        if config:
+            return connection_for(config)
     smtp_host = (cfg.smtp_host or "").strip()
     if not smtp_host:
         return None, settings.DEFAULT_FROM_EMAIL
@@ -66,6 +82,14 @@ def platform_email_configured() -> bool:
     from apps.integrations.models import PlatformEmailSettings
 
     cfg = PlatformEmailSettings.load()
+    if getattr(cfg, "email_provider", "") or getattr(settings, "EMAIL_PROVIDER", ""):
+        try:
+            connection, _ = platform_mail_connection()
+            return connection is not None and (
+                hasattr(connection, "spaceworks_mail_config") or _is_smtp_backend())
+        except Exception:
+            logger.warning("platform_email_configuration_unavailable")
+            return False
     if not (cfg.smtp_host or "").strip():
         return False
     # A host whose stored password no longer decrypts (API_CLIENT_ENC_KEY changed) cannot
@@ -84,6 +108,11 @@ def _is_smtp_backend() -> bool:
 
 
 def email_enabled() -> bool:
+    from apps.integrations.models import PlatformEmailSettings
+    # Only explicit provider mode overrides legacy backend semantics.
+    cfg = PlatformEmailSettings.load()
+    if getattr(cfg, "email_provider", "") or getattr(settings, "EMAIL_PROVIDER", ""):
+        return platform_email_configured()
     # Can we actually DELIVER mail? platform_mail_connection()/makerspace_mail_connection()
     # build the connection via Django get_connection(), which uses settings.EMAIL_BACKEND as
     # the backend CLASS. So a configured SMTP *host* (platform DB row or env EMAIL_HOST) only

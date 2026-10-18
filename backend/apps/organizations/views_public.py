@@ -62,6 +62,8 @@ class PublicOrganizationMakerspacesView(APIView):
         from .public_catalog import linked_spaces_for, space_card
         _request_tenant_ids(request)
         owner = _public_organization(slug)
+        from apps.makerspaces.public_page_access import require_scope
+        require_scope("organization", owner, request)
         paginator = PagePagination()
         page = paginator.paginate_queryset(linked_spaces_for(owner), request, view=self)
         response = paginator.get_paginated_response([space_card(row) for row in page])

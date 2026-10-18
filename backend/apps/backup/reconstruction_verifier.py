@@ -61,7 +61,8 @@ def _load_slices(using, slices):
     ordered_models = _dependency_order(fixtures)
     seen = set()
     from .staff_reconstruction import reconstruction_context
-    with reconstruction_context(using), transaction.atomic(using=using):
+    from .public_page_reconstruction import public_page_reconstruction_context
+    with reconstruction_context(using), public_page_reconstruction_context(using), transaction.atomic(using=using):
         connection = connections[using]
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL DEFERRED")

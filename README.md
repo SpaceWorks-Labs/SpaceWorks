@@ -50,6 +50,10 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   machine-type scope. Organizations can link spaces, publish profiles and cross-space event catalogues,
   and grant actions across the network without conferring membership identity. Superadmins use a
   separate Django control plane; see [roles and access](#roles--access).
+- **Public pages.** Makerspaces and organizations share the `/<handle>` namespace with member
+  profiles. Owners save drafts and explicitly publish section layouts; events keep their existing
+  website editor and gain `/e/<code>` links. Organization pages show linked public spaces and
+  organized events, including a minimal past archive. See the [publication and portability rules](docs/INVARIANTS.md#public-pages-shared-handles-and-owner-builders).
 - **Live work and search.** Staff queues, loans and check-ins update after commit through Redis-backed
   Server-Sent Events, falling back to polling. Inventory, machine and event lists support `?q=`
   full-text search with typo tolerance. Boxes, tools and individual assets have QR/scan history.

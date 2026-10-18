@@ -173,6 +173,8 @@ AUTHORIZATION_SOURCES += tuple(APPS_DIR / app / name for app, name in (
     ("makerspaces", "public_page_asset_cleanup.py"), ("makerspaces", "public_page_revisions.py"),
     ("events", "website_revisions.py"), ("events", "website_delays.py"),
     ("events", "website_revision_projection.py"), ("organizations", "public_catalog.py"),
+    ("apiclients", "scope_registry_public_pages.py"),
+    ("makerspaces", "origin_scope_routes_public_pages.py"),
 ))
 from .catalog_public_pages import EXPORTED_FIELDS as PAGE_EXPORTED_FIELDS
 SCANNED_MODEL_LABELS |= PAGE_EXPORTED_FIELDS.keys()

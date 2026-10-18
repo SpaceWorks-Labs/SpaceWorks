@@ -47,8 +47,11 @@ def upload(kind, owner_id, *, actor, version, file, alt_text):
         typed, owner, actor, page = lock_state(kind, owner_id, actor, version)
         page = ensure_page(typed, owner, page, actor)
         pending = Cleanup.objects.filter(owner_kind=kind, owner_id=owner_id, completed_at__isnull=True).exclude(
-            object_key__in=page.assets.values("object_key")).count()
-        if page.assets.count() + pending >= MAX_ASSETS:
+            object_key__in=page.assets.values("object_key"))
+        if kind == "makerspace":
+            from .public_page_lifecycle import event_cleanup_keys
+            pending = pending.exclude(event_cleanup_keys())
+        if page.assets.count() + pending.count() >= MAX_ASSETS:
             raise ValidationError({"file": "A page may retain at most 50 assets, including pending uploads."})
         charge_storage(kind, owner, len(converted))
         key = prefix(kind, owner_id, page.pk) + uuid4().hex + ".webp"

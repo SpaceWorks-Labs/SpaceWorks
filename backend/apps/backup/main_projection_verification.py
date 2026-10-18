@@ -68,6 +68,8 @@ def build_expected_ledger(using, rules, makerspace_ids, *, sequence_facts):
 
 
 def verify_readable_main(using, rules, makerspace_ids, expected):
+    from .public_page_verification import verify_public_pages
+    verify_public_pages(using=using)
     assert_catalog_matches(using, rules)
     for rule in rules:
         queryset = rule.model._base_manager.using(using).order_by(

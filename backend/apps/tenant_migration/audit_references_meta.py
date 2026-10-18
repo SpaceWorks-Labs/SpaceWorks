@@ -36,6 +36,15 @@ S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 from .target_projection_w7_events import EVENT_AUDIT_EDGES
 
 AUDIT_META_REFERENCES = {
+    **_reference(S, None, *((action, field) for action in (
+        "public_page.updated", "public_page.published", "public_page.unpublished",
+        "public_page.handle_claimed", "public_page.handle_released", "public_page.asset_reserved",
+        "public_page.asset_uploaded", "public_page.asset_deleted",
+    ) for field in ("owner_id", "revision_id", "asset_id"))),
+    **_reference(S, None,
+                 ("public_page.unattached_assets_removed", "owner_id"),
+                 ("public_page.asset_bytes_deleted", "owner_id"),
+                 ("public_page.asset_bytes_deleted", "cleanup_id")),
     **_reference(S, None,
                  ("notification.media_grant_cleaned", "grant_id"),
                  ("notification.media_grant_issued", "delivery_id"),

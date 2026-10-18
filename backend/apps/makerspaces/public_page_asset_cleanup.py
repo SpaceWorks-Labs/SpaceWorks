@@ -62,6 +62,13 @@ def clean_object(job_id):
         expected = (website_assets.prefix("events", job.owner_id, job.page_id) if job.owner_kind == "event"
                     else prefix(job.owner_kind, job.owner_id, job.page_id))
         proven = job.object_key.startswith(expected) or (job.owner_kind == "event" and job.ownership_proven)
+        if job.owner_kind == "makerspace":
+            proven = proven or job.object_key.startswith(f"events/website/{job.owner_id}/{job.page_id}/")
+            # Whole-tenant deletion removes its import journals too. This exact-key
+            # intent was validated and committed before that graph was removed.
+            if owner is None:
+                from apps.inventory.public_image_storage import is_safe_object_key
+                proven = is_safe_object_key(job.object_key)
         if not proven and tenant:
             from apps.tenant_migration.models_import_objects import TenantImportObject
             proven = TenantImportObject.objects.filter(target_key=job.object_key, bucket_kind="private",
@@ -113,15 +120,19 @@ def clean_object(job_id):
 
 
 def _has_asset(job):
-    if job.owner_kind == "event":
-        from django.apps import apps
-        if not apps.is_installed("apps.events"):
-            return False
-        if _event_cover(job):
-            return (apps.get_model("events.Event").objects.filter(image_key=job.object_key).exists()
-                    or apps.get_model("events.EventSeries").objects.filter(image_key=job.object_key).exists())
-        return apps.get_model("events.EventPageAsset").objects.filter(object_key=job.object_key).exists()
-    return adapter(job.owner_kind).asset.objects.filter(object_key=job.object_key).exists()
+    from django.apps import apps
+    from .models_public_pages import MakerspacePublicPageAsset
+    from apps.organizations.models_public_pages import OrganizationPublicPageAsset
+    # Cleanup keys can outlive their typed owner; check every live asset family.
+    if (MakerspacePublicPageAsset.objects.filter(object_key=job.object_key).exists()
+            or OrganizationPublicPageAsset.objects.filter(object_key=job.object_key).exists()):
+        return True
+    if not apps.is_installed("apps.events"):
+        return False
+    if apps.get_model("events.EventPageAsset").objects.filter(object_key=job.object_key).exists():
+        return True
+    return (apps.get_model("events.Event").objects.filter(image_key=job.object_key).exists()
+            or apps.get_model("events.EventSeries").objects.filter(image_key=job.object_key).exists())
 
 
 def _event_cover(job):
@@ -135,25 +146,27 @@ def sweep(*, limit=100):
     counts = {"deleted": 0, "skipped": 0}
     for owner_id in MakerspacePublicPage.objects.values_list("makerspace_id", flat=True).iterator():
         with fanout_tenant_write(owner_id, operation="public_page_asset_cleanup", counts=counts) as allowed:
-            if allowed:
-                collect_unattached("makerspace", owner_id)
+            if not allowed:
+                continue
+            collect_unattached("makerspace", owner_id)
     for owner_id in OrganizationPublicPage.objects.values_list("organization_id", flat=True).iterator():
         collect_unattached("organization", owner_id)
     from apps.separability.registry import runtime_active
-    if runtime_active("events"):
+    from django.apps import apps
+    if apps.is_installed("apps.events") and runtime_active("events"):
         from apps.events.website_asset_cleanup import collect_unattached as collect_events
         from apps.events.models_website import EventPage
         for page_id, owner_id in EventPage.objects.values_list("pk", "makerspace_id").iterator():
             with fanout_tenant_write(owner_id, operation="public_page_asset_cleanup", counts=counts) as allowed:
-                if allowed:
-                    collect_events(page_id)
+                if not allowed:
+                    continue
+                collect_events(page_id)
     from .models_public_pages import MakerspacePublicPageAsset
     from apps.organizations.models_public_pages import OrganizationPublicPageAsset
     from django.db.models import Q
     due = Cleanup.objects.filter(Q(completed_at__isnull=True) | Q(owner_kind="event"), due_at__lte=timezone.now()).exclude(
         object_key__in=MakerspacePublicPageAsset.objects.values("object_key")).exclude(
         object_key__in=OrganizationPublicPageAsset.objects.values("object_key"))
-    from django.apps import apps
     if apps.is_installed("apps.events"):
         due = due.exclude(object_key__in=apps.get_model("events.EventPageAsset").objects.values("object_key"))
         for model in ("events.Event", "events.EventSeries"):
@@ -164,8 +177,9 @@ def sweep(*, limit=100):
         from .models import Makerspace
         if job.owner_kind in {"makerspace", "event"} and Makerspace.objects.filter(pk=job.owner_id).exists():
             with fanout_tenant_write(job.owner_id, operation="public_page_asset_cleanup", counts=counts) as allowed:
-                if allowed:
-                    counts["deleted"] += int(clean_object(pk))
+                if not allowed:
+                    continue
+                counts["deleted"] += int(clean_object(pk))
         else:
             counts["deleted"] += int(clean_object(pk))
     return counts

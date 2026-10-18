@@ -9,6 +9,7 @@ from apps.apiclients.scope_registry_routes import (
     PUBLIC_WRITE,
     SCOPE_REGISTRY,
     TARGET_GLOBAL,
+    TARGET_PUBLIC_HANDLE,
     TARGET_MODES,
     TARGET_TENANT_SLUG,
     TARGET_TENANT_TOKEN,
@@ -17,6 +18,7 @@ from apps.apiclients.scope_registry_routes import (
 )
 
 from .scope_registry_reads import read_scope_vocabulary
+from .scope_registry_public_pages import is_global_target, resolve_handle_target
 
 LEGACY_SCOPE = "legacy:v1"
 SCOPE_VOCABULARY = frozenset(
@@ -97,6 +99,8 @@ def resolve_target(request, entry):
     try:
         match = _request_match(request)
         kwargs = getattr(match, "kwargs", {}) or {}
+        if entry.target_mode == TARGET_PUBLIC_HANDLE:
+            return resolve_handle_target(request, match)
         if entry.target_mode == TARGET_CLIENT_SUBJECT:
             from .read_contract import resolve_read_target
             return resolve_read_target(request, match)
@@ -118,6 +122,12 @@ def resolve_target(request, entry):
             from apps.makerspaces.public_profile_access import resolve_public_profile
             claim, _ = resolve_public_profile(kwargs.get("handle"), request)
             return claim.profile.membership.makerspace, True
+        if view_name == "public-event-code":
+            from apps.events.website_visibility import resolve as resolve_event
+            from apps.makerspaces.public_page_access import require_scope
+            event = resolve_event(None, token)
+            require_scope("makerspace", event.makerspace, request)
+            return event.makerspace, True
         if view_name == "hardware_requests:request-status":
             from apps.hardware_requests.models import HardwareRequest
 
@@ -150,11 +160,13 @@ def target_allows(entry, client, target, resolved):
         return False
     if entry.tenant_bound and client.makerspace_id is None:
         return False
-    if entry.target_mode == TARGET_GLOBAL:
-        return client.makerspace_id is None or entry.tenant_apps_admitted
     if not resolved:
         return False
+    if entry.target_mode == TARGET_GLOBAL or is_global_target(target):
+        return client.makerspace_id is None or entry.tenant_apps_admitted
     target_id = getattr(target, "pk", None)
+    if target_id is None:
+        return False
     return client.makerspace_id is None or target_id == client.makerspace_id
 
 
@@ -176,7 +188,7 @@ def classify(request, client):
 
     target, resolved = resolve_target_once(request, entry)
     target_id = getattr(target, "pk", None)
-    target_resolution = "global" if entry.target_mode == TARGET_GLOBAL else "resolved"
+    target_resolution = "global" if entry.target_mode == TARGET_GLOBAL or is_global_target(target) else "resolved"
     if not resolved:
         return ScopeObservation(view_name, method, False, "unresolved", False, None)
     if not target_allows(entry, client, target, resolved):
@@ -269,7 +281,7 @@ def unregistered_protected_routes():
 __all__ = [
     "BROWSER_SCOPES", "LEGACY_SCOPE",
     "PUBLIC_ALL", "PUBLIC_READ", "PUBLIC_WRITE", "SCOPE_REGISTRY",
-    "SCOPE_VOCABULARY", "TARGET_GLOBAL", "TARGET_MODES", "TARGET_TENANT_SLUG",
+    "SCOPE_VOCABULARY", "TARGET_GLOBAL", "TARGET_PUBLIC_HANDLE", "TARGET_MODES", "TARGET_TENANT_SLUG",
     "TARGET_TENANT_TOKEN", "ScopeObservation", "ScopeRegistryEntry", "classify",
     "lookup", "resolve_target", "resolve_target_once", "resolve_view_name",
     "scope_allows", "target_allows", "unregistered_protected_routes",

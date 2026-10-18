@@ -48,6 +48,21 @@ def mark_attended_with_event(
 ):
     services = _boundary()
     event = services._locked_event(registration.event_id)
+    locked = _lock_registration(event, registration.pk)
+    return mark_attended_locked(event, locked, actor=actor, source=source,
+        operation_id=operation_id, attended_at=attended_at, session_id=session_id,
+        station_version=station_version)
+
+
+def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Source.ONLINE,
+                         operation_id=None, attended_at=None, session_id=None, station_version=None):
+    """Sole attendance writer, reusing scanner-owned locked/prepared registration."""
+    from .programme_locks import current_locks, assert_lock_context
+    context = current_locks(event.pk)
+    assert_lock_context(context)
+    if locked.event_id != event.pk or locked.member_id and locked.member_id not in context.account_ids:
+        raise EventInvalidTransition("Registration scope changed.")
+    services = _boundary()
     if actor is not None:
         from .event_authority import require
         require(actor, event, "check_in")
@@ -65,7 +80,6 @@ def mark_attended_with_event(
         operation_id=operation_id,
     ).exists():
         raise DuplicateCheckInOperation()
-    locked = _lock_registration(event, registration.pk)
     from .hackathons.admission_lifecycle import require_attendance_mapping
     require_attendance_mapping(locked)
     if (

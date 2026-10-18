@@ -235,6 +235,10 @@ def run_target_restore(
                     makerspace=storage_makerspace,
                 )
 
+        if storage_makerspace is not None:
+            from .event_asset_import import publish_raw
+            publish_raw(makerspace=storage_makerspace, ledger=ledger)
+
         _effect(
             ledger, "api-client-reissue", {"approved": True},
             lambda: target.reissue_api_clients(sibling, inputs),

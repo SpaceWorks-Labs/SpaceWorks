@@ -210,7 +210,7 @@ def custody_existing(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("events", "0039_events_programme_guards")]
+    dependencies = [("events", "0040_g2b_subject_lifecycle")]
     operations = [
         migrations.AlterField("hackathonsubmission", "form_answers", models.TextField(default="{}")),
         migrations.AlterField("submissionsnapshot", "project", models.TextField()),

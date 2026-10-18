@@ -56,12 +56,14 @@ def run(*, actor, event_id, operation_id, payload, action, feature, permission,
     adapter.prepare_private_write(makerspace_id=event.makerspace_id)
     request_hash = digest({"action": action, "payload": payload})
     accounts = tuple(sorted({actor.pk, *account_ids, *authority_ids}))
-    tenants = (event.makerspace_id,)
-    with boundary_tenant_write(event.makerspace_id), transaction.atomic():
-        with adapter.fences(tenant_ids=tenants, account_ids=accounts):
-            event = Event.objects.select_for_update().get(pk=event_id)
+    from apps.events.services_write_boundary import write_boundary
+    from apps.events.programme_locks import current_locks
+    with write_boundary(event, actor=actor, account_ids=accounts):
+        with transaction.atomic():
+            event = Event.objects.get(pk=event_id)
             event.makerspace = require_module_locked(event.makerspace_id, "events")
-            locks = LockedContext(event_id=event.pk, tenant_ids=tenants, account_ids=accounts)
+            locks = current_locks(event.pk)
+            accounts = locks.account_ids
             # The shipped grant helper locks User under the event, which conflicts
             # with the programme/account-key lock order. G supplies the opt-in
             # membership/grant-only authority lock under the declared fences.
@@ -92,6 +94,10 @@ def run(*, actor, event_id, operation_id, payload, action, feature, permission,
                 row = get_object_or_404(apps.get_model(ref["model"]), pk=ref["id"], event=event)
                 return CommandResult(row=row, status=ref["status"], replayed=True)
             row = mutate(event, locks)
+            from .models_roles import EventRoleAssignment
+            if isinstance(row, EventRoleAssignment):
+                from .role_notices import emit_role_locked
+                emit_role_locked(row=row, action=action)
             receipt_model.objects.create(event=event, actor=actor, operation_uuid=operation_id,
                 request_sha256=request_hash, response_reference={"model": row._meta.label_lower,
                     "id": row.pk, "status": status})

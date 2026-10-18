@@ -25,30 +25,25 @@ def prepare_documents(event_id):
     if not settings.PII_ENCRYPTION_ENABLED:
         yield
         return
-    if connection.in_atomic_block:
-        raise RuntimeError("Prepare project keys before domain transactions.")
     from apps.events.models_event import Event
-    from apps.encryption.services import unwrap_dek
+    from apps.encryption.preparation import prepare_tenants, prepared_keys
     tenant_id = Event.objects.values_list("makerspace_id", flat=True).get(pk=event_id)
-    keys = list(MakerspaceEncryptionKey.objects.filter(makerspace_id=tenant_id).exclude(status="disabled"))
-    active = [key for key in keys if key.status == "active"]
-    if len(active) != 1:
-        raise SubmissionError("pii_unavailable", 503)
-    try:
-        prepared = (tenant_id, active[0].version, {key.version: unwrap_dek(key) for key in keys})
-    except PiiUnavailable as exc:
-        raise SubmissionError("pii_unavailable", 503) from exc
-    token = _prepared.set(prepared)
-    try:
-        yield
-    finally:
-        _prepared.reset(token)
+    with prepare_tenants([tenant_id]):
+        active, keys = prepared_keys(tenant_id)
+        token = _prepared.set((tenant_id, active.version, keys))
+        try:
+            yield
+        finally:
+            _prepared.reset(token)
+
 
 
 def _keys(tenant_id):
     prepared = _prepared.get()
     if prepared is None or prepared[0] != tenant_id:
-        raise SubmissionError("pii_preparation_required", 503)
+        from apps.encryption.preparation import prepared_keys
+        active, keys = prepared_keys(tenant_id)
+        return active.version, keys
     if not MakerspaceEncryptionKey.objects.filter(makerspace_id=tenant_id,
             version=prepared[1], status="active").exists():
         raise SubmissionError("pii_key_changed", 409)
@@ -82,6 +77,11 @@ class PrivateDocumentMixin(ScopedPiiModelMixin):
                 and not self.__dict__.get("_document_saving")):
             return json.loads(value)
         return value
+
+    def clean_fields(self, exclude=None):
+        # TextField.clean would stringify a dict using Python repr and destroy JSON.
+        # The document boundary serializes strictly on assignment; validators own schema.
+        return super().clean_fields(exclude=set(exclude or ()) | type(self).pii_document_fields)
 
     def save(self, *args, **kwargs):
         selected = kwargs.get("update_fields")

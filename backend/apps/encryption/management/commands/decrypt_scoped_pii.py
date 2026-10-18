@@ -1,6 +1,7 @@
 """Fenced, authenticated rollback from scoped envelopes to legacy plaintext."""
 
 from uuid import UUID
+from contextlib import ExitStack
 
 from django.apps import apps
 from django.conf import settings
@@ -12,6 +13,7 @@ from django.db import transaction
 from apps.audit.services import record
 from apps.encryption.crypto import PiiUnavailable, is_envelope
 from apps.encryption.maintenance import decrypted_values, validate_legacy_values, write_legacy_values
+from apps.encryption.maintenance_programme import MANDATORY_SOURCE_LABEL, MANDATORY_SOURCE_ERROR
 from apps.encryption.blind_index import canonical_email
 from apps.encryption.models import PiiBlindIndex, PiiGlobalWriteFence, PiiMakerspaceWriteFence
 from apps.encryption.readiness import assert_ready
@@ -40,6 +42,9 @@ _FILTERS = {
     "machines.MachineUsageEntry": "machine__makerspace_id",
     "integrations.EmailLog": "makerspace_id",
 }
+
+_FILTERS.update({field.model_label: field.makerspace_path.replace(".", "__")
+                 for field in all_fields() if field.makerspace_path})
 
 
 class Command(BaseCommand):
@@ -88,6 +93,10 @@ class Command(BaseCommand):
             except PiiUnavailable as exc:
                 raise CommandError("Scoped PII readiness preflight failed.") from exc
         labels = [options["model"]] if options["model"] else sorted(registered_labels())
+        if MANDATORY_SOURCE_LABEL in labels and apps.get_model(MANDATORY_SOURCE_LABEL).objects.filter(
+            event__makerspace_id=makerspace.pk,
+        ).exists():
+            raise CommandError(MANDATORY_SOURCE_ERROR)
         total = {"decrypted": 0, "plaintext": 0, "empty": 0}
         for label in labels:
             counts = self._process_model(label, makerspace.pk, actor, operation, options, mutate)
@@ -123,7 +132,10 @@ class Command(BaseCommand):
             ids = list(model.objects.filter(**filters, pk__gt=checkpoint).order_by("pk").values_list("pk", flat=True)[:options["batch_size"]])
             if not ids:
                 break
-            with transaction.atomic():
+            with ExitStack() as stack:
+                from apps.encryption.preparation import prepare_tenants
+                stack.enter_context(prepare_tenants([makerspace_id]))
+                stack.enter_context(transaction.atomic())
                 makerspace = apps.get_model("makerspaces.Makerspace").objects.select_for_update().get(pk=makerspace_id)
                 context = fence_operation(operation) if mutate else transaction.atomic()
                 with context:
@@ -193,6 +205,8 @@ class Command(BaseCommand):
             raise CommandError("Rollback verification found blind-index rows.")
 
     def _verify_global(self):
+        if apps.get_model(MANDATORY_SOURCE_LABEL).objects.exists():
+            raise CommandError(MANDATORY_SOURCE_ERROR)
         for field in all_fields():
             model = apps.get_model(field.model_label)
             if any(is_envelope(row[0]) for row in model.objects.values_list(field.field_name).iterator(chunk_size=200)):

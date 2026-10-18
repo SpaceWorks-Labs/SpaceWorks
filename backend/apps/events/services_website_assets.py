@@ -11,12 +11,16 @@ from .event_permissions import EDIT_DETAILS
 from .models_website import EventPageAsset
 from .services_website import audit, bump, locked_target, own_page
 from .website_copy import owner
+from .services_write_boundary import event_write
+from .website_preparation import prepared_page_write, prepared_copies
 
 
+@prepared_page_write
+@event_write
 def upload_asset(target, *, actor, file, alt_text, replace_id=None):
     if not isinstance(alt_text, str) or not alt_text.strip() or len(alt_text) > 200:
         raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
-    with clone_transaction() as copies:
+    with prepared_copies(target) as copies:
         target, actor = locked_target(target, actor, EDIT_DETAILS)
         page = own_page(target, copies)
         old = get_object_or_404(page.assets, pk=replace_id) if replace_id else None
@@ -34,7 +38,7 @@ def upload_asset(target, *, actor, file, alt_text, replace_id=None):
         return asset
 
 
-@transaction.atomic
+@event_write
 def delete_asset(target, asset_id, *, actor):
     target, actor = locked_target(target, actor, EDIT_DETAILS)
     from .models_website import EventPage

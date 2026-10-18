@@ -34,3 +34,29 @@ def override(*, actor, event_id, assignment_id, payload):
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,
         action="role.requirement_override", feature=None, permission="manage_volunteers" if initial.role == "volunteer" else "manage_team",
         account_ids=(initial.member_id,), mutate=mutate, status=201)
+
+
+class RequirementCompletionSerializer(CommandSerializer):
+    kind = serializers.ChoiceField(choices=["training", "briefing"])
+    reference_id = serializers.IntegerField(min_value=1)
+
+
+def complete(*, actor, event_id, assignment_id, payload):
+    from .models_policy import EventContributorRequirementCompletion
+    initial = get_object_or_404(EventRoleAssignment, pk=assignment_id, event_id=event_id)
+    def mutate(event, locks):
+        role = get_object_or_404(EventRoleAssignment.objects.select_for_update(), event=event, pk=assignment_id)
+        check_version(role, payload["expected_version"])
+        if role.member_id == actor.pk:
+            raise ProgrammeError("second_person_required", "Another organizer must verify completion.", status=403)
+        key = payload["kind"] + "_ids"
+        requirements = role.posting.requirements if role.posting_id else {}
+        if payload["reference_id"] not in requirements.get(key, []):
+            raise ProgrammeError("invalid_requirement", "Choose a requirement of this posting.", status=400)
+        return commands.new_row(EventContributorRequirementCompletion, event, member_id=role.member_id,
+            posting=role.posting, requirements_sha256=commands.digest(requirements),
+            kind=payload["kind"], reference_id=payload["reference_id"], verified_by=actor)
+    return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,
+        action="role.requirement_completed", feature=None,
+        permission="manage_volunteers" if initial.role == "volunteer" else "manage_team",
+        account_ids=(initial.member_id,), mutate=mutate, status=201)

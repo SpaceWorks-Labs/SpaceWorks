@@ -135,7 +135,8 @@ def insert_prepared_locked(
     return result
 
 
-def delete_draft_sources_locked(*, actor_id, subject, locks, question_ids=None):
+def delete_draft_sources_locked(*, actor_id, subject, locks, question_ids=None, audit_actor_id=None):
+    require_owner_fence(subject, locks)
     event = require_locks(subject, locks)
     require_owner(actor_id, subject)
     source = resolve_subject(subject, lock=True)
@@ -148,7 +149,8 @@ def delete_draft_sources_locked(*, actor_id, subject, locks, question_ids=None):
     if any(row.locked_at or row.source_history for row in rows):
         raise DerivationError("answers_locked", "Submitted source evidence is retained.", status=409)
     for row in rows:
-        audit(actor_id, "draft_source_deleted", event, subject=subject, row=row)
+        audit(actor_id if audit_actor_id is None else audit_actor_id,
+              "draft_source_deleted", event, subject=subject, row=row)
         row.delete()
 
 

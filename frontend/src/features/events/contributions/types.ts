@@ -3,7 +3,7 @@ import type { FormDescriptor, ProgrammeMemberInput } from '../contracts/types'
 export interface Page<T> { count: number; next: string | null; previous: string | null; results: T[] }
 export type Aggregate = Omit<import('../../../generated/api').Aggregate, 'id'> & { id: number }
 export type Posting = Omit<import('../../../generated/api').Posting, 'form' | 'coc' | 'application' | 'role'> & {
-  role: 'mentor' | 'volunteer'; form?: FormDescriptor; coc?: { revision: number; body: string }; application?: RoleApplication | null
+  role: 'mentor' | 'volunteer'; host_waiver?: { id: number; version: string; body: string; acceptance_required: boolean } | null; form?: FormDescriptor; coc?: { revision: number; body: string }; application?: RoleApplication | null
 }
 export type RoleApplication = Omit<import('../../../generated/api').Role, 'form' | 'answer_review' | 'save_intent' | 'submitted_at' | 'decision' | 'grant'> & {
   form?: FormDescriptor; submitted_at?: string | null; decision?: string | null; grant?: number | null
@@ -20,6 +20,7 @@ export type Booking = import('../../../generated/api').Booking
 export interface EventScope { eventId: number; makerspaceId: number; accountId: number }
 export type RoleFormValue = Pick<ProgrammeMemberInput, 'form' | 'answers' | 'derivations' | 'save_choices'
   | 'saved_detail_versions' | 'coc' | 'optional_consents' | 'event_date_revision'> & {
+  host_waiver_id?: number; host_waiver_version?: string; host_waiver_accepted?: boolean
   skills?: string[]
   availability?: Array<{ starts_at: string; ends_at: string }>
 }

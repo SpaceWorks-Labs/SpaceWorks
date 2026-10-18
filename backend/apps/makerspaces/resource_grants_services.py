@@ -45,6 +45,7 @@ class GrantAdapter:
     # Opt-in Events helper policy. Bookings retains its full-manager-only default.
     # Called under authority locks for issue/update/revoke AND redemption.
     subset_validator: GrantSubsetValidator | None = None
+    grant_written: Callable | None = None
 
 
 def credential_digest(value, *, namespace, purpose):
@@ -132,6 +133,8 @@ def update_permissions(adapter, grant, *, actor, permissions, label=None):
     for field, value in labels.items():
         setattr(row, field, value)
     row.save(update_fields=["permissions", *labels])
+    if adapter.grant_written:
+        adapter.grant_written(grant=row, permissions=permissions, actor=actor, operation="update_permissions")
     _audit(adapter, actor, "updated", row)
     return row
 
@@ -221,4 +224,6 @@ def redeem_invite(adapter, token, *, actor, makerspace_id=None):
     row.redeemed_at, row.redeemed_by = timezone.now(), account
     row.save(update_fields=["redeemed_at", "redeemed_by"])
     _audit(adapter, actor, "invite_redeemed", row)
+    if adapter.grant_written:
+        adapter.grant_written(grant=grant, permissions=row.permissions, actor=creator, operation="redeem_invite")
     return grant

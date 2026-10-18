@@ -4,7 +4,7 @@ import logging
 
 from django.http import Http404
 
-from .boundary import assert_locked, audit
+from .boundary import assert_locked, audit, notice
 from .ballot_invalidation import invalidate_peers_locked
 from .models_results import JudgingNotice
 from .models_scoring import JudgeAssignment
@@ -32,6 +32,7 @@ def invalidate_snapshot_locked(*, event, snapshot_id, locks, actor):
                 row.state = "invalidated"
                 row.version += 1
                 row.save(update_fields=("state", "version"))
+                notice(event, "assignment_invalidated", row.pk, row.version)
                 count += 1
     if count:
         audit(event, actor, "snapshot_judging_invalidated", event, snapshot_id=snapshot_id, count=count)
@@ -55,8 +56,9 @@ def sweep_notices(*, after_id=None, limit=100):
         try:
             notice = JudgingNotice.objects.select_related("event").get(pk=pk)
             with fanout_tenant_write(notice.event.makerspace_id, operation="event_judging_notices", counts=counts) as allowed:
-                if allowed:
-                    runtime().notify_intent(pk)
+                if not allowed:
+                    continue
+                runtime().notify_intent(pk)
         except Exception:
             failed += 1
             logger.warning("event_judging_notice_retry_failed", extra={"notice_id": pk})

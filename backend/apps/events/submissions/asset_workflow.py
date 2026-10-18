@@ -46,6 +46,8 @@ def initialize_asset(*, actor, event_id, team_id, operation_id, data, participan
     port = boundary()
     digest = request_digest or canonical_digest({"create": data, "team": team_id, "participant": participant, "saved_source": saved_source})
     with prepare_documents(event_id), port.locked(actor=actor, event_id=event_id, team_id=team_id, action="upload") as ctx:
+        from .policy_adapter import require_policy
+        require_policy(ctx.upload_policy, ctx.upload_policy_version)
         replay = _receipt(port, ctx, actor, operation_id, digest)
         if replay is not None:
             return replay

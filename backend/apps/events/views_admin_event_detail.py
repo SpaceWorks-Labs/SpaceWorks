@@ -42,7 +42,7 @@ EVENT_ERROR_409 = OpenApiResponse(
     ErrorSerializer,
     description='Event state or capacity conflict.',
 )
-EVENT_SCOPED_ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404)}
+EVENT_SCOPED_ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 423, 503)}
 
 
 class _EventPagination(PageNumberPagination):
@@ -135,7 +135,9 @@ class EventDetailView(APIView):
             200: EventAdminSerializer,
             400: EVENT_ERROR_400,
             409: EVENT_ERROR_409,
-            **{code: ErrorSerializer for code in (401, 403, 404)},
+    423: OpenApiResponse(ErrorSerializer, description="Source or protected writes are fenced."),
+    503: OpenApiResponse(ErrorSerializer, description="Private data or programme dependency unavailable."),
+            **{code: ErrorSerializer for code in (401, 403, 404, 423, 503)},
         },
     )
     def patch(self, request, pk, *args, **kwargs):

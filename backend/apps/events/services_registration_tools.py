@@ -78,14 +78,19 @@ def _lock(registration, actor):
     return event, _lock_registration(event, registration.pk)
 
 
+from .services_registration_preparation import ordinary_form, canonical_answers, attach_answers
+
+
+@ordinary_form
 @event_write(permission="manage_registrations")
-def edit_registration_answers(registration, *, actor, custom_answers):
+def edit_registration_answers(registration, *, actor, custom_answers=None, form_payload=None):
     from apps.events import services
     event, locked = _lock(registration, actor)
     require_ordinary_transition(locked)
-    locked.custom_answers = validate_answers(event.custom_form, custom_answers)
+    locked.custom_answers = canonical_answers(event, custom_answers)
     locked.version += 1
     locked.save(update_fields=["custom_answers", "version"])
+    attach_answers(event, locked)
     services._audit(event, actor, "event.registration_answers_edited", locked)
     return locked
 

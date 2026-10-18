@@ -24,7 +24,7 @@ def create_event(
     registration_cutoff_at=None, registration_cutoff_lead_minutes=None,
     timezone_name=None, cancellation_cutoff_hours=None,
     registration_audience=None, category_id=None, tags=None, show_registration_count=True,
-    organization_ids=None, collaborator_slugs=None, audience_organization_ids=None,
+    organization_ids=None, collaborator_slugs=None, audience_organization_ids=None, accent_preset="",
 ):
     """Create a draft; organizers, partners and audience land in the SAME transaction.
 
@@ -42,6 +42,7 @@ def create_event(
         makerspace=locked_space,
         registration_audience=registration_audience or locked_space.event_default_registration_audience, category_id=category_id, tags=tags or [],
         created_by=actor,
+        accent_preset=accent_preset,
         show_registration_count=show_registration_count,
         title=title,
         description=description,

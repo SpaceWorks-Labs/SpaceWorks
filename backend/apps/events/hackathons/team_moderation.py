@@ -50,4 +50,6 @@ def reopen(*, event_id, team_id, actor, data):
         record(actor, "event.hackathon.team_reopened", makerspace=ctx.event.makerspace,
                target=team, meta={"version": team.version, "reason_code": data["reason_code"]})
         ctx.finish("team", team.pk)
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_reopened")
         return team

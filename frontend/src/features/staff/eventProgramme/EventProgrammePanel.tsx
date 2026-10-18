@@ -20,6 +20,7 @@ import { EventPublishingPanel } from './EventPublishingPanel'
 import { EventCertificateDesigner } from '../EventCertificateDesigner'
 import { BulkCertificates } from '../eventCredentials/BulkCertificates'
 import { DeskBadgePanel } from '../eventCredentials/DeskBadgePanel'
+import { ProgrammeTeamsPanel } from './ProgrammeTeamsPanel'
 import { sessionScope } from './sessionScope'
 
 export function EventProgrammePanel({ event, makerspaceId, section, access, features }: {
@@ -40,7 +41,7 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   if (section === 'mentor-desk') return <MentorWorkspace scope={scope} manager={access.hackathon || access.manager} roundsEnabled={features.includes('events.mentor_rounds')} />
   if (section === 'judging') return <JudgingWorkspace scope={{ ...scope, actorId: account.data.id, context: currentSessionContext() }} manager={access.hackathon}
     judge={access.judge} sponsor={access.sponsor} timezone={event.timezone_name} galleryEnabled={features.includes('events.project_gallery')} />
-  if (section === 'programme-teams') return <p role="status">The team and project overview is unavailable. Individual participants can still open their own programme pages.</p>
+  if (section === 'programme-teams') return <ProgrammeTeamsPanel eventId={event.id} canTriage={access.hackathon} />
   if (section === 'certificates') return <div className="grid gap-6">
     {access.edit ? <EventCertificateDesigner makerspaceId={makerspaceId} eventId={event.id} /> : access.manager ? <BulkCertificates eventId={event.id} /> : null}
     <DeskBadgePanel eventId={event.id} registrationIds={[]} canEdit={access.edit} canPrint={access.checkIn} />

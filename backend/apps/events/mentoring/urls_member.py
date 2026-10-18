@@ -3,7 +3,10 @@ from . import views_help as h, views_office_hours as o
 
 B = "makerspaces/<int:makerspace_id>/events/<int:pk>/"
 N = "events-programme-member-"
+from .views_member_topics import MemberHelpTopicListView
+
 urlpatterns = [
+    path(B + "help-topics/", MemberHelpTopicListView.as_view(), name=N + "help-topics"),
     path(B + "office-hours/", o.OfficeHoursListView.as_view(), name=N + "office-hours-list"),
     path(B + "office-hours/bookings/", o.OfficeHoursBookingListView.as_view(), name=N + "office-hours-booking-list"),
     path(B + "office-hours/<int:slot_id>/bookings/", o.OfficeHoursBookingCreateView.as_view(), name=N + "office-hours-booking-create"),

@@ -4,7 +4,12 @@ from .views import (BulkIssueView, BatchView, PrintCreateView, PrintDetailView, 
 from .publication_views import CertificatePublicationView
 from .print_preview import BadgePreviewView
 
+from .seed_views import SeedCatalogueView, SeedInstallView, SeedPreviewView
+
 urlpatterns = [
+    path("events/<int:pk>/design-seeds/", SeedCatalogueView.as_view(), name="events-programme-admin-design-seeds"),
+    path("events/<int:pk>/design-seeds/install/", SeedInstallView.as_view(), name="events-programme-admin-design-seed-install"),
+    path("events/<int:pk>/design-seeds/preview.pdf", SeedPreviewView.as_view(), name="events-programme-admin-design-seed-preview"),
     path("events/<int:pk>/badges/design-preview.pdf", BadgePreviewView.as_view(), name="events-programme-admin-badge-design-preview"),
     path("events/<int:pk>/certificates/verification-policy/", CertificatePublicationView.as_view(), name="events-programme-admin-certificate-publication-policy"),
     path("events/<int:pk>/certificates/eligibility/", CertificateEligibilityView.as_view(), name="events-programme-admin-certificate-eligibility"),

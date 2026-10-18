@@ -2,7 +2,7 @@
 from .models_roles import (EventRoleAssignment, EventRolePosting, EventGrantEntitlement,
                            EventSponsor, EventSponsorTrack)
 from .models_notices import EventContributorNotice
-from .models_policy import EventRoleAnswerRevision, EventRequirementOverride
+from .models_policy import EventRoleAnswerRevision, EventRequirementOverride, EventContributorRequirementCompletion
 from .models_admission import EventContributorAdmission
 from .models_shifts import (EventShift, EventShiftSignup, EventShiftAttendance,
                             EventContributionHours, EventContributionHoursEntry, EventShiftAttendanceCorrection)
@@ -10,4 +10,5 @@ from .models_shifts import (EventShift, EventShiftSignup, EventShiftAttendance,
 __all__ = ["EventRoleAssignment", "EventRolePosting", "EventGrantEntitlement", "EventSponsor",
            "EventSponsorTrack", "EventShift", "EventShiftSignup", "EventShiftAttendance",
            "EventContributionHours", "EventContributionHoursEntry", "EventShiftAttendanceCorrection",
-           "EventContributorNotice", "EventRoleAnswerRevision", "EventRequirementOverride", "EventContributorAdmission"]
+           "EventContributorNotice", "EventRoleAnswerRevision", "EventRequirementOverride", "EventContributorAdmission",
+           "EventContributorRequirementCompletion"]

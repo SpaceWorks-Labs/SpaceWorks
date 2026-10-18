@@ -81,8 +81,13 @@ def require_read(certificate, actor):
     if actor.account_kind == "member" and certificate.recipient_member_id == actor.pk:
         from apps.makerspaces.guards import require_module
         require_module(event.makerspace, "events")
-        return
-    event_authority.require(actor, event, None)
+    else:
+        event_authority.require(actor, event, None)
+    if certificate.status != "revoked" and (certificate.role_assignment_id or certificate.kind in ("participant", "finalist", "winner")):
+        from .lifecycle import _eligible
+        from .locked import certificate_command
+        with certificate_command(certificate.pk) as (_, _, checked, prepared):
+            _eligible(checked, prepared)
 
 
 def recipient(certificate):

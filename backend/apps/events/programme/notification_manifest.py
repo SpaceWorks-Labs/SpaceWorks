@@ -2,9 +2,9 @@
 from apps.integrations.notification_sources import NotificationSource, register_source
 
 SOURCE_OWNERS = {
-    "events.application": "A", "events.team": "A", "events.submission": "B",
-    "events.help": "C", "events.contribution": "C", "events.judging": "D",
-    "events.results": "D", "events.certificate": "E",
+    "events.application": "A", "events.answer_date": "P", "events.team": "A", "events.team_invite": "A",
+    "events.submission": "B", "events.mentor_help": "C", "events.contributor": "C",
+    "events.role_assignment": "C", "events.judging": "D", "events.certificate": "E",
 }
 
 

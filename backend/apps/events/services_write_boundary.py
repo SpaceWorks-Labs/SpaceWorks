@@ -42,6 +42,10 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=()):
         yield
         return
     with ExitStack() as stack:
+        from apps.encryption.preparation import prepare_tenants
+        stack.enter_context(prepare_tenants(declaration[0]))
+        from .credentials.preparation import prepare_event_credentials
+        stack.enter_context(prepare_event_credentials(event_ids))
         for tenant_id in declaration[0]:
             stack.enter_context(boundary_tenant_write(tenant_id))
         stack.enter_context(transaction.atomic())

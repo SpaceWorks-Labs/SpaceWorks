@@ -12,7 +12,10 @@ export type EventRegistrationStatus =
   | "attended";
 export type EventRegistrationCounts = Record<EventRegistrationStatus, number>;
 
+export type EventAccent = "" | "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
+
 export type StaffEvent = {
+  accent_preset?: EventAccent;
   staff_permissions?: import("./eventStaffPermissions").EventPermission[];
   can_manage_staff?: boolean;
   can_duplicate?: boolean;
@@ -78,6 +81,7 @@ export type EventRegistration = {
 };
 
 export type EventPayload = {
+  accent_preset?: EventAccent;
   registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   category_id?: number | null; tags?: string[];
   title: string;

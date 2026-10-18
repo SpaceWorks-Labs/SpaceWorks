@@ -47,7 +47,7 @@ def delete_source(kind, pk, *, actor=None):
         for tenant_id in tenants:
             stack.enter_context(boundary_tenant_write(tenant_id))
         stack.enter_context(transaction.atomic())
-        stack.enter_context(account_fences([member_id], tenants, exclusive=True))
+        stack.enter_context(account_fences([member_id], tenants, exclusive=True, allow_erased=True))
         if _scope(kind, pk) != prepared:
             raise ProgrammeConflict("Deletion sources changed. Retry the command.", code="subject_changed")
         list(EventSeries.objects.select_for_update().filter(pk__in={row[3] for row in selections if row[3]}).order_by("pk"))

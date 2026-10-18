@@ -30,6 +30,7 @@ JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | frozenset(
         ("events.EventPage", "venue"),
         ("events.EventPage", "section_order"),
         ("events.EventPage", "section_enabled"),
+        ("events.EventPageSection", "options"),
         ("events.Event", "badge_template"),
         # Fixed layout scalars, never recipient identity. Artwork keys in issuance
         # snapshots are remapped separately by tenant_migration.object_fields.
@@ -39,7 +40,6 @@ JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | frozenset(
         # Registration status enum labels filter recipients; no account identifiers.
         ("events.EventBroadcast", "statuses"),
         ("events.EventSeries", "custom_form"),
-        ("events.EventRegistration", "custom_answers"),
         ("events.EventFeedbackSurvey", "questions"),
         ("events.EventFeedbackSurvey", "answered_question_ids"),
         ("hardware_requests.PublicToolLoan", "asset_ids"),

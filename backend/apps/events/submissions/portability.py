@@ -76,8 +76,13 @@ def finalize_imported_assets(*, event, accepted_objects):
                     raise ValueError("Imported canonical asset lacks a target byte proof.")
                 # Retained hashes are authoritative where the target has no
                 # versioning; never carry a source bucket's version identifier.
-                if asset.final_version_id:
+                if len(proof) != 3 or not isinstance(proof[2], str):
+                    raise ValueError("Target object version proof is malformed.")
+                if asset.final_version_id and asset.final_version_id != proof[2]:
                     raise ValueError("Source bucket version identity survived import.")
+                if asset.final_version_id != proof[2]:
+                    model.objects.filter(pk=asset.pk).update(final_version_id=proof[2])
+                    asset.final_version_id = proof[2]
                 total += asset.actual_bytes
             elif asset.state != "expired" and asset.state != "aborted":
                 raise ValueError("An imported upload cannot retain runnable work.")
@@ -89,7 +94,13 @@ def finalize_imported_assets(*, event, accepted_objects):
                 "verification_key": asset.verification_key, "initial_bytes": expected,
                 "charged_bytes": expected, "managed": managed,
             })
-            if not created and (receipt.object_key != asset.object_key or receipt.charged_bytes != expected):
+            exact = {"asset_label": model._meta.label, "asset_id_snapshot": asset.pk,
+                "event_id_snapshot": event.pk, "makerspace_id_snapshot": event.makerspace_id,
+                "object_key": asset.object_key, "staging_key": asset.staging_key,
+                "verification_key": asset.verification_key, "initial_bytes": expected,
+                "charged_bytes": expected, "reserved_bytes": 0, "managed": managed}
+            if not created and (any(getattr(receipt, key) != value for key, value in exact.items())
+                    or receipt.fully_released or receipt.canonical_extra_bytes):
                 raise ValueError("Target asset accounting conflicts with its durable receipt.")
     budget = MANAGED_ALLOWANCE if managed else None
     configured = getattr(getattr(event, "hackathon_config", None), "storage_budget_bytes", None)

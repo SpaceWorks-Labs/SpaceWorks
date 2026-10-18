@@ -17,8 +17,11 @@ class EventDuplicateSerializer(StrictSerializer):
     attach_series = serializers.BooleanField(default=False, required=False)
 
 
-class RegistrationAnswersSerializer(StrictSerializer):
-    custom_answers = serializers.JSONField(allow_null=True)
+from .serializers_registration_form import RegistrationFormInput
+
+
+class RegistrationAnswersSerializer(RegistrationFormInput, StrictSerializer):
+    custom_answers = serializers.JSONField(allow_null=True, required=False)
 
 
 class FeedbackTemplateSerializer(StrictSerializer):

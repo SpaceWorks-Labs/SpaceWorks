@@ -2,6 +2,11 @@
 from .audit_references_targets import AuditReference, AuditReferenceDisposition
 
 EDGES = {
+    ('event.certificate_reissued', 'source_certificate_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "original_certificate_provenance"),
+    ('event.badge_design_previewed', 'seed_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "packaged_seed_identity"),
+    ('event.programme.contribution_definitions_copied', 'source_event_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "clone_source_event_provenance"),
+    ('event.programme.definitions_copied', 'source_event_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "clone_source_event_provenance"),
+    ('event.role.host_waiver_accepted', 'host_waiver_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "source_waiver_consent_provenance"),
     ('event.badge_resource_bound', 'job_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "programme_source_provenance"),
     ('event.broadcast.previewed', 'preview_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "programme_source_provenance"),
     ('event.broadcast.scheduled', 'preview_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "programme_source_provenance"),

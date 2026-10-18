@@ -18,14 +18,21 @@ from apps.makerspaces.resource_clone import (
     OwnedImage, bounded_children, clone_transaction, copy_fields,
 )
 
-TICKET_FIELDS = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active")
+TICKET_FIELDS = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active",
+                 "purpose", "contributor_capacity_policy")
 SURVEY_FIELDS = ("title", "thank_you_text", "questions")
 
 
 def duplicate_event(event, *, actor, attach_series=False):
+    from .clone_preparation import prepare
+    with prepare(event, actor) as copies:
+        return _duplicate_prepared(event, actor=actor, attach_series=attach_series, copies=copies)
+
+
+def _duplicate_prepared(event, *, actor, attach_series, copies):
     event_authority.require(actor, event, EDIT_DETAILS)
-    with boundary_tenant_write(event.makerspace_id), clone_transaction() as assets, fences(
-            tenant_ids=(event.makerspace_id,), account_ids=(actor.pk,)):
+    with boundary_tenant_write(event.makerspace_id), clone_transaction(copies) as assets, fences(
+            tenant_ids=copies.tenant_ids, account_ids=copies.account_ids):
         from apps.tenant_migration.gate_runtime import assert_write_allowed
         assert_write_allowed(event.makerspace_id)
         # Series mutations lock the series before occurrences. Preserve that order
@@ -36,13 +43,15 @@ def duplicate_event(event, *, actor, attach_series=False):
         if source.series_id != series_id:
             from rest_framework.exceptions import ValidationError
             raise ValidationError("The source series changed. Retry the copy.")
+        from .clone_preparation import revalidate
+        revalidate(source, copies)
         actor = lock_authority(actor, source)
         source.makerspace = require_module_locked(source.makerspace, "events")
         event_authority.require(actor, source, EDIT_DETAILS)
         # Standalone copies inherit neither scoped grants nor organizers. Only
         # tenant managers retain authority over the resulting draft.
         event_authority.require_tenant(actor, source.makerspace)
-        values = copy_fields(source, EVENT_FIELDS | {"badge_template", "timezone_name", "event_accent_preset"})
+        values = copy_fields(source, EVENT_FIELDS | {"badge_template", "timezone_name"})
         values["title"] = source.title[:193].rstrip() + " (copy)"
         clone = Event(makerspace=source.makerspace, created_by=actor,
                       organization_admission_blocked=source.organization_admission_blocked, **values)
@@ -74,7 +83,7 @@ def duplicate_event(event, *, actor, attach_series=False):
         clone.save()
         from .contracts.clone_registration import copy_programme_locked
         copy_programme_locked(source=source, target=clone, actor=actor,
-            locks=LockedContext(event_id=clone.pk, tenant_ids=(source.makerspace_id,), account_ids=(actor.pk,)))
+            locks=LockedContext(event_id=clone.pk, tenant_ids=copies.tenant_ids, account_ids=copies.account_ids))
         for ticket in bounded_children(source.ticket_types.all()):
             child = EventTicketType(event=clone, makerspace=clone.makerspace,
                                     **copy_fields(ticket, TICKET_FIELDS))
@@ -83,6 +92,8 @@ def duplicate_event(event, *, actor, attach_series=False):
         survey = EventFeedbackSurvey.objects.select_for_update().filter(event=source).first()
         if survey is not None and not survey.is_open:
             EventFeedbackSurvey.objects.create(event=clone, **copy_fields(survey, SURVEY_FIELDS))
+        from .certificates.clone_designs import copy_designs_locked
+        copy_designs_locked(source=source, target=clone, actor=actor, prepared=copies.designs)
         from .website_copy import copy_page
         copy_page(source, clone, copies=assets)
         # Materialize the private override before attachment: its window may be

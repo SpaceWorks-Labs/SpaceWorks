@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { memberRequest } from '../../../lib/api'
+import { HelpComposer } from '../contributions/HelpComposer'
 import { useNavigate } from 'react-router-dom'
 import { ErrorBlock } from '../../../components/ui'
 import type { ProgrammeContext } from '../contracts/types'
@@ -19,6 +22,9 @@ export function TeamJourney({ context, scope, section, base }: { context: Progra
   const team = teams.data?.results[0]
   const [helpId, setHelpId] = useState<number | null>(null)
   const navigate = useNavigate()
+  const categories = useQuery({ queryKey: ["member", scope.accountId, "help-topics", scope.makerspaceId, scope.eventId], gcTime: 0,
+    queryFn: () => memberRequest<{ results: { key: string; label: string }[] }>(`/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}/help-topics/`),
+    enabled: section === 'help' && context.programme.capabilities['events.mentoring'], retry: false })
   if (teams.error) return <ErrorBlock error={teams.error} onRetry={() => void teams.refetch()} />
   if (teams.isPending) return <p role="status">Loading your team…</p>
   if (!team) return <div className="grid gap-3"><p>Your team must be ready before this step.</p><button className="desk-button" onClick={() => navigate(`${base}/team`)}>Open your team</button></div>
@@ -29,7 +35,7 @@ export function TeamJourney({ context, scope, section, base }: { context: Progra
   if (section === 'office-hours') return <OfficeHours scope={scope} teamId={team.id} />
   return helpId ? <HelpDetail scope={scope} helpId={helpId} onClose={() => setHelpId(null)} /> : <div className="grid gap-6">
     <HelpQueue scope={scope} surface="member" onOpen={row => setHelpId(row.id)} />
-    <p className="text-sm text-muted">Ask the organizer to publish the available help topics before creating a new request.</p>
+    {categories.error ? <ErrorBlock error={categories.error} onRetry={() => void categories.refetch()} /> : categories.data?.results.length ? <HelpComposer scope={scope} surface="member" teams={[{ id: team.id, label: team.name }]} categories={categories.data.results} /> : <p className="text-sm text-muted">No help topics are available for this event.</p>}
   </div>
 }
 function TeamSharing({ scope, leader }: { scope: EventScope & { teamId: number }; leader: boolean }) {

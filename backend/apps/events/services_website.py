@@ -12,11 +12,12 @@ from .feature_gates import require_feature
 from .models import Event, EventSeries
 from .models_website import EventPage, EventPageSection, EventSession, EventSessionSpeaker
 from .serializers_website import WebsiteContentInput
-from .staff_grant_locks import lock_authority
+from .programme_locks import lock_authority
 from .website_copy import copy_page, owner
 from .website_projection import window
 from .website_content import PAGE_FIELDS, SECTION_FIELDS, SECTION_DETAIL_DEFAULTS
 from .services_write_boundary import event_write
+from .website_preparation import prepared_page_write, prepared_copies
 
 
 def locked_target(target, actor, permission):
@@ -47,7 +48,7 @@ def own_page(target, copies, asset_map=None):
     if isinstance(target, Event) and target.series_id:
         page = copy_page(target, target, copies=copies, preserve_delays=True,
                          preserve_revision=True, asset_map=asset_map)
-    return page or EventPage.objects.create(makerspace=target.makerspace, **owner(target))
+    return page or EventPage.objects.create(id=getattr(copies, "prepared_page_id", None), makerspace=target.makerspace, **owner(target))
 
 
 def bump(page, target):
@@ -89,12 +90,13 @@ def _validate_content(target, data, assets):
                 raise ValidationError(f"Choose {kind} sections from this page.")
 
 
+@prepared_page_write
 @event_write
 def save_content(target, *, actor, data):
     serializer = WebsiteContentInput(data=data)
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
-    with clone_transaction() as copies:
+    with prepared_copies(target) as copies:
         from .event_permissions import VIEW
         target, actor = locked_target(target, actor, VIEW)
         if not (event_authority.can(actor, target, EDIT_DETAILS) or event_authority.can(actor, target, PUBLISH_SCHEDULE)):

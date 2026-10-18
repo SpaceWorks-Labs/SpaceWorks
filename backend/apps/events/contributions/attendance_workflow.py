@@ -87,6 +87,8 @@ def command(*, actor, event_id, signup_id, payload, action, staff=False):
             commands.new_row(EventContributionHoursEntry, event, hours=hours, actor=actor,
                 previous_version=hours.version, minutes=minutes, kind=kind, reason=payload.get("reason", ""))
             commands.changed(hours, minutes=minutes, state=kind)
+            from apps.events.certificates.contribution_proof import invalidate_role_locked
+            invalidate_role_locked(event=event, assignment_id=signup.assignment_id, actor=actor)
         else:
             raise ProgrammeError("invalid_transition", "Unknown attendance command.", status=400)
         if staff and "occurred_at" in payload:

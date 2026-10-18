@@ -83,6 +83,14 @@ TASK_TENANT_RESOLVERS = {
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.events.tasks_assets.sweep_asset_work_task": "Each live scan enters B's ordered boundary; byte cleanup enters only the retained boundary.",
+    "apps.events.tasks_assets.sweep_asset_deadlines_task": "Each due event enters the canonical B source boundary before workflow locks.",
+    "apps.events.tasks_assets.sweep_asset_retention_task": "Expiry uses the narrow retained source lock and recovery/not-restored checks; no publication authority.",
+    "apps.events.tasks_assets.reconcile_asset_obligations_task": "Permanent FK-free custody reconciliation deletes only exact reserved locators; survives tenant purge.",
+    "apps.events.tasks_recovery.sweep_judging_notices_task": "Judging notice dispatch re-enters the live source boundary for each notice.",
+    "apps.events.tasks_recovery.sweep_print_cleanup_task": "Retained print cleanup gates recovery and touches only owned expired/cancelled bytes.",
+    "apps.events.certificates.tasks.resume_batches": "Dispatches persisted batch IDs to the existing tenant-resolved worker; it grants no issuance authority.",
+    "apps.events.certificates.tasks.resume_certificates": "Dispatches persisted certificate IDs to the existing tenant-resolved renderer; it grants no issuance authority.",
     "apps.events.tasks_contributions.sweep_contributor_maintenance_task": "Each tenant is skip-and-count gated before domain maintenance or provider delivery.",
     "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts": (
         "recover_for_tenants establishes a source boundary for each due campaign."
@@ -152,6 +160,7 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.events.judging.lifecycle.sweep_notices": "Each persisted result notice re-enters skip-and-count source boundary before delivery.",
     "apps.events.tasks_contributions.sweep_contributor_maintenance_task": "Contributor lease expiry, escalation and committed-notice recovery.",
     "apps.integrations.notification_media.cleanup_grants": (
         "Expired and consumed disclosure grants are deleted and audited inside each tenant gate."

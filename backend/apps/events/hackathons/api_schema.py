@@ -1,6 +1,6 @@
 """Lane schemas; F supplies the internals of versioned form descriptors."""
 from rest_framework import serializers
-from drf_spectacular.utils import inline_serializer
+from drf_spectacular.utils import inline_serializer, extend_schema_serializer
 from .api_schema_staff import ReviewApplicationSerializer
 from .api_schema_teams import RosterMemberSerializer, JoinRequestSerializer
 from .api_schema_details import (
@@ -104,6 +104,7 @@ class ReviewSerializer(AggregateSerializer):
     completed_scores = serializers.ListField(child=serializers.DictField(), required=False)
 
 
+@extend_schema_serializer(component_name="AdmissionDecisionBatch")
 class BatchSerializer(AggregateSerializer):
     decisions = serializers.ListField(child=serializers.DictField())
 

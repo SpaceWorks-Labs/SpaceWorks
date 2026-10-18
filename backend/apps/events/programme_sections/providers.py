@@ -63,7 +63,7 @@ def project_public(*, event_id, section_id, request_context):
     section = _pages.require_released_section(event_id=event_id, section_id=section_id, request_context=request_context)
     if section.event_id != event_id or section.id != section_id or section.kind not in KINDS:
         raise Http404
-    event = public_event(event_id=event_id, request_context=request_context)
+    event = public_event(event_id=event_id, request_context=request_context, gallery=section.kind == "project_gallery")
     options = validate_options(section.options)
     if section.kind == "prizes":
         rows = HackathonPrize.objects.filter(event_id=event_id).order_by("order", "pk")

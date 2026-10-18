@@ -35,7 +35,7 @@ class RoleDetailView(RolesView):
         event = self.event(request, pk)
         from apps.events import event_authority
         return Response(projections.role(get_object_or_404(EventRoleAssignment, pk=assignment_id, event_id=pk),
-            detail=event_authority.can(request.user, event, None)))
+            detail=event_authority.can(request.user, event, None), actor=request.user))
 
     @extend_schema(request=AdminRoleSerializer, responses={200: RoleSerializer, **ERRORS})
     def patch(self, request, pk, assignment_id):

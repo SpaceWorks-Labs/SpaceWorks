@@ -10,7 +10,7 @@ FIELD_NAMES = {
     'bookings.BookingResourcePageSection': frozenset('id page kind slug title body url asset visibility position'.split()),
     'events.EventPage': frozenset('id makerspace event series released revision updated_at tagline accent_color section_order section_enabled venue'.split()),
     'events.EventPageAsset': frozenset('id page object_key size_bytes alt_text created_at'.split()),
-    'events.EventPageSection': frozenset('id page kind slug title body url asset visibility position headline organization website_url linkedin_url x_url sponsor_tier icon'.split()),
+    'events.EventPageSection': frozenset('id page kind slug title body url asset visibility position headline organization website_url linkedin_url x_url sponsor_tier icon options'.split()),
     'events.EventSession': frozenset('id page slug title body starts_at ends_at track room delay_minutes visibility'.split()),
     'events.EventSessionSpeaker': frozenset('id session speaker'.split()),
 }

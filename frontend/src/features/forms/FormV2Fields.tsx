@@ -10,12 +10,13 @@ function errorText(error: FieldErrors[string] | undefined): string {
   if (Array.isArray(error)) return error.join(" ");
   return Object.entries(error).map(([key, message]) => `${key}: ${Array.isArray(message) ? message.join(" ") : message}`).join(" ");
 }
-export function FormV2Fields({ schema, value, onChange, errors = {}, renderAsset }: {
+export function FormV2Fields({ schema, value, onChange, errors = {}, renderAsset, allowSavedDetails = true }: {
+  allowSavedDetails?: boolean;
   schema: FormSchemaV2; value: FormState; onChange: (state: FormState) => void; errors?: FieldErrors;
   renderAsset?: (question: Question, selected: unknown, onChange: (value: unknown) => void) => ReactNode;
 }) {
   return <div className="grid gap-6">{visibleQuestions(schema, value.answers).map(q => {
-    const saveKey = q.type === "age_at_event" ? "date_of_birth" : q.profile_field_key;
+    const saveKey = allowSavedDetails ? q.type === "age_at_event" ? "date_of_birth" : q.profile_field_key : undefined;
     const source = value.derivations[q.id]?.source;
     const error = errorText(errors[q.id]);
     const changeAnswer = (answer: unknown) => {

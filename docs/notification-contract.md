@@ -252,8 +252,8 @@ The [coverage inventory](notification-coverage.md) records which producers actua
 
 ## Events programme contract (checkpoint 2026-10-18)
 
-At `f1ef7736` the programme remains off pending integration. This contract applies to
-the authored notices below; the [coverage table](notification-coverage.md#events-programme-checkpoint-2026-10-18)
+At GF4 the programme remains off pending runtime acceptance. This contract applies to
+the installed adapters below; the [coverage table](notification-coverage.md#events-programme-checkpoint-2026-10-18)
 states which sources/producers are installed. A source manifest or a scheduled sweep
 alone is not delivery. Missing actual recipient/render/dispatch adapters must refuse.
 
@@ -269,16 +269,21 @@ alone is not delivery. Missing actual recipient/render/dispatch adapters must re
 | Contributor `booking_cancelled` | Owning team/booking recipients selected by live provider; booking-version generation |
 | Help `created`, `claim`, `renew`, `reopen`, `assign`, `cancel`, `claim_released`, `lease_expired`, `expired` | Durable intents use request-version generation. Actual recipient/renderer policy must respect current on-shift eligibility and private assignment; no private queue content is a chat body |
 | Help `attention` | Authorized organizers after 15 minutes open, deduplicated by open-period generation; stale/expired/practice alerts suppressed |
+| `judge_assigned`, `assignment_invalidated` | Exact assignment owner, live assignment version/state, current role and conflict policy; no unpublished score/project details |
 | `results_published` | Released result audience selected by live provider, exact result revision; no private draft/shortlist/notes |
 | `certificate_ready`, `certificate_revoked` | Direct registration/contribution/award recipient, live certificate revision/status; private navigation; only eligible ready active PDF is attachable |
 | Broadcast v2 | Explicit confirmed current audience and original sender authority; schedule at least five seconds ahead; cancelled/stale sources cannot deliver |
 
 Help transition names are internal intent kinds, not new broad notification preferences.
-`resolve`/`release` normally produce `claim_released` when an assignee is cleared. Team
-invitation, submission/scan, role decision, judge assignment and result-correction notices
-have no complete installed producer in this checkpoint; do not describe the generic source
-names `events.team/submission/judging/results` as operational coverage. Admission notice
-render text exists, but production enqueue/recipient plumbing remains a required provider.
+`resolve`/`release` normally produce `claim_released` when an assignee is cleared. Actual
+personal sources are `events.application`, `events.answer_date`, `events.team`,
+`events.team_invite`, `events.submission`, `events.role_assignment`, `events.contributor`,
+`events.mentor_help`, `events.judging` and `events.certificate`. Team invitations require
+an explicitly addressed verified account; generic share links have no inferred recipient.
+Submission notices carry navigation only. Role decisions bind their live assignment.
+Released results bind the current announcement, revision and eligible sealed audience.
+The [coverage inventory](notification-coverage.md#events-programme-checkpoint-2026-10-18)
+records the actual producers and required runtime evidence.
 
 Persist the safe source ID/revision intent in the business transaction; enqueue after
 commit and recover from persisted work after broker loss. Transport runs outside row

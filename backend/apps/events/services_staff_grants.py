@@ -12,6 +12,8 @@ from . import event_authority
 from .event_permissions import PERMISSIONS
 from .models import EventStaffGrant, EventStaffGrantInvite
 from .staff_grant_locks import lock_authority
+from .contributions.authority import subset_validator
+from .contributions.grant_sources import manual_changed
 
 logger = logging.getLogger(__name__)
 
@@ -44,32 +46,54 @@ ADAPTER = lifecycle.GrantAdapter(
     active=event_authority._active,
     lock_authority=lock_authority,
     label_field="role_label",
+    subset_validator=subset_validator,
+    grant_written=manual_changed,
 )
 
 
 def create_invite(target, *, actor, permissions, email="", send_email=False, role_label=""):
-    return lifecycle.create_invite(
-        ADAPTER, target, actor=actor, permissions=permissions, email=email,
-        send=_send_invite if send_email else None, label=role_label,
-    )
+    from .services_write_boundary import write_boundary
+    with write_boundary(target, actor=actor):
+        return lifecycle.create_invite(
+            ADAPTER, target, actor=actor, permissions=permissions, email=email,
+            send=_send_invite if send_email else None, label=role_label)
 
 
 def update_permissions(grant, *, actor, permissions, role_label=None):
-    return lifecycle.update_permissions(
-        ADAPTER, grant, actor=actor, permissions=permissions, label=role_label,
-    )
+    from .services_write_boundary import write_boundary
+    with write_boundary(_target(grant), actor=actor, account_ids=(grant.user_id,)):
+        return lifecycle.update_permissions(
+            ADAPTER, grant, actor=actor, permissions=permissions, label=role_label)
 
 
 def revoke_grant(grant, *, actor):
-    return lifecycle.revoke_grant(ADAPTER, grant, actor=actor)
+    from .services_write_boundary import write_boundary
+    from apps.audit.services import record
+    with write_boundary(_target(grant), actor=actor, account_ids=(grant.user_id,)):
+        target = ADAPTER.lock_target(_target(grant))
+        actor = lock_authority(actor, target)
+        row = EventStaffGrant.objects.select_for_update().get(pk=grant.pk)
+        lifecycle._require_subset(ADAPTER, actor, target, (), operation="revoke_grant", row=row, authority_locked=True)
+        manual_changed(grant=row, permissions=(), actor=actor, operation="revoke_grant")
+        record(actor, "event.staff_grant_manual_revoked", makerspace=row.makerspace, target=row)
+        return row
 
 
 def revoke_invite(invite, *, actor):
-    return lifecycle.revoke_invite(ADAPTER, invite, actor=actor)
+    from .services_write_boundary import write_boundary
+    with write_boundary(_target(invite), actor=actor):
+        return lifecycle.revoke_invite(ADAPTER, invite, actor=actor)
 
 
 def redeem_invite(token, *, actor, makerspace_id=None):
-    return lifecycle.redeem_invite(ADAPTER, token, actor=actor, makerspace_id=makerspace_id)
+    from .services_write_boundary import write_boundary
+    from rest_framework.exceptions import NotFound
+    digest = lifecycle.credential_digest(token, namespace="events", purpose="invite")
+    invite = EventStaffGrantInvite.objects.filter(token_digest=digest).first()
+    if invite is None or (makerspace_id is not None and invite.makerspace_id != makerspace_id):
+        raise NotFound()
+    with write_boundary(_target(invite), actor=actor, account_ids=tuple(x for x in (invite.created_by_id,) if x)):
+        return lifecycle.redeem_invite(ADAPTER, token, actor=actor, makerspace_id=makerspace_id)
 
 
 def _send_invite(row, email, token):

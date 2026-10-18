@@ -58,6 +58,8 @@ def _promote(event, actor, waiters, count=None, *, mode):
         registration.save(update_fields=["status", "version"])
         calendar_registration_changed(registration)
         create_for_registered_registration(registration, actor)
+        from .services_registration_preparation import issue_ordinary_credential_locked
+        issue_ordinary_credential_locked(event, registration, actor=actor)
         meta = {"registration_id": registration.pk, "promotion_mode": mode}
         services._audit(
             event, actor, "event.registration_promoted", registration, meta
@@ -109,6 +111,8 @@ def approve_registration(registration, *, actor):
     calendar_registration_changed(locked)
     if new_status == EventRegistration.Status.REGISTERED:
         create_for_registered_registration(locked, actor)
+        from .services_registration_preparation import issue_ordinary_credential_locked
+        issue_ordinary_credential_locked(event, locked, actor=actor)
     services._audit(
         event,
         actor,

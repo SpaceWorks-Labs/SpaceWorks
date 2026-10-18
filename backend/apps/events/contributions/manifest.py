@@ -27,6 +27,7 @@ TENANT_EXCLUDED = (
     "events.EventGrantEntitlement", "events.MentorRoundLock", "events.MentorImportPreview",
     "events.MentorNotificationIntent",
     "events.EventContributorNotice",
+    "events.EventContributorRequirementCompletion",
     "events.MentorAttentionPreference",
 )
 APPEND_ONLY = (
@@ -36,6 +37,7 @@ APPEND_ONLY = (
     "events.OfficeHoursChange",
     "events.EventRoleAnswerRevision", "events.EventRequirementOverride",
     "events.EventContributorAdmission", "events.MentorAssignmentRun",
+    "events.EventContributorRequirementCompletion",
 )
 ROUTE_MODULES = {
     "member": ("apps.events.contributions.urls_member", "apps.events.mentoring.urls_member"),

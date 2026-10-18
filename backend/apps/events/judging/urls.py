@@ -8,6 +8,7 @@ from . import views_results as results
 from . import views_scoring as scoring
 from . import views_sponsors as sponsors
 from .views_signals import ShortlistSignals
+from .views_sponsor_discovery import AssignedSponsorListView
 
 ADMIN = "admin/events/<int:pk>/"
 MEMBER = "member/makerspaces/<int:makerspace_id>/events/<int:pk>/"
@@ -19,6 +20,7 @@ def route(prefix, suffix, view, name):
 
 
 urlpatterns = [
+    route(ADMIN, "assigned-sponsors/", AssignedSponsorListView, "admin-assigned-sponsors"),
     route(ADMIN, "judging-signals/", ShortlistSignals, "admin-judging-signals"),
     route(ADMIN, "tracks/", definitions.TrackList, "admin-tracks-list"),
     route(ADMIN, "tracks/<int:track_id>/", definitions.TrackDetail, "admin-tracks-detail"),

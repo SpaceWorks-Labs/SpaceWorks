@@ -17,7 +17,7 @@ from apps.makerspaces.servability import is_servable
 from .gallery_models import GalleryConsent, GalleryEntryAsset
 
 
-def public_event(*, request_context, public_token=None, event_id=None):
+def public_event(*, request_context, public_token=None, event_id=None, gallery=True):
     rows = Event.objects.select_related("makerspace")
     event = rows.filter(public_token=public_token).first() if public_token else rows.filter(pk=event_id).first()
     if event is None:
@@ -28,7 +28,7 @@ def public_event(*, request_context, public_token=None, event_id=None):
             or not public_surface_available("events")):
         raise Http404
     runtime().require_public_origin(event, request_context)
-    runtime().require_programme(event, gallery=True)
+    runtime().require_programme(event, gallery=gallery)
     return event
 
 

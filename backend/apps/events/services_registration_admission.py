@@ -89,7 +89,8 @@ def create_pending_locked(*, event, member, selection, contacts, prepared, subje
     ticket = select_ticket(event, values.get("ticket_type_id"), member)
     require_participant_ticket(event, ticket)
     quote = _quote(event, member, ticket, values.get("invite_code"), values.get("promo_code"), actor=member, admission_locked=True)
-    row = existing or EventRegistration(event=event, member=member)
+    from .credentials.preparation import new_registration_id
+    row = existing or EventRegistration(pk=new_registration_id(event.pk), event=event, member=member)
     row.event = event
     for field, value in quote.items():
         setattr(row, field, value)
@@ -182,7 +183,8 @@ def transition_locked(*, application_id, registration_id, transition, actor, rea
         from .service_payments import create_for_registered_registration
         from .credentials.workflow import issue_locked
         create_for_registered_registration(row, actor)
-        issue_locked(event, row, actor=actor)
+        from .credentials.preparation import prepared_issue
+        issue_locked(event, row, actor=actor, prepared=prepared_issue(event.pk, row.pk))
     if target in ("cancelled", "rejected"):
         from .credentials.workflow import revoke_locked
         from .services_lifecycle import _cancel_open_charges_after_commit
@@ -228,7 +230,9 @@ def admit_contributor_locked(*, request, actor_id, operation_id, locks):
     require_requirements(actor_id=member.pk, assignment_id=role.pk, shift_id=None)
     if event.status != "published" or timezone.now() >= event.ends_at:
         fail("invalid_transition", "This event no longer admits contributors.")
-    ticket = select_ticket(event, request.ticket_type_id, member)
+    ticket = select_ticket(event, request.ticket_type_id, member, contributor=True)
+    if ticket is None or request.capacity_policy != ticket.contributor_capacity_policy:
+        fail("contributor_ticket_required", "Choose a matching contributor ticket policy.")
     if request.capacity_policy == "reserved_contributor_capacity":
         from . import capacity
         reserve = getattr(capacity, "require_contributor_room_locked", None)
@@ -251,7 +255,8 @@ def admit_contributor_locked(*, request, actor_id, operation_id, locks):
     if available is not None and available <= 0:
         fail("capacity_full", "No contributor places are available.")
     quote = _quote(event, member, ticket, None, None, actor=actor, admission_locked=True)
-    row = EventRegistration(event=event, member=member, name=member.display_name or member.username,
+    from .credentials.preparation import new_registration_id
+    row = EventRegistration(pk=new_registration_id(event.pk), event=event, member=member, name=member.display_name or member.username,
         email=member.email, phone=member.phone, registered_via_makerspace=event.makerspace,
         payment_via_makerspace=event.makerspace, status="registered", credential_mode="inert", **quote)
     if not row.email or not row.phone:
@@ -261,11 +266,12 @@ def admit_contributor_locked(*, request, actor_id, operation_id, locks):
     stamp_host_waiver(row, waiver, actor=actor, via=event.makerspace, event=event)
     _record_registration(event, actor, row, row.status)
     from .credentials.workflow import issue_locked
-    issue_locked(event, row, actor=actor)
+    from .credentials.preparation import prepared_issue
+    issue_locked(event, row, actor=actor, prepared=prepared_issue(event.pk, row.pk))
     return row.pk
 
 
 def require_participant_ticket(event, ticket):
     from .contributions.models_admission import EventContributorAdmission
-    if ticket and EventContributorAdmission.objects.filter(event=event, registration__ticket_type=ticket).exists():
+    if ticket and (ticket.purpose == "contributor" or EventContributorAdmission.objects.filter(event=event, registration__ticket_type=ticket).exists()):
         fail("contributor_ticket_required", "Choose a participant ticket type.", status=400)

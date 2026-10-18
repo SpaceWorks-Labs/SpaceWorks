@@ -44,6 +44,8 @@ def eligibility_changed_locked(ctx, application):
         record(ctx, "team_member_removed", membership, team_id=team.pk)
     for peer in team.memberships.filter(state="active").select_related("application"):
         notice(ctx, peer.application, "team_eligibility_changed")
+    from .team_notifications import emit_team_locked
+    emit_team_locked(team=team, kind="team_eligibility_changed")
 
 
 def leave(*, event_id, team_id, actor, data, cancel=False):
@@ -61,6 +63,7 @@ def leave(*, event_id, team_id, actor, data, cancel=False):
         from .admission_cohorts import invalidate_locked
         invalidate_locked(ctx, team)
         selected = list(team.memberships.select_for_update().filter(state="active").order_by("pk")) if cancel else [member]
+        notified = tuple(team.memberships.filter(state="active").values_list("member_id", flat=True))
         for row in selected:
             row.state, row.left_at = "left", timezone.now()
             row.save()
@@ -71,6 +74,8 @@ def leave(*, event_id, team_id, actor, data, cancel=False):
                 invite.revoked_at = timezone.now()
                 invite.save(update_fields=["revoked_at"])
             record(ctx, "team_disbanded", team, reason_code=data.get("reason_code", "empty_team"))
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_disbanded" if team.state == "disbanded" else "team_membership_updated", member_ids=notified)
         ctx.finish("team", team.pk)
         return team
 

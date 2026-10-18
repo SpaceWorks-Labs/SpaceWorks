@@ -16,3 +16,9 @@ def install():
     prefill_registration.install()
     readiness_registration.install()
     asset_registration.install()
+    from apps.events.submissions.boundary_runtime import install as install_asset_boundary
+    install_asset_boundary()
+    from apps.events.submissions.notifications import register as register_submission_notices
+    register_submission_notices()
+    from .admission_registration import install as install_admission
+    install_admission()

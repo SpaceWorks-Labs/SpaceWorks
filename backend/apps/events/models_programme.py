@@ -9,7 +9,7 @@ from apps.events.certificates.models import (
     EventCertificatePublicationPolicy, CertificateIssueBatch, CertificateIssueBatchItem,
 )
 from apps.events.certificates.print_models import (
-    EventBadgeTemplateRevision, BadgePrintJob, BadgePrintResource,
+    EventBadgeTemplateRevision, BadgePrintJob, BadgePrintResource, BadgePrintCleanupReceipt,
 )
 from apps.events.contributions.models_admission import (
     EventContributorAdmission,
@@ -18,7 +18,7 @@ from apps.events.contributions.models_notices import (
     EventContributorNotice,
 )
 from apps.events.contributions.models_policy import (
-    EventRoleAnswerRevision, EventRequirementOverride,
+    EventRoleAnswerRevision, EventRequirementOverride, EventContributorRequirementCompletion,
 )
 from apps.events.contributions.models_roles import (
     EventRolePosting, EventRoleAssignment, EventGrantEntitlement, EventSponsor, EventSponsorTrack,
@@ -76,12 +76,16 @@ from apps.events.submissions.gallery_models import (
 )
 from apps.events.submissions.models_assets import (
     SubmissionAsset, HackathonParticipantAsset, EventAssetUsage, SubmissionAssetWork,
+    EventAssetObligation, EventProgrammeSweepCursor,
 )
 from apps.events.submissions.models_projects import (
     HackathonSubmission, SubmissionSnapshot, SubmissionLink, SnapshotAsset, SnapshotLink, SnapshotTrack, SnapshotPrize, SubmissionIntegrityFlag,
 )
 
 __all__ = [
+    'EventContributorRequirementCompletion',
+    'BadgePrintCleanupReceipt',
+    'EventAssetObligation', 'EventProgrammeSweepCursor',
     'EventBroadcastPreview', 'EventCommandReceipt', 'EventAnswerDerivation', 'EventCertificateLibraryTemplate',
     'EventCertificateLibraryArtwork', 'EventCertificateLibraryRevision', 'EventCertificateLibraryCommand', 'EventCertificatePublicationPolicy',
     'CertificateIssueBatch', 'CertificateIssueBatchItem', 'EventBadgeTemplateRevision', 'BadgePrintJob',

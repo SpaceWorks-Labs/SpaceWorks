@@ -22,7 +22,14 @@ _scopes = ContextVar("programme_lock_scopes", default=None)
 def fences(*, tenant_ids, account_ids):
     tenants = tuple(sorted(set(map(int, tenant_ids))))
     accounts = tuple(sorted(set(map(int, account_ids))))
-    with account_fences(accounts, tenants):
+    held = _scopes.get()
+    if held is not None:
+        if not set(tenants) <= set(held[0]) or not set(accounts) <= set(held[1]):
+            raise RuntimeError("Cannot extend programme fences below resource locks.")
+        yield
+        return
+    from apps.encryption.preparation import locked_domain
+    with account_fences(accounts, tenants, allow_erased=True), locked_domain():
         token = _scopes.set((tenants, accounts))
         try:
             yield
@@ -49,6 +56,10 @@ def event_scopes(*, event_id, account_ids=()):
     from .hackathons.admission_models import HackathonApplication
     from .hackathons.review_models import ApplicationReviewAssignment
     from .contributions.models_roles import EventRoleAssignment
+    from .contributions.models_roles import EventGrantEntitlement, EventRolePosting
+    from .models_staff_grants import EventStaffGrant, EventStaffGrantInvite
+    from .profile_photos.models import EventMemberPresentation
+    from .models_certificates import EventAttendanceCertificate
     from .organization_audience import candidate_ids
     from apps.organizations.audience import owned_space_ids
 
@@ -57,11 +68,28 @@ def event_scopes(*, event_id, account_ids=()):
     tenants.update(event.collaborators.filter(status="accepted").values_list("makerspace_id", flat=True))
     tenants.update(owned_space_ids(candidate_ids(event)))
     accounts = set(account_ids)
+    for model, fields in ((EventStaffGrant, ("user_id", "granted_by_id")),
+            (EventStaffGrantInvite, ("created_by_id", "redeemed_by_id")),
+            (EventGrantEntitlement, ("created_by_id",)),
+            (EventRoleAssignment, ("approved_by_id",)),
+            (EventRolePosting, ("permission_issuer_id",))):
+        rows = model.objects.filter(event_id=event_id)
+        if model in (EventStaffGrant, EventStaffGrantInvite, EventGrantEntitlement) and event.series_id:
+            from django.db.models import Q
+            rows = model.objects.filter(Q(event_id=event_id) | Q(series_id=event.series_id))
+        for field in fields:
+            accounts.update(rows.values_list(field, flat=True))
     for model, field in ((EventRegistration, "member_id"), (HackathonApplication, "member_id"),
                          (EventRoleAssignment, "member_id"), (ApplicationReviewAssignment, "reviewer_id")):
         accounts.update(model.objects.filter(event_id=event_id).values_list(field, flat=True))
     for field in ("registered_via_makerspace_id", "payment_via_makerspace_id"):
         tenants.update(EventRegistration.objects.filter(event_id=event_id).values_list(field, flat=True))
+    selections = EventMemberPresentation.objects.filter(event_id=event_id)
+    tenants.update(selections.values_list("selected_profile__membership__makerspace_id", flat=True))
+    tenants.update(selections.values_list("selected_membership__makerspace_id", flat=True))
+    accounts.update(selections.values_list("member_id", flat=True))
+    accounts.update(EventAttendanceCertificate.objects.filter(event_id=event_id)
+                    .values_list("recipient_member_id", flat=True))
     return tuple(sorted(tenants - {None})), tuple(sorted(accounts - {None}))
 
 

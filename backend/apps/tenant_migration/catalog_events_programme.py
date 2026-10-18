@@ -1,6 +1,10 @@
 """Literal programme schema and export dispositions, reviewed by model family."""
 
 FIELD_NAMES = {
+    'events.EventContributorRequirementCompletion': frozenset('id event makerspace version member posting requirements_sha256 kind reference_id verified_by created_at'.split()),
+    'events.BadgePrintCleanupReceipt': frozenset('id makerspace_id_snapshot event_id_snapshot object_key size_bytes released not_before next_attempt_at cleaned_at attempts lease_token lease_until'.split()),
+    'events.EventAssetObligation': frozenset('id asset_uuid asset_label asset_id_snapshot event_id_snapshot makerspace_id_snapshot object_key staging_key verification_key multipart_upload_id initial_bytes canonical_extra_bytes reserved_bytes charged_bytes temporary_released fully_released managed write_not_after next_attempt_at lease_token lease_until attempts last_code last_cleaned_at'.split()),
+    'events.EventProgrammeSweepCursor': frozenset('id namespace last_id'.split()),
     'events.EventBroadcastPreview': frozenset('id content_sha256 revision recipient_count created_at campaign created_by'.split()),
     'events.EventCommandReceipt': frozenset('id operation_uuid request_sha256 response_reference created_at event actor'.split()),
     'events.EventAnswerDerivation': frozenset('id question_id source_dob_envelope event_date_revision as_of_date locked_at version source_history event registration application role_assignment'.split()),
@@ -19,7 +23,7 @@ FIELD_NAMES = {
     'events.EventRoleAnswerRevision': frozenset('id version answers reason schema_version locked_at created_at event makerspace assignment actor'.split()),
     'events.EventRequirementOverride': frozenset('id version kind reference_id reason created_at event makerspace assignment shift actor'.split()),
     'events.EventRolePosting': frozenset('id version role title description briefing skills visibility approval_required opens_at closes_at requirements permission_preset form_schema state event makerspace permission_issuer'.split()),
-    'events.EventRoleAssignment': frozenset('id version origin role state approved_at submitted_at consent_revision application_notes answers form_schema_version answer_locked_at date_review_required display_on_page skills availability imported_inert delegated_permissions track_ids event makerspace member posting sponsor approved_by presentation'.split()),
+    'events.EventRoleAssignment': frozenset('id version origin role state approved_at submitted_at consent_revision application_notes answers form_schema_version answer_locked_at date_review_required display_on_page skills availability imported_inert delegated_permissions track_ids event makerspace member posting sponsor approved_by presentation host_waiver host_waiver_version_accepted host_waiver_accepted_at'.split()),
     'events.EventGrantEntitlement': frozenset('id version source_kind permissions track_ids valid_from valid_until revoked_at event makerspace series grant role_assignment shift_signup created_by revoked_by'.split()),
     'events.EventSponsor': frozenset('id version label logo_reference page_reference active event makerspace organization'.split()),
     'events.EventSponsorTrack': frozenset('id version event makerspace sponsor track'.split()),
@@ -121,6 +125,10 @@ FIELD_NAMES = {
 }
 
 OMITTED_MODELS = {
+    'events.EventContributorRequirementCompletion': 'Source-only training/briefing attestation binds a source posting and requirement digest; target must attest its own requirements.',
+    'events.BadgePrintCleanupReceipt': 'Permanent deployment print-byte custody survives graph purge; never included at either tenant fidelity.',
+    'events.EventAssetObligation': 'Permanent deployment storage custody; retained across purge and deployment backup, excluded from both tenant fidelities.',
+    'events.EventProgrammeSweepCursor': 'Disposable deployment recovery progress; target starts a fresh sweep.',
     'events.CertificateIssueBatch': 'Source-local issuance work; issued certificates travel independently and no pending issuance resumes abroad.',
     'events.CertificateIssueBatchItem': 'Source-local issuance work; issued certificates travel independently and no pending issuance resumes abroad.',
     'events.EventBroadcastPreview': 'Source-local authority, credential or process coordination; target reconstructs explicitly.',
@@ -154,7 +162,8 @@ OMITTED_MODELS = {
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items() if label not in OMITTED_MODELS}
 
 EXTRA_FIELDS = {
-    "events.Event": "version event_date_revision",
+    "events.EventTicketType": "purpose contributor_capacity_policy",
+    "events.Event": "version event_date_revision accent_preset",
     "events.EventRegistration": "version answer_locked_at date_review_required credential_mode",
     "events.EventAttendanceCertificate": "event recipient_member role_assignment kind award result_revision public_verification_enabled event_timezone_name render_token render_started_at render_attempts",
     "events.EventBroadcast": "version render_schema_version design available_at confirmed_preview",

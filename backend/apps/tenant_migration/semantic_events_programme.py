@@ -61,6 +61,30 @@ def _hash(value):
 
 
 def remap_programme(label, source, row, map_id):
+    if label == "events.EventPageSection":
+        # Only the declared selector vector is an identity slot. The imported
+        # page remains unreleased; person/history selections require new consent.
+        options = deepcopy(row.get("options", {}))
+        if not isinstance(options, dict) or set(options) - {"ids", "layout", "limit"}:
+            raise ValueError("Invalid page section options.")
+        target = {"prizes": "HackathonPrize", "project_gallery": "GalleryEntry"}.get(row["kind"])
+        ids = options.get("ids", [])
+        if (not isinstance(ids, list) or len(ids) > 100
+                or any(type(pk) is not int or pk <= 0 for pk in ids) or len(ids) != len(set(ids))):
+            raise ValueError("Invalid typed page section selectors.")
+        limit = options.get("limit", 12)
+        if options.get("layout", "grid") not in {"grid", "list"} or type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError("Invalid page section presentation options.")
+        if ids:
+            options["ids"] = _walk(ids, ["*"], target, map_id) if target else []
+        row["options"] = options
+    if label == "events.EventAttendanceCertificate":
+        from .semantic_certificate_proof import remap_contribution_proof
+        row["layout_snapshot"] = remap_contribution_proof(row["layout_snapshot"], map_id)
+    if label in {"events.EventRolePosting", "events.EventShift"}:
+        # Evidence references belong to the source programme; target staff must
+        # author and attest its own training/briefing IDs. Keep waiver policy.
+        row["requirements"] = {**row.get("requirements", {}), "training_ids": [], "briefing_ids": []}
     if label == "events.EventRegistration" and isinstance(row.get("custom_answers"), dict):
         from apps.events.answer_derivations.portability import remap_canonical_answers
         row["custom_answers"] = remap_canonical_answers(row["custom_answers"], map_id)

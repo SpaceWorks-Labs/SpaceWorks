@@ -12,6 +12,7 @@ import { OrganizationSelfCreation, useOrganizationSelfCreationVisible } from "..
 import { MemberAccountProfile } from "./MemberAccountProfile";
 import { MemberAccountSessions } from "./MemberAccountSessions";
 import { MemberAccountMembership } from "./MemberAccountMembership";
+import { OwnOrganizations } from "../organizationLeave/OwnOrganizations";
 import { MemberAccountExports } from "./MemberAccountExports";
 
 export function MemberAccountPage() {
@@ -65,6 +66,6 @@ export function MemberAccountPage() {
           {selfService && section === "membership" ? <MemberAccountMembership key={`membership-${data.makerspace.id}`} makerspaceId={data.makerspace.id} onLeft={() => setLeft(true)} /> : null}
           {selfExport && section === "data" ? <MemberAccountExports key={`exports-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
         </> : null}
-      </> }, ...(showSelfCreation ? [{ id: "create-organization", title: "Create your organization", rows: <OrganizationSelfCreation /> }] : [])]} /></MemberSectionNavigation>
+      </> }, ...(!restoring && !signIn && !hasClaimSession() && section === (tabs[0]?.key || "profile") ? [{ id: "your-organizations", title: "Organization memberships", rows: <OwnOrganizations /> }] : []), ...(showSelfCreation ? [{ id: "create-organization", title: "Create your organization", rows: <OrganizationSelfCreation /> }] : [])]} /></MemberSectionNavigation>
   </MemberPortalTabs>;
 }

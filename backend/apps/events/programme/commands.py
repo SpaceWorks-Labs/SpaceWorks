@@ -55,7 +55,8 @@ def receipt_model():
 
 
 def execute_command(*, event, actor, command, payload, expected_version, operation_id,
-                    execute, permission=None, version_getter=None, authorize=None):
+                    execute, permission=None, version_getter=None, authorize=None,
+                    account_ids=(), tenant_ids=()):
     """Callback performs domain mutation/audit and returns a non-PII receipt.
 
     Receipt lookup precedes CAS but follows fresh authority checks. A retry cannot
@@ -63,9 +64,8 @@ def execute_command(*, event, actor, command, payload, expected_version, operati
     Domain callbacks must not perform storage/provider/network I/O under locks.
     """
     event_authority.require(actor, event, permission)
-    with boundary_tenant_write(event.makerspace_id), transaction.atomic(), fences(
-        tenant_ids=(event.makerspace_id,), account_ids=(actor.pk,),
-    ):
+    from apps.events.services_write_boundary import write_boundary
+    with write_boundary(event, actor=actor, account_ids=account_ids, tenant_ids=tenant_ids):
         return _execute_fenced(event=event, actor=actor, command=command, payload=payload,
             expected_version=expected_version, operation_id=operation_id, execute=execute,
             permission=permission, version_getter=version_getter, authorize=authorize)

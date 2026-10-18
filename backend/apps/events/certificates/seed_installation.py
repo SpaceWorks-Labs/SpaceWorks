@@ -23,7 +23,7 @@ from .seed_artwork import render_packaged
 from .seeds import catalogue
 
 
-def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None):
+def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None, expected_version=None, operation_id=None, seed_version=None):
     if kind not in ("certificate", "badge") or theme not in ("light", "dark"):
         raise ValidationError({"seed_id": "Choose a certificate or badge seed and theme."})
     if kind == "certificate" and stock is not None:
@@ -32,8 +32,10 @@ def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None):
     seed = next((row for row in candidates if row["seed_id"] == seed_id), None)
     if seed is None:
         raise ValidationError({"seed_id": "Unknown default design."})
-    recipe = json.dumps([event_id, seed_id, seed["seed_version"], theme, stock], separators=(",", ":"))
-    operation = uuid5(NAMESPACE_URL, "spaceworks:seed-install:" + recipe)
+    if seed_version is not None and seed_version != seed["seed_version"]:
+        raise ProgrammeConflict("The default design changed. Reload it.", code="seed_version_changed")
+    recipe = json.dumps([event_id, kind, seed_id, seed["seed_version"], theme, stock], separators=(",", ":"))
+    operation = operation_id or uuid5(NAMESPACE_URL, "spaceworks:seed-install:" + recipe)
     request_digest = sha256(recipe.encode()).hexdigest()
     model = EventBadgeTemplateRevision if kind == "badge" else EventCertificateTemplateRevision
 
@@ -48,6 +50,8 @@ def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None):
         result = previous(event)
         if result:
             return result
+        if expected_version is not None:
+            require_version(event, expected_version)
         expected_version = event.version
     document = deepcopy(seed["document"])
     mapping = {}

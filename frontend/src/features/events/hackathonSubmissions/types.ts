@@ -8,7 +8,13 @@ export type Project = {
   form_answers: Record<string, unknown>; links: ProjectLink[];
 };
 /** The server's JSON project has a domain-specific validated editor projection. */
-export type Submission = Omit<import('../../../generated/api').ProjectResponse, 'project'> & { project: Partial<Project> };
+export type Submission = Omit<import('../../../generated/api').ProjectResponse, 'project'> & { project: Partial<Project>; requirements?: ProjectRequirements };
+export type ProjectRequirements = { version: number; deadline: string; opens_at: string | null;
+  grace_seconds: number; late_policy: string; budget: { limit_bytes: number | null; used_bytes: number; reserved_bytes: number; remaining_bytes: number | null };
+  tracks: { id: number; label: string; version: number; form: unknown }[];
+  prizes: { id: number; label: string; version: number; form: unknown; track_id: number | null }[];
+  slots: { group: string; max_bytes: number }[] };
+
 export type Asset = import('../../../generated/api').AssetResponse;
 export type UploadSpec = { group: string; subtype: string };
 export type UploadDescriptor = import('../../../generated/api').UploadDescriptor;

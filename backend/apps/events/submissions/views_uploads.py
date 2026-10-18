@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from .views_base import PrivateSubmissionView
 
 from .api_assets import create_upload, operation_key, owned_asset, project_asset, resume_upload
 from .asset_workflow import asset_command
@@ -18,7 +18,7 @@ from .views_projects import ERRORS
 KEY = [OpenApiParameter("Idempotency-Key", str, OpenApiParameter.HEADER, required=True)]
 
 
-class UploadView(APIView):
+class UploadView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
     participant = False
 
@@ -48,7 +48,7 @@ class ResumeCollectionView(UploadView):
         return super().post(request, pk, **kwargs)
 
 
-class AssetDetailView(APIView):
+class AssetDetailView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
     participant = False
 
@@ -70,7 +70,7 @@ class ResumeDetailView(AssetDetailView):
             participant=True, action="delete", generation=asset.generation, **serializer.validated_data))
 
 
-class AssetCommandView(APIView):
+class AssetCommandView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
     participant = False
     action = "complete"
@@ -91,7 +91,7 @@ class AssetCommandView(APIView):
         return Response(result, status=202 if self.action == "complete" else 200)
 
 
-class FromSavedView(APIView):
+class FromSavedView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(request=FromSavedSerializer, parameters=KEY, responses={202: AssetCommandResponseSerializer, **ERRORS}, tags=["Event resumes"])

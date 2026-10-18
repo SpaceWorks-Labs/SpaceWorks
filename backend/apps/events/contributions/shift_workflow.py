@@ -143,6 +143,8 @@ def transition(*, actor, event_id, signup_id, payload, action, staff=False):
             raise ProgrammeError("work_locked", "Work has started; ask an organizer to close this shift.")
         commands.changed(signup, state="withdrawn")
         sync_shift_locked(signup_id=signup.pk, actor_id=actor.pk, locks=locks)
+        from .notifications import cancelled_signup_locked
+        cancelled_signup_locked(signup)
         promote_locked(shift=shift, actor=actor, event=event, locks=locks)
         return signup
 
@@ -151,7 +153,7 @@ def transition(*, actor, event_id, signup_id, payload, action, staff=False):
         authorize=authorize, account_ids=account_ids, authority_ids=issuer_ids, mutate=mutate)
 
 
-def withdraw_assignment_locked(*, assignment, actor, event, locks, allow_active=False):
+def withdraw_assignment_locked(*, assignment, actor, event, locks, allow_active=False, reason_code="role_withdrawn"):
     rows = EventShiftSignup.objects.filter(assignment=assignment,
         state__in=["applied", "approved", "waitlisted"]).order_by("shift_id", "pk")
     shift_ids = list(rows.values_list("shift_id", flat=True))
@@ -163,6 +165,8 @@ def withdraw_assignment_locked(*, assignment, actor, event, locks, allow_active=
         shift = shifts[signup.shift_id]
         commands.changed(signup, state="withdrawn")
         sync_shift_locked(signup_id=signup.pk, actor_id=actor.pk, locks=locks)
+        from .notifications import cancelled_signup_locked
+        cancelled_signup_locked(signup)
         record(actor, "event.shift.withdrawn_with_role", makerspace=event.makerspace,
                target=signup, meta={"event_id": event.pk})
         promote_locked(shift=shift, actor=actor, event=event, locks=locks)
@@ -176,4 +180,4 @@ def withdraw_assignment_locked(*, assignment, actor, event, locks, allow_active=
             if allow_active:
                 continue
             raise ProgrammeError("work_locked", "A booked office-hour session has started.")
-        cancel_locked(actor=actor, event=event, booking_id=booking.pk, locks=locks, reason_code="role_withdrawn")
+        cancel_locked(actor=actor, event=event, booking_id=booking.pk, locks=locks, reason_code=reason_code)

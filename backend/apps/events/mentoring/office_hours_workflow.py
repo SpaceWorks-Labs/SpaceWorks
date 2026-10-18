@@ -23,6 +23,8 @@ def cancel_locked(*, actor, event, booking_id, locks, reason_code):
             event_authority.require(actor, event, "manage_team")
     elif reason_code == "team_cancelled":
         ports().teams.require_member(actor_id=actor.pk, event_id=event.pk, team_id=row.team_id)
+    elif reason_code == "event_cancelled":
+        event_authority.require(actor, event, "publish_schedule")
     elif reason_code == "slot_changed":
         event_authority.require(actor, event, "manage_team")
     else:

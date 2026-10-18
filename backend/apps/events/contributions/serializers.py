@@ -35,6 +35,9 @@ class RoleInputSerializer(CommandSerializer):
     event_date_revision = serializers.IntegerField(min_value=1)
     availability = WindowSerializer(many=True, max_length=50, required=False)
     skills = serializers.ListField(child=serializers.SlugField(max_length=40), max_length=50, required=False)
+    host_waiver_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    host_waiver_version = serializers.CharField(max_length=64, required=False)
+    host_waiver_accepted = serializers.BooleanField(required=False)
 
 
 class ReasonCommandSerializer(CommandSerializer):
@@ -86,6 +89,7 @@ class PostingSerializer(AggregateSerializer):
     description = serializers.CharField(required=False)
     form = serializers.JSONField(required=False)
     coc = serializers.JSONField(required=False)
+    host_waiver = serializers.JSONField(required=False, allow_null=True)
     application = serializers.JSONField(allow_null=True, required=False)
 
 

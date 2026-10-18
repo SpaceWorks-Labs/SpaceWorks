@@ -2,6 +2,7 @@
 from datetime import timedelta
 from uuid import uuid4
 from django.db import transaction
+from apps.events.services_write_boundary import write_boundary
 from django.db.models import Q
 from django.utils import timezone
 from apps.audit.services import record
@@ -53,8 +54,8 @@ def expire(*, event_id, limit=100):
     adapter = ports()
     seed = Event.objects.get(pk=event_id)
     adapter.prepare_private_write(makerspace_id=seed.makerspace_id)
-    with boundary_tenant_write(seed.makerspace_id), transaction.atomic():
-        with adapter.fences(tenant_ids=(seed.makerspace_id,), account_ids=()):
+    with write_boundary(seed):
+        with transaction.atomic():
             event = Event.objects.select_for_update().get(pk=event_id)
             event.makerspace = require_module_locked(event.makerspace_id, "events")
             now, count = timezone.now(), 0

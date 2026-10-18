@@ -59,5 +59,5 @@ class ProfileFields:
 def install():
     for key in FORMS:
         register_form(provider(key))
-    from apps.accounts.saved_details.fields import install_profile_fields
-    install_profile_fields(ProfileFields())
+    from apps.accounts.saved_details.fields import install_core_profile_fields
+    install_core_profile_fields()

@@ -6,6 +6,8 @@ export type RuntimeTenantConfig = {
   // domain). Set exclusively by the SaaS Caddy overlay's config.js. Absent for
   // central/dev/self-host deployments so their behavior stays unchanged.
   originBootstrap?: boolean;
+  uiDelightEnabled?: boolean;
+  uiEasterEggsEnabled?: boolean;
 };
 
 declare global {
@@ -24,6 +26,8 @@ export function runtimeTenantConfig(): RuntimeTenantConfig {
     apiUrl: clean(config?.apiUrl) || undefined,
     tenantToken: clean(config?.tenantToken) || undefined,
     originBootstrap: config?.originBootstrap === true,
+    uiDelightEnabled: typeof config?.uiDelightEnabled === "boolean" ? config.uiDelightEnabled : import.meta.env.VITE_UI_DELIGHT_ENABLED === "true",
+    uiEasterEggsEnabled: typeof config?.uiEasterEggsEnabled === "boolean" ? config.uiEasterEggsEnabled : import.meta.env.VITE_UI_EASTER_EGGS_ENABLED === "true",
   };
 }
 

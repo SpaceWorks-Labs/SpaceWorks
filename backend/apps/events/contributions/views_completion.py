@@ -98,3 +98,16 @@ class ContributorAdmissionView(AdminView):
         row = result.row
         return Response({**envelope(row), "state": "admitted", "registration_id": row.registration_id,
             "assignment_id": row.assignment_id, "capacity_policy": row.capacity_policy}, status=result.status)
+
+
+class RequirementCompletionView(AdminView):
+    feature = None
+    permission = "view"
+
+    @extend_schema(request=requirements_workflow.RequirementCompletionSerializer,
+                   responses={201: AggregateSerializer, **ERRORS})
+    def post(self, request, pk, assignment_id):
+        self.event(request, pk)
+        result = requirements_workflow.complete(actor=request.user, event_id=pk, assignment_id=assignment_id,
+            payload=self.input(request, requirements_workflow.RequirementCompletionSerializer))
+        return Response({**envelope(result.row), "state": "recorded"}, status=result.status)

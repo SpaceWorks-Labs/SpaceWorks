@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from .views_base import PrivateSubmissionView
 from django.utils import timezone
 from datetime import timedelta
 
@@ -17,16 +17,18 @@ from .moderation import triage
 ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 409, 410, 413, 423, 429, 503)}
 
 
-class ProjectView(APIView):
+class ProjectView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(responses={200: ProjectResponseSerializer, **ERRORS}, tags=["Event submissions"])
     def get(self, request, pk, team_id, **kwargs):
         with boundary().locked(actor=request.user, event_id=pk, team_id=team_id, action="project_read") as ctx:
+            from .requirements import descriptor
+            requirements = descriptor(ctx)
             project = HackathonSubmission.objects.filter(event_id=pk, team_id=team_id).first()
             if project is None:
                 return Response({"id": None, "event_id": pk, "version": 0, "state": "draft",
-                                 "snapshot_id": None, "project": {}, "allowed_actions": ["save"]})
+                                 "snapshot_id": None, "project": {}, "allowed_actions": ["save"], "requirements": requirements})
             document = {key: getattr(project, key) for key in PROJECT_FIELDS}
             document["links"] = list(project.links.filter(version=project.links_version).values("kind", "url", "public_requested"))
             actions = []
@@ -40,7 +42,7 @@ class ProjectView(APIView):
                     actions.append("withdraw")
             return Response({"id": project.pk, "event_id": pk, "version": project.version, "state": project.state,
                              "snapshot_id": project.current_snapshot_id, "project": document,
-                             "allowed_actions": actions})
+                             "allowed_actions": actions, "requirements": requirements})
 
     @extend_schema(request=ProjectPatchSerializer, responses={200: ProjectResponseSerializer, **ERRORS}, tags=["Event submissions"])
     def patch(self, request, pk, team_id, **kwargs):
@@ -52,7 +54,7 @@ class ProjectView(APIView):
                                 operation_id=operation, expected_version=expected, data=data))
 
 
-class ProjectCommandView(APIView):
+class ProjectCommandView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
     action = "submit"
 
@@ -64,7 +66,7 @@ class ProjectCommandView(APIView):
                                 **serializer.validated_data))
 
 
-class AmendView(APIView):
+class AmendView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(request=AmendSerializer, responses={200: ProjectResponseSerializer, **ERRORS}, tags=["Event submissions"])
@@ -82,7 +84,7 @@ class AmendView(APIView):
             operation_id=str(data.pop("operation_id")), expected_version=data.pop("expected_version"), data=data))
 
 
-class TriageView(APIView):
+class TriageView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(request=TriageSerializer, responses={200: ProjectResponseSerializer, **ERRORS}, tags=["Event submissions"])

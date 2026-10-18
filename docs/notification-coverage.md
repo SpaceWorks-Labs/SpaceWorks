@@ -111,49 +111,38 @@ window suppress stale prompts. The catalog has the event, but the feature enum/e
 
 ## Events programme checkpoint (2026-10-18)
 
-Checked against `f1ef7736`; programme features remain OFF. These rows supplement the
-ordinary-event inventory above and supersede its registration-only certificate subject
-description. **PARTIAL means authored, not accepted delivery.** No runtime/provider pass
-is claimed here. The [contract](notification-contract.md#events-programme-contract-checkpoint-2026-10-18)
-defines recipient/privacy/retry rules for every kind.
+GF4 installs the real sources below; programme features remain OFF. Authored runtime
+composition is not provider acceptance. The [contract](notification-contract.md#events-programme-contract-checkpoint-2026-10-18)
+defines recipient/privacy/retry rules. No Docker, provider or browser delivery pass is claimed.
 
-| New kinds / family | Actual source / producer | Coverage and required verification |
+| New kinds / family | Installed source / producer | Verification still required |
 | --- | --- | --- |
-| `application_submitted` | `hackathons/admission_workflow.py` → `admission_transactions.notice` | PARTIAL: required `AdmissionIntegrations.enqueue_notice` not installed |
-| `application_offered`, `application_waitlisted`, `application_rejected` | `hackathons/admission_decisions.py` release | PARTIAL: no staging notices; real enqueue/released-source/review/recipient proof pending |
-| `application_confirmed`, `application_declined`, `application_expired`, `application_withdrawn` | A admission/RSVP/maintenance services | PARTIAL: canonical registration bridge, envelope dedup and expiry/current-revision proof pending |
-| `rsvp_extended`, `team_eligibility_changed`, application `event_cancelled` | A RSVP/team lifecycle/admission lifecycle | PARTIAL: owner-safe renderer exists; actual producer adapter and ordinary-event dedup pending |
-| Contributor `week`, `two_days`, `day_of`, `booking_cancelled` | `contributions/notifications.py`, persisted `EventContributorNotice` | PARTIAL: schedule/recovery/claims exist; `ports().deliver_contribution` live recipient/render/provider adapter pending |
-| Help `created`, `claim`, `renew`, `reopen`, `assign`, `cancel`, `claim_released`, `lease_expired`, `expired` | `mentoring/help_workflow.py`, `help_expiry.py`, `MentorNotificationIntent` | PARTIAL: durable intents and sweeps; `ports().deliver_help` and source-backed personal/in-app adapters pending |
-| Help `attention` | `mentoring/notifications.py::escalate` | PARTIAL: 15-minute open-period intent; current organizer/expiry/generation checks authored, actual delivery pending |
-| `results_published` | `judging/results_workflow.py` → `JudgingNotice` + after-commit `notify_intent` | PARTIAL: real notify/source/recipient adapter and periodic `lifecycle.sweep_notices` installation pending |
-| `certificate_ready`, `certificate_revoked` | `certificates/lifecycle.py`, `notifications.py`; registered `events.certificate` source | PARTIAL programme acceptance: direct recipient/status/revision and document resolver installed; C/D eligibility and render/batch recovery/real provider proof pending |
-| Broadcast v2 | `programme/broadcast_*`, `broadcast_channels.py` | Authored preview/test/schedule/cancel, current source and shared HTML handoff; scheduled-release recovery registered. Full provider/race/browser acceptance pending; no assertion that every legacy fan-out has recovery |
-| `events.team`, `events.submission`, `events.help`, `events.contribution`, `events.judging`, `events.results` source names | `programme/notification_manifest.py::SOURCE_OWNERS` | MANIFEST ONLY as common personal sources: no complete runtime registration from `programme_runtime.py`. Domain intent sweeps do not substitute for transport registration |
+| Application submit, released decisions, RSVP/expiry/withdrawal, deadline and team eligibility changes | `events.application`; `contracts/admission_registration.py` installs A's enqueue adapter, F/P preparation and canonical registration bridge | Released revision/owner audience, registration dedup, retries and cancellation against the real adapters |
+| Date review | `events.answer_date`; A/P date-notice adapter and committed lifecycle | Current date-source revision and no computed-age disclosure |
+| Team membership/request/reopen/disband and explicitly addressed invitations | `events.team`, `events.team_invite`; `hackathons/team_notifications.py` | Live roster/invite revision, verified unique recipient and no bearer in metadata |
+| Submission submit/amend/withdraw/lock | `events.submission`; `submissions/notifications.py`, workflow and deadlines | Current sealed source/version/state and active-team audience |
+| Role submit/approve/reject/decline/withdraw/revoke/complete/reopen/reconfirm/cancel | `events.role_assignment`; `contributions/role_notices.py` | Current role/version/feature and private owner audience |
+| Shift reminders/cancellation and office-hour cancellation | `events.contributor`; persisted contributor notices and `contributions/runtime_notices.py` | Current generation, source state, live recipients and overlapping reminder dedup |
+| Help transitions and attention | `events.mentor_help`; persisted intent/sweeps and C runtime adapter | Current claim/on-shift/organizer/private audience, lease expiry and broker loss recovery |
+| `judge_assigned`, `assignment_invalidated`, released results | `events.judging`; `judging/provider_notices.py` plus periodic notice recovery | Current assignment/version/state/role/conflict or released announcement/result revision and eligible sealed snapshot recipients |
+| Certificate ready/revoked | `events.certificate`; direct-subject source and typed private PDF resolver | Current C/D immutable proof, render/recovery/revocation and real provider attachment |
+| Broadcast v2 | `programme/broadcast_*`, `broadcast_channels.py` | Preview/test/schedule/cancel, current authority/audience, provider failure and race acceptance |
 
-`programme_runtime.py` actually installs `events.application` with an eligibility predicate
-(current owner/revision, module/feature/config/servable gate), the certificate document
-resolver, and template catalogue. It does not install A's enqueue/render adapter or the
-other listed lane ports. `notification_sources.py` registers the certificate source.
-Application MESSAGES include the eleven literals listed above; some are only adapter
-contracts until their canonical lifecycle is integrated. No general claim that every
-declared kind has an exercised live producer is made.
+`contracts/registration.py`, `admission_registration.py` and the judging/certificate
+registrations compose the production adapters query-free at startup. The source manifest
+names actual sources; it is not a substitute for recipient/render/dispatch implementations.
+Reminders, committed contributor/help work, admission maintenance, broadcast release,
+judging notices, private asset validation/cleanup and certificate rendering/printing have
+bounded recovery entry points in beat and the beat-less runner. Run the source/task guards
+and broker-loss checks before enabling any feature.
 
-`reminders_programme.py` registers `events.volunteer_shift`, `events.office_hours` and
-`events.mentor_help` with the existing reminder scheduler. Contributor maintenance runs
-help expiry/escalation and committed-notice recovery. Admission maintenance, scheduled
-broadcast recovery and account Saved details jobs are also scheduled. Certificate batch/
-render/print and judging recovery remain GF1 item 8; asset jobs/retention/cleanup item 7.
-
-Typed personal PDF source/dispatch/media code supports payment and certificate sources
-by default, not badge secrets or rooms. Evidence targets are
-`tests/events/programme/attachments/test_default_pdfs.py`, `test_dispatch.py`,
-`test_media_binding.py`, `test_notification_manifest.py`, admission
-`test_notification_contract.py`, mentoring `test_notifications_triggers_diagnostics.py`,
-communications schedule/self-test files and existing `tests/billing_docs/test_r2_*.py`.
-They must run with real installed sources and provider failure/revocation boundaries.
-Role/judge assignment, submission/scan and complete correction notifications are still
-missing production integration; owner decisions requiring them are not waived.
+Typed personal PDF dispatch supports payment and certificate sources by default, never
+badge secrets or rooms. Run `tests/events/programme/attachments/`, admission notification
+contract tests, mentoring notification trigger/diagnostic tests, judging lifecycle tests,
+communications schedule/self-test files and existing `tests/billing_docs/test_r2_*.py` with
+real installed sources and provider failure/revocation boundaries. Broader assignment,
+scan and correction coverage must be judged against its actual producer, not an invented
+generic source name. See the GF4 closure report for exact remaining checks.
 
 Code ownership for the status column (all paths under `backend/apps/`):
 

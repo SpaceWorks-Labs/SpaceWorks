@@ -50,7 +50,6 @@ JSON_FIELDS = frozenset({
     ('events.HackathonPrize', 'form'),
     ('events.HackathonSubmission', 'ai_declaration'),
     ('events.HackathonSubmission', 'asset_ids'),
-    ('events.HackathonSubmission', 'form_answers'),
     ('events.HackathonSubmission', 'prize_ids'),
     ('events.HackathonSubmission', 'public_asset_ids'),
     ('events.HackathonSubmission', 'reuse_declaration'),
@@ -78,7 +77,6 @@ JSON_FIELDS = frozenset({
     ('events.SubmissionAsset', 'manifest'),
     ('events.SubmissionAsset', 'media_metadata'),
     ('events.SubmissionIntegrityFlag', 'evidence'),
-    ('events.SubmissionSnapshot', 'project'),
     ('events.SubmissionSnapshot', 'sealed_member_ids'),
 })
 

@@ -10,6 +10,10 @@ def delete_programme_rows(makerspace):
     if not connection.in_atomic_block:
         raise RuntimeError("Programme purge requires the enclosing authorized purge transaction.")
     total, labels = 0, set()
+    # Exact private byte locators must outlive the graph which owns the print job.
+    from apps.events.certificates.print_cleanup import capture_purge_locked
+    event_ids = apps.get_model("events.Event").objects.filter(makerspace=makerspace).values_list("pk", flat=True)
+    capture_purge_locked(event_ids)
     # Certificates protect both role and award subjects, so remove them first.
     count, deleted = apps.get_model("events.EventAttendanceCertificate")._base_manager.filter(
         event__makerspace=makerspace,

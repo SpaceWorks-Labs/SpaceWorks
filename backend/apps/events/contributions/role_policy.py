@@ -38,6 +38,8 @@ def approve_locked(*, row, issuer, event, locks):
             "makerspace_id": event.makerspace_id, "skills": row.skills, "availability": row.availability})
     from .role_workflow import sync_entitlement_locked
     sync_entitlement_locked(assignment_id=row.pk, actor_id=issuer.pk, locks=locks)
+    from .role_notices import emit_role_locked
+    emit_role_locked(row=row, action="role.approve")
 
 
 def auto_approve_locked(*, row, posting, event, locks):
@@ -79,4 +81,6 @@ def reopen_locked(*, row, actor, event, locks, reason):
         imported_inert=False, display_on_page=False)
     from .role_workflow import sync_entitlement_locked
     sync_entitlement_locked(assignment_id=row.pk, actor_id=actor.pk, locks=locks)
+    from apps.events.certificates.contribution_proof import invalidate_role_locked
+    invalidate_role_locked(event=event, assignment_id=row.pk, actor=actor)
     return row

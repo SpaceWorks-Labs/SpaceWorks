@@ -40,10 +40,8 @@ def active_grants(actor, *, makerspace_id=None):
         return rows.none()
     if makerspace_id is not None:
         rows = rows.filter(makerspace_id=makerspace_id)
-    valid = Q()
-    for permission in PERMISSIONS:
-        valid |= Q(permissions__contains=[permission])
-    return rows.filter(valid)
+    from .contributions.authority import grant_ids
+    return rows.filter(pk__in=grant_ids(discovery=True, scope_grants=rows))
 
 
 def _is_series(target):
@@ -64,9 +62,13 @@ def can_manage_grants(actor, event):
     )
 
 
-def can(actor, event, permission):
+def can(actor, event, permission, *, track_id=None, team_id=None):
     if permission not in (*PERMISSIONS, VIEW, None) or not _active(actor):
         return False
+    if team_id is not None and permission in ("judge", "review_applications"):
+        from .mentoring.policy import is_conflicted
+        if is_conflicted(member_id=actor.pk, team_id=team_id):
+            return False
     if can_manage_grants(actor, event):
         return True
     if permission is None:
@@ -76,26 +78,27 @@ def can(actor, event, permission):
         rows = rows.filter(series=event)
     else:
         rows = rows.filter(Q(event=event) | Q(series_id=event.series_id, series__isnull=False))
-    if permission != VIEW:
-        rows = rows.filter(permissions__contains=[permission])
+    from .contributions.authority import grant_ids
+    rows = rows.filter(pk__in=grant_ids(permission=None if permission == VIEW else permission,
+        track_id=track_id, discovery=permission == VIEW, scope_grants=rows))
     return rows.exists()
 
 
-def require(actor, event, permission):
+def require(actor, event, permission, **scope):
     require_module(event.makerspace, "events")
-    if not can(actor, event, permission):
+    if not can(actor, event, permission, **scope):
         raise PermissionDenied()
 
 
-def permissions_for(actor, event):
+def permissions_for(actor, event, *, track_id=None):
     """Granted permissions, batched per resource after the manager check."""
     rows = active_grants(actor, makerspace_id=event.makerspace_id)
     if _is_series(event):
         rows = rows.filter(series=event)
     else:
         rows = rows.filter(Q(event=event) | Q(series_id=event.series_id, series__isnull=False))
-    values = {value for permissions in rows.values_list("permissions", flat=True)
-              for value in permissions if value in PERMISSIONS}
+    from .contributions.authority import permissions_for as source_permissions
+    values = set(source_permissions(grant_ids=rows.values("pk"), track_id=track_id))
     return [permission for permission in PERMISSIONS if permission in values]
 
 
@@ -121,8 +124,9 @@ def events_for(actor, permission, queryset):
     authorized = Q(pk__in=tenant.values("pk")) | Q(pk__in=all_rows.filter(org_q).values("pk"))
     if permission in (*PERMISSIONS, VIEW):
         grants = active_grants(actor)
-        if permission != VIEW:
-            grants = grants.filter(permissions__contains=[permission])
+        from .contributions.authority import grant_ids
+        grants = grants.filter(pk__in=grant_ids(permission=None if permission == VIEW else permission,
+            discovery=permission == VIEW, scope_grants=grants))
         if series:
             authorized |= Q(pk__in=grants.values("series_id"))
         else:

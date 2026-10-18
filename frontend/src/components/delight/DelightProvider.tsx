@@ -1,12 +1,12 @@
+import { runtimeTenantConfig } from "../../lib/runtimeConfig";
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 
 export type DelightArtwork = Partial<Record<"loader" | "welcome" | "success" | "waiting" | "empty" | "error" | "tag" | "companionWalk" | "companionFollow" | "companionNap" | "companionPrint" | "demo", { light: string; dark: string }>>;
 export type DelightPolicy = { enabled: boolean; eggsEnabled: boolean; artwork: DelightArtwork };
 const Policy = createContext<DelightPolicy | null>(null);
 function runtimePolicy() {
-  const runtime = typeof window === "undefined" ? undefined : window.__TENANT__ as
-    (NonNullable<Window["__TENANT__"]> & { uiDelightEnabled?: boolean; uiEasterEggsEnabled?: boolean }) | undefined;
-  return { enabled: runtime?.uiDelightEnabled !== false, eggsEnabled: runtime?.uiEasterEggsEnabled !== false };
+  const runtime = runtimeTenantConfig();
+  return { enabled: runtime.uiDelightEnabled === true, eggsEnabled: runtime.uiEasterEggsEnabled === true };
 }
 
 /** G passes runtime flags and ARTWORK's manifest here when mounting the shell. */

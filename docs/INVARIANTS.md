@@ -2764,7 +2764,7 @@ The rules here are binding; a rule's presence does not claim every adapter is in
   scope afterward or lock User/key rows beneath Event. Recheck prepared epoch/hash/date/
   source revision inside fences. Never combine `select_for_update()` with nullable-FK
   `select_related()`. `programme_locks.py` alone does not migrate ordinary/legacy callers;
-  GF1 items 2–4 track their incomplete conversion and required real PostgreSQL proof.
+  GF4 routes canonical writers through the shared boundary; real PostgreSQL lock/race proof remains required.
 - **Snapshots and scores freeze their inputs.** B's submit is the sole content-snapshot
   writer; roster, exact ready assets/links/tracks/prizes/form references and hashes freeze.
   Later drafts/uploads cannot alter judging or a published card. Amendment requires a
@@ -2786,21 +2786,21 @@ The rules here are binding; a rule's presence does not claim every adapter is in
   is 365 days and cannot extend an existing deadline. Logical expiry denies reads even
   while deletion retries; retained records/hashes are not removed. All final/staging/
   verification versions/multipart locators need durable cleanup, even after runtime-off,
-  migration or purge. Accounting/cleanup scheduling remains open under GF1 item 7.
+  migration or purge. Permanent FK-free asset obligations and print receipts retain exact locators across purge; bounded byte-only recovery must survive Events tombstoning.
 - **Backup is distinct from live file retention.** Typed capture reads direct asset state/
   expiry/size/hash. Missing ready unexpired bytes fail; terminal expired absence is valid;
   in-progress cleanup/promotion and overdue-ready rows require finalization before capture.
   Existing archives have their own retention and can retain prior bytes. Portable import
   preserves absolute expiry, typed hash provenance and evidence but resets live consent,
   public/claim/credential authority; no in-flight upload resumes abroad. Account vault/keys
-  never enter tenant closure. Nested canonical answer/asset import proof is still pending.
+  never enter tenant closure. GF4 installs typed encrypted answer remapping and verified target asset publication; real portable/raw-dump proof remains required.
 - **Saved details is private account data.** F's single standard-key/form validator controls
   mappings/show-if/disclosure; P owns always-encrypted account values/intent preparation.
   Only explicit true per-field choices on visible validated submitted answers create intents;
   sensitive DOB/résumé/diet/accessibility/emergency choices default false. Conflicts never
   overwrite a newer saved value. Organizer sees actual submitted answers only. Vault delete
   does not delete independent submitted evidence. Account erasure permanently fences new
-  writes and removes owner drafts through explicit lifecycle hooks, still pending integration.
+  vault writes and removes owner drafts through explicit lifecycle hooks. Event retained-history boundaries may lock erased owners without reviving vault/key writes; nested vault writes still recheck permanent erasure.
 - **DOB is a source; age is a projection.** Registration, application and role-only assignment
   derive age as of the event-local start date from encrypted DOB/source history. No numeric
   age is persisted in a field, snapshot, audit or coordination cache. Prelock date changes
@@ -2844,7 +2844,7 @@ exclusion) and full staged forms (35) remain required pending work in the separa
   is read-only. Rotation/cancellation/adoption invalidate old credentials; legacy UUID,
   offline roster/sync and station paths must refuse v2/inert mode. This exception permits
   no contacts, arbitrary bearer URLs, public credential resolution or badge PDFs in chat.
-  Full scanner/legacy integration is still pending under GF1 items 2/10. Custom-answer
+  GF4 confirms v2 through the canonical already-locked attendance writer; real scanner/rotation/race proof remains required. Custom-answer
   bindings retain current-form validation and require live registration-management
   authority AND tenant `VIEW_AUDIT` before reading answers. Template-edit authority
   cannot widen printing authority. Check-in-only staff may print attended rows only;

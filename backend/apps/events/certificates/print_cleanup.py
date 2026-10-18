@@ -28,7 +28,8 @@ def cleanup_job(job_id, *, force=False):
     for row in rows:
         if row.object_key:
             print_storage.delete(row.object_key)
-    print_storage.delete(job.object_key)
+    if job.object_key:
+        print_storage.delete(job.object_key)
     with _retention_event(job.event_id) as event:
         locked = BadgePrintJob.objects.select_for_update().get(pk=job.pk)
         for resource in BadgePrintResource.objects.select_for_update().filter(job=locked, cleaned_at__isnull=True):
@@ -57,3 +58,6 @@ def cleanup_expired(limit=100):
         except Exception:
             logging.getLogger(__name__).warning("event_badge_cleanup_deferred", extra={"job_id": pk})
     return len(ids)
+
+
+from .print_custody import capture_purge_locked  # Explicit purge integration entry point.

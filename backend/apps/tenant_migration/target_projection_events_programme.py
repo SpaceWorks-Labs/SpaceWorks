@@ -2,6 +2,9 @@
 from .target_projection_types import TargetField
 
 RESET_VALUES = {
+    ('events.EventRoleAssignment', 'host_waiver'): None,
+    ('events.EventRoleAssignment', 'host_waiver_version_accepted'): '',
+    ('events.EventRoleAssignment', 'host_waiver_accepted_at'): None,
     ('events.HackathonConfig', 'enabled'): False,
     ('events.HackathonConfig', 'finder_enabled'): False,
     ('events.HackathonConfig', 'gallery_publication'): None,

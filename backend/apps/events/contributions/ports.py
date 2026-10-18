@@ -71,6 +71,7 @@ class ProgrammePorts(Protocol):
     forms: RoleForms
     grants: GrantSources
     teams: TeamAccess
+    admissions: object
 
     def fences(self, *, tenant_ids: tuple[int, ...], account_ids: tuple[int, ...]
                ) -> AbstractContextManager[None]: ...

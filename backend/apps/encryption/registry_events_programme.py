@@ -3,6 +3,7 @@
 
 def programme_pii_fields(field):
     return (
+        field("events.EventRegistration", "custom_answers", "event.makerspace_id", None, "source", "none"),
         field("events.HackathonSubmission", "form_answers", "event.makerspace_id", None, "source", "none"),
         field("events.SubmissionSnapshot", "project", "submission.event.makerspace_id", None, "source", "none"),
         field("events.HackathonSubmission", "triage_reason", "event.makerspace_id", 1000, "source", "none"),

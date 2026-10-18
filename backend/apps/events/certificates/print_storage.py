@@ -5,7 +5,9 @@ from django.conf import settings
 from rest_framework.exceptions import APIException
 
 from apps.events.certificate_storage import _client
-from apps.object_storage import delete_all_versions
+from types import SimpleNamespace
+from apps.events.submissions.storage_cleanup import delete_keys
+from apps.events.submissions.errors import SubmissionError
 
 
 class PrintStorageUnavailable(APIException):
@@ -49,6 +51,7 @@ def read(key, digest):
 
 def delete(key):
     try:
-        delete_all_versions(_client(settings.AWS_S3_ENDPOINT_URL), bucket=settings.AWS_STORAGE_BUCKET_NAME, key=key)
-    except (BotoCoreError, ClientError, OSError) as exc:
+        delete_keys(SimpleNamespace(client=_client(settings.AWS_S3_ENDPOINT_URL),
+            bucket=settings.AWS_STORAGE_BUCKET_NAME), [key])
+    except (BotoCoreError, ClientError, OSError, SubmissionError) as exc:
         raise PrintStorageUnavailable() from exc

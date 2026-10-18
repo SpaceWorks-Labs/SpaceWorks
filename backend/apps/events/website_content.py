@@ -4,15 +4,18 @@ PAGE_GROUPS = ("HERO", "ABOUT", "HIGHLIGHTS", "SCHEDULE", "SPEAKERS", "SPONSORS"
                "VENUE", "FAQ", "RESOURCES")
 SECTION_GROUPS = {"logo": "HERO", "intro": "ABOUT", "highlight": "HIGHLIGHTS",
                   "track": "SCHEDULE", "room": "VENUE", "speaker": "SPEAKERS",
-                  "sponsor": "SPONSORS", "faq": "FAQ", "resource": "RESOURCES"}
+                  "sponsor": "SPONSORS", "faq": "FAQ", "resource": "RESOURCES",
+                  "prizes": "SPONSORS", "judges": "SPEAKERS", "mentors": "SPEAKERS",
+                  "project_gallery": "HIGHLIGHTS", "results": "HIGHLIGHTS"}
 SPONSOR_TIERS = ("platinum", "gold", "silver", "partner", "community_partner")
 SECTION_DETAIL_DEFAULTS = dict.fromkeys(
     ("headline", "organization", "website_url", "linkedin_url", "x_url", "icon"), "")
 SECTION_DETAIL_DEFAULTS["sponsor_tier"] = "community_partner"
+SECTION_DETAIL_DEFAULTS["options"] = {}
 PAGE_FIELDS = ("tagline", "accent_color", "section_order", "section_enabled", "venue")
 SECTION_FIELDS = ("kind", "slug", "title", "body", "url", "visibility", "position",
                   "headline", "organization", "website_url", "linkedin_url", "x_url",
-                  "sponsor_tier", "icon")
+                  "sponsor_tier", "icon", "options")
 
 
 def default_section_order():

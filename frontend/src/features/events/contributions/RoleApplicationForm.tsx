@@ -45,6 +45,7 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
   const locked = Boolean(application && !application.allowed_actions.includes('edit'))
   const submit = (intent: 'draft' | 'submit') => {
     if (!value || conflict) return
+    if (intent === 'submit' && posting.host_waiver?.acceptance_required && (!value.host_waiver_accepted || value.host_waiver_id !== posting.host_waiver.id || value.host_waiver_version !== posting.host_waiver.version)) return
     const path = application ? `/role-applications/${application.id}/${intent === 'submit' ? 'submit/' : ''}`
       : `/role-postings/${posting.id}/application/`
     command.mutate({ path, version: baseVersion,
@@ -78,7 +79,7 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
         {bridge.render({ value, onChange: next => { setValue(next); setDirty(true) }, disabled: locked || command.isPending,
           errors: command.error instanceof StructuredApiError ? command.error.body.fields : undefined })}
         {!locked ? <div className="mt-6 flex flex-wrap gap-3">
-          <ActionControl primary action={{ label: application ? 'Submit application' : 'Save draft', pending: command.isPending, disabled: conflict,
+          <ActionControl primary action={{ label: application ? 'Submit application' : 'Save draft', pending: command.isPending, disabled: conflict || Boolean(application && posting.host_waiver?.acceptance_required && (!value?.host_waiver_accepted || value.host_waiver_version !== posting.host_waiver.version)),
             onClick: () => submit(application ? 'submit' : 'draft') }} />
           {application ? <ActionControl action={{ label: application.state === 'applied' ? 'Save changes' : 'Save draft', pending: command.isPending, disabled: conflict, onClick: () => submit('draft') }} /> : null}
         </div> : <p className="mt-4 text-sm text-muted">Your submitted answers are locked.</p>}

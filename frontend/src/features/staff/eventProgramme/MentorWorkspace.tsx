@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { memberRequest } from '../../../lib/api'
 import { ErrorBlock, Field, Pagination } from '../../../components/ui'
 import { useProgrammeList } from '../../events/contributions/api'
 import type { Aggregate, EventScope, RoleApplication } from '../../events/contributions/types'
@@ -28,14 +30,17 @@ export function MentorWorkspace({ scope, manager, roundsEnabled, ownAssignmentId
   const roles = useProgrammeList<RoleApplication>(scope, 'admin', '/roles/', page, false, manager)
   const assignments = useProgrammeList<Mapping>(scope, 'admin', '/mentor-assignments/', page, false, manager)
   const rounds = useProgrammeList<Round>(scope, 'admin', '/mentor-rounds/', page, true, roundsEnabled)
-  const categories = useProgrammeList<HelpType>(scope, 'admin', '/help-types/', page)
+  const categories = useProgrammeList<HelpType>(scope, 'admin', '/help-types/', page, false, manager)
+  const availableTeams = useProgrammeList<Aggregate & { name: string }>(scope, 'admin', '/teams/', page, false, manager)
+  const memberCategories = useQuery({ queryKey: ['member', scope.accountId, 'help-topics', scope.eventId, ...sessionScope()], enabled: !manager, gcTime: 0, retry: false,
+    queryFn: () => memberRequest<{ results: { key: string; label: string }[] }>(`/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}/help-topics/`) })
   const readiness = useProgrammeQuery<Readiness>(scope.eventId, 'readiness')
-  const teams = [...new Set(assignments.data?.results.map(row => row.team_id) ?? [])].map(id => ({ id, label: `Team ${id}` }))
+  const teams = manager ? (availableTeams.data?.results ?? []).map(row => ({ id: row.id, label: row.name })) : [...new Set(assignments.data?.results.map(row => row.team_id) ?? [])].map(id => ({ id, label: `Team ${id}` }))
   const mentors = (roles.data?.results ?? []).filter(row => row.role === 'mentor' && row.state === 'approved').map(row => ({ id: row.id, label: `Mentor ${row.id}` }))
-  const error = roles.error || assignments.error || categories.error || rounds.error
+  const error = roles.error || assignments.error || categories.error || rounds.error || availableTeams.error || memberCategories.error
   return <div className="grid gap-5">
     {error ? <ErrorBlock error={error} onRetry={() => { if (manager) { void roles.refetch(); void assignments.refetch() }; void categories.refetch(); if (roundsEnabled) void rounds.refetch() }} /> : null}
-    <MentorDeskPage scope={scope} teams={teams} categories={categories.data?.results ?? []}
+    <MentorDeskPage scope={scope} teams={teams} categories={categories.data?.results ?? memberCategories.data?.results ?? []}
       rounds={roundsEnabled ? <div className="grid gap-5">
         {manager ? <MentorRoundSetup scope={scope} renderFormBuilder={renderContributorBuilder} /> : null}
         <Field label="Mentor check-in round"><select className="desk-input" value={roundId} onChange={event => setRoundId(Number(event.target.value))}>
@@ -53,7 +58,7 @@ export function MentorWorkspace({ scope, manager, roundsEnabled, ownAssignmentId
       </div>}
       attentionTools={roundsEnabled ? <MentorAttentionPanel scope={scope} /> : undefined}
       importTools={manager ? <TeamImportPanel scope={scope} /> : undefined} />
-    <Pagination page={page} count={Math.max(roles.data?.count ?? 0, assignments.data?.count ?? 0, rounds.data?.count ?? 0, categories.data?.count ?? 0)}
-      pageSize={24} totalPages={Math.ceil(Math.max(roles.data?.count ?? 0, assignments.data?.count ?? 0, rounds.data?.count ?? 0, categories.data?.count ?? 0) / 24)} onChange={setPage} />
+    <Pagination page={page} count={Math.max(availableTeams.data?.count ?? 0, roles.data?.count ?? 0, assignments.data?.count ?? 0, rounds.data?.count ?? 0, categories.data?.count ?? 0)}
+      pageSize={24} totalPages={Math.ceil(Math.max(availableTeams.data?.count ?? 0, roles.data?.count ?? 0, assignments.data?.count ?? 0, rounds.data?.count ?? 0, categories.data?.count ?? 0) / 24)} onChange={setPage} />
   </div>
 }

@@ -23,8 +23,8 @@ def role_eligible(*, event_id, assignment_id, kind):
     # An actor fence is not a recipient fence. Missing E scopes refuse here.
     assert_account_fence_held(role.member_id)
     if role.role == "volunteer":
-        resolve(event_id=event_id, assignment_id=assignment_id,
-            locks=LockedContext(event_id=event_id, tenant_ids=(role.makerspace_id,), account_ids=(role.member_id,)))
+        from apps.events.programme_locks import current_locks
+        resolve(event_id=event_id, assignment_id=assignment_id, locks=current_locks(event_id))
     else:
         if role.state not in ("approved", "completed") or role.imported_inert:
             raise ProgrammeConflict("Completed contribution evidence is required.", code="certificate_ineligible")

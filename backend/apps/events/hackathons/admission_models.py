@@ -32,7 +32,7 @@ class HackathonConfig(models.Model):
     submission_grace_minutes = models.PositiveIntegerField(default=0)
     late_policy = models.CharField(max_length=16, default="reject", choices=[("reject", "Reject"), ("accept_flagged", "Accept flagged")])
     attendance_required = models.BooleanField(default=True)
-    upload_policy = models.CharField(max_length=64, default="maker")
+    upload_policy = models.CharField(max_length=64, default="hackathon-maker-v1")
     upload_policy_version = models.PositiveIntegerField(default=1)
     storage_budget_bytes = models.PositiveBigIntegerField(null=True, blank=True)
     coc_revision = models.PositiveIntegerField(default=1)

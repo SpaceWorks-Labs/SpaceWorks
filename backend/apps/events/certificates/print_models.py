@@ -86,3 +86,21 @@ class BadgePrintResource(models.Model):
                 if any(getattr(old, key) != getattr(self, key) for key in fields):
                     raise ValidationError("Bound print resources are immutable.")
         return super().save(*args, **kwargs)
+
+
+class BadgePrintCleanupReceipt(models.Model):
+    """Permanent, FK-free locator custody survives event and tenant deletion."""
+    makerspace_id_snapshot = models.PositiveBigIntegerField()
+    event_id_snapshot = models.PositiveBigIntegerField()
+    object_key = models.CharField(max_length=512, unique=True)
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    released = models.BooleanField(default=False)
+    not_before = models.DateTimeField()
+    next_attempt_at = models.DateTimeField()
+    cleaned_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    lease_token = models.UUIDField(null=True, blank=True)
+    lease_until = models.DateTimeField(null=True, blank=True)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Print cleanup custody is permanent.")

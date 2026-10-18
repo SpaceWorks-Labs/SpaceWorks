@@ -14,6 +14,8 @@ from apps.encryption.cache import dek_cache, key_for
 from apps.encryption.crypto import PiiKeyUnavailable, PiiUnavailable
 from apps.encryption.models import MakerspaceEncryptionKey
 
+from .preparation import active_preparation, prepared_keys, tenant_key_change, require_prepared_for_programme
+
 _locks = {}
 _locks_guard = Lock()
 
@@ -82,6 +84,12 @@ def unwrap_dek(key_row):
 
 def get_dek(makerspace_id, version):
     _require_enabled()
+    require_prepared_for_programme(makerspace_id)
+    if active_preparation():
+        _, keys = prepared_keys(makerspace_id)
+        if version not in keys:
+            raise PiiKeyUnavailable()
+        return keys[version]
     try:
         key_row = MakerspaceEncryptionKey.objects.get(
             makerspace_id=makerspace_id, version=version
@@ -94,6 +102,10 @@ def get_dek(makerspace_id, version):
 def get_or_create_active_dek(makerspace_id):
     """Get or atomically create the active version for one makerspace."""
     _require_enabled()
+    require_prepared_for_programme(makerspace_id)
+    if active_preparation():
+        active, keys = prepared_keys(makerspace_id)
+        return ActiveDek(active, keys[active.version])
     from apps.makerspaces.models import Makerspace
 
     with _lock_for(makerspace_id):
@@ -130,6 +142,7 @@ def get_or_create_active_dek(makerspace_id):
             return ActiveDek(key=key_row, dek=wrapped.dek)
 
 
+@tenant_key_change
 def rotate_dek(makerspace_id):
     _require_enabled()
     from apps.makerspaces.models import Makerspace
@@ -158,6 +171,7 @@ def rotate_dek(makerspace_id):
         return ActiveDek(key=key_row, dek=wrapped.dek)
 
 
+@tenant_key_change
 def disable_dek(makerspace_id, version=None):
     _require_enabled()
     from apps.makerspaces.models import Makerspace
@@ -179,6 +193,7 @@ def disable_dek(makerspace_id, version=None):
         return key_row
 
 
+@tenant_key_change
 def rewrap_dek(makerspace_id, version):
     """Rewrap a local key from PII_MASTER_KEY_PREVIOUS to PII_MASTER_KEY."""
     _require_enabled()

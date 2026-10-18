@@ -25,6 +25,9 @@ def render_credential_badges_pdf(document, snapshots, *, resolver):
         if not isinstance(snapshot, BadgeSnapshot):
             raise TypeError("Use an authorized event print snapshot.")
         def resource(layer):
+            if layer["type"] == "image":
+                from .certificates.rendering import badge_image_resource
+                return badge_image_resource(layer, event_id=snapshot.event_id, document=document)
             handle = (snapshot.credential_render_handle if layer["type"] == "event_credential_qr" else
                       snapshot.photo_render_handle if layer["type"] == "photo" else
                       int(snapshot.logo_artwork_revision) if layer["type"] == "logo" and snapshot.logo_artwork_revision else None)

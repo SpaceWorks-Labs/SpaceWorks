@@ -1,3 +1,4 @@
+import { NextUpEvents, type NextUpEvent } from "../eventProgramme/NextUpEvents";
 import type { ReactNode } from "react";
 import { DashboardLayout, type DashboardLayoutProps } from "../../../components/layouts/DashboardLayout";
 import { useStaffGet, type Makerspace } from "./shared";
@@ -15,7 +16,7 @@ type Props = {
 
 export function DashboardPanel({ makerspace, allowedTabs, actions,
   isSuperadmin = false, singleTenantLocked = false, guestOnly = false, progress }: Props) {
-  const dashboard = useStaffGet<DashboardCounts>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
+  const dashboard = useStaffGet<DashboardCounts & { next_up_events?: NextUpEvent[] }>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
   const permitted = TILES.filter(tile => (
     (dashboard.data?.scope_mode !== "machine" || MACHINE_TILE_KEYS.has(tile.key))
     && filterTabsByEnabledModules([dashboardDestination(tile.key).tab], makerspace).length > 0
@@ -50,7 +51,7 @@ export function DashboardPanel({ makerspace, allowedTabs, actions,
           subtitle: `What's happening at ${makerspace.name}.`, primary }}
         state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
           error: "Couldn't load dashboard. Try again.", onRetry: () => { void dashboard.refetch(); } }}
-        progress={progress}
+        progress={<>{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}</>}
         stats={ranked.map(tile => ({ label: tile.label, value: dashboard.data?.[tile.key] ?? 0,
           // Overdue, problems, out of stock, failed email and overdue maintenance keep their danger signal.
           tone: tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0 ? tile.tone === "danger" ? "danger" : "attention" : "neutral",

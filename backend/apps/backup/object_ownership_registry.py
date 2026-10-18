@@ -35,6 +35,14 @@ class FieldObjectRule:
 # Literal, field-specific declarations are intentional. The equality guard below
 # makes adding an object-bearing concrete field a preflight failure.
 FIELD_OBJECT_RULES = (
+    FieldObjectRule("events.BadgePrintCleanupReceipt", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_print_custody"),
+    FieldObjectRule("events.EventAssetObligation", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("events.EventAssetObligation", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("events.EventAssetObligation", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
     FieldObjectRule("tenant_migration.TenantImportObject", "staging_key", BucketRule.FROM_ROW,
                     ReferencePolicy.COORDINATION_ONLY, coordination_reason="target_import_staging"),
     FieldObjectRule("accounts.MemberSavedAsset", "object_key", BucketRule.PRIVATE, retention_aware=True),

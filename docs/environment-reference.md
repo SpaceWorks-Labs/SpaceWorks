@@ -197,19 +197,27 @@ These are independent deployment secrets/settings, not extra module keys.
 | `EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION` | `1` | Current integer keyring version; its string form must exist in the JSON map below. |
 | `EVENT_REGISTRATION_CREDENTIAL_KEYS` | `{}` | JSON object mapping string versions to standard-base64 32-byte AES-GCM keys. Keep old versions needed by stored credentials. Empty configuration refuses v2; no Django/PII-key fallback. |
 
-**Deployment wiring pending:** the Compose manifests do not explicitly forward these
-eleven settings at this checkpoint. Adding them to an interpolation `.env` alone does
-not configure Django containers. The deployment lane must wire relevant web, migration,
-worker/beat and cloud processes and verify fresh/upgrade installs. Account keys and
-credential keyring/digest secrets have backup custody/continuity policy; tenant dumps
-exclude global vault/key and live credential material.
+The shared Compose application anchors forward these eleven settings to all relevant
+web/migration/worker/scheduler processes. Secrets remain operator-owned; upgrades must
+retain current/previous wrapping keys and credential digest/keyring values. Tenant dumps
+exclude the global vault and live credentials. Real install/upgrade continuity is still
+an acceptance check.
 
-Event budgets, lower file/group caps and retention anchors are database/domain policy,
-not environment variables. B's `scan_options` and `sandbox_command` are runtime-provider
-inputs awaiting installation; there is no shipped `CLAMAV_*` or `FFPROBE_*` environment
-contract. [Scanner/probe setup](events/operations.md#optional-malware-scanner) documents
-the actual adapters. `UI_DELIGHT_ENABLED` and `UI_EASTER_EGGS_ENABLED` are requested
-integration controls but are not read by this backend yet; do not rely on setting them.
+Event budgets, lower file/group caps and retention anchors are domain policy.
+All eleven settings above are forwarded through each Compose application environment
+anchor, including migration/worker/beat processes, without generating or rotating keys.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `EVENT_ASSET_SCAN_BACKEND` | `'none'` | `none` or `clamav`; optional event-asset scanner; configured failures refuse publication. |
+| `EVENT_ASSET_CLAMAV_HOST` | `''` | Explicit external ClamAV endpoint; no silent host inference. |
+| `EVENT_ASSET_CLAMAV_PORT` | `3310` | Scanner TCP port. |
+| `UI_DELIGHT_ENABLED` | `False` | Runtime frontend artwork/motion opt-in; reduced-motion preference still applies. |
+| `UI_EASTER_EGGS_ENABLED` | `False` | Additional runtime opt-in; sensitive scanner/payment routes still suppress eggs. |
+
+The installed video provider invokes the bounded non-root ffprobe launcher; the backend
+image includes ffmpeg. [Scanner/probe setup](events/operations.md#optional-malware-scanner)
+requires real provider/fault tests. These controls do not enable programme capabilities.
 Certificate verify uses a fixed 30/min anonymous throttle, rather than a new env setting.
 
 ## API clients (HMAC)

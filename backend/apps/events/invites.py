@@ -40,17 +40,19 @@ def create_invite(event, *, actor, email="", max_uses=1, expires_at=None):
     return invite, code
 
 
-@transaction.atomic
-def redeem_invite(event, code, member, *, actor):
-    event = _locked_event(event.pk, lock_makerspace=False)
-    from .organization_audience import lock_admission_sources, require_organization_audience
-    lock_admission_sources(event, [getattr(member, "pk", None)])
-    event.makerspace = require_module_locked(event.makerspace, "events")
-    if member is not None:
-        from apps.accounts.models import User
-        member = User.objects.select_for_update(no_key=True).filter(pk=member.pk).first()
+def _locked_context(event, member):
+    from .programme_locks import current_locks, assert_lock_context
+    from .organization_audience import require_organization_audience
+    locks = current_locks(event.pk)
+    assert_lock_context(locks)
+    if member is not None and member.pk not in locks.account_ids:
+        raise RuntimeError("Declare the invitation member before event locks.")
     require_organization_audience(event, member)
     require_feature(event, "events.invites")
+
+
+def redeem_invite_locked(event, code, member, *, actor):
+    _locked_context(event, member)
     invite = EventInvite.objects.select_for_update().filter(
         event=event, makerspace=event.makerspace, code_digest=code_digest(code or "", "invite"),
     ).first()
@@ -66,18 +68,8 @@ def redeem_invite(event, code, member, *, actor):
     return invite
 
 
-@transaction.atomic
-def resolve_for_account(event, member, *, actor):
-    """Optional verified-email admission, never an alternative membership proof."""
-    event = _locked_event(event.pk, lock_makerspace=False)
-    from .organization_audience import lock_admission_sources, require_organization_audience
-    lock_admission_sources(event, [getattr(member, "pk", None)])
-    event.makerspace = require_module_locked(event.makerspace, "events")
-    if member is not None:
-        from apps.accounts.models import User
-        member = User.objects.select_for_update(no_key=True).filter(pk=member.pk).first()
-    require_organization_audience(event, member)
-    require_feature(event, "events.invites")
+def resolve_for_account_locked(event, member, *, actor):
+    _locked_context(event, member)
     if not member or not member.email or not member.email_verified_at:
         return None
     rows = EventInvite.objects.select_for_update().filter(
@@ -92,6 +84,22 @@ def resolve_for_account(event, member, *, actor):
         invite.save(update_fields=["uses"])
         _audit(event, actor, "event.invite_consumed", invite, {"uses": invite.uses})
     return invite
+
+
+def redeem_invite(event, code, member, *, actor):
+    from .services_write_boundary import write_boundary
+    from apps.accounts.models import User
+    with write_boundary(event, actor=actor, account_ids=(member.pk,) if member else ()):
+        member = User.objects.get(pk=member.pk) if member else None
+        return redeem_invite_locked(event, code, member, actor=actor)
+
+
+def resolve_for_account(event, member, *, actor):
+    from .services_write_boundary import write_boundary
+    from apps.accounts.models import User
+    with write_boundary(event, actor=actor, account_ids=(member.pk,) if member else ()):
+        member = User.objects.get(pk=member.pk) if member else None
+        return resolve_for_account_locked(event, member, actor=actor)
 
 
 @transaction.atomic

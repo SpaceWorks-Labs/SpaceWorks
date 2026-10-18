@@ -67,6 +67,7 @@ def source_dob(source, *, actor_id, saved_dob_loader):
 def prepare_derivations(
     *, actor_id, subject, derivations, visible_question_ids, form_sha256,
     canonical_answer_sha256, explicit_dob=None, saved_dob_loader=None,
+    reopening=False,
 ):
     """Only server-validated visible age question IDs enter this internal API.
 
@@ -99,10 +100,10 @@ def prepare_derivations(
         raise NotFound()
     require_event(event)
     existing = list(EventAnswerDerivation.objects.filter(**subject_filter(subject))) if subject.subject_id else []
-    if any(row.locked_at for row in existing):
+    if any(row.locked_at for row in existing) and not reopening:
         raise DerivationError("answers_locked", "Submitted source evidence is locked.", status=409)
     by_question = {row.question_id: row for row in existing}
-    target = review_target(event, existing)
+    target = review_target(event, [] if reopening else existing)
     resolved = []
     if explicit_dob is not None:
         try:
@@ -127,7 +128,8 @@ def prepare_derivations(
         prior = by_question.get(question_id)
         pk = prior.pk if prior else allocate_id()
         envelope = encrypt_source(dob.isoformat(), pk=pk, makerspace_id=event.makerspace_id, version=version, dek=dek)
-        sources.append(PreparedSource(question_id, pk, prior.version if prior else 0, envelope))
+        sources.append(PreparedSource(question_id, pk,
+            prior.version + int(bool(prior.locked_at and reopening)) if prior else 0, envelope))
     return PreparedDerivations(
         subject=subject, sources=tuple(sources), makerspace_id=event.makerspace_id,
         key_version=version, event_date_revision=target[0], as_of_date=target[1],

@@ -3,7 +3,7 @@
 from django.utils import timezone
 
 from .assignment_planner import plan_assignments
-from .boundary import audit, changed, command, envelope, mutation, owned
+from .boundary import audit, changed, command, envelope, mutation, notice, owned
 from .conflicts import eligible
 from .errors import ProgrammeError, invalid
 from .models_definitions import JudgingRound
@@ -120,14 +120,16 @@ def assign(event_id, round_id, *, actor, data):
                 for row in stale:
                     row.state = "invalidated"
                     changed(event, actor, "assignment_invalidated", row)
+                    notice(event, "assignment_invalidated", row.pk, row.version)
                 for snapshot, judge in plan.pairs:
                     project = snapshot_map[snapshot]
                     person = next(j for j in judges if j.role_assignment_id == judge)
                     possible_tracks = set(project.track_ids) & set(person.track_ids) if person.track_ids else set(project.track_ids)
-                    JudgeAssignment.objects.create(event=event, round=round, judge_role_assignment_id=judge,
+                    assignment = JudgeAssignment.objects.create(event=event, round=round, judge_role_assignment_id=judge,
                                                    submission_snapshot_id=snapshot,
                                                    track_id=min(possible_tracks) if possible_tracks else None,
                                                    batch=f"v{round.version + 1}", room=project.room)
+                    notice(event, "judge_assigned", assignment.pk, assignment.version)
                 changed(event, actor, "judges_assigned", round, count=len(plan.pairs))
             return {**envelope(round), **result}
         return command(event, actor, values, path=f"judging-rounds/{round_id}/assign", run=run)

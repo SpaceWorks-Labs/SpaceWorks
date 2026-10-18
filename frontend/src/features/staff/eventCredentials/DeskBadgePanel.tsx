@@ -4,6 +4,7 @@ import { Printer, Upload, Download } from "lucide-react";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
 import { useBadgeDesignSave, useDeskPrint } from "./api";
 import { STOCKS, safeDesignExport, type LayerDocument, type Stock } from "./layout";
+import { SeedPicker } from "./SeedPicker";
 import { LayerEditor } from "./LayerEditor";
 
 type Seed = { seed_id: string; document: LayerDocument };
@@ -45,7 +46,9 @@ export function DeskBadgePanel({ eventId, eventVersion, registrationIds, canEdit
     {canEdit ? <div className="grid gap-3">
       <label className="grid gap-1 text-sm">Card stock<select className="desk-input" value={stock} onChange={(event) => { setStock(event.target.value as Stock); setDocument(null); setRevision(null); }}>{Object.entries(STOCKS).map(([key, size]) => <option key={key} value={key}>{key} ({size.join(" × ")} mm)</option>)}</select></label>
       <label className="grid gap-1 text-sm">Design theme<select className="desk-input" value={theme} onChange={(event) => setTheme(event.target.value)}><option value="light">Light</option><option value="dark">Dark</option></select></label>
-      <div className="flex flex-wrap gap-2">{designs.data?.results.map((seed) => <button className="desk-button" type="button" key={seed.seed_id} onClick={() => { setDocument(seed.document); setRevision(null); }}>{seed.seed_id.replace("badge-", "")}</button>)}</div>
+      <SeedPicker eventId={eventId} version={version} kind="badge" stock={stock} onInstall={(value) => {
+        setDocument(value.document); setRevision(value.id); setVersion(value.event_version);
+      }} />
       <label className="grid gap-1 text-sm"><span className="flex items-center gap-2"><Upload size={16} aria-hidden="true" />Import a person-free design</span><input className="desk-input" type="file" accept="application/json,.json" onChange={(event) => {
         const file = event.target.files?.[0]; event.target.value = "";
         if (!file) return;

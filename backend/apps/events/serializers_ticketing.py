@@ -38,7 +38,8 @@ class PromoSerializer(serializers.ModelSerializer):
 class TicketInputSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventTicketType
-        fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at")
+        fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at",
+                  "purpose", "contributor_capacity_policy")
 
 
 class TicketSerializer(TicketInputSerializer):

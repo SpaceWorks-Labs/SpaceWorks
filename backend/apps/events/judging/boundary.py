@@ -40,30 +40,26 @@ def mutation(event_id, actor, *, permission="manage_hackathon", account_ids=(), 
     else:
         event = event_authority.get_event(actor, event_id, permission)
     runtime().require_programme(event, gallery=gallery)
-    host = event.makerspace_id
-    account_ids = tuple(sorted({actor.pk, *account_ids}))
-    with boundary_tenant_write(host):
-        with transaction.atomic():
-            # G provides global→tenant→account fences BEFORE the event row lock.
-            with runtime().fences(tenant_ids=(host,), account_ids=tuple(sorted(set(account_ids)))):
-                event = Event.objects.select_for_update().get(pk=event_id)
-                if event.makerspace_id != host:
-                    raise ProgrammeError("scope_changed", "Retry this action.")
-                event.makerspace = require_module_locked(host, "events")
-                fresh_actor = runtime().lock_authority(actor_id=actor.pk, event=event)
-                if fresh_actor is None or fresh_actor.pk != actor.pk:
-                    raise Http404
-                if owner:
-                    active_member(fresh_actor)
-                else:
-                    event_authority.require(fresh_actor, event, permission)
-                runtime().require_programme(event, gallery=gallery)
-                locks = LockedContext(event_id=event.pk, tenant_ids=(host,), account_ids=tuple(sorted(set(account_ids))))
-                token = _locks.set(locks)
-                try:
-                    yield event, locks
-                finally:
-                    _locks.reset(token)
+    from apps.events.services_write_boundary import write_boundary
+    from apps.events.programme_locks import current_locks
+    # Shared preparation and the complete source/account declaration precede
+    # Event, authority, configuration, roster and D's workflow children.
+    with write_boundary(event, actor=actor, account_ids=account_ids):
+        event = Event.objects.select_related("makerspace").get(pk=event_id)
+        fresh_actor = runtime().lock_authority(actor_id=actor.pk, event=event)
+        if fresh_actor is None or fresh_actor.pk != actor.pk:
+            raise Http404
+        if owner:
+            active_member(fresh_actor)
+        else:
+            event_authority.require(fresh_actor, event, permission)
+        runtime().require_programme(event, gallery=gallery)
+        locks = current_locks(event.pk)
+        token = _locks.set(locks)
+        try:
+            yield event, locks
+        finally:
+            _locks.reset(token)
 
 
 def assert_locked(locks):

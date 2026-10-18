@@ -6,11 +6,14 @@ import { LayerEditor } from "./eventCredentials/LayerEditor";
 import { CertificateLibrary } from "./eventCredentials/CertificateLibrary";
 import { useDesign, type DesignInput } from "./eventCredentials/api";
 import { upgradeDocument } from "./eventCredentials/layout";
+import { SeedPicker } from "./eventCredentials/SeedPicker";
+import { useQueryClient } from "@tanstack/react-query";
 import { BulkCertificates } from "./eventCredentials/BulkCertificates";
 
 export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspaceId: number; eventId: number }) {
   const { query, save, preview } = useDesign(eventId);
   const upload = useUploadCertificateArtwork(eventId);
+  const client = useQueryClient();
   const [draft, setDraft] = useState<DesignInput | null>(null);
   const [dirty, setDirty] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -24,6 +27,10 @@ export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspace
     <p className="text-sm text-muted">Each save creates an immutable revision. Existing certificates keep their original layout and artwork. Public verification reveals only the event, date and valid or revoked status.</p>
     {query.isLoading ? <div role="status"><span className="sr-only">Loading certificate template?</span><Skeleton className="h-48 w-full" /></div> : null}
     {query.isError ? <button className="desk-button" type="button" onClick={() => { void query.refetch(); }}>Retry certificate template</button> : null}
+    <SeedPicker eventId={eventId} version={query.data?.event_version} kind="certificate" onInstall={(value) => {
+      setDraft({ parameters: value.document, artwork_id: null }); setDirty(false);
+      void client.invalidateQueries({ queryKey: ["events", "credentials", eventId] });
+    }} />
     {draft ? <Card><div className="grid gap-4">
       <p className="text-sm text-muted">{query.data?.id ? `Saved revision ${query.data.id}` : "Default certificate layout"}. Preview always uses a sample recipient.</p>
       <div className="grid grid-cols-2 gap-3">{(["page_width_mm", "page_height_mm"] as const).map((key) => <label className="grid gap-1 text-sm" key={key}>{key === "page_width_mm" ? "Width (mm)" : "Height (mm)"}<input type="number" className="desk-input" min={100} max={420} value={draft.parameters[key]} onChange={(event) => {

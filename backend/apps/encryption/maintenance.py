@@ -55,11 +55,13 @@ def validate_legacy_values(row, fields, values):
             raise ValidationError({name: "This field may not be blank."})
 
 
-def write_legacy_values(row, values):
+def write_legacy_values(row, values, *, operation_kind="decrypt_rollback"):
     """Update source columns directly, so enabled mappers cannot re-encrypt them."""
     changed = {name: value for name, value in values.items() if value is not None}
     if not changed:
         return False
+    from .maintenance_programme import assert_immutable_maintenance
+    assert_immutable_maintenance(row, changed, operation_kind)
     columns = [row._meta.get_field(name).column for name in changed]
     assignments = ", ".join(f'"{column}" = %s' for column in columns)
     params = [changed[name] for name in changed] + [row.pk]
@@ -69,3 +71,7 @@ def write_legacy_values(row, values):
             params,
         )
     return True
+
+
+# Compatibility name retained for maintenance callers from the G2 checkpoint.
+from .maintenance_programme import encrypt_immutable as encrypt_immutable_snapshot

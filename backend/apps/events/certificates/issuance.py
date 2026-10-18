@@ -37,12 +37,15 @@ def create_for_subject_locked(event, *, subject_kind, subject_id, kind="attendan
     row = EventAttendanceCertificate(
         event=event, recipient_member_id=subject.member_id, kind=kind,
         revision=revision, response=response, award_id=award_id, result_revision_id=result_revision_id,
-        template_revision_id=prepared.template_id, layout_snapshot=prepared.layout,
+        template_revision_id=prepared.template_id, layout_snapshot=dict(prepared.layout),
         recipient_name=subject.recipient_name, event_title=event.title,
         event_starts_at=event.starts_at, event_ends_at=event.ends_at, issuer_name=event.makerspace.name,
         event_timezone_name=event.timezone_name,
         public_verification_enabled=public_verification_enabled and publication, **filters_subject(subject),
     )
+    if subject_kind == "role_assignment":
+        from .contribution_proof import snapshot
+        row.layout_snapshot["contribution_proof"] = snapshot(event_id=event.pk, assignment_id=subject_id)
     # auto_now_add is populated only at save; preflight uses the same issuance date.
     row.issued_at = timezone.now()
     row.object_key = f"event-certificates/{event.makerspace_id}/{row.serial}.pdf"
@@ -105,6 +108,9 @@ def reissue_certificate(certificate, *, actor):
                    "kind": row.kind, "award_id": row.award_id}
         if EventAttendanceCertificate.objects.filter(**filters).exclude(status="revoked").exists():
             raise EventInvalidTransition("A live certificate already exists.")
-        return create_for_subject_locked(event, subject_kind=subject_kind, subject_id=subject_id,
+        result = create_for_subject_locked(event, subject_kind=subject_kind, subject_id=subject_id,
             actor=actor, kind=row.kind, award_id=row.award_id, result_revision_id=row.result_revision_id,
             public_verification_enabled=row.public_verification_enabled, prepared=prepared)
+        record(actor, "event.certificate_reissued", makerspace=event.makerspace, target=result,
+            meta={"source_certificate_id": row.pk, "revision": result.revision})
+        return result

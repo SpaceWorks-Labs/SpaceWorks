@@ -94,12 +94,13 @@ def command(*, event_id, actor, data, action, permission=None, owner=False, acco
                                          separators=(",", ":"), default=str).encode()).hexdigest()
     input_digest = hashed(data)
     digest = hashed(data if normalized_body is None else normalized_body)
+    from apps.events.services_write_boundary import write_boundary
+    from apps.events.programme_locks import current_locks
     with ExitStack() as stack:
-        for tenant_id in tenants:
-            stack.enter_context(boundary_tenant_write(tenant_id))
-        stack.enter_context(transaction.atomic())
-        stack.enter_context(integration.fences(tenant_ids=tenants, account_ids=accounts))
-        locked = integration.lock_event(event_id=event_id, account_ids=accounts)
+        stack.enter_context(write_boundary(event, actor=actor, tenant_ids=tenants, account_ids=accounts))
+        held = current_locks(event_id)
+        tenants, accounts = held.tenant_ids, held.account_ids
+        locked = Event.objects.select_related("makerspace").get(pk=event_id)
         if locked.pk != event_id or locked.makerspace_id != event.makerspace_id:
             raise RuntimeError("Event scope changed; restart before acquiring locks.")
         if integration.lock_actor is not None:

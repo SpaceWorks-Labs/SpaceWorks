@@ -2,6 +2,7 @@
 
 # label, canonical owner path; account/global/source profile rows are absent.
 PURGE_ORDER = (
+    ('events.EventContributorRequirementCompletion', 'event__makerspace'),
     ('events.AdmissionWaitlistSweep', 'event__makerspace'),
     ('events.ApplicationDecision', 'batch__event__makerspace'),
     ('events.ApplicationReview', 'assignment__event__makerspace'),

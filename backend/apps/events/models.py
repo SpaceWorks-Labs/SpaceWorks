@@ -76,6 +76,8 @@ from .models_programme import (
     GalleryConsent, GalleryConsentItem, GalleryConsentRevision, GalleryPublication,
     GalleryEntry, GalleryEntryAsset, GalleryEntryLink, GalleryAmendment,
     SubmissionAsset, HackathonParticipantAsset, EventAssetUsage, SubmissionAssetWork,
+    EventAssetObligation, EventProgrammeSweepCursor,
+    BadgePrintCleanupReceipt, EventContributorRequirementCompletion,
     HackathonSubmission, SubmissionSnapshot, SubmissionLink, SnapshotAsset,
     SnapshotLink, SnapshotTrack, SnapshotPrize, SubmissionIntegrityFlag,
 )

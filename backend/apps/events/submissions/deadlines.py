@@ -24,5 +24,7 @@ def lock_event_submissions(*, event_id, now=None, limit=100):
             project.save(update_fields=["state", "locked_at", "version"])
             record(None, "event.submission_locked", makerspace=context.event.makerspace, target=project,
                    meta={"version": project.version, "snapshot_id": project.current_snapshot_id})
+            from .notifications import enqueue_locked
+            enqueue_locked(project=project, action="lock")
             count += 1
     return count

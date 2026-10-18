@@ -33,9 +33,7 @@ class PagesProvider:
         row = EventPageSection.objects.filter(pk=section_id, page=page, visibility="published").first()
         if row is None or row.kind not in KINDS or not group_enabled(page, GROUPS[row.kind]):
             raise Http404
-        # The current editorial model has no options column. Until the pages
-        # owner adds one, an existing section can use the provider's safe defaults.
-        options = validate_options(getattr(row, "options", {}))
+        options = validate_options(row.options)
         return Section(id=row.pk, event_id=event.pk, kind=row.kind, options=options)
 
     def role_cards(self, *, event_id, role):
@@ -57,7 +55,10 @@ def project_sections(*, event_id, request_context):
         if not group_enabled(page, GROUPS[row.kind]):
             continue
         _, provider = _providers[row.kind]
-        result.append(provider(event_id=event_id, section_id=row.pk, request_context=request_context))
+        try:
+            result.append(provider(event_id=event_id, section_id=row.pk, request_context=request_context))
+        except Http404:
+            continue
     return result
 
 

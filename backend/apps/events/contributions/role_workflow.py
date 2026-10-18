@@ -81,6 +81,9 @@ def edit(*, actor, event_id, assignment_id, payload, submit=False):
         if submit:
             fields.update(state="applied", submitted_at=timezone.now())
         commands.changed(locked, **fields)
+        if submit:
+            from .requirements_adapter import stamp_role_waiver
+            stamp_role_waiver(row=locked, payload=payload, actor=actor)
         if submit and posting and not posting.approval_required:
             role_policy.auto_approve_locked(row=locked, posting=posting, event=event, locks=locks)
         return locked
@@ -147,6 +150,8 @@ def transition(*, actor, event_id, assignment_id, payload, action):
                 from apps.events.mentoring.assignment_workflow import end_role_locked
                 end_role_locked(assignment=locked, actor=actor, event=event)
         sync_entitlement_locked(assignment_id=locked.pk, actor_id=actor.pk, locks=locks)
+        from apps.events.certificates.contribution_proof import invalidate_role_locked
+        invalidate_role_locked(event=event, assignment_id=locked.pk, actor=actor)
         return locked
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"],
@@ -164,3 +169,58 @@ def sync_entitlement_locked(*, assignment_id, locks, actor_id=None):
         raise RuntimeError("Missing host fence.")
     from .sources import sync_role_locked
     sync_role_locked(assignment_id=assignment_id, actor_id=actor_id, locks=locks)
+
+
+def cancel_event_locked(*, event_id, actor_id, locks):
+    """Close capacity parents before removing work; preserve attendance and hours."""
+    from django.db import connection
+    from apps.accounts.models import User
+    from apps.events.models import Event
+    from apps.events.programme_locks import assert_lock_context
+    from .models_shifts import EventShift, EventShiftSignup
+    from apps.events.mentoring.models_rounds import MentorRound, MentorRoundLock
+    from apps.events.mentoring.models_queue import OfficeHoursBooking
+    from .sources import sync_shift_locked
+    from apps.audit.services import record
+    assert_lock_context(locks)
+    event = Event.objects.get(pk=event_id)
+    actor = User.objects.get(pk=actor_id)
+    if locks.event_id != event_id:
+        raise RuntimeError("Use the declared event context.")
+    for model in (EventRolePosting, EventShift, MentorRound):
+        for parent in model.objects.select_for_update().filter(event_id=event_id).order_by("pk"):
+            if parent.state not in ("closed", "completed"):
+                commands.changed(parent, state="closed")
+    # Closing all shift parents suppresses FIFO promotion during role teardown.
+    for row in EventRoleAssignment.objects.select_for_update().filter(event_id=event_id,
+            state__in=ACTIVE).order_by("pk"):
+        if row.member_id not in locks.account_ids:
+            raise RuntimeError("Declare every contributor before event cancellation.")
+        if row.state == "draft" and row.submitted_at is None:
+            from apps.events.answer_derivations.workflow import erase_owner_drafts_locked
+            erase_owner_drafts_locked(owner_member_id=row.member_id, event_id=event_id, locks=locks, actor_id=actor_id)
+        from .shift_workflow import withdraw_assignment_locked
+        withdraw_assignment_locked(assignment=row, actor=actor, event=event, locks=locks, allow_active=True,
+                                   reason_code="event_cancelled")
+        if row.role == "mentor":
+            from apps.events.mentoring.assignment_workflow import end_role_locked
+            end_role_locked(assignment=row, actor=actor, event=event)
+        commands.changed(row, state="revoked" if row.state == "approved" else "withdrawn")
+        sync_entitlement_locked(assignment_id=row.pk, actor_id=actor.pk, locks=locks)
+        record(actor, "event.role.cancelled_with_event", makerspace=event.makerspace, target=row)
+        from .role_notices import emit_role_locked
+        emit_role_locked(row=row, action="role.event_cancelled")
+    # Started attendance remains intact; its source is still revoked immediately.
+    for signup in EventShiftSignup.objects.filter(event_id=event_id).order_by("pk"):
+        sync_shift_locked(signup_id=signup.pk, actor_id=actor.pk, locks=locks)
+    from apps.events.mentoring.office_hours_workflow import cancel_locked
+    for booking in OfficeHoursBooking.objects.select_for_update().filter(event_id=event_id, state="booked").order_by("pk"):
+        cancel_locked(actor=actor, event=event, booking_id=booking.pk, locks=locks, reason_code="event_cancelled")
+    for lease in MentorRoundLock.objects.select_for_update().filter(event_id=event_id).order_by("pk"):
+        lease.delete()
+    from apps.events.mentoring.models_queue import EventHelpRequest
+    for request in EventHelpRequest.objects.select_for_update().filter(event_id=event_id,
+            state__in=("open", "claimed")).order_by("pk"):
+        commands.changed(request, state="cancelled", cancelled_at=timezone.now(), claimed_by=None,
+            claim_uuid=None, claim_expires_at=None)
+        record(actor, "event.help.cancelled_with_event", makerspace=event.makerspace, target=request)

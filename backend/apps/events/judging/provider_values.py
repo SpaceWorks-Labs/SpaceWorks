@@ -57,7 +57,7 @@ class ProgrammeValues:
         role = EventRoleAssignment.objects.filter(pk=role_assignment_id, role="judge").first()
         if role is None:
             raise Http404
-        sources = active_entitlements().filter(role_assignment_id=role.pk, source_kind="role",
+        sources = active_entitlements(event_id=role.event_id).filter(role_assignment_id=role.pk, source_kind="role",
             permissions__contains=["judge"], event_id=role.event_id)
         # A display role or its grant's cached union is not current authority.
         # Each judge value is one role source, so disjoint source scopes never widen.
@@ -83,7 +83,7 @@ class ProgrammeValues:
             event_id=event_id).order_by("pk").values_list("pk", flat=True))
 
     def sponsor_rep_tracks(self, *, event_id, sponsor_id, actor_id):
-        sources = active_entitlements().filter(event_id=event_id, grant__user_id=actor_id,
+        sources = active_entitlements(event_id=event_id).filter(event_id=event_id, grant__user_id=actor_id,
             source_kind="role", role_assignment__role="sponsor_rep", role_assignment__sponsor_id=sponsor_id,
             permissions__contains=["view_sponsor_track"])
         return tuple(sorted({pk for ids in sources.values_list("track_ids", flat=True) for pk in ids}))

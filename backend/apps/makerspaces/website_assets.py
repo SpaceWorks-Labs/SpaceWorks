@@ -97,6 +97,13 @@ def _put(key, data, content_type):
 
 
 def upload(file, *, module, page, copies):
+    prepared = getattr(copies, "prepared_upload", None)
+    if prepared is not None:
+        key, size = prepared
+        if not key.startswith(prefix(module, page.makerspace_id, page.pk)):
+            raise ValidationError("Prepared image belongs to another page.")
+        limits.add_storage(page.makerspace, size)
+        return key, size
     data = file.read(MAX_BYTES + 1)
     converted = webp(data)
     key = prefix(module, page.makerspace_id, page.pk) + uuid4().hex + ".webp"
@@ -116,7 +123,7 @@ def copy_asset(asset, destination, *, module, copies):
     import sys
     if not owns(asset.object_key, module, asset.page.makerspace_id, asset.page_id, asset=asset):
         raise ValidationError("Image is not owned by the source page.")
-    if object_size(asset.object_key) != asset.size_bytes:
+    if copies.source_size(sys.modules[__name__], asset.object_key) != asset.size_bytes:
         raise ValidationError("The source image metadata does not match its private bytes.")
     return copies.copy_image(destination.makerspace, OwnedImage(
         asset.object_key, asset.object_key.rsplit("/", 1)[0] + "/",

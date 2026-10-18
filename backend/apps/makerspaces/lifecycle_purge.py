@@ -10,9 +10,12 @@ from apps.makerspaces.storage_key_collectors import (
 )
 
 
+from apps.events.profile_photos.purge_scope import presentation_purge_scope
+
+
 def purge(makerspace, actor):
     require_platform_superadmin(actor)
-    with transaction.atomic():
+    with presentation_purge_scope(makerspace.pk, actor=actor), transaction.atomic():
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
         if locked.archived_at is None:
             raise ValidationError("Cannot purge a makerspace that is not archived.")
@@ -34,8 +37,8 @@ def purge(makerspace, actor):
     audit.record(actor, "makerspace.purged", makerspace=None, target=None, meta=meta)
     from apps.makerspaces import lifecycle as lifecycle_barrel
 
-    lifecycle_barrel._delete_storage_keys(storage_keys)
-    lifecycle_barrel._delete_public_image_keys(public_image_keys)
+    transaction.on_commit(lambda: lifecycle_barrel._delete_storage_keys(storage_keys))
+    transaction.on_commit(lambda: lifecycle_barrel._delete_public_image_keys(public_image_keys))
 
 
 def _audit_meta(makerspace):

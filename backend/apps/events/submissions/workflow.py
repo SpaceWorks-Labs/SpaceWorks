@@ -94,6 +94,8 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
         project.save()
         record(actor, f"event.submission_{action}", makerspace=context.event.makerspace, target=project,
                meta={"version": project.version, "snapshot_id": project.current_snapshot_id})
+        from .notifications import enqueue_locked
+        enqueue_locked(project=project, action=action)
         result = _projection(project)
         port.store_receipt(event_id=event_id, actor_id=actor.pk, operation_id=str(operation_id), digest=digest, result=result)
         return result
@@ -123,8 +125,10 @@ def _snapshot(actor, project, context, port, now, late, reason):
     previous = project.current_snapshot
     if previous:
         port.invalidate_snapshot(context=context, snapshot_id=previous.pk)
+    from django.db.models import Max
+    sequence = (project.snapshots.aggregate(value=Max("sequence"))["value"] or 0) + 1
     snapshot = SubmissionSnapshot.objects.create(
-        submission=project, sequence=(previous.sequence + 1 if previous else 1), submitted_by=actor,
+        submission=project, sequence=sequence, submitted_by=actor,
         submitted_at=now, sealed_member_ids=sorted(context.member_ids), project=document,
         content_sha256=canonical_digest({"project": document, "members": sorted(context.member_ids)}),
         late=late, amendment_of=previous if reason else None, amendment_reason=reason,

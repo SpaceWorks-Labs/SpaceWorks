@@ -104,6 +104,10 @@ def save_form(event, *, actor, key, data):
             locked.refresh_from_db()
         if event_version(locked) <= before:
             raise ProgrammeUnavailable("event_version_writer_unavailable", "Event version writer integration is required.")
+        from .draft_sources import prune_definition_drafts_locked
+        from apps.events.programme_locks import current_locks
+        prune_definition_drafts_locked(event=locked, key=key, target=target, previous=previous,
+            schema=next_schema, actor=locked_actor, locks=current_locks(locked.pk))
         revision = EventFormRevision.objects.create(**scope, revision=revision_number,
                                                     schema=next_schema, created_by=locked_actor)
         record(locked_actor, "event.form_revised", makerspace=locked.makerspace, target=locked,

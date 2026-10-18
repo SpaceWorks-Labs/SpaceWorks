@@ -37,7 +37,7 @@ def _assert_open(row, operation):
 
 
 @contextmanager
-def account_fences(account_ids, tenant_ids=(), *, exclusive=False):
+def account_fences(account_ids, tenant_ids=(), *, exclusive=False, allow_erased=False):
     """Caller owns the source boundary and atomic block before invoking this helper."""
     if not connection.in_atomic_block:
         raise RuntimeError("Account fences require an atomic transaction.")
@@ -48,6 +48,8 @@ def account_fences(account_ids, tenant_ids=(), *, exclusive=False):
     if held is not None:
         if not accounts <= held[0] or not tenants <= held[1] or (exclusive and not held[2]):
             raise RuntimeError("Cannot expand mapped-write scopes after acquiring fences.")
+        if not allow_erased and PiiAccountWriteFence.objects.filter(user_id__in=accounts, state="erased").exists():
+            raise AccountKeyChanged("Account key changed.")
         yield
         return
     _lock(GLOBAL_LOCK_NAMESPACE, 0)
@@ -63,6 +65,10 @@ def account_fences(account_ids, tenant_ids=(), *, exclusive=False):
         _lock(ACCOUNT_LOCK_NAMESPACE, user_id, exclusive=exclusive)
         state = PiiAccountWriteFence.objects.filter(user_id=user_id).values_list("state", flat=True).first()
         if state == PiiAccountWriteFence.State.ERASED:
+            if allow_erased:
+                # Retained tenant history may be read/updated under the lock.
+                # Account-key/vault writers use default fences and epoch checks.
+                continue
             raise AccountKeyChanged("Account key changed.")
         if state is not None and state != PiiAccountWriteFence.State.OPEN:
             raise PiiWriteFenced("Protected writes are temporarily unavailable.")

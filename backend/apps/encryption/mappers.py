@@ -67,6 +67,8 @@ class ScopedPiiModelMixin(models.Model):
         field = field_for(self, name)
         if field is None or value in ("", None):
             return value
+        from .preparation import require_prepared_for_programme
+        require_prepared_for_programme(makerspace_id_for(self, field))
         plain = self.__dict__.setdefault("_pii_plain_values", {})
         if name in plain:
             return plain[name]
@@ -133,6 +135,9 @@ class ScopedPiiModelMixin(models.Model):
             raise UnmappedPiiModel(
                 f"{type(self)._meta.label} has no scoped-PII registration."
             )
+        if settings.PII_ENCRYPTION_ENABLED and fields_for(self):
+            from .preparation import require_prepared_for_programme
+            require_prepared_for_programme(self._mapped_write_fence_makerspace_id())
         update_fields = kwargs.get("update_fields")
         update_fields = None if update_fields is None else set(update_fields)
         is_new = self._state.adding

@@ -45,7 +45,7 @@ def resolve(event, payload, *, actor, prepared_scope=None):
 
 def confirm(event_id, payload, *, actor, operation_id, credential_generation):
     """G's attendance command dispatches here for SWEC2; existing attendance remains sole writer."""
-    from apps.events.services_checkin import mark_attended_with_event
+    from apps.events.services_checkin import mark_attended_locked
 
     digest = token_digest(event_id, payload)
     identity = EventRegistrationCredential.objects.filter(token_digest=digest,
@@ -66,6 +66,6 @@ def confirm(event_id, payload, *, actor, operation_id, credential_generation):
             return result
         registration = EventRegistration.objects.select_for_update().get(pk=result["registration_id"])
         scope.bind(registration)
-        mark_attended_with_event(registration, actor=actor, operation_id=operation_id,
+        mark_attended_locked(event, registration, actor=actor, operation_id=operation_id,
                                  source=EventCheckInEvent.Source.QR)
         return resolve(event, payload, actor=actor, prepared_scope=scope)

@@ -23,15 +23,18 @@ from apps.forms_schema.validation import validate_answers
 from apps.makerspaces.guards import require_module_locked
 from apps.events.services_calendar import calendar_registration_changed
 from .services_write_boundary import event_write
+from .services_registration_preparation import ordinary_form
+from .services_registration_preparation import canonical_answers, attach_answers
 
 
+@ordinary_form
 @event_write
 def register(
     event, *, member=None, name=None, email=None, phone=None,
     custom_answers=None, actor=None, staff_registration=False,
     via_makerspace=None, collaborative=False,
     invite_code=None, ticket_type_id=None, promo_code=None,
-    host_waiver_id=None, host_waiver_version=None, host_waiver_accepted=False, repair_duplicate=False,
+    host_waiver_id=None, host_waiver_version=None, host_waiver_accepted=False, repair_duplicate=False, form_payload=None,
 ):
     """Register someone for an event.
 
@@ -96,6 +99,9 @@ def register(
     # ordering: publish() takes the event lock first, so taking the makerspace first
     # here would create a deadlock pair with it.
     locked.makerspace = require_module_locked(locked.makerspace, "events")
+    if collaborative:
+        from .services_registration_helpers import require_collaborative_locked
+        require_collaborative_locked(locked, member, via_makerspace)
     now = timezone.now()
     if not locked.is_public and not staff_registration and not collaborative:
         raise EventInvalidTransition("This event is not open for registration.")
@@ -146,7 +152,7 @@ def register(
             stamp_host_waiver(existing, waiver, actor=actor, via=via_makerspace or locked.makerspace, event=locked)
             return existing
         raise DuplicateRegistration("A registration already exists for this email.", fresh_status=existing.status)
-    custom_answers = validate_answers(locked.custom_form, custom_answers)
+    custom_answers = canonical_answers(locked, custom_answers)
     ticket = select_ticket(locked, ticket_type_id, member)
     from .services_registration_admission import require_participant_ticket
     require_participant_ticket(locked, ticket)
@@ -183,11 +189,13 @@ def register(
             "cancelled_at", "status_before_cancel", "waitlist_position_at", "version",
         ])
         stamp_host_waiver(existing, waiver, actor=actor, via=via_makerspace or locked.makerspace, event=locked)
+        attach_answers(locked, existing)
         calendar_registration_changed(existing)
         return _record_registration(locked, actor, existing, status)
     quote = _quote(locked, member, ticket, invite_code, promo_code, actor=actor)
+    from .credentials.preparation import new_registration_id
     registration = EventRegistration(
-        **quote,
+        pk=new_registration_id(locked.pk), **quote,
         event=locked, member=member, name=name, email=normalized_email,
         phone=phone, custom_answers=custom_answers, status=status,
         registered_via_makerspace=via_makerspace or locked.makerspace,
@@ -195,103 +203,9 @@ def register(
     )
     _validate(registration)
     registration.save()
+    attach_answers(locked, registration)
     stamp_host_waiver(registration, waiver, actor=actor, via=via_makerspace or locked.makerspace, event=locked)
     return _record_registration(locked, actor, registration, status)
 
 
-def _quote(event, member, ticket, invite_code, promo_code, *, actor, admission_locked=False):
-    from decimal import Decimal
-    from .invites import redeem_invite
-    from .promos import redeem_promo
-
-    from .organization_audience import AUDIENCE
-    if admission_locked:
-        from . import invites
-        from .hackathons.admission_errors import fail
-        def required(name):
-            callback = getattr(invites, name, None)
-            if callback is None:
-                fail("programme_dependency_unavailable", "Invitation admission is temporarily unavailable.", status=503)
-            return callback
-        if event.registration_audience in ("invite", AUDIENCE):
-            redeem_invite = required("redeem_invite_locked")
-    invite = redeem_invite(event, invite_code, member, actor=actor) if (event.registration_audience == "invite" and invite_code
-             or event.registration_audience == AUDIENCE and invite_code) else None
-    from apps.makerspaces.platform import feature_enabled
-    if event.registration_audience == "invite" and not invite_code:
-        from .invites import resolve_for_account
-        if admission_locked:
-            resolve_for_account = required("resolve_for_account_locked")
-        from rest_framework.exceptions import NotFound, ValidationError
-        if not member or not member.email_verified_at:
-            raise ValidationError({"detail": "Verify your email to use your invitation.", "code": "email_verification_required"})
-        invite = resolve_for_account(event, member, actor=actor)
-        if invite is None:
-            raise NotFound("Invitation not found.")
-    if event.registration_audience == AUDIENCE and not invite_code and feature_enabled(event.makerspace, "events.invites"):
-        from .invites import resolve_for_account
-        if admission_locked:
-            resolve_for_account = required("resolve_for_account_locked")
-        invite = resolve_for_account(event, member, actor=actor)
-    amount = Decimal(ticket.amount if ticket else event.payment_amount)
-    promo, discount = redeem_promo(event, promo_code, amount) if promo_code else (None, Decimal("0"))
-    return {"registration_audience": event.registration_audience, "ticket_type": ticket, "invite": invite, "promo_code": promo,
-            "quoted_amount": amount - discount, "discount_amount": discount}
-
-
-def _existing_registration(event, member, normalized_email, generation, event_hash):
-    if member is not None:
-        existing = EventRegistration.objects.select_for_update().filter(
-            event=event, member=member
-        ).first()
-        if existing:
-            return existing
-    if not settings.PII_ENCRYPTION_ENABLED:
-        return EventRegistration.objects.select_for_update().filter(event=event, email=normalized_email).first()
-    candidates = EventRegistration.objects.select_for_update().filter(
-        event=event, email_hash_generation=generation, email_exact_hash=event_hash
-    )
-    existing = next((row for row in candidates if row.email.strip().lower() == normalized_email), None)
-    if settings.PII_ENCRYPTION_DUAL_READ:
-        from apps.encryption.search import legacy_plaintext_candidates
-
-        legacy = legacy_plaintext_candidates(
-            EventRegistration.objects.filter(event=event), field_name="email", term=normalized_email, exact=True
-        )
-        if legacy:
-            return EventRegistration.objects.select_for_update().filter(pk__in=legacy).first() or existing
-    return existing
-
-
-def _record_registration(event, actor, registration, status):
-    from apps.events import services
-
-    services._audit(
-        event,
-        actor,
-        "event.registration_created",
-        registration,
-        {"registration_id": registration.pk, "status": status},
-    )
-    if registration.invite_id:
-        services._audit(event, actor, "event.invite_redeemed", registration, {"invite_id": registration.invite_id})
-    if registration.promo_code_id:
-        services._audit(event, actor, "event.promo_redeemed", registration, {"promo_id": registration.promo_code_id, "discount_amount": str(registration.discount_amount)})
-    lifecycle_event = "registration_created"
-    if status == EventRegistration.Status.PENDING_APPROVAL:
-        services._audit(
-            event,
-            actor,
-            "event.registration_approval_requested",
-            registration,
-            {"registration_id": registration.pk},
-        )
-        lifecycle_event = "registration_pending_approval"
-    elif status == EventRegistration.Status.WAITLISTED:
-        lifecycle_event = "registration_waitlisted"
-    services.notify_event_lifecycle(event, lifecycle_event, registration.pk)
-    if status == EventRegistration.Status.REGISTERED:
-        from apps.events.service_payments import create_for_registered_registration
-
-        create_for_registered_registration(registration, actor)
-    return services._refresh(registration)
+from .services_registration_helpers import _quote, _existing_registration, _record_registration

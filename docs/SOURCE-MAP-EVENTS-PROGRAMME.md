@@ -1,6 +1,6 @@
 # Events programme source map
 
-Checkpoint `f1ef7736` (2026-10-18). Continued from [SOURCE-MAP.md](SOURCE-MAP.md).
+GF4 authored integration, `lane/events-g2` (2026-10-18). Continued from [SOURCE-MAP.md](SOURCE-MAP.md).
 Paths below are relative to `backend/apps/` unless prefixed otherwise. Presence means
 authored code, not integration acceptance; [remaining work](events/integration-status.md)
 must close before enabling the off-default programme features.
@@ -11,16 +11,16 @@ must close before enabling the off-default programme features.
 | Model discovery | `events/models_programme.py` explicit barrel; `accounts/models.py`, `encryption/models.py`, `organizations/models.py` discover independent models |
 | Application lifecycle / prepared form ports | `events/hackathons/admission_workflow.py`, `admission_ports.py`, `admission_inputs.py`, `admission_projection.py` |
 | Release/RSVP/expiry/capacity | `admission_decisions.py`, `admission_rsvp.py`, `admission_maintenance.py`, `capacity_admission.py`; existing `events/capacity.py` remains hard event/ticket math |
-| Canonical ordinary-registration bridge | `events/hackathons/admission_bridge.py`, `admission_ports.py`; existing `services_registration.py`, `services_registration_state.py` own registration transitions; live installation is pending |
+| Canonical ordinary-registration bridge | `events/hackathons/admission_bridge.py`, `admission_ports.py`; existing `services_registration.py`, `services_registration_state.py` own registration transitions; installed by `events/contracts/admission_registration.py` |
 | Application review | `events/hackathons/review_workflow.py`, `review_projection.py`, `review_models.py` |
 | Teams/invitations/finder/moderation | `events/hackathons/team_workflow.py`, `team_invitations.py`, `team_lifecycle.py`, `team_moderation.py`; never a second registration/quantity writer |
 | Project draft, immutable submission | `events/submissions/workflow.py`, `snapshot_assets.py`, `models_projects.py`; moderation/triage via domain services |
 | Upload and accepted bytes | `events/submissions/asset_workflow.py`, `asset_jobs.py`, `storage.py`, `storage_promotion.py`; immutable verified copy/hash before final promotion |
 | File registry/validation | `maker_formats/registry.py`, `upload_policy.py`, bounded signature/XML/text/ZIP/image readers; `maker_file_formats.py` compatibility barrel keeps `legacy.py` policy |
-| File quota | `events/submissions/quota.py`; G-installed `ports.SubmissionBoundary.storage_pool_locked` must coordinate deployment accounting |
+| File quota | `events/submissions/quota.py`; `submissions/boundary_runtime.py` and `makerspaces/storage_events_programme.py` own dedicated receipt-backed accounting |
 | Live private bytes | `makerspaces/private_upload_transport.py` model-free transport; B `read_policy.py` + D predicates choose server-owned purpose; no download presign shortcut |
-| Scanner and video | `events/submissions/scanning.py`, `probing.py`, `probe_sandbox.py`; runtime options in `api_runtime.SubmissionRuntime`, not invented environment switches |
-| Byte expiry / abandoned work | `events/submissions/retention.py`, `cleanup_schedule.py`, `upload_deadlines.py`, `storage_cleanup.py`; durable cleanup/purge integration still pending |
+| Scanner and video | `events/submissions/scanning.py`, `probing.py`, `probe_sandbox.py`; `contracts/asset_registration.py` installs scanner options and the non-root ffprobe launcher |
+| Byte expiry / abandoned work | `events/submissions/retention.py`, `cleanup_schedule.py`, `upload_deadlines.py`, `storage_cleanup.py`; `models_assets.EventAssetObligation` retains exact cleanup custody after graph purge |
 | Contributor authority and work | `events/contributions/role_workflow.py`, `role_policy.py`, `authority.py`, `ports.py`, `requirements_workflow.py`; entitlement sources separate from display role |
 | Shifts/hours/contributor ticket/certificate eligibility | `events/contributions/shift_workflow.py`, `attendance_workflow.py`, `admission_adapter.py`, `certificate_subjects.py` |
 | Mentor assignment/help/office hours | `events/mentoring/assignment_workflow.py`, `help_workflow.py`, `help_expiry.py`, `office_hours_workflow.py`, `configuration_workflow.py` |
@@ -35,7 +35,7 @@ must close before enabling the off-default programme features.
 | Public certificate verification | `events/certificates/verification.py`, `publication.py`; public event/date/status independent of private PDF authority |
 | Layered templates, library and print | `events/certificates/layout.py`, `rendering.py`, `library_capture.py`, `badge_designs.py`, `print_workflow.py`, `print_cleanup.py`; common `operations/printable_*` remains model-free |
 | Selected profile/photo | `events/profile_photos/selection_workflow.py`, `policy.py`, `snapshot.py`; source remains `makerspaces/models_profiles.py` + `profile_images.py` |
-| Default templates/artwork | `events/default_templates/` versioned catalogue; `certificates/seeds.py` validates catalogue, `programme_runtime.py` installs read provider; owned-resource seed copying is pending |
+| Default templates/artwork | `events/default_templates/` versioned catalogue; `certificates/seeds.py` validates catalogue, `programme_runtime.py` installs read provider; `seed_installation.py` owns immutable copies, `seed_views.py` previews/installs |
 | Shared forms and profile keys | `forms_schema/` is the single v1/v2 validator and `profile_fields.py` registry; `events/programme/forms.py` manages immutable form definitions; `registration_form_adapter.py` normalizes ordinary admission |
 | Saved details and account assets/export | `accounts/saved_details/` owner-only workflows, prefill, intents, résumé copy, cleanup; no Events import in the independent vault |
 | Always-encrypted account keys/fences | `encryption/account_services.py`, `account_readiness.py`, `account_write_fence.py`, `account_mappers.py`, `account_models.py` |
@@ -53,7 +53,7 @@ Retention declarations survive Events tombstoning: `encryption/registry_events_p
 `authority_events_programme*.py`, `audit_references_events_programme.py`,
 `backup/main_projection_events_programme.py`, `makerspaces/purge_events_programme*.py`
 and `storage_keys_events_programme.py`. They name retained rows, ownership and cleanup;
-they do not authorize live workflows. Nested answer/asset finalization remains incomplete.
+they do not authorize live workflows. `tenant_migration/event_asset_import.py` publishes verified target accounting; typed encrypted answers rebind target AAD.
 
 `backup/object_reference_retention.py` owns typed object-capture projections for Evidence,
 SubmissionAsset, HackathonParticipantAsset and MemberSavedAsset. Event assets use direct
@@ -65,16 +65,14 @@ Runtime mounts: `events/urls_programme.py` via `config/urls.py`'s separable Even
 `accounts/urls_programme.py` independently mounts Saved details, own activity/organization
 leave and platform insights. Exact-origin/claim/session/delegation/API-client declarations
 remain mandatory for every named method. `events/apps.py` invokes `programme_runtime.py`
-only while Events is active. Current runtime registration installs application source,
-certificate document resolver and template read catalogue, **not** all lane ports.
+only while Events is active. `contracts/registration.py` composes A/B/C/D/E/F/P providers and source-backed notices; Accounts independently installs the core F profile-key provider.
 
 `events/programme_locks.py` supplies declared combined fences and live authority locks
 without locking User/key rows after Event. It does not prove legacy callers migrated.
 `tasks_programme.py`, `tasks_contributions.py`, `reminders_programme.py`,
 `programme/broadcast_schedule.py`, `accounts/saved_details/tasks.py` participate in
 `backend/config/settings.py` beat schedule and
-`operations/management/commands/run_scheduled_tasks.py`. Asset/certificate/print/
-judging recovery still needs installation and retained-cleanup authority.
+`operations/management/commands/run_scheduled_tasks.py`. Asset/certificate/print/judging recovery is scheduled; `tasks_retention.py` grants only retained byte cleanup, never workflow authority.
 
 ## Frontend and verification
 
@@ -83,8 +81,7 @@ contributions,hackathonGallery,eventPresentation}/`, `features/staff/{hackathonA
 mentorDesk,hackathonJudging,eventCredentials,eventProgramme}/`, `features/forms/`,
 `features/accountSavedDetails/` and `components/delight/`. Original themed SVGs live in
 `src/assets/illustrations/`; generic print controls in `components/print-layout/`.
-Router/AppShell/drawer mounting and real provider props are integration-owned, not proven
-by a component export. The [artwork inventory](events-programme-artwork-inventory.md)
+The programme router, AppShell/drawer and real read contracts are mounted. Type/jsdom checks still require actual browser/privacy/provider verification. The [artwork inventory](events-programme-artwork-inventory.md)
 records local proofs separately from E's authoritative rendering.
 
 Tests live in `backend/tests/events/programme/`, `tests/maker_formats/`,

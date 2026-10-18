@@ -6,7 +6,7 @@ from .ports import ports
 from .subjects import subject_for
 
 
-def role(row, *, detail=False, owner=False):
+def role(row, *, detail=False, owner=False, actor=None):
     actions = ["withdraw"] if owner and row.state in ("draft", "proposed", "applied", "approved") else []
     if owner and row.state in ("draft", "proposed", "applied") and row.answer_locked_at is None:
         actions.extend(["edit", "submit"])
@@ -19,7 +19,8 @@ def role(row, *, detail=False, owner=False):
     if not owner:
         data["imported_inert"] = row.imported_inert
     if detail:
-        data.update(ports().forms.project(subject=subject_for(row), audience="owner" if owner else "organizer"))
+        options = {"actor_id": actor.pk} if actor else {}
+        data.update(ports().forms.project(subject=subject_for(row), audience="owner" if owner else "organizer", **options))
     return data
 
 
@@ -30,7 +31,23 @@ def posting(row, *, actor=None, detail=False, public=False):
         own = EventRoleAssignment.objects.filter(posting=row, member=actor,
             state__in=["draft", "applied", "approved"]).first()
         data["application"] = role(own, owner=True) if own else None
+        data["host_waiver"] = posting_waiver(row, actor=actor, own=own)
     return data
+
+
+def posting_waiver(row, *, actor, own=None):
+    if not (row.requirements.get("host_waiver_required")
+            or row.event.registration_audience == "participating_organizations"):
+        return None
+    from apps.makerspaces.models import MakerspaceWaiver, MakerspaceMembership
+    from apps.events.host_waivers import has_current_host_consent
+    waiver = MakerspaceWaiver.objects.filter(makerspace_id=row.makerspace_id, is_active=True).first()
+    if waiver is None:
+        return None
+    membership = MakerspaceMembership.objects.filter(makerspace_id=row.makerspace_id,
+        user=actor, status="active").first()
+    return {"id": waiver.pk, "version": waiver.version, "body": waiver.body,
+        "acceptance_required": not has_current_host_consent(waiver, membership, own)}
 
 
 def signup(row, *, owner=True):

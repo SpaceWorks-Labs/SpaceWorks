@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 def _eligible(row, prepared):
     if row.event.status not in ("published", "completed"):
         raise EventInvalidTransition("The event no longer permits certificate rendering.")
+    from .contribution_proof import require_current
+    require_current(row)
     return require_subject(row.event, subject_kind="registration" if row.registration_id else "role_assignment",
                            subject_id=row.registration_id or row.role_assignment_id, kind=row.kind,
                            award_id=row.award_id, result_revision_id=row.result_revision_id, prepared=prepared)
@@ -97,6 +99,8 @@ def download_url(certificate, *, actor=None):
     require_read(certificate, actor)
     if certificate.status != "active":
         raise EventInvalidTransition("Only active certificates can be downloaded.")
+    with certificate_command(certificate.pk) as (_event, _, checked, prepared):
+        _eligible(checked, prepared)
     url = presigned_download(certificate.object_key)
     record(actor, "event.certificate_downloaded", makerspace=certificate.event.makerspace,
            target=certificate, meta={"revision": certificate.revision})

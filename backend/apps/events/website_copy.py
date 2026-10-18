@@ -20,7 +20,8 @@ def copy_page(source, target, *, copies, preserve_delays=False, preserve_revisio
         return None
     original = EventPage.objects.select_for_update().get(pk=original.pk)
     # An occurrence override continues the inherited optimistic concurrency token.
-    page = EventPage.objects.create(makerspace=target.makerspace,
+    prepared_id = getattr(copies, "prepared_page_id", None)
+    page = EventPage.objects.create(**({"id": prepared_id} if prepared_id else {}), makerspace=target.makerspace,
                                     revision=original.revision if preserve_revision else 1,
                                     **copy_fields(original, PAGE_FIELDS),
                                     **owner(target))
@@ -33,8 +34,21 @@ def copy_page(source, target, *, copies, preserve_delays=False, preserve_revisio
         asset_map.update({source_id: row.pk for source_id, row in assets.items()})
     sections = {}
     for row in bounded_children(original.sections.all()):
+        values = copy_fields(row, SECTION_FIELDS)
+        if source.pk != target.pk and row.kind in ("prizes", "judges", "mentors", "project_gallery", "results"):
+            options = dict(values["options"])
+            if row.kind == "prizes" and options.get("ids"):
+                from .judging.models_definitions import HackathonPrize
+                originals = list(HackathonPrize.objects.filter(event=source).order_by("order", "pk").values_list("pk", flat=True))
+                copied = list(HackathonPrize.objects.filter(event=target).order_by("order", "pk").values_list("pk", flat=True))
+                mapping = dict(zip(originals, copied))
+                options["ids"] = [mapping[pk] for pk in options["ids"] if pk in mapping]
+            else:
+                # People, project entries and publication history never clone.
+                options["ids"] = []
+            values["options"] = options
         sections[row.pk] = EventPageSection.objects.create(
-            page=page, asset=assets.get(row.asset_id), **copy_fields(row, SECTION_FIELDS))
+            page=page, asset=assets.get(row.asset_id), **values)
     anchor = original.series if original.series_id else original.event
     delta = window(target)[0] - window(anchor)[0]
     for row in bounded_children(original.sessions.prefetch_related("speaker_links__speaker"), maximum=200):

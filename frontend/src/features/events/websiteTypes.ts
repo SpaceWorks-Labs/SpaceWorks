@@ -1,10 +1,11 @@
 export type WebsiteSection = {
-  kind: "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
+  kind: "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight" | "prizes" | "judges" | "mentors" | "project_gallery" | "results";
   slug: string; title: string; body: string; url: string;
   asset_id: number | null; image_url?: string | null; image_alt_text?: string;
   visibility: "draft" | "published"; position: number;
   headline?: string; organization?: string; website_url?: string; linkedin_url?: string; x_url?: string;
   sponsor_tier?: SponsorTier; icon?: string;
+  options?: { ids?: number[]; layout?: "grid" | "list"; limit?: number };
 };
 
 export const sponsorTiers = ["platinum", "gold", "silver", "partner", "community_partner"] as const;
@@ -21,6 +22,7 @@ export const emptyVenue = (): WebsiteVenue => ({ name: "", address: "", city: ""
 export const sectionGroup = (kind: WebsiteSection["kind"]): WebsiteGroup => ({
   intro: "ABOUT", logo: "HERO", highlight: "HIGHLIGHTS", speaker: "SPEAKERS", sponsor: "SPONSORS",
   track: "SCHEDULE", room: "VENUE", faq: "FAQ", resource: "RESOURCES",
+  prizes: "SPONSORS", judges: "SPEAKERS", mentors: "SPEAKERS", project_gallery: "HIGHLIGHTS", results: "HIGHLIGHTS",
 })[kind] as WebsiteGroup;
 export const orderedGroups = (page: EventWebsite): WebsiteGroup[] => {
   const known = (page.section_order ?? []).filter((key): key is WebsiteGroup => websiteGroups.includes(key as WebsiteGroup));
@@ -40,6 +42,7 @@ export type EventWebsite = {
   assets?: { id: number; alt_text: string; size_bytes: number }[];
   tagline?: string; accent_color?: string; section_order?: string[]; section_enabled?: Record<string, boolean>;
   venue?: WebsiteVenue | null;
+  programme_sections?: { kind: string; layout: "grid" | "list"; items: Record<string, unknown>[] }[];
 };
 
 export type WebsiteTarget = { kind: "events" | "event-series"; id: number; makerspaceId: number };

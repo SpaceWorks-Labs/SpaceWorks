@@ -33,12 +33,18 @@ export function ProgrammeRolePage({ scope, context, postingId, applicationId, ba
     },
     render: ({ value, onChange, disabled, errors }) => {
       const schema = formSchema(application.data?.form ?? posting.data?.form)
-      return <fieldset disabled={disabled} className="grid gap-5"><FormV2Fields schema={schema} value={value}
+      return <fieldset disabled={disabled} className="grid gap-5"><FormV2Fields schema={schema} value={value} allowSavedDetails={context.saved_details.readiness === 'ready'}
         errors={errors as FieldErrors} onChange={next => onChange({ ...value, ...next, event_date_revision: context.event.event_date_revision,
           save_choices: context.saved_details.readiness === 'ready' ? next.save_choices : {} })} />
         <p className="whitespace-pre-wrap text-sm">{posting.data?.coc?.body ?? context.coc?.body}</p>
         <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={value.coc?.accepted ?? false}
           onChange={event => onChange({ ...value, coc: { revision: value.coc?.revision ?? 0, accepted: event.target.checked } })} />I agree to this code of conduct.</label>
+        {posting.data?.host_waiver?.acceptance_required ? <section className="grid gap-2">
+          <p className="whitespace-pre-wrap text-sm">{posting.data.host_waiver.body}</p>
+          <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={value.host_waiver_accepted === true && value.host_waiver_id === posting.data.host_waiver.id && value.host_waiver_version === posting.data.host_waiver.version}
+            onChange={event => onChange({ ...value, host_waiver_id: posting.data!.host_waiver!.id,
+              host_waiver_version: posting.data!.host_waiver!.version, host_waiver_accepted: event.target.checked })} />I accept this host waiver for my contributor role.</label>
+        </section> : null}
       </fieldset>
     },
     savedDetailsStatus: intent => <SaveIntentNotice actorId={scope.accountId} operationId={intent.operation_id} />,

@@ -1,6 +1,8 @@
 """Literal user edges and tenant ownership paths; account vault never joins closure."""
 
 USER_FIELDS = frozenset({
+    ('events.EventContributorRequirementCompletion', 'member'),
+    ('events.EventContributorRequirementCompletion', 'verified_by'),
     ('accounts.AccountSavedDetailsExportJob', 'user'),
     ('accounts.MemberSavedAsset', 'user'),
     ('accounts.MemberSavedDetail', 'user'),
@@ -71,6 +73,8 @@ USER_FIELDS = frozenset({
 })
 
 EXCLUDED_USER_EDGE_REASONS = {
+    ('events.EventContributorRequirementCompletion', 'member'): 'Source posting-bound training/briefing evidence never joins the portable user closure.',
+    ('events.EventContributorRequirementCompletion', 'verified_by'): 'Source attestation actor never grants target training/briefing authority.',
     ('events.CertificateIssueBatch', 'actor'): 'Source-local issuance work is omitted; issued certificates preserve their own recipient ownership.',
     ('accounts.AccountSavedDetailsExportJob', 'user'): 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
     ('accounts.MemberSavedAsset', 'user'): 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
@@ -185,6 +189,7 @@ DATASETS = {
 }
 
 DEPLOYMENT_OWNERS = {
+    'events.EventContributorRequirementCompletion': 'event__makerspace',
     'events.CertificateIssueBatch': 'event__makerspace',
     'events.CertificateIssueBatchItem': 'batch__event__makerspace',
     'events.EventBroadcastPreview': 'campaign__makerspace',

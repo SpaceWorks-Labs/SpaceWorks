@@ -98,6 +98,13 @@ class LeaveOutput(serializers.Serializer):
     allowed_actions = serializers.ListField(child=serializers.CharField())
 
 
+class LeaveStateSerializer(serializers.Serializer):
+    organization_id = serializers.IntegerField()
+    membership_version = serializers.IntegerField()
+    allowed_actions = serializers.ListField(child=serializers.CharField())
+    reason = serializers.ChoiceField(choices=("sole_owner",), allow_null=True)
+
+
 class LeaveError(serializers.Serializer):
     code = serializers.CharField()
     detail = serializers.CharField()
@@ -105,6 +112,13 @@ class LeaveError(serializers.Serializer):
 
 class MemberOrganizationLeaveView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(tags=["Member organizations"], request=None,
+                   responses={200: LeaveStateSerializer, **{code: LeaveError for code in (401, 403, 404)}})
+    def get(self, request, pk):
+        organization = get_object_or_404(Organization, pk=pk)
+        return Response(project_leave_state(organization, request.user),
+                        headers={"Cache-Control": "private, no-store"})
 
     @extend_schema(tags=["Member organizations"], request=LeaveInput,
                    responses={200: LeaveOutput, **{code: LeaveError for code in (400, 401, 403, 404, 409, 429)}})

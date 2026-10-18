@@ -11,4 +11,6 @@ REGISTRATION_ACTION_ERRORS = {
     403: OpenApiResponse(ErrorSerializer, description="Event management is required."),
     404: OpenApiResponse(ErrorSerializer, description="Registration not found."),
     409: EVENT_ERROR_409,
+    423: OpenApiResponse(ErrorSerializer, description="Source or protected writes are fenced."),
+    503: OpenApiResponse(ErrorSerializer, description="Private data or programme dependency unavailable."),
 }

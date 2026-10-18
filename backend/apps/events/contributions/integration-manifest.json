@@ -413,6 +413,24 @@
           "target": null,
           "user_edge": false
         },
+        "host_waiver": {
+          "definition": "models.ForeignKey('makerspaces.MakerspaceWaiver', null=True, blank=True, on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'makerspaces.MakerspaceWaiver'",
+          "user_edge": false
+        },
+        "host_waiver_version_accepted": {
+          "definition": "models.CharField(max_length=64, blank=True)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "host_waiver_accepted_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
         "application_notes": {
           "definition": "models.TextField(blank=True)",
           "type": "TextField",
@@ -2131,6 +2149,65 @@
       "constraints_and_indexes": [
         "constraints = [models.UniqueConstraint(fields=['request', 'kind', 'generation'], name='mentor_notice_generation')]"
       ]
+    },
+    {
+      "model": "events.EventContributorRequirementCompletion",
+      "module": "backend/apps/events/contributions/models_policy.py",
+      "bases": [
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "posting": {
+          "definition": "models.ForeignKey('events.EventRolePosting', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventRolePosting'",
+          "user_edge": false
+        },
+        "requirements_sha256": {
+          "definition": "models.CharField(max_length=64)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "member": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='event_requirement_completions')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=8, choices=[('training', 'training'), ('briefing', 'briefing')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "reference_id": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "verified_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='verified_event_requirement_completions')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [],
+      "portable_policy": "OMIT/DROP: current target posting definition and independent verification required; no source-local reference authority is imported."
     }
   ],
   "routes": [
@@ -3199,6 +3276,17 @@
       ],
       "mounted": false,
       "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-roles-requirement-completions",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/requirement-completions/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RequirementCompletionView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": true,
+      "requires": "Live organizer, exact posting requirements hash, independent verifier, ordered boundary"
     }
   ],
   "completion_status": "C2 domain implementation; integration acceptance pending G hooks and runtime verification",
@@ -3211,5 +3299,12 @@
     "events.MentorAssignmentRun.unsatisfied_team_ids": "HackathonTeam[]",
     "events.EventRoleAnswerRevision.answers": "F canonical answer schema; P derivation_id typed references; never computed age",
     "events.EventHelpRequest.claim_uuid": "ephemeral; reset claims on portable import/deployment recovery"
+  },
+  "integration_closure": {
+    "runtime": "apps.events.contracts.admission_registration.install",
+    "new_migration": "0043_gf4_contributor_policy",
+    "capabilities": "remain off",
+    "requirement_references": "Opaque posting-authored training/briefing IDs; completion binds exact posting/hash; portable completion omitted and requirement IDs reset.",
+    "role_waiver_import": "Clear target host waiver FK/version/timestamp; require current target consent."
   }
 }

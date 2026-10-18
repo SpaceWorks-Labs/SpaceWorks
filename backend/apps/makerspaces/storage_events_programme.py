@@ -114,3 +114,16 @@ def refresh_obligation_locked(asset):
     row.write_not_after = max(value for value in (row.write_not_after, asset.upload_not_after) if value is not None)
     row.multipart_upload_id = asset.multipart_upload_id
     row.save(update_fields=["write_not_after", "multipart_upload_id"])
+
+
+def accounted_print_bytes(makerspace):
+    """Reservations remain charged until confirmed cleanup, including after purge."""
+    from apps.events.certificates.print_models import BadgePrintJob, BadgePrintResource, BadgePrintCleanupReceipt
+    from django.db.models import Sum
+    jobs = BadgePrintJob.objects.filter(event__makerspace=makerspace, cleaned_at__isnull=True)
+    resources = BadgePrintResource.objects.filter(job__event__makerspace=makerspace, cleaned_at__isnull=True)
+    # Custody can coexist briefly with a retained graph in its purge transaction.
+    # Keys represented by that graph are counted exactly once.
+    receipts = BadgePrintCleanupReceipt.objects.filter(makerspace_id_snapshot=makerspace.pk, released=False).exclude(
+        object_key__in=jobs.values("object_key")).exclude(object_key__in=resources.values("object_key"))
+    return sum(rows.aggregate(total=Sum("size_bytes"))["total"] or 0 for rows in (jobs, resources, receipts))

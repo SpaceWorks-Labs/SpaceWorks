@@ -1,6 +1,6 @@
 """A six-point ballot is indivisible when any of its exposed projects is invalidated."""
 
-from .boundary import assert_locked, audit
+from .boundary import assert_locked, audit, notice
 from .models_scoring import JudgeAssignment, JudgeRankingBallot
 
 
@@ -17,6 +17,7 @@ def invalidate_peers_locked(*, event, actor, assignment, locks):
         peer.state = "invalidated"
         peer.version += 1
         peer.save(update_fields=("state", "version"))
+        notice(event, "assignment_invalidated", peer.pk, peer.version)
         count += 1
     if count:
         audit(event, actor, "ballot_exposure_invalidated", assignment, count=count, round_id=assignment.round_id)

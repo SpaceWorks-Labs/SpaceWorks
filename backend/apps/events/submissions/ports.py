@@ -23,6 +23,8 @@ class SubmissionContext:
     budget_bytes: int | None = None
     file_caps: dict[str, int] = field(default_factory=dict)
     group_caps: dict[str, int] = field(default_factory=dict)
+    upload_policy: str = "hackathon-maker-v1"
+    upload_policy_version: int = 1
 
 
 class SubmissionBoundary(Protocol):

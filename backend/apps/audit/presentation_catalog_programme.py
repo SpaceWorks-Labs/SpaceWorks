@@ -2,6 +2,15 @@
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P('event.help.cancelled_with_event', 'Event help cancelled with event'),
+    P('event.role.cancelled_with_event', 'Event contribution cancelled with event'),
+    P('event.staff_grant_manual_revoked', 'Event manual permissions revoked'),
+    P('event.staff_grant_container_created', 'Event permission container created'),
+    P('event.role.host_waiver_accepted', 'Event role host waiver accepted'),
+    P('event.certificate_seed_artwork_reserved', 'Event default design artwork reserved'),
+    P('event.programme.definitions_copied', 'Event programme definitions copied'),
+    P('event.programme.contribution_definitions_copied', 'Event contribution definitions copied'),
+    P('event.hackathon.retention_anchored', 'Event submission retention anchored'),
     P('account.saved_detail_deleted', 'Account saved detail deleted'),
     P('account.saved_detail_intent_completed', 'Account saved detail intent completed'),
     P('account.saved_detail_intent_created', 'Account saved detail intent created'),

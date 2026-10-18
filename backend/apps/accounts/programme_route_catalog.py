@@ -2,6 +2,17 @@
 
 # (bare Django name, methods, authoritative target kind)
 ROUTES = (
+    ('member-organizations', ('GET', 'HEAD'), 'account'),
+    ('events-programme-member-help-topics', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-assigned-sponsors', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-roles-requirement-completions', ('POST',), 'event'),
+    ('events-programme-admin-teams', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-team-detail', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-submissions', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-submission-detail', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-design-seeds', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-design-seed-install', ('POST',), 'event'),
+    ('events-programme-admin-design-seed-preview', ('POST',), 'event'),
     ('events-programme-member-application-detail', ('GET', 'HEAD', 'PATCH'), 'event'),
     ('events-programme-member-application-submit', ('POST',), 'event'),
     ('events-programme-member-application-withdraw', ('POST',), 'event'),

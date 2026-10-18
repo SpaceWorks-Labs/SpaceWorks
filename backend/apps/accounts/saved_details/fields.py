@@ -41,3 +41,23 @@ def normalize(key, value):
     if result in (None, "", []):
         raise SavedDetailsError("invalid_field_type", "Use Delete to remove a saved detail.")
     return result
+
+
+class CanonicalProfileFields:
+    """The shared F field catalogue stays available when Events is tombstoned."""
+    def descriptors(self):
+        from apps.forms_schema.profile_fields import PROFILE_FIELDS
+        return tuple({"field_key": row.field_key, "sensitive": row.sensitive,
+            "persistable": row.persistable, "default_save": row.default_save}
+            for row in PROFILE_FIELDS.values())
+
+    def normalize(self, key, value):
+        from apps.forms_schema.profile_fields import normalize_profile_value
+        return normalize_profile_value(key, value)
+
+
+_core_provider = CanonicalProfileFields()
+
+
+def install_core_profile_fields():
+    install_profile_fields(_core_provider)

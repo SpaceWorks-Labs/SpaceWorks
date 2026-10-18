@@ -1,6 +1,6 @@
 # Events programme operator runbook
 
-**Checkpoint `f1ef7736`, 2026-10-18: do not enable programme features.**
+**GF4 authored integration, 2026-10-18: do not enable programme features.**
 This repository contains the migrations/mounts and regenerated schema/client; neither those
 artifacts nor syntax checks certify a working production programme. Close the named
 [integration work](integration-status.md) and [acceptance evidence](acceptance.md) first.
@@ -8,11 +8,9 @@ Use the existing isolated runner; this documentation lane ran no Docker/Django t
 
 ## Migration and key preparation
 
-**Setup blocker:** `makerspaces/setup_areas.py::features_for` selects all children of
-chosen areas, including the five programme features when Events is chosen. Registry
-defaults alone do not protect that installer/setup path. The owning lane must exclude
-unaccepted programme features or add explicit independent opt-in and regression coverage;
-until then verify stored enabled features after any setup operation and keep these off.
+**Setup opt-ins:** choosing the Events area now excludes all five programme features.
+Only an explicit independent selection may enable them. Registry and per-event defaults
+stay off; syntax and jsdom checks do not authorize enablement.
 
 The authored graph is:
 
@@ -25,6 +23,13 @@ The authored graph is:
 | `events/0037_events_programme_schema` | events 0036, accounts 0037, makerspaces 0096, organizations 0004 | Programme tables and cyclic FK completion |
 | `events/0038_events_programme_backfills` | events 0037 | Existing event/registration/certificate/artwork/broadcast extensions |
 | `events/0039_events_programme_guards` | events 0038, encryption 0009 | Frozen-content, ownership, snapshot, judging, print/library/composer guards |
+| `events/0040_g2b_subject_lifecycle` | events 0039, encryption 0009 | Paired source deletion and persistent erased account fences |
+| `events/0041_g2c_private_assets` | events 0040 | Encrypted project documents, permanent asset custody, bounded recovery cursor; populated downgrade refuses |
+| `events/0042_gf4_registration_documents` | events 0041 | Private ordinary registration TEXT and mapped-write SQL fence; ciphertext downgrade refuses |
+| `events/0043_gf4_contributor_policy` | events 0042 | Contributor-purpose pools, exact source requirements and role waiver evidence |
+| `events/0044_gf4_print_custody` | events 0043 | Permanent print cleanup custody/key reuse guards and closed programme section options |
+| `events/0045_gf4_event_accent` | events 0044 | Palette-only event accent with database constraint |
+| `events/0046_gf4_pii_maintenance` | events 0045 | Fixed mapped-column representation maintenance only under matching closed global/tenant operation fences |
 
 Before upgrade, take a deployment backup with required recipient/key custody. Inspect actual
 leaves and the merged sibling-lane graph; parallel follow-up migrations may be renumbered.
@@ -56,11 +61,9 @@ the digest key invalidates lookup and needs coordinated credential reissue. Neit
 is derived from Django/PII keys. Deployment backups require the exact configured credential
 secrets and account wrapping-key custody; tenant artifacts exclude live credentials/vault keys.
 
-**Deployment gap:** the programme's eleven new environment settings are read by Django but
-are not explicitly forwarded in the checked-in Compose files or installer examples at this
-checkpoint. A value in Compose's interpolation `.env` alone does not reach a container.
-The deployment lane must wire backend, migration, worker/beat and applicable cloud processes
-consistently before enabling; this guide does not claim an installer change was made.
+**Deployment wiring:** the eleven account/credential settings are now forwarded through
+the shared Compose application anchors and shown in the env examples. Nothing generates,
+rotates or discards keys. Verify fresh and upgrade installations before enabling.
 
 ## Private storage and asynchronous work
 
@@ -78,18 +81,17 @@ The authored B transport requires tested POST/multipart/conditional-copy/version
 S3-compatible providers need an explicit compatible adapter/capability refusal and fault tests.
 The separate cloud programme owns that work; full-server defaults must remain unchanged.
 
-Install the typed `storage_pool_locked` provider for reservation, canonical expansion,
-charge and cleanup release, idempotent per asset. [Budgets](media.md#budgets-and-media-validation)
-include used plus reserved bytes; the managed 25 GB event pool must not also be denied by
-the ordinary base entitlement. Imported usage starts at zero allowance until target-side
-accounting/accepted-byte reconstruction is installed. Do not raise limits to hide that gap.
+The installed storage-pool adapter reserves/charges/releases by permanent asset UUID,
+independently of the ordinary base entitlement. Imported allowance remains zero until
+verified object-journal proofs rebuild the target pool at publication; source allowances
+and multipart/version handles never resume abroad.
 
-Scheduled now in beat and the beat-less runner: bounded admission maintenance, contributor
-help expiry/escalation/notice recovery, scheduled broadcast recovery and account Saved details
-work. Missing production providers can still make those jobs refuse. Required pending work:
-asset scan/deadline/idle/retention/cleanup jobs, certificate batch/render resumption, print
-cleanup and judging notices, with recovery after broker loss and reviewed retention-only
-authority for frozen/MIGRATED_OUT sources. Runtime-off must not strand deletion obligations.
+Beat and the beat-less runner schedule bounded admission, contributor, broadcast/account,
+asset scan/deadline/idle/retention/cleanup, certificate batch/render, print and judging
+recovery. Permanent asset obligations and print receipts reserve exact locators after
+module/tenant purge, retry late versions and release quota only after proven absence.
+Retained cleanup uses a narrow source lock plus recovery/not-restored checks; it grants
+no workflow/publication authority and continues on frozen/MIGRATED_OUT sources.
 
 Monitor work claims/attempts/failure codes, overdue-ready assets, reserved/used/failed-cleanup
 bytes and stale notice/render claims. Logs/audits carry IDs, hashes, versions and safe codes,
@@ -97,11 +99,12 @@ not DOB, private answers, raw credential/invite secrets, presigns or provider re
 
 ## Optional malware scanner
 
-The B worker receives **Python runtime configuration**, not a new `CLAMAV_*` environment API:
+The installed B runtime reads `EVENT_ASSET_SCAN_BACKEND`, `EVENT_ASSET_CLAMAV_HOST` and
+`EVENT_ASSET_CLAMAV_PORT` (defaults `none`, blank, `3310`) into the bounded scanner:
 
 ```python
 scan_options = {"backend": "none"}  # explicit development/off policy: records skipped
-# Production adapter, once installed:
+# Explicit production configuration:
 scan_options = {"backend": "clamav", "host": "clamav", "port": 3310,
                 "max_scan_bytes": 2 * 1024**3}
 ```
@@ -172,3 +175,11 @@ Disabling/uninstalling retains rows/objects. Events purge uses dependency-ordere
 metadata and collects all owned keys; it must preserve foreign profile bytes, account vault
 and core money ledger. Durable multipart/version cleanup receipts and accounting reconciliation
 are still pending. No irreversible purge or enablement is authorized merely by reading this guide.
+
+Scoped PII backfill uses authenticated preparation and fixed immutable-column maintenance;
+it never calls an immutable history model's ordinary save path. Decrypt rollback refuses
+retained birth-date source evidence before mutating any row: that evidence requires ciphertext.
+Keep scoped PII enabled and retain tenant keys until authorized retention/purge removes it.
+Test `tests/encryption/test_gf4_programme_maintenance.py` and the normal enable/backfill/
+verify/rollback suite on PostgreSQL before performing maintenance. Matching fence IDs alone
+never authorize changing history, subject identity, versions or non-PII columns.

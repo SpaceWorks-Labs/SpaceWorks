@@ -5,11 +5,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from apps.encryption.mappers import ScopedPiiModelMixin
+from apps.events.submissions.pii import PrivateDocumentMixin
 from apps.events.models_event import Event
 
 
-class EventRegistration(ScopedPiiModelMixin, models.Model):
+class EventRegistration(PrivateDocumentMixin, models.Model):
+    pii_document_fields = frozenset({"custom_answers"})
+    pii_text_fields = frozenset({"name", "email", "phone"})
     version = models.PositiveIntegerField(default=1)
     answer_locked_at = models.DateTimeField(null=True, blank=True)
     date_review_required = models.BooleanField(default=False)
@@ -92,7 +94,7 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
         "encryption.SearchKeyGeneration", on_delete=models.PROTECT,
         null=True, editable=False,
     )
-    custom_answers = models.JSONField(null=True, blank=True, default=None)
+    custom_answers = models.TextField(null=True, blank=True, default=None)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -158,7 +160,11 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
             )
 
     def save(self, *args, **kwargs):
-        self.name = (self.name or "").strip()
-        self.email = (self.email or "").strip().lower()
-        self.phone = (self.phone or "").strip()
+        selected = kwargs.get("update_fields")
+        # Partial status/credential writes must not reassign untouched mapped fields:
+        # that would discard their authenticated cache without persisting new envelopes.
+        for name in ("name", "email", "phone"):
+            if selected is None or name in selected:
+                value = (getattr(self, name) or "").strip()
+                setattr(self, name, value.lower() if name == "email" else value)
         super().save(*args, **kwargs)

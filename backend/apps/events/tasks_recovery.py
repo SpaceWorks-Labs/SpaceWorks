@@ -14,4 +14,5 @@ def sweep_judging_notices_task():
 @shared_task
 def sweep_print_cleanup_task():
     from .certificates.print_cleanup import cleanup_expired
-    return cleanup_expired(limit=100)
+    from .certificates.print_custody import sweep
+    return {"retained_jobs": cleanup_expired(limit=100), "purged_jobs": sweep(limit=100)}

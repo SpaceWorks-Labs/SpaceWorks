@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
+from .views_base import PrivateSubmissionView
 
 from apps.events.contracts.providers import ReadPurpose
 from .api_runtime import runtime
@@ -13,7 +13,7 @@ RANGE = [OpenApiParameter("Range", str, OpenApiParameter.HEADER, description="On
 BINARY = {200: OpenApiTypes.BINARY, 206: OpenApiTypes.BINARY, 416: None, **ERRORS}
 
 
-class AssetDownloadView(APIView):
+class AssetDownloadView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
     participant = False
     staff = False
@@ -35,14 +35,10 @@ class AssetDownloadView(APIView):
             snapshot_id=snapshot_id, purpose=purpose)
 
 
-class GalleryAssetView(APIView):
+class GalleryAssetView(PrivateSubmissionView):
     permission_classes = [AllowAny]
 
     @extend_schema(parameters=RANGE, responses=BINARY, tags=["Event gallery streams"])
     def get(self, request, public_token, public_asset_id):
-        adapter = runtime()
-        # D resolves publication+consent+host/module and the exact frozen entry.
-        asset_id, snapshot_id = adapter.public_asset_resolver(request=request,
-            public_token=public_token, public_asset_id=public_asset_id)
-        return download_response(request=request, reader=adapter.asset_reader, storage_reader=adapter.storage_reader,
-            actor_id=None, asset_id=asset_id, snapshot_id=snapshot_id, purpose=ReadPurpose.PUBLIC_GALLERY)
+        from .gallery_projection import asset_download
+        return asset_download(public_token, public_asset_id, request=request)

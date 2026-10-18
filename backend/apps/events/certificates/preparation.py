@@ -1,6 +1,7 @@
 """Recipient decryption, key unwrapping and layout capture precede Event locks."""
 from dataclasses import dataclass, field
 from copy import deepcopy
+import json
 
 from django.conf import settings
 from django.db import connection
@@ -19,6 +20,12 @@ from apps.events.models_registration import EventRegistration
 from apps.events.contributions.models_roles import EventRoleAssignment
 from apps.events.credentials.errors import ProgrammeConflict
 from apps.makerspaces.platform import feature_enabled
+
+
+def role_recipient(member):
+    name = member.display_name or member.get_full_name() or member.username
+    identity = json.dumps([member.display_name, member.first_name, member.last_name, member.username], separators=(",", ":"))
+    return name, identity
 
 
 def subject_model(kind):
@@ -72,7 +79,7 @@ class IssuancePreparation:
             row = subject_model(item.kind).objects.filter(pk=item.subject_id, event=event).first()
             if row is None or row.member_id != item.member_id:
                 raise ProgrammeConflict("Certificate ownership changed.", code="subject_changed")
-            raw = row.__dict__["name"] if item.kind == "registration" else User.objects.get(pk=row.member_id).display_name
+            raw = row.__dict__["name"] if item.kind == "registration" else role_recipient(User.objects.get(pk=row.member_id))[1]
             if raw != item.raw_name:
                 raise ProgrammeConflict("Recipient name changed. Retry preparation.", code="subject_changed")
 
@@ -94,8 +101,10 @@ def prepare_issuance(event_id, subjects, *, for_issue=True):
         source = subject_model(kind).objects.filter(pk=pk, event_id=event_id).first()
         if source is None or not source.member_id:
             raise NotFound()
-        raw = source.__dict__["name"] if kind == "registration" else User.objects.get(pk=source.member_id).display_name
-        name = source.name if kind == "registration" else raw
+        if kind == "registration":
+            raw, name = source.__dict__["name"], source.name
+        else:
+            name, raw = role_recipient(User.objects.get(pk=source.member_id))
         candidate = Certificate()
         if for_issue:
             candidate._reserve_pk()  # Sequence allocation has no domain row lock.

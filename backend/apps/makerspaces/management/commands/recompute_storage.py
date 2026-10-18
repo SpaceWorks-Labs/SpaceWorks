@@ -15,7 +15,7 @@ from apps.maintenance import storage as maintenance_storage
 from apps.maintenance.models import MaintenanceLogDocument
 from apps.makerspaces.models import MemberCard, Makerspace, MemberProfile, MemberProject
 from apps.makerspaces.servability import servable_queryset
-from apps.makerspaces.storage_events_programme import accounted_bytes
+from apps.makerspaces.storage_events_programme import accounted_bytes, accounted_print_bytes
 from apps.procurement import storage as procurement_storage
 from apps.procurement.models import ToBuyReceipt
 from apps.warranty import storage as warranty_storage
@@ -56,6 +56,7 @@ class Command(BaseCommand):
             try:
                 values = {
                     "event_asset_obligations": accounted_bytes(makerspace),
+                    "event_print_obligations": accounted_print_bytes(makerspace),
                     "evidence": self._sum(
                         EvidencePhoto.objects.filter(makerspace=makerspace)
                         .exclude(

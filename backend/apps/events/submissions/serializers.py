@@ -1,5 +1,6 @@
 """Closed request/response schemas for every Lane B route."""
 from rest_framework import serializers
+from .serializers_requirements import ProjectRequirementsSerializer
 
 
 class ClosedSerializer(serializers.Serializer):
@@ -108,6 +109,7 @@ class ProjectResponseSerializer(serializers.Serializer):
     state = serializers.CharField()
     snapshot_id = serializers.IntegerField(allow_null=True)
     project = serializers.DictField(required=False)
+    requirements = ProjectRequirementsSerializer(required=False)
     allowed_actions = serializers.ListField(child=serializers.CharField())
 
 

@@ -37,7 +37,7 @@ def catalogue(*, kind, theme, stock=None):
     return result
 
 
-def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None):
+def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None, **command):
     """On-demand installation; packaged catalogue imports never write tenant rows."""
     from .seed_installation import install_to_event as install
-    return install(event_id, actor=actor, seed_id=seed_id, theme=theme, kind=kind, stock=stock)
+    return install(event_id, actor=actor, seed_id=seed_id, theme=theme, kind=kind, stock=stock, **command)

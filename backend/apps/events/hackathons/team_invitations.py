@@ -54,6 +54,8 @@ def invite(*, event_id, team_id, actor, data):
         team.version += 1
         team.save()
         record(ctx, "team_invite_created", row, team_id=team.pk)
+        from .team_notifications import emit_invite_locked
+        emit_invite_locked(invite=row, email=email)
         ctx.finish("team_invite", row.pk)
         return row, token
 
@@ -76,6 +78,8 @@ def join_request(*, event_id, team_id, actor, data):
         team.version += 1
         team.save()
         record(ctx, "team_join_requested", row, team_id=team.pk)
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_join_requested", member_ids=(team.leader_id,), request_id=row.pk)
         ctx.finish("team", team.pk)
         return team
 
@@ -106,6 +110,8 @@ def accept(*, event_id, team_id, actor, data):
         require_forming(ctx.config, team)
         application = member_application(ctx, member)
         activate_locked(ctx, team, member, application)
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_membership_updated")
         if invitation:
             invitation.redeemed_at, invitation.redeemed_by = timezone.now(), actor
             invitation.save(update_fields=["redeemed_at", "redeemed_by"])

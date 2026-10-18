@@ -10,6 +10,7 @@ import { useAccessibleEvents } from "./eventStaffGrantsApi";
 import { opsStatusLabel } from "./opsPresentation";
 import { eventErrorText } from "./eventUi";
 import type { GrantedListFrame } from "./GrantedResourcesPanel";
+import { useTenantBootstrap } from '../inventory/usePublicInventory';
 
 const permissionList = (permissions: string[] = []) => permissions.map((permission) => permission.replace(/_/g, " ")).join(", ");
 
@@ -20,7 +21,8 @@ export function GrantedEventsPanel({ makerspaceId, grants = [], frame }: { maker
   const series = grants.filter((grant) => grant.event_id === null && grant.series_id !== null && (!makerspaceId || grant.makerspace_id === makerspaceId));
   const events = useAccessibleEvents(page, makerspaceId);
   // An opened assignment replaces the list with its own detail page, exactly like the Events console.
-  if (selected) return <EventDrawer key={selected.id} eventId={selected.id} makerspaceId={selected.makerspace_id} onClose={() => setSelected(null)} />;
+  if (selected) return <GrantedProgrammeDrawer key={selected.id} eventId={selected.id} makerspaceId={selected.makerspace_id}
+    slug={grants.find(grant => grant.makerspace_id === selected.makerspace_id)?.makerspace_slug ?? ''} onClose={() => setSelected(null)} />;
   if (selectedSeries) return <EventSeriesDrawer key={selectedSeries.id} seriesId={selectedSeries.id} makerspaceId={selectedSeries.makerspace_id} onClose={() => setSelectedSeries(null)}
     onSelectOccurrence={(id) => { setSelected({ id, makerspace_id: selectedSeries.makerspace_id }); setSelectedSeries(null); }} />;
   const retry = () => { void events.refetch(); };
@@ -46,4 +48,9 @@ export function GrantedEventsPanel({ makerspaceId, grants = [], frame }: { maker
       </section> : null}
     </> }}
     pagination={events.data?.count ? { page, pageSize: 24, count: events.data.count, onChange: setPage } : undefined} />;
+}
+
+function GrantedProgrammeDrawer({ slug, ...props }: { slug: string; eventId: number; makerspaceId: number; onClose: () => void }) {
+  const bootstrap = useTenantBootstrap(slug, Boolean(slug));
+  return <EventDrawer {...props} enabledFeatures={bootstrap.data?.features ?? []} />;
 }

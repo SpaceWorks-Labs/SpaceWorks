@@ -33,7 +33,7 @@ export function DeskBadgePanel({ eventId, eventVersion, registrationIds, canEdit
   const print = useDeskPrint(eventId);
   const desk = useQuery({ queryKey: ["event-badge-desk-design", eventId], enabled: canPrint,
     queryFn: () => staffRequest<{ id: number; document: LayerDocument; stock: Stock; event_version: number }>(`/admin/events/${eventId}/badges/desk-design/`), retry: false });
-  useEffect(() => { if (desk.data && !hydrated.current) { hydrated.current = true; setDocument(desk.data.document); setRevision(desk.data.id); setStock(desk.data.stock); setVersion(desk.data.event_version); } }, [desk.data]);
+  useEffect(() => { if (desk.data) setVersion(desk.data.event_version); if (desk.data && !hydrated.current) { hydrated.current = true; setDocument(desk.data.document); setRevision(desk.data.id); setStock(desk.data.stock); setVersion(desk.data.event_version); } }, [desk.data]);
   const testCard = useMutation({ mutationFn: () => staffRequestBlob(`/admin/events/${eventId}/badges/design-preview.pdf`, {
     method: "POST", body: JSON.stringify({ document, stock }),
   }), onSuccess: (blob) => setPreview(URL.createObjectURL(blob)) });

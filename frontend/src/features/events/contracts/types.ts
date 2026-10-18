@@ -1,13 +1,11 @@
-/** G1 contract types. These do not mount routes or enable programme features. */
+import type { ApplicationInput, Command, Context, NamedRoute as WireRoute } from '../../../generated/api'
+/** Refinements of generated JSON fields; runtime parsers validate these descriptors. */
 export type SubjectKind = 'registration' | 'application' | 'role_assignment'
 export type ProgrammeCapability =
   | 'events.hackathons' | 'events.mentoring' | 'events.mentor_rounds'
   | 'events.volunteering' | 'events.project_gallery'
 
-export interface ProgrammeCommand {
-  operation_id: string
-  expected_version: number
-}
+export type ProgrammeCommand = Command
 
 export interface EmergencyContact {
   name: string
@@ -15,18 +13,7 @@ export interface EmergencyContact {
   phone: string
 }
 
-export interface FormDescriptor {
-  schema_version: 2
-  form_id: string
-  revision: number
-  questions: Array<Record<string, unknown>>
-  event_context?: {
-    event_id: number
-    event_date_revision: number
-    timezone_name: string
-    as_of_date: string
-  }
-}
+export type FormDescriptor = import('../../forms/types').FormSchemaV2
 
 export interface AdmissionSelection {
   ticket_type_id?: number
@@ -39,7 +26,7 @@ export interface AdmissionSelection {
   host_waiver_accepted?: boolean
 }
 
-export interface ProgrammeMemberInput extends ProgrammeCommand, AdmissionSelection {
+export interface ProgrammeMemberInput extends ApplicationInput {
   form: { schema_version: 2; form_id: string; revision: number }
   answers: Record<string, unknown>
   derivations: Record<string, {
@@ -59,13 +46,13 @@ export interface HackathonApplicationInput extends ProgrammeMemberInput {
   coc: { revision: number; accepted: boolean }
 }
 
-export interface NamedRoute { name: string; url: string }
+export type NamedRoute = WireRoute
 export type ContextRouteKey =
   | 'context' | 'application' | 'application_submit' | 'application_withdraw'
   | 'application_rsvp' | 'application_date_review' | 'role_postings' | 'prefill'
   | 'ordinary_register'
 
-export interface ProgrammeContext {
+export interface ProgrammeContext extends Omit<Context, 'application_form' | 'registration_form' | 'routes'> {
   context_version: 1
   event: {
     id: number; public_token: string; starts_at: string; ends_at: string

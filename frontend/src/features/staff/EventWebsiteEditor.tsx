@@ -1,3 +1,4 @@
+import { CoverPhotoEditor } from "./eventProgramme/CoverPhotoEditor";
 import { useEffect, useState } from "react";
 import { Field, SettingsSection, Skeleton, StatusPill } from "../../components/ui";
 import type { EventWebsite, WebsiteTarget } from "../events/websiteTypes";
@@ -25,6 +26,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps
   const setDraft = (value: EventWebsite) => setLocal((current) => current ? { ...current, draft: value } : current);
   const [preview, setPreview] = useState(false);
   const [alt, setAlt] = useState("");
+  const [coverPending, setCoverPending] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [replaceId, setReplaceId] = useState<number | undefined>();
   const save = useWebsiteSave(target);
@@ -38,7 +40,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps
     }
   }, [query.data]);
   const terminal = status === "cancelled" || status === "completed";
-  const pending = save.isPending || release.isPending || asset.isPending;
+  const pending = save.isPending || release.isPending || asset.isPending || coverPending;
   const dirty = Boolean(local && JSON.stringify(local.draft) !== JSON.stringify(local.base));
   const conflict = dirty && JSON.stringify(local?.base) !== JSON.stringify(query.data);
   const error = query.error || save.error || release.error || asset.error;
@@ -76,6 +78,13 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps
         </div>
       </form>
       {canEdit && !terminal ? <SettingsSection title="Private website images">
+        <CoverPhotoEditor onPendingChange={setCoverPending} onSave={async (coverFile, description) => {
+          if (dirty) throw new Error('Save your website changes before uploading a cover.');
+          if (!description || description.length > 200) throw new Error('Describe this image in 1?200 characters.');
+          const data = new FormData(); data.set('file', coverFile); data.set('alt_text', description);
+          await asset.mutateAsync(data);
+        }} />
+        <p className="mt-3 text-sm text-muted">Prepared images stay private. Choose one in your website sections, save the draft, then release it when ready.</p>
         <form className="grid gap-4 py-5 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); if (!file) return; const data = new FormData(); data.set("file", file); data.set("alt_text", alt); if (replaceId) data.set("replace_id", String(replaceId)); asset.mutate(data); }}>
           <Field label="Image description"><input className="desk-input w-full min-w-0" required maxLength={200} value={alt} onChange={(e) => setAlt(e.target.value)} /></Field>
           <Field label="Replace image"><select className="desk-input w-full min-w-0" value={replaceId ?? ""} onChange={(e) => setReplaceId(e.target.value ? Number(e.target.value) : undefined)}><option value="">Upload new image</option>{draft.assets?.map((image) => <option key={image.id} value={image.id}>{image.alt_text}</option>)}</select></Field>

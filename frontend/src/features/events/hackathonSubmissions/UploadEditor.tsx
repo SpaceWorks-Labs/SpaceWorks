@@ -4,9 +4,9 @@ import { ActionControl, Field } from "../../../components/ui";
 import { uploadProjectFile } from "./upload";
 import type { Asset, SubmissionScope, UploadSpec } from "./types";
 
-export function UploadEditor({ scope, allowedOrigins, options, onUploaded, disabled }: {
+export function UploadEditor({ scope, allowedOrigins, options, onUploaded, disabled, onPendingChange }: {
   scope: SubmissionScope; allowedOrigins: readonly string[]; options: readonly (UploadSpec & { label: string })[];
-  onUploaded: (asset: Asset) => void; disabled?: boolean;
+  onUploaded: (asset: Asset) => void; disabled?: boolean; onPendingChange?: (pending: boolean) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [option, setOption] = useState(0);
@@ -15,6 +15,7 @@ export function UploadEditor({ scope, allowedOrigins, options, onUploaded, disab
   const [error, setError] = useState("");
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => { onPendingChange?.(pending); return () => onPendingChange?.(false); }, [pending, onPendingChange]);
   async function upload() {
     if (!file || !options[option]) return;
     setError(""); setPending(true); controller.current = new AbortController();

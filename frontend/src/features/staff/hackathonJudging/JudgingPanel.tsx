@@ -9,7 +9,7 @@ import { MentorShortlistBoard } from './MentorShortlistBoard';
 import type { Round, Scope } from './types';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 
-function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false }: { scope: Scope; timezone?: string; fullManager?: boolean }) {
+function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, galleryEnabled = false }: { scope: Scope; timezone?: string; fullManager?: boolean; galleryEnabled?: boolean }) {
   const [page, setPage] = useState(1); const { query, mutate, denied } = useJudging(scope, true, false, page);
   const [judges, setJudges] = useState(''); const [reason, setReason] = useState('');
   const [strategy, setStrategy] = useState('balanced'); const [maxLoad, setMaxLoad] = useState(100);
@@ -57,7 +57,7 @@ function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false }: {
       </div>
     </article>)}
     <Pagination page={page} count={query.data?.count ?? 0} pageSize={24} totalPages={Math.ceil((query.data?.count ?? 0) / 24)} onChange={setPage} disabled={mutate.isPending} />
-    {fullManager ? <><MentorShortlistBoard scope={scope} /><ResultsPanel scope={scope} rounds={query.data?.results ?? []} /></> : null}
+    {fullManager ? <><MentorShortlistBoard scope={scope} /><ResultsPanel scope={scope} rounds={query.data?.results ?? []} galleryEnabled={galleryEnabled} /></> : null}
     <ConfirmDialog open={!!confirm} title={confirm?.action === 'open' ? 'Freeze this judging rubric?' : confirm?.action === 'close' ? 'Close scoring?' : 'Finalize this round?'}
       message={confirm?.action === 'open' ? 'Opening freezes the method, criteria and eligible submission set.' : 'This action is recorded in the event history. Review coverage before continuing.'}
       pending={mutate.isPending} onCancel={() => setConfirm(null)} onConfirm={() => confirm && run(confirm.round, confirm.action)} />

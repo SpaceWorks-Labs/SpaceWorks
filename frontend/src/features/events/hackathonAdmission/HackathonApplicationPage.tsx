@@ -25,8 +25,8 @@ export function HackathonApplicationPage({ publicToken, accountId, Fields, onSig
   if (current.programme.kind === 'ordinary' || !row) return <CenteredCardLayout standalone={false} title="Event registration"
     state={{ status: 'ready' }} body="This event uses ordinary registration." primary={{ label: 'Continue registration', onClick: () => onOrdinaryRegister(current) }} />
   if (row.state === 'draft' || (editing && row.allowed_actions.includes('edit'))) return <ApplicationEditor context={current} application={row} Fields={Fields} prefill={prefill.data}
-    pending={mutation.isPending} error={mutation.error} onSave={(body, draft) => mutation.mutate({
-      route: draft ? 'application' : 'application_submit', method: draft ? 'PATCH' : 'POST', body }, { onSuccess: () => setEditing(false) })} />
+    pending={mutation.isPending} error={mutation.error} onSave={(body, draft) => mutation.mutateAsync({
+      route: draft ? 'application' : 'application_submit', method: draft ? 'PATCH' : 'POST', body }).then(saved => { setEditing(false); return saved })} />
   return <ApplicationStatus application={row} pending={mutation.isPending} error={mutation.error}
     onDateReview={body => mutation.mutate({ route: 'application_date_review', body })}
     onRepair={body => mutation.mutate({ route: 'application_submit', body })}
@@ -36,5 +36,5 @@ export function HackathonApplicationPage({ publicToken, accountId, Fields, onSig
         form_id: current.application_form.form_id, revision: current.application_form.revision } } : {}) } }) }}
     onAction={action => mutation.mutate({
     route: action === 'withdraw' ? 'application_withdraw' : 'application_rsvp', body: { expected_version: row.version,
-      ...(action === 'withdraw' ? { reason_code: 'participant_withdrew' } : { decision: action }) } })} />
+      ...(action === 'withdraw' ? { reason_code: 'participant_withdrew' } : { decision: action, event_date_revision: current.event.event_date_revision }) } })} />
 }

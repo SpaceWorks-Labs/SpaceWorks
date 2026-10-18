@@ -17,7 +17,7 @@ function canonical(value: unknown): string {
 /** Memory only: retry the same command UUID after a lost response. */
 export class CommandSession {
   private operations = new Map<string, string>()
-  async send<T>(url: string, method: 'POST' | 'PATCH', body: Record<string, unknown>, staff = false) {
+  async send<T>(url: string, method: 'POST' | 'PATCH' | 'PUT' | 'DELETE', body: Record<string, unknown>, staff = false) {
     const key = method + url + canonical(body)
     let operation = this.operations.get(key)
     if (!operation) { operation = crypto.randomUUID(); this.operations.set(key, operation) }

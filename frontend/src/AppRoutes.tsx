@@ -1,3 +1,4 @@
+import { isProgrammePath } from "./features/events/programme/routeNames";
 import { lazy, Suspense, type ReactNode } from "react";
 import { Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { MakerspacePage } from "./features/public/MakerspacePage";
@@ -90,10 +91,14 @@ function SingleTenantEvent() {
   return slug === tenant.slug ? <PublicEventDetailPage /> : <NotFoundPage />;
 }
 
+const ProgrammeRoutes = lazy(() => import("./features/events/programme/ProgrammeRoutes").then(m => ({ default: m.ProgrammeRoutes })));
+
 export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landing: ReactNode }) {
   const location = useLocation();
   let routes: ReactNode;
-  if (/^\/(?:m\/[^/]+\/)?admin\/reset-password\/?$/.test(location.pathname)) {
+  if (isProgrammePath(location.pathname)) {
+    routes = <ProgrammeRoutes />;
+  } else if (/^\/(?:m\/[^/]+\/)?admin\/reset-password\/?$/.test(location.pathname)) {
     routes = <Routes>
       <Route path="/admin/reset-password" element={<ConsolePasswordResetPage />} />
       <Route path="/m/:slug/admin/reset-password" element={<ConsolePasswordResetPage />} />

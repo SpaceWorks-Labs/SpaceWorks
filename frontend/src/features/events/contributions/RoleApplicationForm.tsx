@@ -1,3 +1,5 @@
+import { memberFormInput } from '../../forms/conditions'
+import { formSchema } from '../programme/formBridge'
 import { useEffect, useState, type ReactNode } from 'react'
 import { DetailLayout } from '../../../components/layouts'
 import { ActionControl, Card } from '../../../components/ui'
@@ -26,6 +28,9 @@ export function RoleApplicationForm(props: Props) {
 function FormContent({ scope, posting, application, bridge, onSaved, sponsorConsent, completionReady = false }: Props) {
   const [value, setValue] = useState<RoleFormValue | null>(null)
   const [prefillError, setPrefillError] = useState<unknown>(null)
+  const [dirty, setDirty] = useState(false)
+  const [baseVersion, setBaseVersion] = useState(application?.version ?? 0)
+  const conflict = dirty && (application?.version ?? 0) !== baseVersion
   const command = useProgrammeCommand(scope, 'member')
   useEffect(() => {
     let active = true
@@ -36,21 +41,22 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
     // A successful revision refresh must not replace unsaved text. Remount this
     // form on a subject/account switch; an explicit reload accepts a new revision.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope.accountId, scope.eventId, scope.makerspaceId, posting.id, application?.id, bridge])
+  }, [scope.accountId, scope.eventId, scope.makerspaceId, posting.id, application?.id])
   const locked = Boolean(application && !application.allowed_actions.includes('edit'))
   const submit = (intent: 'draft' | 'submit') => {
-    if (!value) return
+    if (!value || conflict) return
     const path = application ? `/role-applications/${application.id}/${intent === 'submit' ? 'submit/' : ''}`
       : `/role-postings/${posting.id}/application/`
-    command.mutate({ path, version: application?.version ?? 0,
-      method: application && intent === 'draft' ? 'PATCH' : 'POST', fields: { ...value } },
-    { onSuccess: row => onSaved(row.id) })
+    command.mutate({ path, version: baseVersion,
+      method: application && intent === 'draft' ? 'PATCH' : 'POST', fields: { ...value, ...(posting.form ? memberFormInput(formSchema(posting.form), value) : {}) } },
+    { onSuccess: row => { setBaseVersion(row.version); setDirty(false); onSaved(row.id) } })
   }
   return <DetailLayout title={posting.title} state={prefillError ? { status: 'error', error: errorText(prefillError) }
     : value ? { status: 'ready' } : { status: 'loading' }}
     main={<div className="grid gap-6"><Card>
       <p className="mb-4 text-muted">{posting.description}</p>
       <p className="mb-4 text-sm text-muted">Only the answers you submit go to this event. Choose which details to save for your next registration.</p>
+      {conflict ? <div role="alert" className="mb-4 grid gap-3"><p>Your application changed. Your draft is preserved. Review the current form before reapplying it.</p><button className="desk-button" onClick={() => { setBaseVersion(application?.version ?? 0); setValue(previous => previous ? { ...previous, coc: previous.coc ? { ...previous.coc, accepted: false } : undefined } : previous) }}>Review and keep my draft</button></div> : null}
       {command.error ? <p role="alert" className="mb-4 text-danger">{errorText(command.error)}</p> : null}
       {application?.answer_review?.date_review_required && posting.form?.event_context ? <div className="mb-4">
         <p className="mb-2 text-sm">The event start date changed to {posting.form.event_context.as_of_date}. Review this date before submitting.</p>
@@ -69,12 +75,12 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
           } }} />
       </div> : null}
       {value ? <form onSubmit={event => { event.preventDefault(); submit(application ? 'submit' : 'draft') }}>
-        {bridge.render({ value, onChange: setValue, disabled: locked || command.isPending,
+        {bridge.render({ value, onChange: next => { setValue(next); setDirty(true) }, disabled: locked || command.isPending,
           errors: command.error instanceof StructuredApiError ? command.error.body.fields : undefined })}
         {!locked ? <div className="mt-6 flex flex-wrap gap-3">
-          <ActionControl primary action={{ label: application ? 'Submit application' : 'Save draft', pending: command.isPending,
+          <ActionControl primary action={{ label: application ? 'Submit application' : 'Save draft', pending: command.isPending, disabled: conflict,
             onClick: () => submit(application ? 'submit' : 'draft') }} />
-          {application ? <ActionControl action={{ label: application.state === 'applied' ? 'Save changes' : 'Save draft', pending: command.isPending, onClick: () => submit('draft') }} /> : null}
+          {application ? <ActionControl action={{ label: application.state === 'applied' ? 'Save changes' : 'Save draft', pending: command.isPending, disabled: conflict, onClick: () => submit('draft') }} /> : null}
         </div> : <p className="mt-4 text-sm text-muted">Your submitted answers are locked.</p>}
       </form> : null}
       {application?.save_intent ? <div className="mt-4" role="status">{bridge.savedDetailsStatus(application.save_intent)}</div> : null}

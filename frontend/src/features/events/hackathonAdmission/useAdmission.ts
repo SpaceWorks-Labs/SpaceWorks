@@ -1,3 +1,4 @@
+import { sessionScope } from '../../staff/eventProgramme/sessionScope'
 import { useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { parseProgrammeContext } from '../contracts/parsers'
@@ -8,7 +9,7 @@ import type { Application, Prefill, ProgrammeContext } from './types'
 export function useAdmission(publicToken: string, accountId: number) {
   const queryClient = useQueryClient()
   const commands = useRef(new CommandSession())
-  const key = ['event-admission', accountId, publicToken] as const
+  const key = ['event-admission', accountId, publicToken, ...sessionScope()] as const
   const context = useQuery({ queryKey: [...key, 'context'], queryFn: async () => parseProgrammeContext(
     await readMember<unknown>('/api/v1/public/event-programmes/' + publicToken + '/context/')),
     enabled: accountId > 0, staleTime: 0, gcTime: 0, retry: false })

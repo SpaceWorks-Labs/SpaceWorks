@@ -20,8 +20,8 @@ export const eventStaffGrantKeys = {
   accessible: ["events", "accessible"] as const,
 };
 
-export function useEventStaffGrants(target: StaffGrantTarget, page: number) {
-  return useQuery({ queryKey: [...eventStaffGrantKeys.resource(target), "grants", page],
+export function useEventStaffGrants(target: StaffGrantTarget, page: number, enabled = true) {
+  return useQuery({ queryKey: [...eventStaffGrantKeys.resource(target), "grants", page], enabled,
     queryFn: () => staffRequest<Paginated<EventStaffGrant>>(`${base(target)}/staff-grants/?page=${page}`) });
 }
 export function useEventStaffInvites(target: StaffGrantTarget, page: number) {

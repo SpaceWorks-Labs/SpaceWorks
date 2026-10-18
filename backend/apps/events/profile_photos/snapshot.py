@@ -7,6 +7,7 @@ import warnings
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
+from django.db import connection
 from PIL import Image, UnidentifiedImageError
 from rest_framework.exceptions import APIException
 
@@ -58,6 +59,8 @@ def canonical_png(content):
 
 
 def prepare_photo(profile):
+    if connection.in_atomic_block:
+        raise RuntimeError("Prepare photo bytes outside domain transactions.")
     key, revision = profile.avatar_key, source_revision(profile)
     pixels = read_public_png(key)
     return PreparedPhoto(profile_id=profile.pk, membership_id=profile.membership_id,
@@ -66,6 +69,8 @@ def prepare_photo(profile):
 
 
 def read_public_png(key):
+    if connection.in_atomic_block:
+        raise RuntimeError("Read render resources outside domain transactions.")
     from apps.events.certificate_storage import _client as bounded_client
     try:
         response = bounded_client(settings.AWS_S3_ENDPOINT_URL).get_object(Bucket=settings.PUBLIC_IMAGE_BUCKET, Key=key)

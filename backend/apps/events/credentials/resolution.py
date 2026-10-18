@@ -13,9 +13,10 @@ from .crypto import token_digest
 from .errors import ProgrammeConflict
 from .models import EventRegistrationCredential
 from .workflow import require_eligible
+from .scopes import registrations
 
 
-def resolve(event, payload, *, actor):
+def resolve(event, payload, *, actor, prepared_scope=None):
     event_authority.require(actor, event, CHECK_IN)
     if not download_is_open(event):
         raise NotFound()
@@ -29,6 +30,8 @@ def resolve(event, payload, *, actor):
     if credential is None:
         raise NotFound()
     registration = credential.registration
+    if prepared_scope is not None:
+        prepared_scope.bind(registration)
     registration.event = event
     require_eligible(event, registration)
     attendance = EventCheckInEvent.objects.filter(registration=registration).order_by("-recorded_at", "-pk").first()
@@ -44,8 +47,15 @@ def confirm(event_id, payload, *, actor, operation_id, credential_generation):
     """G's attendance command dispatches here for SWEC2; existing attendance remains sole writer."""
     from apps.events.services_checkin import mark_attended_with_event
 
-    with event_command(event_id, actor=actor, permission=CHECK_IN) as (event, actor):
-        result = resolve(event, payload, actor=actor)
+    digest = token_digest(event_id, payload)
+    identity = EventRegistrationCredential.objects.filter(token_digest=digest,
+        registration__event_id=event_id).values_list("registration_id", flat=True).first() if digest else None
+    if identity is None:
+        raise NotFound()
+    scope = registrations(event_id, [identity], prepare_names=True)
+    with event_command(event_id, actor=actor, permission=CHECK_IN, account_ids=scope.account_ids,
+                       revalidate=scope.revalidate) as (event, actor):
+        result = resolve(event, payload, actor=actor, prepared_scope=scope)
         if result["credential_generation"] != credential_generation:
             raise ProgrammeConflict("This badge was replaced.", code="credential_changed")
         previous = EventCheckInEvent.objects.filter(makerspace_id=event.makerspace_id,
@@ -55,6 +65,7 @@ def confirm(event_id, payload, *, actor, operation_id, credential_generation):
                 raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
             return result
         registration = EventRegistration.objects.select_for_update().get(pk=result["registration_id"])
+        scope.bind(registration)
         mark_attended_with_event(registration, actor=actor, operation_id=operation_id,
                                  source=EventCheckInEvent.Source.QR)
-        return resolve(event, payload, actor=actor)
+        return resolve(event, payload, actor=actor, prepared_scope=scope)

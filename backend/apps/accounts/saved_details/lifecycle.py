@@ -9,7 +9,6 @@ from apps.encryption.account_services import revoke_account_keys
 from apps.encryption.account_write_fence import account_write
 
 from . import storage
-from .access import require_owner
 from .models import (
     AccountSavedDetailsExportJob, MemberSavedAsset, MemberSavedDetail,
     SavedDetailCommandReceipt, SavedDetailUpdateIntent, SavedDetailsObjectCleanup,
@@ -28,29 +27,40 @@ def erase_account_vault(user_id, *, actor):
     from apps.encryption.account_models import PiiAccountWriteFence
     if PiiAccountWriteFence.objects.filter(user_id=user_id, state="erased").exists():
         return  # successful prior erasure retained only FK-free cleanup receipts
-    with account_write(user_id, exclusive=True):
-        from apps.accounts.models import User
-        from apps.encryption.account_models import AccountPiiKey, PiiAccountWriteFence
-        owner = User.objects.select_for_update().get(pk=user_id)
-        PiiAccountWriteFence.objects.get_or_create(user_id=user_id)
-        list(AccountPiiKey.objects.select_for_update().filter(user_id=user_id).order_by("version"))
-        assets = list(MemberSavedAsset.objects.select_for_update().filter(user_id=user_id).order_by("pk"))
-        jobs = list(AccountSavedDetailsExportJob.objects.select_for_update().filter(user_id=user_id).order_by("pk"))
-        keys = [key for asset in assets for key in (asset.object_key, asset.staging_key, asset.verification_key)]
-        keys.extend(key for asset in assets for key in asset.cleanup_keys)
-        keys.extend(job.object_key for job in jobs)
-        keys.extend(key for job in jobs for key in job.cleanup_keys)
-        if keys:
-            SavedDetailsObjectCleanup.objects.create(object_keys=keys, next_attempt_at=timezone.now())
-        # Epoch is revoked before releasing the fence; all later prepared intent
-        # insertions fail. Rows are erased in this same transaction.
-        SavedDetailUpdateIntent.objects.filter(user_id=user_id).delete()
-        SavedDetailCommandReceipt.objects.filter(user_id=user_id).delete()
-        MemberSavedDetail.objects.filter(user_id=user_id).delete()
-        MemberSavedAsset.objects.filter(user_id=user_id).delete()
-        AccountSavedDetailsExportJob.objects.filter(user_id=user_id).delete()
-        revoke_account_keys(user_id, actor=actor, erase=True)
-        record(actor, "account.saved_details_erased", target=owner)
+    from apps.accounts.erasure_hooks import erasure_scope
+    from apps.encryption.account_write_fence import AccountKeyChanged
+    try:
+        with erasure_scope(user_id, actor=actor):
+            _erase_vault_locked(user_id, actor=actor)
+    except AccountKeyChanged:
+        # A concurrent successful erase may have won while this call waited.
+        if not PiiAccountWriteFence.objects.filter(user_id=user_id, state="erased").exists():
+            raise
+
+
+def _erase_vault_locked(user_id, *, actor):
+    from apps.accounts.models import User
+    from apps.encryption.account_models import AccountPiiKey, PiiAccountWriteFence
+    owner = User.objects.select_for_update().get(pk=user_id)
+    PiiAccountWriteFence.objects.get_or_create(user_id=user_id)
+    list(AccountPiiKey.objects.select_for_update().filter(user_id=user_id).order_by("version"))
+    assets = list(MemberSavedAsset.objects.select_for_update().filter(user_id=user_id).order_by("pk"))
+    jobs = list(AccountSavedDetailsExportJob.objects.select_for_update().filter(user_id=user_id).order_by("pk"))
+    keys = [key for asset in assets for key in (asset.object_key, asset.staging_key, asset.verification_key)]
+    keys.extend(key for asset in assets for key in asset.cleanup_keys)
+    keys.extend(job.object_key for job in jobs)
+    keys.extend(key for job in jobs for key in job.cleanup_keys)
+    if keys:
+        SavedDetailsObjectCleanup.objects.create(object_keys=keys, next_attempt_at=timezone.now())
+    # Epoch is revoked before releasing the fence; all later prepared intent
+    # insertions fail. Rows are erased in this same transaction.
+    SavedDetailUpdateIntent.objects.filter(user_id=user_id).delete()
+    SavedDetailCommandReceipt.objects.filter(user_id=user_id).delete()
+    MemberSavedDetail.objects.filter(user_id=user_id).delete()
+    MemberSavedAsset.objects.filter(user_id=user_id).delete()
+    AccountSavedDetailsExportJob.objects.filter(user_id=user_id).delete()
+    revoke_account_keys(user_id, actor=actor, erase=True)
+    record(actor, "account.saved_details_erased", target=owner)
 
 
 def run_object_cleanup(receipt_id):

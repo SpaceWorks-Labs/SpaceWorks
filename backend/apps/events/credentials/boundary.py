@@ -15,7 +15,7 @@ from .errors import ProgrammeConflict
 
 
 @contextmanager
-def event_command(event_id, *, actor=None, permission=None, tenant_ids=()):
+def event_command(event_id, *, actor=None, permission=None, tenant_ids=(), account_ids=(), revalidate=None):
     original = Event.objects.values("makerspace_id", "series_id").get(pk=event_id)
     host_id = original["makerspace_id"]
     tenants = sorted({host_id, *tenant_ids})
@@ -23,13 +23,16 @@ def event_command(event_id, *, actor=None, permission=None, tenant_ids=()):
         for tenant_id in tenants:
             stack.enter_context(boundary_tenant_write(tenant_id))
         stack.enter_context(transaction.atomic())
-        stack.enter_context(fences(tenant_ids=tenants, account_ids=(actor.pk,) if actor else ()))
+        accounts = sorted({*account_ids, *((actor.pk,) if actor else ())})
+        stack.enter_context(fences(tenant_ids=tenants, account_ids=accounts))
         if original["series_id"]:
             EventSeries.objects.select_for_update().get(pk=original["series_id"])
         event = Event.objects.select_for_update().get(pk=event_id)
         if event.makerspace_id != host_id or event.series_id != original["series_id"]:
             raise ProgrammeConflict("Event scope changed; retry the command.")
         event.makerspace = require_module_locked(event.makerspace_id, "events")
+        if revalidate is not None:
+            revalidate(event)
         if actor is not None:
             actor = lock_authority(actor, event)
             event_authority.require(actor, event, permission)

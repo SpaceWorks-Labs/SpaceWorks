@@ -61,3 +61,7 @@ class EventPresentationCommand(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("presentation", "operation_id"), name="event_presentation_command")]
+
+
+from .source_lifecycle import register_source_lifecycle  # noqa: E402
+register_source_lifecycle()

@@ -38,7 +38,8 @@ def register_public_surface(scope, predicate):
 
 def active_member(actor):
     return bool(actor and actor.is_authenticated and actor.account_kind == "member"
-                and actor.is_active and actor.access_status == "active" and not actor.is_tenant_dump_stub)
+                and actor.is_active and actor.access_status == "active" and not actor.is_tenant_dump_stub
+                and actor.retired_at is None)
 
 
 def require_owner_event(event, actor):

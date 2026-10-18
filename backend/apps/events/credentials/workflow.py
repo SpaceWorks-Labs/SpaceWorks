@@ -2,7 +2,9 @@
 
 import hashlib
 import json
+from dataclasses import dataclass, field
 
+from django.db import connection
 from django.db.models import Max
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
@@ -16,6 +18,8 @@ from .boundary import advance, event_command, require_version
 from .crypto import prepare, unwrap
 from .errors import ProgrammeConflict
 from .models import EventCredentialCommand, EventRegistrationCredential
+from .scopes import registrations
+from apps.encryption.account_write_fence import assert_account_fence_held
 
 ELIGIBLE = ("registered", "attended")
 
@@ -25,7 +29,7 @@ def require_eligible(event, registration):
     if (registration.event_id != event.pk or event.status not in ("published", "completed")
             or registration.status not in ELIGIBLE or not member
             or member.account_kind != "member" or not member.is_active
-            or member.access_status != "active" or member.is_tenant_dump_stub):
+            or member.access_status != "active" or member.is_tenant_dump_stub or member.retired_at is not None):
         raise NotFound()
 
 
@@ -39,6 +43,8 @@ def current(registration):
 
 def revoke_locked(registration, *, actor=None, reason="cancelled"):
     """Caller holds event, source/fences and registration locks. No secret in audit."""
+    if registration.member_id:
+        assert_account_fence_held(registration.member_id)
     rows = EventRegistrationCredential.objects.select_for_update().filter(
         registration=registration, revoked_at__isnull=True,
     )
@@ -50,7 +56,25 @@ def revoke_locked(registration, *, actor=None, reason="cancelled"):
                                  "reason": reason})
 
 
-def issue_locked(event, registration, *, actor=None, rotate=False):
+@dataclass(frozen=True)
+class PreparedCredential:
+    event_id: int
+    registration_id: int
+    generation: int
+    material: object = field(repr=False)
+
+
+def prepare_issue(event_id, registration_id):
+    if connection.in_atomic_block:
+        raise RuntimeError("Prepare credentials before the event transaction.")
+    generation = (EventRegistrationCredential.objects.filter(registration_id=registration_id)
+                  .aggregate(value=Max("generation"))["value"] or 0) + 1
+    return PreparedCredential(event_id, registration_id, generation,
+                              prepare(event_id, registration_id, generation))
+
+
+def issue_locked(event, registration, *, actor=None, rotate=False, prepared=None):
+    assert_account_fence_held(registration.member_id)
     require_eligible(event, registration)
     if window_for(event).closes_at <= timezone.now():
         raise ProgrammeConflict("The event credential window has closed.", code="credential_expired")
@@ -59,8 +83,10 @@ def issue_locked(event, registration, *, actor=None, rotate=False):
         return existing
     generation = (EventRegistrationCredential.objects.filter(registration=registration)
                   .aggregate(value=Max("generation"))["value"] or 0) + 1
-    # Local cryptography only; missing deployment keys fails before any state change.
-    material = prepare(event.pk, registration.pk, generation)
+    if (not isinstance(prepared, PreparedCredential) or prepared.event_id != event.pk
+            or prepared.registration_id != registration.pk or prepared.generation != generation):
+        raise ProgrammeConflict("Credential generation changed. Retry preparation.", code="credential_changed")
+    material = prepared.material
     revoke_locked(registration, actor=actor, reason="rotated" if rotate else "expired")
     row = EventRegistrationCredential.objects.create(
         registration=registration, generation=generation, token_digest=material.digest,
@@ -75,8 +101,13 @@ def issue_locked(event, registration, *, actor=None, rotate=False):
 
 
 def command(event_id, registration_id, *, actor, operation_id, expected_version, action):
+    from apps.events import event_authority
+    event_authority.get_event(actor, event_id, CHECK_IN)
     digest = hashlib.sha256(json.dumps([registration_id, action, expected_version]).encode()).hexdigest()
-    with event_command(event_id, actor=actor, permission=CHECK_IN) as (event, actor):
+    scope = registrations(event_id, [registration_id], prepare_names=True)
+    prepared = prepare_issue(event_id, registration_id) if action == "rotate" else None
+    with event_command(event_id, actor=actor, permission=CHECK_IN, account_ids=scope.account_ids,
+                       revalidate=scope.revalidate) as (event, actor):
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.request_sha256 != digest or receipt.actor_id != actor.pk:
@@ -87,9 +118,10 @@ def command(event_id, registration_id, *, actor, operation_id, expected_version,
             registration = EventRegistration.objects.select_for_update().get(pk=registration_id, event=event)
         except EventRegistration.DoesNotExist as exc:
             raise NotFound() from exc
+        scope.bind(registration)
         registration.event = event
         if action == "rotate":
-            row = issue_locked(event, registration, actor=actor, rotate=True)
+            row = issue_locked(event, registration, actor=actor, rotate=True, prepared=prepared)
         elif action == "revoke":
             revoke_locked(registration, actor=actor, reason="lost_card")
             row = None
@@ -116,9 +148,13 @@ def owner_payload(registration, *, actor):
 
 
 def expire(event_id):
-    with event_command(event_id) as (event, _):
+    affected = list(EventRegistration.objects.filter(event_id=event_id,
+        credentials__revoked_at__isnull=True, credentials__expires_at__lte=timezone.now()
+    ).values_list("pk", flat=True).distinct())
+    scope = registrations(event_id, affected)
+    with event_command(event_id, account_ids=scope.account_ids, revalidate=scope.revalidate) as (event, _):
         rows = EventRegistration.objects.filter(
-            event=event, credentials__revoked_at__isnull=True,
+            event=event, pk__in=affected, credentials__revoked_at__isnull=True,
             credentials__expires_at__lte=timezone.now(),
         ).distinct().order_by("pk")
         ids = list(rows.values_list("pk", flat=True))

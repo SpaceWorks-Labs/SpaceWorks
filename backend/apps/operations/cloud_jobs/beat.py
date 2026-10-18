@@ -6,6 +6,7 @@ persistent --schedule file and existing clock-slot semantics.
 import time
 
 from celery.beat import Scheduler
+from celery.schedules import maybe_schedule
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
@@ -29,17 +30,22 @@ class DatabaseScheduler(Scheduler):
 
     def tick(self, **kwargs):
         from apps.operations.models_scheduling import PeriodicTaskRun
+        from .diagnostics import scheduler_heartbeat
         if self._leader_context is None:
             context = leader()
             lock = context.__enter__()
             self._leader_context, self._leader = context, lock
         self._leader.check()
+        scheduler_heartbeat("beat")
         now = timezone.now()
         for task in periodic_catalog():
             self._leader.check()
             with transaction.atomic():
-                row, _ = PeriodicTaskRun.objects.select_for_update().get_or_create(name=task.key)
-                if not row.is_due(now, task.minutes):
+                row, _ = PeriodicTaskRun.objects.select_for_update().get_or_create(
+                    name=task.key, defaults={"last_run_at": now})
+                declaration = settings.CELERY_BEAT_SCHEDULE.get(task.key, {})
+                schedule = maybe_schedule(declaration.get("schedule", task.minutes * 60), app=self.app)
+                if not schedule.is_due(row.last_run_at or now).is_due:
                     continue
                 row.last_run_at, row.last_error = now, ""
                 row.save(update_fields=["last_run_at", "last_error"])

@@ -35,6 +35,9 @@ class FieldObjectRule:
 # Literal, field-specific declarations are intentional. The equality guard below
 # makes adding an object-bearing concrete field a preflight failure.
 FIELD_OBJECT_RULES = (
+    FieldObjectRule("backup.ManagedStagedObject", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY,
+                    coordination_reason="private_ephemeral_ciphertext_lineage"),
     FieldObjectRule("payments.PaymentDocument", "branding_logo_key", BucketRule.PRIVATE),
     FieldObjectRule("bookings.BookingResourcePageAsset", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("events.EventPageAsset", "object_key", BucketRule.PRIVATE),

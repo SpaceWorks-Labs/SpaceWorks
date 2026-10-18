@@ -69,6 +69,9 @@ def effective_environment(environ):
 def validate_process(profile, role, command):
     role = ProcessRole(role)
     fixed = ["python", "-m", "scripts.run_cloud_role"]
+    runtime_management = {"verify_storage", "reconcile_cloud_email", "reconcile_cloud_storage",
+                          "bind_legacy_storage_receipts", "migrate_cloud_storage", "resume_cloud_storage", "recover_managed_capture",
+                          "reconcile_cloud_outbox", "cancel_cloud_delivery"}
     if profile.mode != "managed":
         return
     if role == ProcessRole.MIGRATE and command != fixed + ["release"]:
@@ -79,13 +82,17 @@ def validate_process(profile, role, command):
             ProcessRole.BEAT: ("beat",), ProcessRole.CRON: ("scheduler",),
             ProcessRole.MIGRATE: ("release",),
         }
-        if role in allowed and command not in [fixed + [name] for name in allowed[role]]:
+        admitted_commands = [fixed + [name] for name in allowed.get(role, ())]
+        if role in {ProcessRole.WORKER, ProcessRole.CRON}:
+            admitted_commands += [argv + ["--once"] for argv in admitted_commands]
+        if role in allowed and command not in admitted_commands:
             raise DeploymentConfigurationError("Managed process role and fixed command disagree.")
         if role == ProcessRole.MANAGEMENT:
             finite = {
                 "check", "showmigrations", "setup_instance", "setup_platform_email",
-                "archive_custody_report", "backup_preflight", "export_tenant_migration_archive",
+                "archive_custody_report", "backup_preflight", "export_tenant_migration_archive", "export_portable_tenant_dump", "verify_storage",
             }
+            finite |= runtime_management
             adopt = command == ["python", "-m", "apps.backup.managed.adopt"]
             if not adopt and not (len(command) >= 3 and command[:2] == ["python", "manage.py"] and command[2] in finite):
                 raise DeploymentConfigurationError("Managed management command is not in the finite allowlist.")
@@ -94,7 +101,8 @@ def validate_process(profile, role, command):
             ProcessRole.BACKEND: fixed + ["web"],
             ProcessRole.MIGRATE: fixed + ["release"],
         }
-        finite = {"check", "showmigrations", "setup_instance", "setup_platform_email"}
+        finite = {"check", "showmigrations", "setup_instance", "setup_platform_email", "verify_storage"}
+        finite |= runtime_management
         if role == ProcessRole.MANAGEMENT and command == ["python", "-m", "apps.backup.managed.adopt"]:
             return
         if role == ProcessRole.MANAGEMENT and len(command) >= 3 and command[:2] == ["python", "manage.py"] and command[2] in finite:

@@ -20,6 +20,12 @@ export type FreeUsage = {
   email: UsageSample;
   email_pending: number | null;
   email_uncertain: number | null;
+  notification_uncertain?: number;
+  email_accounts?: Array<{
+    label: string; provider: string; accepted: number; reserved: number; uncertain: number;
+    daily_cap: number | null; monthly_cap: number | null; monthly_charged: number;
+    reset_timezone: string; provider_usage_known: boolean;
+  }>;
   tick: {
     last_completed_at: string | null;
     last_contact_at: string | null;

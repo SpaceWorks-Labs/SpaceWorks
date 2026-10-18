@@ -24,6 +24,15 @@ def deliver_native_push(log):
     # Additive master switch (plan A6): the platform credential check below still runs,
     # so enabling the feature on an unconfigured platform delivers nothing.
     from apps.makerspaces.platform import feature_enabled
+    from .notification_cloud_fanout import free, check, UnsupportedFanout
+    if free():
+        from apps.makerspaces.models import MakerspaceMembership
+        if MakerspaceMembership.objects.filter(makerspace=log.makerspace, status="active",
+                user__account_kind="staff").count() > 25:
+            raise UnsupportedFanout("Legacy push staff resolution exceeds the free profile limit.")
+        if PushDevice.objects.filter(makerspace=log.makerspace, active=True,
+                device_grant__status="active").count() > 2:
+            raise UnsupportedFanout("Legacy push exceeds the free two-device limit.")
 
     if log.makerspace_id and not feature_enabled(log.makerspace, "mobile.push"):
         return False
@@ -48,6 +57,7 @@ def deliver_native_push(log):
     ).select_related("device_grant")
     transient_failure = False
     for device in devices:
+        check()
         try:
             token = device.get_token()
             data = {"feature": str(log.feature), "event": str(log.event),
@@ -61,6 +71,7 @@ def deliver_native_push(log):
                     continue
                 from apps.integrations.push_apns import send_apns
                 send_apns(settings_row, token, device.environment, "Space Works", log.text_body, data)
+            check()
         except PushProviderError as exc:
             if exc.invalid_token:
                 PushDevice.objects.filter(pk=device.pk).update(

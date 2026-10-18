@@ -1,4 +1,6 @@
 """Celery and beat-less recovery for personal exports."""
+from apps.operations.cloud_jobs import bounded
+
 
 from celery import shared_task
 from django.db import transaction
@@ -26,7 +28,7 @@ def sweep_subject_exports_task():
         status__in=(DataExportJob.Status.PENDING, DataExportJob.Status.RUNNING),
         expires_at__gt=timezone.now(),
     )).order_by("created_at")[:20]
-    for job in jobs:
+    for job in bounded.page(jobs, "subject-exports"):
         with fanout_tenant_write(job.makerspace_id, operation="subject_export_recovery",
                                 counts=counts) as process:
             if not process:

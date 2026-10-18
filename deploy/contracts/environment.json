@@ -314,6 +314,21 @@
       "secret": true,
       "roles": "authenticated edge/backend only",
       "policy": "excluded"
+    },
+    "MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS": {
+      "default": 0,
+      "minimum": 0,
+      "maximum": 86400,
+      "secret": false,
+      "roles": "managed writers and finite capture jobs",
+      "policy": "excluded",
+      "description": "Zero refuses coordinated unversioned capture; operator verifies actual provider-enforced transfer bound before setting."
+    },
+    "SPACEWORKS_FINITE_MAINTENANCE_JOB": {
+      "default": "unset",
+      "secret": false,
+      "roles": "internal exact finite export entrypoint only",
+      "policy": "excluded"
     }
   },
   "reserved_by_owner": {

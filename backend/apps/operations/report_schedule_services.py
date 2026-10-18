@@ -5,6 +5,8 @@ records a FAILED delivery and lets the sweep carry on. The run is idempotent und
 coarse cron because the claim advances `next_run_at` under a `skip_locked` row lock
 BEFORE any work happens; a second worker in the same minute finds nothing due.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -48,6 +50,7 @@ PAYMENT_FILTER_KEYS = ("status", "subject_type")
 
 
 def run_report_schedules(*, now=None, limit=50):
+    limit = bounded.limit(limit)
     now = now or timezone.now()
     # Archived, reports-disabled and superadmin-hidden makerspaces never run: the same
     # eligibility the aggregate reports use, applied before any row is claimed.
@@ -57,7 +60,7 @@ def run_report_schedules(*, now=None, limit=50):
         ).order_by("next_run_at", "id").values_list("id", "makerspace_id")[: max(int(limit), 1)]
     )
     counts = {"delivered": 0, "failed": 0, "skipped": 0}
-    for schedule_id, makerspace_id in due:
+    for schedule_id, makerspace_id in bounded.items(due):
         with fanout_tenant_write(
             makerspace_id, operation="report_schedule", counts=counts
         ) as should_process:
@@ -161,6 +164,8 @@ def _build_and_deliver(schedule, definition, now, actor):
     makerspace = schedule.makerspace
     errors, object_key, built = [], "", False
     try:
+        from .cloud_jobs.admission import assert_report
+        assert_report(schedule)
         date_range, report_filters = schedule_inputs(schedule, now)
         provenance = build_provenance(
             definition.key, version=definition.version, makerspace_id=makerspace.id,
@@ -171,9 +176,12 @@ def _build_and_deliver(schedule, definition, now, actor):
         )
         rows = reports.report_rows(
             definition.key, makerspace.id, date_range=date_range,
+            limit=501 if settings.SPACEWORKS_DEPLOYMENT_PROFILE == "free" else None,
             actor=schedule.created_by,
             report_filters=report_filters, grain=schedule.grain,
         )
+        if settings.SPACEWORKS_DEPLOYMENT_PROFILE == "free" and len(rows) > 500:
+            raise ValueError("This report exceeds the free profile's 500-row export limit.")
         condition = validate_condition(schedule.condition, definition)
         if not condition_matches(condition, rows):
             audit.record(actor, "report_schedule.skipped", makerspace=makerspace, target=schedule,
@@ -270,7 +278,7 @@ def _sweep_expired(schedule, now):
     """Delete this schedule's expired objects; the row keeps the delivery history."""
     deliveries = rbac.scope_for_scheduled_work(schedule.deliveries.all(),
         makerspace_id=schedule.makerspace_id, field="schedule__makerspace_id")
-    for delivery in deliveries.filter(expires_at__lt=now).exclude(object_key=""):
+    for delivery in bounded.page(deliveries.filter(expires_at__lt=now).exclude(object_key=""), f"report-delivery:{schedule.pk}"):
         if delete_report_object(delivery.object_key) is False:
             logger.warning("report_schedule_cleanup_failed", extra={"schedule_id": schedule.pk, "delivery_id": delivery.pk})
             continue

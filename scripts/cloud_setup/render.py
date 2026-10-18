@@ -20,21 +20,40 @@ def render(directory, values, answers):
     root = Path(directory) / "rendered"
     runtime = role_environment(values, "web")
     release = role_environment(values, "release")
+    # This is a protected server-only adapter input, separate from browser build
+    # configuration. It carries no database, storage or mail credentials.
+    from urllib.parse import urlsplit
+    def origin(value):
+        parsed = urlsplit(value)
+        return f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else ""
+    storage_origin = origin(values.get("AWS_S3_PUBLIC_ENDPOINT_URL", ""))
+    edge = {"PUBLIC_ORIGIN": answers["public_origin"], "BACKEND_ORIGIN": answers["api_origin"],
+            "SPACEWORKS_DEPLOYMENT_PROFILE": answers["profile"],
+            "TRUSTED_EDGE_INGRESS_SECRET": values.get("TRUSTED_EDGE_INGRESS_SECRET", ""),
+            "PUBLIC_API_URL": "/api", "CONNECT_ORIGINS": storage_origin,
+            "IMAGE_ORIGINS": origin(values.get("PUBLIC_IMAGE_BASE_URL", "")),
+            "MEDIA_ORIGINS": storage_origin}
+    if answers["profile"] == "free":
+        edge["FREE_TICK_SECRET"] = values["FREE_TICK_SECRET"]
+    elif values.get("LIVE_ORIGIN"):
+        edge["LIVE_ORIGIN"] = values["LIVE_ORIGIN"]
     roles = ["web"]
     if answers["profile"] == "full":
         roles += ["worker", "beat" if answers["task_profile"] == "redis" else "scheduler"]
     spec = {
         "version": 1, "deployment_mode": "managed", "profile": answers["profile"],
         "backend_image": answers["backend_image"],
-        "image_variant": "free" if answers["profile"] == "free" else "full",
+        "image_variant": "free" if answers["profile"] == "free" else "managed",
+        "image_build": {"target": "free" if answers["profile"] == "free" else "managed", "context": "backend", "named_context": "cloud_tooling=.", "verification": "Require same-build digest and variant proof before deployment."},
         "scheduler": values["CLOUD_SCHEDULER"],
         "roles": [{"name": role, "argv": command(role), "replicas": 1} for role in roles],
         "release": {"argv": command("release"), "finite": True, "environment": "release.environment.json"},
-        "frontend": {"apiUrl": "/api", "upstream": answers["api_origin"], "browser_internal_routes": "denied", "worker_cron": tick_cron(int(values["FREE_TICK_INTERVAL_SECONDS"])) if answers["profile"] == "free" else None},
+        "frontend": {"apiUrl": "/api", "upstream": answers["api_origin"], "server_only_environment": "edge.environment.json", "browser_internal_routes": "denied", "worker_cron": tick_cron(int(values["FREE_TICK_INTERVAL_SECONDS"])) if answers["profile"] == "free" else None},
         "completion": "pending runtime, core-flow and provider acceptance",
     }
     files = {
         "runtime.environment.json": json.dumps(runtime, indent=2, sort_keys=True) + "\n",
+        "edge.environment.json": json.dumps(edge, indent=2, sort_keys=True) + "\n",
         "release.environment.json": json.dumps(release, indent=2, sort_keys=True) + "\n",
         "runtime.env": dotenv(runtime), "release.env": dotenv(release),
         "deployment.json": json.dumps(spec, indent=2, sort_keys=True) + "\n",

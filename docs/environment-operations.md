@@ -151,3 +151,71 @@ stations. Keep the existing value on upgrades; the updater preserves `.env`.
 
 Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
 Provider/cloud inputs and secret-file rules: [managed environment reference](deploy/cloud-environment.md). FREE_* caps apply only in the selected free profile.
+
+Cloud configuration and finite-job inputs (host/full ignores free limits):
+
+| Variable | Default | Operational meaning |
+| --- | --- | --- |
+| `SPACEWORKS_DEPLOYMENT_MODE` | `host` | Explicit host or managed admission; never infer from absent markers. |
+| `SPACEWORKS_DEPLOYMENT_PROFILE` | `full` | Free requires managed; the normal VPS installer remains full. |
+| `SPACEWORKS_DEPLOYMENT_ID` | empty | Stable managed deployment UUID; bind through release/adopt. |
+| `DATABASE_CONNECTION_MODE` | direct on host; explicit managed | Direct or proven session transport; transaction pooling refuses. |
+| `DATABASE_MAINTENANCE_CONNECTION_MODE` | explicit | Direct/session declaration for the finite maintenance connection. |
+| `DATABASE_MAINTENANCE_URL` | empty | Secret owner connection for release/adopt/qualified export jobs only. |
+| `SPACEWORKS_MAINTENANCE_DATABASE_URL` | empty | Host Compose maintenance connection; never an ordinary runtime secret. |
+| `CLOUD_SCRATCH_DATABASES_FILE` | empty | Private version-1 file declaring two isolated scratch DB credentials. |
+| `CLOUD_TASK_PROFILE` | legacy host selection | Managed redis or brokerless task transport. |
+| `CLOUD_SCHEDULER` | legacy host selection | Managed beat, loop or external; free permits tick only. |
+| `SPACEWORKS_ADMITTED_GENERATION` | entrypoint-owned | Original launch generation; active boundaries retain their own generation. Do not set manually. |
+| `SPACEWORKS_FINITE_MAINTENANCE_JOB` | entrypoint-owned | Exact admitted export command only; erased for other invocations. |
+| `MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS` | `0` | Zero refuses coordinated capture. Set only after proving the provider's enforced transfer horizon, at most 86,400 seconds. |
+| `STORAGE_CAPABILITIES_FILE` | empty | Required managed version-1 role/identity/capability descriptor, not a credential file. |
+| `STORAGE_CAPABILITY_TTL_SECONDS` | `900` | Qualified proof freshness, 60..86,400 seconds; periodic callbacks refresh it. |
+| `AWS_SESSION_TOKEN` | empty | Optional private S3 temporary credential token. |
+| `EMAIL_PROVIDER` | empty legacy selection | smtp, resend, postmark, ses, brevo, mailgun or sendgrid. |
+| `EMAIL_PROVIDER_CONFIG_FILE` | empty | Private runtime provider JSON; never embed in frontend configuration. |
+| `EMAIL_PROVIDER_WEBHOOKS_ENABLED` | `False` | Enable only supported native signed provider callbacks. |
+| `SPACEWORKS_SECRET_FILE_MODE` | `native` | Explicit inline mode materializes private files before admission. |
+| `SPACEWORKS_EMAIL_PROVIDER_CONFIG_B64` | empty | Inline provider secret JSON; removed from child environment after materialization. |
+| `SPACEWORKS_STORAGE_CAPABILITIES_B64` | empty | Inline descriptor JSON; removed after protected file materialization. |
+| `UPLOAD_SCAN_POLICY` | managed none; existing host selection | none or configured external clamav; no malware-scanning claim for none. |
+| `CLAMD_HOST` | empty | Private external scanner endpoint when clamav is selected. |
+| `CLAMD_PORT` | `3310` | External scanner port. |
+| `CLAMD_TIMEOUT_SECONDS` | `5` | Bounded scanner request timeout. |
+| `CLAMD_MAX_SCAN_BYTES` | `2147483648` | Scanner maximum; domain/free limits remain stricter where applicable. |
+| `TRUST_FORWARDED_HOST` | `False` | Opt in only with independently restricted managed ingress and exact proxy chain. |
+| `TRUSTED_EDGE_CIDRS` | empty | Allowed immediate edge socket networks; no browser authority. |
+| `TRUSTED_EDGE_UPSTREAM_HOSTS` | empty | Exact raw upstream Host values; no wildcard. |
+| `TRUSTED_EDGE_INGRESS_SECRET` | empty | Protected 32..256 ASCII byte edge/backend proof, distinct from cron secret. |
+| `FREE_TICK_SECRET` | empty | Protected fixed internal scheduler secret; full has no route. |
+| `FREE_TICK_INTERVAL_SECONDS` | `600` | Must match the actual external trigger; affects freshness warnings. |
+| `FREE_TICK_BUDGET_SECONDS` | `20` | Total tick budget, bounded 3..20 seconds with checkpoint headroom. |
+| `FREE_TICK_RATE_LIMIT_PER_MINUTE` | `6` | Authenticated database counter limit, 1..60. |
+| `FREE_TICK_INGRESS_LIMIT_PER_MINUTE` | `120` | Separate fixed unauthenticated ingress counter, 6..600. |
+| `FREE_DB_CAP_BYTES` | configured allowance | Actual operator-verified database cap; unknown usage is never zero. |
+| `FREE_OBJECT_CAP_BYTES` | configured allowance | Actual physical object allowance including retained versions/incomplete uploads. |
+| `FREE_MAX_PROMOTION_BYTES` | `16777216` | Free promotion ceiling; domain/job limits can be lower. |
+| `FREE_EMAIL_DAILY_CAP` | configured allowance | Account-wide recipient allowance, never a per-tenant multiplier. |
+| `FREE_EMAIL_MONTHLY_CAP` | none | Optional actual monthly recipient allowance. |
+| `FREE_EMAIL_ACCOUNT_KEY` | empty | Stable billing-account alias, preserved across credential rotation. |
+| `FREE_EMAIL_PROVIDER` | empty | Provider associated with the configured shared allowance. |
+| `FREE_EMAIL_RESET_TIMEZONE` | `UTC` | Actual provider reset timezone. |
+| `FREE_EMAIL_ACCOUNTS` | `{}` | Protected multi-account cap/fingerprint map; tenants cannot mint allowances. |
+| `SETUP_SUPERADMIN_PASSWORD_GENERATED` | `False` | Setup annotation for a newly generated password; force first change, never print it. |
+| `SPACEWORKS_PRIVILEGED_TARGET_REQUIRED` | unset | Ephemeral V proof flag held under the operation lock, never persist in dotenv. |
+| `SPACEWORKS_PRIVILEGED_TARGET_NAME` | unset | Proven active database name for privileged bootstrap/migration. |
+| `SPACEWORKS_PRIVILEGED_TARGET_OID` | unset | Matching positive active database OID. |
+| `SPACEWORKS_PRIVILEGED_TARGET_UUID` | unset | Matching protected database UUID; all four proof values travel together. |
+| `SPACEWORKS_GRANT_DATABASE_OID` | unset | Separately supervised sibling grant-only target OID. |
+| `SPACEWORKS_GRANT_DATABASE_UUID` | unset | Separately supervised sibling grant-only target UUID. |
+| `SPACEWORKS_INITIALIZE_DATABASE_NAME` | unset | Ephemeral pre-H1 name proof for a populated legacy database without a marker. |
+| `SPACEWORKS_INITIALIZE_DATABASE_OID` | unset | Matching pre-H1 OID proof; empty fresh initialization retains its explicit path. |
+| `BUILD_IMAGE_PROFILE` | image build metadata | Build-owned full/free identity; cannot promote a reduced image through runtime env. |
+| `GUNICORN_CMD_ARGS` | empty | Free rejects arbitrary command arguments; use its fixed one-worker topology. |
+| `PGCONNECT_TIMEOUT` | validated transport | Connection timeout only; passfiles and validated URLs own credentials. |
+| `PGSSLMODE` | validated URL/provider choice | Remote managed connections require explicit TLS; prefer verify-full. |
+| `PGSSLROOTCERT` | empty | Optional provider/system CA path. |
+| `PGSSLCERT` | empty | Optional client certificate path. |
+| `PGSSLKEY` | empty | Optional protected client private-key path. |
+| `PGSSLCRL` | empty | Optional certificate revocation-list path. |
+| `PGCHANNELBINDING` | validated URL/provider choice | Explicit supported libpq channel-binding policy. |

@@ -39,3 +39,21 @@ def verify_bindings(*, check=lambda: None, roles=None):
         finally:
             client.close()
     return results
+
+
+def refresh_chunk(context):
+    """Refresh one binding per attempt, using the same native qualification probes."""
+    from .cloud_jobs.contracts import ChunkResult
+    from apps.storage_capabilities.runtime import configured_contracts
+    from apps.storage_capabilities.budget import storage_budget
+    roles = sorted(configured_contracts())
+    position = int(context.checkpoint.get("position", 0))
+    if position >= len(roles):
+        return ChunkResult(True, {}, 0)
+    context.check()
+    with storage_budget(deadline=context.deadline, check_active=context.check):
+        from .cloud_runtime import writer
+        with writer("presign"):
+            verify_bindings(check=context.check, roles=[roles[position]])
+    return ChunkResult(position + 1 == len(roles),
+                       {} if position + 1 == len(roles) else {"position": position + 1}, 1)

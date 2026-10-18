@@ -29,10 +29,13 @@ def validate_endpoint(url, mode, provider):
     return parsed
 
 
-def connect(url):
-    import psycopg2
-    # Explicit kwargs override ambient PGOPTIONS and prevent unbounded probe SQL.
-    return psycopg2.connect(url, connect_timeout=5, gssencmode="disable", options="-c statement_timeout=5000 -c lock_timeout=2000", application_name="spaceworks-setup-probe")
+def specification(url, mode, values):
+    import os
+    from config.cloud_database import database_spec
+    # The builder must see inherited PG* names too, so a wizard cannot validate
+    # one endpoint while libpq silently supplies a different host/service file.
+    source = {**os.environ, **values}
+    return database_spec(url, mode=mode, managed=True, environ=source, statement_timeout_ms=5000)
 
 
 def database_probe(values, answers, *, require_identity=True):
@@ -41,12 +44,16 @@ def database_probe(values, answers, *, require_identity=True):
     validate_endpoint(runtime, answers["database_connection_mode"], answers["database_provider"])
     validate_endpoint(maintenance, answers["maintenance_connection_mode"], answers["database_provider"])
     with ExitStack() as stack:
+        from config.cloud_database import connect_database
+        from config.cloud_database.probes import probe_session_transport
+        specs = [specification(runtime, answers["database_connection_mode"], values),
+                 specification(maintenance, answers["maintenance_connection_mode"], values)]
+        for spec in specs:
+            probe_session_transport(spec)
         connections = []
-        for url in (runtime, runtime, maintenance):
-            db = connect(url)
-            stack.callback(db.close)
+        for spec in (specs[0], specs[0], specs[1]):
+            db = stack.enter_context(connect_database(spec))
             connections.append(db)
-            db.autocommit = True
         first, contender, owner = connections
         with first.cursor() as cur, contender.cursor() as other, owner.cursor() as privileged:
             cur.execute("SELECT current_setting('server_version_num')::int, pg_is_in_recovery(), current_database(), current_user")

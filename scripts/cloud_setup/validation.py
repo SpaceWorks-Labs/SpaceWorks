@@ -32,8 +32,8 @@ def validate(values, answers, *, final=False):
     checks.append(probe("continuity", lambda: continuity_probe(values, free=answers["profile"] == "free")))
     # Validation is read-only. Conditional PUT/privacy/CORS probes belong to the
     # explicit bootstrap phase, never a validation command.
-    from .secret_files import read_config
-    checks.append(probe("storage_descriptor", lambda: {"status": "passed" if read_config(values, "STORAGE_CAPABILITIES_FILE") else "failed"}))
+    from .storage_probe import descriptor_probe
+    checks.append(probe("storage_descriptor", lambda: descriptor_probe(values)))
     payload = {"version": 1, "checked_at": datetime.now(timezone.utc).isoformat(), "checks": checks}
     payload["status"] = "passed" if all(c["status"] == "passed" for c in checks) else "failed"
     payload["evidence_sha256"] = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()

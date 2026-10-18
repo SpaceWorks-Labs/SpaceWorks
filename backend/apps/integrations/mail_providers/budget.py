@@ -81,6 +81,17 @@ def reserve(account, *, log, attempt_key, recipients, now=None):
         row = Account.objects.select_for_update().get(pk=row.pk)
         if row.provider != account.provider or row.reset_timezone != account.reset_timezone:
             raise BudgetDeferred("email_budget_account_policy_changed")
+        # A retry increments EmailLog.attempts. Its new attempt key must never
+        # evade an older send whose provider acceptance is still unknown.
+        unresolved = Reservation.objects.filter(log_id=log.pk, state__in=("reserved", "uncertain")).exclude(attempt_key=attempt_key)
+        if unresolved.exists():
+            raise BudgetDeferred("email_acceptance_uncertain")
+        parts = attempt_key.split(":")
+        if len(parts) == 4:
+            accepted = Reservation.objects.filter(account=row, log_id=log.pk, state="accepted",
+                attempt_key__startswith=f"{parts[0]}:{parts[1]}:", attempt_key__endswith=":" + parts[3]).first()
+            if accepted:
+                return accepted
         existing = Reservation.objects.filter(attempt_key=attempt_key).first()
         if existing:
             if existing.account_id != row.pk or existing.recipients != recipients:

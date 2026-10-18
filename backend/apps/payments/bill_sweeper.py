@@ -1,4 +1,6 @@
 """Bounded recovery of optional bill issuance, isolated by tenant and payment."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 
@@ -15,13 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 def issue_missing_bills(*, makerspace_id=None, limit=200):
+    limit = bounded.limit(limit)
     if type(limit) is not int or not 1 <= limit <= 10000:
         raise ValueError("Use a bill batch size between 1 and 10000.")
     counts = {"issued": 0, "skipped": 0, "failed": 0}
     spaces = rbac.scope_for_scheduled_work(Makerspace.objects.all(), field="pk").order_by("pk")
     if makerspace_id is not None:
         spaces = spaces.filter(pk=makerspace_id)
-    for space in spaces.iterator(chunk_size=100):
+    for space in bounded.page(spaces, "bill-spaces"):
         try:
             with fanout_tenant_write(space.pk, operation="issue_missing_bills", counts=counts) as allowed:
                 if not allowed:
@@ -30,7 +33,7 @@ def issue_missing_bills(*, makerspace_id=None, limit=200):
                     continue
                 ids = list(Payment.objects.filter(makerspace=space, status="pending")
                            .exclude(documents__kind="bill").order_by("pk").values_list("pk", flat=True)[:limit])
-                for pk in ids:
+                for pk in bounded.items(ids):
                     try:
                         with transaction.atomic():
                             # Lock before checking pending: settlement may have won the race.

@@ -3,7 +3,8 @@ import { failure, httpsOrigin, publicConfig, securityHeaders } from './security.
 
 const STRIP = ['forwarded', 'x-real-ip', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto',
   'x-forwarded-port', 'x-cron-secret', 'x-original-url', 'x-rewrite-url', 'host',
-  'connection', 'transfer-encoding', 'upgrade', 'proxy-authorization', 'cf-access-jwt-assertion'];
+  'connection', 'transfer-encoding', 'upgrade', 'proxy-authorization', 'cf-access-jwt-assertion',
+  'x-spaceworks-edge-secret'];
 
 export async function handleRequest(request, env, assets, fetcher = fetch, clientIp = '') {
   try {
@@ -37,18 +38,24 @@ export async function handleRequest(request, env, assets, fetcher = fetch, clien
     }
     const upstream = new URL(target.path + url.search, httpsOrigin(live ? env.LIVE_ORIGIN : env.BACKEND_ORIGIN));
     const headers = new Headers(request.headers);
+    if (typeof env.TRUSTED_EDGE_INGRESS_SECRET !== 'string'
+        || env.TRUSTED_EDGE_INGRESS_SECRET.length < 32
+        || env.TRUSTED_EDGE_INGRESS_SECRET.length > 256
+        || !/^[\x21-\x7e]+$/.test(env.TRUSTED_EDGE_INGRESS_SECRET)) return failure(502, 'edge_not_configured');
     for (const name of (headers.get('connection') || '').split(',')) if (name.trim()) headers.delete(name.trim());
     for (const name of STRIP) headers.delete(name);
     for (const name of [...headers.keys()]) {
       if (/^(?:x-forwarded-|x-middleware-|x-vercel-)/i.test(name)) headers.delete(name);
     }
     headers.set('X-Forwarded-Host', url.host);
+    headers.set('X-SpaceWorks-Edge-Secret', env.TRUSTED_EDGE_INGRESS_SECRET);
     headers.set('X-Forwarded-Proto', 'https');
     if (clientIp) headers.set('X-Forwarded-For', clientIp);
     const response = await fetcher(upstream, { method: request.method, headers,
       body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
       duplex: 'half', redirect: 'manual', signal: request.signal });
     const output = new Headers(response.headers);
+    output.delete('X-SpaceWorks-Edge-Secret');
     // Host-only Secure auth cookies need no rewrite. Refuse a mismatched Domain.
     const cookies = typeof output.getSetCookie === 'function' ? output.getSetCookie() : [output.get('set-cookie') || ''];
     for (const cookie of cookies) {

@@ -85,7 +85,10 @@ PY
   prepare_compose_wrapper
   COMPOSE=("$ROOT/scripts/spaceworks-compose.sh" bundled)
   # No old writers are readmitted. New entrypoints provision grants and identity.
+  export SPACEWORKS_INITIALIZE_DATABASE_NAME="${old_identity%%|*}"
+  export SPACEWORKS_INITIALIZE_DATABASE_OID="${old_identity#*|}"
   "${COMPOSE[@]}" up -d --remove-orphans
+  unset SPACEWORKS_INITIALIZE_DATABASE_NAME SPACEWORKS_INITIALIZE_DATABASE_OID
   wait_for_backend || die 'Legacy transition is incomplete; writers remain fenced by the installed H1 boundary.'
   install_producer_capability
   rm -f "$ROOT/.spaceworks-transition.json"

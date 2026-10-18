@@ -80,6 +80,7 @@ def main(argv=None):
         parser.parse_args(argv or ["--help"])
         return 0
     from cloud_setup.cli import main as managed_main
+    sys.path.insert(0, str(ROOT / "backend" if (ROOT / "backend").is_dir() else ROOT))
     return managed_main(argv)
 
 

@@ -1,4 +1,6 @@
 """Scheduled coordination for audit batch sealing and anchoring."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 
@@ -45,13 +47,10 @@ def run_audit_attestation():
         synchronize_anchors,
     )
 
-    scope_ids = list(
-        AuditMacKey.objects.order_by("makerspace_id").values_list(
-            "makerspace_id", flat=True
-        )
-    )
+    scope_ids = AuditMacKey.objects.order_by("makerspace_id")
     result = {"sealed": 0, "failed": 0}
-    for makerspace_id in scope_ids:
+    for scope_key in bounded.page(scope_ids, "audit-scopes"):
+        makerspace_id = scope_key.makerspace_id
         try:
             # Lane D publication takes this same per-scope lock while proving that
             # no immutable anchor exists. Keep activation, synchronization, sealing,

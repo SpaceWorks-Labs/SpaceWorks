@@ -18,6 +18,10 @@ def deployment_settings(env, selection):
         raise ImproperlyConfigured("Storage proof TTL must be in 60..86400 seconds.")
     if selection.mode == "managed" and "*" in env.list("ALLOWED_HOSTS", default=[]):
         raise ImproperlyConfigured("Managed ingress requires explicit allowed hosts.")
+    if selection.mode == "managed":
+        values["MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS"] = env.int("MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS", default=0)
+        if not 0 <= values["MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS"] <= 86400:
+            raise ImproperlyConfigured("Managed transfer horizon must be in 0..86400 seconds.")
     if values["TRUST_FORWARDED_HOST"]:
         if (selection.mode != "managed" or not values["TRUSTED_EDGE_CIDRS"]
                 or not values["TRUSTED_EDGE_UPSTREAM_HOSTS"]

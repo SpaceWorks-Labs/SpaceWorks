@@ -8,6 +8,8 @@ from .dispatch_channels import channel_module_blocks, sanitize_notification_erro
 logger = logging.getLogger(__name__)
 
 def _deliver_notification(log) -> NotificationDeliveryLog:
+    from apps.operations.cloud_jobs.bounded import check
+    check()
     if log.status in {NotificationDeliveryStatus.SENT, NotificationDeliveryStatus.SKIPPED}:
         return log
 
@@ -50,6 +52,7 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
         return log
 
     try:
+        check()
         if log.channel == NonEmailNotificationChannel.NATIVE_PUSH:
             from apps.integrations.push import deliver_native_push
 
@@ -92,6 +95,7 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
             log.status = NotificationDeliveryStatus.FAILED
             log.error = "notification_channel_not_configured"
     finally:
+        check()
         log.attempts += 1
         log.save(
             update_fields=["status", "error", "attempts", "sent_at", "updated_at"]

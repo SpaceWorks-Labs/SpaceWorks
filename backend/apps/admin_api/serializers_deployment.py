@@ -25,6 +25,19 @@ class TickStatusSerializer(serializers.Serializer):
     failed_tasks = serializers.IntegerField()
 
 
+class EmailAccountUsageSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    provider = serializers.CharField()
+    accepted = serializers.IntegerField()
+    reserved = serializers.IntegerField()
+    uncertain = serializers.IntegerField()
+    daily_cap = serializers.IntegerField(allow_null=True)
+    monthly_cap = serializers.IntegerField(allow_null=True)
+    monthly_charged = serializers.IntegerField()
+    reset_timezone = serializers.CharField()
+    provider_usage_known = serializers.BooleanField()
+
+
 class FreeUsageSerializer(serializers.Serializer):
     profile = serializers.ChoiceField(choices=["free"])
     visibility = serializers.ChoiceField(choices=["deployment", "tenant"])
@@ -33,6 +46,8 @@ class FreeUsageSerializer(serializers.Serializer):
     email = UsageSampleSerializer()
     email_pending = serializers.IntegerField(allow_null=True)
     email_uncertain = serializers.IntegerField(allow_null=True)
+    email_accounts = EmailAccountUsageSerializer(many=True)
+    notification_uncertain = serializers.IntegerField()
     tick = TickStatusSerializer()
     notices = serializers.ListField(child=serializers.CharField())
 

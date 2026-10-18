@@ -65,6 +65,11 @@ def _remove_alias(alias):
 
 @contextmanager
 def _owned_database(name, alias, *, database=None, migrate=False):
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_portable import allocate
+        with allocate(alias, migrate=migrate) as value:
+            yield value
+        return
     database = database or getattr(
         settings, "TENANT_DUMP_SCRATCH_DATABASE", settings.DATABASES["default"]
     )
@@ -108,9 +113,15 @@ def _migrate_scratch(name, database):
         extra_env={
             "DATABASE_URL": _database_url(scratch),
             "CONN_MAX_AGE": "0",
+            "SPACEWORKS_DEPLOYMENT_MODE": "host",
+            "SPACEWORKS_DEPLOYMENT_PROFILE": "full",
         },
         cwd=settings.BASE_DIR,
     )
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        _run([sys.executable, "manage.py", "createcachetable", "spaceworks_cache", "--verbosity", "0"],
+             database=scratch, extra_env={"DATABASE_URL": _database_url(scratch),
+             "SPACEWORKS_DEPLOYMENT_MODE": "host", "SPACEWORKS_DEPLOYMENT_PROFILE": "full"}, cwd=settings.BASE_DIR)
 
 
 def _database_url(database):
@@ -149,17 +160,23 @@ def migrated_scratch_database(makerspace_id, run_id, *, database=None):
 
 
 @contextmanager
-def empty_verification_database(makerspace_id, run_id, *, database=None):
+def empty_verification_database(makerspace_id, run_id, *, database=None, migrate=False):
     """Allocate an unmigrated database into which the candidate dump is restored."""
     component = re.sub(r"[^a-z0-9]", "", str(run_id).lower())
     suffix = "verification"
     name = scratch_database_name(makerspace_id, f"{component}{suffix}")
     alias = f"tenant_dump_verify_{component}"
-    with _owned_database(name, alias, database=database) as value:
+    with _owned_database(name, alias, database=database, migrate=migrate) as value:
         yield value
 
 
 def dump_scratch_database(database_name, destination, *, database=None):
+    from .cloud_portable import allocated_database, check_allocations
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        check_allocations()
+        database = allocated_database(database_name)
+        if database is None:
+            raise TenantDumpBuildError("The scratch database has no retained allocation.")
     database = database or getattr(
         settings, "TENANT_DUMP_SCRATCH_DATABASE", settings.DATABASES["default"]
     )
@@ -169,6 +186,7 @@ def dump_scratch_database(database_name, destination, *, database=None):
             "--format=custom",
             "--no-owner",
             "--no-acl",
+            *(["--exclude-table=public.spaceworks_scratch_identity"] if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed" else []),
             f"--dbname={database_name}",
             f"--file={Path(destination)}",
         ],
@@ -176,7 +194,13 @@ def dump_scratch_database(database_name, destination, *, database=None):
     )
 
 
-def restore_scratch_dump(path, database_name, *, database=None):
+def restore_scratch_dump(path, database_name, *, database=None, source_data=False):
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_portable import allocated_database, check_allocations
+        check_allocations()
+        database = allocated_database(database_name)
+        if database is None:
+            raise TenantDumpBuildError("The scratch database has no retained allocation.")
     database = database or getattr(
         settings, "TENANT_DUMP_SCRATCH_DATABASE", settings.DATABASES["default"]
     )
@@ -184,6 +208,7 @@ def restore_scratch_dump(path, database_name, *, database=None):
         [
             client_binary("pg_restore"),
             "--exit-on-error",
+            *(["--single-transaction"] if source_data else []),
             "--no-owner",
             "--no-acl",
             f"--dbname={database_name}",

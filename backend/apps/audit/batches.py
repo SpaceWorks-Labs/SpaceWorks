@@ -1,4 +1,6 @@
 """Single-writer scheduled construction and external anchoring of audit batches."""
+from apps.operations.cloud_jobs import bounded
+
 
 from contextlib import contextmanager
 
@@ -173,18 +175,19 @@ def synchronize_anchors(makerspace_id, sink, signing_key):
     from apps.audit.models import AuditSigningKeyRotation
     from apps.audit.rotations import rotation_envelope, validate_rotation
 
-    for rotation in AuditSigningKeyRotation.objects.filter(
+    for rotation in bounded.page(AuditSigningKeyRotation.objects.filter(
         makerspace_id=makerspace_id,
         events__state="FINALIZED",
-    ).select_related("old_key", "new_key").distinct().order_by("old_version"):
+    ).select_related("old_key", "new_key").distinct().order_by("old_version"), f"anchor-rotations:{makerspace_id}", key="old_version"):
         envelope = validate_rotation(rotation)
         identity = sink.rotation_identity(envelope)
         anchored = sink.fetch_rotation(identity)
         if anchored is None or not anchors_match(anchored, rotation_envelope(rotation)):
             raise AnchorConflict("A finalized signing-key transition is absent or conflicting.")
-    for batch in AuditBatch.objects.filter(makerspace_id=makerspace_id).order_by(
+    bounded.require_complete(f"anchor-rotations:{makerspace_id}")
+    for batch in bounded.page(AuditBatch.objects.filter(makerspace_id=makerspace_id).order_by(
         "batch_seq"
-    ):
+    ), f"anchor-batches:{makerspace_id}", key="batch_seq"):
         envelope = batch_envelope(batch)
         identity = (
             envelope["payload"]["deployment_id"],
@@ -199,6 +202,7 @@ def synchronize_anchors(makerspace_id, sink, signing_key):
             raise AnchorConflict(
                 f"External anchor conflicts at batch_seq={batch.batch_seq}."
             )
+    bounded.require_complete(f"anchor-batches:{makerspace_id}")
 
 
 def seal_scope(makerspace_id, signing_key):

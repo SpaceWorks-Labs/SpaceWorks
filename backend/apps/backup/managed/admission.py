@@ -45,6 +45,8 @@ def assert_binding(database, expected, *, require_narrow=True):
         cursor.execute("SELECT deployment_id::text, database_uuid::text FROM public.backup_manageddeploymentstate WHERE id = 1")
         if cursor.fetchone() != (str(expected), live.database_uuid):
             raise ManagedAdmissionError("Managed deployment identity is missing or disagrees with this database.")
+        from .legacy_staging import assert_durable_staging
+        assert_durable_staging(cursor)
         if require_narrow:
             cursor.execute("SELECT current_user")
             _assert_narrow_runtime_role(cursor, cursor.fetchone()[0])

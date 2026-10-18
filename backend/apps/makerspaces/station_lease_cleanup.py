@@ -1,4 +1,6 @@
 """Bounded per-tenant cleanup of expired kiosk operator leases and revocations."""
+from apps.operations.cloud_jobs import bounded
+
 
 from datetime import timedelta
 
@@ -28,17 +30,18 @@ def purge_expired_operator_leases(*, now=None, tenant_limit=500):
     revocation_tenants = StationSessionRevocation.objects.filter(
         expires_at__lt=now
     ).values_list("station__makerspace_id", flat=True)
-    tenant_ids = sorted(set(lease_tenants) | set(revocation_tenants))[:tenant_limit]
-    for makerspace_id in tenant_ids:
+    tenant_ids = (sorted(set(lease_tenants[:bounded.limit(tenant_limit)]) | set(revocation_tenants[:bounded.limit(tenant_limit)]))[:bounded.limit(tenant_limit)]
+                  if bounded.active() else sorted(set(lease_tenants) | set(revocation_tenants))[:tenant_limit])
+    for makerspace_id in bounded.items(tenant_ids):
         with fanout_tenant_write(
             makerspace_id, operation="kiosk_operator_lease_cleanup", counts=counts
         ) as should_process:
             if not should_process:
                 continue
-            counts["leases"] += StationOperatorLease.objects.filter(
+            counts["leases"] += bounded.delete(StationOperatorLease.objects.filter(
                 makerspace_id=makerspace_id, expires_at__lt=lease_cutoff
-            ).delete()[0]
-            counts["revocations"] += StationSessionRevocation.objects.filter(
+            ), f"station-leases:{makerspace_id}")[0]
+            counts["revocations"] += bounded.delete(StationSessionRevocation.objects.filter(
                 station__makerspace_id=makerspace_id, expires_at__lt=now
-            ).delete()[0]
+            ), f"station-revocations:{makerspace_id}")[0]
     return counts

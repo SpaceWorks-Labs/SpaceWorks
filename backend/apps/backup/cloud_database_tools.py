@@ -31,6 +31,8 @@ def fixed_command(command, *, database=None, extra_env=None, cwd=None, timeout=3
         return run_client(tool, args, spec=configuration_spec(database, name=target), timeout=timeout)
     # Scratch migrations use a Python argv, with credentials only in protected env.
     with postgres_environment(configuration_spec(database)) as (_, environment):
+        for name in ("DATABASE_MAINTENANCE_URL", "SPACEWORKS_MAINTENANCE_DATABASE_URL", "CLOUD_SCRATCH_DATABASES_FILE", "SPACEWORKS_FINITE_MAINTENANCE_JOB"):
+            environment.pop(name, None)
         environment.update(extra_env or {})
         try:
             return subprocess.run(command, env=environment, cwd=cwd, timeout=timeout,

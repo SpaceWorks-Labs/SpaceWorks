@@ -4,6 +4,7 @@ import hashlib
 import logging
 
 import boto3
+from apps.storage_clients import s3_client
 from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
@@ -36,7 +37,7 @@ class BackupObjectMissing(BackupStorageError):
 
 def client(*, public_endpoint=False):
     endpoint = settings.AWS_S3_PUBLIC_ENDPOINT_URL if public_endpoint else settings.AWS_S3_ENDPOINT_URL
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID or None,
@@ -154,6 +155,17 @@ def download_object(bucket, key, destination, *, versioned):
     except BackupObjectMissing:
         if key.startswith(STAGING_PREFIX):
             raise
+        if bucket == settings.PUBLIC_IMAGE_BUCKET and (
+            settings.SPACEWORKS_DEPLOYMENT_MODE == "managed" or getattr(settings, "STORAGE_CAPABILITIES_FILE", "")
+        ):
+            from apps.storage_capabilities.presigning import public_image_staging
+            locator = public_image_staging(key, private_bucket=settings.AWS_STORAGE_BUCKET_NAME)
+            try:
+                captured = _download_object(locator.bucket, locator.key, destination,
+                    versioned=ensure_versioning_or_quiescence(locator.bucket) == "versioned")
+                return {**captured, "key": key}
+            except BackupObjectMissing:
+                pass  # Preserve the legacy public staging drain until it is empty.
         staged = _download_object(
             bucket, f"{STAGING_PREFIX}{key}", destination, versioned=versioned
         )

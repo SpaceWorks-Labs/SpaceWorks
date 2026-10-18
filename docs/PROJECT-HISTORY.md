@@ -433,3 +433,10 @@ coverage drafted against 7a; local frontend checks complete, database verificati
 UI integration outstanding. This entry is not a shipped-release claim.
 
 2026-10-18: cloud shared integration adds additive coordination/provider migrations, explicit settings/routes, encrypted provider API/admin wiring, durable-dispatch gates, private image staging, managed refusal/guard seams, image variants and scoped presentation. Acceptance, incoming programmes and remaining adapters are incomplete; no launch/recovery pass claimed.
+
+2026-10-18 integration closure source: private object-backed import/capture staging with immutable lineage,
+physical writer/presign drain and supervised pause recovery; qualified application-only portable capture
+with isolated scratch leases; bounded catalog/domain/work/mail drains; storage reservation/inventory and
+provider mail reconciliation; C5 active-target privileged wiring and C17 real scheduler/worker diagnostics.
+Generated schemas/catalog hash remain owner-deferred. Docker/provider/VM/browser acceptance is unexecuted;
+this entry records source work, not a shipped release or completed recovery drill.

@@ -83,4 +83,4 @@ envVarGroups:
       - {"key": "TRUST_X_FORWARDED_PROTO", "value": "true"}
       - {"key": "UPLOAD_SCAN_POLICY", "value": "none"}
 services:
-  - {"type": "web", "name": "spaceworks-web", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "free", "dockerCommand": "--role backend python -m scripts.run_cloud_role web", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1, "healthCheckPath": "/api/v1/health/readiness/"}
+  - {"type": "web", "name": "spaceworks-web", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-hq/spaceworks-backend-free@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "free", "dockerCommand": "--role backend python -m scripts.run_cloud_role web", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1, "healthCheckPath": "/api/v1/health/readiness/"}

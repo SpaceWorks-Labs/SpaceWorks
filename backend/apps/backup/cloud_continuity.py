@@ -5,6 +5,10 @@ from contextvars import ContextVar
 _operation = ContextVar("managed_operation_guard", default=None)
 
 
+def current_operation():
+    return _operation.get()
+
+
 def check_operation():
     guard = _operation.get()
     if guard is not None and hasattr(guard, "assert_valid"):

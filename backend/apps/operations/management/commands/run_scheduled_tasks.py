@@ -94,6 +94,9 @@ class Command(BaseCommand):
 
     def _run_pass(self, options, lock):
         from apps.operations.models_scheduling import PeriodicTaskRun
+        from apps.operations.cloud_jobs.diagnostics import scheduler_heartbeat, scheduler_completed
+        if options["lane"] != "worker":
+            scheduler_heartbeat("loop" if options["loop"] else "external")
 
         only = options.get("task")
         known = [name for name, _path, _interval in SCHEDULED_TASKS]
@@ -154,7 +157,9 @@ class Command(BaseCommand):
                 if lock is not None:
                     lock.check()
                 full_progress.end(attempt, task, lock)
+                scheduler_completed()
             except Exception as exc:  # noqa: BLE001 - one failing task must not stop the rest
+                scheduler_completed(failed=True)
                 full_progress.end(attempt, task, lock, failed=True)
                 with transaction.atomic():
                     row = PeriodicTaskRun.objects.select_for_update().get(name=name)

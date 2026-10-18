@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "common_base": "01ac3decc0d3f32817cbf8956bf8b26cc5d7e7e7",
-  "status": "awaiting_incoming_programmes",
+  "status": "reviewed_current_tree",
   "runtime_plugin_system": false,
-  "final_gate": "refuse pending sections or missing actual hooks; import/validate against the combined tree",
+  "final_gate": "Enable only programmes whose required packages and actual hooks validate in the current tree.",
   "pages": {
-    "status": "pending",
+    "status": "not_present_in_current_tree",
     "incoming_commit": null,
     "required_tasks": [
       {
@@ -25,7 +25,7 @@
     "actual_hooks": []
   },
   "events": {
-    "status": "pending",
+    "status": "not_present_in_current_tree",
     "incoming_commit": null,
     "required_tasks": [
       {
@@ -77,7 +77,7 @@
     "actual_hooks": []
   },
   "reimbursement": {
-    "status": "pending",
+    "status": "not_present_in_current_tree",
     "incoming_commit": null,
     "required_tasks": [
       {
@@ -126,7 +126,7 @@
     "actual_hooks": []
   },
   "integration_evidence": {
-    "head": "150312619b682b5b5d5d669f70422738d277169a",
+    "head": "f9f9fa6ca88e8de4b937abc0f3a1d6e514c7e3e9",
     "active_programmes": [],
     "absent_required_packages": [
       "backend/apps/events/submissions",
@@ -134,6 +134,12 @@
       "backend/apps/event_reimbursements",
       "backend/apps/payments/event_payouts"
     ],
-    "reason": "prepare reviewed incoming programme deltas before registering their adapters"
+    "existing_scheduled_hooks": [
+      "apps.events.tasks.extend_event_series_task",
+      "apps.payments.tasks.issue_missing_bills_task",
+      "apps.makerspaces.tasks_membership.run_membership_renewals_task"
+    ],
+    "absent_page_task": "apps.makerspaces.tasks.cleanup_public_page_assets_task",
+    "reason": "No enabled programme imports missing packages; existing events/billing/membership schedules remain in the legacy catalog."
   }
 }

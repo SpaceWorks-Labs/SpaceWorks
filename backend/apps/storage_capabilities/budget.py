@@ -33,6 +33,11 @@ def storage_budget(*, deadline, check_active):
 
 
 def checkpoint():
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_MODE", "host") == "managed":
+        from apps.operations.cloud_runtime import check
+        from apps.backup.cloud_continuity import check_operation
+        check_operation()
+        check()
     value = _budget.get()
     if value is None:
         return

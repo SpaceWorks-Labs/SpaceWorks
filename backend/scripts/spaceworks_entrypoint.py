@@ -83,6 +83,18 @@ def main(argv=None, *, capability_request=request_launch_capability):
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
         return refuse("DATABASE_URL is missing")
+    if role == ProcessRole.MIGRATE:
+        try:
+            from apps.backup.privileged_target import privileged_url, verify_target
+            from config.cloud_database import connect_database, database_spec
+            runtime_url = os.environ.get("SPACEWORKS_RUNTIME_DATABASE_URL", "")
+            database_url = privileged_url(database_url, runtime_url)
+            with connect_database(database_spec(database_url)) as database:
+                verify_target(database, marker, runtime_url, os.environ,
+                              allow_initial=bound_database.server_identity is None)
+            os.environ["DATABASE_URL"] = database_url
+        except Exception:
+            return refuse("privileged migration target could not be verified")
     try:
         identity = live_database_identity(database_url)
     except Exception:

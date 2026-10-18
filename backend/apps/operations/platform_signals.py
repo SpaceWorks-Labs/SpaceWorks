@@ -1,4 +1,6 @@
 """Safe deployment summaries: no provider errors, secrets or tenant snapshots."""
+from apps.operations.cloud_jobs import bounded
+
 
 from django.db.models import Q
 from django.utils import timezone
@@ -59,7 +61,7 @@ def offsite_snapshot(visible_ids):
         Q(scope_snapshot="deployment", makerspace_id_snapshot__isnull=True)
         | Q(scope_snapshot="makerspace", makerspace_id_snapshot__in=visible_ids),
     )
-    for destination in BackupDestination.objects.filter(enabled=True, retired_at=None):
+    for destination in bounded.page(BackupDestination.objects.filter(enabled=True, retired_at=None), "offsite-signals"):
         copies = uploads.filter(destination=destination)
         latest = copies.order_by("-created_at").first()
         failing = copies.exclude(state="deleted").filter(

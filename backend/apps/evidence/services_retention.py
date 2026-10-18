@@ -125,8 +125,10 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
             staged_key = storage.staging_key(claim.object_key)
             staged_size = storage.object_size(staged_key)
             outcomes = {
-                "final": storage.delete_object_strict(claim.object_key),
-                "staging": storage.delete_object_strict(staged_key),
+                "final": storage.delete_object_strict(claim.object_key,
+                    **_accounting_receipt(claim.evidence_id, "final")),
+                "staging": storage.delete_object_strict(staged_key,
+                    **_accounting_receipt(claim.evidence_id, "staging")),
             }
             size = final_size or staged_size or claim.recorded_size
             checkpoint()
@@ -208,6 +210,12 @@ def _claim(evidence_id, *, now):
         return ExpiryClaim(
             photo.pk, photo.makerspace_id, photo.object_key, token, recorded_size
         )
+
+
+def _accounting_receipt(evidence_id, part):
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") != "free":
+        return {}
+    return {"operation_key": f"evidence-expiry:{evidence_id}:{part}"}
 
 
 def _complete(claim, *, size, policy_days, cutoff, outcomes, run_id):

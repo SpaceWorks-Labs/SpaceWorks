@@ -4,6 +4,8 @@ Delivery is AT-LEAST-ONCE: a duplicate is possible; a drop is not. A worker can
 die after SMTP acceptance and before recording success, so durable intent is created
 under the custody-row lock and claimed rows dispatch only after that transaction.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -54,13 +56,13 @@ ZERO_REMINDER = timedelta(days=1)
 
 def deliver_archive_custody_alarms(*, makerspace_id=None):
     states = MakerspaceArchiveCustodyState.objects.filter(state__in=ALARM_STATES)
-    state_ids = list(
+    state_ids = (
         servable_queryset(states, relation="makerspace")
         .filter(**({"makerspace_id": makerspace_id} if makerspace_id else {}))
         .order_by("makerspace_id")
         .values_list("pk", flat=True)
     )
-    for state_id in state_ids:
+    for state_id in bounded.page(state_ids, "archive-custody-states"):
         try:
             _ensure_delivery_intents(state_id)
         except Exception:
@@ -71,7 +73,7 @@ def deliver_archive_custody_alarms(*, makerspace_id=None):
 
     delivered = deliver_claimable_rows(makerspace_id=makerspace_id)
 
-    for state_id in state_ids:
+    for state_id in bounded.page(state_ids, "archive-custody-reconcile"):
         try:
             _reconcile_exhausted_tenant_deliveries(state_id)
         except Exception:

@@ -31,8 +31,15 @@ control() {
     --role management python manage.py backup_control "$@"
 }
 reprovision_grants() {
-  local database_name="${1:-$RESTORE_DATABASE}"
+  local database_name="${1:-$RESTORE_DATABASE}" proof oid identity
+  [[ "$database_name" =~ ^[A-Za-z_][A-Za-z0-9_$]{0,62}$ ]] || return 1
+  proof="$("${COMPOSE[@]}" exec -T -e "SPACEWORKS_RESTORE_DATABASE=$database_name" db sh -c \
+    'psql -X -v ON_ERROR_STOP=1 -At -F "|" -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE" -c "SELECT d.oid, i.database_uuid FROM pg_database d CROSS JOIN backup_deploymentdatabaseidentity i WHERE d.datname=current_database() AND i.id=1"')" || return
+  proof="${proof//$'\r'/}"
+  IFS='|' read -r oid identity <<< "$proof"
+  [[ "$oid" =~ ^[1-9][0-9]*$ && "$identity" =~ ^[0-9a-f-]{36}$ && "$proof" == "$oid|$identity" ]] || return 1
   local command=(run --rm --no-deps -T -e SPACEWORKS_GRANTS_ONLY=1)
+  command+=(-e "SPACEWORKS_GRANT_DATABASE_OID=$oid" -e "SPACEWORKS_GRANT_DATABASE_UUID=$identity")
   if [[ -n "$database_name" ]]; then
     command+=(-e "SPACEWORKS_GRANT_DATABASE_NAME=$database_name")
   fi

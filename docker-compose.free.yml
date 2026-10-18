@@ -7,6 +7,7 @@ services:
     image: ${MAKERSPACE_FREE_BACKEND_IMAGE:?set reviewed immutable free-variant image digest}
     env_file: ${SPACEWORKS_RUNTIME_ENV_FILE:?set protected runtime-only env file, never maintenance credentials}
     environment:
+      MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS: ${MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS:-0}
       SPACEWORKS_DEPLOYMENT_MODE: managed
       SPACEWORKS_DEPLOYMENT_PROFILE: free
       SPACEWORKS_DEPLOYMENT_ID: ${SPACEWORKS_DEPLOYMENT_ID:?set persistent deployment identity}

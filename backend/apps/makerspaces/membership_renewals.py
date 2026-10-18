@@ -1,4 +1,6 @@
 """Locked, idempotent renewal automation; lapse never revokes membership authority."""
+from apps.operations.cloud_jobs import bounded
+
 import logging
 from datetime import timedelta
 
@@ -169,7 +171,7 @@ def run_membership_renewals(*, now=None, limit=200, makerspace_id=None):
         | Q(status="active", grace_until__isnull=True, ends_at__lte=now),
     ).select_related("membership__makerspace").order_by("ends_at", "pk")
     # Completed predecessors wait for expiry; prepaid successors wait for their window.
-    for term in rows[:limit]:
+    for term in bounded.page(rows[:bounded.limit(limit)], "membership-renewals"):
         space = term.membership.makerspace
         if not module_enabled(space, "membership"):
             counts["skipped"] += 1

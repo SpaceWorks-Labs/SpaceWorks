@@ -2,13 +2,17 @@
 {{- printf "%s-spaceworks" .Release.Name | trunc 52 | trimSuffix "-" -}}
 {{- end -}}
 {{- define "spaceworks.backendImage" -}}
+{{- $repository := .Values.backendImage -}}
+{{- if and (eq .Values.deploymentMode "managed") (eq $repository "ghcr.io/spaceworks-hq/spaceworks-backend") -}}
+{{- $repository = "ghcr.io/spaceworks-hq/spaceworks-backend-managed" -}}
+{{- end -}}
 {{- if and (eq .Values.deploymentMode "host") (empty .Values.backendDigest) -}}
-{{- printf "%s:%s" .Values.backendImage (required "imageTag is required for existing host releases" .Values.imageTag) -}}
+{{- printf "%s:%s" $repository (required "imageTag is required for existing host releases" .Values.imageTag) -}}
 {{- else -}}
 {{- if not (regexMatch "^sha256:[a-f0-9]{64}$" .Values.backendDigest) -}}
 {{- fail "backendDigest must pin a verified same-build OCI digest" -}}
 {{- end -}}
-{{- printf "%s@%s" .Values.backendImage .Values.backendDigest -}}
+{{- printf "%s@%s" $repository .Values.backendDigest -}}
 {{- end -}}
 {{- end -}}
 {{- define "spaceworks.validate" -}}

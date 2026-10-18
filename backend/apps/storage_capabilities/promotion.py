@@ -60,6 +60,8 @@ def promote(client, *, source_bucket, source_key, destination_bucket, destinatio
                 validated_mime = validate(spool, size)
                 spool.seek(0)
             mime = validated_mime or content_type or response.get("ContentType", "application/octet-stream")
+            from apps.operations.cloud_quotas.storage import reserve_upload, finalized_upload
+            reserve_upload(client, bucket=destination_bucket, key=destination_key, max_bytes=size, ttl=60, server_owned=True)
             try:
                 checkpoint()
                 written = client.put_object(
@@ -90,6 +92,8 @@ def promote(client, *, source_bucket, source_key, destination_bucket, destinatio
             final_body.close()
         if final_size != size or not hmac.compare_digest(final_digest.digest(), digest.digest()):
             raise CapabilityError("storage_promotion_readback_mismatch")
+        finalized_upload(client, bucket=destination_bucket, key=destination_key, size=size,
+                         operation_key=f"promotion:{destination_key}:{digest.hexdigest()}")
         return {"size": size, "sha256": digest.hexdigest(), "content_type": mime}
     finally:
         body.close()

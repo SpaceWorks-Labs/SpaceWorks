@@ -9,6 +9,8 @@ touched regardless of age, so this can never invalidate a code somebody is mid-w
 through using. The window is generous on purpose: "I never got my code" is a real support
 question, and answering it needs the row to still exist for a while.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -55,9 +57,7 @@ def purge_spent_challenges(*, retention=RETENTION):
         )
         try:
             count, _ = (
-                model.objects.filter(spent)
-                .filter(created_at__lt=cutoff)
-                .delete()
+                bounded.delete(model.objects.filter(spent).filter(created_at__lt=cutoff), label)
             )
             deleted[label] = count
         except Exception:
@@ -69,10 +69,10 @@ def purge_spent_challenges(*, retention=RETENTION):
     # exist for an attacker-submitted address stranded before issuance.
     label = PasswordResetEnvelope._meta.label
     try:
-        count, _ = PasswordResetEnvelope.objects.filter(
+        count, _ = bounded.delete(PasswordResetEnvelope.objects.filter(
             Q(terminal_at__isnull=False, terminal_at__lt=cutoff)
             | Q(terminal_at__isnull=True, requested_at__lt=cutoff)
-        ).delete()
+        ), label)
         deleted[label] = count
     except Exception:
         logger.exception("auth_challenge_purge_failed", extra={"model": label})
@@ -84,7 +84,7 @@ def purge_spent_challenges(*, retention=RETENTION):
         from django.db import transaction
         from apps.audit.services import record
         with transaction.atomic():
-            count, _ = ReauthenticationSession.objects.filter(updated_at__lt=cutoff).delete()
+            count, _ = bounded.delete(ReauthenticationSession.objects.filter(updated_at__lt=cutoff), label)
             if count:
                 record(None, "auth.reauthentication_proofs_purged", meta={"count": count})
         deleted[label] = count

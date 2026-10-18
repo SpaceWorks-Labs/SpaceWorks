@@ -62,6 +62,8 @@ def _existing(cursor, *, adopt, expected=None):
                 raise ManagedAdmissionError("Existing installations require explicit managed adoption.")
         elif not adopt:
             raise ManagedAdmissionError("Existing installations require explicit managed adoption.")
+        from .legacy_staging import assert_durable_staging
+        assert_durable_staging(cursor)
     else:
         cursor.execute("SELECT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN ('r', 'p'))")
         if cursor.fetchone()[0]:

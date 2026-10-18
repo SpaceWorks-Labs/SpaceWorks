@@ -67,22 +67,33 @@ def probe_delivery(*, private_client, public_client, signing_client,
         if status != 200 or data != payload:
             raise CapabilityError("storage_public_delivery_unproven")
         for method in sorted(private_contract.presign_methods):
+            from apps.backup.managed.presigns import register_presign
+            register_presign(60)
             if method == "put":
-                upload_url = signing_client.generate_presigned_url("put_object", Params={
+                from django.conf import settings
+                free_put = getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
+                params = {
                     "Bucket": private_bucket, "Key": staged, "ContentType": "image/png",
-                }, ExpiresIn=60)
+                }
+                if free_put:
+                    params["IfNoneMatch"] = "*"
+                upload_url = signing_client.generate_presigned_url("put_object", Params=params, ExpiresIn=60)
             else:
+                free_put = False
                 upload_url = signing_client.generate_presigned_post(
                     Bucket=private_bucket, Key=staged, ExpiresIn=60,
                 )["url"]
             for origin in frontend_origins:
                 status, _, headers = _http(Request(upload_url, method="OPTIONS", headers={
                     "Origin": origin, "Access-Control-Request-Method": method.upper(),
-                    "Access-Control-Request-Headers": "content-type",
+                    "Access-Control-Request-Headers": "content-type,if-none-match" if free_put else "content-type",
                 }), 0)
                 methods = {item.strip() for item in headers.get("Access-Control-Allow-Methods", "").split(",")}
                 if status not in {200, 204} or headers.get("Access-Control-Allow-Origin") != origin or method.upper() not in methods:
                     raise CapabilityError("storage_browser_cors_unproven")
+                allowed = {item.strip().lower() for item in headers.get("Access-Control-Allow-Headers", "").split(",")}
+                if free_put and "*" not in allowed and not {"content-type", "if-none-match"} <= allowed:
+                    raise CapabilityError("storage_conditional_upload_cors_unproven")
     except CapabilityError:
         raise
     except (BotoCoreError, ClientError, OSError, KeyError):

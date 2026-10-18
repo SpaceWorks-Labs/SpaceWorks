@@ -99,6 +99,12 @@ PROGRAMME_ENTRIES = (
     ("reimbursement", "stage-file-retention", "apps.events.tasks_cloud.sweep_stage_file_retention_task", 1440, True),
 )
 
+OPERATIONAL_ENTRIES = (
+    ("cloud-storage-qualification", "apps.operations.cloud_jobs.maintenance.refresh_storage", 5),
+    ("cloud-storage-usage", "apps.operations.cloud_jobs.maintenance.sample_storage", 15),
+    ("cloud-private-staging-cleanup", "apps.operations.cloud_jobs.maintenance.cleanup_staging", 60),
+)
+
 
 def all_declarations():
     tasks = [PeriodicTask(
@@ -112,6 +118,12 @@ def all_declarations():
         retained=retained, heavy=key in {"event-asset-work", "event-certificate-resume", "finance-work"},
         operation=key.replace("-", "_"),
     ) for group, key, path, minutes, retained in PROGRAMME_ENTRIES)
+    tasks.extend(PeriodicTask(key, path, minutes, app="operations", retained=True)
+                 for key, path, minutes in OPERATIONAL_ENTRIES)
+    from .work import WORK
+    tasks.extend(PeriodicTask("persisted-" + work.key, work.task, 1, app=work.app,
+                              retained=work.app == "tenant_migration", heavy=True)
+                 for work in WORK)
     return tuple(tasks)
 
 
@@ -122,6 +134,11 @@ def periodic_catalog(*, programmes=None, tombstones=None):
     tombstones = frozenset(settings.TOMBSTONED_APPS if tombstones is None else tombstones)
     extra = {key for group, key, *_ in PROGRAMME_ENTRIES if group in selected}
     legacy = {row[0] for row in LEGACY_ENTRIES}
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_MODE", "host") == "managed":
+        extra.update(row[0] for row in OPERATIONAL_ENTRIES)
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+        from .work import WORK
+        extra.update("persisted-" + work.key for work in WORK)
     return tuple(task for task in all_declarations()
                  if task.key in legacy | extra and (task.retained or task.app not in tombstones))
 

@@ -79,7 +79,7 @@ def delete_object(object_key):
         return False
 
 
-def delete_object_strict(object_key):
+def delete_object_strict(object_key, *, operation_key=None):
     """Delete every version and report whether a current object was visible."""
     existed = object_exists(object_key)
     try:
@@ -88,6 +88,7 @@ def delete_object_strict(object_key):
             bucket=settings.AWS_STORAGE_BUCKET_NAME,
             key=object_key,
             require_version_listing=True,
+            **({"operation_key": operation_key} if operation_key is not None else {}),
         )
     except (BotoCoreError, ClientError, CapabilityError) as exc:
         raise StorageUnavailable from exc

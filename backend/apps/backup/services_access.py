@@ -1,4 +1,6 @@
 """Download-token and retained-byte lifecycle for completed archives."""
+from apps.operations.cloud_jobs import bounded
+
 
 import hashlib
 import hmac
@@ -84,14 +86,14 @@ def purge_expired_archives(limit=100):
     re-selecting them every run let 100 of them starve every newer expired archive of
     pruning forever. Non-terminal rows are never pruned underneath a running build.
     """
-    archives = list(
+    archives = (
         BackupArchive.objects.filter(
             expires_at__lte=timezone.now(),
             status__in=(BackupArchive.Status.AVAILABLE, BackupArchive.Status.FAILED),
         ).order_by("expires_at", "pk")[:limit]
     )
     deleted = 0
-    for archive in archives:
+    for archive in bounded.page(archives, "expired-archives"):
         if not storage.delete_archive(archive.object_key):
             continue
         # Single archives use a per-attempt directory; compound artifacts use one

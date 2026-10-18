@@ -1,3 +1,4 @@
+from apps.operations.cloud_jobs import bounded
 from apps.operations.durable_dispatch import dispatch
 """Bounded retention jobs for tenant-import rows, archives, and object journals."""
 
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 def cleanup_expired_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SIZE):
     """Delete pre-tenant jobs and expire archives retained by terminal target jobs."""
+    batch_size = bounded.limit(batch_size)
     cleanup_at = now or timezone.now()
     if not _claim_named_cleanup_lease(CLEANUP_LEASE_NAME, cleanup_at):
         return 0
@@ -55,7 +57,7 @@ def cleanup_expired_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SI
     if delete_ids:
         from .object_import import rollback_import_objects
 
-        for job in TenantImportJob.objects.filter(pk__in=delete_ids):
+        for job in bounded.page(TenantImportJob.objects.filter(pk__in=delete_ids), "import-delete-jobs"):
             rollback_import_objects(job)
 
     with transaction.atomic():
@@ -71,7 +73,7 @@ def cleanup_expired_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SI
             pk__in=[row["pk"] for row in candidates],
         ).order_by("pk"))
         delete_ids, cleared = [], 0
-        for job in locked:
+        for job in bounded.items(locked):
             if job.expires_at > cleanup_at:
                 continue
             if job.target_makerspace_id is None:
@@ -93,6 +95,7 @@ def cleanup_expired_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SI
 
 def cleanup_abandoned_import_objects(*, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SIZE):
     """Roll back a bounded batch of failed/abandoned object journals."""
+    batch_size = bounded.limit(batch_size)
     cleanup_at = now or timezone.now()
     if not _claim_named_cleanup_lease(CLEANUP_OBJECTS_LEASE_NAME, cleanup_at):
         return 0
@@ -111,9 +114,9 @@ def cleanup_abandoned_import_objects(*, now=None, batch_size=DEFAULT_CLEANUP_BAT
     )
     from .object_import import rollback_import_objects
 
-    for job in TenantImportJob.objects.filter(pk__in=job_ids).select_related(
+    for job in bounded.page(TenantImportJob.objects.filter(pk__in=job_ids).select_related(
         "target_makerspace", "actor"
-    ):
+    ), "import-abandoned-objects"):
         rollback_import_objects(job)
     return len(job_ids)
 
@@ -122,6 +125,7 @@ def resume_expired_finalizing_import_jobs(
     *, now=None, batch_size=DEFAULT_CLEANUP_BATCH_SIZE
 ):
     """Requeue FINALIZING jobs only when no object promotion lease is live."""
+    batch_size = bounded.limit(batch_size)
     sweep_at = now or timezone.now()
     if not _claim_named_cleanup_lease(
         FINALIZATION_SWEEP_LEASE_NAME,
@@ -146,7 +150,7 @@ def resume_expired_finalizing_import_jobs(
     from .tasks import run_import_job_task
 
     failures = 0
-    for job in jobs:
+    for job in bounded.items(jobs):
         try:
             dispatch(run_import_job_task, str(job["pk"]), job["actor_id"])
         except Exception:
@@ -168,6 +172,7 @@ def resume_stale_pending_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BAT
     from .services_import_staging import STAGING_LEASE_DURATION, staging_lease_name
     from .tasks import stage_import_job_task
 
+    batch_size = bounded.limit(batch_size)
     sweep_at = now or timezone.now()
     if not _claim_named_cleanup_lease(
         STAGING_SWEEP_LEASE_NAME, sweep_at,
@@ -186,7 +191,7 @@ def resume_stale_pending_import_jobs(*, now=None, batch_size=DEFAULT_CLEANUP_BAT
         .order_by("created_at", "pk").values("pk", "actor_id")[:batch_size]
     )
     failures = 0
-    for job in jobs:
+    for job in bounded.items(jobs):
         try:
             dispatch(stage_import_job_task, str(job["pk"]), job["actor_id"])
         except Exception:
@@ -213,6 +218,7 @@ def resume_stalled_materializations(*, now=None, batch_size=DEFAULT_CLEANUP_BATC
     from .import_run_lock import import_run_lock
     from .tasks import run_import_job_task
 
+    batch_size = bounded.limit(batch_size)
     sweep_at = now or timezone.now()
     if not _claim_named_cleanup_lease(
         MATERIALIZATION_SWEEP_LEASE_NAME, sweep_at,
@@ -228,7 +234,7 @@ def resume_stalled_materializations(*, now=None, batch_size=DEFAULT_CLEANUP_BATC
         .values("pk", "run_request")[:batch_size]
     )
     dispatched = 0
-    for job in jobs:
+    for job in bounded.items(jobs):
         try:
             # A live run holds the lock; skip it rather than queue a no-op.
             with import_run_lock(job["pk"]) as probe:

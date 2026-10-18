@@ -23,7 +23,7 @@ def release(values):
     env.update(values, DJANGO_SETTINGS_MODULE="config.settings")
     try:
         subprocess.run(
-            [sys.executable, "scripts/spaceworks_entrypoint.py", "--role", "migrate", sys.executable, "-m", "scripts.run_cloud_role", "release"],
+            [sys.executable, "scripts/cloud_entrypoint.py", "--role", "migrate", "python", "-m", "scripts.run_cloud_role", "release"],
             cwd=BACKEND, env=env, stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1800, check=True,
         )

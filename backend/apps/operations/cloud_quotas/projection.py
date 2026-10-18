@@ -10,7 +10,7 @@ def sample(*, used=None, cap=None, unit="bytes", scope="deployment", uncertain=0
         if (timezone.now() - sampled_at).total_seconds() > 1800:
             state = "stale"
         elif cap is not None:
-            ratio = used / cap if cap > 0 else float("inf")
+            ratio = (used + uncertain) / cap if cap > 0 else float("inf")
             state = "reached" if ratio >= 1 else "critical" if ratio >= .95 else "warning" if ratio >= .8 else "ok"
     return {"used": used, "cap": cap, "unit": unit, "state": state, "source": source,
             "cap_source": "operator_configuration" if cap is not None else "unknown", "cap_verified_on": None,
@@ -53,9 +53,19 @@ def free_usage(makerspace=None):
         row = CloudUsageSample.objects.filter(metric="database", scope="deployment").order_by("-sampled_at").first()
         database = sample(used=row.used if row else None, cap=settings.FREE_DB_CAP_BYTES,
                           sampled_at=row.sampled_at if row else None, source="database_sample")
-        row = CloudUsageSample.objects.filter(metric="objects", scope="deployment").order_by("-sampled_at").first()
-        objects = sample(used=row.used if row else None, cap=settings.FREE_OBJECT_CAP_BYTES,
-                         uncertain=row.uncertain if row else 0, sampled_at=row.sampled_at if row else None)
+        from .sampling import configured_contracts
+        from apps.operations.models import CloudObjectAccount, CloudObjectReservation
+        from django.db.models import Sum
+        try:
+            identities = {c.identity.fingerprint for c in configured_contracts().values()}
+            accounts = list(CloudObjectAccount.objects.filter(pk__in=identities))
+            known = bool(identities) and len(accounts) == len(identities) and all(a.used is not None and not a.reason for a in accounts)
+            pending = CloudObjectReservation.objects.filter(state__in=["reserved", "writing", "uncertain"]).aggregate(n=Sum("bytes"))["n"] or 0
+            objects = sample(used=sum(a.used for a in accounts) if known else None, cap=settings.FREE_OBJECT_CAP_BYTES,
+                uncertain=pending, sampled_at=min(a.sampled_at for a in accounts) if known else None,
+                source="physical_inventory_with_concurrent_deltas", reason="provider_external_usage_unknown")
+        except Exception:
+            pass
     email = sample(scope="tenant" if tenant else "provider_account", unit="recipients")
     if not tenant:
         try:
@@ -68,14 +78,26 @@ def free_usage(makerspace=None):
                 raise ValueError("Account policy has not been established.")
             config = stored_config(row) or environment_config()
             values = usage(account_budget(config))
-            email = sample(used=sum(values[k] for k in ("accepted", "reserved", "uncertain")),
-                cap=values["daily_cap"], uncertain=values["uncertain"], sampled_at=values["sampled_at"],
+            email = sample(used=values["accepted"],
+                cap=values["daily_cap"], uncertain=values["reserved"] + values["uncertain"], sampled_at=values["sampled_at"],
                 source="application_account_reservations", unit="recipients", scope="provider_account",
                 reason="provider_usage_outside_application_unknown")
         except Exception:
             pass  # Preserve unknown, never display missing account policy as zero.
+    from .email_projection import email_accounts
+    breakdown = email_accounts(makerspace=makerspace)
+    from apps.integrations.models import NotificationDeliveryLog
+    from apps.integrations.models_contract import NotificationDelivery
+    channels = NotificationDeliveryLog.objects.filter(status="sending")
+    personal = NotificationDelivery.objects.filter(Q(claim_until__isnull=False) | Q(ambiguous_count__gt=0)).exclude(
+        state__in=["accepted", "sent", "delivered", "read", "skipped"])
+    if tenant:
+        channels, personal = channels.filter(makerspace=makerspace), personal.filter(makerspace=makerspace)
     return {"profile": "free", "visibility": scope, "database": database, "objects": objects,
-            "email": email, "email_pending": logs.filter(status="pending").count(),
+            "email_accounts": breakdown,
+            "notification_uncertain": channels.count() + personal.count(),
+            "email": email, "email_pending": logs.filter(Q(status__in=["pending", "failed"], email_retryable=True)
+                                                         | Q(status="sending")).count(),
             "email_uncertain": None if tenant else email["uncertain"], "tick": tick_status(),
             "notices": ["Cold starts and missed triggers can delay scheduled work.",
                         "Scheduled deployment backups and video validation are unavailable."]}

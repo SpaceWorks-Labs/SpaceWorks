@@ -236,8 +236,14 @@ The cloud/integration tree contains runtime/database, storage, HTTP mail, jobs/t
 Shared models/migrations/settings/routes/mail/images/health/panels are being integrated. Defaults remain host/full.
 Additional managed/full and managed/free images declare amd64/arm64 with build-time static; no publication occurs here.
 
-This is not an AO24/AO25 or launch acceptance pass. VPS V remains separate. Incoming Events submission runtime
-and reimbursement are absent here, so their cloud programmes remain inactive. Complete free adapters, durable
-managed staging/drain/accounting, recipe/function-catalogue corrections and real provider recovery evidence remain
-required. The orchestrator regenerates OpenAPI/client/catalogue hash in Docker. See [hosting](deploy/cloud-overview.md),
+All nine cloud/VPS lanes are now combined. Closure source adds durable encrypted object staging, managed
+writer/presign drain and supervised reconciliation, bounded catalog/domain/work adapters, physical storage
+and provider-account mail accounting, C5 privileged active-database targeting and C17 real scheduler/worker
+diagnostics. Full retains its task calendars, cache/queue choices, upload limits and host recovery authority;
+the host beat wrapper adds observation with the same persistent schedule.
+
+This is not an AO24/AO25 or launch acceptance pass. Incoming Pages, Events submission runtime and
+reimbursement packages are absent here, so those programme entries remain inactive. Real Docker/provider/
+VM/browser/recovery evidence remains required. The orchestrator regenerates OpenAPI/client/catalogue hash
+in Docker; those generated artifacts were deliberately left untouched. See [hosting](deploy/cloud-overview.md),
 [free limits](deploy/cloud-free.md) and [recovery](deploy/cloud-recovery.md).

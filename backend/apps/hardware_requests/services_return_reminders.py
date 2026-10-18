@@ -1,3 +1,4 @@
+from apps.operations.cloud_jobs import bounded
 from django.db import transaction
 from django.utils import timezone
 
@@ -27,7 +28,7 @@ def _run_legacy_return_reminders(*, now=None, limit=200) -> dict:
     # Keep frozen/not-restored tenants in the RBAC scan so the gate counts skips.
     queryset = _legacy_rows(now).select_related("makerspace", "requester").order_by("return_due_at", "id")[:limit]
     counts = {"sent": 0, "skipped": 0}
-    for hardware_request in queryset:
+    for hardware_request in bounded.page(queryset, "return-reminders"):
         with fanout_tenant_write(
             hardware_request.makerspace_id,
             operation="return_reminder",

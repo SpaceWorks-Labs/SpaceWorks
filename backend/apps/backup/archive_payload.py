@@ -165,8 +165,10 @@ def _storage_modes():
 
 
 def _write_continuity_keys(path):
+    from .continuity import validate_continuity_secrets
     values = {name: os.environ.get(name, "") for name in CONTINUITY_KEYS}
-    _write_json(path, values)
+    values["EVENT_STATION_PIN_PEPPER"] = settings.EVENT_STATION_PIN_PEPPER
+    _write_json(path, validate_continuity_secrets(values))
 
 
 def _write_json(path, value):

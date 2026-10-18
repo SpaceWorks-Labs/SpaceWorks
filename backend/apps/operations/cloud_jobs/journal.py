@@ -28,7 +28,7 @@ def prepare(tasks):
 
 
 @transaction.atomic
-def claim(task, guard):
+def claim(task, guard, *, due_required=True):
     guard.check()
     row = model("CloudTaskState").objects.select_for_update().get(key=task.key)
     now = timezone.now()
@@ -37,7 +37,7 @@ def claim(task, guard):
         row.save(update_fields=["status", "failure_code"])
         record(None, "cloud.task_uncertain", meta={"task_key": task.key, "generation": row.generation})
         return None, "operator_reconciliation_required"
-    if row.next_due_at and row.next_due_at > now:
+    if due_required and row.next_due_at and row.next_due_at > now:
         return None, "not_due"
     row.token, row.generation = uuid4(), row.generation + 1
     row.status, row.last_attempt_at, row.heartbeat_at, row.failure_code = "running", now, now, ""
@@ -72,8 +72,13 @@ def finish(row, task, *, status, checkpoint=None, code="", guard=None):
     # Deferred/failed work remains due; incomplete pages are never sweep success.
     locked.save(update_fields=["status", "failure_code", "checkpoint", "last_completed_at", "next_due_at"])
     if status == "completed":
+        from django.conf import settings
         from apps.operations.models_scheduling import PeriodicTaskRun
-        PeriodicTaskRun.objects.update_or_create(name=task.key, defaults={"last_run_at": now, "last_error": ""})
+        values = {"last_error": ""}
+        if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+            values["last_run_at"] = now
+        PeriodicTaskRun.objects.update_or_create(name=task.key, defaults=values,
+            create_defaults={"last_run_at": now, "last_error": ""})
     record(None, "cloud.task_finished", meta={
         "task_key": task.key, "generation": row.generation, "status": status, "code": code,
     })

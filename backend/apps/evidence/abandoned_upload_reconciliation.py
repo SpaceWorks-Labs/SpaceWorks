@@ -85,8 +85,8 @@ def reconcile_receipts(*, dry_run=False, now=None, batch_size=None):
 def _reconcile_receipt(pk, object_key, *, now):
     receipts = EvidenceAbandonedUploadReceipt.objects.filter(pk=pk)
     try:
-        storage.delete_object_strict(object_key)
-        storage.delete_object_strict(storage.staging_key(object_key))
+        from apps.operations.cloud_quotas.receipt_storage import delete_receipt_keys
+        delete_receipt_keys(receipts.get())
     except Exception as exc:  # per-receipt isolation; retried two sweeps later
         raise_if_fenced(exc)
         receipts.reconcile_update(

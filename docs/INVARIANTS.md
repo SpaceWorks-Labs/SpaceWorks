@@ -5008,7 +5008,8 @@ releases would therefore not just lose history, it would eventually strand that 
 Missing selectors remain host/full. Managed privilege mode and product classification are separate inputs.
 Free requires managed and never applies its resource restrictions under full. Full has no tick route/schema.
 A managed binding is immutable and omitted from restored/portable tenant state; source identity cannot admit
-another deployment as normal. Recovery admission is uncached and process generations cannot silently advance.
+another deployment as normal. Recovery admission is uncached. An active boundary retains its original
+generation/physical session; only a new boundary acknowledges a successfully resumed generation.
 Direct/session transport retains advisory locks; transaction pooling is unsupported. Maintenance secrets belong
 only to finite qualified jobs. Shared libpq subprocesses use private temporary passfiles, never PGPASSWORD.
 
@@ -5026,3 +5027,11 @@ survive log/tenant deletion; uncertain acceptance remains charged until independ
 Forwarded host requires independent ingress restriction, exact upstream Host and proxy-chain validation.
 Tenant projections omit infrastructure identities and global/provider totals. Unknown usage is never zero.
 Current implementation/acceptance limitations are explicit in the cloud guides and integration report.
+
+Managed staging identity/owner/attempt/digest/expiry fields and selected slots are SQL-guarded; late-delete
+receipts remain permanent and continue reconciling old storage identities after an audited empty-bucket
+handoff. A writer holds its physical session lock before its boundary commits. Capture recovery proves
+the global owner is gone, every writer lock is free and the provider-qualified transfer horizon has
+drained; age alone proves none of those facts. Presigns are journalled before signature generation.
+Unknown provider acceptance remains charged across new mail attempt keys. Only evidence-backed supervised
+reconciliation may release it. Full never consults free accounting caps or free input limits.

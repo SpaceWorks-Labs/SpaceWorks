@@ -14,6 +14,7 @@
   "edge_configuration": {
     "PUBLIC_ORIGIN": "one exact HTTPS app origin; previews refused",
     "BACKEND_ORIGIN": "one fixed HTTPS backend origin; no path/query/userinfo",
+    "TRUSTED_EDGE_INGRESS_SECRET": "server-only provider secret, same independent 32..256-byte value as backend; overwrite browser header on every backend proxy; rotate/redeploy both sides; never in frontend/config.js",
     "ORIGIN_BOOTSTRAP": "true only for verified-domain SaaS",
     "CONNECT_ORIGINS": "space-separated exact API/storage/analytics HTTPS origins",
     "IMAGE_ORIGINS": "space-separated exact public-image/storage HTTPS origins",

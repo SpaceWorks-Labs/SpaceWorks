@@ -41,9 +41,33 @@ recovery inputs; the free web tick never runs database dumps. Escrow config/keys
 alone cannot undo deletion. [Recovery](cloud-recovery.md) does not promise atomic DB/object restoration.
 [Oracle Always Free](cloud-oracle-free.md) instead uses host/full on a VM.
 
-Current blockers: complete bounded domain/personal-envelope/export/PDF adapters, durable staging/drain/accounting,
-periodic capability refresh, the unsupported-media gate, recipe interface alignment and runtime acceptance.
-This is an integration recipe, not a launchable completion claim.
+The catalog installs bounded domain, personal-envelope/legacy/mail, six persisted-work, storage-refresh and
+usage callbacks. Export admission is at most 500 rows and 2 MiB of logical JSON including account closure;
+import admission is at most 2 MiB ciphertext, 512 extracted files, 500 CSV rows, four object files and eight
+carried keys. Larger work requires a full external worker before claim/freeze. Portable source capture
+requiring presign drain or object bytes also requires that worker. Audit verification additionally bounds
+250 rows, 1,000 leaves, 25 batches, eight rotations and 36 anchor reads. These are enforced input limits,
+not measured completion promises. A Linux total deadline fences uncertain effects rather than reclaiming
+them automatically. Required acceptance still includes real 512 MiB/0.1 CPU export/PDF, overlap, guard-loss,
+crash/resume, provider mail/storage and full-profile isolation measurements.
+
+Legacy notification fanout is also bounded before dispatch: at most two email and two inbox destinations,
+two rooms per channel (twelve total), 25 scope links, 25 active staff, two push devices and 64 KiB of text.
+Oversized intents refuse before an effect; partially dispatched fanout retains its ambiguity marker.
+The [supervised recovery commands](cloud-recovery.md) require exact attempt evidence rather than age-based
+claim takeover. These admission limits apply only to the free managed profile.
+
+Object accounting samples current and retained versions plus incomplete multipart parts with durable
+cursors. New writes reserve capacity before effects. Confirmed deletion is credited once by receipt;
+unknown or stale usage refuses admission and remains visible. Only a drained physical inventory can
+fold old browser-upload reservations. `reconcile_cloud_storage` performs that supervised operation.
+Mail shows accepted, reserved, uncertain and pending separately per configured account. An uncertain send
+stays charged across retries; `reconcile_cloud_email` requires independent provider nonacceptance or
+acceptance evidence and a current platform operator. Account aliases cannot create another allowance.
+
+The later Pages, Events submission/media and reimbursement programme packages are absent from this
+checkout. Their manifest entries remain inactive; existing Events series, billing and membership tasks
+are covered by the current catalog. Provider/VM/browser/Docker acceptance remains required before launch.
 
 Sources checked 2026-10-18: [Render free services](https://render.com/docs/free),
 [Supabase connections](https://supabase.com/docs/guides/database/connecting-to-postgres),

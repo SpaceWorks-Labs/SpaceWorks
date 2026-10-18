@@ -162,8 +162,10 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
                 "staging": storage.object_size(staged_key),
             }
             outcomes = {
-                "final": storage.delete_object_strict(current.object_key),
-                "staging": storage.delete_object_strict(staged_key),
+                "final": storage.delete_object_strict(current.object_key,
+                    **_accounting_receipt(current.evidence_id, "final")),
+                "staging": storage.delete_object_strict(staged_key,
+                    **_accounting_receipt(current.evidence_id, "staging")),
             }
             checkpoint()
             result = complete(
@@ -189,3 +191,9 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
         summary["bytes_removed"] += result["removed_size_bytes"]
         summary["quota_released_bytes"] += result["quota_released_bytes"]
     window.finish_page(makerspace.pk, ids[:batch_size], len(ids) > batch_size)
+
+
+def _accounting_receipt(evidence_id, part):
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") != "free":
+        return {}
+    return {"operation_key": f"evidence-abandoned:{evidence_id}:{part}"}

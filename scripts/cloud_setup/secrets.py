@@ -14,8 +14,9 @@ GENERATED = {
     "SECRET_KEY": 64, "API_CLIENT_ENC_KEY": 32, "AUDIT_MAC_MASTER_KEY": 32,
     "EVENT_STATION_PIN_PEPPER": 48, "PII_MASTER_KEY": 32, "PII_SEARCH_HASH_KEY": 32,
     "CRON_SECRET": 32, "FREE_TICK_SECRET": 48,
+    "TRUSTED_EDGE_INGRESS_SECRET": 48,
 }
-RELEASE_ONLY = {"DATABASE_MAINTENANCE_URL", "DATABASE_MAINTENANCE_CONNECTION_MODE", "CLOUD_SCRATCH_DATABASES_FILE", "SETUP_SUPERADMIN_PASSWORD"}
+RELEASE_ONLY = {"DATABASE_MAINTENANCE_URL", "SPACEWORKS_MAINTENANCE_DATABASE_URL", "DATABASE_MAINTENANCE_CONNECTION_MODE", "CLOUD_SCRATCH_DATABASES_FILE", "SETUP_SUPERADMIN_PASSWORD"}
 
 
 def validate_secrets(values, *, free=False):
@@ -30,7 +31,7 @@ def validate_secrets(values, *, free=False):
         if name == "FREE_TICK_SECRET" and not free:
             continue
         if name in values:
-            if name in {"SECRET_KEY", "EVENT_STATION_PIN_PEPPER", "CRON_SECRET", "FREE_TICK_SECRET"}:
+            if name in {"SECRET_KEY", "EVENT_STATION_PIN_PEPPER", "CRON_SECRET", "FREE_TICK_SECRET", "TRUSTED_EDGE_INGRESS_SECRET"}:
                 if len(values[name]) < (50 if name == "SECRET_KEY" else 32):
                     raise SetupError("invalid_continuity_key", f"Recover a sufficiently long {name}; setup never rotates an existing value.")
                 if name == "FREE_TICK_SECRET" and not values[name].isascii():

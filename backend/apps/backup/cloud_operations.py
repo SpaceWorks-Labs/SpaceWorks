@@ -33,5 +33,9 @@ def require_managed_tenant_capture():
         return
     from apps.storage_capabilities.runtime import configured_contracts
     contracts = configured_contracts()
-    if any(contract.versioning != "enabled" for contract in contracts.values()):
-        raise HostSupervisorRequired("managed_writer_drain_inventory_unqualified")
+    for role in ("private", "public_image"):
+        if role not in contracts:
+            raise HostSupervisorRequired("managed_storage_binding_unqualified")
+    if any(contracts[role].versioning != "enabled" for role in ("private", "public_image")):
+        if not getattr(settings, "MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS", 0):
+            raise HostSupervisorRequired("managed_upload_transfer_horizon_unqualified")

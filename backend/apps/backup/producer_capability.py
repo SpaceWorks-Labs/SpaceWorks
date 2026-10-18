@@ -25,14 +25,7 @@ from apps.ed25519 import Ed25519Error, decode_key, fingerprint_public_key
 
 
 MARKER_VERSION = 1
-PRIVILEGED_SCRIPT_NAMES = (
-    "host-capability.py",
-    "import-backup.sh",
-    "restore.sh",
-    "spaceworks-compose.sh",
-    "compose-deployment.sh",
-    "validate-compose-wrapper.py",
-)
+from .privileged_script_inventory import PRIVILEGED_SCRIPT_NAMES
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MIGRATION_VERSION = re.compile(r"django-migrations-v1:[0-9a-f]{64}")
 _MAX_PROTOCOL_VERSION = 65_535

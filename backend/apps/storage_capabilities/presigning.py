@@ -60,12 +60,33 @@ def presign_upload(signing_client, *, backend_client, bucket, key, content_type,
     if contract is not None:
         contract.validate_upload_limit(max_bytes)
     method = _upload_method(contract, requested)
+    from django.conf import settings
+    free = getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
+    if free and requested == "auto" and contract.versioning != "never_versioned":
+        method = _upload_method(contract, "put")
+    if free and method == "post" and contract.versioning != "never_versioned":
+        raise CapabilityError("storage_free_replayable_post_refused")
+    if free and method == "put":
+        from .runtime import require_capability
+        require_capability(backend_client, bucket, "conditional_create", role="private")
+        if verified_state(contract).facts.get("put_conditional_presign") is not True:
+            raise CapabilityError("storage_put_conditional_presign_unproven")
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_MODE", "host") == "managed":
+        from apps.backup.managed.presigns import register_presign
+        register_presign(ttl)
+    from apps.operations.cloud_quotas.storage import reserve_upload
+    reserve_upload(backend_client, bucket=bucket, key=key, max_bytes=max_bytes, ttl=ttl)
     if method == "put":
+        params = {"Bucket": bucket, "Key": key, "ContentType": content_type}
+        headers = {"Content-Type": content_type}
+        if free:
+            params["IfNoneMatch"] = "*"
+            headers["If-None-Match"] = "*"
         url = signing_client.generate_presigned_url(
-            "put_object", Params={"Bucket": bucket, "Key": key, "ContentType": content_type},
+            "put_object", Params=params,
             ExpiresIn=ttl,
         )
-        return {"url": url, "method": "PUT", "headers": {"Content-Type": content_type}}
+        return {"url": url, "method": "PUT", "headers": headers}
     return signing_client.generate_presigned_post(
         Bucket=bucket, Key=key, Fields={"Content-Type": content_type},
         Conditions=[{"Content-Type": content_type}, ["content-length-range", 1, max_bytes]],

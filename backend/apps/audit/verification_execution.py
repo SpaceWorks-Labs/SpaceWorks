@@ -41,6 +41,11 @@ def _start_attempt(run_id):
         if latest is None or latest.state not in {State.QUEUED, State.RETRYING}:
             return None, None  # duplicate delivery or already terminal
         attempt = latest.attempt + 1
+        from apps.accounts import rbac
+        from apps.operations.cloud_jobs.authority import allowed
+        if not allowed(run.requested_by, rbac.Action.VIEW_AUDIT, run.makerspace_id):
+            runs.finish(run, State.FAILED, attempt, failure_code="requester_authority_changed")
+            return None, None
         runs.append_event(run, State.RUNNING, attempt)
     return run, attempt
 

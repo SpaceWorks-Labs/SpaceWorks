@@ -17,13 +17,21 @@ class TenantGateTask(Task):
 
     def __call__(self, *args, **kwargs):
         from apps.operations.cloud_runtime import managed, writer, check
-        check()
         if managed():
             with writer("worker"):
-                return self._call_scoped(*args, **kwargs)
+                from apps.operations.cloud_jobs.full_progress import invoke
+                return invoke(self.name, lambda: self._call_scoped(*args, **kwargs))
+        check()
         return self._call_scoped(*args, **kwargs)
 
     def _call_scoped(self, *args, **kwargs):
+        if self.name == "apps.operations.cloud_jobs.diagnostics.installer_roundtrip":
+            import re
+            if len(args) != 1 or kwargs or not isinstance(args[0], str) or not re.fullmatch(r"[0-9a-f]{32}", args[0]):
+                raise ValueError("Installer diagnostic invocation is invalid.")
+            # No tenant/business effect. The outer managed writer admission is
+            # still mandatory; the task itself writes only a 60-second cache ack.
+            return super().__call__(*args, **kwargs)
         resolver = TASK_TENANT_RESOLVERS.get(self.name)
         makerspace_id = (
             _resolve_makerspace_id(resolver, args, kwargs)

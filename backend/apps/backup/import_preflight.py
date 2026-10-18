@@ -156,18 +156,15 @@ def _validate_signature(manifest):
 
 
 def _validate_continuity_secrets(values):
+    from .continuity import validate_continuity_secrets
     if not isinstance(values, dict) or set(values) != set(CONTINUITY_KEYS):
+        raise ImportPreflightError("continuity_secret_names", "the continuity-secret name set is incompatible with this release.")
+    try:
+        validate_continuity_secrets(values)
+    except ValueError:
         raise ImportPreflightError(
-            "continuity_secret_names",
-            "the continuity-secret name set is not exactly the required set.",
-        )
-    if any(
-        not isinstance(value, str) or "\n" in value or "\r" in value
-        for value in values.values()
-    ):
-        raise ImportPreflightError(
-            "continuity_secret_value", "a continuity secret is not a single-line string."
-        )
+            "continuity_secret_value", "continuity secrets are incompatible with this release."
+        ) from None
 
 
 def _validate_target_compatibility(manifest):

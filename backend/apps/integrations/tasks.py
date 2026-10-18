@@ -121,6 +121,9 @@ def _claim_notification_log(log_id):
         )
         if log is None or log.status in (NotificationDeliveryStatus.SENT, NotificationDeliveryStatus.SKIPPED):
             return None
+        from .mail_providers.budget_config import free_profile
+        if free_profile() and log.attempts >= 4:
+            return None
         if (
             log.status == NotificationDeliveryStatus.SENDING
             and not sending_claim_is_stale(log)

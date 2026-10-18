@@ -12,43 +12,81 @@ from .private_files import read_json
 from .service_probes import NoRedirect
 
 
+def descriptor_probe(values):
+    """Parse the storage lane's strict schema without writing to the provider."""
+    import json
+    from pathlib import Path
+    import tempfile
+    from .secret_files import read_config
+    from apps.storage_capabilities.configuration import read_configuration
+    from apps.storage_capabilities.contracts import StorageIdentity
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as handle:
+            path = Path(handle.name)
+            json.dump(read_config(values, "STORAGE_CAPABILITIES_FILE"), handle)
+        contracts = read_configuration(path)
+        for role, name in (("private", "AWS_STORAGE_BUCKET_NAME"), ("public_image", "PUBLIC_IMAGE_BUCKET")):
+            contract = contracts[role]
+            identity = StorageIdentity.build(values["AWS_S3_ENDPOINT_URL"], values.get("AWS_S3_REGION_NAME", "us-east-1"), values[name])
+            if contract.identity != identity or values.get("STORAGE_PRESIGN_METHOD", "put") not in contract.presign_methods:
+                raise SetupError("storage_descriptor_identity", "Bind the strict capability descriptor to the actual endpoint, region, bucket and upload method.")
+        return {"status": "passed", "schema": 1, "qualification": "required-at-bootstrap"}
+    finally:
+        if path is not None:
+            path.unlink(missing_ok=True)
+
+
 def storage_probe(values, answers):
+    """Use the admitted runtime-only command so setup writes join capture drain."""
+    import os
+    import subprocess
+    import sys
+    from .bootstrap import BACKEND
+    from .environment import role_environment
+    environment = {key: os.environ[key] for key in ("PATH", "HOME", "SYSTEMROOT", "SSL_CERT_FILE", "SSL_CERT_DIR") if key in os.environ}
+    environment.update(role_environment(values, "web"), DJANGO_SETTINGS_MODULE="config.settings")
+    try:
+        subprocess.run([sys.executable, "scripts/cloud_entrypoint.py", "--role", "management",
+                        "python", "manage.py", "verify_storage", "--browser-probes"],
+                       cwd=BACKEND, env=environment, stdin=subprocess.DEVNULL,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=600, check=True)
+    except (OSError, subprocess.SubprocessError):
+        raise SetupError("storage_qualification_failed", "The native storage/privacy/CORS qualification failed; inspect protected diagnostics and retry with runtime-only credentials.") from None
+    return {"status": "passed", "qualification": "native-runtime-and-browser-endpoint"}
+
+
+def verify_delivery(values, *, check=lambda: None):
+    """Called only inside verify_storage's admitted presign writer boundary."""
     import boto3
     from botocore.config import Config
-    from botocore.exceptions import ClientError
+    from apps.storage_capabilities.configuration import read_configuration
+    from apps.storage_capabilities.contracts import StorageIdentity
 
-    # Read the same versioned descriptor as runtime; the storage lane owns its
-    # exact validation. Keep the read lazy so --help/render need no SDK/Django.
-    from .secret_files import read_config
-    declared = read_config(values, "STORAGE_CAPABILITIES_FILE")
-    if declared.get("version") != 1 or not declared.get("buckets"):
-        raise SetupError("storage_capabilities_missing", "Mount the storage lane's verified per-bucket capability descriptor.")
-    options = {
-        "region_name": values.get("AWS_S3_REGION_NAME", "us-east-1"),
-        "endpoint_url": values.get("AWS_S3_ENDPOINT_URL") or None,
-        "config": Config(connect_timeout=5, read_timeout=5, retries={"max_attempts": 0}, signature_version="s3v4"),
-    }
-    credentials = {"aws_access_key_id": values.get("AWS_ACCESS_KEY_ID"), "aws_secret_access_key": values.get("AWS_SECRET_ACCESS_KEY"), "aws_session_token": values.get("AWS_SESSION_TOKEN")}
+    contracts = read_configuration(values["STORAGE_CAPABILITIES_FILE"])
+    options = {"region_name": values.get("AWS_S3_REGION_NAME", "us-east-1"),
+               "endpoint_url": values.get("AWS_S3_ENDPOINT_URL") or None,
+               "config": Config(connect_timeout=5, read_timeout=5, retries={"max_attempts": 0},
+                                signature_version="s3v4", s3={"addressing_style": values.get("AWS_S3_ADDRESSING_STYLE", "auto")})}
+    credentials = {"aws_access_key_id": values.get("AWS_ACCESS_KEY_ID"),
+                   "aws_secret_access_key": values.get("AWS_SECRET_ACCESS_KEY"),
+                   "aws_session_token": values.get("AWS_SESSION_TOKEN")}
     session = boto3.session.Session(**{k: v for k, v in credentials.items() if v})
     client = session.client("s3", **options)
     browser = session.client("s3", **dict(options, endpoint_url=values.get("AWS_S3_PUBLIC_ENDPOINT_URL") or options["endpoint_url"]))
-    bucket = values.get("AWS_STORAGE_BUCKET_NAME")
-    public = values.get("PUBLIC_IMAGE_BUCKET")
-    if not bucket or not public or bucket == public:
-        raise SetupError("storage_bucket_required", "Supply distinct existing private and public-final buckets; setup never creates or changes policies.")
-    results = []
+    answers = {"public_origin": values["PUBLIC_APP_BASE_URL"],
+               "presign_method": values.get("STORAGE_PRESIGN_METHOD", "put")}
     try:
-        for role, name in (("private", bucket), ("public", public)):
-            descriptor = declared["buckets"].get(role, {})
-            if descriptor.get("bucket") != name or descriptor.get("versioning") not in {"enabled", "never_versioned", "suspended"}:
-                raise SetupError("storage_descriptor_identity", "Bind the version-1 capability descriptor to each exact bucket and verified version-history policy.")
-            client.head_bucket(Bucket=name)
-            actual = client.get_bucket_versioning(Bucket=name).get("Status")
-            observed = {"Enabled": "enabled", "Suspended": "suspended", None: "never_versioned"}.get(actual)
-            if observed != descriptor["versioning"]:
-                raise SetupError("storage_versioning_mismatch", "Resolve the declared/probed bucket history mismatch before any probe write. Denied/unsupported version APIs require the storage lane's verified native capability adapter.")
-            results.append(probe_bucket(client, browser, name, descriptor, role, values, answers))
-        return {"status": "passed", "buckets": results}
+        results = []
+        for role, name in (("private", values["AWS_STORAGE_BUCKET_NAME"]), ("public_image", values["PUBLIC_IMAGE_BUCKET"])):
+            check()
+            contract = contracts[role]
+            if contract.identity != StorageIdentity.build(client.meta.endpoint_url, client.meta.region_name, name):
+                raise SetupError("storage_descriptor_identity", "Bind the strict runtime descriptor to the configured bucket endpoint and region.")
+            results.append(probe_bucket(client, browser, name, {"versioning": contract.versioning}, role, values, answers))
+            check()
+        return results
     finally:
         client.close()
         browser.close()

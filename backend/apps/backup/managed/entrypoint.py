@@ -14,7 +14,7 @@ def admit_managed_command(role, command):
         role == ProcessRole.MANAGEMENT and command == ADOPT_COMMAND
     ):
         preflight_release()
-    elif role == ProcessRole.MANAGEMENT and command[:3] == ["python", "manage.py", "export_tenant_migration_archive"]:
+    elif role == ProcessRole.MANAGEMENT and command[:2] == ["python", "manage.py"] and len(command) >= 3 and command[2] in {"export_tenant_migration_archive", "export_portable_tenant_dump"}:
         import os
         from config.cloud_database import connect_database
 

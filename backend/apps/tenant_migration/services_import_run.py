@@ -28,6 +28,9 @@ def run_import_job(job_id, *, actor_id, target_identity=None):
     from .services_import_job import _require_superadmin
 
     job = TenantImportJob.objects.get(pk=job_id)
+    from apps.operations.cloud_jobs.admission import admit_import
+    if job.status == TenantImportJob.Status.MATERIALIZING and not admit_import(job):
+        return TenantImportJob.objects.get(pk=job_id)
     if job.status == TenantImportJob.Status.COMPLETED:
         return job
     if job.status == TenantImportJob.Status.FINALIZING:

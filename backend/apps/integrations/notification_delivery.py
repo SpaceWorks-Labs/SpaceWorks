@@ -8,6 +8,8 @@ from django.utils import timezone
 from .models_contract import NotificationDelivery as Delivery
 from .notification_providers import ProviderResult, provider_for, safe_error
 from .notification_resolution import eligible, resolve, target_eligible
+from apps.operations.cloud_jobs import bounded
+from apps.operations.cloud_jobs.contracts import BudgetExpired, GuardLost
 
 MAX_ATTEMPTS = 4
 SUCCESS = {"accepted", "sent", "delivered", "read"}
@@ -74,6 +76,7 @@ def ensure_deliveries(envelope, *, fallback=False):
 
 
 def claim(delivery_id):
+    from django.conf import settings
     now = timezone.now()
     with transaction.atomic():
         row = Delivery.objects.select_for_update().get(pk=delivery_id)
@@ -81,6 +84,8 @@ def claim(delivery_id):
             return None
         if row.state == "failed" and not row.retryable:
             return None
+        if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free" and row.claim_until is not None:
+            return None  # Expiry cannot prove the old provider attempt stopped.
         if row.claim_until and row.claim_until > now:
             return None
         if row.attempt_count >= MAX_ATTEMPTS:
@@ -108,6 +113,7 @@ def claim(delivery_id):
 
 
 def send(delivery_id):
+    bounded.check()
     row = claim(delivery_id)
     if row is None:
         return
@@ -142,22 +148,34 @@ def send(delivery_id):
                                                "locale": template.locale} if template else None)
         from .notification_builtin import send_builtin
         from .notification_quotas import reserve
+        bounded.check()
         if not reserve(row):
             result = ProviderResult(False, error_code="quota_exceeded")
         elif row.endpoint_id:
             provider = provider_for(row.endpoint.configuration)
             if provider:
                 from .notification_document_dispatch import send_document
+                bounded.check()
                 result = send_document(provider, row, rendered)
             else:
                 result = ProviderResult(False, error_code="not_configured")
         else:
+            bounded.check()
             result = send_builtin(row, rendered)
+        bounded.check()
+    except (BudgetExpired, GuardLost):
+        raise
     except TimeoutError:
         result = ProviderResult(False, retryable=True, error_code="timeout", ambiguous=True)
     except Exception as exc:
         ambiguous = type(exc).__name__ in {"Timeout", "ReadTimeout", "ConnectTimeout", "ReadTimeoutError"}
+        from django.conf import settings
+        if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free" and row.channel != "email":
+            # Only explicit provider results prove a definite rejection. An
+            # unexpected transport exception may follow remote acceptance.
+            ambiguous = True
         result = ProviderResult(False, retryable=True, error_code="timeout" if ambiguous else "provider_error", ambiguous=ambiguous)
+    bounded.check()
     return record_result(row, result)
 
 
@@ -169,12 +187,37 @@ def finish_skipped(pk, reason):
 
 
 def record_result(row, result):
+    bounded.check()
     if result.error_code == "skipped":
         finish_skipped(row.pk, "transport_suppressed")
         return Delivery.objects.get(pk=row.pk)
     with transaction.atomic():
         current = Delivery.objects.select_for_update().get(pk=row.pk)
         if current.attempt_count != row.attempt_count:
+            return current
+        from django.conf import settings
+        if (getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
+                and current.channel != "email" and result.ambiguous and current.state not in SUCCESS):
+            bounded.check()
+            current.state, current.retryable = "failed", False
+            current.next_attempt_at, current.last_error = None, "acceptance_uncertain"
+            current.ambiguous_count += 1
+            # Keep claim_until as an unresolved receipt, regardless of its age.
+            current.save(update_fields=["state", "retryable", "next_attempt_at", "last_error",
+                                        "ambiguous_count", "updated_at"])
+            return current
+        if (getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
+                and current.channel == "email" and result.error_code == "email_deferred"
+                and current.state not in SUCCESS):
+            # The durable EmailLog owns actual provider attempts/reservations.
+            # Waiting for quota is not another personal transport attempt.
+            bounded.check()
+            current.state, current.retryable = "retrying", True
+            current.claim_until, current.last_error = None, "email_deferred"
+            current.attempt_count = max(0, current.attempt_count - 1)
+            current.next_attempt_at = timezone.now() + timedelta(minutes=10)
+            current.save(update_fields=["state", "retryable", "claim_until", "last_error",
+                                        "attempt_count", "next_attempt_at", "updated_at"])
             return current
         # A callback can win the race with the send response.
         if current.state in SUCCESS or (current.state == "failed" and not current.retryable):

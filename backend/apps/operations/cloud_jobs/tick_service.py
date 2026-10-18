@@ -10,6 +10,7 @@ from .contracts import BudgetExpired, ChunkContext, ChunkResult, GuardLost, Jobs
 from . import journal
 from .tick_locks import task_guard
 from .tick_policy import database_deadline, free_profile, integer_setting, tick_budget
+from .outcomes import TaskReportedFailure
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,11 @@ def _attempt(task, deadline):
             return "failed", "bounded_adapter_unavailable"
         context = ChunkContext(deadline, lambda: _fence(row, guard), row.checkpoint, row.token, row.generation)
         try:
-            context.check()
-            result = callback(context)
-            context.check()
+            from .deadline import total_deadline
+            with total_deadline(deadline):
+                context.check()
+                result = callback(context)
+                context.check()
             if not isinstance(result, ChunkResult):
                 raise TypeError("Invalid bounded chunk result")
         except GuardLost:
@@ -66,6 +69,9 @@ def _attempt(task, deadline):
             # Domain checkpoints must already be committed. No blanket success.
             journal.finish(row, task, status="deferred", code="budget_exhausted", guard=guard)
             return "deferred", "budget_exhausted"
+        except TaskReportedFailure:
+            journal.finish(row, task, status="failed", code="domain_job_failed", guard=guard)
+            return "failed", "domain_job_failed"
         except Exception:
             # The callback may have reached a provider: retain the uncertain fence.
             journal.finish(row, task, status="uncertain", code="chunk_failed_reconciliation_required")

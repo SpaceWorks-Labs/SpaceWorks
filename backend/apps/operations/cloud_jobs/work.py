@@ -77,3 +77,12 @@ def run_persisted_work(*, fence, limit=25):
 
 def worker_inventory():
     return [asdict(work) for work in WORK if work.app not in settings.TOMBSTONED_APPS]
+
+
+def install_defaults():
+    from . import work_adapters
+    callbacks = (work_adapters.bulk_import, work_adapters.staff_export,
+                 work_adapters.audit_verification, work_adapters.tenant_export,
+                 work_adapters.tenant_import_stage, work_adapters.tenant_import)
+    for work, callback in zip(WORK, callbacks):
+        install_worker(work.key, callback)

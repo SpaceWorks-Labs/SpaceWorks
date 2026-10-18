@@ -115,11 +115,18 @@ def work_bounds(makerspace_id, rows):
 
 def check_bounds(bounds):
     selected, leaves, chain, rotations, reads = bounds
-    if selected > MAX_ROWS:
+    from django.conf import settings
+    free = getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
+    max_rows, max_leaves, max_chain, max_rotations, max_reads = (
+        (250, 1000, 25, 8, 36) if free else
+        (MAX_ROWS, MAX_EXPANDED_LEAVES, MAX_CHAIN_BATCHES, MAX_ROTATIONS, MAX_ANCHOR_READS))
+    if selected > max_rows:
+        if free:
+            raise NarrowAuditRange("Narrow the audit range to at most 250 rows in the free profile.")
         raise NarrowAuditRange("Narrow the audit range to at most 10,000 rows.")
     if (
-        leaves > MAX_EXPANDED_LEAVES or chain > MAX_CHAIN_BATCHES
-        or rotations > MAX_ROTATIONS or reads > MAX_ANCHOR_READS
+        leaves > max_leaves or chain > max_chain
+        or rotations > max_rotations or reads > max_reads
     ):
         raise VerificationScopeTooLarge("The verification scope exceeds a work bound.")
 
@@ -188,6 +195,7 @@ def request_run(actor, makerspace_id, validated):
 
 
 def _enqueue(run_id, countdown=0):
+    from apps.operations.durable_dispatch import resident_delivery
     from apps.audit.tasks_verification import run_audit_verification
-
-    run_audit_verification.apply_async(args=[run_id], countdown=countdown)
+    if resident_delivery():
+        run_audit_verification.apply_async(args=[run_id], countdown=countdown)

@@ -37,6 +37,9 @@ class ImportArchiveUploadHandler(FileUploadHandler):
                 raise ValidationError({"archive": ["Upload exactly one archive file part."]})
             self.archive_seen = True
             root = Path(settings.BACKUP_OPS_DIR, "tenant-imports")
+            if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+                import tempfile
+                root = Path(tempfile.gettempdir(), "spaceworks-import-uploads")
             root.mkdir(parents=True, exist_ok=True, mode=0o700)
             self.path = root / f"{uuid4()}.tar.age"
             self.output = self.path.open("xb")

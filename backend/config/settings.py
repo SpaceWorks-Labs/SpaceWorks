@@ -1395,3 +1395,7 @@ if SPACEWORKS_DEPLOYMENT_MODE == "managed" and not _deployment.is_free:
         CELERY_BEAT_SCHEDULE.setdefault(_name, _entry)
     if CLOUD_SCHEDULER == "beat":
         CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.beat.DatabaseScheduler"
+if SPACEWORKS_DEPLOYMENT_MODE == "host":
+    # Preserve PersistentScheduler's file/calendar behavior, while exposing real
+    # dispatcher contact to the existing installer completion probe (C17).
+    CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.host_beat.ObservedPersistentScheduler"

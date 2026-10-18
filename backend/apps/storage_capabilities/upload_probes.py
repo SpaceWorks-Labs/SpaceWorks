@@ -26,6 +26,8 @@ def probe_upload_methods(client, contract):
             key = f"spaceworks-capability-probes/{uuid.uuid4().hex}/{method}"
             keys.append(key)
             checkpoint()
+            from apps.backup.managed.presigns import register_presign
+            register_presign(60)
             if method == "post":
                 signed = client.generate_presigned_post(
                     Bucket=bucket, Key=key, Fields={"Content-Type": "image/png"},
@@ -42,12 +44,24 @@ def probe_upload_methods(client, contract):
                 _assert_content(client, bucket, key, b"valid")
                 facts["post_size_policy"] = True
             else:
-                url = client.generate_presigned_url("put_object", Params={
+                from django.conf import settings
+                free = getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
+                params = {
                     "Bucket": bucket, "Key": key, "ContentType": "image/png",
-                }, ExpiresIn=60)
-                if _request(Request(url, data=b"valid", method="PUT", headers={"Content-Type": "image/png"})) not in {200, 201, 204}:
+                }
+                headers = {"Content-Type": "image/png"}
+                if free:
+                    if contract.conditional_create is not True:
+                        raise CapabilityError("storage_free_conditional_create_required")
+                    params["IfNoneMatch"], headers["If-None-Match"] = "*", "*"
+                url = client.generate_presigned_url("put_object", Params=params, ExpiresIn=60)
+                if _request(Request(url, data=b"valid", method="PUT", headers=headers)) not in {200, 201, 204}:
                     raise CapabilityError("storage_put_upload_unproven")
-                if _request(Request(url, data=b"bad", method="PUT", headers={"Content-Type": "application/pdf"})) not in {400, 403}:
+                if free:
+                    if _request(Request(url, data=b"replay", method="PUT", headers=headers)) not in {409, 412}:
+                        raise CapabilityError("storage_put_presign_replay_accepted")
+                    facts["put_conditional_presign"] = True
+                if _request(Request(url, data=b"bad", method="PUT", headers={**headers, "Content-Type": "application/pdf"})) not in {400, 403}:
                     raise CapabilityError("storage_put_mime_binding_unproven")
                 _assert_content(client, bucket, key, b"valid")
                 facts["put_size_validation"] = "finalization"

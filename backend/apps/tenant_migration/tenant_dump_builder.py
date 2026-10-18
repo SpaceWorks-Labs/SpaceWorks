@@ -83,7 +83,8 @@ def build_tenant_dump(
         with migrated_scratch_database(
             makerspace_id, run_id, database=database
         ) as (using, database_name):
-            validate_unowned_tables(connections[using].introspection.table_names())
+            from .cloud_portable import application_table_names
+            validate_unowned_tables(application_table_names(using))
             with transaction.atomic(using=using), no_decrypt_guard():
                 with connections[using].cursor() as cursor:
                     cursor.execute("SET LOCAL app.allow_immutable_delete = 'on'")

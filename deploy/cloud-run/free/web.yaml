@@ -23,7 +23,7 @@
         "timeoutSeconds": 60,
         "containers": [
           {
-            "image": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "image": "ghcr.io/spaceworks-hq/spaceworks-backend-free@sha256:0000000000000000000000000000000000000000000000000000000000000000",
             "args": [
               "--role",
               "backend",

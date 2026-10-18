@@ -16,7 +16,7 @@ def integer(source, name, default, minimum, maximum):
     return str(value)
 
 
-def role_argv(role, environ=None):
+def role_argv(role, environ=None, *, once=False):
     source = os.environ if environ is None else environ
     profile = deployment_profile(source)
     if profile.mode != "managed":
@@ -25,6 +25,8 @@ def role_argv(role, environ=None):
         raise DeploymentConfigurationError("Use validated role options instead of GUNICORN_CMD_ARGS.")
     if profile.free and role not in {"web", "release"}:
         raise DeploymentConfigurationError("Free deployments do not admit resident worker/live/scheduler processes.")
+    if once and role not in {"worker", "scheduler"}:
+        raise DeploymentConfigurationError("Finite execution requires a worker or scheduler role.")
     if role == "release":
         return None
     task_profile = source.get("CLOUD_TASK_PROFILE", "brokerless" if profile.free else "redis")
@@ -56,22 +58,24 @@ def role_argv(role, environ=None):
         ]
     if role == "worker":
         if task_profile == "brokerless":
-            return [python, "-m", "apps.operations.cloud_jobs.runner", "worker"]
+            return [python, "-m", "apps.operations.cloud_jobs.runner", "worker"] + (["--once"] if once else [])
+        if once:
+            raise DeploymentConfigurationError("Finite workers require the brokerless task profile.")
         return [python, "-m", "celery", "-A", "config", "worker", "--loglevel=info", "--concurrency", integer(source, "CELERY_CONCURRENCY", 1, 1, 16), "--prefetch-multiplier", "1"]
     if role == "beat" and scheduler == "beat":
         return [python, "-m", "apps.operations.cloud_jobs.runner", "beat"]
     if role == "scheduler" and scheduler in {"loop", "external"}:
         command = [python, "-m", "apps.operations.cloud_jobs.runner", "scheduler"]
-        return command + (["--once"] if scheduler == "external" else [])
+        return command + (["--once"] if once or scheduler == "external" else [])
     raise DeploymentConfigurationError("Unknown role or role incompatible with the selected scheduler.")
 
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     try:
-        if len(argv) != 1:
+        if len(argv) not in {1, 2} or (len(argv) == 2 and argv[1] != "--once"):
             raise DeploymentConfigurationError("Select exactly one cloud role.")
-        command = role_argv(argv[0])
+        command = role_argv(argv[0], once=len(argv) == 2)
         if command is None:
             from apps.backup.managed.release import run_release
 

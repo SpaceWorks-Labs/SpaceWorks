@@ -5,6 +5,7 @@ file. No credentials or endpoint URLs are written to audit metadata.
 """
 
 from datetime import timedelta
+from contextvars import ContextVar
 
 from django.apps import apps
 from django.conf import settings
@@ -12,6 +13,8 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from .contracts import CapabilityError
+
+_unbound_migration_probe = ContextVar("unbound_storage_migration_probe", default=False)
 
 
 def _states():
@@ -41,6 +44,8 @@ def _check_history(state, contract):
 
 
 def _binding_role(contract):
+    if _unbound_migration_probe.get():
+        return None
     from .runtime import configured_contracts
 
     contracts = configured_contracts()

@@ -177,50 +177,7 @@ def cleanup_rollback_objects(restore):
         row.delete()
 
 
-def cleanup_expired_rollback_objects(limit=100):
-    """Remove expired failed-restore copies without deleting a live source version."""
-    rows = list(
-        RestoreRollbackObject.objects.select_related("makerspace", "restore")
-        .filter(expires_at__lte=timezone.now())
-        .order_by("pk")[:limit]
-    )
-    cleaned = 0
-    for row in rows:
-        if row.copy_key:
-            try:
-                delete_all_versions(
-                    storage.client(),
-                    bucket=_bucket(row.bucket_kind),
-                    key=row.copy_key,
-                )
-            except Exception:
-                continue
-        elif row.source_version_id and row.restore.stage in {
-            RestoreOperation.Stage.COMPLETED,
-            RestoreOperation.Stage.RESTORED_QUARANTINED,
-        }:
-            try:
-                storage.client().delete_object(
-                    Bucket=_bucket(row.bucket_kind),
-                    Key=row.source_key,
-                    VersionId=row.source_version_id,
-                )
-            except Exception:
-                continue
-        with transaction.atomic():
-            # No select_related: FOR UPDATE across nullable `makerspace` crashed this sweep.
-            locked = (
-                RestoreRollbackObject.objects.select_for_update()
-                .filter(pk=row.pk, expires_at__lte=timezone.now())
-                .first()
-            )
-            if locked is None:
-                continue
-            if locked.makerspace_id and locked.size_bytes:
-                limits.free_storage(locked.makerspace, locked.size_bytes)
-            locked.delete()
-            cleaned += 1
-    return cleaned
+from .object_restore_cleanup import cleanup_expired_rollback_objects
 
 
 def reconcile_rollback_journal(restore, journal_path):

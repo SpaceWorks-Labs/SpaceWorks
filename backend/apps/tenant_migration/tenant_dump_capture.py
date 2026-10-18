@@ -36,6 +36,9 @@ logger = logging.getLogger(__name__)
 def request_tenant_dump_capture(actor, makerspace):
     """Freeze request-time custody under Part A's serialization boundary."""
     validate_catalog()
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_portable import qualify_portable_export
+        qualify_portable_export()
     rejected = None
     capture = None
     with with_makerspace_custody_lock(makerspace.pk) as custody:
@@ -67,6 +70,10 @@ def request_tenant_dump_capture(actor, makerspace):
                 source_encryption_mode=bool(settings.PII_ENCRYPTION_ENABLED),
                 catalog_digest=CATALOG_SCHEMA_SHA256,
             )
+            origin = {}
+            if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+                from apps.backup.managed.legacy_staging import request_origin
+                origin = request_origin(capture)
             audit.record(
                 actor,
                 "tenant_migration.tenant_dump_requested",
@@ -76,6 +83,7 @@ def request_tenant_dump_capture(actor, makerspace):
                     "superadmin_access_at_decision": (
                         capture.superadmin_access_at_decision
                     ),
+                    **origin,
                     "recipient_fingerprints": [
                         item["fingerprint"] for item in recipients
                     ],
@@ -120,6 +128,16 @@ def canonical_tenant_recipient_snapshot(makerspace_id):
 
 
 def capture_tenant_dump_source(capture_id, *, sleep=None, storage_modes=None):
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_portable import ensure_qualified
+        ensure_qualified()
+    from .cloud_capture_scope import capture_scope
+    modes = storage_modes or _storage_modes()
+    with capture_scope(capture_id, modes):
+        return _capture_tenant_dump_source(capture_id, sleep=sleep, storage_modes=modes)
+
+
+def _capture_tenant_dump_source(capture_id, *, sleep=None, storage_modes=None):
     """Freeze database plus exact object bytes, persist lineage, then reopen source."""
     capture = _claim_capture(capture_id)
     root = None
@@ -151,6 +169,9 @@ def capture_tenant_dump_source(capture_id, *, sleep=None, storage_modes=None):
             # the digest describes exactly what the artifact will carry.
             money_sha256 = money_fingerprint(capture.makerspace_id)
 
+        if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+            from .cloud_capture_staging import persist
+            persist(capture.pk, root, "source")
         ledger = object_ledger(objects)
         database_sha256 = sha256_file(database_image)
         ledger_sha256 = canonical_digest(ledger)

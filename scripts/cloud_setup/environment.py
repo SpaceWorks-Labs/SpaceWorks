@@ -14,6 +14,7 @@ COMMON = {
     "EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS": "2555", "EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS": "30",
     "EVENT_REIMBURSEMENT_FILE_MAX_BYTES": "10485760", "EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES": "104857600",
     "EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES": "1073741824", "EVENT_STAGE_FILE_RETENTION_DAYS": "365",
+    "MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS": "0",
 }
 SECRET_MOUNTS = {"EMAIL_PROVIDER_CONFIG_FILE", "STORAGE_CAPABILITIES_FILE"}
 CONFIGURABLE_DEFAULTS = {
@@ -82,6 +83,9 @@ def effective_environment(answers, secrets):
         if key.startswith("SPACEWORKS_HOST") or key == "BACKUP_OPS_DIR":
             raise SetupError("managed_host_authority", "Remove host authority from managed configuration.")
         values[key] = value
+    if values.get("TRUST_FORWARDED_HOST", "false").lower() in {"true", "1", "yes", "on"}:
+        if not all(values.get(name) for name in ("TRUSTED_EDGE_INGRESS_SECRET", "TRUSTED_EDGE_CIDRS", "TRUSTED_EDGE_UPSTREAM_HOSTS")):
+            raise SetupError("edge_trust_incomplete", "Configure the protected edge secret, exact socket CIDRs and raw upstream hosts together.")
     values["DATABASE_MAINTENANCE_CONNECTION_MODE"] = answers["maintenance_connection_mode"]
     for endpoint in ("AWS_S3_ENDPOINT_URL", "AWS_S3_PUBLIC_ENDPOINT_URL", "PUBLIC_IMAGE_BASE_URL"):
         if values.get(endpoint):

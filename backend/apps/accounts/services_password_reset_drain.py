@@ -1,4 +1,6 @@
 """Lease-fenced, at-most-once issuance drain for password reset envelopes."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 import os
@@ -55,9 +57,10 @@ def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None)
     """Resolve, mint and synchronously deliver one bounded claimed batch."""
     expire_delivery_leases(batch_size=batch_size)
     discard_expired_issued(batch_size=batch_size)
+    batch_size = bounded.limit(batch_size)
     claims = claim_pending_envelopes(batch_size=batch_size, owner=owner)
     outcomes = {"claimed": len(claims), "issued": 0, "terminal": 0, "stale": 0}
-    for claim in claims:
+    for claim in bounded.items(claims):
         attempt = prepare_delivery(claim)
         if attempt is None:
             outcomes["stale"] += 1

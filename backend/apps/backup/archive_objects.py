@@ -17,6 +17,7 @@ OBJECT_FIELD_NAMES = frozenset({
 NON_OBJECT_KEY_FIELDS = frozenset({
     ("operations.CloudEmailReservation", "attempt_key"),  # stable mail replay identity
     ("operations.CloudObjectUsageReceipt", "operation_key"),  # accounting idempotency, no object locator
+    ("operations.CloudObjectReservation", "key"),  # digest of physical identity and key, not a locator
     # Notification intent and delivery-target identities, never bucket locators.
     ("integrations.NotificationEnvelope", "dedup_key"),
     ("integrations.NotificationDelivery", "target_key"),
@@ -71,7 +72,7 @@ def object_closure():
     result = {"private": {}, "public_image": {}}
     for model in apps.get_models():
         # Receipt keys are deletion locators for objects that must NOT exist.
-        if model._meta.label == "evidence.EvidenceAbandonedUploadReceipt":
+        if model._meta.label in {"evidence.EvidenceAbandonedUploadReceipt", "backup.ManagedStagedObject"}:
             continue
         collect_model_objects(model._default_manager.all(), model, result)
     return result

@@ -11,8 +11,8 @@ python scripts/init-cloud-environment.py render --non-interactive --answers-file
 ```
 
 Examples/contracts are in deploy/cloud/. Rendering prepares configuration; bootstrap completion needs real
-probes, actual inbox confirmation and deployment-bound acceptance. R's absolute-Python bootstrap argv and
-M's fixed-role interface still need reviewed alignment. Until accepted, invoke the fixed release role directly:
+probes, actual inbox confirmation and deployment-bound acceptance. Bootstrap uses the pre-settings secret
+materializer and the same fixed role interface as runtime. The exact release invocation is:
 `--role migrate python -m scripts.run_cloud_role release`. Only that finite job receives maintenance credentials.
 Existing databases require explicit adoption; changing one environment variable is insufficient.
 
@@ -41,10 +41,15 @@ CORS/CSRF/staff origins and Secure cookie policy. Forwarded-host authority requi
 A publicly reachable unrestricted backend is not a trusted edge. Free caps/account aliases are in [the free guide](cloud-free.md).
 Missing usage means unknown, never zero/unlimited. Global/provider totals remain operator-only.
 
+Render also writes a separate protected `edge.environment.json` for the server-side static adapter.
+It contains fixed origins/CSP inputs, the independent edge proof and, for free only, the tick secret.
+Deploy it only to the edge secret store; it contains no DB, object-storage or mail credentials and is
+never browser runtime configuration. Keep runtime and release environment artifacts separate.
+
 
 Forwarded-host enablement also requires TRUST_X_FORWARDED_PROTO=True and a protected
 TRUSTED_EDGE_INGRESS_SECRET (32..256 ASCII bytes). The authenticated origin proxy must overwrite
 X-SpaceWorks-Edge-Secret on upstream requests and remove any browser-supplied copy. Keep this value
-in server-only edge/backend secret stores. F's adapters still need that reviewed secret-header wiring;
-until then forwarded-host enablement correctly refuses their requests. Exact raw health GET/HEAD and
+in server-only edge/backend secret stores. Every static adapter strips the browser copy and overwrites
+the upstream secret. Exact raw health GET/HEAD and
 the separately secret-authenticated free tick can reach backend ingress without a forwarded host.

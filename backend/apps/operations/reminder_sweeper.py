@@ -1,4 +1,6 @@
 """One UTC sweeper for explicit reminder sources, with isolated tenant failures."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from dataclasses import asdict
@@ -40,7 +42,7 @@ def run_reminder_sweep(*, now=None, limit=None, tz_resolver=None, source_keys=No
     if transaction.get_connection().in_atomic_block or not transaction.get_autocommit():
         raise RuntimeError("Reminder sweeps require autocommit.")
     now = utc_time(timezone.now() if now is None else now)
-    limit = settings.REMINDER_SWEEP_BATCH_SIZE if limit is None else limit
+    limit = bounded.limit(settings.REMINDER_SWEEP_BATCH_SIZE if limit is None else limit)
     if type(limit) is not int or limit < 1:
         raise ValueError("Reminder sweep batch size must be a positive integer.")
     if source_keys is None:
@@ -51,7 +53,7 @@ def run_reminder_sweep(*, now=None, limit=None, tz_resolver=None, source_keys=No
         return {"dispatched": 0, "skipped": 0, "failed": 0}
     counts = {"dispatched": 0, "skipped": 0, "failed": 0}
     tenants = rbac.scope_for_scheduled_work(Makerspace.objects.all(), field="pk").order_by("pk")
-    for makerspace in tenants.iterator(chunk_size=100):
+    for makerspace in bounded.page(tenants, "reminder-tenants"):
         try:
             with fanout_tenant_write(
                 makerspace.pk, operation="reminder_sweep", counts=counts,
@@ -64,7 +66,7 @@ def run_reminder_sweep(*, now=None, limit=None, tz_resolver=None, source_keys=No
                     raise ValueError("Reminder timezone resolver must return a timezone.")
                 # Validate custom resolvers without converting any stored timestamp.
                 now.astimezone(local_tz)
-                for source in sources:
+                for source in bounded.items(sources):
                     if not _source_enabled(makerspace, source):
                         counts["skipped"] += 1
                         continue
@@ -93,7 +95,7 @@ def _current_tenant(makerspace):
 
 
 def _run_source(makerspace, source, now, local_tz, limit, counts):
-    for subject in islice(source.discover(makerspace, now, limit, local_tz), limit):
+    for subject in bounded.items(islice(source.discover(makerspace, now, limit, local_tz), limit)):
         schedule_reminders(
             makerspace=makerspace, source=source.key, subject=subject.subject,
             kind=subject.kind, due_at=subject.due_at, offsets=subject.offsets,
@@ -105,8 +107,8 @@ def _run_source(makerspace, source, now, local_tz, limit, counts):
         counts["skipped"] += 1
         return
     makerspace = current
-    for row in claim_reminders(makerspace=makerspace, source=source.key, now=now, limit=limit,
-                              normalize_claim=source.normalize_claim):
+    for row in bounded.items(claim_reminders(makerspace=makerspace, source=source.key, now=now, limit=limit,
+                              normalize_claim=source.normalize_claim)):
         failed = False
         try:
             message = source.build(makerspace, row, now, local_tz)

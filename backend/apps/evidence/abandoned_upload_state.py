@@ -91,7 +91,7 @@ def release(current, exc):
             return
         state.claim_token = None
         state.claimed_at = None
-        state.last_error = f"{type(exc).__name__}: {exc}"[:500]
+        state.last_error = getattr(exc, "code", type(exc).__name__)[:500]
         state.save(update_fields=("claim_token", "claimed_at", "last_error", "updated_at"))
 
 
@@ -107,7 +107,7 @@ def _reserve(photo, now):
         try:
             with transaction.atomic():
                 return EvidenceAbandonedUploadReceipt.objects.create(
-                    **values, next_reconcile_at=now + RECONCILE_INTERVAL
+                    **values, storage_identity=_storage_identity(), next_reconcile_at=now + RECONCILE_INTERVAL
                 )
         except IntegrityError:
             existing = EvidenceAbandonedUploadReceipt.objects.filter(
@@ -117,6 +117,15 @@ def _reserve(photo, now):
     if existing is None or any(getattr(existing, k) != v for k, v in values.items()):
         raise RuntimeError("Abandoned-upload receipt conflicts with its cleanup candidate.")
     return existing
+
+
+def _storage_identity():
+    from apps.storage_capabilities.runtime import client_identity
+    client = storage._client()
+    try:
+        return client_identity(client, settings.AWS_STORAGE_BUCKET_NAME).fingerprint
+    finally:
+        client.close()
 
 
 def complete(current, *, cutoff, policy_days, sizes, outcomes, run_id):

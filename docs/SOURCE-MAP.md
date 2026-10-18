@@ -476,3 +476,13 @@ member offline cards/loans retain their separate lifecycle. Tests: `backend/test
 and frontend `*.accountSplit.test.*`, `sessionContexts.test.ts`, `contextStores.test.ts`.
 
 Cloud shared integration: config/cloud_settings composes lane contracts; operations/models_cloud_*, models_storage_capabilities and cloud_quotas own deployment-local state/projections; operations/cloud_runtime owns generation admission; scripts/cloud_entrypoint composes protected managed files before M admission. Provider/operator guides live under docs/deploy/cloud-*.md.
+
+`backup/managed/staging.py` owns ciphertext locators/deletion receipts; `writers.py`, `presigns.py`,
+`capture.py` and `recovery.py` own managed drain/reconciliation. `tenant_migration/cloud_import_*`
+adapts existing import protocols to object storage. `cloud_capture_staging.py` encrypts capture trees;
+`cloud_portable.py` qualifies and leases isolated scratch databases. Pure derivation manifest assembly
+lives in `tenant_dump_derivation_manifest.py`; readable-main operational omissions in
+`backup/main_projection_omissions.py`. `operations/cloud_jobs` remains the single periodic/work catalog
+and owns bounded cursor adapters and actual scheduler diagnostics; `cloud_quotas` owns physical usage,
+write reservations and audited storage/mail reconciliation. `backup/privileged_target.py`
+derives only the active database-name component for privileged host jobs and validates the protected tuple.

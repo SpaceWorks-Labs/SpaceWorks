@@ -216,3 +216,11 @@ OMITTED_MODELS.update({
     'operations.CloudObjectUsageReceipt': "Deployment-local cloud coordination or delivery telemetry.",
     'integrations.EmailProviderWebhookReceipt': "Deployment-local cloud coordination or delivery telemetry.",
 })
+
+OMITTED_MODELS.update({
+    'backup.ManagedStagedObject': "Deployment-local immutable staging, accounting or migration receipt.",
+    'backup.ManagedPresignLease': "Deployment-local immutable staging, accounting or migration receipt.",
+    'operations.CloudObjectAccount': "Deployment-local immutable staging, accounting or migration receipt.",
+    'operations.CloudObjectReservation': "Deployment-local immutable staging, accounting or migration receipt.",
+    'operations.CloudStorageMigrationReceipt': "Deployment-local immutable staging, accounting or migration receipt.",
+})

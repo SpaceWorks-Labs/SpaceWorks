@@ -12,6 +12,7 @@ from apps.events.models import (
 )
 from apps.events.services_station import credential_for_event
 from apps.makerspaces.guards import require_feature_locked
+from .services_write_boundary import event_write
 
 
 FEATURE_SOURCES = {
@@ -34,7 +35,7 @@ def _lock_registration(event, registration_id):
     return registration
 
 
-@transaction.atomic
+@event_write
 def mark_attended_with_event(
     registration,
     *,
@@ -47,6 +48,9 @@ def mark_attended_with_event(
 ):
     services = _boundary()
     event = services._locked_event(registration.event_id)
+    if actor is not None:
+        from .event_authority import require
+        require(actor, event, "check_in")
     if source in FEATURE_SOURCES:
         event.makerspace = require_feature_locked(
             event.makerspace_id, "events.offline_checkin"
@@ -62,6 +66,8 @@ def mark_attended_with_event(
     ).exists():
         raise DuplicateCheckInOperation()
     locked = _lock_registration(event, registration.pk)
+    from .hackathons.admission_lifecycle import require_attendance_mapping
+    require_attendance_mapping(locked)
     if (
         locked.status != EventRegistration.Status.REGISTERED
         or event.status not in (Event.Status.PUBLISHED, Event.Status.COMPLETED)
@@ -86,7 +92,11 @@ def mark_attended_with_event(
     check_in.full_clean(validate_unique=False)
     check_in.save()
     locked.status = EventRegistration.Status.ATTENDED
-    locked.save(update_fields=["status"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version"])
+    from .hackathons.admission_lifecycle import attendance_changed_locked
+    from .programme_locks import current_locks
+    attendance_changed_locked(event=event, registration=locked, actor=actor, locks=current_locks(event.pk))
     services._audit(
         event,
         actor,

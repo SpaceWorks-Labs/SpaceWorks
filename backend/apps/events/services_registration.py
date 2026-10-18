@@ -3,7 +3,6 @@
 from apps.accounts.account_kind_guards import require_member_account
 
 from django.conf import settings
-from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -23,9 +22,10 @@ from apps.events.models import EventRegistration
 from apps.forms_schema.validation import validate_answers
 from apps.makerspaces.guards import require_module_locked
 from apps.events.services_calendar import calendar_registration_changed
+from .services_write_boundary import event_write
 
 
-@transaction.atomic
+@event_write
 def register(
     event, *, member=None, name=None, email=None, phone=None,
     custom_answers=None, actor=None, staff_registration=False,
@@ -55,7 +55,13 @@ def register(
 
     assert_mapped_write_allowed(event.makerspace_id)
     locked = _locked_event(event.pk, lock_makerspace=False)
-    from .organization_audience import AUDIENCE, lock_admission_sources
+    if staff_registration:
+        from .event_authority import require
+        require(actor, locked, "manage_registrations")
+    from .hackathons.admission_bridge import require_ordinary_registration
+    require_ordinary_registration(locked)
+    from .organization_audience import AUDIENCE
+    from .programme_locks import lock_admission_sources
     lock_admission_sources(locked, [getattr(member, "pk", None)],
                            extra_space_ids=[via_makerspace.pk] if via_makerspace else [])
     if member is not None and locked.registration_audience == AUDIENCE:
@@ -142,6 +148,8 @@ def register(
         raise DuplicateRegistration("A registration already exists for this email.", fresh_status=existing.status)
     custom_answers = validate_answers(locked.custom_form, custom_answers)
     ticket = select_ticket(locked, ticket_type_id, member)
+    from .services_registration_admission import require_participant_ticket
+    require_participant_ticket(locked, ticket)
     status = fresh_registration_status(locked, ticket)
     if existing and existing.status == EventRegistration.Status.CANCELLED:
         # The unique payment subject preserves historical money. Reusing a cancelled
@@ -167,11 +175,12 @@ def register(
         existing.name, existing.email, existing.phone = name, normalized_email, phone
         existing.custom_answers, existing.status, existing.created_at = custom_answers, status, timezone.now()
         existing.cancelled_at, existing.status_before_cancel, existing.waitlist_position_at = None, "", None
+        existing.version += 1
         _validate(existing)
         existing.save(update_fields=[
             "member", "registered_via_makerspace", "payment_via_makerspace", "name",
             "email", "phone", "custom_answers", "status", "created_at", *quote,
-            "cancelled_at", "status_before_cancel", "waitlist_position_at",
+            "cancelled_at", "status_before_cancel", "waitlist_position_at", "version",
         ])
         stamp_host_waiver(existing, waiver, actor=actor, via=via_makerspace or locked.makerspace, event=locked)
         calendar_registration_changed(existing)
@@ -190,17 +199,29 @@ def register(
     return _record_registration(locked, actor, registration, status)
 
 
-def _quote(event, member, ticket, invite_code, promo_code, *, actor):
+def _quote(event, member, ticket, invite_code, promo_code, *, actor, admission_locked=False):
     from decimal import Decimal
     from .invites import redeem_invite
     from .promos import redeem_promo
 
     from .organization_audience import AUDIENCE
+    if admission_locked:
+        from . import invites
+        from .hackathons.admission_errors import fail
+        def required(name):
+            callback = getattr(invites, name, None)
+            if callback is None:
+                fail("programme_dependency_unavailable", "Invitation admission is temporarily unavailable.", status=503)
+            return callback
+        if event.registration_audience in ("invite", AUDIENCE):
+            redeem_invite = required("redeem_invite_locked")
     invite = redeem_invite(event, invite_code, member, actor=actor) if (event.registration_audience == "invite" and invite_code
              or event.registration_audience == AUDIENCE and invite_code) else None
     from apps.makerspaces.platform import feature_enabled
     if event.registration_audience == "invite" and not invite_code:
         from .invites import resolve_for_account
+        if admission_locked:
+            resolve_for_account = required("resolve_for_account_locked")
         from rest_framework.exceptions import NotFound, ValidationError
         if not member or not member.email_verified_at:
             raise ValidationError({"detail": "Verify your email to use your invitation.", "code": "email_verification_required"})
@@ -209,6 +230,8 @@ def _quote(event, member, ticket, invite_code, promo_code, *, actor):
             raise NotFound("Invitation not found.")
     if event.registration_audience == AUDIENCE and not invite_code and feature_enabled(event.makerspace, "events.invites"):
         from .invites import resolve_for_account
+        if admission_locked:
+            resolve_for_account = required("resolve_for_account_locked")
         invite = resolve_for_account(event, member, actor=actor)
     amount = Decimal(ticket.amount if ticket else event.payment_amount)
     promo, discount = redeem_promo(event, promo_code, amount) if promo_code else (None, Decimal("0"))

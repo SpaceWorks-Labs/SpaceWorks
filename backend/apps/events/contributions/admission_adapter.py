@@ -29,6 +29,43 @@ class ContributorAdmissions(Protocol):
         ...
 
 
+class CanonicalContributorAdmissions:
+    def admit_locked(self, **kwargs):
+        from apps.events.services_registration_admission import admit_contributor_locked
+        return admit_contributor_locked(**kwargs)
+
+
+def close_event_locked(*, event, actor, locks):
+    """Freeze submitted role/ordinary sources, preserving pending owner review."""
+    from apps.events.programme_locks import assert_lock_context
+    from apps.events.answer_derivations.models import EventAnswerDerivation
+    from apps.events.answer_derivations.subjects import binding_for, subject_model
+    from apps.events.answer_derivations.lifecycle import lock_subject_locked
+    from apps.events.contracts.subjects import SubjectKind
+    assert_lock_context(locks)
+    for kind in (SubjectKind.ROLE_ASSIGNMENT, SubjectKind.REGISTRATION):
+        ids = EventAnswerDerivation.objects.filter(event=event, locked_at__isnull=True).values_list(
+            f"{kind.value}_id", flat=True)
+        rows = subject_model(kind).objects.select_for_update().filter(event=event, pk__in=ids, member_id__isnull=False)
+        if kind == SubjectKind.ROLE_ASSIGNMENT:
+            rows = rows.exclude(state="draft")
+        for row in rows.order_by("pk"):
+            lock_subject_locked(actor_id=getattr(actor, "pk", None), subject=binding_for(row, kind), locks=locks, closing=True)
+
+
+def cancel_event_locked(*, event, actor, locks):
+    """C's lifecycle remains the only writer of roles, duties and entitlements."""
+    from apps.events.programme_locks import assert_lock_context
+    from .models_roles import EventRolePosting
+    from . import role_workflow
+    assert_lock_context(locks)
+    close_event_locked(event=event, actor=actor, locks=locks)
+    if (EventRoleAssignment.objects.filter(event=event).exists()
+            or EventRolePosting.objects.filter(event=event).exists()):
+        required_hook(role_workflow, "cancel_event_locked")(event_id=event.pk,
+            actor_id=getattr(actor, "pk", None), locks=locks)
+
+
 def admit(*, actor, event_id, assignment_id, payload):
     initial = get_object_or_404(EventRoleAssignment, event_id=event_id, pk=assignment_id)
 

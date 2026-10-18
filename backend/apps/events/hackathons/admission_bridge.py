@@ -7,12 +7,32 @@ from .admission_errors import fail
 from .admission_models import HackathonApplication, HackathonConfig
 
 
+class CanonicalRegistrationBridge:
+    """The production port delegates all writes to the existing registration domain."""
+
+    def create_pending_locked(self, **kwargs):
+        from apps.events.services_registration_admission import create_pending_locked
+        return create_pending_locked(**kwargs)
+
+    def transition_locked(self, **kwargs):
+        from apps.events.services_registration_admission import transition_locked
+        return transition_locked(**kwargs)
+
+    def mirror_answers_locked(self, **kwargs):
+        from apps.events.services_registration_admission import mirror_answers_locked
+        return mirror_answers_locked(**kwargs)
+
+
 def enabled_for(event_id):
     return HackathonConfig.objects.filter(event_id=event_id, enabled=True).exists()
 
 
+def requires_admission(event_id):
+    return enabled_for(event_id) or HackathonApplication.objects.filter(event_id=event_id).exists()
+
+
 def require_ordinary_registration(event):
-    if enabled_for(event.pk):
+    if requires_admission(event.pk):
         from .admission_transactions import require_programme
         require_programme(event)
         fail("hackathon_application_required", "Apply through this event's application form.")

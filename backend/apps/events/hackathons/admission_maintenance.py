@@ -8,7 +8,7 @@ from apps.events.models import Event
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
 from .admission_models import HackathonApplication, HackathonConfig
 from .admission_ports import ports
-from .admission_transactions import CommandContext, lock_domain_parents, record
+from .admission_transactions import CommandContext, lock_accounts, lock_domain_parents, record
 from .capacity_admission import occupancy
 
 
@@ -26,6 +26,7 @@ def maintenance_boundary(event_id):
         stack.enter_context(transaction.atomic())
         stack.enter_context(integration.fences(tenant_ids=tenants, account_ids=accounts))
         event = integration.lock_event(event_id=event_id, account_ids=accounts)
+        lock_accounts(integration, event, accounts)
         config = get_object_or_404(HackathonConfig.objects.select_for_update(), event=event)
         lock_domain_parents(event_id)
         yield CommandContext(event, config, None,
@@ -116,7 +117,7 @@ def freeze_closed_applications(*, event_id, limit=100):
         applications = list(HackathonApplication.objects.select_for_update().filter(event=ctx.event,
             state="submitted", answer_locked_at__isnull=True).order_by("pk")[:max(1, min(limit, 200))])
         for app in applications:
-            lock_answers_locked(ctx, app)
+            lock_answers_locked(ctx, app, closing=True)
             app.version += 1
             app.save(update_fields=["version"])
         return len(applications)

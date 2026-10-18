@@ -40,6 +40,7 @@ def save_application(*, event, actor, payload, submit=False):
     with command(event_id=event.pk, actor=actor, data=data, owner=True,
                  action="application.submit" if submit else "application.edit",
                  normalized_body=prepared.normalized_input if prepared is not None else None) as ctx:
+        actor = ctx.actor
         if ctx.reference:
             return get_object_or_404(HackathonApplication, pk=ctx.reference["id"], event=ctx.event, member=actor), ctx.reference["status"]
         application = HackathonApplication.objects.select_for_update().filter(event=ctx.event, member=actor).first()

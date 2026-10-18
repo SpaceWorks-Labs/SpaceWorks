@@ -8,13 +8,14 @@ from .admission_ports import ports
 from .admission_transactions import record
 
 
-def lock_answers_locked(ctx, application, *, at=None):
+def lock_answers_locked(ctx, application, *, at=None, closing=False):
     if application.answer_locked_at:
         return
     application.answer_event_date_revision = ctx.event.event_date_revision
     application.answer_as_of_date = ctx.event.starts_at.astimezone(ZoneInfo(ctx.event.timezone_name)).date()
     application.answer_locked_at = at or timezone.now()
-    ports().forms.lock_answers_locked(application=application, at=application.answer_locked_at, locks=ctx.locks)
+    kwargs = {"closing": True} if closing else {}
+    ports().forms.lock_answers_locked(application=application, at=application.answer_locked_at, locks=ctx.locks, **kwargs)
     application.save(update_fields=["answer_event_date_revision", "answer_as_of_date", "answer_locked_at"])
     record(ctx, "application_answers_locked", application, version=application.version,
            event_date_revision=application.answer_event_date_revision)

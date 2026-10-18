@@ -74,23 +74,30 @@ def lock_subject_locked(*, actor_id, subject, locks, closing=False):
 def date_changed_locked(*, event_id, actor_id, locks):
     """G calls after incrementing starts_at/timezone revision under event locks.
 
-    Returned owner IDs feed G's safe notice outbox after commit. Bumping subject
-    versions invalidates response ETags without storing a computed age.
+    Notices commit with the review flag and dispatch after commit. Bumping
+    subject versions invalidates response ETags without storing a computed age.
     """
     event = require_event_locks(event_id, locks)
+    from apps.events.programme_locks import assert_lock_context
+    assert_lock_context(locks)
     owners = set()
     for kind in SubjectKind:
         ids = EventAnswerDerivation.objects.filter(
             event_id=event_id, locked_at__isnull=True,
         ).exclude(**{f"{kind.value}_id__isnull": True}).values_list(f"{kind.value}_id", flat=True)
-        rows = subject_model(kind).objects.select_for_update().filter(pk__in=ids, event_id=event_id)
+        rows = subject_model(kind).objects.select_for_update().filter(
+            pk__in=ids, event_id=event_id, member_id__isnull=False).order_by("pk")
         for row in rows:
+            if row.member_id is not None and row.member_id not in locks.account_ids:
+                raise RuntimeError("Declare every affected answer owner before event locks.")
             row.date_review_required = True
             row.version += 1
             row.save(update_fields=["date_review_required", "version"])
             if row.member_id:
                 owners.add(row.member_id)
             audit(actor_id, "date_review_requested", event, subject=binding_for(row, kind), date_revision=event.event_date_revision)
+            from apps.events.hackathons.admission_date_notices import enqueue_locked
+            enqueue_locked(event=event, row=row, kind=kind)
     return tuple(sorted(owners))
 
 

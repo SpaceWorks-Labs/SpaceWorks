@@ -14,6 +14,7 @@ from .models import Event, EventRegistration
 from .services_core import (EVENT_FIELDS, INHERITABLE_FIELDS, _locked_event, _validate,
                        _canonical_form, _audit, _refresh, _may_promote)
 from .services_registration_state import promote_automatically
+from .services_write_boundary import event_write
 
 @transaction.atomic
 def create_event(
@@ -75,7 +76,7 @@ def create_event(
     return _refresh(event)
 
 
-@transaction.atomic
+@event_write
 def update_event(event, *, actor, inherit_fields=(), **changes):
     from apps.events.services_calendar import CALENDAR_EVENT_FIELDS, calendar_event_changed
 
@@ -86,7 +87,7 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
         EventSeries.objects.select_for_update().get(pk=series_id)
 
     locked = _locked_event(event.pk, lock_makerspace=False)
-    from .organization_audience import lock_admission_sources
+    from .programme_locks import lock_admission_sources
     original_audience = locked.registration_audience
     prospective_audience = changes.get("registration_audience", original_audience)
     if "registration_audience" in inherit_fields and locked.series_id:
@@ -116,6 +117,14 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
         )
     if inherit_fields and locked.series_id is None:
         raise serializers.ValidationError({"inherit_fields": "This event is not in a series."})
+    from .event_authority import require
+    affected = set(changes) | inherit_fields
+    if affected & {"starts_at", "ends_at"}:
+        require(actor, locked, "publish_schedule")
+    if affected - {"starts_at", "ends_at"} or not affected:
+        require(actor, locked, "edit_details")
+    if "payment_amount" in affected:
+        require(actor, locked, None)
     if "registration_audience" in changes or "registration_audience" in inherit_fields:
         from . import event_authority
         from .event_permissions import EDIT_DETAILS
@@ -166,16 +175,6 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
         locked.organization_admission_blocked = False
     promoted = []
     capacity_changed = "capacity" in changes and locked.capacity != old_capacity
-    if (
-        _may_promote(locked, now)
-        and (locked.capacity == 0 or locked.capacity > confirmed)
-    ):
-        if not locked.registration_requires_approval:
-            promoted = promote_automatically(
-                locked,
-                actor,
-                None if locked.capacity == 0 else locked.capacity - confirmed,
-            )
 
     if changes:
         update_fields = set(changes)
@@ -193,6 +192,10 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
             locked.series_override_fields = sorted(overrides)
             update_fields.add("series_override_fields")
         locked.save(update_fields=[*sorted(update_fields), "updated_at"])
+        if "event_date_revision" in update_fields:
+            from .hackathons.admission_dates import date_changed_locked
+            from .programme_locks import current_locks
+            date_changed_locked(event=locked, actor=actor, locks=current_locks(locked.pk))
         if set(changes) & CALENDAR_EVENT_FIELDS:
             calendar_event_changed(locked)
         if "image_key" in inherit_fields and old_image_key:
@@ -201,6 +204,18 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
             public_image_storage.release_public_image_on_commit(
                 locked.makerspace, old_image_key
             )
+    if (
+        _may_promote(locked, now)
+        and (locked.capacity == 0 or locked.capacity > confirmed)
+    ):
+        from .hackathons.admission_bridge import requires_admission
+        if requires_admission(locked.pk) or not locked.registration_requires_approval:
+            promoted = promote_automatically(
+                locked,
+                actor,
+                None if locked.capacity == 0 else locked.capacity - confirmed,
+            )
+
     meta = {"changed_fields": sorted(changes)}
     if "registration_audience" in changes:
         from .organization_audience import candidate_ids

@@ -56,7 +56,7 @@ def promote_locked(ctx, *, exclude_application_ids=(), limit=100, restart=True):
                 code = str(exc.detail.get("code", "")) if isinstance(exc.detail, dict) else ""
                 if exc.status_code == 403:
                     reason = "no_longer_eligible"
-                elif code in ("review_coverage_required", "roster_changed", "invalid_transition", "decision_already_staged", "event_date_changed"):
+                elif code in ("review_coverage_required", "roster_changed", "invalid_transition", "decision_already_staged", "event_date_changed", "capacity_full", "host_waiver_required", "admission_mapping_conflict"):
                     reason = code
                 else:
                     raise

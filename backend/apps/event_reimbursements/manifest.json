@@ -1,9 +1,9 @@
 {
   "manifest_version": 1,
-  "lane": "RB-R",
+  "lane": "RB-R2",
   "module_key": "event_reimbursements",
   "integration_status": "INCOMPLETE_DO_NOT_ENABLE",
-  "prerequisite": "G1 reimbursement_addon.json plus F/P executable handoffs absent in this checkout",
+  "prerequisite": "G1 frozen reimbursement_addon.json absent; fixture test present. PostgreSQL runtime unavailable. See RB-R2-report.md.",
   "models": [
     {
       "label": "event_reimbursements.GrantAward",
@@ -188,7 +188,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.GrantAwardRevision",
@@ -273,7 +273,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ReimbursementBudgetPool",
@@ -362,7 +362,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.BudgetReservation",
@@ -471,7 +471,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.BudgetEntry",
@@ -575,7 +575,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ClaimDecision",
@@ -743,7 +743,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ClaimLineDecision",
@@ -812,7 +812,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ClaimAppeal",
@@ -905,7 +905,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ClaimScreeningReview",
@@ -993,7 +993,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ClaimAttendanceAttestation",
@@ -1130,7 +1130,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ReimbursementClaim",
@@ -1323,7 +1323,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ReimbursementWorkItem",
@@ -1424,7 +1424,7 @@
         }
       ],
       "lifetime": "coordination",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ClaimRevision",
@@ -1500,7 +1500,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ClaimLine",
@@ -1697,7 +1697,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.ReimbursementProgramme",
@@ -1951,7 +1951,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "event_reimbursements.GrantRequest",
@@ -2246,17 +2246,49 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     }
   ],
   "routes": [],
   "audits": [],
   "notices": [],
   "reminder_sources": [],
-  "runtime_registration": "NOT IMPLEMENTED",
+  "runtime_registration": "Not enabled. G mounts and provider/route/authority registry integration required.",
   "retention_registration": "NOT IMPLEMENTED",
-  "source_boundaries": "NOT IMPLEMENTED; no callable command or HTTP surface",
+  "source_boundaries": {
+    "interactive": "apps.events.staged_forms.transactions.command",
+    "crypto": "prepare_tenant_key outside locks, tenant_key_context around the command",
+    "workers": "staged_forms.tasks.reconcile_event uses source/fences/event; other required retention/domain workers unfinished"
+  },
   "object_fields": [],
   "portable_status": "FIELD INVENTORY ONLY; typed JSON schemas, registry declarations and preservation adapters unfinished",
-  "tests": "See scratchpad/build/RB-R-report.md and RB-R-rerun-files.txt; independent Python policy tests only"
+  "tests": "RB-R2-rerun-files.txt: 64 model-free Python tests pass; 7 frontend tests pass; Django/PostgreSQL files not run.",
+  "implemented_modules": [
+    "backend/apps/event_reimbursements/apps.py",
+    "backend/apps/event_reimbursements/attendance.py",
+    "backend/apps/event_reimbursements/award_models.py",
+    "backend/apps/event_reimbursements/award_workflow.py",
+    "backend/apps/event_reimbursements/budget_math.py",
+    "backend/apps/event_reimbursements/budget_models.py",
+    "backend/apps/event_reimbursements/budget_service.py",
+    "backend/apps/event_reimbursements/calculations.py",
+    "backend/apps/event_reimbursements/cancellation_coordination.py",
+    "backend/apps/event_reimbursements/claim_decision_models.py",
+    "backend/apps/event_reimbursements/claim_inputs.py",
+    "backend/apps/event_reimbursements/claim_models.py",
+    "backend/apps/event_reimbursements/claim_revision_models.py",
+    "backend/apps/event_reimbursements/claim_workflow.py",
+    "backend/apps/event_reimbursements/config_models.py",
+    "backend/apps/event_reimbursements/models.py",
+    "backend/apps/event_reimbursements/model_base.py",
+    "backend/apps/event_reimbursements/programme_workflow.py",
+    "backend/apps/event_reimbursements/receipt_service.py",
+    "backend/apps/event_reimbursements/request_form_adapter.py",
+    "backend/apps/event_reimbursements/request_models.py",
+    "backend/apps/event_reimbursements/request_workflow.py",
+    "backend/apps/event_reimbursements/serializers_request.py",
+    "backend/apps/event_reimbursements/transactions.py",
+    "backend/apps/event_reimbursements/__init__.py"
+  ],
+  "remaining": "See exact UNFINISHED in RB-R2-report.md. Do not enable these packages."
 }

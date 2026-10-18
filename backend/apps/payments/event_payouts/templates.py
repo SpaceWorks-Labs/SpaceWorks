@@ -13,12 +13,15 @@ TEMPLATE_VERSION = 1
 IBAN_LENGTHS = {"AT": 20, "BE": 16, "CH": 21, "DE": 22, "DK": 18, "ES": 24,
                 "FI": 18, "FR": 27, "GB": 22, "IE": 22, "IT": 27, "NL": 18,
                 "NO": 15, "PL": 28, "PT": 25, "SE": 24}
-COUNTRIES = frozenset({"IN", "US", *IBAN_LENGTHS})
+COUNTRIES = frozenset({"IN", "US", "AU", "CA", "NZ", *IBAN_LENGTHS})
 ROUTING_FIELDS = {
     "in_bank": ("holder_name", "account_number", "ifsc", "bank_name"),
     "in_upi": ("holder_name", "upi_id"),
     "us_bank": ("holder_name", "routing_number", "account_number", "account_type"),
     "iban_bank": ("holder_name", "iban", "swift", "bank_name"),
+    "au_bank": ("holder_name", "bank_name", "account_number", "bsb", "swift"),
+    "ca_bank": ("holder_name", "bank_name", "account_number", "institution_number", "transit_number", "swift"),
+    "nz_bank": ("holder_name", "bank_name", "account_number", "bank_code", "branch_code", "swift"),
     "email": ("holder_name", "payout_email"),
     "cash": ("holder_name",),
     "cheque": ("holder_name", "delivery_instructions"),
@@ -61,6 +64,8 @@ def template_key(country, method):
             return "in_bank"
         if country == "US":
             return "us_bank"
+        if country in {"AU", "CA", "NZ"}:
+            return country.lower() + "_bank"
         if country in IBAN_LENGTHS:
             return "iban_bank"
     raise PayoutValidationError("payee_template_unsupported")
@@ -101,6 +106,15 @@ def validate_details(*, country, method, template, version, details, enabled_tem
         result["swift"] = _pattern(result["swift"].upper(), r"[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?")
         if result["swift"][4:6] != country:
             raise PayoutValidationError("invalid_payee_details")
+    elif expected in {"au_bank", "ca_bank", "nz_bank"}:
+        result["account_number"] = _digits(details["account_number"], 4, 34)
+        lengths = {"au_bank": {"bsb": 6}, "ca_bank": {"institution_number": 3, "transit_number": 5},
+                   "nz_bank": {"bank_code": 2, "branch_code": 4}}[expected]
+        for field, length in lengths.items():
+            result[field] = _digits(details[field], length, length)
+        result["swift"] = _pattern(result["swift"].upper(), r"[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?")
+        if result["swift"][4:6] != country:
+            raise PayoutValidationError("invalid_payee_details")
     elif expected == "email":
         from django.core.exceptions import ValidationError
         from django.core.validators import validate_email
@@ -116,7 +130,7 @@ def validate_details(*, country, method, template, version, details, enabled_tem
 def masked_details(details, *, country, method):
     """Call only after owner/finance authorization and tenant decryption."""
     key = template_key(country, method)
-    if key in {"in_bank", "us_bank"}:
+    if key in {"in_bank", "us_bank", "au_bank", "ca_bank", "nz_bank"}:
         return "••••" + details["account_number"][-4:]
     if key == "iban_bank":
         return "••••" + details["iban"][-4:]

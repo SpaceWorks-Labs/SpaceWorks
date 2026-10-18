@@ -18,7 +18,12 @@ class Immutable(models.Model):
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
-            raise RuntimeError("Financial history is immutable.")
+            from apps.payments.event_payouts.model_base import maintenance_fields
+            allowed = maintenance_fields(self)
+            requested = kwargs.get("update_fields")
+            if requested is not None and not set(requested) <= allowed:
+                raise RuntimeError("Maintenance may update mapped envelopes only.")
+            kwargs["update_fields"] = allowed if requested is None else requested
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):

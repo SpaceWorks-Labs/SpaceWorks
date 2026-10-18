@@ -1,8 +1,11 @@
 # Event reimbursements
 
-Implementation status: **foundation only; not enabled or ready for integration**.
-The RB-R handoff lists the missing G1/F/P contracts and all unfinished workflows.
-This document describes the approved operating contract, not available screens.
+Implementation status: **partial R2 implementation; not enabled or ready for integration**.
+Request preparation/submission, finite-budget commands, award responses, claim draft/
+submission/appeal, and core record/amend/cancel/payee services now exist. Finance
+approval evidence, uploads, retention/purge adapters and full acceptance remain
+unfinished. The G1 fixture test is present but its frozen JSON is missing in rb-r.
+The RB-R2 handoff enumerates the exact remaining files and integration gates.
 
 Travel support applies to ordinary events and hackathons. A participant explicitly
 requests support at registration/application or after acceptance, according to the

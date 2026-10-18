@@ -1,0 +1,11 @@
+export type FinanceScope = { actorId: number; makerspaceId: number };
+export type Payout = { id: string; version: number; event_id: number; event_title: string; currency: string;
+  approved_minor: number; effective_paid_minor: number; remaining_minor: number;
+  state: "open" | "settled" | "cancelled"; eligibility_status: "eligible" | "held" | "needs_acknowledgement";
+  eligibility_revision: number; current_revision_sequence: number; coordination_state: "attached" | "detached" };
+export type Payee = { id: string; version: number; state: string; country: string; method: string; masked_details: string; verified: boolean };
+export type PayoutEntry = { id: string; amount_minor: number; currency: string; method: string; reference: string;
+  paid_at: string; amends_id: string | null; is_void: boolean; payee_revision_id: string | null };
+export type PayoutDetail = Payout & { payee: Payee; entries: PayoutEntry[] };
+export type Page<T> = { count: number; results: T[]; next: string | null; previous: string | null };
+export type Preview = { id: string; expires_at: string; preview: { obligation_id: string; remaining_minor: number; currency: string; masked_payee: string }[] };

@@ -4,7 +4,9 @@ from uuid import uuid4
 from django.conf import settings
 from django.db import models
 from .model_base import Immutable
-from .validation import METHODS
+
+# Retained model declarations must import without removable workflow helpers.
+METHODS = ("bank_transfer", "cash", "cheque", "other", "paypal", "upi", "wise")
 
 
 class EventPayoutEntry(Immutable):

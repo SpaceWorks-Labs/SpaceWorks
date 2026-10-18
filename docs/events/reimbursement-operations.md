@@ -1,9 +1,10 @@
 # Reimbursement operations
 
-Implementation status: **not operational**. RB-R currently provides model definitions
-and independently tested policy calculations. Do not enable routes or install the
-new app in production until G1/F/P integration, migrations, guards, workflows,
-retention workers and acceptance tests are complete.
+Implementation status: **not operational**. R2 adds unmounted commands, stage/core
+route modules and partial owner/finance UI. Do not enable these surfaces until the
+missing frozen G1 JSON, G-authored model migrations, complete decision/upload/
+retention/purge workflows and PostgreSQL/browser acceptance are resolved. The
+RB-R2 report separates implemented code from verified behavior and unfinished work.
 
 Finance first initializes an event programme and its currency pool in one
 reauthenticated command. Replaying initialization must not fund again. Later policy

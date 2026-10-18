@@ -1,9 +1,9 @@
 {
   "manifest_version": 1,
-  "lane": "RB-R",
+  "lane": "RB-R2",
   "module_key": "request_workflow",
   "integration_status": "INCOMPLETE_DO_NOT_ENABLE",
-  "prerequisite": "G1 reimbursement_addon.json plus F/P executable handoffs absent in this checkout",
+  "prerequisite": "G1 frozen reimbursement_addon.json absent; fixture test present. PostgreSQL runtime unavailable. See RB-R2-report.md.",
   "models": [
     {
       "label": "payments.FinanceAttachment",
@@ -378,7 +378,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.PayoutEligibility",
@@ -471,7 +471,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.PayoutHold",
@@ -608,7 +608,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.PayoutExportBatch",
@@ -728,7 +728,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "coordination",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.PayoutExportBatchItem",
@@ -805,7 +805,7 @@
         }
       ],
       "lifetime": "coordination",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.EventPayoutObligation",
@@ -998,7 +998,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.EventPayoutObligationRevision",
@@ -1160,7 +1160,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.EventPayeeRevision",
@@ -1345,7 +1345,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.EventPayeeReview",
@@ -1449,7 +1449,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.EventPayoutEntry",
@@ -1609,7 +1609,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.ReceiptUse",
@@ -1674,7 +1674,7 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.ReceiptAllocationOverride",
@@ -1780,7 +1780,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "payments.ReceiptAllocation",
@@ -1855,16 +1855,203 @@
         }
       ],
       "lifetime": "permanent_core",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "payments.EventPayoutCommandReceipt",
+      "file": "backend/apps/payments/event_payouts/command_models.py",
+      "scope": "obligation.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name=\"ID\")",
+          "pii": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "makerspace": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'makerspaces.Makerspace'",
+          "on_delete": "models.CASCADE"
+        },
+        "obligation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.EventPayoutObligation', on_delete=models.CASCADE, related_name='command_receipts')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'payments.EventPayoutObligation'",
+          "on_delete": "models.CASCADE"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "user_edge": "EXCLUDED_OMITTED_COORDINATION"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "command_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "response_reference": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "ephemeral_command",
+      "database_guards": "G-owned additive migration and cross-event/scope guards required; see RB-R2-model-deltas.py"
     }
   ],
-  "routes": [],
+  "routes": [
+    {
+      "suffix": "",
+      "name": "finance-event-payout-list",
+      "view": "v.FinancePayoutListView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "dashboard/",
+      "name": "finance-event-payout-dashboard",
+      "view": "v.PayoutDashboardView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "exports/",
+      "name": "finance-event-payout-export",
+      "view": "v.ExportPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "exports/<uuid:batch_id>/download/",
+      "name": "finance-event-payout-export-download",
+      "view": "v.DownloadExportView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/",
+      "name": "finance-event-payout-detail",
+      "view": "v.FinancePayoutDetailView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/record/",
+      "name": "finance-event-payout-record",
+      "view": "v.RecordPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/entries/<uuid:entry_id>/amend/",
+      "name": "finance-event-payout-amend",
+      "view": "v.AmendPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/cancel/",
+      "name": "finance-event-payout-cancel",
+      "view": "v.CancelPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/verify/",
+      "name": "finance-event-payee-verify",
+      "view": "v.VerifyPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/request-correction/",
+      "name": "finance-event-payee-request-correction",
+      "view": "v.CorrectPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/reveal/",
+      "name": "finance-event-payee-reveal",
+      "view": "v.RevealPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/hold/",
+      "name": "finance-event-payout-hold",
+      "view": "v.HoldPayoutView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/release-hold/",
+      "name": "finance-event-payout-release-hold",
+      "view": "v.ReleaseHoldView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_finance.py"
+    },
+    {
+      "suffix": "",
+      "name": "member-event-payout-list",
+      "view": "v.MemberPayoutListView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/",
+      "name": "member-event-payout-detail",
+      "view": "v.MemberPayoutDetailView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/",
+      "name": "member-event-payout-payee",
+      "view": "v.MemberPayeeView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py"
+    },
+    {
+      "suffix": "<uuid:obligation_id>/payee/reveal/",
+      "name": "member-event-payee-reveal",
+      "view": "v.MemberPayeeRevealView.as_view()",
+      "url_module": "backend/apps/payments/event_payouts/urls_member.py"
+    }
+  ],
   "audits": [],
   "notices": [],
   "reminder_sources": [],
-  "runtime_registration": "NOT IMPLEMENTED",
+  "runtime_registration": "Not enabled. G mounts and provider/route/authority registry integration required.",
   "retention_registration": "NOT IMPLEMENTED",
-  "source_boundaries": "NOT IMPLEMENTED; no callable command or HTTP surface",
+  "source_boundaries": {
+    "interactive": "apps.payments.event_payouts.transactions.command",
+    "crypto": "prepare_tenant_key outside locks, tenant_key_context around the command",
+    "workers": "staged_forms.tasks.reconcile_event uses source/fences/event; other required retention/domain workers unfinished"
+  },
   "object_fields": [
     {
       "model": "payments.FinanceAttachment",
@@ -1877,5 +2064,55 @@
     }
   ],
   "portable_status": "FIELD INVENTORY ONLY; typed JSON schemas, registry declarations and preservation adapters unfinished",
-  "tests": "See scratchpad/build/RB-R-report.md and RB-R-rerun-files.txt; independent Python policy tests only"
+  "tests": "RB-R2-rerun-files.txt: 64 model-free Python tests pass; 7 frontend tests pass; Django/PostgreSQL files not run.",
+  "implemented_modules": [
+    "backend/apps/payments/event_payouts/attachment_models.py",
+    "backend/apps/payments/event_payouts/attachment_workflow.py",
+    "backend/apps/payments/event_payouts/authority.py",
+    "backend/apps/payments/event_payouts/command_models.py",
+    "backend/apps/payments/event_payouts/coordination.py",
+    "backend/apps/payments/event_payouts/csv_values.py",
+    "backend/apps/payments/event_payouts/eligibility_models.py",
+    "backend/apps/payments/event_payouts/eligibility_workflow.py",
+    "backend/apps/payments/event_payouts/errors.py",
+    "backend/apps/payments/event_payouts/exports.py",
+    "backend/apps/payments/event_payouts/export_models.py",
+    "backend/apps/payments/event_payouts/http.py",
+    "backend/apps/payments/event_payouts/ledger_math.py",
+    "backend/apps/payments/event_payouts/models.py",
+    "backend/apps/payments/event_payouts/model_base.py",
+    "backend/apps/payments/event_payouts/obligation_models.py",
+    "backend/apps/payments/event_payouts/obligation_workflow.py",
+    "backend/apps/payments/event_payouts/payee_models.py",
+    "backend/apps/payments/event_payouts/payee_workflow.py",
+    "backend/apps/payments/event_payouts/payout_models.py",
+    "backend/apps/payments/event_payouts/payout_workflow.py",
+    "backend/apps/payments/event_payouts/queries.py",
+    "backend/apps/payments/event_payouts/receipt_models.py",
+    "backend/apps/payments/event_payouts/retention_policy.py",
+    "backend/apps/payments/event_payouts/serializers.py",
+    "backend/apps/payments/event_payouts/serializers_finance.py",
+    "backend/apps/payments/event_payouts/templates.py",
+    "backend/apps/payments/event_payouts/transactions.py",
+    "backend/apps/payments/event_payouts/urls_finance.py",
+    "backend/apps/payments/event_payouts/urls_member.py",
+    "backend/apps/payments/event_payouts/validation.py",
+    "backend/apps/payments/event_payouts/views_finance.py",
+    "backend/apps/payments/event_payouts/views_member.py",
+    "backend/apps/payments/event_payouts/__init__.py"
+  ],
+  "remaining": "See exact UNFINISHED in RB-R2-report.md. Do not enable these packages.",
+  "typed_json_references": {
+    "payments.EventPayoutCommandReceipt.response_reference": {
+      "shape": "closed stable-reference object",
+      "references": {
+        "id": "payments.EventPayoutObligation UUID",
+        "entry_id": "payments.EventPayoutEntry UUID, optional",
+        "payee_revision_id": "payments.EventPayeeRevision UUID, optional",
+        "cancellation_revision_id": "payments.EventPayoutObligationRevision integer, optional"
+      },
+      "disposition": "DROP row on tenant import"
+    }
+  },
+  "coordination_provider": "apps.event_reimbursements.cancellation_coordination.RetainedCancellationProvider installed by G through core coordination.install"
 }

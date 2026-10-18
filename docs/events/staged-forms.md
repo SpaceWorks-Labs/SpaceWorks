@@ -1,8 +1,10 @@
 # Staged event forms
 
-Implementation status: **model and pure-policy foundation only**. Publication,
-activation, submissions, Saved-details integration, reminders and UI are unfinished.
-No staged-form route is mounted by RB-R yet.
+Implementation status: **partial R2 implementation, unmounted**. Definition,
+assignment, response, milestone, coverage-guard and reconciliation commands now
+exist, together with owner UI and revision-specific detail routes. The Saved-details
+dispatcher, canonical admission/check-in bridges, file transport/retention and
+complete acceptance still require integration. New cursor models need G migrations.
 
 Staged forms are an Events feature for ordinary events and hackathons, independent
 of reimbursements. Forms reuse the shared forms engine and immutable form revisions.
@@ -44,5 +46,6 @@ never vault values. Organizer detail needs registration-management plus host aud
 authority; finance detail returns the separate sensitive-only projection.
 
 Reminder delivery must use the real `ReminderSource` registry and shared sweep.
-The deadline calculations in this foundation are not a reminder dispatcher or
-scheduler implementation. AO20 remains open until live delivery and browser evidence.
+Stage and RSVP ReminderSource adapters are supplied for G registration. Their
+frozen identity vectors, live delivery and browser evidence remain unverified;
+AO20 is open. The RSVP source does not require staged forms or reimbursement.

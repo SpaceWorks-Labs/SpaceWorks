@@ -7,7 +7,8 @@ from .eligibility_models import PayoutEligibility, PayoutHold
 from .attachment_models import FinanceAttachment
 from .receipt_models import ReceiptUse, ReceiptAllocation, ReceiptAllocationOverride
 from .export_models import PayoutExportBatch, PayoutExportBatchItem
+from .command_models import EventPayoutCommandReceipt
 
 __all__ = ["EventPayoutObligation", "EventPayoutObligationRevision", "EventPayoutEntry", "EventPayeeRevision",
            "EventPayeeReview", "PayoutEligibility", "PayoutHold", "FinanceAttachment", "ReceiptUse", "ReceiptAllocation",
-           "ReceiptAllocationOverride", "PayoutExportBatch", "PayoutExportBatchItem"]
+           "ReceiptAllocationOverride", "PayoutExportBatch", "PayoutExportBatchItem", "EventPayoutCommandReceipt"]

@@ -1,9 +1,9 @@
 {
   "manifest_version": 1,
-  "lane": "RB-R",
+  "lane": "RB-R2",
   "module_key": "events",
   "integration_status": "INCOMPLETE_DO_NOT_ENABLE",
-  "prerequisite": "G1 reimbursement_addon.json plus F/P executable handoffs absent in this checkout",
+  "prerequisite": "G1 frozen reimbursement_addon.json absent; fixture test present. PostgreSQL runtime unavailable. See RB-R2-report.md.",
   "models": [
     {
       "label": "events.EventStageForm",
@@ -252,7 +252,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "events.EventStageMilestone",
@@ -359,7 +359,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "events.StageFormAssignment",
@@ -656,7 +656,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "events.StageFormResponse",
@@ -804,7 +804,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "events.StageFormResponseRevision",
@@ -892,7 +892,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
     {
       "label": "events.StageFormAsset",
@@ -1193,16 +1193,297 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "G MUST AUTHOR: scope, state/immutability, mandatory encryption/fences, purge capabilities"
+      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+    },
+    {
+      "label": "events.StageReconcileCursor",
+      "file": "backend/apps/events/staged_forms/work_models.py",
+      "scope": "event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name=\"ID\")",
+          "pii": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "event": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='stage_reconcile_cursor')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE"
+        },
+        "last_owner_id": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "coordination",
+      "database_guards": "G-owned additive migration and cross-event/scope guards required; see RB-R2-model-deltas.py"
+    },
+    {
+      "label": "events.StageActivationJob",
+      "file": "backend/apps/events/staged_forms/work_models.py",
+      "scope": "event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name=\"ID\")",
+          "pii": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='stage_activation_jobs')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE"
+        },
+        "stage_form": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventStageForm', on_delete=models.CASCADE, related_name='activation_jobs')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'events.EventStageForm'",
+          "on_delete": "models.CASCADE"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "user_edge": "EXCLUDED_OMITTED_COORDINATION"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "command_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "participant_ids": {
+          "type": "JSONField",
+          "declaration": "models.JSONField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "effective_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "pinned_form_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='+')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "DROP_ON_IMPORT",
+          "target": "'events.EventFormRevision'",
+          "on_delete": "models.PROTECT"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='pending', choices=[(v, v) for v in ('pending', 'completed', 'cancelled')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "cursor": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "coordination",
+      "database_guards": "G-owned additive migration and cross-event/scope guards required; see RB-R2-model-deltas.py"
     }
   ],
-  "routes": [],
+  "routes": [
+    {
+      "suffix": "stage-forms/",
+      "name": "admin-event-stage-form-list",
+      "view": "v.StageDefinitionListView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-forms/<int:stage_form_id>/",
+      "name": "admin-event-stage-form-detail",
+      "view": "v.StageDefinitionDetailView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-forms/<int:stage_form_id>/publish/",
+      "name": "admin-event-stage-form-publish",
+      "view": "v.StageTransitionView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-forms/<int:stage_form_id>/retire/",
+      "name": "admin-event-stage-form-retire",
+      "view": "v.StageTransitionView.as_view(publish=False)",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-forms/<int:stage_form_id>/activate/",
+      "name": "admin-event-stage-form-activate",
+      "view": "v.StageActivateView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-assignments/",
+      "name": "admin-event-stage-assignment-list",
+      "view": "v.StageAssignmentListView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-assignments/<int:assignment_id>/cancel/",
+      "name": "admin-event-stage-assignment-cancel",
+      "view": "v.StageAssignmentCommandView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-assignments/<int:assignment_id>/reassign/",
+      "name": "admin-event-stage-assignment-reassign",
+      "view": "v.StageAssignmentCommandView.as_view(action='reassign', serializer_class=s.ReassignStageAssignmentCommand)",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-assignments/<int:assignment_id>/extend/",
+      "name": "admin-event-stage-assignment-extend",
+      "view": "v.StageAssignmentCommandView.as_view(action='extend', serializer_class=s.ExtendStageAssignmentCommand)",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-assignments/<int:assignment_id>/reopen/",
+      "name": "admin-event-stage-assignment-reopen",
+      "view": "v.StageAssignmentCommandView.as_view(action='reopen', serializer_class=s.ExtendStageAssignmentCommand)",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-milestones/shortlist/",
+      "name": "admin-event-stage-shortlist",
+      "view": "v.StageShortlistView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-responses/<int:response_id>/",
+      "name": "admin-event-stage-response-detail",
+      "view": "v.StageResponseDetailView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-responses/<int:response_id>/finance/",
+      "name": "admin-event-stage-response-finance-detail",
+      "view": "v.StageResponseFinanceDetailView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
+    },
+    {
+      "suffix": "stage-forms/",
+      "name": "member-event-stage-form-list",
+      "view": "StageFormListView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+    },
+    {
+      "suffix": "stage-forms/<int:stage_form_id>/context/",
+      "name": "member-event-stage-form-context",
+      "view": "StageFormContextView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+    },
+    {
+      "suffix": "stage-forms/<int:stage_form_id>/draft/",
+      "name": "member-event-stage-draft",
+      "view": "StageDraftView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+    },
+    {
+      "suffix": "stage-responses/<int:response_id>/",
+      "name": "member-event-stage-response",
+      "view": "StageResponseView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+    },
+    {
+      "suffix": "stage-responses/<int:response_id>/submit/",
+      "name": "member-event-stage-response-submit",
+      "view": "StageResponseSubmitView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+    }
+  ],
   "audits": [],
   "notices": [],
-  "reminder_sources": [],
-  "runtime_registration": "NOT IMPLEMENTED",
+  "reminder_sources": [
+    "stage_forms",
+    "events.rsvp_deadline"
+  ],
+  "runtime_registration": "Not enabled. G mounts and provider/route/authority registry integration required.",
   "retention_registration": "NOT IMPLEMENTED",
-  "source_boundaries": "NOT IMPLEMENTED; no callable command or HTTP surface",
+  "source_boundaries": {
+    "interactive": "apps.events.staged_forms.transactions.command",
+    "crypto": "prepare_tenant_key outside locks, tenant_key_context around the command",
+    "workers": "staged_forms.tasks.reconcile_event uses source/fences/event; other required retention/domain workers unfinished"
+  },
   "object_fields": [
     {
       "model": "events.StageFormAsset",
@@ -1215,5 +1496,64 @@
     }
   ],
   "portable_status": "FIELD INVENTORY ONLY; typed JSON schemas, registry declarations and preservation adapters unfinished",
-  "tests": "See scratchpad/build/RB-R-report.md and RB-R-rerun-files.txt; independent Python policy tests only"
+  "tests": "RB-R2-rerun-files.txt: 64 model-free Python tests pass; 7 frontend tests pass; Django/PostgreSQL files not run.",
+  "implemented_modules": [
+    "backend/apps/events/staged_forms/admission_hooks.py",
+    "backend/apps/events/staged_forms/assignment_workflow.py",
+    "backend/apps/events/staged_forms/deadlines.py",
+    "backend/apps/events/staged_forms/definition_models.py",
+    "backend/apps/events/staged_forms/form_provider.py",
+    "backend/apps/events/staged_forms/guards.py",
+    "backend/apps/events/staged_forms/http.py",
+    "backend/apps/events/staged_forms/milestone_models.py",
+    "backend/apps/events/staged_forms/milestone_workflow.py",
+    "backend/apps/events/staged_forms/models.py",
+    "backend/apps/events/staged_forms/notices.py",
+    "backend/apps/events/staged_forms/policy.py",
+    "backend/apps/events/staged_forms/prefill_provider.py",
+    "backend/apps/events/staged_forms/projections.py",
+    "backend/apps/events/staged_forms/registration_hooks.py",
+    "backend/apps/events/staged_forms/reminders.py",
+    "backend/apps/events/staged_forms/response_models.py",
+    "backend/apps/events/staged_forms/response_workflow.py",
+    "backend/apps/events/staged_forms/rsvp_reminders.py",
+    "backend/apps/events/staged_forms/serializers.py",
+    "backend/apps/events/staged_forms/stage_workflow.py",
+    "backend/apps/events/staged_forms/tasks.py",
+    "backend/apps/events/staged_forms/transactions.py",
+    "backend/apps/events/staged_forms/trigger_service.py",
+    "backend/apps/events/staged_forms/upload_models.py",
+    "backend/apps/events/staged_forms/upload_policy.py",
+    "backend/apps/events/staged_forms/upload_workflow.py",
+    "backend/apps/events/staged_forms/urls_admin.py",
+    "backend/apps/events/staged_forms/urls_member.py",
+    "backend/apps/events/staged_forms/views_admin.py",
+    "backend/apps/events/staged_forms/views_member.py",
+    "backend/apps/events/staged_forms/work_models.py",
+    "backend/apps/events/staged_forms/__init__.py"
+  ],
+  "remaining": "See exact UNFINISHED in RB-R2-report.md. Do not enable these packages.",
+  "runtime_providers": {
+    "form": "apps.events.staged_forms.form_provider.STAGE_FORM_PROVIDER",
+    "saved_context": "apps.events.staged_forms.prefill_provider.resolve_context",
+    "saved_binding": "apps.events.staged_forms.prefill_provider.require_binding",
+    "reminders": [
+      "apps.events.staged_forms.reminders.STAGE_REMINDER_SOURCE",
+      "apps.events.staged_forms.rsvp_reminders.RSVP_REMINDER_SOURCE"
+    ],
+    "notification_sources": {
+      "event.stage_form": "apps.events.staged_forms.notices.NOTICE_SOURCE",
+      "events.rsvp_deadline": "apps.events.staged_forms.rsvp_reminders.RSVP_NOTICE_SOURCE"
+    }
+  },
+  "typed_json_references": {
+    "events.StageActivationJob.participant_ids": {
+      "shape": "array of positive accounts.User IDs, maximum 1000",
+      "disposition": "DROP row on tenant import; excluded account closure edge"
+    },
+    "events.StageReconcileCursor.last_owner_id": {
+      "shape": "opaque scan cursor",
+      "disposition": "DROP row on tenant import"
+    }
+  }
 }

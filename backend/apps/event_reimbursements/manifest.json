@@ -1,9 +1,9 @@
 {
-  "manifest_version": 1,
-  "lane": "RB-R2",
+  "manifest_version": 2,
+  "lane": "RB3-A",
   "module_key": "event_reimbursements",
-  "integration_status": "INCOMPLETE_DO_NOT_ENABLE",
-  "prerequisite": "G1 frozen reimbursement_addon.json absent; fixture test present. PostgreSQL runtime unavailable. See RB-R2-report.md.",
+  "integration_status": "IMPLEMENTED_PENDING_CROSS_LANE_INTEGRATION_DO_NOT_ENABLE",
+  "prerequisite": "Frozen G1 fixture e7031f2354b266f657fe37073428eca85a61dbf49ef3d873eedcb81af892c9cd read and stdlib checks passed. Core sibling callable contracts, G-owned migrations/mounts/registries and PostgreSQL QA are required before enablement.",
   "models": [
     {
       "label": "event_reimbursements.GrantAward",
@@ -106,7 +106,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "accept_by": {
@@ -188,7 +188,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.GrantAwardRevision",
@@ -225,7 +225,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "reason_code": {
@@ -273,7 +273,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ReimbursementBudgetPool",
@@ -362,7 +362,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.BudgetReservation",
@@ -471,7 +471,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.BudgetEntry",
@@ -575,7 +575,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ClaimDecision",
@@ -743,7 +743,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ClaimLineDecision",
@@ -812,7 +812,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ClaimAppeal",
@@ -905,7 +905,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ClaimScreeningReview",
@@ -993,7 +993,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ClaimAttendanceAttestation",
@@ -1038,7 +1038,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "created_at": {
@@ -1130,7 +1130,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ReimbursementClaim",
@@ -1323,7 +1323,7 @@
       },
       "constraints_and_indexes": [],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ReimbursementWorkItem",
@@ -1424,7 +1424,7 @@
         }
       ],
       "lifetime": "coordination",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ClaimRevision",
@@ -1500,7 +1500,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ClaimLine",
@@ -1697,7 +1697,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.ReimbursementProgramme",
@@ -1800,7 +1800,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "allowed_categories": {
@@ -1809,7 +1809,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "exclusions": {
@@ -1818,7 +1818,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "min_distance_km": {
@@ -1835,7 +1835,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "eligible_cohorts": {
@@ -1844,7 +1844,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "award_accept_days": {
@@ -1885,7 +1885,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "category_limits": {
@@ -1894,7 +1894,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "finance_policy_revision": {
@@ -1942,6 +1942,14 @@
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
           "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        },
+        "imported_paused": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "target_runtime_state",
+          "portable_disposition": "SET_TRUE; enabled=false; explicit finance reconciliation required; deployment backup preserves actual state"
         }
       },
       "constraints_and_indexes": [
@@ -1951,7 +1959,7 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     },
     {
       "label": "event_reimbursements.GrantRequest",
@@ -2094,7 +2102,7 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
-          "schema_status": "requires G1 closed-schema review before integration",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "estimated_total_minor": {
@@ -2246,24 +2254,383 @@
         }
       ],
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
     }
   ],
-  "routes": [],
-  "audits": [],
-  "notices": [],
-  "reminder_sources": [],
-  "runtime_registration": "Not enabled. G mounts and provider/route/authority registry integration required.",
-  "retention_registration": "NOT IMPLEMENTED",
-  "source_boundaries": {
-    "interactive": "apps.events.staged_forms.transactions.command",
-    "crypto": "prepare_tenant_key outside locks, tenant_key_context around the command",
-    "workers": "staged_forms.tasks.reconcile_event uses source/fences/event; other required retention/domain workers unfinished"
+  "routes": [
+    {
+      "name": "member-event-reimbursement",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.ReimbursementView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-request-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/request/submit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.RequestSubmitView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-request-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/request/withdraw/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.RequestWithdrawView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-award-accept",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/award/accept/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.AwardAcceptView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-award-decline",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/award/decline/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.AwardDeclineView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-claim",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT"
+      ],
+      "view": "apps.event_reimbursements.views_member.ClaimView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-claim-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/submit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.ClaimSubmitView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-claim-appeal",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/appeal/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.ClaimAppealView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-receipt-file-create",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_receipts.ReceiptCreateView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-receipt-file-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/<int:asset_id>/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "DELETE"
+      ],
+      "view": "apps.event_reimbursements.views_receipts.ReceiptDetailView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-receipt-file-complete",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/<int:asset_id>/complete/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_receipts.ReceiptCompleteView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "admin-event-reimbursement-programme",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/programme/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PATCH"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ProgrammeView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-request-list",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.event_reimbursements.views_admin.RequestListView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-request-decide",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/<int:request_id>/decide/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.AwardDecisionView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-list",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimListView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-detail",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimDetailView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-review",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/review/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimReviewView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-extend",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/extend/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimExtendView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-attendance-attest",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/attendance-attestations/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.AttendanceAttestView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-receipt-override",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/receipt-allocation-overrides/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ReceiptOverrideView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-correct-decision",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/correct-decision/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.CorrectDecisionView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    }
+  ],
+  "audits": [
+    "event.reimbursement.appeal_expired",
+    "event.reimbursement.attendance_attested",
+    "event.reimbursement.award_accepted",
+    "event.reimbursement.claim_appealed",
+    "event.reimbursement.claim_cancelled",
+    "event.reimbursement.claim_decided",
+    "event.reimbursement.claim_decision_corrected",
+    "event.reimbursement.claim_draft_saved",
+    "event.reimbursement.claim_expired",
+    "event.reimbursement.claim_extended",
+    "event.reimbursement.claim_finalized",
+    "event.reimbursement.claim_opened",
+    "event.reimbursement.claim_screened",
+    "event.reimbursement.claim_submitted",
+    "event.reimbursement.claim_withdrawn",
+    "event.reimbursement.forfeited",
+    "event.reimbursement.module_purge_no_liability",
+    "event.reimbursement.programme_configured",
+    "event.reimbursement.programme_initialized",
+    "event.reimbursement.receipt_override",
+    "event.reimbursement.request_decided",
+    "event.reimbursement.request_draft_created",
+    "event.reimbursement.request_expired",
+    "event.reimbursement.request_withdrawn",
+    "event.reimbursement.requested",
+    "event.reimbursement.waitlist_preview_available"
+  ],
+  "notices": {
+    "sources": [
+      "event.reimbursement",
+      "event.reimbursement.queue"
+    ],
+    "feature": "events",
+    "stream": "events",
+    "events": [
+      "reimbursement.requested",
+      "reimbursement.awarded",
+      "reimbursement.award_reminder",
+      "reimbursement.award_accepted",
+      "reimbursement.forfeited",
+      "reimbursement.claim_open",
+      "reimbursement.claim_reminder",
+      "reimbursement.returned_for_info",
+      "reimbursement.decision",
+      "reimbursement.queue"
+    ],
+    "payload": "Only IDs, enums, money/currency and UTC deadlines. No need text, vendor, traveller, payee or receipt bytes."
   },
-  "object_fields": [],
-  "portable_status": "FIELD INVENTORY ONLY; typed JSON schemas, registry declarations and preservation adapters unfinished",
-  "tests": "RB-R2-rerun-files.txt: 64 model-free Python tests pass; 7 frontend tests pass; Django/PostgreSQL files not run.",
+  "reminder_sources": [
+    {
+      "key": "event_reimbursements.award_accept",
+      "provider": "reminders.AWARD_REMINDER_SOURCE",
+      "identity": "award:{id}:offer:{due_revision}:due:{UTC seconds/fraction Z}"
+    },
+    {
+      "key": "event_reimbursements.claim_due",
+      "provider": "reminders.CLAIM_REMINDER_SOURCE",
+      "identity": "claim:{id}:due:{due_revision}"
+    }
+  ],
+  "runtime_registration": {
+    "ready": "Owned AppConfig registers two notification sources and canonical frozen-project reader only when Events/R runtimes are active. G installs reminder sources, optional request port, live payout preflight, cancellation and upload binding adapters, and literal routes."
+  },
+  "retention_registration": {
+    "provider": "apps.event_reimbursements.retention_registration.RETENTION_PROVIDER",
+    "purge_plan_factory": "module_purge_plan",
+    "lifetime": "Always importable, including tombstoned runtime; exposed on AppConfig.retention_provider. G composes into its literal PLANS/BY_KEY/catalogue/object dispatches."
+  },
+  "source_boundaries": {
+    "interactive": "apps.event_reimbursements.transactions.command",
+    "crypto": "prepared_boundary holds lock-only source gate during prepare_tenant_key before domain transaction/row locks; shared tenant_key_context only",
+    "workers": "tasks.sweep_one and defer_failed_work source/fences/event/host; source-frozen discovery excluded and rechecked",
+    "lock_order": "source -> prepared tenant crypto -> global/tenant/account fences -> series/event -> sorted host/collaborator tenants -> authority -> programme -> pool -> request -> award -> claim -> obligation -> sorted children",
+    "receipt_override": "Pre-discover affected events/series/owners/trusted hash; sorted event/programme/pool/request/award/claim/core obligation locks before ReceiptUse. Changed unpaid allocations are held before append; paid allocations cannot be reassigned."
+  },
+  "object_fields": {
+    "owned": [],
+    "finance_receipts": "Core FinanceAttachment staging_key/object_key + version/generation/retention locators; selected by object_capture.attachments; never deleted by module purge",
+    "capture": "object_capture.capture full custodial only; redacted omits bytes; core capture_attachment is authoritative"
+  },
+  "portable_status": "Implemented portable.transform/remap_structured; preserve amounts, commitments, accepted caps and immutable history; drop work coordination; pause imported programme until explicit checked finance reconciliation; target envelopes through in-memory custody callback.",
+  "tests": "RB3-A-rerun-files.txt; 25 owned model-free tests + 12 frozen G1 tests passed; two Django compatibility checks skipped. PostgreSQL/API/storage/concurrency/crypto/purge suites authored, not executed per owner restriction.",
   "implemented_modules": [
+    "backend/apps/event_reimbursements/__init__.py",
+    "backend/apps/event_reimbursements/accepted_policy.py",
+    "backend/apps/event_reimbursements/api_schema.py",
     "backend/apps/event_reimbursements/apps.py",
     "backend/apps/event_reimbursements/attendance.py",
     "backend/apps/event_reimbursements/award_models.py",
@@ -2273,22 +2640,83 @@
     "backend/apps/event_reimbursements/budget_service.py",
     "backend/apps/event_reimbursements/calculations.py",
     "backend/apps/event_reimbursements/cancellation_coordination.py",
+    "backend/apps/event_reimbursements/claim_commands.py",
     "backend/apps/event_reimbursements/claim_decision_models.py",
+    "backend/apps/event_reimbursements/claim_decisions.py",
+    "backend/apps/event_reimbursements/claim_finality.py",
+    "backend/apps/event_reimbursements/claim_form_adapter.py",
     "backend/apps/event_reimbursements/claim_inputs.py",
     "backend/apps/event_reimbursements/claim_models.py",
+    "backend/apps/event_reimbursements/claim_policy.py",
     "backend/apps/event_reimbursements/claim_revision_models.py",
     "backend/apps/event_reimbursements/claim_workflow.py",
     "backend/apps/event_reimbursements/config_models.py",
-    "backend/apps/event_reimbursements/models.py",
+    "backend/apps/event_reimbursements/deadlines.py",
+    "backend/apps/event_reimbursements/decision_summary.py",
+    "backend/apps/event_reimbursements/eligibility.py",
+    "backend/apps/event_reimbursements/http.py",
+    "backend/apps/event_reimbursements/ledger_bridge.py",
+    "backend/apps/event_reimbursements/lifecycle_hooks.py",
     "backend/apps/event_reimbursements/model_base.py",
+    "backend/apps/event_reimbursements/models.py",
+    "backend/apps/event_reimbursements/notices.py",
+    "backend/apps/event_reimbursements/object_capture.py",
+    "backend/apps/event_reimbursements/payout_preflight.py",
+    "backend/apps/event_reimbursements/policy.py",
+    "backend/apps/event_reimbursements/portable.py",
     "backend/apps/event_reimbursements/programme_workflow.py",
+    "backend/apps/event_reimbursements/projections.py",
+    "backend/apps/event_reimbursements/purge.py",
+    "backend/apps/event_reimbursements/queue_notices.py",
     "backend/apps/event_reimbursements/receipt_service.py",
+    "backend/apps/event_reimbursements/receipt_uploads.py",
+    "backend/apps/event_reimbursements/reminders.py",
     "backend/apps/event_reimbursements/request_form_adapter.py",
     "backend/apps/event_reimbursements/request_models.py",
     "backend/apps/event_reimbursements/request_workflow.py",
+    "backend/apps/event_reimbursements/retention_registration.py",
+    "backend/apps/event_reimbursements/serializers.py",
+    "backend/apps/event_reimbursements/serializers_finance.py",
+    "backend/apps/event_reimbursements/serializers_read.py",
     "backend/apps/event_reimbursements/serializers_request.py",
+    "backend/apps/event_reimbursements/tasks.py",
     "backend/apps/event_reimbursements/transactions.py",
-    "backend/apps/event_reimbursements/__init__.py"
+    "backend/apps/event_reimbursements/urls_admin.py",
+    "backend/apps/event_reimbursements/urls_member.py",
+    "backend/apps/event_reimbursements/views_admin.py",
+    "backend/apps/event_reimbursements/views_member.py",
+    "backend/apps/event_reimbursements/views_receipts.py",
+    "backend/apps/event_reimbursements/work_items.py"
   ],
-  "remaining": "See exact UNFINISHED in RB-R2-report.md. Do not enable these packages."
+  "remaining": "Cross-lane core providers, additive migrations/shared registrations/mounts, Postgres acceptance and independent review. No enablement claim.",
+  "typed_json_references": {
+    "ClaimAttendanceAttestation.venue_evidence_refs": "opaque evidence labels; preserve, no inferred PKs",
+    "ReimbursementClaim.draft_payload.lines[].receipt.asset_id": "payments.FinanceAttachment",
+    "GrantRequest.estimated_cost.form.form_id": "reimbursement-request-{programme_id}",
+    "GrantRequest.estimated_cost.snapshot.form_id": "reimbursement-request-{programme_id}",
+    "GrantRequest.eligibility_snapshot.cohort": "events.HackathonApplicationCohort, decimal-string ID",
+    "ReimbursementProgramme.eligible_cohorts[]": "events.HackathonApplicationCohort, decimal-string ID"
+  },
+  "logical_references": {
+    "ClaimDecision.attendance_checkin_event_id": "events.EventCheckInEvent PK",
+    "ClaimDecision.project_snapshot_ref": "UUIDv5(NAMESPACE_URL, spaceworks:submission-snapshot:{event_id}:{snapshot_id}); G builds source->target map from included B snapshots; no invented age subject",
+    "ClaimDecision.core_obligation_id": "payments.EventPayoutObligation UUID",
+    "ClaimDecision.core_decision_revision": "obligation-local sequence, preserve",
+    "ClaimAppeal.resolved_by_cancellation_revision_id": "payments.EventPayoutObligationRevision PK"
+  },
+  "cross_lane_callable_contracts": "scratchpad/build/RB3-A-CROSS-LANE.md (exact core signatures and G files); imports are lazy where runtime-only",
+  "accepted_policy": "GrantAward.calculation_snapshot pins caps/categories/exclusions/attendance/project/venue policy and UTC claim_due_at; accepted_policy.py reads it. Later programme edits never rewrite accepted terms.",
+  "json_shapes": {
+    "ReimbursementProgramme.tier_rules": "policy.rules: percentage {basis_points:int 0..10000,cap_minor}; need_based {cap_minor?}; fixed_tier map of {amount_minor}; route_cap map of {amount_minor,priority,origin_country?,destination_country?,region?,mode?}; deterministic distinct priorities",
+    "ReimbursementProgramme.category_limits": "closed CATEGORIES->nonnegative minor integer",
+    "ReimbursementProgramme.eligible_countries": "unique supported ISO alpha-2 codes",
+    "ReimbursementProgramme.eligible_cohorts": "unique canonical HackathonApplicationCohort decimal-string IDs; remap on import",
+    "GrantRequest.category_estimates": "serializers_request.Estimate[]; unique categories, positive selected estimates <=10_000_000 (G1 fixed schema); omitted categories map to required zero-valued form answers.",
+    "GrantRequest.estimated_cost": "{form:FormDescriptor,snapshot:F canonical v2,consent:true,submitted_at:UTC,distance_self_reported:true}",
+    "GrantRequest.eligibility_snapshot": "{country?,cohort?,origin_country?,destination_country?,region?,mode?}; canonical/registered reader; encrypted; cohort reference typed",
+    "GrantAward.calculation_snapshot": "{mode,tier,rules,policy_revision,category_caps,allowed_categories,exclusions,attendance_required,require_project_submission,permitted_venue_sources,claim_due_at}; no member facts",
+    "GrantAwardRevision.rule_snapshot": "same accepted calculation snapshot shape",
+    "ReimbursementClaim.draft_payload": "{lines:claim_inputs.ClaimLineInput[0..50]}; submit requires >=1. F canonical money/file/itinerary validator; pre-discovered trusted attachment hashes rechecked under locks.",
+    "ClaimAttendanceAttestation.venue_evidence_refs": "bounded opaque evidence labels, not inferred FK IDs"
+  }
 }

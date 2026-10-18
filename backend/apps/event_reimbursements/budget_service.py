@@ -108,3 +108,18 @@ def release_locked(pool, reservation, *, operation_id, actor, reason_code, cance
     reservation.state, reservation.released_at = "released", timezone.now()
     reservation.version += 1
     reservation.save()
+
+
+def hold_appeal_locked(pool, reservation, *, operation_id, actor):
+    """A partial decision freed money; an appeal cannot promise that money twice."""
+    disputed = reservation.award.amount_minor - reservation.committed_minor
+    require(disputed > 0 and reservation.held_minor == 0, "appeal_closed")
+    _, new = _entry(pool, operation_id=operation_id, actor=actor, kind="reserve", amount=disputed,
+                    reason_code="claim_appeal", reservation=reservation)
+    if new:
+        _apply(pool, reserved=disputed)
+        reservation.held_minor = disputed
+        reservation.state = "committed" if reservation.committed_minor else "held"
+        reservation.released_at = None
+        reservation.version += 1
+        reservation.save()

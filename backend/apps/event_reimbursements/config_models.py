@@ -16,6 +16,7 @@ def exclusions():
 class ReimbursementProgramme(Versioned):
     event = models.OneToOneField("events.Event", on_delete=models.CASCADE, related_name="reimbursement_programme")
     enabled = models.BooleanField(default=False)
+    imported_paused = models.BooleanField(default=False)
     currency = models.CharField(max_length=3)
     request_phase = models.CharField(max_length=16, default="both", choices=[(v, v) for v in (
         "application", "after_acceptance", "both")])

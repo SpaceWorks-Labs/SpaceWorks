@@ -72284,7 +72284,7 @@
                                 }
                             }
                         },
-                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                        "description": "Signed in, but this action or makerspace is not permitted, or recent_reauth_required: writing or clearing provider credentials needs identity verification within ten minutes."
                     },
                     "404": {
                         "content": {
@@ -72948,7 +72948,7 @@
                                 }
                             }
                         },
-                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                        "description": "Signed in, but this action or makerspace is not permitted, or recent_reauth_required: writing or clearing provider credentials needs identity verification within ten minutes."
                     },
                     "404": {
                         "content": {
@@ -73973,7 +73973,7 @@
                                 }
                             }
                         },
-                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                        "description": "Signed in, but this action or makerspace is not permitted, or recent_reauth_required: writing or clearing provider credentials needs identity verification within ten minutes."
                     },
                     "404": {
                         "content": {

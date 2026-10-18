@@ -22,6 +22,13 @@ def lock_state(kind, owner_id, actor, version=None):
     return typed, owner, actor, page
 
 
+def read_state(kind, owner_id, actor):
+    """Owner authority for GETs: no tenant write fence and no row locks."""
+    typed = adapter(kind)
+    owner, actor = typed.read_owner(owner_id, actor)
+    return typed, owner, actor, typed.page.objects.filter(**typed.lookup(owner)).first()
+
+
 def ensure_page(typed, owner, page, actor):
     if page is not None:
         return page
@@ -44,9 +51,8 @@ def finish(typed, owner, page, actor, action, **metadata):
     return page
 
 
-@transaction.atomic
 def read_editor(kind, owner_id, *, actor):
-    typed, owner, actor, page = lock_state(kind, owner_id, actor)
+    typed, owner, actor, page = read_state(kind, owner_id, actor)
     return editor_state(typed, owner, page)
 
 
@@ -149,7 +155,7 @@ def preview(kind, owner_id, *, actor, version, document, request=None):
     from types import SimpleNamespace
     from .models_profiles import MemberProfile
     from .public_page_contract import reference_slots
-    from .public_page_projection import project_sections, presentation
+    from .public_page_projection import page_description, project_sections, presentation
     from .public_page_access import canonical_url
     from .public_profile_access import profile_is_public
     typed, owner, actor, page = lock_state(kind, owner_id, actor, version)
@@ -181,6 +187,6 @@ def preview(kind, owner_id, *, actor, version, document, request=None):
         asset = page.assets.get(pk=document["cover_asset_id"])
         cover = {"url": image(asset.pk), "alt": asset.alt_text}
     return {"schema_version": 1, "kind": kind, "canonical_url": canonical_url(kind, owner),
-            "title": owner.name, "description": "", "publication_token": None, "draft": True,
+            "title": owner.name, "description": page_description(kind, owner, document), "publication_token": None, "draft": True,
             "cover": cover, "presentation": presentation(kind, owner, document),
             "sections": project_sections(kind, owner, revision, request=request, image_url=image)}

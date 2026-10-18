@@ -19,13 +19,27 @@ LEGACY_ADDITIONS = {
 }
 
 
+def _columns(path):
+    with path.open(encoding="utf-8", newline="") as handle:
+        return next(csv.reader(handle), [])
+
+
 def legacy_archive(archive):
     path = archive.root / "events/pages.csv"
-    if not path.exists():
+    if path.exists():
+        columns = _columns(path)
+        return "draft_revision_id" not in columns and "published_revision_id" not in columns
+    # Events tombstoned at the source writes no events dataset. Every current export
+    # writes the (core) makerspace page dataset with a header, and its handle rows
+    # carry typed owners; a pre-branch archive has neither. Both must agree, so a
+    # damaged current archive is never mistaken for an older one.
+    from .archive_stream import PORTABLE_DATASETS
+    pages = PORTABLE_DATASETS.get("makerspaces.MakerspacePublicPage")
+    handles = PORTABLE_DATASETS.get("makerspaces.PublicHandle")
+    if pages is None or handles is None or (archive.root / pages.path).exists():
         return False
-    with path.open(encoding="utf-8", newline="") as handle:
-        columns = next(csv.reader(handle), [])
-    return "draft_revision_id" not in columns and "published_revision_id" not in columns
+    handle_path = archive.root / handles.path
+    return handle_path.is_file() and "makerspace_id" not in _columns(handle_path)
 
 
 def missing_dataset_allowed(archive, label):

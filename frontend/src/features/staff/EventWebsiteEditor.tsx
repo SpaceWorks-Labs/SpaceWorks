@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { staffRequest } from "../../lib/api";
 import { Field, SettingsSection, Skeleton, StatusPill } from "../../components/ui";
 import type { EventWebsite, WebsiteTarget } from "../events/websiteTypes";
 import { PublicEventWebsite } from "../events/PublicEventWebsite";
@@ -8,18 +10,20 @@ import { useEventWebsite, useWebsiteAsset, useWebsiteRelease, useWebsiteSave, we
 import { eventErrorText } from "./eventUi";
 import { PageImage } from "../publicPages/PageImage";
 import { EventWebsiteLayout } from "./EventWebsiteLayout";
-import { websiteDraftPreview } from "../events/websiteDraftPreview";
+import { websiteDraftPreview, type InheritedCover } from "../events/websiteDraftPreview";
 import { EventWebsiteEditorial } from "./EventWebsiteEditorial";
 
 type EditorProps = {
   target: WebsiteTarget; canEdit: boolean; canPublish: boolean; status: string;
+  /** The effective event (or series) photo and title, which an "inherit" cover shows first. */
+  inheritedImage?: { url: string | null; alt: string };
 };
 
 export function EventWebsiteEditor(props: EditorProps) {
   return <WebsiteDraftEditor key={JSON.stringify(websiteKey(props.target))} {...props} />;
 }
 
-function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps) {
+function WebsiteDraftEditor({ target, canEdit, canPublish, status, inheritedImage }: EditorProps) {
   const query = useEventWebsite(target);
   const [local, setLocal] = useState<{ base: EventWebsite; draft: EventWebsite } | null>(null);
   const draft = local?.draft;
@@ -31,6 +35,11 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps
   const save = useWebsiteSave(target);
   const release = useWebsiteRelease(target);
   const asset = useWebsiteAsset(target);
+  // Same fallback chain as the published projection; the makerspace artwork loads only for the preview.
+  const space = useQuery({ queryKey: ["makerspace-settings", target.makerspaceId], enabled: preview && !inheritedImage?.url, retry: false,
+    queryFn: () => staffRequest<{ cover_image_url?: string | null; logo_url?: string | null }>(`/admin/makerspaces/${target.makerspaceId}`) });
+  const inheritedUrl = inheritedImage?.url || space.data?.cover_image_url || space.data?.logo_url;
+  const inherited: InheritedCover = inheritedUrl ? { url: inheritedUrl, alt: inheritedImage?.alt ?? "" } : null;
   useEffect(() => {
     if (query.data) {
       const latest = query.data;
@@ -66,7 +75,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps
       </div> : null}
       {preview ? <div role="region" aria-label="Event draft preview" className="min-w-0 rounded-xl border border-dashed border-line bg-bg p-4">
         <p className="eyebrow mb-3">Draft preview · not released</p>
-        <PublicEventWebsite website={websiteDraftPreview(draft, target)} image={(url, description) => <PageImage url={url} alt={description} token={String(draft.revision)} privatePreview />} />
+        <PublicEventWebsite website={websiteDraftPreview(draft, target, inherited)} image={(url, description) => <PageImage url={url} alt={description} token={String(draft.revision)} privatePreview />} />
       </div> : null}
       <form className="grid min-w-0 gap-6" onSubmit={(e) => { e.preventDefault(); if (conflict) return; save.mutate(draft, {
         onSuccess: (saved) => setLocal({ base: saved, draft: saved }),

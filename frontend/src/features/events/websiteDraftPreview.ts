@@ -2,12 +2,16 @@ import type { PublicEventEditorialSection } from "../../generated/api";
 import { previewSessions } from "./websiteProgramme";
 import { websiteGroups, type EventWebsite, type PublicEventWebsiteData, type WebsiteTarget } from "./websiteTypes";
 
+/** Public artwork an "inherit" cover falls back to: event (or series) image, then makerspace cover/logo. */
+export type InheritedCover = { url: string; alt: string } | null;
+
 /** Private local preview only. It never resolves member identities or manufactures public eligibility. */
-export function websiteDraftPreview(page: EventWebsite, target: WebsiteTarget): PublicEventWebsiteData {
+export function websiteDraftPreview(page: EventWebsite, target: WebsiteTarget, inherited: InheritedCover = null): PublicEventWebsiteData {
   const projected = { ...page, sections: page.sections.map(row => ({ ...row, image_url: row.image_url ?? null, image_alt_text: row.image_alt_text ?? "" })),
     section_enabled: page.section_enabled ? Object.fromEntries(websiteGroups.map(group => [group, page.section_enabled?.[group] !== false])) as import("../../generated/api").WebsiteGroupVisibility : undefined };
   const document = page.editorial_document;
-  if (!document) return { ...projected, editorial_document: undefined, sessions: previewSessions(page.sessions) };
+  // The admin payload carries no projected cover, so "inherit" resolves from the caller's artwork.
+  if (!document) return { ...projected, cover: page.cover ?? inherited, editorial_document: undefined, sessions: previewSessions(page.sessions) };
   const asset = (id: number) => {
     const found = page.assets?.find(row => row.id === id);
     return found ? { url: `/api/v1/admin/${target.kind}/${target.id}/website/assets/${id}`, alt: found.alt_text } : null;
@@ -25,6 +29,6 @@ export function websiteDraftPreview(page: EventWebsite, target: WebsiteTarget): 
       default: return [];
     }
   });
-  const cover = document.cover_mode === "none" ? null : document.cover_mode === "asset" && document.cover_asset_id ? asset(document.cover_asset_id) : page.cover;
+  const cover = document.cover_mode === "none" ? null : document.cover_mode === "asset" && document.cover_asset_id ? asset(document.cover_asset_id) : page.cover ?? inherited;
   return { ...projected, presentation: undefined, cover, sessions: previewSessions(page.sessions), editorial_document: { ...document, sections } };
 }

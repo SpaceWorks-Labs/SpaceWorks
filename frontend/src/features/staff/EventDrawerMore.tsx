@@ -54,7 +54,7 @@ export function EventDrawerMore({ event, makerspaceId, access, surfaces, section
     {sections.analytics && section === "analytics" ? <EventAnalyticsPanel makerspaceId={makerspaceId} eventId={eventId} endsAt={event.ends_at} features={event.report_features ?? []} /> : null}
     {/* Kept mounted (hidden) so the "publish website with event" choice the Publish action reads never goes stale. */}
     {sections.website && access.publish && event.status === "draft" ? <div hidden={section !== "website"}><EventWebsitePublication key={eventId} target={websiteTarget} onChange={onWebsitePublication} /></div> : null}
-    {sections.website && section === "website" ? <EventWebsiteEditor key={`event:${eventId}`} target={websiteTarget} canEdit={access.edit} canPublish={access.publish} status={event.status} /> : null}
+    {sections.website && section === "website" ? <EventWebsiteEditor key={`event:${eventId}`} target={websiteTarget} canEdit={access.edit} canPublish={access.publish} status={event.status} inheritedImage={{ url: event.image_url, alt: event.title }} /> : null}
     {access.manager ? <>
       <EventOrganizers visible={section === "team"} event={event} makerspaceId={makerspaceId} disabled={readOnly} />
       <EventCollaborators visible={section === "team"} makerspaceId={makerspaceId} eventId={eventId} />

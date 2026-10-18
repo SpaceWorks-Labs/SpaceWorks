@@ -1,6 +1,5 @@
 """Gated image streams; a retained reference alone never authorizes public bytes."""
 
-from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.parsers import MultiPartParser
@@ -11,7 +10,7 @@ from .public_page_editor_views import PageEditorBase, ERRORS, data
 from .public_profile_views import PublicProfileBase
 from .public_page_serializers import AssetUploadInput, AssetUploadResult, VersionInput, EditorState
 from . import public_page_assets as assets
-from .public_page_services import lock_state
+from .public_page_services import read_state
 from .public_page_access import public_page
 from .website_serving import private_image_response
 from .website_uploads import WebsiteUploadLimit
@@ -58,15 +57,12 @@ class PageAssetsView(PageEditorBase):
 class PageAssetDetailView(PageEditorBase):
     @extend_schema(tags=["Page editor"], responses={200: OpenApiResponse(bytes, description="Private WebP image; no-store."), **ERRORS})
     def get(self, request, pk, asset_id, kind="makerspace"):
-        # Authorize and resolve the key under the page lock, then stream bytes after
-        # the lock is released so a slow object store never blocks page writers.
-        with transaction.atomic():
-            typed, owner, _, page = lock_state(kind, pk, request.user)
-            asset = get_object_or_404(typed.asset, pk=asset_id, page=page)
-            if not assets.owns(asset, kind, owner.pk):
-                raise NotFound()
-            key = asset.object_key
-        return private_image_response(key)
+        # A read takes no locks or tenant fence; storage is read with no transaction open.
+        typed, owner, _, page = read_state(kind, pk, request.user)
+        asset = get_object_or_404(typed.asset, pk=asset_id, page=page)
+        if not assets.owns(asset, kind, owner.pk):
+            raise NotFound()
+        return private_image_response(asset.object_key)
 
     @extend_schema(tags=["Page editor"], request=VersionInput, responses={200: EditorState, **ERRORS})
     def delete(self, request, pk, asset_id, kind="makerspace"):

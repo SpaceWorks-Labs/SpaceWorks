@@ -32,14 +32,17 @@ def canonical_url(kind, owner, handle=None):
 
 
 def require_scope(kind, owner, request):
+    # Both kinds fail closed on unknown Hosts and browser Origins/Referers. A tenant
+    # Origin may read a global organization page; a tenant Host may not serve one.
     scopes = _request_tenant_ids(request)
     if kind == "makerspace":
         if any(pk != owner.pk for pk in scopes):
             raise NotFound()
-    else:
-        host = canonical_host(request.get_host())
-        if Makerspace.objects.filter(frontend_domain__iexact=host).exists():
-            raise NotFound()
+        return
+    # An infra IP host has no canonical name; None must never become an isnull match.
+    host = canonical_host(request.get_host())
+    if host and Makerspace.objects.filter(frontend_domain__iexact=host).exists():
+        raise NotFound()
 
 
 def public_page(kind, owner, request=None):

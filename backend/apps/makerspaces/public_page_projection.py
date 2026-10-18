@@ -5,7 +5,7 @@ from .models_profiles import PublicHandle
 from .platform import module_enabled, feature_enabled
 from .public_page_access import canonical_url
 from .public_page_contract import PALETTES
-from .public_page_markdown import excerpt
+from .public_page_markdown import document_description, excerpt
 from .public_profile_access import profile_is_public, _request_tenant_ids
 
 
@@ -29,6 +29,9 @@ def project_team(entries, revision, request):
     from apps.inventory.public_image_storage import public_url
     references = {str(row.slot): row.profile for row in revision.member_references.select_related(
         "profile__membership__makerspace", "profile__membership__user")}
+    # One handle query for the whole section instead of one per member row.
+    claims = {(row.profile_id, row.user_id): row for row in PublicHandle.objects.filter(
+        profile__in=[profile for profile in references.values() if profile is not None])}
     result = []
     scopes = _request_tenant_ids(request) if request else []
     for row in entries:
@@ -38,7 +41,7 @@ def project_team(entries, revision, request):
         profile = references.get(row.get("member_slot_id", row["id"]))
         if not profile_is_public(profile) or any(pk != profile.membership.makerspace_id for pk in scopes):
             continue
-        claim = PublicHandle.objects.filter(profile=profile, user_id=profile.membership.user_id).first()
+        claim = claims.get((profile.pk, profile.membership.user_id))
         if claim is None:
             continue
         from .public_profile_share import profile_url
@@ -84,6 +87,12 @@ def presentation(kind, owner, document, *, legacy_accent=""):
         "theme_config": theme, "light": derive_palette(theme, "light"), "dark": derive_palette(theme, "dark")}}
 
 
+def page_description(kind, owner, document):
+    # Makerspaces have no description field; organizations fall back to About too.
+    own = excerpt(owner.description) if kind == "organization" else ""
+    return own or document_description(document)
+
+
 def projection(kind, owner, page, *, request=None):
     from apps.inventory.public_image_storage import public_url
     revision, claim = page.published_revision, PublicHandle.objects.filter(**{kind: owner}).first()
@@ -101,6 +110,6 @@ def projection(kind, owner, page, *, request=None):
         if key:
             cover = {"url": public_url(key), "alt": owner.name}
     return {"schema_version": 1, "kind": kind, "canonical_url": canonical_url(kind, owner, claim.handle if claim else None),
-            "title": title, "description": excerpt(getattr(owner, "description", "")), "publication_token": str(revision.pk),
+            "title": title, "description": page_description(kind, owner, document), "publication_token": str(revision.pk),
             "cover": cover, "presentation": presentation(kind, owner, document),
             "sections": project_sections(kind, owner, revision, request=request, image_url=image)}

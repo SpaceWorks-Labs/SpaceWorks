@@ -98,3 +98,24 @@ def rendering_policy(value):
 def excerpt(value, *, limit=300):
     # Metadata is plain text, never an HTML fragment. The share renderer escapes it.
     return " ".join(str(value).split())[:limit]
+
+
+def plain_excerpt(markdown, *, limit=300):
+    """Share/metadata text from restricted Markdown: link labels kept, markup dropped."""
+    text, parts, cursor = str(markdown), [], 0
+    for start, end, url in links(text):
+        parts += [text[cursor:start], text[start + 1:end - len(url) - 3]]
+        cursor = end
+    parts.append(text[cursor:])
+    text = re.sub(r"(?m)^[ \t]*(?:#{1,6}|>|[-+*]|\d+\.)[ \t]+", "", "".join(parts))
+    return excerpt(re.sub(r"\\(.)|[*`]", r"\1", text), limit=limit)
+
+
+def document_description(document):
+    """The first enabled About section summarizes a page that has no description field."""
+    for section in document["sections"]:
+        if section["enabled"] and section["type"] == "about":
+            text = plain_excerpt(section["payload"].get("markdown", ""))
+            if text:
+                return text
+    return ""

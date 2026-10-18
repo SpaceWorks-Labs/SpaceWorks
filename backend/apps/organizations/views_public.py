@@ -13,6 +13,11 @@ PUBLIC_ERRORS = {
     404: OpenApiResponse(description="Organization not found."),
     429: OpenApiResponse(description="Rate limit exceeded."),
 }
+# Paginated collections also refuse a malformed or out-of-range `page` (and `period`).
+COLLECTION_ERRORS = {
+    400: OpenApiResponse(description="Invalid page or period query parameter."),
+    **PUBLIC_ERRORS,
+}
 
 
 def _public_organization(slug):
@@ -55,7 +60,7 @@ class PublicOrganizationMakerspacesView(APIView):
     throttle_scope = "public_read"
 
     @extend_schema(tags=["Public organizations"], auth=[], parameters=[OpenApiParameter("page", int)],
-                   responses={200: OrganizationSpaceListSerializer, **PUBLIC_ERRORS})
+                   responses={200: OrganizationSpaceListSerializer, **COLLECTION_ERRORS})
     def get(self, request, slug):
         from apps.makerspaces.public_profile_access import _request_tenant_ids
         from apps.makerspaces.public_page_pagination import PagePagination

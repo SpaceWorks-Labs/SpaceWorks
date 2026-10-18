@@ -4,6 +4,7 @@ Always use the candidate connection. No visibility queries, storage I/O or repai
 are allowed here: failure keeps the existing restore checkpoint closed.
 """
 
+import logging
 from collections import Counter
 from copy import deepcopy
 
@@ -11,6 +12,8 @@ from django.apps import apps
 from django.db.models import Sum
 
 from .recipient_selection import BackupBuildError
+
+logger = logging.getLogger(__name__)
 
 
 def refuse(message):
@@ -143,4 +146,7 @@ def verify_quota(*, using):
             total += apps.get_model(label).objects.using(using).filter(
                 page__makerspace=space).aggregate(n=Sum("size_bytes"))["n"] or 0
         if space.storage_bytes_used < total:
-            refuse("tenant storage counter below retained page bytes")
+            # Legitimate, not corruption: bytes uploaded while storage was unlimited
+            # were never counted, and free_storage clamps at zero. Report, never refuse.
+            logger.warning("public_page.restore_storage_counter_below_page_bytes",
+                           extra={"makerspace_id": space.pk, "counter": space.storage_bytes_used, "page_bytes": total})

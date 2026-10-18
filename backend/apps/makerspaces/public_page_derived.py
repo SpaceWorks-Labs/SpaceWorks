@@ -1,7 +1,7 @@
 """Live section adapters. Optional domains load behind runtime/module gates."""
 
 from django.utils import timezone
-from .platform import module_enabled, feature_enabled
+from .platform import module_enabled
 
 
 def event_cards(kind, owner, *, page=1):
@@ -16,7 +16,7 @@ def event_cards(kind, owner, *, page=1):
         if not module_enabled(owner, "events"):
             return [], 0
         from apps.events.website_visibility import public_events
-        rows = public_events(owner).order_by("starts_at", "id")
+        rows = public_events(owner).select_related("makerspace").order_by("starts_at", "id")
     if rows is None:
         return [], 0
     count = rows.count()
@@ -27,6 +27,18 @@ def event_cards(kind, owner, *, page=1):
     return [{"title": row.title, "starts_at": row.starts_at, "ends_at": row.ends_at,
              "event_url": f"{canonical_origin(row.makerspace)}/e/{row.public_token}"}
             for row in rows[offset:offset + 24]], count
+
+
+def public_catalogue_open(owner):
+    """The public inventory list's own gate, as a predicate (edition, module, feature)."""
+    from django.http import Http404
+    from rest_framework.exceptions import ValidationError
+    from .public_site import require_public_catalogue
+    try:
+        require_public_catalogue(owner)
+    except (Http404, ValidationError):
+        return False
+    return True
 
 
 def derived_payload(kind, owner, key, payload, *, request=None):
@@ -69,11 +81,12 @@ def derived_payload(kind, owner, key, payload, *, request=None):
         metrics = {}
         if payload["show_published_event_count"] and module_enabled(owner, "events"):
             _, metrics["published_event_count"] = event_cards(kind, owner)
-        if payload["show_public_inventory_units"] and (module_enabled(owner, "public_inventory")
-                and owner.public_inventory_enabled and feature_enabled(owner, "loans.enabled")):
+        if payload["show_public_inventory_units"] and public_catalogue_open(owner):
             from apps.inventory.models import InventoryProduct
             from apps.inventory.public_availability import get_public_availability
-            projected = (get_public_availability(row) for row in InventoryProduct.objects.filter(makerspace=owner, is_public=True))
+            # Exactly the rows the public catalogue lists: archived products are gone.
+            projected = (get_public_availability(row) for row in InventoryProduct.objects.filter(
+                makerspace=owner, is_public=True, is_archived=False))
             metrics["public_exact_count_subset_units"] = sum(row["count"] for row in projected if row and "count" in row)
         page = getattr(owner, "public_page", None)
         current_consent = bool(page and page.draft_revision_id and any(

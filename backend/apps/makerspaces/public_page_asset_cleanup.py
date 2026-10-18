@@ -11,6 +11,9 @@ from .public_page_assets import prefix, owns
 from . import website_assets, limits
 
 logger = logging.getLogger(__name__)
+# A completed event receipt is repaired (re-deleted) only long enough to outlast a
+# timed-out PUT/COPY that lands late. Past this window it is inert history.
+REPAIR_WINDOW = timedelta(hours=24)
 
 
 def collect_unattached(kind, owner_id):
@@ -55,7 +58,12 @@ def clean_object(job_id):
             assert_write_allowed(snapshot.owner_id)
         owner = Owner.objects.select_for_update().filter(pk=snapshot.owner_id).first()
         job = Cleanup.objects.select_for_update().get(pk=job_id)
-        if job.due_at > timezone.now() or (job.completed_at and job.owner_kind != "event"):
+        if job.due_at > timezone.now() or (job.completed_at and (
+                job.owner_kind != "event" or job.completed_at < timezone.now() - REPAIR_WINDOW)):
+            return False
+        if tenant and owner is None and not _tenant_purged(job.owner_id):
+            # A tenant absent from a restored readable main may still arrive by slice
+            # merge; only an audited whole-tenant purge proves its bytes are garbage.
             return False
         if _has_asset(job):
             return False
@@ -119,6 +127,12 @@ def clean_object(job_id):
         return True
 
 
+def _tenant_purged(makerspace_id):
+    from apps.audit.models import AuditLog
+    return AuditLog.objects.filter(action="makerspace.purge_started",
+                                   meta__makerspace_id=makerspace_id).exists()
+
+
 def _has_asset(job):
     from django.apps import apps
     from .models_public_pages import MakerspacePublicPageAsset
@@ -163,8 +177,10 @@ def sweep(*, limit=100):
                 collect_events(page_id)
     from .models_public_pages import MakerspacePublicPageAsset
     from apps.organizations.models_public_pages import OrganizationPublicPageAsset
-    from django.db.models import Q
-    due = Cleanup.objects.filter(Q(completed_at__isnull=True) | Q(owner_kind="event"), due_at__lte=timezone.now()).exclude(
+    from django.db.models import F, Q
+    now = timezone.now()
+    due = Cleanup.objects.filter(Q(completed_at__isnull=True) | Q(
+        owner_kind="event", completed_at__gte=now - REPAIR_WINDOW), due_at__lte=now).exclude(
         object_key__in=MakerspacePublicPageAsset.objects.values("object_key")).exclude(
         object_key__in=OrganizationPublicPageAsset.objects.values("object_key"))
     if apps.is_installed("apps.events"):
@@ -172,7 +188,9 @@ def sweep(*, limit=100):
         for model in ("events.Event", "events.EventSeries"):
             due = due.exclude(object_key__in=apps.get_model(model).objects.exclude(
                 image_key__isnull=True).values("image_key"))
-    for pk in due.order_by("id").values_list("pk", flat=True)[:limit]:
+    # Pending deletions (and their quota refunds) go before repair passes.
+    ordered = due.order_by(F("completed_at").asc(nulls_first=True), "due_at", "id")
+    for pk in ordered.values_list("pk", flat=True)[:limit]:
         job = Cleanup.objects.get(pk=pk)
         from .models import Makerspace
         if job.owner_kind in {"makerspace", "event"} and Makerspace.objects.filter(pk=job.owner_id).exists():

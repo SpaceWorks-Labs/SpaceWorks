@@ -6,7 +6,7 @@ from apps.apiclients.throttling import ClientTierRateThrottle
 from .public_catalog import public_events_for
 from .serializers_public_events import PublicOrganizationEventSerializer, PublicOrganizationEventListSerializer, OrganizationArchiveListSerializer
 from .serializers_public import OrganizationArchiveEventSerializer
-from .views_public import _public_organization, PUBLIC_ERRORS
+from .views_public import _public_organization, COLLECTION_ERRORS
 
 
 class PublicOrganizationEventListView(APIView):
@@ -22,7 +22,7 @@ class PublicOrganizationEventListView(APIView):
         parameters=[OpenApiParameter("period", str, enum=["upcoming", "past"]), OpenApiParameter("page", int)],
         responses={200: PolymorphicProxySerializer(component_name="OrganizationEventCollection",
             serializers={"upcoming": PublicOrganizationEventListSerializer, "past": OrganizationArchiveListSerializer},
-            resource_type_field_name="period"), **PUBLIC_ERRORS},
+            resource_type_field_name="period"), **COLLECTION_ERRORS},
     )
     def get(self, request, slug):
         from apps.makerspaces.public_page_pagination import PagePagination

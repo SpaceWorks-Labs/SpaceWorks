@@ -69,19 +69,28 @@ class PublicPageCoverShareView(PublicProfileBase):
 
 
 def sitemap_page_urls(request, *, spaces):
+    """Bulk form of public_page(): one query per owner kind, scope resolved once."""
     from .models_profiles import PublicHandle
-    from .public_page_access import canonical_url
-    from rest_framework.exceptions import NotFound
-    claims = PublicHandle.objects.filter(makerspace__in=spaces).select_related("makerspace")
+    from .public_page_access import canonical_url, require_scope
+    from .public_profile_access import _request_tenant_ids
+    from .servability import servable_q
+    try:
+        scopes = _request_tenant_ids(request)
+    except NotFound:
+        return
+    claims = PublicHandle.objects.filter(
+        servable_q("makerspace"), makerspace__in=spaces, makerspace__public_site_enabled=True,
+        makerspace__public_page__published_revision__isnull=False,
+    ).select_related("makerspace").order_by("pk")
     for claim in claims:
-        try:
-            public_page("makerspace", claim.makerspace, request)
-        except NotFound:
-            continue
-        yield canonical_url("makerspace", claim.makerspace, claim.handle)
-    for claim in PublicHandle.objects.filter(organization__is_active=True, organization__public_profile_enabled=True).select_related("organization"):
-        try:
-            public_page("organization", claim.organization, request)
-        except NotFound:
-            continue
+        if not any(pk != claim.makerspace_id for pk in scopes):
+            yield canonical_url("makerspace", claim.makerspace, claim.handle)
+    try:
+        require_scope("organization", None, request)  # A tenant Host lists no organizations.
+    except NotFound:
+        return
+    for claim in PublicHandle.objects.filter(
+            organization__is_active=True, organization__public_profile_enabled=True,
+            organization__public_page__published_revision__isnull=False,
+    ).select_related("organization").order_by("pk"):
         yield canonical_url("organization", claim.organization, claim.handle)

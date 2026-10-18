@@ -120,11 +120,16 @@ def _receipt_reserved(bucket_kind, key):
 def _occupied(bucket_kind, key):
     if _receipt_reserved(bucket_kind, key):
         return True
+    # A pending or repairing page cleanup will delete this exact key (private page
+    # bytes, or a public event cover), so an import must never be handed it.
+    if apps.get_model("makerspaces.PublicPageObjectCleanup").objects.filter(object_key=key).exists():
+        return True
     if bucket_kind == "private":
         # A row reserves its unique key even when its bytes are missing. Allocate
         # here so promotion and imported rows share one key. Removed domain apps
         # have no rows to reserve and must not be imported just to inspect storage.
-        for label in ("events.EventCertificateArtwork", "events.EventPageAsset", "bookings.BookingResourcePageAsset"):
+        for label in ("makerspaces.MakerspacePublicPageAsset", "organizations.OrganizationPublicPageAsset",
+                      "events.EventCertificateArtwork", "events.EventPageAsset", "bookings.BookingResourcePageAsset"):
             try:
                 model = apps.get_model(label)
             except LookupError:

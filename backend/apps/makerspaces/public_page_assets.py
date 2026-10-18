@@ -37,6 +37,10 @@ def charge_storage(kind, owner, size):
 def upload(kind, owner_id, *, actor, version, file, alt_text):
     if not isinstance(alt_text, str) or not alt_text.strip() or len(alt_text) > 200:
         raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
+    # Refuse unauthorized callers before reading or decoding any bytes; the locked
+    # reservation below still rechecks authority and the tenant write fence.
+    from .public_page_adapters import adapter
+    adapter(kind).read_owner(owner_id, actor)
     raw = file.read(website_assets.MAX_BYTES + 1)
     if len(raw) > website_assets.MAX_BYTES:
         from .public_page_errors import PagePayloadTooLarge

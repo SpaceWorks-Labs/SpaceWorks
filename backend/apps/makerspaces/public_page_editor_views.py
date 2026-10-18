@@ -1,6 +1,5 @@
 """Thin authenticated adapters over owner-locked page services."""
 
-from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -75,9 +74,8 @@ class PageHandleView(PageEditorBase):
 class PageHandleAvailabilityView(PageEditorBase):
     @extend_schema(tags=["Page editor"], parameters=[OpenApiParameter("handle", str, required=True)],
                    responses={200: HandleAvailability, **ERRORS})
-    @transaction.atomic
     def get(self, request, pk, kind="makerspace"):
-        services.lock_state(kind, pk, request.user)
+        services.read_state(kind, pk, request.user)
         handle = normalize_handle(request.query_params.get("handle", ""))
         return Response({"handle": handle, "available": name_available(handle)})
 
@@ -91,10 +89,9 @@ class PagePreviewView(PageEditorBase):
 
 class PageRevisionsView(PageEditorBase):
     @extend_schema(tags=["Page editor"], parameters=[OpenApiParameter("page", int)], responses={200: RevisionList, **ERRORS})
-    @transaction.atomic
     def get(self, request, pk, kind="makerspace"):
         from .public_page_pagination import PagePagination
-        _, _, _, page = services.lock_state(kind, pk, request.user)
+        _, _, _, page = services.read_state(kind, pk, request.user)
         paginator = PagePagination()
         rows = page.revisions.select_related("created_by").order_by("-created_at", "-id") if page else []
         selected = paginator.paginate_queryset(rows, request, view=self)

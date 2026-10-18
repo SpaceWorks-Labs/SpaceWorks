@@ -94105,6 +94105,47 @@
                 }
             }
         },
+        "/share/e/{public_token}/cover/": {
+            "get": {
+                "operationId": "share_e_cover_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "public_token",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public events"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "Current released cover WebP; private, no-store."
+                    },
+                    "404": {
+                        "description": "Unavailable event or released cover."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Image storage is unavailable."
+                    }
+                }
+            }
+        },
         "/share/pages/{handle}/": {
             "get": {
                 "operationId": "share_pages_retrieve",

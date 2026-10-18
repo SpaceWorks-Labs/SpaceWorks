@@ -938,6 +938,7 @@ export const openApiPaths = [
   "/embed/{makerspace_slug}/{kind}/{public_token}/",
   "/robots.txt",
   "/share/e/{public_token}/",
+  "/share/e/{public_token}/cover/",
   "/share/pages/{handle}/",
   "/share/profiles/{handle}/",
   "/share/{kind}/{public_token}/",

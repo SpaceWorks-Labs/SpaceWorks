@@ -8,11 +8,136 @@
 
 ## Current source map (real paths)
 
+Canonical personal delivery is the envelope/configuration/provider pipeline indexed in
+[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). SMS, Twilio/Meta WhatsApp,
+physical sender/STOP protection, device children and canonical reports are reconciled there.
+Addressed enqueue/worker compatibility shims are inert; legacy schema and historical import
+helpers remain for replay pending the independent
+[retirement and activation checkpoints](notification-reconciliation-rollout.md).
+
 Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
 `bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
 to `inventory/public_image_promotion.py`. Membership owner mail is classified as staff/account
 or community in `makerspaces/notifications_p2_members.py`; `operations/notifications_p2.py`
 keeps the owner route separate from the existing staff-summary category.
+Member-account comeback lives in `accounts/account_restore.py` (locked eligibility and identity-only
+reactivation), `account_restore_email.py` (reset-queue restore links), `account_restore_phone.py`
+(phone login-start restore OTPs), and `account_restore_social.py` / `account_restore_social_device.py`
+(fresh existing provider proofs). `recovery_locks.py` owns User-before-envelope proof locking.
+`models_account_restore.py` stores single-use provider intents; `views_account_restore.py` and
+`serializers_account_restore.py` expose their anonymous, throttled confirmation contracts.
+The web restore-link landing page is `features/auth/AccountRestorePage.tsx`.
+
+Member-account deletion Stage B lives in `accounts/account_purge.py` (tenant orchestration and
+global identity finalization), `account_purge_scrub.py` (mutable tenant copies), and
+`account_purge_objects.py` (committed object deletion followed by quota release).
+`models_account_purge.py` defines tenant progress, object cleanup and Apple credential/
+revocation work. `apple_credentials.py` exchanges sign-in authorization codes;
+`apple_revocation.py` retries revocation from the Stage A on-commit task and daily sweep.
+`models_email.py` holds the email-challenge/counter classes re-exported by `models.py`.
+The member account page composes `MemberAccountDeletion.tsx`,
+`AccountDeletionReauthentication.tsx`, `AccountDeletionBlockers.tsx` and the session-keyed
+TanStack Query hooks in `accountDeletionApi.ts`. Privacy disclosure is in
+`docs/privacy-account-deletion.md`.
+Mobile analytics prerequisites (1f-1): `accounts/models_activity.py` owns grant/day and
+anonymous attestation outcomes; `device_activity.py` records validated authentication
+activity. `accounts/authentication_device.py` validates native grants and locks User before
+DeviceGrant for the revocation-safe heartbeat used by `authentication.py`.
+`integrations/models_tracking.py` owns staff push attempts, anonymous SMS
+outcomes and tenant-bound bounce replay identities. Staff delivery uses `push.py`; member
+delivery uses `notifications/member_push.py`, `envelope_push_leases.py` and
+`envelope_push_transport.py` beneath the canonical envelope delivery. The older lease helpers
+remain for retained legacy staff matrix legs.
+`integrations/email.py` stamps connection provenance, `dispatch_delivery.py` retains
+provider IDs and `views_bounce.py` handles exact correlation and replay protection.
+
+Addressed template values share domain adapters without importing the optional inbox:
+`payments/notification_projections.py` owns audience-specific payment bags and local due
+dates; `machines/service_printing_projection.py` owns the kernel-to-printing projection
+(including capability quantity and printing status). Payment and printing notification
+adapters pass reviewed scalar projections into canonical envelopes.
+`hardware_requests/notification_projection.py` supplies the source-backed audience projection;
+legacy `integrations/messaging/sources.py` remains a compatibility seam, not another outbox.
+
+`machines/models_tracking.py`, `status_tracking.py` and `consumable_costs.py` own immutable
+status/cost facts. `service_manual_usage.py` contains typed manual logging behind the
+`service_consumable_pools.py` compatibility wrapper; `usage_attribution.py` validates
+optional local members/times. `inventory/cost_basis.py` validates current price units for
+products and pools. `admin_api/views_machine_usage_candidates.py` and the React
+`panels/machine/UsageAttributionFields.tsx` provide the scoped optional member picker.
+
+Machine analytics (1f-2 area C) register in `operations/report_definitions_machines.py`.
+`reports_machine_common.py` resolves staff authority/type scope, `reports_machine_facts.py`
+projects allowlisted source facts, and the usage/heatmap/downtime/service/maintenance/queue/health
+builders own their measurements. `org_machine_reports.py` combines partitioned numeric inputs;
+`org_machine_report_schemas.py` declares organization schema parity. Typed API rows live in
+`serializers_reports_machine_analytics.py`. The field and measurement handoff is
+`docs/report-machines-1f2.md`; focused tests are `backend/tests/analytics/test_c_*_m1f2.py`.
+
+Role dashboards (1f-4): `operations/dashboard_widgets.py` declares and gates report-backed
+widgets, while `dashboard_counts.py` preserves the legacy count contract and
+`dashboard_handover.py` serves queue-only handover homes. `serializers_dashboard.py`
+describes the additive widget/chart and queue payload. `org_report_charts.py` projects
+existing strategy-backed organization charts onto combined fields; `org_reports.py`
+keeps combined data inseparable from its tenant breakdown.
+Personal usage lives beside member activity: `makerspaces/member_usage_views.py` owns
+the membership-versus-core-payments boundary at `/member/makerspaces/<id>/my-usage`,
+`member_usage_service.py` owns authenticated-user-only facts, and
+`member_usage_serializers.py` documents the summary/chart response. Claim policy is in
+`accounts/claim_routes_member.py`. Tests: `analytics/test_dashboards_m1f4.py`,
+`test_my_usage_m1f4.py` and `test_dashboard_native_org_m1f4.py`.
+
+`inventory/models_tracking.py` defines stock observations; `availability_stock.observe_stock`
+reads authoritative quantity buckets, while `stock_snapshots.py` gates tenant fan-out and
+`tasks.py` exposes the daily task. `data_export/classification_m1f1.py` classifies new facts;
+`subject_runtime.py` provides the separate personal runtime allowlist, consumed by
+`subject_archive.py`. Tenant imports remap cost sources in `semantic_remap.py` using
+`tracking_references.py`; `verification_semantic.py` verifies non-FK references behind
+the existing `verification.py` exports. Regression coverage is `backend/tests/analytics/`.
+
+Frontend analytics (1f-5) lives in `features/staff/panels/`: `reportAreas.ts` groups only
+server-catalog entries into nine areas, `ReportAreaSections.tsx` mounts the selected
+report query, and `AnalyticsData.tsx` pairs charts with complete source-table toggles
+(including rows omitted by chart axes or top-N display). `analyticsApi.ts` imports the
+generated serializer types and owns scoped query keys under the existing `operations-report`
+invalidation prefix, and matrix-to-record projection. `charts/wireChartSpec.ts` adapts
+the backend F1 spec into the existing accessible chart kit, preserving tenant, currency,
+measurement-unit and negative-value rules. Null specs retain the table presentation.
+`DashboardAnalyticsWidgets.tsx` renders server-authorized widget kinds and the separate
+handover queue home; `staffAccess.ts` and the flat sidebar admit that queue-only home.
+`ModuleAnalytics.tsx` embeds catalog-authorized small panels in inventory, machines,
+bookings, events, membership, money, communications and device consoles. The online
+payment rail is not a gate on core money analytics.
+
+`features/members/memberUsageApi.ts` and `MemberUsagePanel.tsx` own the personal
+`my-usage` query, keyed by makerspace under `member`, and its charts in the member
+overview. They suppress 403/404 and display payments independently of membership usage.
+`organizationAnalyticsApi.ts`, `organizationReportChoices.ts` and
+`panels/OrganizationAnalyticsPanel.tsx` retain the server's combined total alongside
+every makerspace breakdown, with period/grain controls and nullable combined chart specs.
+`platformAnalyticsApi.ts`, `PlatformAnalyticsPanels.tsx` and `PlatformAnalyticsPicker.tsx`
+add services/usage charts and paginated tenant drill-down to `PlatformDashboardPanel`.
+Hidden service buckets have one anonymous label and no tenant identifiers; scoped
+catalog/report 403s remain explicit blocks. The two platform fallback specs mirror the
+registry for cached responses predating chart metadata; current platform responses include
+the canonical `chart_spec`. Report, dashboard, member, organization and picker contracts
+now import `frontend/src/generated/api.ts`; widget JSON is projected at the chart boundary.
+Vitest panel suites live beside these components, with registry fixtures and shared
+fetch/provider helpers in `src/test/reportChartCases.ts` and `analyticsFixtures.tsx`.
+
+Personal channel UI is consolidated in `features/notifications/`: `channelsApi.ts`,
+`channelCatalog.ts`, `ChannelSetupPanel/Form`, `WhatsAppTemplatesEditor`, `ChannelTestSend`
+and `ChannelDeliveryLog` own canonical configuration, approval, diagnostics and history.
+`PersonalChannels`, `ChannelPreferences`, `MyNotificationSettings` and `SmsConsent` own
+connections, category selections and current phone/sender-bound consent. `smsConsentApi.ts`
+uses the retained core consent endpoints. `features/messaging/MessagingFeedback.tsx` supplies
+shared inline feedback. The old messagingApi, MakerspaceMessagingSettings, MessagingTestSend,
+WhatsAppTemplateBindings/BindingForm and MemberMessaging components are deleted.
+`MemberArea.tsx` exposes Channels to server-authorized account-only owners independently of
+membership/inbox; old messaging section links remain aliases. Staff have a core My channels tab;
+platform navigation remains separate. Query keys bind account, context and tenant; session
+switches clear private caches and late mutation results cannot populate another account.
+`MemberPhoneVerification.tsx` refreshes consent reads after linking without subscribing anyone.
 
 The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
 `AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
@@ -93,6 +218,14 @@ carry source kind/id/metadata through lifecycle dispatch, deferral and retry.
 `report_pdf.py` renders paginated metric/value tables with provenance; new event report
 definitions/builders/typed contracts are `report_definitions_events.py`,
 `reports_event_exports.py`, `serializers_reports_events_detail.py`.
+
+Booking/event analytics (1f-2 D/E): `operations/report_definitions_de.py` registers
+the new builders and organization combiners; `report_fields_de.py` owns their allowlists.
+`reports_booking_trends.py` provides booking-utilization v2; `reports_booking_analytics.py`
+owns occupancy, lead-time and member rankings. `reports_event_analytics.py`,
+`reports_event_revenue.py` and `reports_event_quality.py` own signup/funnel, money,
+and check-in/feedback measures respectively. `org_report_de.py` combines count/sum/rate
+inputs. Measurement boundaries and per-key fields are in `docs/report-builders-de.md`.
 
 Booking resource reports (BK-E): `bookings/report_subject.py` registers the typed
 `bookable_space` policy; `report_features.py` projects request-local UI capabilities.
@@ -203,7 +336,20 @@ owns its durable release claims. `views_timing.py` configures tenant timing and 
 encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs and writes
 address-hash suppression. `notifications/models_broadcasts.py`, `broadcasts.py` and
 `views_broadcasts.py` own scoped member segments, matrix fan-out and personal announcements.
+`notifications/models_push.py` owns canonical per-device children; `member_push.py`,
+`member_push_policy.py`, `envelope_push_leases.py` and `envelope_push_transport.py` separate
+registered fan-out, current source/device gates, fenced claims and transport. The old
+member_push_leases helper remains for legacy staff matrix use. `notifications/tasks.py`
+re-enters canonical envelope delivery for five-minute recovery; old enqueue IDs are inert.
+`notifications/inbox_scope.py` validates persisted requester-selection subjects.
+`integrations/push.py` shares one-device provider sending; `push_payload.py` builds v2
+data through the existing `mobile_link_contract.py` routing contract.
 `payments/failure_notifications.py` handles verified failed attempts without closing debt.
+`payments/services_mobile.py` coordinates native rail locks and vendor dispatch;
+`services_mobile_razorpay.py` validates and recovers native Orders through
+`providers/razorpay.py`. `serializers_mobile.py` defines the vendor-discriminated response.
+`terminal_settlement.py` retains late-capture refund anchors and deduplicates excess-collection
+audits; `reconciliation_rail.py` closes native Razorpay Orders locally without cancelling links.
 Booking models are explicitly exported from `bookings/models.py` over `models_spaces.py`,
 `models_booking.py` and `models_feed.py`; `services_reschedule.py` and `services_recurrence.py`
 reuse the ordinary space lock and booking policy. `views_feed.py` owns private booking ICS
@@ -249,7 +395,21 @@ JWT lineage over the existing token ledger. Subject export routes/jobs live in
 existing field classification. `subject_boundary.py` reuses source-gate boundaries.
 Frontend account controls live in `features/members/MemberAccount*.tsx` with
 `memberAccountApi.ts`; staff plan controls use `MembershipRenewalFields.tsx`.
+`features/auth/SignOutEverywhere.tsx` calls account-wide logout from member Security
+and all account MFA settings, independently of membership self-service.
 See [member-account-renewals.md](member-account-renewals.md) for policy and limits.
+
+Member-account deletion lives in the `accounts/account_deletion*` service modules
+and `accounts/views_account_deletion.py` / `serializers_account_deletion.py`. Stage A archives identity,
+revokes session authority and coordinates existing membership/application services.
+`organizations/services_governance.py:self_departure` owns organization departure
+without requiring governance authority, while preserving the last-governor invariant.
+`accounts/reauthentication*.py` supplies browser/device proof and provider second-factor
+intents independently of the deletion transaction. Stage B purge uses the durable
+tenant/object journals described above.
+`accounts/account_obligations.py` locks the obligation owner after domain locks;
+new loans, bookings, registrations, service jobs and membership purchases use it
+to serialize against departure. Refresh rotation locks the account before tokens.
 Public item deep links live in `frontend/src/features/inventory/PublicItemPage.tsx`;
 they reuse `inventory/views.py`'s existing `PublicInventoryDetailView` and the
 catalogue's `PublicProductSerializer`. Public search builds an allowlisted vector
@@ -267,7 +427,11 @@ entry points are indexed in `docs/SOURCE-MAP-CONSOLES.md`.
 
 Cloud surfaces: `accounts/views_social.py` explicitly exports the nonce/login views in
 `views_social_login.py` and identity management in `views_social_identities.py`, with shared
-verification/error helpers in `views_social_helpers.py`. `integrations/health.py` explicitly exports
+verification/error helpers in `views_social_helpers.py`. `accounts/services_device_grants.py`
+owns shared first-grant creation for social and phone sign-in; `services_phone_device.py`
+consumes the OTP-bound attestation and carries member-only phone provenance through MFA.
+`makerspaces/config_native.py` owns native provider/version discovery and its OpenAPI serializers.
+`integrations/health.py` explicitly exports
 `health_status.py` rollups and `health_chat.py` destination/legacy delivery summaries. The
 read-only scheduler control page lives in `operations/admin_scheduling.py`.
 The shared reminder foundation is `operations/models_reminders.py`,
@@ -321,6 +485,35 @@ Platform monitoring uses `admin_api/views_platform_monitoring.py` and its schema
 and `scheduler_telemetry.py` own scheduled checks and beat completion telemetry.
 Tenant counters and allowances are read by `makerspaces/usage_snapshot.py`.
 
+Report infrastructure: `operations/report_registry.py` composes `report_definitions_<area>.py`;
+`report_validation.py` validates privacy flags and chart specs (also a Django check),
+`report_output.py` projects public rows, and `platform_scope.py` separates platform context
+and service buckets from tenant authority. Organization builders register combine functions
+with `org_report_aggregate.register_combine`; `report_coverage_contract.py` is the phase-1f
+module-to-report acceptance table, separate from runtime prerequisites.
+`report_charts_remaining.py` supplies the F1 specs for legacy and subject-detail reports,
+including currency-separated ledger/journal summaries. Detail builders expose a numeric
+count per row where no measurement existed; health rows retain their tenant chart axis.
+`tests/operations/test_chart_spec_complete_m1f6.py` guards the whole previewable registry
+and both platform analytics responses. The latter use `PlatformAnalyticsReportSerializer`.
+
+H/I analytics register in `operations/report_definitions_hi.py`: communications v3 stays in
+`integrations/reports_communications.py`; tenant mobile counts live in
+`operations/reports_mobile_devices.py` and `reports_mobile_auth.py`. Their shared allowlists
+are `report_fields_hi.py`; `reports_mobile_platform.py` exposes context-guarded global source
+projections for platform builders. Measurement and disclosure notes: [report-builders-hi.md](report-builders-hi.md).
+Area J analytics: `operations/report_definitions_j.py` registers device, presence,
+audit, organization membership and delivery-health reports; `report_fields_j.py`
+declares their public schemas. `reports_j_*` builds tenant rows and `org_reports_j.py`
+combines organization counts and rate inputs. Person rankings and local hour-of-week
+are separate tenant-only keys. Organization membership is offered only on organization
+and deployment surfaces. `reports_platform_services.py` owns provider metering and the
+anonymous hidden-service bucket; `reports_platform_usage.py` owns visible-space activity,
+with finalized consumable sources in `reports_platform_consumables.py`.
+`views_platform_analytics.py` serves the two platform keys and the action-scoped tenant
+picker. `metrics_push.py` reads both per-device outcome ledgers for Prometheus.
+Field/measurement contracts and the complete lane handoff are in `report-builders-j.md`.
+
 Membership admission is described in [membership-admission.md](membership-admission.md).
 `makerspaces/models_admission.py` owns the settings and immutable vouch models.
 `membership_services.py` remains the explicit compatibility barrel over
@@ -372,6 +565,27 @@ Backend app ownership is indexed once in [SOURCE-MAP-APPS.md](SOURCE-MAP-APPS.md
 recovery and tenant-dump internals are in [SOURCE-MAP-RECOVERY.md](SOURCE-MAP-RECOVERY.md).
 `backup/restore_hooks.py` and `tenant_migration/restore_hooks.py` clear copied download
 bearers during deployment restore and slice staging.
+
+Native mobile integration setup: `accounts/native_app_identity.py` owns global registration eligibility,
+identity normalization and production minimum-version comparison. `mobile_associations.py` builds
+  public documents using the unchanged `integrations/mobile_link_contract.py`;
+  `views_mobile_associations.py` enforces frontend-host eligibility. `mobile_readiness.py` is the one
+  read-only report builder used by `views_mobile_readiness.py` and `admin_native_apps.py`;
+  `forms_native_apps.py` validates registration edits. Operator setup: `docs/mobile-integration.md`.
+
+## Domain and frontend map
+See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
+printing, events, the frontend directories and connected device monitoring.
+See also [SOURCE-MAP-CLIENT.md](SOURCE-MAP-CLIENT.md) for the standalone
+frontend directory and browser/kiosk flow map.
+See [SOURCE-MAP-CONSOLES.md](SOURCE-MAP-CONSOLES.md) for staff lists, saved views,
+command-palette discovery and the connected-device console map.
+Staff list preferences live in `operations/models_saved_views.py`, `serializers_saved_views.py` and
+`views_saved_views.py`; cross-entity discovery is `admin_api/search.py`. Shared pagination/ordering
+and entity authority live in `admin_api/list_options.py` and `staff_list_scope.py`.
+Saved-view audit targets travel as inert source provenance in
+`tenant_migration/audit_references_targets.py`, including after a preference is deleted.
+Booking/event `views_admin_spaces.py` / `views_admin_events.py` barrels re-export the corresponding `*_list/detail.py` handlers.
 
 ## Community and notification delivery
 
@@ -474,3 +688,50 @@ using the handwritten contract in `lib/api/staffAccounts.ts`. Password secrets r
 dialog state, outside Query caches/storage. Staff offline rosters, jobs and toasts are context-bound;
 member offline cards/loans retain their separate lifecycle. Tests: `backend/tests/account_split/`
 and frontend `*.accountSplit.test.*`, `sessionContexts.test.ts`, `contextStores.test.ts`.
+
+Addressed messaging is part of core integrations, not a second delivery pipeline.
+`models_endpoints.py` owns canonical channel configuration and templates; `models_contract.py`
+owns personal envelopes/deliveries; `models_cutover.py` owns `NotificationCutover`, encrypted
+`NotificationIngress`, `NotificationLegacyMapping`, credential versions and provider references.
+`models_messaging_consent.py` retains append-only consent and shared physical suppression,
+alias/correlation protection. Platform sender settings and sender identity/history remain in
+`models_messaging_settings.py`; its old tenant settings/binding models and the old
+`models_messaging_delivery.py` send records survive only for conversion/import compatibility.
+
+`notification_sender.py` owns canonical own/platform resolution, sender snapshots and retired
+verifiers; `notification_addressed.py` rechecks addressed eligibility, SMS routing snapshots,
+segments and WhatsApp correlation before provider I/O. `messaging/ties.py`, `consent.py`,
+`protections.py`, `stops.py`, `correlation.py`, `segments.py` and reviewed `projections.py`
+provide the ported safeguards. `recipients_addressed.py` / `recipients_owners.py` share source
+recipient extraction without requiring inbox installation. `notification_personal_policy.py`
+keeps opt-outs effective even when the optional inbox app is absent. OTP remains in `sms/`.
+
+`notification_ingress.py`, `notification_ingress_apply.py`, `notification_legacy_ingress.py`,
+`notification_callbacks.py` and provider ingress modules authenticate/journal/replay callbacks.
+The old messaging webhook URLs remain signed compatibility ingress, not send authority.
+`notification_cutover.py` and `management/commands/notification_cutover.py` own barrier, route,
+replay, verify and activate. Integrations 0041 expands; 0042 converts/maps restartably without
+sending. Destructive 0043 remains unsupplied. Historical migrations, including
+0035_messaging_tenant_tie and frozen conversion helpers, are retained.
+
+`notifications/member_push.py`, `envelope_push_leases.py`, `envelope_push_transport.py` and
+`models_push.py` own registered device fan-out beneath `NotificationDelivery(native_push)`.
+Notifications 0008 expands nullable parents, 0009 converts/maps old rows, 0010 verifies/enforces
+parent/device uniqueness. `inbox.py::write_envelope_inbox` supplies source audience/scope and a
+stable identity without triggering push; `privacy.py` owns push/inbox mapping redaction hooks.
+Deleting inbox rows preserves children through their canonical parent. The entire notifications
+app still owns adapter registration; disabling its inbox module is a distinct operation.
+
+`messaging/dispatch.py` and `worker.py` and old member-push enqueue/deliver task names are inert
+import/broker shims. `tasks_messaging.py` recovers canonical ingress; settings wipe tasks retain
+retired-secret hygiene. Duplicate settings/template writes return 503 then 410. Source adapter
+coverage and deliberate legacy pre-skips are indexed in notification-coverage.md.
+
+Messaging analytics uses `operations/reports_communications.py::build_communications_health`
+(version 4), `integrations/reports_messaging.py` and the operations canonical delivery-fact
+helpers. `NotificationDelivery` plus exact legacy mappings preserve original observations
+without counting another send; EmailLog and device children supply physical outcomes once.
+`report_fields_hi.py` owns public fields; `org_reports_messaging.py` combines weighted rates
+and excludes current consent snapshots from totals. Platform services/module health are v3;
+mobile devices/auth v2. Held ingress, original abandoned receipts, current proof-bound consent
+and billed-zero segments keep distinct measurements. See [measurement notes](report-builders-messaging.md).

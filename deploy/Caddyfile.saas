@@ -8,6 +8,14 @@
 # Shared application routing for platform and custom-domain hosts.
 (backend_paths) {
     # The TLS ask endpoint is internal-only, even though it also fails closed.
+    handle /.well-known/assetlinks.json {
+        reverse_proxy backend:8000
+    }
+
+    handle /.well-known/apple-app-site-association {
+        reverse_proxy backend:8000
+    }
+
     handle /api/v1/internal/* {
         respond 403
     }

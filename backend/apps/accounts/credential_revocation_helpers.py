@@ -16,7 +16,7 @@ from apps.integrations.models_endpoints import NotificationEndpoint, Notificatio
 from apps.makerspaces.models_station_leases import StationOperatorLease
 
 
-def revoke_authentication(user, *, now):
+def revoke_authentication(user, *, now, revoke_invitations=True):
     counts = {"django_sessions": 0, "outstanding_tokens": 0}
     # Django's database session store has no indexed user FK. Decode with Django's
     # signature verification; never match text inside the serialized session data.
@@ -37,9 +37,14 @@ def revoke_authentication(user, *, now):
             blacklist_device_family(family)
     counts["device_grants"] = len(grants)
     counts["refresh_families"] = len(families)
-    counts["staff_invitations"] = StaffInvitation.objects.filter(
-        account=user, accepted_at__isnull=True, revoked_at__isnull=True,
-    ).update(revoked_at=now)
+    from apps.integrations.models_push import PushDevice
+    counts["push_devices"] = PushDevice.objects.filter(user=user, active=True).update(
+        active=False, invalidated_at=now,
+    )
+    if revoke_invitations:
+        counts["staff_invitations"] = StaffInvitation.objects.filter(
+            account=user, accepted_at__isnull=True, revoked_at__isnull=True,
+        ).update(revoked_at=now)
     return counts
 
 

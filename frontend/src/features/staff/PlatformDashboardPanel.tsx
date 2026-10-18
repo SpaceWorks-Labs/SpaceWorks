@@ -5,6 +5,7 @@ import { type CalloutProps, DataTable, EmptyState, KeyValueCard, ListRow, Relati
 import { adminQueryState } from "./adminPresentation";
 import { getPlatformDashboard, getPlatformProblems, usageAmount, type Problem } from "./platformMonitoringApi";
 import { UsageTable } from "./TenantUsagePanel";
+import { PlatformAnalyticsPanels } from "./PlatformAnalyticsPanels";
 
 // Tenant repair screens use control's separate platform session and authority.
 const problemHref = (problem: Problem) => problem.makerspace_id === null
@@ -34,6 +35,7 @@ export function PlatformDashboardPanel() {
       ...Object.entries(data.usage_totals).map(([key, value]) => ({ label: key.replace(/_/g, " "), value: usageAmount(value, key === "storage" ? "bytes" : "count") })),
     ] } : undefined}
     main={[
+      { title: "Analytics", content: <PlatformAnalyticsPanels />, empty: { message: "No platform activity yet." } },
       { title: "Problems", empty: { message: "All checks passed. Run checks again after a deployment change." },
         content: problems.isLoading ? <p role="status">Running checks…</p> : problems.isError ? <EmptyState message="Couldn't load problems. Try again." action={{ label: "Retry", onClick: () => { void problems.refetch(); } }} />
           : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <>Checked <RelativeTime date={problems.data.checked_at} />. </> : null}Checks also run every 15 minutes through the platform scheduler.</p>
@@ -62,9 +64,9 @@ export function PlatformDashboardPanel() {
             { label: "Automatic backups", value: <StatusPill label={data.backup.automatic_enabled ? "On" : "Off"} tone={data.backup.automatic_enabled ? "success" : "neutral"} /> },
             ...data.offsite.map(row => ({ label: row.name, value: <><StatusPill label={row.state.replace(/_/g, " ")} tone={row.has_error ? "warn" : "neutral"} />{row.has_error ? " · Needs attention" : ""} … {row.verified_at ? <RelativeTime date={row.verified_at} /> : "No verification recorded"}</> })),
             ...(!data.offsite.length ? [{ label: "Offsite destinations", value: "No offsite destinations configured." }] : []),
-          ]} /><a className="desk-button" href="/admin/backup-restore">Backup settings</a></section> : undefined}
+          ]} /><a className="desk-button" href={consoleSessionHref("/admin/backup-restore", "platform")}>Backup settings</a></section> : undefined}
     rail={data ? { title: "Delivery", items: [
       { key: "emails", actor: "Email", children: `${data.failed_deliveries.email} failed deliveries`, date: data.checked_at },
       { key: "notifications", actor: "Notifications", children: `${data.failed_deliveries.notifications} failed deliveries`, date: data.checked_at },
-    ], seeAll: { label: "Platform settings", href: "/admin/platform" } } : undefined} />;
+    ], seeAll: { label: "Platform settings", href: consoleSessionHref("/admin/platform", "platform") } } : undefined} />;
 }

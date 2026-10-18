@@ -196,3 +196,30 @@ contract-endpoints contract-preferences device-grant-detail device-grants device
 inbox-list inbox-read inbox-read-all live member-account-profile member-account-session-detail
 member-account-sessions member-preferences push-device-detail push-device-list-create
 """.split())
+
+# These are account-kind boundaries, rather than sources of staff authority.
+MEMBER_ROUTES = frozenset("""
+auth-account-deletion auth-account-restore-email auth-account-restore-phone
+auth-account-restore-social-start auth-account-restore-social-complete
+auth-reauth-phone-start auth-reauth-phone-confirm auth-reauth-social-factor
+""".split())
+
+PLATFORM_ONLY_ROUTES = frozenset("""
+admin-platform-mobile-readiness platform-analytics platform-analytics-makerspaces
+platform-tenant-report-catalog platform-tenant-analytics platform-tenant-dashboard
+platform-tenant-report-export
+""".split())
+
+TENANT_STAFF_ROUTES = frozenset("""
+messaging-settings messaging-test whatsapp-template-list whatsapp-template-detail
+whatsapp-template-catalog admin-machine-usage-candidates
+""".split())
+
+# Compatibility ingress keeps its provider signatures, even while sends are held.
+# It never accepts a browser, member, staff or API-client credential as authority.
+SIGNED_PROTOCOL_ROUTES = frozenset("""
+messaging-twilio-platform-status messaging-twilio-platform-inbound
+messaging-twilio-status messaging-twilio-inbound messaging-meta-platform messaging-meta
+""".split())
+
+SHARED_ROUTES |= {"auth-logout-all", "member-messaging", "member-messaging-consent"}

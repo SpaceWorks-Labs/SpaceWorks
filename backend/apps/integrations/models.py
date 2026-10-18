@@ -43,6 +43,10 @@ from .models_sms import (
 )
 
 __all__ = [
+    'SmsSendLog',
+    'PushDeliveryAttempt',
+    'EmailProviderEvent',
+
     'CHANNEL_MODULE_KEYS',
     'ChatNotificationChannel',
     'ChatTemplate',
@@ -85,3 +89,25 @@ __all__ += ["NotificationDelivery", "NotificationEnvelope", "ChannelConfiguratio
 from .models_notification_media import NotificationMediaGrant
 
 __all__ += ["NotificationMediaGrant"]
+# Historical models stay importable while deployment checkpoint verification is pending.
+from .models_tracking import SmsSendLog, PushDeliveryAttempt, EmailProviderEvent  # noqa: F401
+from .models_messaging_settings import (
+    PlatformWhatsAppSettings, MakerspaceMessagingSettings, MessagingSenderIdentity,
+    MessagingSenderCredential, WhatsAppTemplateBinding,
+)
+from .models_messaging_consent import (
+    MessagingConsent, MessagingSuppression, MessagingRecipientAlias, MessagingRecipientCorrelation,
+)
+from .models_messaging_delivery import MessagingDelivery, MessagingWebhookEvent
+
+__all__ += ["PlatformWhatsAppSettings", "MakerspaceMessagingSettings", "MessagingSenderIdentity",
+            "MessagingSenderCredential", "WhatsAppTemplateBinding", "MessagingConsent",
+            "MessagingSuppression", "MessagingRecipientAlias", "MessagingRecipientCorrelation",
+            "MessagingDelivery", "MessagingWebhookEvent"]
+from .models_cutover import (
+    NotificationCutover, NotificationIngress, NotificationLegacyMapping, NotificationCredentialVersion,
+    NotificationProviderReference,
+)
+
+__all__ += ["NotificationCutover", "NotificationIngress", "NotificationLegacyMapping", "NotificationCredentialVersion"]
+__all__ += ["NotificationProviderReference"]

@@ -39,16 +39,13 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         # A credential change also locks User. Hold that same lock through both
         # verification and minting so an unenrolled login cannot pick up the new
         # credential's version between these reads without proving its factor.
-        from apps.accounts.credential_locks import lock_token_issuance
-        user = lock_token_issuance(user)
-        if getattr(user, "is_tenant_dump_stub", False):
-            from rest_framework.exceptions import AuthenticationFailed
-
-            raise AuthenticationFailed("Account is not available.")
+        from apps.accounts.session_issuance import lock_session_user
+        user = lock_session_user(user)
         from apps.accounts.mfa_policy import assert_verified, credential, source_for
         assert_verified(user)
         token = super().for_user(user)
         token["kind"] = user.account_kind
+        token["credential_generation"] = user.credential_generation
         token["surface"] = {"member": "member", "staff": "staff_api", "platform": "platform"}[user.account_kind]
         if user.account_kind == "staff":
             token["makerspace"] = user.staff_makerspace_id
@@ -61,8 +58,8 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         token["auth_generation"] = current_auth_generation()
         if web_session:
             from apps.accounts.web_sessions import create_session
-            from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
             create_session(user, token)
-            OutstandingToken.objects.filter(jti=token["jti"]).update(token=str(token))
+        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+        OutstandingToken.objects.filter(jti=token["jti"], user=user).update(token=str(token))
         return token

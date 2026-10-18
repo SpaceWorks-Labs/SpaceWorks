@@ -12,7 +12,7 @@ from apps.makerspaces.lookup import get_makerspace_by_public_code
 from apps.makerspaces.servability import is_servable
 from apps.payments.models import MakerspacePaymentSettings
 from apps.payments.providers import WebhookVerificationError, get_provider
-from apps.payments.resolution import resolve_payment_source
+from apps.payments.resolution import razorpay_source
 from apps.payments.serializers import WebhookResponseSerializer
 from apps.payments.services import apply_razorpay_webhook_event, apply_webhook_event
 from apps.payments.stripe_client import PaymentsUnavailable, StripeWebhookSignatureError, construct_event
@@ -100,12 +100,9 @@ class RazorpayWebhookView(APIView):
             logger.warning("razorpay_webhook_unknown_makerspace", extra={"public_code": public_code})
             return Response({"detail": "Makerspace not found."}, status=status.HTTP_404_NOT_FOUND)
         settings_row = MakerspacePaymentSettings.for_makerspace(makerspace)
-        if settings_row.provider != "razorpay":
-            # A Razorpay callback for a Stripe space is either a misconfiguration or a
-            # probe. Either way there is no secret to verify it with.
-            logger.warning("razorpay_webhook_wrong_provider", extra={"makerspace_id": makerspace.id})
-            return Response({"detail": "Razorpay is not configured."}, status=status.HTTP_400_BAD_REQUEST)
-        source = resolve_payment_source(makerspace)
+        # Retained Razorpay credentials authenticate late captures even after the
+        # space switches its new collections to Stripe.
+        source = razorpay_source(settings_row)
         if source is None:
             logger.warning("razorpay_webhook_unconfigured", extra={"makerspace_id": makerspace.id})
             return Response({"detail": "Payments are not configured."}, status=status.HTTP_400_BAD_REQUEST)

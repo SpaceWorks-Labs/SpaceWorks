@@ -22,6 +22,7 @@ class PasswordResetEnvelope(models.Model):
     unavailable accounts receive the same public acknowledgement without a queue row.
     """
 
+    purpose = models.CharField(max_length=16, default="reset", choices=[("reset", "Reset"), ("restore", "Restore")])
     email_normalized = models.CharField(max_length=254)
     context = models.CharField(max_length=8, choices=[(kind, kind.title()) for kind in ("member", "staff", "platform")], default="member")
     makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True, on_delete=models.CASCADE)
@@ -54,6 +55,9 @@ class PasswordResetEnvelope(models.Model):
 
     class Meta:
         constraints = [
+            models.CheckConstraint(condition=(models.Q(purpose="reset") | models.Q(
+                purpose="restore", context="member", makerspace__isnull=True,
+            )), name="reset_restore_member_context"),
             models.UniqueConstraint(
                 fields=["user"],
                 name="uniq_password_reset_account",

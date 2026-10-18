@@ -18,6 +18,7 @@ from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
 from apps.operations.report_registry import ReportDefinition
 from apps.operations.report_scope import ReportScope, combined_report_scope
+from apps.accounts.native_session import is_native_session
 from apps.organizations.models import (
     Organization,
     OrganizationMakerspace,
@@ -26,6 +27,7 @@ from apps.organizations.models import (
 
 
 ORGANIZATION_REPORT_ACTIONS = frozenset({
+    rbac.Action.MANAGE_MEMBERS,
     rbac.Action.VIEW_AUDIT,
     rbac.Action.MANAGE_MAKERSPACE,
     rbac.Action.VIEW_FINANCE,
@@ -33,8 +35,20 @@ ORGANIZATION_REPORT_ACTIONS = frozenset({
     # organization grant of that action (never a local role) is what admits them.
     rbac.Action.MANAGE_EVENTS,
     rbac.Action.MANAGE_BOOKINGS,
+    rbac.Action.VIEW_INVENTORY,
+    rbac.Action.EDIT_INVENTORY,
+    rbac.Action.MANAGE_MACHINES,
 })
 EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
+    "overdue-loans", "longest-loans", "qr-scan-actors",
+    "presence-top-visitors", "audit-top-actors",
+    "presence-activity-hours", "audit-activity-hours",
+    "platform-services", "platform-usage",
+    "active-loans", "returns", "top-borrowers",
+    "machine-usage-members", "machine-usage-heatmap",
+    "booking-top-members",
+    # Tenant-local hour-of-week cells are intentionally not organization totals.
+    "booking-occupancy",
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
     "event-registrations", "event-feedback", "event-attendance-pdf",
     # Financial detail and accounting custody stay tenant-local. Different local
@@ -71,7 +85,24 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "module-operational-health",
     "machine-service",
     "printer-service",
+    # Medians/percentiles cannot be reconstructed by averaging tenant summaries.
+    "service-queue-times", "booking-lead-time", "event-checkin-times",
 })
+
+# v2 A+B definitions expose additive samples/denominators for these former exclusions.
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"loan-throughput", "inventory-control", "procurement-performance"}
+
+
+# v2 communications exposes additive cohorts and both rate denominators.
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"communications-health"}
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"machine-service"}
+
+
+# Phase 1f F/G adds explicit local-period strategies and exposed denominators.
+# These totals count memberships (a person in two spaces contributes twice).
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {
+    "member-retention", "membership-revenue", "revenue-over-time", "cash-book",
+}
 
 
 class OrganizationReportScopeError(ValueError):
@@ -96,6 +127,11 @@ def _validate_inputs(
         raise ValueError("organization must be saved before resolving report scope.")
     if not isinstance(definition, ReportDefinition):
         raise TypeError("definition must be a ReportDefinition.")
+    if definition.platform_only:
+        from .report_types import ReportNotFound
+        raise ReportNotFound()
+    if definition.identity_bearing:
+        raise UnsupportedOrganizationReport("Identity-bearing reports are tenant-only.")
     if definition.key in EXCLUDED_ORGANIZATION_REPORT_KEYS:
         raise UnsupportedOrganizationReport(
             f"Report {definition.key!r} is unavailable to organization dashboards."
@@ -125,6 +161,8 @@ def resolve_organization_report_scope(
         actor is None
         or not getattr(actor, "is_authenticated", False)
         or getattr(actor, "pk", None) is None
+        # Native device sessions are membership-only: no organization report scope.
+        or is_native_session(actor)
     ):
         return combined_report_scope(Makerspace.objects.none())
 

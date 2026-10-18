@@ -13,6 +13,11 @@ def require_member_account(user):
 
 
 def guard_account_identity(user, *, using=None):
+    if user.account_kind != "member" and any(getattr(user, field) for field in (
+        "deletion_requested_at", "deletion_purge_after", "purge_started_at",
+        "account_restored_at", "account_purged_at", "deletion_email_ciphertext", "deletion_username",
+    )):
+        raise ValidationError("Account deletion and restoration require a member account.")
     if user._state.adding:
         return
     using = using or router.db_for_write(type(user), instance=user)

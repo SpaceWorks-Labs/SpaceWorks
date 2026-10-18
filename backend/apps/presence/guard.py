@@ -87,8 +87,13 @@ def _require_active_identity(user, makerspace):
         user
         and user.is_authenticated
         and user.pk
+        and user.account_kind == User.AccountKind.MEMBER
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
+        and not user.is_tenant_dump_stub
+        and not user.retired_at
+        and not user.deletion_requested_at
+        and not user.account_purged_at
     ):
         raise MemberPresenceRequired()
 

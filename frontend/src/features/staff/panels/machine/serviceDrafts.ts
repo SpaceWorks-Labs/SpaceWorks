@@ -22,6 +22,8 @@ export type ServiceDraft = {
     reason: string;
   };
   manual: {
+    member?: string;
+    started_at?: string;
     machine_id: string;
     consumable_pool_id: string;
     duration_minutes: string;

@@ -11,6 +11,7 @@ import { ConfirmDialog, DangerZone, ErrorBlock, StatusPill } from "../../compone
 import { MfaRecoveryCodes } from "./MfaRecoveryCodes";
 import { MfaFlow } from "./MfaFlow";
 import type { MfaChallenge } from "./mfaApi";
+import { SignOutEverywhere } from "./SignOutEverywhere";
 
 export function MfaAccountPage() {
   const context = currentSessionContext();
@@ -60,6 +61,7 @@ export function MfaAccountPage() {
             : !enabled ? <PasswordlessMfaProof />
             : <p className="text-sm text-muted">Your existing MFA-management operations require a current password. Contact your administrator if you cannot supply one.</p>}</> : null}
         {codes ? <MfaRecoveryCodes codes={codes} /> : null}
+        {ready ? <SignOutEverywhere signInHref={context === "member" ? "/member/account" : signInHref} onSignedOut={() => setReady(false)} /> : null}
         {enroll.error || change.error ? <ErrorBlock error={(enroll.error ?? change.error)!} /> : null}
       </div>}
       primary={codes ? { label: "I've saved my codes", onClick: () => { setCodes(undefined); setNotice("Your recovery codes are saved. Sign in again to continue."); } } : !ready || !available ? { label: "Sign in", href: signInHref } : {

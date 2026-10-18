@@ -7,11 +7,18 @@ import { CenteredCardLayout } from "./components/layouts";
 import { LandingPage } from "./features/LandingPage";
 import { useTenant } from "./lib/tenant";
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
+// Explicit test dev mode only: Vite removes this import and route from production builds.
+const ChartTestPage = import.meta.env.DEV && import.meta.env.MODE === "chart-test"
+  ? lazy(() => import("./features/staff/panels/charts/ChartTestPage")) : null;
 
 export default function App() {
   const tenant = useTenant();
   const { pathname } = useLocation();
+  if (ChartTestPage && pathname === "/__test/charts") return <Suspense fallback={<p role="status">Loading chart fixture…</p>}><ChartTestPage /></Suspense>;
   if (pathname === "/reauth/callback" || pathname === "/reauth/confirm") return <ReauthenticationReturn confirmation={pathname === "/reauth/confirm"} />;
+  if (pathname === "/account/restore" || pathname === "/member/archived") {
+    return <><AppRoutes mode={tenant.mode} landing={null} /><ReauthenticationDialog /></>;
+  }
   // Station UUID routes must open their precached shell even when no-store
   // config.js / tenant bootstrap cannot load. Central /kiosk/:slug stays distinct.
   if (/^\/m\/[^/]+\/kiosk\/[^/]+\/?$/.test(pathname)

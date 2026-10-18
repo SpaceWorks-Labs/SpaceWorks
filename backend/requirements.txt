@@ -20,6 +20,8 @@ whitenoise>=6.12
 segno
 djangorestframework-simplejwt>=5.5
 cryptography>=44
+# App Attest's CBOR attestation object and COSE credential key.
+cbor2==6.1.5
 django-storages[s3]>=1.14,<2
 boto3>=1.36,<2
 requests>=2.32,<3

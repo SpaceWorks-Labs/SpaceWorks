@@ -11,6 +11,19 @@ from apps.accounts.credential_revocation_helpers import (
 from apps.audit import services as audit
 
 
+@transaction.atomic
+def revoke_account_sessions(user):
+    """Account utility: User first, without later tenant/invitation locks."""
+    from apps.accounts.session_issuance import lock_session_user
+
+    locked = lock_session_user(user)
+    locked.credential_generation += 1
+    locked.save(update_fields=["credential_generation"])
+    counts = revoke_authentication(locked, now=timezone.now(), revoke_invitations=False)
+    user.credential_generation = locked.credential_generation
+    return counts
+
+
 def revoke_all_credentials(user, *, reason, actor=None):
     """Revoke account-owned bearers, retaining credential and audit history.
 

@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.makerspaces import limits
 from apps.makerspaces.models import (
     Makerspace,
@@ -23,12 +24,17 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
     if role.slug != "member":
         raise ValidationError({"role_id": "Community membership requires the Member role."})
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed
         ensure_join_allowed(makerspace)
         driving_request = None
         if request is not None:
             driving_request = MembershipRequest.objects.select_for_update().get(pk=request.pk)
+        # Invitation/request rows precede User in the account lifecycle lock order.
+        user = lock_obligation_owner(user)
+        if driving_request is not None:
             if driving_request.makerspace_id != makerspace.pk:
                 raise ValidationError({"detail": "Membership request is for another makerspace."})
             if driving_request.state not in (

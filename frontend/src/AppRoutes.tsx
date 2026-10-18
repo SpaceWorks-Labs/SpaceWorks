@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { MakerspacePage } from "./features/public/MakerspacePage";
 import { useTenantBootstrap } from "./features/inventory/usePublicInventory";
 import { PublicDeskKioskPage } from "./features/kiosk/PublicDeskKioskPage";
@@ -36,6 +36,7 @@ const PublicOrganizationPage = lazy(() => import("./features/organizations/Publi
 const OrganizationInvitationRedeemPage = lazy(() => import("./features/organizations/OrganizationInvitationRedeemPage").then((m) => ({ default: m.OrganizationInvitationRedeemPage })));
 const ResetPasswordPage = lazy(() => import("./features/staff/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
 const ConsolePasswordResetPage = lazy(() => import("./features/auth/ConsolePasswordResetPage").then((m) => ({ default: m.ConsolePasswordResetPage })));
+const AccountRestorePage = lazy(() => import("./features/auth/AccountRestorePage").then((m) => ({ default: m.AccountRestorePage })));
 const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
@@ -90,6 +91,16 @@ function SingleTenantEvent() {
   return slug === tenant.slug ? <PublicEventDetailPage /> : <NotFoundPage />;
 }
 
+function MemberTabRoute() {
+  const { slug, memberTab } = useParams();
+  const [search] = useSearchParams();
+  // Retain registered inbox OAuth redirects for account-only owners, even when
+  // membership or the optional inbox is absent. Verification still binds server state.
+  if (memberTab === "inbox" && search.has("state")) return <Navigate replace
+    to={`${slug ? `/m/${slug}` : ""}/member/account-portal?${search}`} />;
+  return <MemberArea />;
+}
+
 export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landing: ReactNode }) {
   const location = useLocation();
   let routes: ReactNode;
@@ -98,6 +109,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/admin/reset-password" element={<ConsolePasswordResetPage />} />
       <Route path="/m/:slug/admin/reset-password" element={<ConsolePasswordResetPage />} />
     </Routes>;
+  } else if (location.pathname === "/account/restore") {
+    routes = <Routes><Route path="/account/restore" element={<AccountRestorePage />} /></Routes>;
   } else if (location.pathname === "/mfa") {
     routes = <Routes><Route path="/mfa" element={<MfaAccountPage />} /></Routes>;
   } else if (location.pathname === "/staff-invitations/accept") {
@@ -140,7 +153,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/member/events/history" element={<MemberEventHistoryPage />} />
       <Route path="/member/speaker-claim" element={<SpeakerClaimPage />} />
-      <Route path="/member/:memberTab" element={<MemberArea />} />
+      <Route path="/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/stats" element={<PublicStatsPage />} />
       <Route path="/now" element={<PresenceNowPage />} />
       <Route path="/about" element={<AboutPage />} />
@@ -181,8 +194,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
-      <Route path="/m/:slug/member/:memberTab" element={<MemberArea />} />
-      <Route path="/member/:memberTab" element={<MemberArea />} />
+      <Route path="/m/:slug/member/:memberTab" element={<MemberTabRoute />} />
+      <Route path="/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/m/:slug/stats" element={<PublicStatsPage />} />
       <Route path="/m/:slug/now" element={<PresenceNowPage />} />
       <Route path="/m/:slug/kiosk/:stationToken" element={<KioskStationPage />} />

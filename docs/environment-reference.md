@@ -26,6 +26,7 @@ Read by every backend process. `ALLOWED_HOSTS`, `SECRET_KEY` and the proxy postu
 | Variable | Default | Notes |
 |---|---|---|
 | `ADMIN_SITE_NAME` | `'Space Works'` |  |
+| `ACCOUNT_DELETION_RETENTION_DAYS` | `90` | Days between the account deletion request and scheduled identity purge; Stage A immediately deactivates the account. |
 | `ALLOWED_HOSTS` | `['localhost', '127.0.0.1']` | Django's host check; add every custom domain on self-host. |
 | `CORS_ALLOWED_ORIGINS` | `['http://localhost:5000', 'http://localhost:5173']` |  |
 | `CSRF_TRUSTED_ORIGINS` | `[]` |  |
@@ -315,3 +316,35 @@ default to empty and must be configured together for manual Plausible analytics.
 not a Django setting. The operations reference describes their validation and backup policies.
 Station PINs also require the independent `EVENT_STATION_PIN_PEPPER` secret documented
 there; setup creates it once and upgrades must preserve it.
+
+## Addressed messaging
+
+Canonical Twilio/Meta credentials live in `ChannelConfiguration`, with explicit platform
+opt-in. Compatibility callback verifiers and encrypted retired credential versions remain
+available during replay; retirement and sending activation require separate operator
+checkpoints. Canonical Meta HTTP uses `WHATSAPP_META_GRAPH_VERSION` (default `v25.0`),
+documented in [the delivery reference](environment-reference-delivery.md).
+Compatibility/template helpers retain `WHATSAPP_GRAPH_VERSION` below; neither setting
+enables a sender. Preserve both settings and old signed callback routes through the
+[callback/replay compatibility period](notification-reconciliation-rollout.md).
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `MESSAGING_WEBHOOK_BASE_URL` | empty | Operator-owned absolute externally reachable origin (scheme and host, optional deployment prefix). Required for SMS and compatibility SMS/WhatsApp callback resolution. Old callback paths shown in settings remain under `/api/v1/integrations/messaging/`; canonical WhatsApp routes are under `/api/v1/integrations/makerspace/{id}/whatsapp/`. Twilio signatures use this configured base, never forwarded headers. |
+| `WHATSAPP_GRAPH_VERSION` | `v23.0` | Retained compatibility/template-helper Meta Graph version; canonical HTTP uses `WHATSAPP_META_GRAPH_VERSION`. Must match `v<number>.<number>`. |
+
+Provider credentials live encrypted in the platform or tenant settings, not environment
+variables. OTP SMS keeps its existing independent platform configuration. Retired callback
+credentials are accepted for fourteen days and wiped by `messaging-credential-wipe` in
+both Celery beat and `run_scheduled_tasks`. Sending remains separately paused by NotificationCutover
+until explicit replay verification/activation; migrations do not enable delivery.
+
+
+Addressed channel operations: see [SMS and WhatsApp notifications](messaging-channels.md)
+for exact versioned webhook URLs, Twilio Advanced Opt-Out and connection overrides,
+Meta registration/PIN and permissions, and the bounded WhatsApp correlation probe.
+`MANAGED_RESOURCE_LIMITS["sms"]` and `["whatsapp"]` default to 100 logical messages per
+makerspace/day, with existing per-space resource-limit overrides. Self-host bypasses
+these notification quotas. Both scheduler modes run `messaging-recovery` every five
+minutes and `canonical-messaging-retention` hourly; provider secrets retired for 14 days are
+wiped independently of module state.

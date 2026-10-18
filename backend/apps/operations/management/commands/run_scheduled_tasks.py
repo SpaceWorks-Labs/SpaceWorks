@@ -37,6 +37,16 @@ SCHEDULED_TASKS = (
     ("missing-payment-bills", "apps.payments.tasks.issue_missing_bills_task", 5),
     PRESENCE_SCHEDULED_ENTRY,
     ("notification-contract-outbox", "apps.integrations.notification_tasks.sweep_notification_outbox", 1),
+    # Compatibility recovery journals/replays receipts only; the duplicate legacy
+    # send scanner is inert. Both canonical and push work honor the cutover gate.
+    ("messaging-recovery", "apps.integrations.tasks_messaging.sweep_messaging_task", 5),
+    # Bounded canonical addressed-leg/receipt retention; core, so it survives a
+    # tombstoned inbox. Hourly in both schedulers.
+    ("canonical-messaging-retention", "apps.integrations.tasks_messaging.canonical_retention_task", 60),
+    ("messaging-credential-wipe", "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task", 24 * 60),
+    ("inventory-stock-snapshot", "apps.inventory.tasks.snapshot_stock_task", 24 * 60),
+    ("member-push-recovery", "apps.notifications.tasks.sweep_member_push", 5),
+    ("purge-deleted-accounts", "apps.accounts.tasks.purge_deleted_accounts_task", 24 * 60),
     ("subject-access-exports", "apps.data_export.subject_tasks.sweep_subject_exports_task", 60),
     ("reminder-sweep", "apps.operations.tasks_reminders.run_reminder_sweep_task", 5),
     ("platform-problem-checks", "apps.operations.tasks_platform.run_platform_problem_checks_task", 15),
@@ -181,6 +191,8 @@ if "devices" in settings.TOMBSTONED_APPS:
     SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".devices." not in task[1])
 if "presence" in settings.TOMBSTONED_APPS:
     SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".presence." not in task[1])
+if "notifications" in settings.TOMBSTONED_APPS:
+    SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".notifications." not in task[1])
 
 
 def _import_task(dotted_path):

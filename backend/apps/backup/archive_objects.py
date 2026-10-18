@@ -15,12 +15,33 @@ OBJECT_FIELD_NAMES = frozenset({
 })
 
 NON_OBJECT_KEY_FIELDS = frozenset({
+    # Sender/correlation identities are protected provider state, never S3 keys.
+    ("integrations.MakerspaceMessagingSettings", "sms_sender_key"),
+    ("integrations.MakerspaceMessagingSettings", "whatsapp_sender_key"),
+    ("integrations.MessagingDelivery", "event_key"),
+    ("integrations.MessagingDelivery", "sender_key"),
+    ("integrations.MessagingRecipientAlias", "sender_key"),
+    ("integrations.MessagingRecipientCorrelation", "sender_key"),
+    ("integrations.MessagingSenderIdentity", "sender_key"),
+    ("integrations.MessagingSuppression", "sender_key"),
+    ("integrations.MessagingWebhookEvent", "sender_key"),
+    # Canonical cutover sender bindings and receipt dedupe identities are provider
+    # correlation strings (deployment-local), never bucket locators.
+    ("integrations.ChannelConfiguration", "sender_key"),
+    ("integrations.MessagingConsent", "sender_key"),
+    ("integrations.NotificationCredentialVersion", "sender_key"),
+    ("integrations.NotificationDelivery", "sender_key"),
+    ("integrations.NotificationIngress", "dedupe_key"),
+    ("integrations.NotificationIngress", "sender_key"),
+    ("integrations.NotificationProviderReference", "sender_key"),
     # Notification intent and delivery-target identities, never bucket locators.
     ("integrations.NotificationEnvelope", "dedup_key"),
     ("integrations.NotificationDelivery", "target_key"),
     # UUID identifying one inbox fan-out, never a bucket locator.
     ("notifications.NotificationInboxRow", "event_key"),
     ("accounts.NativeAppRegistration", "verifier_config_key"),
+    # App Attest credential PEM, never an object-storage locator.
+    ("accounts.DeviceGrant", "attestation_public_key"),
     ("accounts.PlatformSocialAuthSettings", "apple_private_key"),
     ("audit.AuditMacKey", "wrapped_key"),
     ("audit.AuditSigningKey", "public_key"),
@@ -69,13 +90,16 @@ def object_closure():
     result = {"private": {}, "public_image": {}}
     for model in apps.get_models():
         # Receipt keys are deletion locators for objects that must NOT exist.
-        if model._meta.label == "evidence.EvidenceAbandonedUploadReceipt":
+        if model._meta.label in {"evidence.EvidenceAbandonedUploadReceipt", "accounts.AccountPurgeObject"}:
             continue
         collect_model_objects(model._default_manager.all(), model, result)
     return result
 
 
 def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
+    if model._meta.label == "accounts.AccountPurgeObject":
+        # A deletion journal is never a request to resurrect erased profile bytes.
+        return
     # Share the compound archive's field-specific bucket declarations. A public
     # gallery uses object_key too; field spelling alone cannot select its bucket.
     from .object_ownership_registry import FIELD_OBJECT_RULES

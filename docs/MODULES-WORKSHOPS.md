@@ -41,7 +41,8 @@ Required by `printing`.
   or by message; nothing records who ran what, on which machine, using how much material. `printing`
   cannot be installed while this is off.
 - **Data** — purgeable: service requests, queues, uploads, consumption ledgers and the usage entries they
-  produced. Consumable pools stay — they belong to `machines`.
+  produced, including recorded costs for those consumption sources. Consumable pools and
+  independent manual pool usage/costs stay — they belong to `machines`.
 
 ### printing
 
@@ -187,7 +188,11 @@ Required by the members-only events path. Bookings can run without this module.
 
 ### member_accounts
 
-Required by `mobile`.
+Required by `mobile`. Member, staff and platform are separate immutable account kinds; this
+key never converts a member into staff. Native staff use password/MFA/attestation with fixed
+tenant authority, while phone/social/OIDC native login is member-only and platform grants
+are forbidden. Member self-deletion, 90-day archive, identity-only restore and purge are
+independent of staff retirement and never operate on staff/platform accounts.
 
 - **What it is** — the member-facing identity ecosystem: self sign-up, and the built-in password, social
   and phone sign-in.
@@ -203,4 +208,3 @@ Required by `mobile`.
   are platform state.
 
 ---
-

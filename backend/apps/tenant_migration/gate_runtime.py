@@ -19,11 +19,14 @@ logger = logging.getLogger(__name__)
 def assert_write_allowed(makerspace_id):
     """Lock and validate in either a service transaction or a gate boundary."""
     makerspace_id = int(makerspace_id)
-    if transaction.get_connection().in_atomic_block:
-        acquire_shared(makerspace_id)
+    # A boundary already protects all application transactions through commit.
+    # Reacquiring on another connection can queue behind an exclusive waiter that
+    # is itself waiting for our boundary, so consult boundary ownership FIRST.
+    if makerspace_id in _boundary_shared_locks.get():
         _assert_gate_state(makerspace_id)
         return
-    if makerspace_id in _boundary_shared_locks.get():
+    if transaction.get_connection().in_atomic_block:
+        acquire_shared(makerspace_id)
         _assert_gate_state(makerspace_id)
         return
     # A direct non-transactional assertion is supported for boundary-style callers.
@@ -57,6 +60,10 @@ def _assert_gate_state(makerspace_id):
 def boundary_tenant_write(makerspace_id):
     """Validate under a dedicated lock transaction without transacting dispatch."""
     makerspace_id = int(makerspace_id)
+    if makerspace_id in _boundary_shared_locks.get():
+        assert_write_allowed(makerspace_id)
+        yield
+        return
     with shared_boundary(makerspace_id):
         token = _boundary_shared_locks.set(
             _boundary_shared_locks.get() + (makerspace_id,)

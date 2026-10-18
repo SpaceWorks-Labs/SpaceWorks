@@ -34,16 +34,43 @@ class AuthorityRegistryError(AssertionError):
 
 APPS_DIR = Path(project_apps.__file__).resolve().parent
 AUTHORIZATION_SOURCES = (
+    APPS_DIR / "accounts" / "surface_policy.py",
+    APPS_DIR / "accounts" / "credential_locks.py",
+    APPS_DIR / "accounts" / "session_issuance.py",
+    APPS_DIR / "accounts" / "services_staff_authority.py",
+    APPS_DIR / "organizations" / "governance.py",
+    APPS_DIR / "organizations" / "access.py",
+    APPS_DIR / "events" / "organizer_authority.py",
+    APPS_DIR / "events" / "series_authority.py",
+    APPS_DIR / "bookings" / "booking_authority_page.py",
+    APPS_DIR / "integrations" / "recipients_addressed.py",
+    APPS_DIR / "integrations" / "recipients_owners.py",
+    APPS_DIR / "integrations" / "notification_sources.py",
+    APPS_DIR / "integrations" / "dispatch_policy.py",
+    APPS_DIR / "integrations" / "messaging" / "eligibility.py",
+    APPS_DIR / "integrations" / "messaging" / "ties.py",
+    APPS_DIR / "integrations" / "messaging" / "consent.py",
     APPS_DIR / "accounts" / "staff_account_policy.py",
     APPS_DIR / "accounts" / "staff_account_services.py",
     APPS_DIR / "accounts" / "staff_account_lifecycle.py",
     APPS_DIR / "accounts" / "services_staff_invitations.py",
     APPS_DIR / "accounts" / "staff_invitation_acceptance.py",
+    APPS_DIR / "accounts" / "account_restore.py",
+    APPS_DIR / "accounts" / "account_restore_email.py",
+    APPS_DIR / "accounts" / "account_restore_phone.py",
+    APPS_DIR / "accounts" / "account_restore_social.py",
+    APPS_DIR / "accounts" / "account_deletion.py",
+    APPS_DIR / "accounts" / "account_deletion_blockers.py",
+    APPS_DIR / "accounts" / "account_obligations.py",
     APPS_DIR / "bookings" / "broadcasts.py",
     APPS_DIR / "bookings" / "communication_recipients.py",
     APPS_DIR / "bookings" / "reminder_delivery.py",
     APPS_DIR / "accounts" / "reauthentication.py",
     APPS_DIR / "accounts" / "reauthentication_intents.py",
+    APPS_DIR / "accounts" / "reauthentication_factors.py",
+    APPS_DIR / "accounts" / "reauthentication_providers.py",
+    APPS_DIR / "accounts" / "reauthentication_phone.py",
+    APPS_DIR / "accounts" / "reauthentication_methods.py",
     APPS_DIR / "accounts" / "reauthentication_control.py",
     APPS_DIR / "apiclients" / "read_contract.py",
     APPS_DIR / "apiclients" / "scope_registry_reads.py",
@@ -54,6 +81,7 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "events" / "report_subject.py",
     APPS_DIR / "integrations" / "broadcasts_delivery.py",
     APPS_DIR / "operations" / "report_subjects.py",
+    APPS_DIR / "operations" / "views_platform_tenant_reports.py",
     APPS_DIR / "events" / "event_authority.py",
     APPS_DIR / "events" / "event_authority_page.py",
     APPS_DIR / "events" / "staff_grant_locks.py",
@@ -87,6 +115,8 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "machines" / "access.py",
     APPS_DIR / "bookings" / "booking_authority.py",
 )
+from .authority_reconciliation import SOURCE_PATHS, AUTHORITY_FIELDS as RECONCILIATION_FIELDS
+AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in SOURCE_PATHS)
 SCANNED_MODEL_LABELS = frozenset({
     "makerspaces.MembershipAdditionalRole",
     "machines.MembershipMachineTypeScope",
@@ -100,6 +130,10 @@ SCANNED_MODEL_LABELS = frozenset({
 
 
 EXPLICIT_AUTHORITY_FIELDS = {
+    **RECONCILIATION_FIELDS,
+    ("makerspaces.MakerspaceMembership", "renewal_cancelled_at"): (
+        "Historical cancellation stops source renewal; target automation resets independently."
+    ),
     ("makerspaces.MembershipAdditionalRole", "membership"): "Dropped membership role authority.",
     ("makerspaces.MembershipAdditionalRole", "role"): "Dropped additional role authority.",
     ("makerspaces.MembershipAdditionalRole", "assigned_by"): "Dropped role assignment provenance.",

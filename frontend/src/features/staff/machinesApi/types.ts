@@ -78,6 +78,8 @@ export type MachineOperatorCandidate = {
 };
 
 export type MachineUsageEntry = {
+  member?: number | null;
+  started_at?: string | null;
   id: number;
   hours: string;
   source: string;

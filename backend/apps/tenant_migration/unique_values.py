@@ -21,6 +21,10 @@ from .unique_values_policy import (  # noqa: F401 -- re-exported
 # One mapping over every rule set; a per-app extension module adds its own dict here.
 DEPLOYMENT_GLOBAL_UNIQUE_RULES = {
     **CORE_UNIQUE_RULES,
+    ("integrations.WhatsAppTemplateBinding", "messaging_platform_template"): _policy(
+        UniqueValueDisposition.DROP_ROW,
+        "Global legacy provider bindings never travel or authorize target sending.",
+    ),
     ("presence.PresenceSession", "field:event_registration"): _policy(
         UniqueValueDisposition.DROP_ROW,
         "Live presence is source-local; its unique event attendance binding is dropped on import.",

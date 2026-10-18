@@ -7,9 +7,10 @@ from .report_request_contract import _export_format, _grain_param, _report_filte
 from .report_exports import _csv_response, _xlsx_response
 from .report_exports_provenance import actor_label, build_provenance, export_filters
 from .views_report_helpers import _date_range, _makerspace_for_report_view
+from .report_definitions_machines import MACHINE_REPORT_KEYS
 
 
-def _export_response(request, definition, makerspace_id):
+def _export_response(request, definition, makerspace_id, *, platform_context=None):
     """Build the file through the canonical row path and stamp its provenance.
 
     Every input the builder saw is echoed into the provenance filters, so a reader of the
@@ -19,7 +20,9 @@ def _export_response(request, definition, makerspace_id):
     local_space = None
     if makerspace_id is not None:
         local_space = _makerspace_for_report_view(request.user, makerspace_id, definition.key)
-    local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in {"member-retention", "membership-revenue"})
+    # Membership/money builders resolve calendar labels in each source space; machine
+    # builders still need makerspace-local ranges.
+    local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in MACHINE_REPORT_KEYS)
     date_range = _date_range(request, local_space if local_dates else None)
     report_filters = _report_filters(request, definition.key)
     grain = _grain_param(request, definition)
@@ -27,6 +30,7 @@ def _export_response(request, definition, makerspace_id):
         definition.key, makerspace_id, date_range=date_range,
         actor=request.user,
         report_filters=report_filters, grain=grain,
+        platform_context=platform_context,
     )
     provenance = build_provenance(
         definition.key, version=definition.version, makerspace_id=makerspace_id,

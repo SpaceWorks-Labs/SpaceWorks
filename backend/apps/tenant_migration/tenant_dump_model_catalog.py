@@ -96,7 +96,12 @@ PROJECTED_MODEL_LABELS |= P2_BOOKING_FIELDS.keys()
 from .catalog_profiles import EXPORTED_FIELDS as PROFILE_FIELDS
 PROJECTED_MODEL_LABELS |= PROFILE_FIELDS.keys()
 
+PROJECTED_MODEL_LABELS |= frozenset({"inventory.InventoryStockSnapshot", "machines.MachineStatusEvent", "machines.ConsumableCostRecord"})
+
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
+
+from .catalog_messaging import PROJECTED_LABELS as MESSAGING_PROJECTED_LABELS
+PROJECTED_MODEL_LABELS |= MESSAGING_PROJECTED_LABELS
 
 EXPLICIT_DROP_MODEL_REASONS = {
     "apiclients.ApiClient": "Source clients and their bearer secrets never become target authority.",

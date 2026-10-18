@@ -5,6 +5,9 @@ import hmac
 import time
 
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from apps.integrations.models_email import EmailLog
+from apps.integrations.models_tracking import EmailProviderEvent
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
@@ -24,6 +27,7 @@ from apps.tenant_migration.gate_runtime import tenant_write
 
 class BounceSerializer(serializers.Serializer):
     event_id = serializers.CharField(max_length=200)
+    message_id = serializers.CharField(max_length=255, required=False, allow_blank=False)
     address = serializers.EmailField(max_length=254)
     reason = serializers.ChoiceField(choices=('bounce', 'complaint'))
 
@@ -61,6 +65,19 @@ class BounceWebhookView(APIView):
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
         with tenant_write(space.pk):
+            _, fresh = EmailProviderEvent.objects.get_or_create(
+                makerspace=space, event_id=values['event_id'], defaults={'reason': values['reason']},
+            )
+            if not fresh:
+                return Response({'accepted': True})
+            if values.get('message_id'):
+                field = 'complained_at' if values['reason'] == 'complaint' else 'bounced_at'
+                EmailLog.objects.filter(
+                    makerspace=space, provider_message_id=values['message_id'],
+                    **{field + '__isnull': True},
+                ).update(**{field: timezone.now()})
+            audit.record(None, "email.provider_event_received", makerspace=space,
+                         meta={"reason": values["reason"]})
             row, created = rbac.scope_notification_policy(EmailSuppression.objects.all(), makerspace_id=space.pk).get_or_create(
                 makerspace=space, address_hash=address_hash(space.pk, values['address']),
                 defaults={'reason': values['reason']},

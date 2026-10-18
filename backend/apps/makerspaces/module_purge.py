@@ -20,6 +20,8 @@ The contract that makes it safe to offer at all:
   commit, best-effort: a failed S3 call must not roll back a completed purge.
 """
 
+from apps.integrations.notification_cutover import guarded
+
 import logging
 
 from django.conf import settings
@@ -39,6 +41,7 @@ def purgeable_modules():
     return [{"key": plan.key, "summary": plan.summary} for plan in PLANS]
 
 
+@guarded()
 def purge_module(makerspace, key, actor):
     """Delete one module's data for one makerspace. Returns the row counts."""
     plan = _resolve(makerspace, key, actor)

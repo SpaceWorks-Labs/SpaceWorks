@@ -130,6 +130,8 @@ _ROUTE_DEFINITIONS += wp4_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET
 
 from .scope_registry_p2_presence import routes as presence_routes
 _ROUTE_DEFINITIONS += presence_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
+from .scope_registry_messaging import definitions as messaging_denied_routes
+_ROUTE_DEFINITIONS += messaging_denied_routes()
 
 
 def _build_registry():

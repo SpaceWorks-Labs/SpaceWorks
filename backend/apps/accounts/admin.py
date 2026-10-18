@@ -273,13 +273,11 @@ class UserAdmin(StaffLifecycleAdminMixin, SuperuserOnlyModelAdmin, DjangoUserAdm
             )
 
 
-from apps.accounts.admin_native import NativeAppRegistrationAdmin  # noqa: E402,F401
-
-
 admin.site.unregister(Group)
 
 from apps.accounts import admin_claim, admin_social, admin_tokens  # noqa: E402,F401
-from apps.accounts import admin_password_reset  # noqa: E402,F401
+from apps.accounts import admin_password_reset, admin_attestation  # noqa: E402,F401
+from apps.accounts.admin_native_apps import NativeAppRegistrationAdmin  # noqa: E402,F401
 
 
 def _api_exception_message(exc):

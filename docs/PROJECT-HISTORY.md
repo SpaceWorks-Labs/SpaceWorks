@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-18 -- mobile/integration reconciliation.** Member/staff/platform account kinds retained;
+  native staff require password/MFA/attestation and fixed tenant; deletion/restore stay member-only.
+  Personal envelopes incorporate SMS, Twilio/Meta WhatsApp and mobile sender/consent/STOP/BSUID
+  protections. Push uses envelope-owned device children; reports read canonical/mapped history and
+  the frontend uses consolidated channels. The former Meta missing-module blocker is resolved.
+  Destructive integrations 0043 and sending activation remain held pending replay sign-off.
+
 - **2026-10-17 — account split.** Separate member/tenant-staff/platform identity, kind-bound auth and browser contexts, audited admin-issued staff lifecycle, shared chat binding and credential-free tenant staff transport; purge/backup shells preserve signed audit actors.
 
 - **2026-10-17 — personal notification delivery.** Transactional envelopes/outbox, encrypted
@@ -13,7 +20,7 @@
   email fallback; Telegram private /start linking and contract-token room sender, Slack/Mattermost/
   Discord OAuth adapters and Twilio WhatsApp. Phase 3 wires member JWT personal routes, authenticated
   actor/challenge-bound OAuth completion and environment-backed provider settings; Meta is registered/
-  mounted but its unregistered-module readiness gate remains in the delivery contract/coverage.
+  mounted; its then-missing module readiness gate was resolved in the 2026-10-18 reconciliation.
   Equipment/watch/certification and membership/ledger/API/device/operations sources reserve personal
   intents; maintenance/procurement barrels and member broadcasts now call those adapters. Catalog
   strings and stocktake/first-failure inbox dedup landed; same-booking-owner contact mail and narrowly

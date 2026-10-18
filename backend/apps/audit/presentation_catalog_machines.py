@@ -7,6 +7,7 @@ text, secrets, object keys or before/after payloads)."""
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P("consumable.cost_recorded", "Consumable cost recorded"),
     P("certification.granted", "Certification granted"),
     P("certification.override", "Certification override", ("certification_type_id",)),
     P("certification.revoked", "Certification revoked",

@@ -7,6 +7,7 @@ text, secrets, object keys or before/after payloads)."""
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P("inventory.stock_observed", "Inventory stock observed"),
     P("asset.issued", "Asset issued",
       ("qr_id", "request_id", "request_item_id"), request_refs=("request_id",)),
     P("asset_units.generated", "Asset units generated", ("count",)),

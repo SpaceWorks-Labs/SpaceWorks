@@ -19,6 +19,8 @@ class MachinePublicitySerializer(serializers.Serializer):
 
 
 class LogUsageSerializer(serializers.Serializer):
+    member = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    started_at = serializers.DateTimeField(required=False, allow_null=True)
     hours = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,

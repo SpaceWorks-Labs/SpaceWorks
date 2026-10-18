@@ -58,6 +58,12 @@ class ScopedPiiModelMixin(models.Model):
                     cache = self.__dict__.get(cache_name)
                     if cache is not None:
                         cache.pop(name, None)
+                # ORM hydration assigns fields while _state.adding is True.
+                # Later explicit assignments are fresh plaintext, not legacy DB
+                # values. Concrete save() methods must be able to normalize and
+                # validate them before this mixin encrypts the write.
+                if not self._state.adding and not is_envelope(value):
+                    self.__dict__.setdefault("_pii_plain_values", {})[name] = value
         super().__setattr__(name, value)
 
     def __getattribute__(self, name):
@@ -91,11 +97,20 @@ class ScopedPiiModelMixin(models.Model):
         self.__dict__.setdefault("_pii_original_plain_values", {})[name] = decrypted
         return decrypted
 
-    def refresh_from_db(self, *args, **kwargs):
-        result = super().refresh_from_db(*args, **kwargs)
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        fields = None if fields is None else list(fields)
+        # Django copies attributes from a freshly hydrated instance. Mapped
+        # attributes are authenticated/decrypted on that read, then __setattr__
+        # caches the fresh plaintext here. Clear stale entries BEFORE that copy;
+        # clearing afterwards makes strict reads reject these verified values.
         for cache_name in ("_pii_plain_values", "_pii_raw_values", "_pii_original_plain_values"):
-            self.__dict__.pop(cache_name, None)
-        return result
+            if fields is None:
+                self.__dict__.pop(cache_name, None)
+            else:
+                cache = self.__dict__.get(cache_name, {})
+                for name in fields:
+                    cache.pop(name, None)
+        return super().refresh_from_db(using=using, fields=fields, **kwargs)
 
     def _reserve_pk(self):
         pk_field = self._meta.pk

@@ -6,12 +6,13 @@ import { useSaveChannel, type Channel, type ChannelWrite, type ProviderKey, type
 import { WhatsAppTemplatesEditor } from "./WhatsAppTemplatesEditor";
 import { SlackInstallation } from "./SlackInstallation";
 import { WhatsAppApprovalRefresh } from "./WhatsAppApprovalRefresh";
+import { ChannelCallbackURLs } from "./ChannelCallbackURLs";
 
 type Props = { makerspaceId: number; spec: ChannelSpec; row?: Channel; moduleInstalled: boolean };
 
 const sameQuotas = (a: Quotas, b: Quotas) => a.daily_limit === b.daily_limit && a.recipient_daily_limit === b.recipient_daily_limit;
 const sameTemplates = (a: WhatsAppTemplate[], b: WhatsAppTemplate[]) => JSON.stringify(a.map(strip)) === JSON.stringify(b.map(strip));
-const strip = ({ event, audience, locale, template_name, variables }: WhatsAppTemplate) => ({ event, audience, locale, template_name, variables });
+const strip = ({ feature, event, audience, locale, template_name, variables }: WhatsAppTemplate) => ({ ...(feature ? { feature } : {}), event, audience, locale, template_name, variables });
 
 /**
  * One channel's settings, saved together with an explicit Save. The PATCH sends only what
@@ -23,22 +24,28 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
   const [draft, setDraft] = useState<Channel>(initial);
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [problem, setProblem] = useState("");
+  const [clearCredentials, setClearCredentials] = useState(false);
   const save = useSaveChannel(makerspaceId, spec.key);
   const provider = providerSpec(spec, draft.provider);
   const set = (patch: Partial<Channel>) => { setDraft(current => ({ ...current, ...patch })); setProblem(""); };
   const typed = Object.values(secrets).some(Boolean);
-  const rotates = draft.provider !== initial.provider || draft.integration_identity !== initial.integration_identity || typed;
+  const addressed = spec.key === "sms" || spec.key === "whatsapp";
+  const rotates = draft.provider !== initial.provider || draft.integration_identity !== initial.integration_identity || typed
+    || clearCredentials || Boolean(draft.use_platform_sender) !== Boolean(initial.use_platform_sender);
   const chat = spec.providers.some(item => item.identityLabel || item.derivedIdentity || item.installation);
 
   function submit() {
     const missing = provider.credentials.filter(field => !field.optional && !secrets[field.key]?.trim());
     if (typed && provider.identityCredential && !draft.integration_identity.trim()) missing.push({ key: provider.identityCredential, label: provider.identityLabel ?? "Identity" });
     if (typed && missing.length) return setProblem(`Enter every required credential to replace them: ${missing.map(field => field.label).join(", ")}.`);
-    if (draft.personal_enabled && chat && !draft.integration_identity.trim() && !(typed && provider.derivedIdentity))
+    if (draft.personal_enabled && chat && !draft.integration_identity.trim() && !(typed && provider.derivedIdentity) && !draft.use_platform_sender)
       return setProblem(provider.installation ? "Install the Slack app before turning on personal messages."
         : provider.derivedIdentity ? "Enter every required credential before turning on personal messages."
         : `Enter the ${provider.identityLabel?.toLowerCase()} before turning on personal messages.`);
     const body: ChannelWrite = { enabled: draft.enabled, personal_enabled: draft.personal_enabled };
+    if (addressed && Boolean(draft.use_platform_sender) !== Boolean(initial.use_platform_sender)) body.use_platform_sender = Boolean(draft.use_platform_sender);
+    if (addressed && Boolean(draft.activation_hold) !== Boolean(initial.activation_hold)) body.activation_hold = Boolean(draft.activation_hold);
+    if (clearCredentials && !typed) body.credentials = {};
     if (spec.rooms) body.room_enabled = draft.room_enabled;
     if (spec.key === "email") body.email_fallback = draft.email_fallback;
     // A new row is created with the server's default provider, so a non-default choice is sent.
@@ -54,7 +61,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
     }
     if (!sameQuotas(draft.quotas, initial.quotas)) body.quotas = Object.fromEntries(Object.entries(draft.quotas).filter(([, value]) => value)) as Quotas;
     if (spec.key === "whatsapp" && !sameTemplates(draft.templates, initial.templates)) body.templates = draft.templates.map(strip);
-    save.mutate(body, { onSuccess: saved => { setDraft(saved); setSecrets({}); } });
+    save.mutate(body, { onSuccess: saved => { setDraft(saved); setSecrets({}); setClearCredentials(false); } });
   }
 
   const toggle = (key: "enabled" | "room_enabled" | "personal_enabled" | "email_fallback", label: string, helper: string) =>
@@ -74,6 +81,17 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
       {toggle("personal_enabled", "Personal messages", spec.key === "email" ? "Send people their own messages by email." : `Let staff and members receive their own messages on ${spec.label}.`)}
       {spec.key === "email" ? toggle("email_fallback", "Email fallback", "Email a person when none of the channels they chose could deliver.") : null}
     </fieldset>
+    {addressed ? <fieldset className="grid gap-2 rounded-lg border border-line p-3"><legend className="px-1 text-sm font-semibold">Sender</legend>
+      <p className="text-sm text-muted">Saved own credentials take precedence. Incomplete own settings refuse delivery; they never fall back to a platform sender.</p>
+      {spec.key === "sms" || draft.provider === "meta" ? <label className="flex min-h-11 items-center gap-2 text-sm">
+        <input type="checkbox" checked={Boolean(draft.use_platform_sender)} disabled={save.isPending}
+          onChange={event => set({ use_platform_sender: event.target.checked })} />Allow the operator's platform sender
+      </label> : null}
+      {initial.credentials_set ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={clearCredentials} disabled={save.isPending || typed}
+        onChange={event => setClearCredentials(event.target.checked)} />Remove saved own credentials on save</label> : null}
+      {initial.activation_hold ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={!draft.activation_hold} disabled={save.isPending}
+        onChange={event => set({ activation_hold: !event.target.checked })} />I reviewed the imported sender configuration; release its hold on save</label> : null}
+    </fieldset> : null}
     {spec.providers.length > 1 ? <Field label="Provider"><select className="desk-input" value={draft.provider} disabled={save.isPending}
       onChange={event => { set({ provider: event.target.value as ProviderKey }); setSecrets({}); }}>
       {spec.providers.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></Field> : null}
@@ -90,6 +108,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
           disabled={save.isPending} onChange={event => { setSecrets(current => ({ ...current, [field.key]: event.target.value })); setProblem(""); }} />
       </Field>)}
     </fieldset> : null}
+    {addressed ? <ChannelCallbackURLs urls={save.data?.callback_urls ?? row?.callback_urls} /> : null}
     {provider.installation ? <SlackInstallation makerspaceId={makerspaceId} configured={draft.credentials_set} /> : null}
     {spec.key !== "email" && spec.key !== "native_push" ? <div className="grid gap-3 sm:grid-cols-2">
       {(["daily_limit", "recipient_daily_limit"] as const).map(key => <Field key={key} label={key === "daily_limit" ? "Messages per day (optional)" : "Messages per person per day (optional)"}>

@@ -1,14 +1,17 @@
-import { staffRequest } from "../../lib/api";
+import { memberRequest, staffRequest } from "../../lib/api";
 import type { ReauthenticationResult } from "./reauthenticationApi";
 
 type Started = { authorization_url: string; state: string; nonce: string; expires_in: number };
 
-export async function reauthenticateSocial(provider: string): Promise<ReauthenticationResult> {
+export const reauthenticateSocial = (provider: string) => runSocialReauthentication(provider, staffRequest);
+export const reauthenticateMemberSocial = (provider: string) => runSocialReauthentication(provider, memberRequest);
+
+async function runSocialReauthentication(provider: string, request: typeof staffRequest): Promise<ReauthenticationResult> {
   // Open synchronously from the user's click so the browser permits the popup.
   const popup = window.open("about:blank", "spaceworks-reauth", "popup,width=600,height=750");
   if (!popup) throw new Error("Allow the identity-provider popup to verify this browser session.");
   try {
-    const started = await staffRequest<Started>("/auth/reauth/social/start", {
+    const started = await request<Started>("/auth/reauth/social/start", {
       method: "POST", body: JSON.stringify({ provider, redirect_uri: `${window.location.origin}/reauth/callback` }),
     });
     popup.location.href = started.authorization_url;
@@ -33,6 +36,6 @@ export async function reauthenticateSocial(provider: string): Promise<Reauthenti
         } catch { /* The provider's cross-origin page remains inaccessible until it returns. */ }
       }, 250);
     });
-    return await staffRequest<ReauthenticationResult>("/auth/reauth/social/complete", { method: "POST", body: JSON.stringify(result) });
+    return await request<ReauthenticationResult>("/auth/reauth/social/complete", { method: "POST", body: JSON.stringify(result) });
   } finally { popup.close(); }
 }

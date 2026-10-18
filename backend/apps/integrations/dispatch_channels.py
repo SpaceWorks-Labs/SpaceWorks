@@ -1,5 +1,6 @@
 import logging
 import re
+from uuid import uuid4
 
 from django.db import transaction
 from django.utils import timezone
@@ -120,7 +121,7 @@ def dispatch_channel(
     specific room rather than to "Slack". Quota is charged per row, because N rooms is N
     real sends and that is what costs.
     """
-    if channel not in NonEmailNotificationChannel.values:
+    if channel in {"sms", "whatsapp"} or channel not in NonEmailNotificationChannel.values:
         raise ValueError(f"Unsupported notification channel: {channel}")
     if channel == NonEmailNotificationChannel.WHATSAPP:
         raise ValueError("WhatsApp requires an explicit personal envelope")
@@ -128,6 +129,8 @@ def dispatch_channel(
     # Push resolves its recipients at delivery time, so the alert's subject has to travel
     # on the row or a narrowed recipient rule would match nothing by then.
     stored_payload = dict(payload or {})
+    if channel == NonEmailNotificationChannel.NATIVE_PUSH:
+        stored_payload.setdefault("event_key", str(uuid4()))
     if scope is not None and hasattr(scope, "as_dict"):
         stored_payload["scope"] = scope.as_dict()
 

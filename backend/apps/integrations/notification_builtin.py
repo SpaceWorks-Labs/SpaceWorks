@@ -1,6 +1,4 @@
 """Reuse mail/inbox/push transports with an explicit personal audience."""
-from uuid import NAMESPACE_URL, uuid5
-
 from .notification_providers import ProviderResult
 
 
@@ -29,44 +27,26 @@ def send_builtin(delivery, rendered):
         return ProviderResult(log.status == "sent", f"email:{log.pk}",
                               retryable=log.status == "failed", error_code="provider_error")
     if delivery.channel == "in_app":
-        from apps.notifications.models_inbox import NotificationInboxRow
-        from apps.notifications.inbox import safe_link
-        row, _ = NotificationInboxRow.objects.get_or_create(makerspace=envelope.makerspace,
-            user_id=envelope.recipient_id, event_key=uuid5(NAMESPACE_URL, envelope.dedup_key),
-            defaults={"feature": envelope.feature, "event": envelope.event,
-                      "title": rendered.get("subject", "Space Works")[:200],
-                      "summary": rendered.get("text", "")[:2000], "link": safe_link(rendered.get("link", ""))})
+        from apps.notifications.inbox import write_envelope_inbox
+        row = write_envelope_inbox(envelope, rendered)
         return ProviderResult(True, f"inbox:{row.pk}")
     if delivery.channel == "native_push":
         return _push(delivery, rendered)
     return ProviderResult(False, error_code="not_configured")
 
 
+_native_push_sender = None
+
+
+def register_native_push_sender(sender):
+    """P registers its per-device lease adapter from AppConfig.ready()."""
+    global _native_push_sender
+    if _native_push_sender is not None and _native_push_sender is not sender:
+        raise ValueError("Duplicate native-push envelope adapter")
+    _native_push_sender = sender
+
+
 def _push(delivery, rendered):
-    from django.utils import timezone
-    from .models_push import PlatformPushSettings, PushDevice
-    from .push_fcm import PushProviderError, send_fcm
-    from .push_apns import send_apns
-    config = PlatformPushSettings.load()
-    devices = PushDevice.objects.filter(makerspace=delivery.makerspace,
-        user_id=delivery.envelope.recipient_id, active=True, device_grant__status="active")
-    sent, failed = 0, False
-    for device in devices:
-        try:
-            data = {"feature": delivery.envelope.feature, "event": delivery.envelope.event}
-            if device.provider == "fcm" and config.fcm_configured:
-                send_fcm(config, device.get_token(), "Space Works", rendered.get("text", "")[:300], data)
-            elif device.provider == "apns" and config.apns_configured:
-                send_apns(config, device.get_token(), device.environment, "Space Works", rendered.get("text", "")[:300], data)
-            else:
-                continue
-            sent += 1
-        except PushProviderError as exc:
-            if exc.invalid_token:
-                PushDevice.objects.filter(pk=device.pk).update(active=False, invalidated_at=timezone.now())
-            else:
-                failed = True
-        except Exception:
-            failed = True
-    return ProviderResult(sent > 0 and not failed, retryable=failed,
-                          error_code="provider_error" if failed else "not_configured")
+    if _native_push_sender is None:
+        return ProviderResult(False, error_code="not_configured")
+    return _native_push_sender(delivery, rendered)

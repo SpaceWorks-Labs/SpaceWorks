@@ -1,16 +1,18 @@
 # Notification coverage after Phase 3 wiring
 
 This is the complete trigger inventory from `audit-spec-notify.out.txt` (2026-10-16).
-Checked against the merged producers and source registrations in `3fd2c82e` on 2026-10-17.
+Updated for the 2026-10-18 reconciliation source contracts; runtime/provider verification remains
+with the orchestrator. The original inventory date does not establish current rollout success.
 **TRUE means the stated producer/adapter is wired, not a runtime/provider test result.**
 PARTIAL names a remaining part of the target; RETAINED means the existing intentional path.
 All personal rows remain subject to the [integration limits](notification-contract.md#integration-limits-in-this-tree).
-Member-token admission and authenticated OAuth completion/settings are wired; Meta is registered/mounted
-but retains a blocking readiness gate. The existing lifecycle dispatcher remains compatible through
-legacy envelopes.
+Member-token admission and authenticated OAuth completion/settings are wired. Meta and Twilio
+WhatsApp providers and the whatsapp module are registered; the former missing-module blocker is
+resolved. Sending remains paused until the independent conversion/replay/activation checkpoints
+in [the rollout guide](notification-reconciliation-rollout.md). The old addressed send loop is inert.
 
 Personal = every selected and eligible medium: email, in-app,
-native push, Telegram, Slack, Mattermost, Discord, WhatsApp (Twilio or Meta).
+native push, SMS (Twilio), Telegram, Slack, Mattermost, Discord, WhatsApp (Twilio or Meta).
 Chat endpoints require verification and consent; narrow legacy email allowances are recorded below.
 Email fallback requires tenant and recipient permission and no unsubscribe. Native push
 also requires an active device grant. Unconfigured channels never become recipients.
@@ -24,7 +26,7 @@ payment and loan owners do not acquire a universal membership requirement.
 
 | Trigger from audit | Target audience | Channels / obligation | Code status (2026-10-17) |
 |---|---|---|---|
-| Hardware `submitted`, `accepted`, `rejected`, `issued`, `partially_returned`, `returned`, `closed_with_issue` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes; closed_with_issue bypasses personal email opt-out, but requires the email module | TRUE — request/staff/owner sources + guarded rooms; equipment email-policy limits [H] |
+| Hardware `submitted`, `accepted`, `rejected`, `issued`, `partially_returned`, `returned`, `closed_with_issue` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes; closed_with_issue bypasses personal email opt-out, but requires the email module | TRUE -- request/staff/owner sources + guarded rooms and shared equipment email-policy/render hooks [H] |
 | Legacy overdue `return_reminder`, for spaces without a loan policy | Borrower/custodian; scoped staff for staff variants only | Mandatory email remains independent of selected personal chat; preserve suppression, module exemptions and never-deferred policy | TRUE — mandatory-email reminder producer; same-owner verified-contact compatibility leg [H] |
 | Loan-policy ladder: advance/due/overdue borrower `return_reminder` | Borrower/custodian; scoped staff for staff variants only | Mandatory email remains independent of selected personal chat; preserve suppression, module exemptions and never-deferred policy | TRUE — revision-bound ladder intents; mandatory email plus selection [H] |
 | Loan-policy `overdue_escalated` | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — staff escalation source and scoped rooms [H] |
@@ -34,7 +36,7 @@ payment and loan owners do not acquire a universal membership requirement.
 | Printer service `submitted`, `accepted`, `started`, `rejected`, `completed` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — service source + owner/staff envelopes [H] |
 | Printer service `failed`, `collected` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — service terminal-edge sources [H] |
 | Printer reprint creation | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — reprinted service edge [H] |
-| Non-printer machine service `submitted`, `accepted`, `rejected`, `started`, `completed`, `failed`, `collected` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | PARTIAL — producer wired; shared printing-module gate still refuses printing-off installs [H] |
+| Non-printer machine service `submitted`, `accepted`, `rejected`, `started`, `completed`, `failed`, `collected` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE -- source-backed producer and machine_service-specific module override [H] |
 | Maintenance `schedule_created`, `schedule_updated`, `schedule_deactivated`, `logged`, `schedule_completed` | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — compatibility barrel delegates to the source-backed adapter [H] |
 | Maintenance calendar `due_soon`, `overdue` | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — calendar reaches the adapter through the maintenance barrel [H] |
 | Usage-meter maintenance threshold | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — meter reaches the adapter through the maintenance barrel [H] |
@@ -83,7 +85,7 @@ payment and loan owners do not acquire a universal membership requirement.
 | Email-verification OTP | Mailbox owner | Platform email only; synchronous/redacted authentication proof; never reroute | RETAINED — synchronous/redacted platform email [C] |
 | Authenticator-enrollment email confirmation | Mailbox owner | Platform email only; synchronous/redacted authentication proof; never reroute | RETAINED — email-only authentication proof [C] |
 | Phone login/link OTP | Phone owner | Existing platform authentication SMS only; separate from WhatsApp consent | RETAINED — existing SMS authentication [C] |
-| Delivery tests | Space Manager / own verified endpoint or selected staff room | Provider.test diagnostics, including both WhatsApp providers; no member data in body | PARTIAL — both factories registered; Meta readiness still requires an unregistered module [C] |
+| Delivery tests | Space Manager / own verified endpoint or selected staff room | Provider.test diagnostics, including both WhatsApp providers; no member data in body | PARTIAL -- both factories/module registered; cutover activation held, staff SMS consent path unavailable [C] |
 | Platform problem-check beat task | Operators | Cache/dashboard remains intentional; no notification trigger added | RETAINED — cache/dashboard, no new trigger [O] |
 
 Five module exemptions stay exactly `(account,password_reset)`, `(account,email_verification)`,
@@ -107,14 +109,16 @@ other room summaries retain legacy retry policy. Registration alone does not wir
 
 Presence adds a separate TRUE producer: `presence/notifications.py` emits `presence.expiry` at
 expiry, default in-app/native push, no email fallback. Revision/new-session checks and the ten-minute
-window suppress stale prompts. The catalog has the event, but the feature enum/editor lacks it.
+window suppress stale prompts. The catalog and feature choice union include PRESENCE; new source/standing checks retain
+member-account boundaries. It has no room delivery.
 
 Code ownership for the status column (all paths under `backend/apps/`):
 
 - **[H] Equipment:** `hardware_requests/notifications_p2*.py`, `inventory/notifications_p2.py`,
   `machines/notifications_p2_{service,certifications,maintenance,stock}.py`; actual barrel/callers
   are indexed in [SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). Maintenance/procurement
-  barrels now delegate; shared generic-machine/email limits remain. `hardware.owner_mailbox`
+  barrels now delegate; machine_service/stocktake/core-inventory source overrides resolve
+  selective installs. Equipment email hooks participate in the shared resolver/mail path. `hardware.owner_mailbox`
   preserves the owner's same verified contact mailbox separately from the shared resolver.
 - **[E] Events:** `events/notifications.py`, `notification_envelopes.py`, `notification_sources.py`,
   `broadcast_channels.py`, `reminders.py` and `services_certificates.py`. Staff in-app/push and
@@ -137,6 +141,6 @@ Code ownership for the status column (all paths under `backend/apps/`):
 - **[C] Contract:** `integrations/notification_{outbox,resolution,delivery,digest,proofs}.py`,
   `notification_api_*.py`, provider registration in `integrations/apps.py` and mounts in `urls.py`.
   `notification_catalog.py` now lists problem_report.filed, membership joined/verified/invitation/
-  vouched, document_issued, subdomain/report/email-failure and stocktake events. Presence remains
-  absent from the feature enum/editor. `notification_resolution.legacy_staff_email_allowed`
+  vouched, document_issued, subdomain/report/email-failure and stocktake events. PRESENCE is
+  included in the reconciled feature choices. `notification_resolution.legacy_staff_email_allowed`
   narrowly preserves operational unverified staff email, never campaigns or requester/member mail.

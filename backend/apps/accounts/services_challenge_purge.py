@@ -47,6 +47,21 @@ def purge_spent_challenges(*, retention=RETENTION):
     now = timezone.now()
     cutoff = now - retention
     deleted = {}
+    # Provider recovery stores an encrypted PKCE verifier and an optional app
+    # anchor. Expired proofs have no authority and follow auth-state retention.
+    from apps.accounts.models_account_restore import AccountRestoreIntent
+    label = AccountRestoreIntent._meta.label
+    try:
+        from django.db import transaction
+        from apps.audit.services import record
+        with transaction.atomic():
+            count, _ = AccountRestoreIntent.objects.filter(expires_at__lt=cutoff).delete()
+            if count:
+                record(None, "auth.account_restore_intents_purged", meta={"count": count})
+        deleted[label] = count
+    except Exception:
+        logger.exception("auth_challenge_purge_failed", extra={"model": label})
+        deleted[label] = 0
     for model in (EmailVerificationChallenge, PhoneVerificationChallenge, MFAChallenge):
         label = model._meta.label
         spent = _spent(now) if model is not MFAChallenge else (

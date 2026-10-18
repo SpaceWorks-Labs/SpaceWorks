@@ -2,19 +2,20 @@
 from datetime import timedelta
 
 from django.utils import timezone
+from rest_framework.exceptions import APIException
 
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource, register_source
 from .models import PresenceSession
-from .policy import require_enabled
+from .policy import require_account
 
 KIND = "presence.expiry"
 
 
 def eligible(envelope):
     try:
-        require_enabled(envelope.makerspace)
-    except Exception:
+        require_account(envelope.recipient, envelope.makerspace)
+    except APIException:
         return False
     row = PresenceSession.objects.filter(pk=envelope.source_id, makerspace_id=envelope.makerspace_id,
         account_id=envelope.recipient_id, revision=envelope.revision,

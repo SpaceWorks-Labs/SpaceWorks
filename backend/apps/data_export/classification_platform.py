@@ -15,8 +15,15 @@ GLOBAL_MODELS = {
 }
 
 OMITTED_MODELS = {
+    "accounts.AccountRestoreIntent": "Deployment-local single-use account recovery proof; never portable authority.",
+    "accounts.AccountPurgeProgress": "Source-deployment erasure progress; target resumes from User deletion timestamps.",
+    "accounts.AccountPurgeObject": "Source object deletion and quota journal; source keys never authorize target cleanup.",
+    "accounts.AppleRefreshCredential": "Encrypted platform Apple refresh credential; never portable.",
+    "accounts.AppleRevocation": "Source Apple credential revocation work; never target authority.",
+    "accounts.PlatformAttestationSettings": "Platform attestation credentials; never tenant data.",
     "accounts.ReauthenticationSession": "Deployment-local browser step-up proof; never tenant authority.",
     "notifications.NotificationInboxRow": "Short-lived personal delivery text and read telemetry; target inbox starts empty.",
+    "notifications.MemberPushDelivery": "Per-device telemetry owned through envelope_delivery.makerspace and its envelope recipient; optional inbox linkage grants no authority and all push rows are omitted on the target.",
     "integrations.EmailSuppression": "Deployment-keyed address suppression must be re-established on the target.",
     "makerspaces.SpacePackProfile": "Deployment-global configuration preset, never tenant-owned or tenant authority.",
     "accounts.UserMFA": "Platform MFA credentials never become target authority.",
@@ -56,7 +63,7 @@ OMITTED_MODELS = {
     # digest and a credential fingerprint. Transient authentication state, and global
     # rather than tenant data.
     "accounts.PasswordResetEnvelope": "Transient authentication state, including context, tenant, origin and credential generation; never portable.",
-    "accounts.PhoneVerificationChallenge": "Transient authentication state.",
+    "accounts.PhoneVerificationChallenge": "Transient OTP and attestation binding; never portable authentication authority.",
     "accounts.PlatformLoginMethods": "Platform identity configuration.",
     "accounts.PlatformSocialAuthSettings": "Platform credentials and identity configuration.",
     "accounts.SocialIdentity": "Verified platform login identity.",

@@ -193,6 +193,15 @@ DATASET_SPECS.update(EVENT_DATASET_SPECS)
 from apps.tenant_migration.catalog_p2_bookings import DATASETS as P2_BOOKING_DATASETS
 DATASET_SPECS.update({label: (path, P(paths)) for label, (path, paths) in P2_BOOKING_DATASETS.items()})
 
+DATASET_SPECS.update({
+    "inventory.InventoryStockSnapshot": ("inventory/stock_snapshots.csv", P(("makerspace",), ("product__makerspace",))),
+    "machines.MachineStatusEvent": ("machines/status_events.csv", P(("makerspace",), ("machine__makerspace",))),
+    "machines.ConsumableCostRecord": ("machines/consumable_costs.csv", P(("makerspace",))),
+})
+DATASET_SPECS.update({
+    "integrations.WhatsAppTemplateBinding": ("messaging/whatsapp_templates.csv", P(("makerspace",))),
+    "integrations.MessagingConsent": ("messaging/consents.csv", P(("makerspace",))),
+})
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs
 DATASET_SPECS.update(wp3_dataset_specs(P))

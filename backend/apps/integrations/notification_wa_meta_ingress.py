@@ -1,69 +1,29 @@
-"""Apply each authenticated batch item under the tenant gate and generation lock."""
-import logging
+"""Compatibility journal adapter and canonical transient-failure replay helper."""
 from datetime import timedelta
-from types import SimpleNamespace
 
-from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts import rbac
 from apps.audit import services as audit
-from apps.encryption.write_fence import assert_mapped_write_allowed
-from apps.makerspaces.platform import module_enabled
-from apps.tenant_migration.gate_runtime import tenant_write
 from .models_contract import NotificationDelivery
-from .models_endpoints import ChannelConfiguration, NotificationEndpoint
-from .notification_proofs import verified_callback
 from .notification_delivery import MAX_ATTEMPTS, apply_callback
 from .notification_providers import CallbackEvent
-from .notification_wa_meta_callbacks import callback_event, destination, destination_digest
 from .notification_wa_meta_http import error_result
-from .notification_wa_window import inbound_time
-
-logger = logging.getLogger(__name__)
+from .notification_cutover import guarded
 
 
 def apply_item(configuration, request, index, item):
-    proxy = SimpleNamespace(body=request.body, headers=request.headers,
-        meta_route_kwargs=request.parser_context["kwargs"], meta_item_index=index)
-    with tenant_write(configuration.makerspace_id), transaction.atomic():
-        assert_mapped_write_allowed(configuration.makerspace_id)
-        current = rbac.scope_notification_policy(ChannelConfiguration.objects.select_for_update(),
-            makerspace_id=configuration.makerspace_id).get(pk=configuration.pk)
-        if current.generation != configuration.generation or current.provider != "meta":
-            return
-        event = callback_event(current, proxy)
-        if event is None:
-            return
-        if event.proof and not module_enabled(current.makerspace, "notifications"):
-            return
-        try:
-            # Re-verifies the original signature through the registered factory.
-            result = verified_callback(current, proxy)
-        except ValidationError:
-            # Expired, replayed, or sender-mismatched proof: acknowledge without PII.
-            logger.info("notification.meta_proof_refused", extra={"configuration_id": current.pk})
-            return
-        kind, row = item
-        if kind == "statuses" and event.state == "retrying":
-            result = _retry_failure(current, row, event)
-        if kind == "statuses" and result:
-            _delivery_audit(current, row)
-        if event.opt_in and result:
-            audit.record(None, "notification.whatsapp_inbound", makerspace=current.makerspace,
-                target=current, meta={"channel": "whatsapp", "generation": current.generation})
-        if kind == "messages" and not event.opt_out:
-            from .notification_destination_events import live_destination
-            identity = destination_digest(current, destination(row.get("from")))
-            moment = inbound_time(row.get("timestamp"))
-            if identity and moment:
-                endpoints = list(live_destination(current, identity).select_for_update().order_by("pk"))
-                for endpoint in endpoints:
-                    if endpoint.last_inbound_at is None or endpoint.last_inbound_at < moment:
-                        NotificationEndpoint.objects.filter(pk=endpoint.pk).update(last_inbound_at=moment)
-                        audit.record(None, "notification.whatsapp_inbound", makerspace=current.makerspace,
-                            target=endpoint, meta={"channel": "whatsapp", "generation": current.generation})
+    """Compatibility import seam; there is no synchronous alternative writer."""
+    from .notification_wa_meta_callbacks import items, verified_payload
+    from .notification_wa_journal import accept_meta_item
+    payload = verified_payload(configuration, request)
+    if payload is None:
+        raise ValidationError({"proof": "Provider verification failed."})
+    batch = items(configuration, payload)
+    if type(index) is not int or not 0 <= index < len(batch) or batch[index] != item:
+        raise ValidationError({"proof": "Invalid authenticated batch item."})
+    return accept_meta_item(configuration, request, index, item)
 
 
 def _delivery_rows(configuration, row):
@@ -73,6 +33,7 @@ def _delivery_rows(configuration, row):
         provider_id=row["id"])
 
 
+@guarded(mutation=True)
 def _retry_failure(configuration, row, event):
     """No premature email fallback on an authenticated transient failure callback."""
     changed = False
@@ -85,10 +46,11 @@ def _retry_failure(configuration, row, event):
             continue
         if delivery.provider_id and delivery.provider_id != row["id"]:
             continue
-        if delivery.state not in {"accepted", "sent"} and not (delivery.state == "retrying" and delivery.claim_until):
+        if delivery.state not in {"accepted", "sent", "held"} and not (delivery.state == "retrying" and delivery.claim_until):
             continue
         if delivery.attempt_count >= MAX_ATTEMPTS:
-            changed = apply_callback(configuration, CallbackEvent(provider_id=row["id"], state="failed", delivery_id=delivery.pk)) or changed
+            changed = apply_callback(configuration, CallbackEvent(provider_id=row["id"], state="failed",
+                delivery_id=delivery.pk, provider_timestamp=event.provider_timestamp)) or changed
             continue
         error = row["errors"][0]
         delivery.state, delivery.retryable = "retrying", True

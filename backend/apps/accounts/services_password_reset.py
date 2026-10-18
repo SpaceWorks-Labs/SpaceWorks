@@ -66,6 +66,12 @@ def request_password_reset(email, *, context="member", makerspace=None, origin="
         if context != "member" and (not mail_available(context) or not recoverable(
                 user, context=context, makerspace=makerspace, origin=origin)):
             user = None
+        if context == "member" and user:
+            from apps.accounts.account_restore import recovery_eligible, restorable
+            if not (user.account_kind == "member" and recovery_eligible(user)
+                    and user.email and (restorable(user, now=requested_at)
+                    or user.is_active and user.deletion_requested_at is None)):
+                user = None
         if user:
             normalized = normalize_email(user.email)
         envelope, created = _lock_or_create(user, normalized, requested_at, context=context, origin=origin) if user else (None, False)
@@ -74,9 +80,10 @@ def request_password_reset(email, *, context="member", makerspace=None, origin="
                 cooled_down = True
             else:
                 _reenter_pending(envelope, normalized, requested_at)
+                envelope.purpose = "reset"
                 envelope.request_origin = origin
                 envelope.credential_generation = user.credential_generation
-                envelope.save(update_fields=["request_origin", "credential_generation"])
+                envelope.save(update_fields=["purpose", "request_origin", "credential_generation"])
         elif envelope is not None and not created and envelope.status not in BLOCKED_STATUSES:
             # Fail closed if a future state is added without defining its resend rule.
             cooled_down = True

@@ -126,7 +126,10 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
 - `backend/apps/notifications/` - legacy shared feed plus `models_inbox.py` personal rows;
   `inbox.py` matrix fan-out, `legacy_inbox.py` legacy-only staff snapshots,
   `preferences.py` opt-out policy, `views_inbox.py`/`views_preferences.py` personal APIs,
-  `retention.py` F1 bounded cleanup. See `docs/notification-inbox.md`.
+  `retention.py` F1 bounded cleanup. Canonical `MemberPushDelivery` children link to
+  integrations.NotificationDelivery with optional SET_NULL inbox rows; member_push and
+  envelope_push_leases/transport supply registered device delivery independently of inbox
+  creation. See `docs/notification-inbox.md`.
   `accounts/rbac_notifications.py` owns personal history scope and trusted tenant policy reads;
   `backup/archive_objects.py` declares the inbox event UUID as a non-object key.
   Membership analytics use `operations/reports_retention.py` and
@@ -139,7 +142,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   allow-list with schedules. The frontend report panel uses `ServerReportViews.tsx` and
   `SelectedReportPreview.tsx` for server preferences and selected-column previews.
 - `backend/apps/integrations/` — personal envelopes/outbox and Telegram/email/Slack/Mattermost/Discord/
-  WhatsApp provider sources plus native push; concrete ownership and current mounting are indexed in
+  Twilio SMS and Twilio/Meta WhatsApp provider sources plus envelope/device native push; concrete ownership and current mounting are indexed in
   [SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). Encrypted FCM/APNs
   credentials + device registrations, `dispatch_email` choke point + `EmailLog` outbox + Celery task,
   webhook (auth via `X-Telegram-Bot-Api-Secret-Token` vs `TELEGRAM_WEBHOOK_SECRET`, fail-closed),

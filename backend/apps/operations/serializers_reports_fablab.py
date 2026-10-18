@@ -66,6 +66,7 @@ class MaintenanceActivityRowSerializer(TypedReportBaseSerializer):
 
 
 class FabLabHealthRowSerializer(TypedReportBaseSerializer):
+    makerspace_id = serializers.IntegerField(help_text="Tenant dimension included in both local and aggregate health reports.")
     events_enabled = serializers.BooleanField()
     events_available = serializers.BooleanField()
     events_in_period = serializers.IntegerField(allow_null=True)

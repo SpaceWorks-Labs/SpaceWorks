@@ -26,6 +26,7 @@ from apps.integrations.email_templates import render
 from apps.integrations.email_templates_fablab import events_context
 from apps.integrations.email_templates_registry_fablab_defaults import EVENTS_REQUESTER_BODIES
 from apps.integrations.notification_outbox import emit
+from apps.hardware_requests.notification_projection import addressed_context
 
 logger = logging.getLogger(__name__)
 
@@ -79,13 +80,24 @@ def _context(event, registration, event_name):
 
 def _emit(space, user, *, audience, event_name, source_kind, source_id, intent, event, registration,
           rendered, skip=()):
-    from apps.integrations.models_contract import NotificationDelivery
+    from apps.integrations.models_contract import NotificationDelivery, NotificationEnvelope
+    version = lifecycle_revision(event, registration)
+    template_context = events_context(event, event_name, registration)
+    identity = f"{source_kind}:{source_id}:{event_name}:{version}:{space.pk}:{audience}:{user.pk}"
     with transaction.atomic():
+        # T used random per-call keys. Reuse its already persisted source intent
+        # across the upgrade; changing the key must not create a second delivery.
+        existing = NotificationEnvelope.objects.filter(makerspace=space, recipient=user,
+            source_kind=source_kind, source_id=str(source_id), event=event_name,
+            revision=version, audience=audience).order_by("pk").first()
         envelope = emit(
             makerspace=space, recipient=user, feature="events", stream="events", event=event_name,
-            audience=audience, dedup_key=f"ev:{intent}:{space.pk}:{audience[0]}:{source_kind[-5:]}:{user.pk}",
-            source_kind=source_kind, source_id=str(source_id), revision=lifecycle_revision(event, registration),
-            subject=registration or event, context=_context(event, registration, event_name), rendered=rendered,
+            audience=audience,
+            dedup_key=existing.dedup_key if existing else f"ev:{sha256(identity.encode()).hexdigest()}",
+            source_kind=source_kind, source_id=str(source_id), revision=version,
+            subject=registration or event,
+            context={**addressed_context(space, "events", event_name, audience, template_context),
+                     **_context(event, registration, event_name)}, rendered=rendered,
         )
         for channel in skip:
             NotificationDelivery.objects.get_or_create(envelope=envelope, channel=channel, defaults={
@@ -124,7 +136,7 @@ def _owner_allowed(space, event_name):
 
 
 def owner_envelope(event, event_name, registration, intent):
-    from apps.notifications.inbox import eligible_owner
+    from apps.integrations.recipients_owners import eligible_owner
     if registration is None or not registration.member_id:
         return None
     space = registration.registered_via_makerspace or event.makerspace
@@ -169,7 +181,7 @@ CERTIFICATE_COPY = {
 
 def certificate_envelope(certificate, event_name):
     """Navigation notice only: never the document, a bearer or another person's details."""
-    from apps.notifications.inbox import eligible_owner
+    from apps.integrations.recipients_owners import eligible_owner
     registration = certificate.registration
     event = registration.event
     space = registration.registered_via_makerspace or event.makerspace

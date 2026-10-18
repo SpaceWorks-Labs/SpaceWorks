@@ -30,6 +30,8 @@ export function WhatsAppTemplatesEditor({ templates, disabled, onChange }: {
       className="grid min-w-0 gap-2 rounded-md border border-line p-3 sm:grid-cols-2">
       <label className="grid gap-1 text-sm">Event<input className="desk-input" value={row.event} maxLength={64} disabled={disabled}
         placeholder="request_accepted" onChange={event => update(index, { event: event.target.value })} /></label>
+      <label className="grid gap-1 text-sm">Feature (optional)<input className="desk-input" value={row.feature ?? ""} maxLength={64} disabled={disabled}
+        placeholder="hardware_requests" onChange={event => update(index, { feature: event.target.value || undefined })} /></label>
       <label className="grid gap-1 text-sm">Audience<select className="desk-input" value={row.audience} disabled={disabled}
         onChange={event => update(index, { audience: event.target.value as WhatsAppTemplate["audience"] })}>
         {AUDIENCES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
@@ -40,7 +42,7 @@ export function WhatsAppTemplatesEditor({ templates, disabled, onChange }: {
       <label className="grid gap-1 text-sm sm:col-span-2">Variables (comma separated)<input className="desk-input" value={row.variables.join(", ")} disabled={disabled}
         onChange={event => update(index, { variables: event.target.value.split(",").map(part => part.trim()).filter(Boolean) })} /></label>
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-        <StatusPill label={row.approved ? "Approved" : "Not approved yet"} tone={row.approved ? "success" : "neutral"} />
+        <StatusPill label={row.approved && !row.needs_review ? "Approved" : "Needs provider review"} tone={row.approved && !row.needs_review ? "success" : "neutral"} />
         <button type="button" className="desk-button" disabled={disabled}
           onClick={() => onChange(templates.filter((_, at) => at !== index))}>Remove template</button>
       </div>

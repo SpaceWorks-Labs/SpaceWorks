@@ -188,6 +188,11 @@ def _field_disposition(fidelity: Fidelity, label: str, field_name: str):
 from .classification_w7_events import EVENT_OMITTED_FIELDS
 ALWAYS_OMITTED.update(EVENT_OMITTED_FIELDS)
 
+ALWAYS_OMITTED[("integrations.MessagingConsent", "lifted_suppression_id")] = "Source-local suppression provenance does not address target protection rows."
+ALWAYS_OMITTED.update({
+    ("integrations.MessagingConsent", name): "Source sender/proof binding is deployment-local; imported consent is inert."
+    for name in ("sender_key", "configuration_generation", "endpoint")
+})
 FIELDS = {}
 for _fidelity in Fidelity:
     for _label, _names in EXPORTED_MODEL_FIELDS.items():

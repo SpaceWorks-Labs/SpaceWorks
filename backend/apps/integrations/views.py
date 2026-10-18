@@ -1,3 +1,4 @@
+from .notification_cutover import guarded, sending_allowed, CutoverClosed
 import logging
 
 from django.shortcuts import get_object_or_404
@@ -82,10 +83,13 @@ class TelegramTestAlertView(APIView):
                 description="Delivery attempt result; `delivered: false` with a reason when "
                 "Telegram is unconfigured or rejects the message."
             ),
-            **errors(400, 401, 403, 404),
+            **errors(400, 401, 403, 404, 503),
         },
     )
+    @guarded(mutation=True)
     def post(self, request, *args, **kwargs):
+        if not sending_allowed():
+            raise CutoverClosed()
         serializer = TelegramTestAlertSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         makerspace = get_object_or_404(

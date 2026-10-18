@@ -13,16 +13,22 @@ from apps.accounts.attestation import (
     AttestationRejected, AttestationUnavailable,
     consume_attestation_challenge, create_challenge, verify_attestation,
 )
-from apps.accounts.login_methods import password_login_enabled
 from apps.accounts.models_devices import DeviceGrant
+from apps.accounts.serializers_attestation import ATTESTATION_DESCRIPTION
 from apps.accounts.serializers_device import (
     DeviceChallengeResponseSerializer, DeviceGrantSerializer,
     DeviceIdentitySerializer, DeviceLoginSerializer,
     DeviceLogoutResponseSerializer, DeviceRefreshResponseSerializer,
     DeviceRefreshSerializer, DeviceTokenResponseSerializer,
 )
-from apps.accounts.services_device_tokens import rotate_device_refresh
+from apps.accounts.services_device_tokens import (
+    rotate_device_refresh,
+)
 from apps.accounts.services_tokens import revoke_device_grant
+from apps.accounts.services_device_grants import (
+    DeviceSuperadminNotSupported,
+    audit_grant_refusal,
+)
 from apps.accounts.throttles import DeviceLoginThrottle, DeviceLoginUserThrottle
 from apps.hardware_requests.exceptions import ErrorSerializer
 
@@ -40,7 +46,7 @@ class IsDeviceAccessToken(BasePermission):
         _reject_browser_headers(request)
         return bool(
             request.user and request.user.is_authenticated
-            and request.user.account_kind == "member"
+            and request.user.account_kind in {"member", "staff"}
             and getattr(request, "device_grant", None)
             and request.auth and request.auth.get("token_type") == "access"
         )
@@ -52,6 +58,7 @@ class DeviceAttestationChallengeView(APIView):
     throttle_scope = "device_attestation_challenge"
 
     @extend_schema(tags=["Device auth"], auth=[], request=DeviceIdentitySerializer,
+        description=ATTESTATION_DESCRIPTION,
         responses={200: DeviceChallengeResponseSerializer, 400: OpenApiResponse(ErrorSerializer), 429: OpenApiResponse(ErrorSerializer), 503: OpenApiResponse(ErrorSerializer)})
     def post(self, request):
         _reject_browser_headers(request)
@@ -92,6 +99,7 @@ class DeviceLoginView(APIView):
     throttle_classes = [DeviceLoginThrottle, DeviceLoginUserThrottle]
 
     @extend_schema(tags=["Device auth"], auth=[], request=DeviceLoginSerializer,
+        description="Attested password sign-in in an explicit account context (member by default). Staff must supply context=staff and their makerspace slug; password and authenticator MFA bind the resulting grant to that fixed tenant. Platform grants are refused with device_superadmin_not_supported (403). " + ATTESTATION_DESCRIPTION,
         responses={200: PolymorphicProxySerializer(component_name="DeviceLoginResult", serializers=[DeviceTokenResponseSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None), 401: OpenApiResponse(ErrorSerializer), 403: OpenApiResponse(ErrorSerializer), 503: OpenApiResponse(ErrorSerializer)})
     def post(self, request):
         _reject_browser_headers(request)
@@ -114,16 +122,14 @@ class DeviceLoginView(APIView):
         except AttestationRejected as exc:
             _audit_login_failure(data, 'attestation_rejected')
             raise AuthenticationFailed("Invalid device credentials or attestation.") from exc
-        # Device login is member-only, so the member password switch applies here.
-        if not password_login_enabled():
-            _audit_login_failure(data, 'password_login_disabled')
-            raise AuthenticationFailed("Invalid device credentials or attestation.")
-        from apps.accounts.services_device_login import password_login, DevicePasswordRejected
+        from apps.accounts.services_device_login import DevicePasswordRejected, password_login
         try:
             return password_login(request, data, challenge, verified)
         except DevicePasswordRejected as exc:
-            # Password failure counters have committed before this public refusal.
             _audit_login_failure(data, exc.reason)
+            raise
+        except DeviceSuperadminNotSupported as exc:
+            audit_grant_refusal(exc)
             raise
 
 
@@ -167,7 +173,7 @@ class DeviceGrantListView(APIView):
     @extend_schema(tags=["Device auth"], request=None, responses={200: DeviceGrantSerializer(many=True), 401: OpenApiResponse(ErrorSerializer)})
     def get(self, request):
         from apps.accounts.surface_policy import assert_surface
-        assert_surface(request.user, "member")
+        assert_surface(request.user, "staff_api" if request.user.account_kind == "staff" else "member")
         grants = DeviceGrant.objects.filter(user=request.user).order_by("-last_used_at")
         return Response(DeviceGrantSerializer(grants, many=True).data)
 
@@ -178,7 +184,7 @@ class DeviceGrantDetailView(APIView):
     @extend_schema(tags=["Device auth"], request=None, responses={204: None, 401: OpenApiResponse(ErrorSerializer), 404: OpenApiResponse(ErrorSerializer)})
     def delete(self, request, grant_id):
         from apps.accounts.surface_policy import assert_surface
-        assert_surface(request.user, "member")
+        assert_surface(request.user, "staff_api" if request.user.account_kind == "staff" else "member")
         grant = DeviceGrant.objects.filter(pk=grant_id, user=request.user).first()
         if grant is None:
             return Response(status=status.HTTP_404_NOT_FOUND)

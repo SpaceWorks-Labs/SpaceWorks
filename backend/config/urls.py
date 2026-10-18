@@ -66,11 +66,14 @@ def docs_root(_request):
     )
 
 
+from apps.accounts.views_mobile_associations import AssetLinksView, AppleAppSiteAssociationView
 from apps.accounts.control_mfa import control_mfa
 from apps.accounts.reauthentication_control import control_reauthentication
 from apps.operations.control_storage import control_storage
 
 urlpatterns = [
+    path(".well-known/assetlinks.json", AssetLinksView.as_view(), name="mobile-assetlinks"),
+    path(".well-known/apple-app-site-association", AppleAppSiteAssociationView.as_view(), name="mobile-apple-association"),
     path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
     path("", include("apps.makerspaces.website_urls")),
     path("mfa/control/", control_mfa, name="control-mfa"),
@@ -191,3 +194,9 @@ urlpatterns = [
         name="redoc",
     ),
 ]
+
+from apps.integrations.messaging.urls import member_urlpatterns as messaging_member_urls
+from apps.integrations.messaging.urls import staff_urlpatterns as messaging_staff_urls
+urlpatterns += [path("api/v1/", include(messaging_member_urls)), path("api/v1/admin/", include(messaging_staff_urls))]
+
+urlpatterns += [path("api/v1/integrations/messaging/", include("apps.integrations.messaging.urls_webhooks"))]

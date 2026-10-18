@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
+from apps.accounts.account_obligations import lock_obligation_owner
 
 from apps.encryption.write_fence import assert_mapped_write_allowed
 from apps.events.capacity import (
@@ -52,7 +53,9 @@ def register(
     if member is not None:
         require_member_account(member)
     from apps.events.services import _audit, _locked_event, _refresh, _validate
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
 
+    assert_write_allowed(event.makerspace_id)
     assert_mapped_write_allowed(event.makerspace_id)
     locked = _locked_event(event.pk, lock_makerspace=False)
     from .organization_audience import AUDIENCE, lock_admission_sources
@@ -90,6 +93,7 @@ def register(
     # ordering: publish() takes the event lock first, so taking the makerspace first
     # here would create a deadlock pair with it.
     locked.makerspace = require_module_locked(locked.makerspace, "events")
+    member = lock_obligation_owner(member)
     now = timezone.now()
     if not locked.is_public and not staff_registration and not collaborative:
         raise EventInvalidTransition("This event is not open for registration.")
@@ -144,6 +148,8 @@ def register(
     ticket = select_ticket(locked, ticket_type_id, member)
     status = fresh_registration_status(locked, ticket)
     if existing and existing.status == EventRegistration.Status.CANCELLED:
+        if member is None:
+            existing.member = lock_obligation_owner(existing.member)
         # The unique payment subject preserves historical money. Reusing a cancelled
         # paid row would find its terminal charge and silently provide a free place.
         from apps.payments.models import Payment

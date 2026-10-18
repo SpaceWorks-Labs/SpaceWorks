@@ -1,10 +1,16 @@
 # Phase 2 wa-meta implementation handoff
 
+Historical implementation handoff. The current [personal contract](notification-contract.md),
+[channel guide](messaging-channels.md) and [rollout checkpoints](notification-reconciliation-rollout.md)
+supersede its old runtime/settings, ambiguity, inbox-coupling and readiness claims. SMS/WhatsApp
+use canonical envelopes; duplicate addressed models/worker entry points are inert compatibility
+history. Sending activation and destructive retirement remain held pending replay sign-off.
+
 Branch: `lane/p2-wa-meta`, based on `9cc3c9cc`. All changes are new files in this worktree.
 Nothing was staged or committed. Frozen contracts, frontend, shared barrels and integrator-owned
 documentation were left unchanged in that lane. Phase 3 registered/mounted Meta and wired its
-gate/origin declarations and environment setting. Its readiness still requires an unregistered
-whatsapp module, blocking ordinary send/start/test; wiring is not an operational delivery claim.
+gate/origin declarations and environment setting. The 2026-10-18 reconciliation registered
+the whatsapp module, resolving that historical readiness blocker; wiring is not provider-test evidence.
 
 ## Files changed
 
@@ -87,8 +93,10 @@ the user instead receives instructions to message the business number with the c
 no outbound request. Only a signed matching inbound reply consumes the single-use challenge and creates
 the endpoint. User-initiated proof can bootstrap linking before a diagnostic approval refresh.
 For diagnostics outside the session window, bind `notification_test/member/en` with no variables.
-The adapter requires notifications plus module_enabled(..., "whatsapp") for proof/send/test.
-There is no registered whatsapp module key; this remains a blocking readiness limit after Phase 3.
+The reconciled adapter uses the independent registered whatsapp module; it does not require
+the optional inbox module. The former missing-module blocker is resolved. The canonical
+[contract](notification-contract.md) and [rollout checkpoints](notification-reconciliation-rollout.md)
+supersede this historical lane note: sending activation/retirement remain held pending replay.
 
 Sent/delivered/read/terminal-failed updates use the frozen monotonic callback service. Transient error
 callbacks are authenticated through `verified_callback` with state `retrying`, then a small tenant-locked

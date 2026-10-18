@@ -1,3 +1,4 @@
+import { UsageAttributionFields } from "./UsageAttributionFields";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,6 +72,8 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
       method: "POST",
       body: JSON.stringify({
         machine_id: Number(draft.manual.machine_id),
+        member: draft.manual.member ? Number(draft.manual.member) : undefined,
+        started_at: draft.manual.started_at ? new Date(draft.manual.started_at).toISOString() : undefined,
         consumable_pool_id: poolUnit && draft.manual.consumable_pool_id ? Number(draft.manual.consumable_pool_id) : null,
         duration_minutes: Number(draft.manual.duration_minutes),
         quantity: poolUnit && draft.manual.quantity ? draft.manual.quantity : undefined,
@@ -82,7 +85,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
       }),
     }),
     onSuccess: () => {
-      setDraft((current) => ({ ...current, manual: { ...current.manual, machine_id: "", consumable_pool_id: "", duration_minutes: "", quantity: "", outcome: "success", percent_complete: "100", reason: "", note: "" } }));
+      setDraft((current) => ({ ...current, manual: { ...current.manual, member: "", started_at: "", machine_id: "", consumable_pool_id: "", duration_minutes: "", quantity: "", outcome: "success", percent_complete: "100", reason: "", note: "" } }));
       setLogging(false);
       invalidate();
     },
@@ -111,7 +114,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
         <ServiceQueueTabs rows={requests.data} initialStatus={queueStatus}>{visible => <div className="grid gap-3">
           {visible?.map((request) => (
             <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
-                meta={<> {request.requester_name} · Planned {request.planned_quantity ?? "0"} {unitLabel} · actual {request.actual_consumed_quantity ?? "0"} {unitLabel}</>}
+                meta={<> {request.requester_name} Â· Planned {request.planned_quantity ?? "0"} {unitLabel} Â· actual {request.actual_consumed_quantity ?? "0"} {unitLabel}</>}
                 right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} label={machineStatusLabel(request.status)} /><ServiceActions request={request} onAction={name => setDraft(current => ({ ...current, action: { id: request.id, name } }))} /></div>} />
           )) ?? <p className="text-sm text-muted">Loading service queue...</p>}
         </div>}</ServiceQueueTabs>
@@ -130,7 +133,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
           /><ErrorBlock error={runAction.error} /></Modal>
         ) : null}
       </Subsection>} manualForm={<ManualUsageForm draft={draft} setDraft={setDraft} machines={machines} pools={manualPools} unitLabel={unitLabel} hasPool={!!poolUnit} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />} manualRows={<div className="mt-3 grid gap-2">
-          {manualUsage.data?.length === 0 ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{manualUsage.data?.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_quantity} {unitLabel}{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={undefined} logging={logging} onLogging={setLogging} />
+          {manualUsage.data?.length === 0 ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{manualUsage.data?.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_quantity} {unitLabel}{entry.outcome === "failed" ? ` Â· ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={undefined} logging={logging} onLogging={setLogging} />
       <ErrorBlock error={[requests.error, manualUsage.error, submitManual.error, runAction.error].find((item) => item instanceof Error)} />
     </div>
   );
@@ -160,7 +163,7 @@ function ServiceActionForm({ action, values, setValues, machines, pools, unitLab
 function ManualUsageForm({ draft, setDraft, machines, pools, unitLabel, hasPool, pending, onSubmit }: { draft: ServiceDraft; setDraft: Props["setDraft"]; machines: Machine[]; pools: PrinterPool[]; unitLabel: string; hasPool: boolean; pending: boolean; onSubmit: () => void }) {
   const manual = draft.manual;
   const update = (patch: Partial<typeof manual>) => setDraft((current) => ({ ...current, manual: { ...current.manual, ...patch } }));
-  return <div className="grid gap-2 sm:grid-cols-2"><select aria-label="Manual usage machine" className={`desk-input ${focusRing}`} value={manual.machine_id} onChange={(event) => update({ machine_id: event.target.value, consumable_pool_id: "" })}><option value="">Machine</option>{machines.map((machine) => <option key={machine.id} value={machine.id}>{machine.name}</option>)}</select>{hasPool ? <select aria-label="Manual usage pool" className={`desk-input ${focusRing}`} value={manual.consumable_pool_id} onChange={(event) => update({ consumable_pool_id: event.target.value })}><option value="">No pool</option>{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.material} {pool.color}</option>)}</select> : null}<input aria-label="Manual usage minutes" className={`desk-input ${focusRing}`} type="number" min="0" placeholder="Minutes" value={manual.duration_minutes} onChange={(event) => update({ duration_minutes: event.target.value })} />{hasPool ? <input aria-label={`Manual usage ${unitLabel}`} className={`desk-input ${focusRing}`} type="number" min="0" placeholder={unitLabel} value={manual.quantity} onChange={(event) => update({ quantity: event.target.value })} /> : null}<select aria-label="Manual usage outcome" className={`desk-input ${focusRing}`} value={manual.outcome} onChange={(event) => update({ outcome: event.target.value })}><option value="success">Success</option><option value="failed">Failed</option></select>{manual.outcome === "failed" ? <input aria-label="Failure reason" className={`desk-input ${focusRing}`} placeholder="Failure reason" value={manual.reason} onChange={(event) => update({ reason: event.target.value })} /> : null}<input aria-label="Manual usage note" className={`desk-input ${focusRing}`} placeholder="Note" value={manual.note} onChange={(event) => update({ note: event.target.value })} /><button className="desk-button-primary sm:col-span-2 sm:justify-self-end" disabled={!manual.machine_id || !manual.duration_minutes || pending} onClick={onSubmit}>Log usage</button></div>;
+  return <div className="grid gap-2 sm:grid-cols-2"><select aria-label="Manual usage machine" className={`desk-input ${focusRing}`} value={manual.machine_id} onChange={(event) => update({ machine_id: event.target.value, consumable_pool_id: "" })}><option value="">Machine</option>{machines.map((machine) => <option key={machine.id} value={machine.id}>{machine.name}</option>)}</select>{hasPool ? <select aria-label="Manual usage pool" className={`desk-input ${focusRing}`} value={manual.consumable_pool_id} onChange={(event) => update({ consumable_pool_id: event.target.value })}><option value="">No pool</option>{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.material} {pool.color}</option>)}</select> : null}<input aria-label="Manual usage minutes" className={`desk-input ${focusRing}`} type="number" min="0" placeholder="Minutes" value={manual.duration_minutes} onChange={(event) => update({ duration_minutes: event.target.value })} />{hasPool ? <input aria-label={`Manual usage ${unitLabel}`} className={`desk-input ${focusRing}`} type="number" min="0" placeholder={unitLabel} value={manual.quantity} onChange={(event) => update({ quantity: event.target.value })} /> : null}<select aria-label="Manual usage outcome" className={`desk-input ${focusRing}`} value={manual.outcome} onChange={(event) => update({ outcome: event.target.value })}><option value="success">Success</option><option value="failed">Failed</option></select>{manual.outcome === "failed" ? <input aria-label="Failure reason" className={`desk-input ${focusRing}`} placeholder="Failure reason" value={manual.reason} onChange={(event) => update({ reason: event.target.value })} /> : null}<UsageAttributionFields machineId={Number(manual.machine_id)} member={manual.member ?? ""} startedAt={manual.started_at ?? ""} onChange={update} /><input aria-label="Manual usage note" className={`desk-input ${focusRing}`} placeholder="Note" value={manual.note} onChange={(event) => update({ note: event.target.value })} /><button className="desk-button-primary sm:col-span-2 sm:justify-self-end" disabled={!manual.machine_id || !manual.duration_minutes || pending} onClick={onSubmit}>Log usage</button></div>;
 }
 
 function Subsection({ title, children }: { title: string; children: React.ReactNode }) {

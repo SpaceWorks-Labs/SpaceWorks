@@ -36,6 +36,10 @@ def require_raw_user(fidelity, *, model, row_pk, field, user_id, existing_user_i
             f"{model} row {row_pk} has dangling {field}={user_id}"
         )
     return user_id
+RELATIONAL_USER_FIELDS |= frozenset({("machines.MachineUsageEntry", "member"), ("integrations.PushDeliveryAttempt", "recipient")})
+_EXCLUDED_USER_EDGE_REASONS[("integrations.PushDeliveryAttempt", "recipient")] = "Runtime delivery ownership is exported only through the personal allowlist; never a portable tenant user edge."
+RELATIONAL_USER_FIELDS |= frozenset({("integrations.MessagingConsent", "user"), ("integrations.MessagingDelivery", "user")})
+_EXCLUDED_USER_EDGE_REASONS[("integrations.MessagingDelivery", "user")] = "Personal runtime telemetry is omitted from tenant artifacts."
 USER_EDGES = {}
 for _fidelity in Fidelity:
     for _label, _field in RELATIONAL_USER_FIELDS | RAW_USER_REFERENCE_FIELDS:

@@ -109,6 +109,9 @@ class WebhookEvent:
     refund_status: str = ""
     refund_amount_minor: int = 0
     is_failed: bool = False
+    #: Captured amount in provider minor units, for excess-collection audit evidence.
+    amount_minor: int = 0
+    currency: str = ""
 
 
 class PaymentProvider(Protocol):

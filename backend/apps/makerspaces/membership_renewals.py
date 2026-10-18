@@ -7,6 +7,7 @@ from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
 from apps.accounts import rbac
+from apps.accounts.account_obligations import AccountDeletionPending, lock_obligation_owner
 from apps.audit import services as audit
 from apps.makerspaces.local_time import to_local
 from apps.makerspaces.models import MakerspaceMembership, MembershipTerm
@@ -82,11 +83,14 @@ def _process(term_id, now, counts):
 
     with transaction.atomic():
         seed = renewal_terms().get(pk=term_id)
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(seed.membership.makerspace_id)
         require_module_locked(seed.membership.makerspace_id, "membership")
         membership = rbac.scope_for_scheduled_work(
             MakerspaceMembership.objects.all(), makerspace_id=seed.membership.makerspace_id,
         ).select_for_update().get(pk=seed.membership_id)
         term = renewal_terms(membership.makerspace_id).select_for_update().get(pk=term_id)
+        membership.user = lock_obligation_owner(membership.user)
         term.membership = membership
         auto = automatic(term)
         if membership.status != "active" or term.status == "cancelled":
@@ -141,6 +145,8 @@ def _retry_state(term, now):
 def _run_one(term_id, now, counts):
     try:
         _process(term_id, now, counts)
+    except AccountDeletionPending:
+        counts["skipped"] += 1
     except Exception:
         counts["failed"] += 1
         logger.warning("membership_renewal_failed", extra={"term_id": term_id})

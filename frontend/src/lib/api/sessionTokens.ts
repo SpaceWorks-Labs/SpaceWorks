@@ -56,9 +56,10 @@ export function clearAccessToken(context = currentSessionContext()) {
   state.refresh = null;
   clearJobs(context); clearToasts(context);
   if (context === "member") clearOfflineCards();
-  void wipeOfflineScopes(offlineSessionPrefix(context)).catch(() => undefined);
+  const cleanup = wipeOfflineScopes(offlineSessionPrefix(context)).catch(() => undefined);
   notifySessionCleared(context);
   cleanupLegacyAccessToken();
+  return cleanup;
 }
 
 export function addAuthExpiredListener(listener: () => void, context = currentSessionContext()) {
@@ -67,8 +68,18 @@ export function addAuthExpiredListener(listener: () => void, context = currentSe
   return () => { expiredListeners.get(context)?.delete(listener); };
 }
 export function expireStaffAuthSession(context = currentSessionContext()) {
-  clearAccessToken(context);
+  const cleanup = clearAccessToken(context);
   expiredListeners.get(context)?.forEach(listener => listener());
+  return cleanup;
+}
+
+/** A principal may have both member and delegated browser contexts. Never clear
+ * another account merely because it shares an email or the same browser. */
+export async function clearAccountSessions(context = currentSessionContext()) {
+  const owner = session(context).owner;
+  const contexts = [...sessions.keys()].filter(key => key === context || (owner && session(key).owner === owner));
+  await Promise.all(contexts.map(expireStaffAuthSession));
+  return owner;
 }
 
 const authUrl = (action: string) => `${configuredApiUrl().replace(/\/api$/, "/api/v1")}/auth/${action}`;

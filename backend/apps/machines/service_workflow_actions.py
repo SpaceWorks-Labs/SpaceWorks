@@ -4,6 +4,7 @@ from apps.accounts.account_kind_guards import require_member_account
 
 from django.db import transaction
 from django.utils import timezone
+from apps.accounts.account_obligations import lock_obligation_owner
 
 from apps.makerspaces import limits
 from apps.machines import role_scope
@@ -51,6 +52,11 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
             override_reason=certification_override_reason,
         )
         _require_module(makerspace, locked=True)
+        owner = lock_obligation_owner(member if member is not None else requester)
+        if member is not None:
+            member = owner
+        else:
+            requester = owner
         limits.check_quota(makerspace, "machine_service_open", adding=1)
         limits.check_quota(makerspace, "machine_service_submit", adding=1)
         if isinstance(target, ServiceQueue):
@@ -173,8 +179,8 @@ def start(service_request, actor, machine_scope, *, machine_id=None, estimated_m
             pool = locked.run_consumable_pool
             locked.run_consumable_label, locked.run_consumable_material, locked.run_consumable_color = pool.label, pool.material, pool.color
         locked.save(update_fields=["assigned_machine", "status", "handled_by", "started_at", "estimated_minutes", "run_machine_name", "run_machine_model", "run_consumable_label", "run_consumable_material", "run_consumable_color", "run_estimated_minutes", "run_planned_grams", "updated_at"])
-        machine.status = Machine.Status.RUNNING
-        machine.save(update_fields=["status", "updated_at"])
+        from .status_tracking import change_status
+        change_status(machine, Machine.Status.RUNNING, source="service_start", actor=actor)
         _audit_transition(actor, locked, "assigned", extra={"machine_id": machine.pk})
         _audit_transition(actor, locked, "started")
         _notify_after_commit(locked, "started")
@@ -198,7 +204,9 @@ def complete(service_request, actor, *, actual_minutes, consumptions, actual_gra
             locked.actual_minutes = _minutes(actual_minutes, "actual_minutes")
         locked.status, locked.handled_by, locked.completed_at = MachineServiceRequest.Status.COMPLETED, actor, timezone.now()
         locked.save(update_fields=["status", "handled_by", "actual_minutes", "completed_at", "updated_at"])
-        _release_queue_machine(locked)
+        from .consumable_costs import record_service_cost
+        record_service_cost(locked, actor)
+        _release_queue_machine(locked, actor)
         _audit_transition(actor, locked, "completed")
         _notify_after_commit(locked, "completed")
         from apps.machines.service_payments import create_for_completed_request
@@ -235,7 +243,9 @@ def fail(service_request, actor, *, reason, percent_complete, actual_minutes, co
             locked.failed_at = timezone.now()
         locked.status, locked.handled_by = MachineServiceRequest.Status.FAILED, actor
         locked.save(update_fields=["status", "handled_by", "actual_minutes", "fail_percent_complete", "reason", "failed_at", "updated_at"])
-        _release_queue_machine(locked)
+        from .consumable_costs import record_service_cost
+        record_service_cost(locked, actor)
+        _release_queue_machine(locked, actor)
         _audit_transition(actor, locked, "failed")
         _notify_after_commit(locked, "failed")
         return locked
@@ -258,7 +268,12 @@ def create_reprint(service_request, actor):
     """Create an accepted child request that retains the original attachment root."""
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
+        from apps.makerspaces.models import Makerspace
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(service_request.makerspace_id)
+        Makerspace.objects.select_for_update().get(pk=service_request.makerspace_id)
         original = _locked_request(service_request)
+        lock_obligation_owner(original.member if original.member_id else original.requester)
         if original.status not in {MachineServiceRequest.Status.FAILED, MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.COLLECTED}:
             raise ServiceInvalidTransition("Only terminal service requests can be reprinted.")
         root = original.reprint_of or original

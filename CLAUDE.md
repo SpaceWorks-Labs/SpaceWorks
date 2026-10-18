@@ -61,6 +61,10 @@ verified private account-link proofs, never workflow decisions. Two architectura
   Staff belong to one makerspace and are created only by its Space Manager or a permitted superadmin;
   staff/platform sign in with password (+ authenticator MFA); recovery uses admin-issued resets or
   separate context-bound email OTPs via configured Platform Email.
+  Native staff use staff accounts with password, MFA, attestation and a fixed tenant; native
+  phone/social/OIDC login and account self-deletion/restore are member-only. Platform native
+  grants are forbidden. Accounts `0032_account_context` is a development-data role reset,
+  never an authorized live-authority migration.
   Resource helpers and organization delegates use member accounts, never built-in staff memberships.
   Super Admin is global; each makerspace has seven fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
   Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member. No custom roles or role
@@ -85,9 +89,13 @@ verified private account-link proofs, never workflow decisions. Two architectura
   with encrypted credentials, provider-proven endpoints and per-category channel selections with email
   fallback. Space Managers configure channels; personal choices cannot grant tenant authority. Mandatory
   mail and email-only authentication proofs keep their rules. Member JWTs reach exactly six personal
-  route shapes; chat OAuth completes only through authenticated challenge verification. Both WhatsApp
-  factories/webhooks are wired, but Meta's readiness still requires an unregistered module. Contract
-  and remaining integration limits:
+  route shapes; chat OAuth completes only through authenticated challenge verification. SMS uses
+  Twilio; WhatsApp uses Twilio or Meta under independent default-off modules.
+  Sender history, durable STOP/suppression, BSUID correlation, segments and analytics live in this
+  pipeline; duplicate addressed workers are inert. Platform sending requires explicit operator and
+  tenant opt-in. Per-device native push belongs to envelope deliveries, independently of the inbox
+  module. Sending activation and destructive retirement remain held pending replay sign-off
+  (`docs/notification-reconciliation-rollout.md`). Contract and remaining integration limits:
   `docs/notification-contract.md`; actual adapter coverage: `docs/notification-coverage.md`.
 - **Telegram Integration** — sends per-makerspace room alerts and verified personal messages.
   **Outbound for decisions.** The secret-authenticated webhook accepts only private `/start` account-link
@@ -218,17 +226,13 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   classes/functions into domain submodules (`views_*`, `serializers_*`, `admin_*`, `services_*`) and keep
   the original file as a **thin re-export barrel** (explicit `from .submodule import (...)`, never
   `import *`) so `from app.views import X` and `views.X` keep resolving; for `admin.py` the barrel must
-  still import the admin submodules so the `@admin.register` side effects fire. **The ceiling is enforced
-  on what you touch, and it is nearly met repo-wide: two `backend/apps/` files (non-migration, non-test)
-  exceed 300 lines** — `machines/access.py` (367) and `tenant_migration/source_gate_guards.py` (301) —
-  plus `config/settings.py` (1273, the accepted exception — Django settings are conventionally a single
-  file). `backend/tests/` is not held to the ceiling. Frontend: **zero** non-test, non-generated files
-  exceed it — `8be90478` split all eleven, so a frontend file over the ceiling is now new debt, not
-  inherited. Re-measured 2026-10-15, after the 2026-10-09 splits of `makerspaces/module_registry.py`,
-  `tenant_migration/unique_values.py`, `data_export/classification.py` and `data_export/references.py`
-  into catalogue/core siblings behind thin barrels; every earlier version of this line (37 files
-  2026-08-20, eleven frontend files 2026-09-03, five backend files 2026-09-06, four backend files
-  2026-10-09) was already stale by the time it was read.
+  still import the admin submodules so the `@admin.register` side effects fire. **The ceiling is enforced on what you touch.**
+  Measured on 2026-10-18: **two `backend/apps/` non-migration, non-test Python files exceed
+  300 lines** -- `machines/access.py` (367) and `tenant_migration/source_gate_guards.py` (301).
+  `config/settings.py` remains the accepted exception (Django settings conventionally use one file).
+  `backend/tests/` is not held to the ceiling. Frontend: **zero** non-test, non-generated files
+  exceeded it when measured 2026-10-17 after the mobile programme; that frontend count was
+  not remeasured in this documentation pass.
   **Split an over-ceiling file in its own commit before adding to it**, and when splitting one that other
   modules import from, check for guards pinned to its path: `tests/makerspaces/test_tenant_servability_guard.py`
   pins two function *bodies* to `accounts/rbac.py` by `(path, function)`, and

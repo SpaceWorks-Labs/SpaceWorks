@@ -31,7 +31,9 @@ def require_enabled(space):
 def require_account(account, space):
     require_enabled(space)
     if not (account and account.is_authenticated and account.pk and account.is_active
-            and account.access_status == "active" and not account.is_tenant_dump_stub):
+            and account.account_kind == "member" and account.access_status == "active"
+            and not account.is_tenant_dump_stub and not account.retired_at
+            and not account.deletion_requested_at and not account.account_purged_at):
         raise PresenceError("account_inactive", "An active signed-in account is required.", status_code=403)
     membership = MakerspaceMembership.objects.filter(user=account, makerspace=space).first()
     if membership and membership.status != "active":

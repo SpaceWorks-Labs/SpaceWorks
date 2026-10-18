@@ -1,20 +1,7 @@
 ﻿import { Field } from "../../../components/ui";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 
-const groupFor = (key: string) => {
-  if (/loan|lent|borrow|return|taken|summary/.test(key)) return "Lending";
-  if (/invent|procure|damaged|lost|added|import|evidence|qr/.test(key)) return "Inventory";
-  if (/machine|printer|booking|maintenance|certification|fablab/.test(key)) return "Machines";
-  if (/payment|revenue|financ|income/.test(key)) return "Money";
-  if (/member|event|community/.test(key)) return "Community";
-  return "System";
-};
-
-function grouped(reports: ReportCatalogItem[]) {
-  const groups = new Map<string, ReportCatalogItem[]>();
-  for (const report of reports) { const group = groupFor(report.key); groups.set(group, [...(groups.get(group) ?? []), report]); }
-  return groups;
-}
+import { reportAreaGroups as grouped } from "./reportAreas";
 
 /** Below xl the layout stacks the aside AFTER the report, so the picker leads the main column instead. */
 export function OperationsReportPicker({ reports, selected, onSelect }: {

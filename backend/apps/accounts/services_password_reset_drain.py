@@ -4,6 +4,7 @@ import logging
 import os
 import socket
 import uuid
+import secrets
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -16,6 +17,8 @@ from apps.accounts.password_reset_context import (
     lock_recovery_account, recoverable, reset_destination, recovery_transaction,
 )
 from apps.integrations.email import platform_email_configured
+from apps.accounts.account_restore import restorable, identifier_fingerprint
+from apps.accounts.account_restore_email import send_restore_link
 from apps.accounts.password_reset_crypto import (
     credential_fingerprint,
     generate_otp,
@@ -49,6 +52,7 @@ class DeliveryAttempt:
     code: str
     reset_url: str = ""
     account_label: str = ""
+    restore: bool = False
 
 
 def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None):
@@ -72,7 +76,7 @@ def drain_password_reset_envelopes(*, batch_size=DEFAULT_BATCH_SIZE, owner=None)
             recovery_details = ({"reset_url": attempt.reset_url, "account_label": attempt.account_label}
                                 if attempt.reset_url else {})
             delivered = bool(
-                send_password_reset_otp(
+                send_restore_link(attempt.recipient, attempt.code) if attempt.restore else send_password_reset_otp(
                     attempt.recipient,
                     attempt.code,
                     expires_in_minutes=int(CHALLENGE_TTL.total_seconds() // 60),
@@ -151,12 +155,19 @@ def prepare_delivery(claim, *, now=None):
         )
         if envelope is None:
             return None
+        if user is None or envelope.email_normalized != claim.email_normalized or envelope.user_id != user.pk:
+            return None
         slug = envelope.makerspace.slug if envelope.makerspace_id else None
-        if (not recoverable(user, context=envelope.context, makerspace=slug,
-                            origin=envelope.request_origin)
-                or user.email.lower() != envelope.email_normalized
-                or (envelope.context != "member" and
-                    user.credential_generation != envelope.credential_generation)):
+        archived = bool(envelope.context == "member" and user.account_kind == "member"
+                        and restorable(user, now=issued_at))
+        if (not archived and (not recoverable(user, context=envelope.context, makerspace=slug,
+                                             origin=envelope.request_origin)
+                              or user.deletion_requested_at is not None)
+                or envelope.context != user.account_kind
+                or envelope.makerspace_id != (user.staff_makerspace_id if user.account_kind == "staff" else None)
+                or user.email.strip().lower() != envelope.email_normalized
+                or user.credential_generation != envelope.credential_generation
+                or user.account_restored_at and envelope.requested_at <= user.account_restored_at):
             return _finish_claimed_terminal(
                 envelope, claim, PasswordResetEnvelopeStatus.DISCARDED, issued_at
             )
@@ -167,19 +178,20 @@ def prepare_delivery(claim, *, now=None):
                 envelope, claim, PasswordResetEnvelopeStatus.UNDELIVERABLE, issued_at
             )
 
-        code = generate_otp()
+        code = secrets.token_urlsafe(48) if archived else generate_otp()
         updated = PasswordResetEnvelope.objects.filter(
             pk=envelope.pk,
             generation=claim.generation,
             status=PasswordResetEnvelopeStatus.CLAIMED,
         ).update(
             user=user,
+            purpose="restore" if archived else "reset",
             digest=otp_digest(code, envelope.email_normalized),
             digest_is_live=True,
-            credential_fingerprint=credential_fingerprint(
+            credential_fingerprint=identifier_fingerprint(user) if archived else credential_fingerprint(
                 user, envelope.email_normalized
             ),
-            expires_at=issued_at + CHALLENGE_TTL,
+            expires_at=issued_at + (timedelta(hours=24) if archived else CHALLENGE_TTL),
             consumed_at=None,
             attempts=0,
             status=PasswordResetEnvelopeStatus.DELIVERING,
@@ -189,10 +201,9 @@ def prepare_delivery(claim, *, now=None):
         )
         if updated != 1:
             return None
-        # Capture trusted routing while the tenant is still locked. A purge or
-        # domain edit after commit must not turn destination resolution into a crash.
+        # Resolve trusted routing while the tenant is locked.
         url, label = reset_destination(user) if envelope.context != "member" else ("", "")
-    return DeliveryAttempt(claim, envelope.email_normalized, code, url, label)
+    return DeliveryAttempt(claim, envelope.email_normalized, code, url, label, restore=archived)
 
 
 def finalize_delivery(claim, *, delivered, now=None):

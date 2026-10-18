@@ -13,7 +13,7 @@ from apps.integrations.notification_catalog import is_notification_enabled
 from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.servability import is_servable
 from apps.makerspaces.website_directory import public_url
-from apps.notifications.inbox import eligible_owner
+from apps.integrations.recipients_owners import eligible_owner
 from . import event_authority
 from .event_permissions import MANAGE_REGISTRATIONS
 from .models import EventRegistration

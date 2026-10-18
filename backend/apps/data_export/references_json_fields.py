@@ -84,3 +84,10 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("tenant_migration.ExternalTenantReference", "snapshot"),
     }
 )
+
+JSON_REFERENCE_FIELDS |= frozenset({("integrations.WhatsAppTemplateBinding", "parameters"), ("integrations.MessagingConsent", "lifted_suppression_id")})
+
+# Canonical notification runtime models (ChannelConfiguration, NotificationEnvelope,
+# NotificationCutover, WhatsAppTemplate) are omitted from tenant artifacts, so their
+# JSON payloads are never exported and need no reference declaration here; the
+# guard compares this registry against JSON fields on EXPORTED models only.

@@ -9,6 +9,7 @@ export const openApiInfo = {
 export const openApiTags = [
   "API clients",
   "API key requests",
+  "Accounts",
   "Admin bookings",
   "Admin event series",
   "Admin events",
@@ -67,6 +68,9 @@ export const openApiTags = [
   "Member events",
   "Member profile",
   "Memberships",
+  "Messaging",
+  "Messaging webhooks",
+  "Mobile associations",
   "Native push",
   "Notification contract",
   "Notification delivery",
@@ -75,6 +79,7 @@ export const openApiTags = [
   "Personal notification contract",
   "Personal notifications",
   "Platform",
+  "Platform tenant reports",
   "Presence",
   "Presence staff",
   "Procurement",
@@ -109,6 +114,8 @@ export const openApiTags = [
 ] as const;
 
 export const openApiPaths = [
+  "/.well-known/apple-app-site-association",
+  "/.well-known/assetlinks.json",
   "/api/public/makerspaces/",
   "/api/public/{makerspace_slug}/inventory/",
   "/api/public/{makerspace_slug}/inventory/categories/",
@@ -297,6 +304,7 @@ export const openApiPaths = [
   "/api/v1/admin/machines/{id}/set-status",
   "/api/v1/admin/machines/{id}/unretire",
   "/api/v1/admin/machines/{id}/usage",
+  "/api/v1/admin/machines/{id}/usage-candidates",
   "/api/v1/admin/machines/{id}/warranty",
   "/api/v1/admin/maintenance/log-documents/{id}/",
   "/api/v1/admin/maintenance/log-documents/{id}/url/",
@@ -387,6 +395,8 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/machines",
   "/api/v1/admin/makerspace/{makerspace_id}/maintenance-overdue",
   "/api/v1/admin/makerspace/{makerspace_id}/membership-invitations",
+  "/api/v1/admin/makerspace/{makerspace_id}/messaging-settings",
+  "/api/v1/admin/makerspace/{makerspace_id}/messaging-settings/test",
   "/api/v1/admin/makerspace/{makerspace_id}/modules",
   "/api/v1/admin/makerspace/{makerspace_id}/modules/install",
   "/api/v1/admin/makerspace/{makerspace_id}/modules/uninstall",
@@ -444,6 +454,9 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/usage",
   "/api/v1/admin/makerspace/{makerspace_id}/verify-domain",
   "/api/v1/admin/makerspace/{makerspace_id}/warranties",
+  "/api/v1/admin/makerspace/{makerspace_id}/whatsapp-templates",
+  "/api/v1/admin/makerspace/{makerspace_id}/whatsapp-templates/catalog",
+  "/api/v1/admin/makerspace/{makerspace_id}/whatsapp-templates/{id}",
   "/api/v1/admin/makerspaces",
   "/api/v1/admin/makerspaces/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-issues/",
@@ -530,6 +543,12 @@ export const openApiPaths = [
   "/api/v1/admin/organizations/{id}/memberships/{membership_id}/",
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}",
   "/api/v1/admin/organized-events/",
+  "/api/v1/admin/platform/analytics/makerspaces",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/analytics/{report_key}",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/dashboard",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/catalog",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/{report_key}/export",
+  "/api/v1/admin/platform/analytics/{report_key}",
   "/api/v1/admin/platform/backup-destinations",
   "/api/v1/admin/platform/backup-destinations/push",
   "/api/v1/admin/platform/backup-destinations/{destination_id}",
@@ -541,6 +560,7 @@ export const openApiPaths = [
   "/api/v1/admin/platform/backups/{archive_id}/rehydrate",
   "/api/v1/admin/platform/dashboard",
   "/api/v1/admin/platform/email-settings",
+  "/api/v1/admin/platform/mobile-readiness",
   "/api/v1/admin/platform/payment-settings",
   "/api/v1/admin/platform/problems",
   "/api/v1/admin/platform/restores",
@@ -637,6 +657,11 @@ export const openApiPaths = [
   "/api/v1/admin/warranty/documents/{id}/url",
   "/api/v1/admin/warranty/{id}/documents",
   "/api/v1/admin/warranty/{id}/documents/presign",
+  "/api/v1/auth/account/deletion",
+  "/api/v1/auth/account/restore/email",
+  "/api/v1/auth/account/restore/phone",
+  "/api/v1/auth/account/restore/social/complete",
+  "/api/v1/auth/account/restore/social/start",
   "/api/v1/auth/change-password",
   "/api/v1/auth/claim/redeem",
   "/api/v1/auth/device/attestation-challenge",
@@ -650,6 +675,7 @@ export const openApiPaths = [
   "/api/v1/auth/forgot-password",
   "/api/v1/auth/login",
   "/api/v1/auth/logout",
+  "/api/v1/auth/logout-all",
   "/api/v1/auth/me",
   "/api/v1/auth/member-sign-up",
   "/api/v1/auth/mfa",
@@ -668,7 +694,10 @@ export const openApiPaths = [
   "/api/v1/auth/reauth",
   "/api/v1/auth/reauth/enrollment/confirm",
   "/api/v1/auth/reauth/enrollment/email",
+  "/api/v1/auth/reauth/phone/confirm",
+  "/api/v1/auth/reauth/phone/start",
   "/api/v1/auth/reauth/social/complete",
+  "/api/v1/auth/reauth/social/factor",
   "/api/v1/auth/reauth/social/start",
   "/api/v1/auth/refresh",
   "/api/v1/auth/reset-password",
@@ -741,6 +770,12 @@ export const openApiPaths = [
   "/api/v1/integrations/makerspace/{makerspace_id}/whatsapp/twilio/templates/refresh",
   "/api/v1/integrations/makerspace/{makerspace_id}/whatsapp/twilio/{generation}/inbound",
   "/api/v1/integrations/makerspace/{makerspace_id}/whatsapp/twilio/{generation}/status/{delivery_id}",
+  "/api/v1/integrations/messaging/twilio/m/{makerspace_id}/inbound",
+  "/api/v1/integrations/messaging/twilio/m/{makerspace_id}/status",
+  "/api/v1/integrations/messaging/twilio/platform/inbound",
+  "/api/v1/integrations/messaging/twilio/platform/status",
+  "/api/v1/integrations/messaging/whatsapp/m/{makerspace_id}",
+  "/api/v1/integrations/messaging/whatsapp/platform",
   "/api/v1/integrations/notification-media/{token}.pdf",
   "/api/v1/integrations/push/devices",
   "/api/v1/integrations/push/devices/{device_id}",
@@ -756,6 +791,8 @@ export const openApiPaths = [
   "/api/v1/kiosk-stations/{public_token}/session/",
   "/api/v1/kiosk-stations/{public_token}/work-package/",
   "/api/v1/live/",
+  "/api/v1/me/messaging",
+  "/api/v1/me/messaging/consent",
   "/api/v1/member/archived-payments",
   "/api/v1/member/event-speaker-claims/",
   "/api/v1/member/makerspaces/{makerspace_id}/account/cancel",
@@ -791,6 +828,7 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/member-card",
   "/api/v1/member/makerspaces/{makerspace_id}/member-card/photo",
   "/api/v1/member/makerspaces/{makerspace_id}/member-card/preview.pdf",
+  "/api/v1/member/makerspaces/{makerspace_id}/my-usage",
   "/api/v1/member/makerspaces/{makerspace_id}/payment-documents",
   "/api/v1/member/makerspaces/{makerspace_id}/payment-documents/{document_id}/download-url",
   "/api/v1/member/makerspaces/{makerspace_id}/payments",
@@ -944,6 +982,45 @@ export type AccessLevelEnum = "operate" | "manage" | "full";
 
 export type AccessStatusEnum = "active" | "restricted" | "suspended";
 
+export type AccountDeletionBlocker = {
+  "code": string;
+  "makerspace_id": number | null;
+  "makerspace_slug": string | null;
+  "makerspace_member_url": string | null;
+  "organization_url": string | null;
+  "organization_id": number | null;
+  "count": number;
+  "detail": string;
+};
+
+export type AccountDeletionForbidden = HardwareRequestError | AccountDeletionRefused;
+
+export type AccountDeletionPreview = {
+  "deletable": boolean;
+  "restorable": boolean;
+  "restore_reason": string;
+  "blockers": Array<AccountDeletionBlocker>;
+  "reauth": AccountDeletionReauth;
+};
+
+export type AccountDeletionReauth = {
+  "required": boolean;
+  "methods": Array<string>;
+};
+
+export type AccountDeletionRefused = {
+  "blockers": Array<AccountDeletionBlocker>;
+};
+
+export type AccountDeletionRequest = {
+  "confirm": ConfirmEnum;
+};
+
+export type AccountDeletionResult = {
+  "deleted_at": string;
+  "purge_after": string;
+};
+
 export type AccountFailure = {
   "detail": string;
   "code"?: string;
@@ -961,6 +1038,52 @@ export type AccountProfile = {
   "first_name"?: string;
   "last_name"?: string;
   "phone"?: string;
+};
+
+export type AccountRestoreEmail = {
+  "email": string;
+  "token": string;
+  "new_password": string;
+};
+
+export type AccountRestorePhone = {
+  "phone": string;
+  "delivery"?: DeliveryEnum;
+  "client_platform"?: ClientPlatformEnum;
+  "challenge"?: string;
+  "code": string;
+  "attestation"?: DeviceAttestationPayload;
+  "new_password": string;
+};
+
+export type AccountRestoreResult = {
+  "restored": boolean;
+  "detail": string;
+};
+
+export type AccountRestoreSocialComplete = {
+  "state": string;
+  "nonce": string;
+  "id_token"?: string;
+  "code"?: string;
+  "challenge"?: string;
+  "attestation"?: DeviceAttestationPayload;
+};
+
+export type AccountRestoreSocialResult = {
+  "authorization_url": string;
+  "state": string;
+  "nonce": string;
+  "expires_in": number;
+};
+
+export type AccountRestoreSocialStart = {
+  "delivery"?: DeliveryEnum;
+  "client_platform"?: ClientPlatformEnum;
+  "challenge"?: string;
+  "username": string;
+  "provider": string;
+  "redirect_uri"?: string;
 };
 
 export type AccountSession = {
@@ -996,6 +1119,7 @@ export type ActiveLoansReportRow = {
   "requester": string;
   "status": string;
   "issued_at": string | null;
+  "count": number;
 };
 
 export type AddressingStyleEnum = "auto" | "path" | "virtual";
@@ -1132,11 +1256,26 @@ export type AdmissionVouchOutcome = {
   "state": State9efEnum;
 };
 
+export type AgeBucketEnum = "0-30" | "31-60" | "61-90" | "90+";
+
 export type AlignEnum = "left" | "center" | "right";
 
 export type AllowedFormatsEnum = "csv" | "xlsx" | "pdf";
 
-export type AnalyticsReportResponse = AnalyticsSummary | TakenItemsReport | ActiveLoansReport | ReturnsReport | DamagedMissingReport | DamagedLostReport | QrScansReport | MostLentReport | TopBorrowersReport | RecentlyAddedReport | MachineUsageReport | EventAttendanceReport | BookingUtilizationReport | MaintenanceActivityReport | MemberActivityReport | FabLabHealthReport | PaymentReconciliationReport | PaymentCashBook | PaymentsLedgerReport | RevenueOverTimeReport | CashBookReport | AccountingJournalReport | GenericAnalyticsReport | MemberRetentionReport | MembershipRevenueReport | EventRegistrationReport | EventFeedbackReport | BookingResourceUtilizationReport | BookingReservationReport | BookingAnswerReport;
+export type AnalyticsMakerspace = {
+  "id": number;
+  "name": string;
+  "slug": string;
+};
+
+export type AnalyticsMakerspacePage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<AnalyticsMakerspace>;
+};
+
+export type AnalyticsReportResponse = AnalyticsSummary | TakenItemsReport | ActiveLoansReport | ReturnsReport | DamagedMissingReport | DamagedLostReport | QrScansReport | MostLentReport | TopBorrowersReport | RecentlyAddedReport | MachineUsageV2Report | EventAttendanceReport | BookingUtilizationReport | MaintenanceActivityV2Report | MachineUsageMembersReport | MachineUsageHeatmapReport | MachineDowntimeReport | MachineServiceV2Report | ServiceQueueTimesReport | PrinterJobsReport | MachineErrorsReport | WarrantyExpiryReport | BookingUtilizationV2Report | BookingOccupancyReport | BookingLeadTimeReport | BookingTopMembersReport | EventSignupsReport | EventRevenueReport | EventFunnelReport | EventCheckinTimesReport | EventFeedbackScoresReport | MemberActivityReport | FabLabHealthReport | PaymentReconciliationReport | PaymentCashBook | PaymentsLedgerReport | RevenueOverTimeReport | CashBookReport | AccountingJournalReport | GenericAnalyticsReport | CommunicationsHealthReport | PlatformServicesReport | MemberRetentionReport | MembershipRevenueReport | MembershipGrowthReport | PaymentsAgeingReport | EventRegistrationReport | EventFeedbackReport | BookingResourceUtilizationReport | BookingReservationReport | BookingAnswerReport;
 
 export type AnalyticsSummary = {
   "products": number;
@@ -1146,6 +1285,13 @@ export type AnalyticsSummary = {
   "issued_quantity": number;
   "damaged_quantity": number;
   "missing_quantity": number;
+  "asset_available": number;
+  "asset_reserved": number;
+  "asset_issued": number;
+  "asset_damaged": number;
+  "asset_lost": number;
+  "asset_maintenance": number;
+  "asset_retired": number;
 };
 
 export type AnchorEnum = "completion" | "calendar";
@@ -1242,6 +1388,8 @@ export type ApiKeyRequest = {
   "created_at": string;
   "resolved_at": string | null;
 };
+
+export type AppAttestAttestationTypeEnum = "app_attest";
 
 export type ApprovalModeE35Enum = "instant" | "approve";
 
@@ -1383,6 +1531,8 @@ export type AttendedEvent = {
   "starts_at": string;
 };
 
+export type Audience817Enum = "member" | "staff";
+
 export type AudienceBe5Enum = "member" | "public";
 
 export type AuditLog = {
@@ -1450,6 +1600,8 @@ export type AuthMembership = {
 
 export type AuthMembershipSourceEnum = "membership" | "organization";
 
+export type AuthorityEnum = "member" | "staff";
+
 export type AuthStaffMakerspace = {
   "id": number;
   "slug": string;
@@ -1457,6 +1609,7 @@ export type AuthStaffMakerspace = {
 };
 
 export type AuthUserPayload = {
+  "session_authority": string;
   "id": number;
   "username": string;
   "email": string;
@@ -1842,7 +1995,7 @@ export type BookingDecision = {
 export type BookingDeparture = {
   "outcome": Outcome860Enum;
   "remark": string;
-  "source": Source356Enum;
+  "source": Surface356Enum;
   "recorded_at": string;
   "recorded_by": string;
 };
@@ -1883,6 +2036,18 @@ export type BookingIssuePage = {
   "results": Array<BookingIssue>;
 };
 
+export type BookingLeadTimeReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<BookingLeadTimeRow>;
+};
+
+export type BookingLeadTimeRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "lead_time_bucket": string;
+  "booking_count": number;
+};
+
 export type BookingListResponse = {
   "count": number;
   "next"?: string | null;
@@ -1900,6 +2065,21 @@ export type BookingMachineTypePage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<BookingMachineType>;
+};
+
+export type BookingOccupancyReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<BookingOccupancyRow>;
+};
+
+export type BookingOccupancyRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "weekday": number;
+  "hour": number;
+  "occupied_hours": string;
+  "window_hours": string;
+  "occupancy_percent": number | null;
 };
 
 export type BookingPassElement = {
@@ -2068,6 +2248,18 @@ export type BookingTimeInput = {
   "ends_at": string;
 };
 
+export type BookingTopMemberRow = {
+  "member_id": number | null;
+  "member": string;
+  "booking_count": number;
+  "reserved_hours": string;
+};
+
+export type BookingTopMembersReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<BookingTopMemberRow>;
+};
+
 export type BookingUtilizationReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<BookingUtilizationRow>;
@@ -2089,6 +2281,33 @@ export type BookingUtilizationRow = {
   "window_hours": string | null;
   "reservation_utilization_percent": number | null;
   "no_show_rate_percent": number | null;
+};
+
+export type BookingUtilizationV2Report = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<BookingUtilizationV2Row>;
+};
+
+export type BookingUtilizationV2Row = {
+  "makerspace_id"?: number;
+  "space_id": number;
+  "space_name": string;
+  "kind": string;
+  "is_active": boolean;
+  "booked": number;
+  "completed": number;
+  "no_show": number;
+  "cancelled": number;
+  "upcoming": number;
+  "reserved_hours": string;
+  "completed_hours": string;
+  "window_hours": string | null;
+  "reservation_utilization_percent": number | null;
+  "no_show_rate_percent": number | null;
+  "period"?: string;
+  "reservations"?: number;
+  "terminal_reservations"?: number;
+  "cancellation_rate_percent"?: number | null;
 };
 
 export type BookingWebsite = {
@@ -2148,6 +2367,7 @@ export type BookingWebsiteSectionInput = {
 
 export type Bounce = {
   "event_id": string;
+  "message_id"?: string;
   "address": string;
   "reason": BounceReasonEnum;
 };
@@ -2250,6 +2470,13 @@ export type CadenceEnum = "daily" | "weekly" | "monthly";
 
 export type CallbackStatus = {
   "verified": boolean;
+};
+
+export type CallbackURLs = {
+  "inbound_url"?: string;
+  "status_url"?: string;
+  "status_url_template"?: string;
+  "webhook_url"?: string;
 };
 
 export type CashBookReport = {
@@ -2445,11 +2672,13 @@ export type ChangePasswordResponse = {
   "detail": string;
 };
 
+export type Channel06eEnum = "sms" | "whatsapp";
+
+export type Channel292Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "sms" | "whatsapp";
+
 export type Channel59dEnum = "telegram" | "slack" | "mattermost" | "discord" | "webhook";
 
-export type Channel673Enum = "email" | "in_app" | "native_push";
-
-export type ChannelBe2Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
+export type ChannelB6fEnum = "email" | "in_app" | "native_push" | "sms" | "whatsapp";
 
 export type ChannelDb9Enum = "telegram" | "slack" | "mattermost" | "discord" | "whatsapp";
 
@@ -2506,6 +2735,8 @@ export type ClosureIdentity = {
   "phone": string;
   "date_joined": string;
 };
+
+export type CodeEnum = "payment_provider_conflict";
 
 export type CollaborativeEvent = {
   "participating_organizations": Array<ParticipatingOrganization>;
@@ -2583,6 +2814,69 @@ export type CommandLease = {
   "item_count"?: number;
 };
 
+export type CommunicationsHealthReport = {
+  "report_key"?: string;
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<CommunicationsHealthRow>;
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type CommunicationsHealthRow = {
+  "triggered_count": number;
+  "delivery_count": number;
+  "attempt_count": number;
+  "sent_count": number;
+  "failed_count": number;
+  "skipped_count": number;
+  "suppressed_count": number;
+  "bounced_count": number;
+  "complained_count": number;
+  "invalid_count": number;
+  "inbox_created_count": number;
+  "inbox_read_count": number;
+  "unread_count": number;
+  "accepted_count": number;
+  "delivered_count": number;
+  "read_count": number;
+  "pending_count": number;
+  "sending_count": number;
+  "accepted_only_count": number;
+  "sent_only_count": number;
+  "delivered_only_count": number;
+  "estimated_segments": number;
+  "billed_segments": number;
+  "segments": number;
+  "abandoned_webhook_count": number;
+  "held_webhook_count": number;
+  "held_count": number;
+  "canceled_count": number;
+  "delivery_rate_numerator": number;
+  "delivery_rate_denominator": number;
+  "read_rate_numerator": number;
+  "read_rate_denominator": number;
+  "makerspace_id"?: number;
+  "period": string | null;
+  "module_key": string;
+  "channel": string;
+  "feature": string;
+  "provider_source": string;
+  "platform": string;
+  "audience": string;
+  "skip_reason": string;
+  "segment_source": SegmentSourceEnum;
+  "measurement": CommunicationsHealthRowMeasurementEnum;
+  "success_rate_percent": number | null;
+  "read_rate_percent": number | null;
+  "delivery_rate": number | null;
+  "read_rate": number | null;
+  "consented_member_count": number | null;
+  "last_activity_at": string | null;
+};
+
+export type CommunicationsHealthRowMeasurementEnum = "delivery_cohort" | "webhook_receipts" | "current_consent_snapshot";
+
 export type CompleteRequest = {
   "token": string;
   "public_key": string;
@@ -2591,6 +2885,8 @@ export type CompleteRequest = {
 };
 
 export type ConditionEnum = "available" | "damaged" | "lost" | "unknown";
+
+export type ConfirmEnum = "DELETE";
 
 export type ConnectedDeviceIdentity = {
   "device_id": string;
@@ -2601,6 +2897,14 @@ export type ConnectedDeviceIdentity = {
 };
 
 export type ConnectStatusEnum = "unconnected" | "pending" | "active" | "restricted" | "disconnected";
+
+export type ConsentWrite = {
+  "makerspace": number;
+  "channel": Channel06eEnum;
+  "action": ConsentWriteActionEnum;
+};
+
+export type ConsentWriteActionEnum = "opted_in" | "opted_out";
 
 export type ConsumableCandidate = {
   "id": number;
@@ -2676,7 +2980,7 @@ export type ContractChallengeStart = {
 };
 
 export type ContractChannel = {
-  "channel": ChannelBe2Enum;
+  "channel": Channel292Enum;
   "enabled"?: boolean;
   "room_enabled"?: boolean;
   "personal_enabled"?: boolean;
@@ -2687,6 +2991,11 @@ export type ContractChannel = {
   "quotas"?: unknown;
   "credentials_set": boolean;
   "templates": Array<ContractWhatsAppTemplate>;
+  "use_platform_sender"?: boolean;
+  "sender_key"?: string;
+  "credential_version"?: number;
+  "activation_hold"?: boolean;
+  "callback_urls": CallbackURLs;
 };
 
 export type ContractChannelPage = {
@@ -2701,7 +3010,7 @@ export type ContractChannelPatchProviderEnum = "telegram" | "slack" | "mattermos
 export type ContractDelivery = {
   "id": number;
   "envelope_id": number;
-  "channel": ChannelBe2Enum;
+  "channel": Channel292Enum;
   "state"?: ContractDeliveryStateEnum;
   "attempt_count"?: number;
   "next_attempt_at"?: string | null;
@@ -2720,7 +3029,7 @@ export type ContractDeliveryPage = {
   "results": Array<ContractDelivery>;
 };
 
-export type ContractDeliveryStateEnum = "accepted" | "sent" | "delivered" | "read" | "failed" | "skipped" | "retrying";
+export type ContractDeliveryStateEnum = "accepted" | "sent" | "delivered" | "read" | "failed" | "skipped" | "retrying" | "held";
 
 export type ContractEndpoint = {
   "id": number;
@@ -2777,23 +3086,27 @@ export type ContractSelection = {
   "available_channels": Array<string>;
 };
 
-export type ContractSelectionChannelsEnum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "whatsapp";
+export type ContractSelectionChannelsEnum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "sms" | "whatsapp";
 
 export type ContractTest = {
+  "feature"?: Feature977Enum;
+  "event"?: string;
   "channel": ContractTestChannelEnum;
   "endpoint_id"?: number;
   "room_id"?: number;
 };
 
-export type ContractTestChannelEnum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
+export type ContractTestChannelEnum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "sms" | "whatsapp";
 
 export type ContractWhatsAppTemplate = {
+  "feature"?: Feature977Enum;
   "event": string;
   "audience": ContractWhatsAppTemplateAudienceEnum;
   "locale"?: string;
   "template_name": string;
   "variables": Array<string>;
   "approved": boolean;
+  "needs_review": boolean;
 };
 
 export type ContractWhatsAppTemplateAudienceEnum = "staff" | "requester" | "member";
@@ -2898,9 +3211,13 @@ export type DamagedLostReport = {
 
 export type DamagedLostReportRow = {
   "makerspace_id"?: number;
+  "product_id": number;
   "product_name": string;
   "damaged_quantity": number;
   "lost_quantity": number;
+  "total_quantity": number;
+  "damage_rate_percent": number | null;
+  "loss_rate_percent": number | null;
 };
 
 export type DamagedMissingReport = {
@@ -2922,6 +3239,8 @@ export type Dashboard = {
   "upcoming_bookings"?: number;
   "open_booking_issues"?: number;
   "scope_mode": ScopeModeEnum;
+  "widgets"?: Array<DashboardWidget>;
+  "queue_tiles"?: DashboardQueue;
   "overdue_loans"?: number;
   "pending_requests"?: number;
   "awaiting_issue"?: number;
@@ -2939,6 +3258,28 @@ export type Dashboard = {
   [key: string]: string;
 };
 };
+
+export type DashboardQueue = {
+  "ready_to_issue"?: number;
+  "due_returns"?: number;
+  "pickups"?: number;
+};
+
+export type DashboardWidget = {
+  "key": string;
+  "title": string;
+  "required_action": string;
+  "required_modules": Array<string>;
+  "kind": DashboardWidgetKindEnum;
+  "report_keys": Array<string>;
+  "default_period": number;
+  "data": {
+  [key: string]: unknown;
+};
+  "chart_spec": ReportChartSpec | null;
+};
+
+export type DashboardWidgetKindEnum = "count" | "trend" | "top_n" | "heatmap" | "queue";
 
 export type DataExportCreate = {
   "fidelity"?: FidelityEnum;
@@ -3031,6 +3372,8 @@ export type DestinationScope = {
   "category_ids"?: Array<number>;
 };
 
+export type DevelopmentAttestationTypeEnum = "development";
+
 export type Device = {
   "id": string;
   "makerspace": number;
@@ -3049,6 +3392,17 @@ export type Device = {
   "revoked_at": string | null;
   "revoked_by": number | null;
 };
+
+export type DeviceAttestationPayload = {
+  "type": PlayIntegrityAttestationTypeEnum;
+  "token": string;
+} | {
+  "type": AppAttestAttestationTypeEnum;
+  "key_id": string;
+  "attestation": string;
+} | {
+  "type": DevelopmentAttestationTypeEnum;
+} | Record<string, unknown>;
 
 export type DeviceChallengeResponse = {
   "challenge": string;
@@ -3072,29 +3426,34 @@ export type DeviceError = {
 
 export type DeviceGrant = {
   "id": string;
-  "platform": string;
+  "platform": DevicePlatformEnum;
   "app_id": string;
   "environment": string;
   "status": string;
+  "authority": AuthorityEnum;
+  "staff_makerspace_id": number | null;
+  "login_method": string;
   "attested_at": string;
   "last_used_at": string;
   "created_at": string;
 };
 
 export type DeviceIdentity = {
-  "platform": PlatformEnum;
+  "platform": DevicePlatformEnum;
   "app_id": string;
   "environment": EnvironmentEnum;
 };
 
 export type DeviceLogin = {
-  "platform": PlatformEnum;
+  "platform": DevicePlatformEnum;
   "app_id": string;
   "environment": EnvironmentEnum;
+  "context"?: Context396Enum;
+  "makerspace"?: string;
   "username": string;
   "password": string;
   "challenge": string;
-  "attestation": unknown;
+  "attestation": DeviceAttestationPayload;
 };
 
 export type DeviceLoginResult = DeviceTokenResponse | MFAChallengeResponse;
@@ -3102,6 +3461,8 @@ export type DeviceLoginResult = DeviceTokenResponse | MFAChallengeResponse;
 export type DeviceLogoutResponse = {
   "detail": string;
 };
+
+export type DevicePlatformEnum = "apple" | "android";
 
 export type DeviceRefresh = {
   "refresh": string;
@@ -3393,10 +3754,12 @@ export type EndReasonEnum = "superseded" | "membership_revoked" | "claim_revoked
 export type EnrollmentGrant = {
   "enrollment_id": string;
   "device_id": string;
-  "purpose": PurposeEnum;
+  "purpose": EnrollmentGrantPurposeEnum;
   "token": string;
   "expires_at": string;
 };
+
+export type EnrollmentGrantPurposeEnum = "enroll" | "rotate" | "reactivate";
 
 export type EnvironmentEnum = "development" | "production";
 
@@ -3570,6 +3933,20 @@ export type EventCheckInRow = {
 
 export type EventCheckInRowSourceEnum = "legacy" | "manual" | "offline" | "qr" | "station";
 
+export type EventCheckinTimesReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<EventCheckinTimesRow>;
+};
+
+export type EventCheckinTimesRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "event_id": number;
+  "title": string;
+  "timing_bucket": string;
+  "checkin_count": number;
+};
+
 export type EventCollaborationInbox = {
   "id": number;
   "event_id": number;
@@ -3658,6 +4035,39 @@ export type EventFeedbackReportRow = {
   "answers": string;
 };
 
+export type EventFeedbackScoresReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<EventFeedbackScoresRow>;
+};
+
+export type EventFeedbackScoresRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "event_id": number;
+  "title": string;
+  "question_id": string;
+  "score_count": number;
+  "score_total": string;
+  "average_score": string;
+};
+
+export type EventFunnelReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<EventFunnelRow>;
+};
+
+export type EventFunnelRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "event_id": number;
+  "title": string;
+  "registrations": number;
+  "confirmed": number;
+  "attended": number;
+  "confirmation_rate_percent": number | null;
+  "attendance_rate_percent": number | null;
+};
+
 export type EventHistory = {
   "counts": HistoryCounts;
   "registrations": Array<HistoryRegistration>;
@@ -3741,6 +4151,26 @@ export type EventRegistrationReportRow = {
   "status": string;
   "created_at": string;
   "answers": string;
+};
+
+export type EventRevenueReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<EventRevenueRow>;
+};
+
+export type EventRevenueRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "event_id": number;
+  "title": string;
+  "currency": string;
+  "charge_count": number;
+  "charged_amount": string;
+  "promo_discount_amount": string;
+  "collected_amount": string;
+  "refunded_amount": string;
+  "outstanding_amount": string;
+  "net_amount": string;
 };
 
 export type EventSeriesDetail = {
@@ -3841,6 +4271,20 @@ export type EventSeriesWrite = {
 };
 
 export type EventSeriesWriteRegistrationAudienceEnum = "members" | "accounts" | "invite" | "participating_organizations";
+
+export type EventSignupsReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<EventSignupsRow>;
+};
+
+export type EventSignupsRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "event_id": number;
+  "title": string;
+  "registrations": number;
+  "cumulative_registrations": number;
+};
 
 export type EventSpeaker = {
   "id": number;
@@ -3954,7 +4398,7 @@ export type FabLabHealthReport = {
 };
 
 export type FabLabHealthRow = {
-  "makerspace_id"?: number;
+  "makerspace_id": number;
   "events_enabled": boolean;
   "events_available": boolean;
   "events_in_period": number | null;
@@ -3979,6 +4423,8 @@ export type FabLabHealthRow = {
   "maintenance_total_cost": string | null;
   "maintenance_overdue_schedules": number | null;
 };
+
+export type FactorRequiredEnum = "totp" | "phone" | "email_code";
 
 export type FailedDeliveries = {
   "email": number;
@@ -4521,6 +4967,9 @@ export type InventoryProductAdmin = {
   "reorder_quantity"?: number;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
+  "unit_cost"?: string | null;
+  "cost_currency"?: string;
+  "cost_unit"?: string;
   "borrowing_terms"?: string;
   "image_key": string;
   "image_url": string | null;
@@ -4559,6 +5008,9 @@ export type InventoryProductAdminCreate = {
   "reorder_quantity"?: number;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
+  "unit_cost"?: string | null;
+  "cost_currency"?: string;
+  "cost_unit"?: string;
   "borrowing_terms"?: string;
   "image_key": string;
   "image_url": string | null;
@@ -4597,6 +5049,9 @@ export type InventoryProductAdminUpdate = {
   "reorder_quantity"?: number;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
+  "unit_cost"?: string | null;
+  "cost_currency"?: string;
+  "cost_unit"?: string;
   "borrowing_terms"?: string;
   "image_key": string;
   "image_url": string | null;
@@ -4770,9 +5225,9 @@ export type JournalLine = {
   "settlement_method": string;
 };
 
-export type Key4d1Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
+export type Key292Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "sms" | "whatsapp";
 
-export type KeyBe2Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
+export type Key4d1Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
 export type Kind21fEnum = "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
 
@@ -5115,7 +5570,14 @@ export type LogMachineConsumption = {
   "quantity": string;
 };
 
+export type LogoutAllResponse = {
+  "web_sessions": number;
+  "devices": number;
+};
+
 export type LogUsage = {
+  "member"?: number | null;
+  "started_at"?: string | null;
   "hours": string;
   "note"?: string;
 };
@@ -5171,17 +5633,74 @@ export type MachineDocument = {
   "created_at": string;
 };
 
+export type MachineDowntimeReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<MachineDowntimeRow>;
+};
+
+export type MachineDowntimeRow = {
+  "makerspace_id"?: number;
+  "period": string | null;
+  "machine_id": number | null;
+  "machine_name": string | null;
+  "machine_type": string | null;
+  "status": string;
+  "status_hours": string | null;
+};
+
 export type MachineErrorLog = {
   "id": number;
-  "severity": SeverityEnum;
+  "severity": MachineErrorLogSeverityEnum;
   "message": string;
   "logged_by_username": string | null;
   "created_at": string;
 };
 
+export type MachineErrorLogSeverityEnum = "info" | "warning" | "error" | "critical";
+
+export type MachineErrorsReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<MachineErrorsRow>;
+};
+
+export type MachineErrorsRow = {
+  "makerspace_id"?: number;
+  "period": string | null;
+  "machine_id": number | null;
+  "machine_name": string | null;
+  "machine_type": string | null;
+  "severity": MachineErrorsRowSeverityEnum;
+  "error_count": number;
+};
+
+export type MachineErrorsRowSeverityEnum = "info" | "warning" | "error" | "critical";
+
+export type MachineHeatmapRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "measure": MeasureEnum;
+  "machine_type_id": number | null;
+  "machine_type": string;
+  "weekday": number;
+  "hour": number;
+  "service_hours": string | null;
+  "manual_hours": string | null;
+  "booked_hours": string | null;
+};
+
 export type MachineListResponse = {
   "count": number;
   "results": Array<Machine>;
+};
+
+export type MachineMemberRow = {
+  "period": string;
+  "member_id": number | null;
+  "measure": MeasureEnum;
+  "machine_type_id": number | null;
+  "machine_type": string;
+  "entries": number;
+  "hours": string | null;
 };
 
 export type MachineOperator = {
@@ -5308,6 +5827,43 @@ export type MachineServiceSubmit = {
   "capability_payload"?: unknown;
 };
 
+export type MachineServiceV2Report = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<MachineServiceV2Row>;
+};
+
+export type MachineServiceV2Row = {
+  "makerspace_id"?: number;
+  "period": string | null;
+  "machine_id": number | null;
+  "machine_name": string | null;
+  "machine_type": string | null;
+  "row_kind": RowKindEnum;
+  "submitted": number | null;
+  "accepted": number | null;
+  "in_progress": number | null;
+  "completed": number | null;
+  "collected": number | null;
+  "rejected": number | null;
+  "failed": number | null;
+  "request_count": number | null;
+  "completed_count": number | null;
+  "failed_count": number | null;
+  "completed_hours": string | null;
+  "failed_partial_hours": string | null;
+  "total_recorded_service_hours": string | null;
+  "failure_rate": number | null;
+  "measurement": string | null;
+  "product_id": number | null;
+  "product_label": string | null;
+  "completed_amount": string | null;
+  "failed_partial_amount": string | null;
+  "total_used": string | null;
+  "outcome": string | null;
+  "failed_count_amount": string | null;
+  "failed_grams_amount": string | null;
+};
+
 export type MachineStatusEnum = "idle" | "running" | "reserved" | "maintenance" | "offline";
 
 export type MachineType = {
@@ -5371,9 +5927,18 @@ export type MachineTypePricingSet = {
   "payment_enabled": boolean;
 };
 
+export type MachineUsageCandidatesPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<OperatorCandidate>;
+};
+
 export type MachineUsageEntry = {
   "id": number;
   "hours": string;
+  "member": number | null;
+  "started_at": string | null;
   "source": MachineUsageEntrySourceEnum;
   "note": string;
   "logged_by_username": string | null;
@@ -5382,40 +5947,56 @@ export type MachineUsageEntry = {
 
 export type MachineUsageEntrySourceEnum = "manual" | "typed_manual";
 
-export type MachineUsageReport = {
+export type MachineUsageHeatmapReport = {
   "rows": Array<Array<unknown>>;
-  "typed_rows": Array<MachineUsageRow>;
+  "typed_rows": Array<MachineHeatmapRow>;
 };
 
-export type MachineUsageRow = {
-  "makerspace_id"?: number;
-  "machine_id": number;
-  "machine_name": string;
-  "machine_type": string;
-  "is_active": boolean;
-  "usage_entries": number;
-  "usage_hours": string;
-};
-
-export type MaintenanceActivityReport = {
+export type MachineUsageMembersReport = {
   "rows": Array<Array<unknown>>;
-  "typed_rows": Array<MaintenanceActivityRow>;
+  "typed_rows": Array<MachineMemberRow>;
 };
 
-export type MaintenanceActivityRow = {
+export type MachineUsageV2Report = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<MachineUsageV2Row>;
+};
+
+export type MachineUsageV2Row = {
   "makerspace_id"?: number;
-  "machine_id": number;
-  "machine_name": string;
-  "machine_type": string;
+  "period": string | null;
+  "machine_id": number | null;
+  "machine_name": string | null;
+  "machine_type": string | null;
+  "measure": MeasureEnum;
+  "machine_type_id": number | null;
+  "entries": number;
+  "service_hours": string | null;
+  "manual_hours": string | null;
+  "booked_hours": string | null;
+};
+
+export type MaintenanceActivityV2Report = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<MaintenanceActivityV2Row>;
+};
+
+export type MaintenanceActivityV2Row = {
+  "makerspace_id"?: number;
+  "period": string | null;
+  "machine_id": number | null;
+  "machine_name": string | null;
+  "machine_type": string | null;
   "is_active": boolean;
-  "log_count": number;
-  "costed_log_count": number;
-  "total_cost": string;
+  "log_count": number | null;
+  "costed_log_count": number | null;
+  "total_cost": string | null;
   "average_cost": string | null;
   "last_performed_at": string | null;
   "average_interval_days": number | null;
-  "active_schedules": number;
-  "overdue_schedules": number;
+  "active_schedules": number | null;
+  "overdue_schedules": number | null;
+  "currency": string | null;
 };
 
 export type MaintenanceDocumentFinalize = {
@@ -5682,6 +6263,15 @@ export type MakerspaceDirectoryPage = {
 };
 
 export type MakerspacePaymentSettings = {
+  "provider"?: MakerspacePaymentSettingsProviderEnum;
+  "razorpay_key_id"?: string;
+  "razorpay_key_id_set": boolean;
+  "razorpay_key_secret"?: string;
+  "razorpay_key_secret_set": boolean;
+  "razorpay_webhook_secret"?: string;
+  "razorpay_webhook_secret_set": boolean;
+  "stripe_webhook_url": string;
+  "razorpay_webhook_url": string;
   "default_currency"?: string;
   "stripe_publishable_key"?: string;
   "stripe_publishable_key_set": boolean;
@@ -5702,6 +6292,8 @@ export type MakerspacePaymentSettings = {
   "loan_grace_days"?: number;
   "loan_deposit_blocks_issue"?: boolean;
 };
+
+export type MakerspacePaymentSettingsProviderEnum = "stripe" | "razorpay";
 
 export type MakerspaceProfile = {
   "timezone": string;
@@ -5798,6 +6390,8 @@ export type MattermostInstallation = {
   "webhook_token": string;
 };
 
+export type MeasureEnum = "service" | "manual" | "booked";
+
 export type Measurement883Enum = "count" | "grams";
 
 export type MemberAccountability = {
@@ -5864,6 +6458,11 @@ export type MemberBookingList = {
   "next": string | null;
   "previous": string | null;
   "results": Array<MemberBooking>;
+};
+
+export type MemberBookingUsage = {
+  "count": number;
+  "monthly": MemberUsageSeries;
 };
 
 export type MemberCalendarFeedIssue = {
@@ -6042,6 +6641,11 @@ export type MemberEventTicket = {
   "ticket_png_available": boolean;
 };
 
+export type MemberEventUsage = {
+  "attended_count": number;
+  "chart": MemberUsageSeries;
+};
+
 export type MemberKitPreviewInput = {
   "payload": string;
   "phase": PhaseEnum;
@@ -6066,6 +6670,13 @@ export type MemberLoanHistory = {
   "returned_late": boolean;
 };
 
+export type MemberLoanUsage = {
+  "count": number;
+  "returned_count": number;
+  "currently_out": number;
+  "monthly": MemberUsageSeries;
+};
+
 export type MemberMachineScope = {
   "membership_id": number;
   "scoping_applies": boolean;
@@ -6083,6 +6694,17 @@ export type MemberMachineServiceActivity = {
   "status": string;
   "created_at": string;
   "queue_position": number | null;
+};
+
+export type MemberMachineUsage = {
+  "hours": string;
+  "monthly": MemberUsageSeries;
+  "top_machines": MemberUsageSeries;
+};
+
+export type MemberMessaging = {
+  "sms": MessagingChannel;
+  "whatsapp": MessagingChannel;
 };
 
 export type MemberNotice = {
@@ -6108,6 +6730,16 @@ export type MemberPayment = {
   "refunded_amount": number;
   "refunds": Array<MemberRefund>;
   "created_at": string;
+};
+
+export type MemberPaymentUsage = {
+  "paid_by_currency": {
+  [key: string]: string;
+};
+  "outstanding_by_currency": {
+  [key: string]: string;
+};
+  "totals": MemberUsageSeries;
 };
 
 export type MemberPresenceActivity = {
@@ -6205,6 +6837,20 @@ export type MembershipCreate = {
 };
 
 export type MembershipDispositionEnum = "import_membership" | "no_membership";
+
+export type MembershipGrowthReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<MembershipGrowthRow>;
+};
+
+export type MembershipGrowthRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "new_members": number;
+  "activated_members": number;
+  "revoked_members": number;
+  "active_members": number;
+};
 
 export type MembershipList = {
   "id": number;
@@ -6316,6 +6962,8 @@ export type MembershipRevenueRow = {
   "makerspace_id"?: number;
   "period": string;
   "currency": string;
+  "plan_id": number;
+  "plan_name": string;
   "recurring_members": number;
   "mrr": string;
   "arr": string;
@@ -6375,6 +7023,22 @@ export type MemberTerm = {
   "blocks_borrowing": boolean;
 };
 
+export type MemberUsage = {
+  "usage_available": boolean;
+  "loans"?: MemberLoanUsage;
+  "machines"?: MemberMachineUsage;
+  "bookings"?: MemberBookingUsage;
+  "events"?: MemberEventUsage;
+  "payments"?: MemberPaymentUsage;
+};
+
+export type MemberUsageSeries = {
+  "rows": Array<{
+  [key: string]: unknown;
+}>;
+  "chart_spec": ReportChartSpec;
+};
+
 export type MemberVerificationAck = {
   "detail": string;
 };
@@ -6398,7 +7062,61 @@ export type MemberWaiverResponse = {
 
 export type MessageStatusEnum = "accepted" | "queued" | "sending" | "sent" | "delivered" | "read" | "failed" | "undelivered" | "canceled";
 
+export type MessagingCatalogEntry = {
+  "feature": string;
+  "event": string;
+  "audience": Audience817Enum;
+  "allowed_projection_keys": Array<string>;
+  "supported_languages": Array<string>;
+};
+
+export type MessagingChannel = {
+  "available": boolean;
+  "consented": boolean;
+  "phone_verified": boolean;
+  "phone_masked": string;
+  "suppressed": boolean;
+};
+
 export type MessagingProductEnum = "whatsapp";
+
+export type MessagingSettings = {
+  "use_platform_sender"?: boolean;
+  "sms_account_sid"?: string;
+  "sms_from_number"?: string;
+  "sms_auth_token"?: string;
+  "whatsapp_phone_number_id"?: string;
+  "whatsapp_business_account_id"?: string;
+  "whatsapp_access_token"?: string;
+  "whatsapp_app_secret"?: string;
+  "sms_auth_token_set": boolean;
+  "whatsapp_access_token_set": boolean;
+  "whatsapp_app_secret_set": boolean;
+  "whatsapp_webhook_verify_token": string;
+  "effective_source": {
+  [key: string]: "own" | "platform" | "none";
+};
+  "platform_available": {
+  [key: string]: boolean;
+};
+  "webhook_urls": {
+  [key: string]: {
+  [key: string]: string;
+};
+};
+};
+
+export type MessagingTest = {
+  "channel": Channel06eEnum;
+  "feature"?: string;
+  "event"?: string;
+};
+
+export type MessagingTestResponse = {
+  "delivery_id": number;
+  "status": string;
+  "skip_reason": string;
+};
 
 export type MetaChange = {
   "field": MetaChangeFieldEnum;
@@ -6542,12 +7260,12 @@ export type MigrationExportJob = {
   "expires_at": string;
 };
 
-export type MobilePaymentIntentResponse = {
-  "payment_id": number;
-  "client_secret": string;
-  "publishable_key": string;
-  "customer_id"?: string | null;
-  "ephemeral_key"?: string | null;
+export type MobilePaymentIntentResponse = StripeMobilePaymentIntentResponse | RazorpayMobilePaymentIntentResponse;
+
+export type MobileReadiness = {
+  "platforms": {
+  [key: string]: PlatformReadiness;
+};
 };
 
 export type Mode087Enum = "preview" | "apply";
@@ -6556,7 +7274,7 @@ export type ModuleAction = {
   "key": string;
 };
 
-export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook";
+export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
 
 export type MostLentReport = {
   "rows": Array<Array<unknown>>;
@@ -6565,6 +7283,8 @@ export type MostLentReport = {
 
 export type MostLentReportRow = {
   "makerspace_id"?: number;
+  "period": string | null;
+  "product_id": number | null;
   "product_name": string;
   "times_lent": number;
   "total_quantity_lent": number;
@@ -6643,12 +7363,60 @@ export type MyMemberships = {
   "requests": Array<MyMembershipRequest>;
 };
 
+export type NativeAppIdentities = {
+  "android": NativeAppIdentity | null;
+  "ios": NativeAppIdentity | null;
+};
+
+export type NativeAppIdentity = {
+  "app_id": string;
+  "signing_identities": Array<string>;
+};
+
+export type NativeApple = {
+  "enabled": boolean;
+};
+
+export type NativeConfig = {
+  "app_display_name": string;
+  "app_identity": NativeAppIdentities;
+  "min_app_version": NativeMinVersion;
+  "providers": NativeProviders;
+};
+
+export type NativeGoogle = {
+  "android_client_id": string;
+  "ios_client_id": string;
+};
+
+export type NativeMinVersion = {
+  "android": string | null;
+  "ios": string | null;
+};
+
+export type NativeOidc = {
+  "key": string;
+  "display_name": string;
+  "client_id": string;
+  "issuer": string;
+};
+
+export type NativeProviders = {
+  "password": boolean;
+  "phone": boolean;
+  "google": NativeGoogle | null;
+  "apple": NativeApple | null;
+  "oidc": Array<NativeOidc>;
+};
+
 export type NeedsFixAction = {
   "action": NeedsFixActionActionEnum;
   "quantity": number;
 };
 
 export type NeedsFixActionActionEnum = "repair" | "scrap" | "shelve";
+
+export type NegativesEnum = "allow" | "clip";
 
 export type Notification = {
   "id": number;
@@ -6662,7 +7430,7 @@ export type Notification = {
 };
 
 export type NotificationChannel = {
-  "key": KeyBe2Enum;
+  "key": Key292Enum;
   "label": string;
 };
 
@@ -6707,7 +7475,7 @@ export type NotificationMarkAllRead = {
 
 export type NotificationPreferenceCell = {
   "feature": Feature4d1Enum;
-  "channel": ChannelBe2Enum;
+  "channel": Channel292Enum;
   "enabled": boolean;
   "source": NotificationPreferenceCellSourceEnum;
 };
@@ -6716,7 +7484,7 @@ export type NotificationPreferenceCellSourceEnum = "default" | "override";
 
 export type NotificationPreferenceChange = {
   "feature": Feature4d1Enum;
-  "channel": ChannelBe2Enum;
+  "channel": Channel292Enum;
   "enabled": boolean;
 };
 
@@ -7040,6 +7808,7 @@ export type OrganizationReportResponse = {
   "strategy": StrategyEnum;
   "breakdown": Array<OrganizationReportBreakdown>;
   "total": OrganizationReportRows;
+  "chart_spec"?: ReportChartSpec | null;
 };
 
 export type OrganizationReportRows = {
@@ -7249,7 +8018,7 @@ export type PackMembershipPlan = {
 
 export type PackNotificationPreference = {
   "feature": Feature4d1Enum;
-  "channel": ChannelBe2Enum;
+  "channel": Channel292Enum;
   "enabled": boolean;
 };
 
@@ -7595,6 +8364,8 @@ export type ParticipatingOrganization = {
   "name": string;
 };
 
+export type PartitionEnum = "tenant" | "currency" | "unit";
+
 export type PasswordLoginResult = LoginResponse | MFAChallengeResponse;
 
 export type PasswordResetAcknowledgement = {
@@ -7810,6 +8581,8 @@ export type PatchedCertificationTypeUpdate = {
 };
 
 export type PatchedContractChannelPatch = {
+  "use_platform_sender"?: boolean;
+  "activation_hold"?: boolean;
   "enabled"?: boolean;
   "room_enabled"?: boolean;
   "personal_enabled"?: boolean;
@@ -7916,6 +8689,9 @@ export type PatchedInventoryProductAdminUpdate = {
   "reorder_quantity"?: number;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
+  "unit_cost"?: string | null;
+  "cost_currency"?: string;
+  "cost_unit"?: string;
   "borrowing_terms"?: string;
   "image_key"?: string;
   "image_url"?: string | null;
@@ -8118,6 +8894,15 @@ export type PatchedMakerspace = {
 };
 
 export type PatchedMakerspacePaymentSettings = {
+  "provider"?: MakerspacePaymentSettingsProviderEnum;
+  "razorpay_key_id"?: string;
+  "razorpay_key_id_set"?: boolean;
+  "razorpay_key_secret"?: string;
+  "razorpay_key_secret_set"?: boolean;
+  "razorpay_webhook_secret"?: string;
+  "razorpay_webhook_secret_set"?: boolean;
+  "stripe_webhook_url"?: string;
+  "razorpay_webhook_url"?: string;
   "default_currency"?: string;
   "stripe_publishable_key"?: string;
   "stripe_publishable_key_set"?: boolean;
@@ -8227,6 +9012,32 @@ export type PatchedMembershipRoleAssign = {
   "role_ids"?: Array<number>;
 };
 
+export type PatchedMessagingSettings = {
+  "use_platform_sender"?: boolean;
+  "sms_account_sid"?: string;
+  "sms_from_number"?: string;
+  "sms_auth_token"?: string;
+  "whatsapp_phone_number_id"?: string;
+  "whatsapp_business_account_id"?: string;
+  "whatsapp_access_token"?: string;
+  "whatsapp_app_secret"?: string;
+  "sms_auth_token_set"?: boolean;
+  "whatsapp_access_token_set"?: boolean;
+  "whatsapp_app_secret_set"?: boolean;
+  "whatsapp_webhook_verify_token"?: string;
+  "effective_source"?: {
+  [key: string]: "own" | "platform" | "none";
+};
+  "platform_available"?: {
+  [key: string]: boolean;
+};
+  "webhook_urls"?: {
+  [key: string]: {
+  [key: string]: string;
+};
+};
+};
+
 export type PatchedNotificationRecipientsPatch = {
   "recipients"?: Array<NotificationRecipientUpdate>;
 };
@@ -8308,7 +9119,7 @@ export type PatchedPlatformStripeConnectSettings = {
 
 export type PatchedPreferenceWrite = {
   "feature"?: Feature977Enum;
-  "channel"?: Channel673Enum;
+  "channel"?: ChannelB6fEnum;
   "enabled"?: boolean;
   "daily_digest"?: boolean;
 };
@@ -8507,6 +9318,28 @@ export type PatchedToBuyItem = {
   "updated_at"?: string;
 };
 
+export type PatchedWhatsAppBinding = {
+  "id"?: number;
+  "feature"?: string;
+  "event"?: string;
+  "audience"?: Surface356Enum;
+  "business_account_id"?: string;
+  "template_name"?: string;
+  "language"?: string;
+  "parameters"?: unknown;
+  "is_active"?: boolean;
+  "needs_review"?: boolean;
+  "components"?: unknown;
+};
+
+export type PaymentAgeingRow = {
+  "makerspace_id"?: number;
+  "currency": string;
+  "age_bucket": AgeBucketEnum;
+  "payment_count": number;
+  "outstanding_amount": string;
+};
+
 export type PaymentBulkAction = {
   "ids": Array<number>;
 };
@@ -8570,6 +9403,11 @@ export type PaymentOfflineRefund = {
   "receipt": ManualRefundReceipt;
 };
 
+export type PaymentProviderConflict = {
+  "detail": string;
+  "code": CodeEnum;
+};
+
 export type PaymentReconciliation = {
   "id": number;
   "subject_type": SubjectTypeEnum;
@@ -8614,8 +9452,14 @@ export type PaymentRefundRequest = {
   "reason"?: string;
 };
 
+export type PaymentsAgeingReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<PaymentAgeingRow>;
+};
+
 export type PaymentSettingsError = {
   "detail": string;
+  "code"?: string;
 };
 
 export type PaymentsLedgerReport = {
@@ -8641,7 +9485,23 @@ export type PhoneConfirm = {
   "code": string;
 };
 
-export type PhoneLoginResult = MFACompleted | MFAChallengeResponse;
+export type PhoneLoginConfirm = {
+  "phone": string;
+  "delivery"?: DeliveryEnum;
+  "client_platform"?: ClientPlatformEnum;
+  "challenge"?: string;
+  "code": string;
+  "attestation"?: DeviceAttestationPayload;
+};
+
+export type PhoneLoginResult = MFACompleted | MFAChallengeResponse | DeviceTokenResponse;
+
+export type PhoneLoginStart = {
+  "phone": string;
+  "delivery"?: DeliveryEnum;
+  "client_platform"?: ClientPlatformEnum;
+  "challenge"?: string;
+};
 
 export type PhoneStart = {
   "phone": string;
@@ -8654,6 +9514,18 @@ export type PhoneStartResponse = {
 export type PhoneStatus = {
   "phone_e164": string;
   "verified": boolean;
+};
+
+export type PlatformAnalyticsReport = {
+  "report_key"?: string;
+  "rows": Array<Array<unknown>>;
+  "typed_rows"?: Array<{
+  [key: string]: unknown;
+}>;
+  "meta"?: {
+  [key: string]: unknown;
+};
+  "chart_spec": ReportChartSpec;
 };
 
 export type PlatformBackupHealth = {
@@ -8703,8 +9575,6 @@ export type PlatformEmailSettings = {
   "updated_at": string;
 };
 
-export type PlatformEnum = "apple" | "android";
-
 export type PlatformOffsiteHealth = {
   "name": string;
   "state": string;
@@ -8725,6 +9595,40 @@ export type PlatformProblems = {
   "status": Status00eEnum;
   "results": Array<PlatformProblem>;
 };
+
+export type PlatformReadiness = {
+  "hint": string;
+  "login_ready": boolean;
+  "push_ready": boolean;
+  "apple_revocation_ready": boolean;
+  "associations_ready": boolean;
+  "registrations": Array<RegistrationReadiness>;
+};
+
+export type PlatformServicesReport = {
+  "report_key"?: string;
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<PlatformServicesRow>;
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type PlatformServicesRow = {
+  "makerspace_id": number | null;
+  "period": string | null;
+  "day": string;
+  "service": string;
+  "provider_source": string | null;
+  "status": string | null;
+  "bucket": string;
+  "count": number;
+  "currency": string | null;
+  "amount": string | null;
+  "purpose": PlatformServicesRowPurposeEnum | NullEnum | null;
+};
+
+export type PlatformServicesRowPurposeEnum = "otp" | "notifications";
 
 export type PlatformSocialAuthSettings = {
   "google_enabled": boolean;
@@ -8774,6 +9678,8 @@ export type PlatformTenantUsage = {
   "usage": MakerspaceUsage;
 };
 
+export type PlayIntegrityAttestationTypeEnum = "play_integrity";
+
 export type Policy = {
   "blind_default"?: boolean;
   "variance_threshold"?: number | null;
@@ -8794,7 +9700,7 @@ export type PositionedElement = {
 
 export type PreferenceCell = {
   "feature": Feature977Enum;
-  "channel": Channel673Enum;
+  "channel": ChannelB6fEnum;
   "enabled": boolean;
   "daily_digest"?: boolean;
   "available": boolean;
@@ -8898,6 +9804,22 @@ export type PresenceTVRow = {
 
 export type PresetEnum = "sheet" | "single";
 
+export type PrinterJobsReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<PrinterJobsRow>;
+};
+
+export type PrinterJobsRow = {
+  "makerspace_id"?: number;
+  "period": string | null;
+  "machine_id": number | null;
+  "machine_name": string | null;
+  "machine_type": string | null;
+  "state": string;
+  "outcome": string;
+  "job_count": number;
+};
+
 export type PrinterPool = {
   "id": number;
   "machine_id": number | null;
@@ -8908,6 +9830,9 @@ export type PrinterPool = {
   "brand"?: string;
   "lot_code"?: string;
   "unit"?: PrinterPoolUnitEnum;
+  "unit_cost"?: string | null;
+  "cost_currency"?: string;
+  "cost_unit"?: string;
   "initial_grams": string;
   "remaining_grams": string;
   "low_threshold_grams"?: string | null;
@@ -8924,6 +9849,9 @@ export type PrinterPoolCorrection = {
 };
 
 export type PrinterPoolCreate = {
+  "unit_cost"?: string | null;
+  "cost_currency"?: string;
+  "cost_unit"?: string;
   "machine_id"?: number | null;
   "machine_type_id"?: number | null;
   "is_public"?: boolean;
@@ -9232,6 +10160,7 @@ export type PublicConfig = {
   "member_accounts"?: {
   [key: string]: unknown;
 };
+  "native"?: NativeConfig;
 };
 
 export type PublicEvent = {
@@ -9780,8 +10709,6 @@ export type PublicVouch = {
   "display_name": string;
 };
 
-export type PurposeEnum = "enroll" | "rotate" | "reactivate";
-
 export type PushDevice = {
   "id": number;
   "provider": string;
@@ -9920,7 +10847,11 @@ export type QrScansReport = {
 
 export type QrScansReportRow = {
   "makerspace_id"?: number;
+  "period": string;
   "context": string;
+  "target_type": string;
+  "target_id": number | null;
+  "hour_of_week": number;
   "count": number;
 };
 
@@ -9934,7 +10865,22 @@ export type QuantityChainSummary = {
   "active_quantity": number;
 };
 
+export type RailEnum = "online" | "offline" | "unallocated";
+
 export type RateLimitTierEnum = "public" | "standard" | "trusted";
+
+export type RazorpayMobilePaymentIntentResponse = {
+  "vendor": RazorpayMobilePaymentIntentResponseVendorEnum;
+  "payment_id": number;
+  "key_id": string;
+  "order_id": string;
+  "amount_minor": number;
+  "currency": string;
+  "name": string;
+  "description": string;
+};
+
+export type RazorpayMobilePaymentIntentResponseVendorEnum = "razorpay";
 
 export type ReadAll = {
   "updated": number;
@@ -9944,6 +10890,11 @@ export type Readiness = {
   "status": string;
   "database": string;
   "archive_custody": ArchiveCustodyReadiness;
+};
+
+export type ReadinessItem = {
+  "ready": boolean;
+  "hint": string;
 };
 
 export type Reason870Enum = "bounce" | "complaint";
@@ -9965,10 +10916,22 @@ export type ReauthenticationEmailSent = {
   "sent": boolean;
 };
 
+export type ReauthenticationFactor = {
+  "token": string;
+  "code": string;
+};
+
+export type ReauthenticationPhoneStarted = {
+  "sent": boolean;
+  "token": string;
+};
+
 export type ReauthenticationResult = {
   "verified": boolean;
   "expires_in": number;
   "mfa_required"?: boolean;
+  "factor_required"?: FactorRequiredEnum;
+  "factor_token"?: string;
 };
 
 export type ReauthenticationSocialComplete = {
@@ -9981,7 +10944,7 @@ export type ReauthenticationSocialComplete = {
 
 export type ReauthenticationSocialStart = {
   "provider": string;
-  "redirect_uri": string;
+  "redirect_uri"?: string;
 };
 
 export type ReauthenticationSocialStarted = {
@@ -10162,6 +11125,18 @@ export type RefundProviderEnum = "stripe" | "razorpay" | "manual";
 
 export type RefundStatusEnum = "pending" | "succeeded" | "failed";
 
+export type RegistrationReadiness = {
+  "hint": string;
+  "production": boolean;
+  "login_ready": boolean;
+  "login": {
+  [key: string]: ReadinessItem;
+};
+  "optional": {
+  [key: string]: ReadinessItem;
+};
+};
+
 export type Rehydrate = {
   "destination": number;
 };
@@ -10317,12 +11292,45 @@ export type ReportCatalogItem = {
   "unavailable_reason": string | null;
   "grains": Array<string>;
   "chart_hint": string;
+  "chart_spec": ReportChartSpec | null;
+  "identity_bearing": boolean;
   "aggregate_supported": boolean;
   "allowed_formats": Array<AllowedFormatsEnum>;
   "schedulable": boolean;
   "previewable": boolean;
   "condition_metrics": Array<string>;
 };
+
+export type ReportChartAxis = {
+  "field": string;
+  "kind": ReportChartAxisKindEnum;
+};
+
+export type ReportChartAxisKindEnum = "time" | "category";
+
+export type ReportChartSpec = {
+  "series": Array<string>;
+  "x": ReportChartAxis;
+  "values": Array<ReportChartValue>;
+  "currency_field": string | null;
+  "partition": PartitionEnum | NullEnum | null;
+  "negatives": NegativesEnum;
+  "truncation": ReportChartTruncation | null;
+  "alt_template": string;
+};
+
+export type ReportChartTruncation = {
+  "top_n": number;
+  "other_label": string;
+};
+
+export type ReportChartValue = {
+  "field": string;
+  "unit": string;
+  "kind"?: ReportChartValueKindEnum;
+};
+
+export type ReportChartValueKindEnum = "line" | "stacked_bar";
 
 export type ReportCondition = {
   "non_empty"?: boolean;
@@ -10348,7 +11356,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "summary" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "damaged-lost" | "qr-scans" | "most-lent" | "top-borrowers" | "recently-added" | "machine-usage" | "event-attendance" | "booking-utilization" | "maintenance-activity" | "member-activity" | "machine-service" | "printer-service" | "fablab-health" | "payment-reconciliation" | "loan-throughput" | "inventory-control" | "evidence-compliance" | "import-quality" | "procurement-performance" | "communications-health" | "community-engagement" | "certification-coverage" | "module-operational-health" | "audit-trail" | "member-retention" | "membership-revenue" | "payments-ledger" | "revenue-over-time" | "cash-book" | "accounting-journal" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;
@@ -10550,6 +11558,7 @@ export type ReturnsReportRow = {
   "requester": string;
   "status": string;
   "closed_at": string | null;
+  "count": number;
 };
 
 export type RevenueOverTimeReport = {
@@ -10564,6 +11573,7 @@ export type RevenuePeriod = {
   "refunded_amount": string;
   "period": string;
   "subject_type": string;
+  "rail": RailEnum;
   "owed_amount": string;
   "waived_amount": string;
   "net_amount": string;
@@ -10598,6 +11608,8 @@ export type RoleId = {
 export type RoleLabelEnum = "speaker" | "volunteer" | "check_in";
 
 export type RoleSlugEnum = "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover";
+
+export type RowKindEnum = "status" | "machine" | "consumption" | "failure";
 
 export type SavedReportView = {
   "id": number;
@@ -10653,7 +11665,7 @@ export type Schedule = {
 
 export type ScopeEnum = "deployment" | "makerspace";
 
-export type ScopeModeEnum = "machine" | "full";
+export type ScopeModeEnum = "machine" | "full" | "handover";
 
 export type SearchHit = {
   "entity": SearchHitEntityEnum;
@@ -10677,6 +11689,8 @@ export type SegmentChoice = {
   "id": number;
   "name": string;
 };
+
+export type SegmentSourceEnum = "billed" | "estimated" | "not_applicable";
 
 export type SeriesCollaborationInbox = {
   "id": number;
@@ -10798,6 +11812,24 @@ export type ServiceMachine = {
   "status": string;
 };
 
+export type ServiceQueueTimesReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<ServiceQueueTimesRow>;
+};
+
+export type ServiceQueueTimesRow = {
+  "makerspace_id"?: number;
+  "period": string;
+  "queue_id": number | null;
+  "queue_name": string;
+  "bucket_id": number | null;
+  "stage": string;
+  "samples": number;
+  "median_minutes": string | null;
+  "p90_minutes": string | null;
+  "p95_minutes": string | null;
+};
+
 export type ServiceReject = {
   "reason": string;
 };
@@ -10832,8 +11864,6 @@ export type SetupState = {
   "modules_chosen": boolean;
 };
 
-export type SeverityEnum = "info" | "warning" | "error" | "critical";
-
 export type Skill = {
   "name": string;
   "level": number;
@@ -10854,6 +11884,8 @@ export type SocialLink = {
 };
 
 export type SocialLogin = {
+  "authorization_code"?: string;
+  "redirect_uri"?: string;
   "id_token": string;
   "nonce": string;
   "surface": Surface356Enum;
@@ -10861,7 +11893,7 @@ export type SocialLogin = {
   "client_platform": ClientPlatformEnum;
   "apple_name"?: string;
   "challenge"?: string;
-  "attestation"?: unknown;
+  "attestation"?: DeviceAttestationPayload;
 };
 
 export type SocialLoginResponse = {
@@ -10888,8 +11920,6 @@ export type SocialNonceResponse = {
   "nonce": string;
   "expires_in": number;
 };
-
-export type Source356Enum = "staff" | "member";
 
 export type SpaceImageFinalizeRequest = {
   "object_key": string;
@@ -11366,7 +12396,7 @@ export type StocktakeScanInput = {
 };
 
 export type StocktakeScanResult = {
-  "type": TypeEnum;
+  "type": StocktakeScanResultTypeEnum;
   "container_id"?: number;
   "asset_id"?: number;
   "product_id"?: number;
@@ -11377,6 +12407,8 @@ export type StocktakeScanResult = {
   "name"?: string;
   "status"?: string;
 };
+
+export type StocktakeScanResultTypeEnum = "box" | "asset" | "product";
 
 export type StocktakeStatusEnum = "draft" | "counting" | "completed" | "approved" | "applied" | "cancelled";
 
@@ -11432,6 +12464,17 @@ export type StripeConnectOnboarding = {
   "authorize_url": string;
 };
 
+export type StripeMobilePaymentIntentResponse = {
+  "vendor": StripeMobilePaymentIntentResponseVendorEnum;
+  "payment_id": number;
+  "client_secret": string;
+  "publishable_key": string;
+  "customer_id"?: string | null;
+  "ephemeral_key"?: string | null;
+};
+
+export type StripeMobilePaymentIntentResponseVendorEnum = "stripe";
+
 export type SubdomainRequest = {
   "id": number;
   "requested_label": string;
@@ -11484,7 +12527,7 @@ export type SuppressionWrite = {
   "reason": Reason870Enum;
 };
 
-export type Surface356Enum = "member" | "staff";
+export type Surface356Enum = "staff" | "member";
 
 export type TakenItemsReport = {
   "rows": Array<Array<unknown>>;
@@ -11532,6 +12575,7 @@ export type TenantBootstrap = {
   "theme": unknown;
   "branding": unknown;
   "email_enabled": boolean;
+  "messaging": TenantMessagingAvailability;
   "public_api": TenantBootstrapPublicApi;
 };
 
@@ -11604,6 +12648,11 @@ export type TenantBootstrapPublicApi = {
   "base_url": string;
   "publishable_key": string;
   "inventory_path": string;
+};
+
+export type TenantMessagingAvailability = {
+  "sms": boolean;
+  "whatsapp": boolean;
 };
 
 export type TextAlignEnum = "left" | "center";
@@ -11694,7 +12743,7 @@ export type TimingPolicy = {
   "bounce_configured": boolean;
 };
 
-export type TimingPolicyChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook";
+export type TimingPolicyChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook" | "sms" | "whatsapp";
 
 export type ToBuyItem = {
   "id": number;
@@ -11798,6 +12847,8 @@ export type TypedError = {
 };
 
 export type TypedManualUsage = {
+  "member"?: number | null;
+  "started_at"?: string | null;
   "machine_id": number;
   "consumable_pool_id"?: number | null;
   "service_request_id"?: number | null;
@@ -11829,12 +12880,12 @@ export type TypedManualUsageResponse = {
   "consumed_quantity": string;
   "hours": string;
   "note": string;
+  "member": number | null;
+  "started_at": string | null;
   "created_at": string;
 };
 
 export type TypedManualUsageResponseMeteringUnitEnum = "minutes" | "weight" | "volume" | "length" | "count";
-
-export type TypeEnum = "box" | "asset" | "product";
 
 export type UnsubscribeResult = {
   "detail": string;
@@ -12056,6 +13107,22 @@ export type WarrantyDocumentUrl = {
   "url": string;
 };
 
+export type WarrantyExpiryReport = {
+  "rows": Array<Array<unknown>>;
+  "typed_rows": Array<WarrantyExpiryRow>;
+};
+
+export type WarrantyExpiryRow = {
+  "makerspace_id"?: number;
+  "warranty_id": number;
+  "machine_id": number;
+  "machine_name": string;
+  "machine_type": string;
+  "purchased_on": string | null;
+  "warranty_expires_on": string;
+  "days_until_expiry": number;
+};
+
 export type WarrantyReportRow = {
   "host_kind": string;
   "host_id": number;
@@ -12214,6 +13281,27 @@ export type WebsiteVenue = {
   "parking"?: string;
   "public_transport"?: string;
   "accessibility_notes"?: string;
+};
+
+export type WhatsAppBinding = {
+  "id": number;
+  "feature": string;
+  "event": string;
+  "audience": Surface356Enum;
+  "business_account_id": string;
+  "template_name": string;
+  "language": string;
+  "parameters"?: unknown;
+  "is_active"?: boolean;
+  "needs_review": boolean;
+  "components"?: unknown;
+};
+
+export type WhatsAppBindingPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<WhatsAppBinding>;
 };
 
 export type WitnessWaiverResponse = {

@@ -30,9 +30,11 @@ class NativeAppRegistration(models.Model):
     app_id = models.CharField(max_length=255)
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     environment = models.CharField(max_length=16, choices=DeviceEnvironment.choices)
-    # Indirection keeps verifier credentials in deployment configuration while the
-    # database row remains the independently approvable and revocable authority.
+    # Only legacy rows with an empty signer list resolve this label in the env map.
+    # New approvals use public app identities stored here; credentials stay encrypted.
     verifier_config_key = models.CharField(max_length=255)
+    signing_identities = models.JSONField(default=list, blank=True)
+    min_supported_version = models.CharField(max_length=64, null=True, blank=True)
     status = models.CharField(
         max_length=16,
         choices=Status.choices,
@@ -51,6 +53,12 @@ class NativeAppRegistration(models.Model):
 
     class Meta:
         constraints = [
+            models.UniqueConstraint(
+                fields=['platform', 'environment'],
+                condition=models.Q(makerspace__isnull=True, status='approved'),
+                name='uniq_approved_deployment_app',
+                violation_error_message='Only one approved deployment app per platform and environment is allowed. Rotate signers on the existing registration, or revoke it before approving its replacement.',
+            ),
             models.UniqueConstraint(
                 fields=['makerspace', 'app_id', 'platform', 'environment'],
                 nulls_distinct=False,
@@ -78,6 +86,7 @@ class DeviceAttestationChallenge(models.Model):
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     app_id = models.CharField(max_length=255)
     signing_identity = models.CharField(max_length=255)
+    signing_identities = models.JSONField(default=list, blank=True)
     environment = models.CharField(max_length=16, choices=DeviceEnvironment.choices)
     challenge_digest = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()
@@ -89,6 +98,10 @@ class DeviceAttestationChallenge(models.Model):
 
 
 class DeviceGrant(models.Model):
+    class Authority(models.TextChoices):
+        MEMBER = 'member', 'Member'
+        STAFF = 'staff', 'Staff'
+
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
         REVOKED = 'revoked', 'Revoked'
@@ -105,11 +118,21 @@ class DeviceGrant(models.Model):
         related_name='device_grants',
     )
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    authority = models.CharField(max_length=16, choices=Authority.choices, default=Authority.MEMBER)
+    # Immutable provenance, including after the tenant/account is retired. This is
+    # an identifier snapshot rather than a FK that would block tenant purge.
+    staff_makerspace_id = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
+    credential_generation = models.PositiveIntegerField(default=0, editable=False)
+    login_method = models.CharField(max_length=16, blank=True, default="", choices=[
+        ("password", "Password"), ("phone", "Phone"), ("social", "Social"),
+    ])
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     app_id = models.CharField(max_length=255)
     signing_identity = models.CharField(max_length=255)
     environment = models.CharField(max_length=16, choices=DeviceEnvironment.choices)
     attestation_subject_fingerprint = models.CharField(max_length=64)
+    attestation_key_id = models.CharField(max_length=512, null=True, blank=True)
+    attestation_public_key = models.TextField(null=True, blank=True)
     attested_at = models.DateTimeField()
     last_used_at = models.DateTimeField()
     revoked_at = models.DateTimeField(null=True, blank=True)
@@ -117,6 +140,12 @@ class DeviceGrant(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=['user', 'status'], name='device_grant_user_idx')]
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(status="revoked") | models.Q(
+                authority="member", staff_makerspace_id__isnull=True,
+            ) | models.Q(authority="staff", staff_makerspace_id__isnull=False, login_method="password")),
+            name="device_grant_account_context",
+        )]
 
 
 class DeviceRefreshFamily(models.Model):

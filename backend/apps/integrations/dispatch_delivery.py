@@ -1,3 +1,4 @@
+from apps.integrations.notification_cutover import guarded, sending_allowed
 import logging
 
 from django.core.mail import EmailMultiAlternatives
@@ -10,7 +11,10 @@ from .dispatch_policy import email_module_blocks
 
 logger = logging.getLogger(__name__)
 
+@guarded()
 def _deliver(log):
+    if not sending_allowed():
+        return log
     if log.status in {EmailLog.Status.SENT, EmailLog.Status.SKIPPED}:
         from .delivery_sources import finished
         finished(log)
@@ -86,6 +90,7 @@ def _deliver(log):
             connection, from_email = makerspace_mail_connection(log.makerspace)
         else:
             connection, from_email = platform_mail_connection()
+        log.provider_source = "platform" if connection is None else getattr(connection, "provider_source", "")
         rendered = content(log)
         msg = EmailMultiAlternatives(
             subject=rendered.subject,
@@ -102,7 +107,14 @@ def _deliver(log):
             for reference in rendered.attachments:
                 msg.attach(*render_attachment(reference, makerspace_id=log.makerspace_id,
                                               recipient_id=log.recipient_id))
-        msg.send()
+        if not msg.send():
+            raise RuntimeError("Mail backend did not accept the message.")
+        # Provider backends may expose an accepted-message ID; SMTP itself does not.
+        message_id = getattr(msg, "provider_message_id", "")
+        if not message_id:
+            message_id = getattr(getattr(msg, "anymail_status", None), "message_id", "")
+        if isinstance(message_id, str) and len(message_id) <= 255:
+            log.provider_message_id = message_id
     except Exception as exc:
         from apps.payments.document_delivery import DocumentDeliveryError
         log.status = EmailLog.Status.FAILED
@@ -134,6 +146,8 @@ def _deliver(log):
         log.attempts += 1
         log.save(
             update_fields=[
+                "provider_source",
+                "provider_message_id",
                 "status",
                 "error",
                 "attempts",

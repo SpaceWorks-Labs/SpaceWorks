@@ -1,5 +1,11 @@
 # Phase 2: Twilio WhatsApp lane
 
+Historical implementation handoff. The current [personal contract](notification-contract.md),
+[channel guide](messaging-channels.md) and [rollout checkpoints](notification-reconciliation-rollout.md)
+supersede its old runtime/settings, ambiguity, inbox-coupling and readiness claims. SMS/WhatsApp
+use canonical envelopes; duplicate addressed models/worker entry points are inert compatibility
+history. Sending activation and destructive retirement remain held pending replay sign-off.
+
 Implemented on `lane/p2-wa-twilio`, based on the frozen Phase 0+1 contract.
 No models, migrations, frontend files, domain adapters or frozen contract files changed.
 No Docker, Django, network integration tests, staging or commits were run in this lane.

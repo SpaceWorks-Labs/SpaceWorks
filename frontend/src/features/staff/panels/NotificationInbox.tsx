@@ -10,9 +10,7 @@ export function NotificationInbox({ makerspace, canManageMembers = false }: { ma
   // Provider returns carry signed state; the server resolves its challenge.
   const [channels, setChannels] = useState(() => new URLSearchParams(window.location.search).has("state"));
   const canBroadcast = canManageMembers && makerspace.enabled_features?.includes("membership.broadcasts");
-  // Personal channels need the notifications module (the contract endpoints require it).
-  const hasChannels = (makerspace.enabled_modules ?? []).includes("notifications");
-  const myChannels: Action | undefined = hasChannels ? { label: "My channels", icon: "Settings", onClick: () => setChannels(true) } : undefined;
+  const myChannels: Action = { label: "My channels", icon: "Settings", onClick: () => setChannels(true) };
   const announcement: Action | undefined = canBroadcast ? { label: "Send announcement", onClick: () => setCompose(true) } : undefined;
   return <>
     <PersonalInbox makerspaceId={makerspace.id} makerspaceSlug={makerspace.slug} announcement={announcement ?? myChannels}
@@ -20,8 +18,8 @@ export function NotificationInbox({ makerspace, canManageMembers = false }: { ma
     {canBroadcast ? <Modal open={compose} onClose={() => setCompose(false)} title="Send announcement">
       {compose ? <BroadcastComposer makerspaceId={makerspace.id} /> : null}
     </Modal> : null}
-    {hasChannels ? <Modal open={channels} onClose={() => setChannels(false)} title="My notification channels" size="xl">
+    <Modal open={channels} onClose={() => setChannels(false)} title="My notification channels" size="xl">
       {channels ? <MyNotificationSettings makerspaceId={makerspace.id} /> : null}
-    </Modal> : null}
+    </Modal>
   </>;
 }

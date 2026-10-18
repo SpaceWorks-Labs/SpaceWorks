@@ -1,6 +1,6 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **35 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
+Space Works ships **37 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
 default** (`backup`), and the rest opt-in. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
@@ -80,6 +80,14 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
+The registry contains 37 keys (36 in the main catalogue plus presence): six core,
+backup enabled by default, and 30 opt-in. SMS/WhatsApp are separate opt-in modules.
+Migration 0097 preserves only previously enabled canonical WhatsApp installations;
+new SMS/WhatsApp installations remain off. Existing operational channel conversion
+preserves enablement/opt-outs and never enables platform sending. Module-list validation
+uses the registry rather than scalar JSONField choices. Follow the independent
+[conversion/replay/activation checkpoints](notification-reconciliation-rollout.md).
+
 ## Index
 
 **Inventory** (always on): [public_inventory](#public_inventory) · [request_workflow](#request_workflow) ·
@@ -91,7 +99,7 @@ core modules cannot be uninstalled at all.
 [machine_service](#machine_service) · [printing](#printing) · [maintenance](#maintenance) —
 **Events**: [events](#events) — **Bookings**: [bookings](#bookings) —
 **Membership**: [membership](#membership) · [presence](#presence)
-**Notifications**: [notifications](#notifications) · [email](#email) · [telegram](#telegram) ·
+**Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) —
 **Payments**: [payments](#payments) — **Accounts**: [member_accounts](#member_accounts) —
 **Mobile apps**: [mobile](#mobile) · **Backup & custody**: [backup](#backup) · **Connected devices**: [devices](#devices)
@@ -171,6 +179,9 @@ Email, staff invitations or MFA. Modules never turn a member into built-in staff
 ### machine_service
 
 [Read the machine_service module reference](MODULES-WORKSHOPS.md#machine_service).
+
+Finalized consumable costs accompany their service sources and are removed with them
+during module purge; independent manual pool usage and its recorded costs remain.
 
 ### printing
 
@@ -411,8 +422,10 @@ multi-select category preferences and email fallback. Space Managers configure e
 credentials under Communication channels; staff manage their own connections under My channels,
 and a member Channels tab exists. Manager defaults prefer verified Telegram, otherwise email;
 other accounts default email/in-app. Tenant matrix/module/suppression rules still apply. WhatsApp
-is a personal channel with `twilio|meta` provider configuration, **not a separate module key**;
-Twilio and Meta are registered/mounted, but Meta's readiness still requires an unregistered module.
+is personal-only with `twilio|meta` providers and an independent default-off `whatsapp` module;
+both providers are registered/mounted and the former missing-module blocker is resolved.
+SMS uses Twilio under its own default-off module. Physical sender/STOP history, BSUID correlation
+and device push live beneath canonical envelope delivery. The inbox module is optional.
 Member JWTs reach exactly the six personal routes and OAuth uses authenticated challenge verification.
 Remaining delivery limits are recorded in the
 [delivery contract](notification-contract.md#integration-limits-in-this-tree). Security mail and
@@ -421,6 +434,30 @@ mandatory-mail exemptions keep their own delivery rules.
 ### email
 
 [Read the email module reference](MODULES-PLATFORM.md#email).
+
+### sms
+
+Default off independently of the optional inbox and OTP SMS. Verified account-only owners
+with a current tenant tie may consent; revoked/restricted accounts remain excluded.
+
+[Read the SMS module reference](MODULES-PLATFORM.md#sms).
+Provisioning, verified callbacks, quotas and recovery: [messaging operator guide](messaging-channels.md).
+With reports enabled, communications health includes scoped SMS delivery cohorts,
+segment estimates/bills and a labelled current consent snapshot. Platform metering
+separates notification usage from OTP counts; [measurement notes](report-builders-messaging.md).
+
+### whatsapp
+
+Default off and personal-only, with canonical Twilio/Meta providers. The combined registry
+contains this key, removing the former Meta missing-module readiness blocker. Existing operational
+installations need explicit conversion preserving enablement and opt-outs; platform senders stay off
+until the operator enables them.
+
+[Read the WhatsApp module reference](MODULES-PLATFORM.md#whatsapp).
+Provisioning and the shared sender correlation barrier: [messaging operator guide](messaging-channels.md).
+With reports enabled, communications health includes scoped WhatsApp progress and
+delivery/read rates plus a labelled current consent snapshot. Platform usage exposes
+counts only; [measurement notes](report-builders-messaging.md).
 
 ### telegram
 
@@ -480,12 +517,23 @@ state/sharing and drop schedules, so neither restores source disclosure rules.
 ### payments
 
 [Read the payments module reference](MODULES-PLATFORM.md#payments).
+Native Stripe/Razorpay flows and both providers' settings/webhook provisioning:
+[mobile integration operator guide](mobile-integration.md#payments-stripe-and-razorpay).
+The module gates the online rail; core charge history, receipts and desk settlement remain available.
 
 ## Mobile apps
 
 ### mobile
 
 [Read the mobile module reference](MODULES-PLATFORM.md#mobile).
+Configure branded app registrations, identity, associations and readiness with the
+[mobile integration operator guide](mobile-integration.md). Native staff require a separate
+staff account, password/MFA/attestation and fixed-tenant local actions. Phone/social/OIDC
+native login is member-only; platform grants are forbidden. Push uses envelope-owned device
+children independently of inbox creation. Delivery policy admits source-tied account-only
+owners, while native selection/new registration still require local membership. Logout-all
+is account-wide; self-deletion/restore are member-only. Core messaging consent is independent
+of this module; SMS/WhatsApp each have their own opt-in key.
 
 ## Backup & custody
 

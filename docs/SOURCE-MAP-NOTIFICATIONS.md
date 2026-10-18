@@ -35,14 +35,15 @@ notification_slack_installation.py install validation; notification_slack_views.
 acknowledge-only callbacks. notification_mattermost.py/http.py own configured-server OAuth/DM and
 DNS/TLS policy. notification_discord.py owns identify/DM/signatures. Their *_urls.py mount surfaces;
 IntegrationsConfig.ready registers these and Telegram/Twilio/Meta providers. OAuth redirect settings
-are environment-backed; notification_slack_oauth.py expands tenant/challenge placeholders and appends
-notify_challenge for the frontend return, using the same redirect for exchange.
+are environment-backed fixed registered URLs. Signed state carries challenge identity; the frontend
+resolves it through authenticated endpoints GET before verify. Placeholders/appended challenge IDs
+are forbidden; authorization and exchange use identical redirects.
 
 notification_wa_twilio.py owns the WhatsApp factory/proof/send; *_config/http/templates/callbacks
 split credential/address/URL policy, REST/error mapping, approval/variables and signed events;
 *_views/urls expose callbacks and approval diagnostics. notification_wa_meta.py and its
 *_callbacks/http/ingress/schema/templates/views/urls implement the registered/mounted Meta source;
-its _ready still requires an unregistered whatsapp module. notification_wa_window.py owns bounded
+the independent default-off whatsapp module is registered, resolving the former readiness blocker. notification_wa_window.py owns bounded
 replay/window helpers shared by both providers, resolution and delivery. Reserved bindings are
 notification_opt_in / notification_test, member/en, for both providers.
 
@@ -51,8 +52,7 @@ notification_opt_in / notification_test, member/en, for both providers.
 hardware_requests/notifications_p2.py owns equipment fan-out/savepoints; *_requests owns request
 and staff-only charge summaries, *_reminders the loan ladder, *_reports problem reports,
 *_rooms queued staff summaries and live source/scope checks. *_contact and *_email own verified
-contact compatibility and email-policy/render helpers; shared resolver/transport does not yet call
-the latter hooks. notifications.py and loan/reminder call sites use these adapters.
+contact compatibility and email-policy/render helpers used by the shared resolver/mail transport. notifications.py and loan/reminder call sites use these adapters.
 inventory/notifications_p2.py owns thresholds/watch-source invalidation; availability_stock.py
 latches back-in-stock and notify_me.py reserves watch intents.
 
@@ -82,8 +82,12 @@ channelCatalog.ts owns providers/credential fields. ChannelSetupPanel/Form, What
 ChannelTestSend and ChannelDeliveryLog compose tenant setup/diagnostics. PersonalChannels,
 ConnectChannel and ChannelPreferences own account connection/category choices; MyNotificationSettings
 composes them in the staff Inbox action/member Channels tab. Saves send changed fields only, avoiding
-accidental generation rotation. MyNotificationSettings consumes notify_challenge/code/state and calls
-authenticated personal verify; MEMBER JWT admission now covers exactly the personal route shapes.
+accidental generation rotation. MyNotificationSettings resolves signed OAuth code/state through endpoints GET and calls
+authenticated personal verify; member JWT admission covers exactly the personal route shapes.
+SmsConsent/smsConsentApi use retained core member consent, with current phone/sender binding.
+Staff My channels is independent of inbox; account-only owners use server permission results.
+Query keys include account/context/tenant and session switches clear private state. Duplicate
+addressed settings/template/test components and their API client are retired.
 
 Audit presentation and tenant-migration catalog/gate siblings below declare retained schema,
 PII/export dispositions and callback participants. Existing encryption/registry.py,
@@ -184,3 +188,35 @@ provider/route mounting; provider source files alone do not imply a mounted inte
 `ChannelTestSend.tsx`, `ConnectChannel.tsx`, `MyNotificationSettings.tsx`, `PersonalChannels.tsx`,
 `WhatsAppTemplatesEditor.tsx`, `channelCatalog.ts`, `channelsApi.ts`.
 
+
+## Reconciled history, privacy and reporting (2026-10-18)
+
+The [main source map](SOURCE-MAP.md) details canonical sender/consent/ingress/cutover modules,
+per-device envelope push and analytics ownership. `integrations/models_cutover.py` stores the
+closed-by-default cutover, encrypted receipt journal/legacy mappings/credential versions and
+physical provider references. `notification_cutover.py` owns the processing fence and operator
+checkpoints; `notification_ingress.py` commits protection before optional tenant writes.
+`notification_sender.py` and `notification_addressed.py` integrate SMS and sender safeguards;
+`notification_personal_policy.py` retains core opt-out checks without inbox installation.
+`notification_retention.py` is the bounded canonical leg/receipt retention sweep
+(`tasks_messaging.canonical_retention_task`, hourly in both schedulers).
+Integrations `0041`/`0042` expand/convert; `0043` retirement remains unsupplied.
+
+`notifications/apps.py` registers `member_push` using
+`notification_builtin.register_native_push_sender`. `notifications/models_push.py`,
+`envelope_push_leases.py` and `envelope_push_transport.py` own per-device children, claims and
+fenced completion beneath the canonical envelope parent. Notifications `0008`/`0009`/`0010`
+expand/map/constrain those children. `inbox.write_envelope_inbox` never enqueues push.
+`integrations/notification_privacy.py` calls `notifications/privacy.py` for cleanup before
+clearing envelope context. Account discovery and push reports use the canonical envelope parent.
+`integrations/notification_projection.py` projects allowlisted scalar template keys;
+workflow adapters retain independent source/revision and audience checks.
+
+`operations/reports_communications.py::build_communications_health` is the registered
+communications-health builder v4; `integrations/reports_communications.py` is its lazy
+compatibility delegate. `reports_notification_facts.py` reads inert mapping history without
+counting a second send; `reports_push_facts.py` reads device children through their delivery
+parent. Platform services/module health reports are v3; mobile device/auth reports are v2.
+Frontend `MyNotificationSettings` composes canonical settings, proofs, preferences, SMS consent
+and diagnostics for separate staff/member contexts. Deployment holds and callback compatibility
+are in [the rollout guide](notification-reconciliation-rollout.md).

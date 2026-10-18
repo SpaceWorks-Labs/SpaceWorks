@@ -20,6 +20,9 @@ class MachineConsumablePool(models.Model):
         on_delete=models.PROTECT,
         related_name="consumable_pools",
     )
+    unit_cost = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True, validators=[MinValueValidator(0)])
+    cost_currency = models.CharField(max_length=3, blank=True)
+    cost_unit = models.CharField(max_length=16, blank=True)
     material = models.CharField(max_length=100)
     color = models.CharField(max_length=100, blank=True)
     color_hex = models.CharField(max_length=7, blank=True, default="")
@@ -51,6 +54,11 @@ class MachineConsumablePool(models.Model):
                 name="consumable_pool_color_hex_valid",
             ),
         ]
+
+    def clean(self):
+        super().clean()
+        from apps.inventory.cost_basis import clean_model_price
+        clean_model_price(self, self.unit)
 
     @property
     def label(self):

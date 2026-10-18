@@ -6,7 +6,7 @@ from django.db.models.functions import Greatest, Least
 from django.utils import timezone
 
 from apps.bookings.models import BookableSpace, Booking
-from apps.operations.report_registry import ReportResult
+from apps.operations.report_types import ReportResult
 from apps.operations.report_scope import scoped_ids
 
 
@@ -23,7 +23,10 @@ NON_CANCELLED = (
 CENT = Decimal("0.01")
 
 
-def build_booking_utilization(makerspace_id, *, limit=None, date_range=None, subject_kind=None, subject_id=None):
+def build_booking_utilization(makerspace_id, *, limit=None, date_range=None, subject_kind=None, subject_id=None, grain=None):
+    if grain is not None and subject_kind is None and subject_id is None:
+        from .reports_booking_trends import build_utilization_trend
+        return build_utilization_trend(makerspace_id, limit=limit, date_range=date_range, grain=grain)
     if subject_kind is not None or subject_id is not None:
         from rest_framework.exceptions import ValidationError
         if makerspace_id is None or subject_kind != "bookable_space" or subject_id is None:

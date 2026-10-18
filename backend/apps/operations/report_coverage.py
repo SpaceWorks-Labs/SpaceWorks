@@ -4,6 +4,8 @@ from django.core import checks
 
 from apps.makerspaces.module_registry import MODULE_KEYS
 from apps.operations.report_registry import REPORT_REGISTRY
+from apps.operations.report_coverage_contract import REPORT_COVERAGE_AREAS
+from apps.separability.tombstones import tombstoned_app_labels
 
 
 @dataclass(frozen=True)
@@ -13,6 +15,10 @@ class ModuleReportCoverage:
 
 
 REPORT_MODULE_COVERAGE = {
+    "presence": ModuleReportCoverage("substantive", ("presence-activity",)),
+    "audit": ModuleReportCoverage("substantive", ("audit-activity",)),
+    "organizations": ModuleReportCoverage("substantive", ("organization-membership",)),
+    "platform": ModuleReportCoverage("substantive", ("platform-services", "platform-usage")),
     "public_inventory": ModuleReportCoverage("composite", ("inventory-control",)),
     "request_workflow": ModuleReportCoverage("substantive", ("loan-throughput",)),
     "staff_admin": ModuleReportCoverage("health_row", ("module-operational-health",)),
@@ -36,9 +42,10 @@ REPORT_MODULE_COVERAGE = {
     "bookings": ModuleReportCoverage("substantive", ("booking-utilization",)),
     "maintenance": ModuleReportCoverage("substantive", ("maintenance-activity",)),
     "membership": ModuleReportCoverage("substantive", ("member-activity", "community-engagement")),
-    "presence": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "notifications": ModuleReportCoverage("composite", ("communications-health",)),
     "email": ModuleReportCoverage("composite", ("communications-health",)),
+    "sms": ModuleReportCoverage("substantive", ("communications-health", "platform-services", "module-operational-health")),
+    "whatsapp": ModuleReportCoverage("substantive", ("communications-health", "platform-services", "module-operational-health")),
     "slack": ModuleReportCoverage("composite", ("communications-health",)),
     "webhook": ModuleReportCoverage("composite", ("communications-health",)),
     "mattermost": ModuleReportCoverage("composite", ("communications-health",)),
@@ -49,21 +56,63 @@ REPORT_MODULE_COVERAGE = {
     "devices": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "backup": ModuleReportCoverage("health_row", ("module-operational-health",)),
 }
+REPORT_MODULE_COVERAGE["mobile"] = ModuleReportCoverage(
+    "substantive", ("community-engagement", "mobile-devices", "mobile-auth", "communications-health"),
+)
+
+# Coverage associations are independent of the builders' actual source-module gates.
+from apps.operations.report_definitions_ab import AB_REPORT_KEYS
+from apps.operations.report_coverage_contract import required_report_modules
+for _key, _modules in required_report_modules().items():
+    if _key in AB_REPORT_KEYS:
+        for _module in _modules:
+            _coverage = REPORT_MODULE_COVERAGE[_module]
+            REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage("substantive", tuple(dict.fromkeys((*_coverage.reports, _key))))
+
+# Coverage associations describe the plan's area, not runtime source dependencies.
+_MACHINE_AREA_REPORT_KEYS = (
+    "machine-usage", "machine-usage-members", "machine-usage-heatmap", "machine-downtime",
+    "maintenance-activity", "machine-service", "service-queue-times", "printer-jobs", "machine-errors", "warranty-expiry",
+)
+for _module in ("machines", "machine_service", "printing", "maintenance"):
+    _coverage = REPORT_MODULE_COVERAGE[_module]
+    REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(_coverage.kind, tuple(dict.fromkeys((*_coverage.reports, *_MACHINE_AREA_REPORT_KEYS))))
+
+
+REPORT_MODULE_COVERAGE["bookings"] = ModuleReportCoverage("substantive", (
+    *REPORT_MODULE_COVERAGE["bookings"].reports, "booking-occupancy", "booking-lead-time", "booking-top-members",
+))
+REPORT_MODULE_COVERAGE["events"] = ModuleReportCoverage("substantive", (
+    *REPORT_MODULE_COVERAGE["events"].reports, "event-signups", "event-revenue", "event-funnel",
+    "event-checkin-times", "event-feedback-scores",
+))
+
+
+# These associations document coverage; the payment ledger is permanently core,
+# and membership analytics do not require the optional member sign-in module.
+REPORT_MODULE_COVERAGE.update({
+    "membership": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["membership"].reports, "membership-growth", "member-retention", "membership-revenue")),
+    "member_accounts": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["member_accounts"].reports, "membership-growth", "member-retention", "membership-revenue")),
+    "payments": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["payments"].reports, "revenue-over-time", "payments-ageing", "cash-book")),
+})
+REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device-health", "module-operational-health"))
 
 
 @checks.register(checks.Tags.models)
 def check_report_module_coverage(app_configs=None, **kwargs):
     errors = []
     missing = MODULE_KEYS - REPORT_MODULE_COVERAGE.keys()
-    extra = REPORT_MODULE_COVERAGE.keys() - MODULE_KEYS
+    extra = REPORT_MODULE_COVERAGE.keys() - MODULE_KEYS - REPORT_COVERAGE_AREAS
     if missing or extra:
         errors.append(checks.Error(
             f"Report coverage differs from module registry; missing={sorted(missing)}, extra={sorted(extra)}.",
             id="operations.E001",
         ))
     for module_key, coverage in REPORT_MODULE_COVERAGE.items():
+        if module_key == "presence" and "presence" in tombstoned_app_labels():
+            continue
         from apps.makerspaces.module_registry import module_available
-        if not module_available(module_key):
+        if module_key in MODULE_KEYS and not module_available(module_key):
             continue
         for report_key in coverage.reports:
             definition = REPORT_REGISTRY.get(report_key)

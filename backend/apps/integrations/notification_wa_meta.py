@@ -20,7 +20,7 @@ class MetaWhatsAppProvider:
         return bool(config.channel == "whatsapp" and config.provider == "meta"
                     and config.enabled and config.personal_enabled
                     and is_servable(config.makerspace)
-                    and module_enabled(config.makerspace, "notifications")
+                    and module_enabled(config.makerspace, "whatsapp") and not config.activation_hold
                     and config.integration_identity and credentials(config))
 
     def _endpoint_valid(self, endpoint):
@@ -33,6 +33,7 @@ class MetaWhatsAppProvider:
             and endpoint.consented_at and not endpoint.revoked_at)
 
     def send(self, delivery, rendered):
+        self._delivery = delivery
         if not self._ready():
             return failure("not_configured")
         endpoint, config = delivery.endpoint, self.configuration
@@ -70,7 +71,7 @@ class MetaWhatsAppProvider:
         return send_message(self.configuration, endpoint.destination, content)
 
     def _live_target(self, endpoint):
-        from apps.notifications.inbox import eligible_owner
+        from .recipients_owners import eligible_owner
         config = self.configuration
         generation, identity = config.generation, config.integration_identity
         try:
@@ -80,7 +81,15 @@ class MetaWhatsAppProvider:
             return False
         return bool(config.generation == generation and config.integration_identity == identity
             and self._ready() and self._endpoint_valid(endpoint)
-            and eligible_owner(config.makerspace, endpoint.user_id))
+            and eligible_owner(config.makerspace, endpoint.user_id)
+            and self._current_sendable(endpoint))
+
+    def _current_sendable(self, endpoint):
+        from .notification_addressed import endpoint_sendable
+        from .notification_resolution import eligible, target_eligible
+        delivery = getattr(self, "_delivery", None)
+        return endpoint_sendable(self.configuration, endpoint) and (delivery is None or (
+            eligible(delivery.envelope) and target_eligible(delivery.envelope, "whatsapp", endpoint)))
 
     def send_document(self, delivery, *, filename, pdf_bytes, caption):
         from .notification_wa_documents import meta_document
@@ -101,6 +110,9 @@ class MetaWhatsAppProvider:
         # No candidate: the user sends the code to the business number themselves.
         if not challenge.candidate_destination:
             return {"instructions": f"Message the business WhatsApp number with: {code}"}
+        from .notification_cutover import sending_allowed, CutoverClosed
+        if not sending_allowed():
+            raise CutoverClosed()
         approval = sync_templates(config)
         if not approval.accepted:
             raise ValueError(approval.error_code)

@@ -4,6 +4,7 @@ import logging
 
 from apps.integrations.notification_links import local_link
 from apps.integrations import email_templates
+from apps.hardware_requests.notification_projection import addressed_context
 from django.db import transaction
 
 from .notification_sources import REMINDER_SOURCE
@@ -21,7 +22,8 @@ def emit_reminder(row, schedule, account):
             envelope = emit(makerspace=makerspace, recipient=account, feature="bookings", stream="bookings", event="reminder",
                  audience="requester", dedup_key=f"bookings.reminder:{schedule.pk}:{row.pk}:{row.calendar_sequence}",
                  source_kind=REMINDER_SOURCE, source_id=str(row.pk), revision=str(row.calendar_sequence), subject=row,
-                 context={"booking_id": row.pk, "offset_seconds": schedule.offset_seconds},
+                 context={**addressed_context(makerspace, "bookings", "reminder", "requester", context_for(row)),
+                          "booking_id": row.pk, "offset_seconds": schedule.offset_seconds},
                  rendered={"subject": message["subject"], "text": message["text_body"], "html": message["html_body"],
                            "link": local_link(makerspace, "member", "bookings")})
             from .notification_owner_mailbox import notify_owner

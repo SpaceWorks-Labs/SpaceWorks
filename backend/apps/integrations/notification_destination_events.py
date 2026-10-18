@@ -17,7 +17,7 @@ def live_destination(configuration, identity_digest):
         verification_state="verified", revoked_at=None)
 
 
-def apply_destination_event(configuration, event, *, identity_digest=""):
+def apply_destination_event(configuration, event, *, identity_digest="", decision_at=None):
     if not (event.opt_out or event.inbound or event.opt_in):
         return
     with tenant_write(configuration.makerspace_id), transaction.atomic():
@@ -38,12 +38,13 @@ def apply_destination_event(configuration, event, *, identity_digest=""):
         from .notification_proofs import revoke
         if event.opt_out:
             for endpoint in endpoints:
-                revoke(endpoint, actor=endpoint.user)
+                if max(endpoint.verified_at, endpoint.consented_at) <= (decision_at or timezone.now()):
+                    revoke(endpoint, actor=None)
         elif endpoints:
             values = {}
             if event.inbound:
                 values["last_inbound_at"] = timezone.now()
-            if event.opt_in:
-                values["consented_at"] = timezone.now()
-            NotificationEndpoint.objects.filter(pk__in=[row.pk for row in endpoints]).update(**values)
+            # START is not an account-bound consent proof. Only consume() can grant it.
+            if values:
+                NotificationEndpoint.objects.filter(pk__in=[row.pk for row in endpoints]).update(**values)
         return bool(endpoints)

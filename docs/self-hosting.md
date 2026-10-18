@@ -80,8 +80,10 @@ Module-only reruns still use the live module selector without downloading a rele
 Only the superadmin and operator-named makerspace are provisioned, along with configuration defaults.
 Setup asks `Turn on two-step sign-in (authenticator app)? [Y/n]` before the area questions.
 The provider prompt defaults to Google on Enter; use `none` for no provider, or a comma list of
-`google,apple,github`. Provider keys are entered later in the platform console. Google/Apple/OIDC
-can sign staff in; GitHub is member-only. The install choices are read-only in `/control/`.
+`google,apple,github`. Provider keys are entered later in the platform console. All social/OIDC
+and phone sign-in is member-only; staff/platform retain independent password doors. Native
+staff additionally require MFA/attestation and fixed-tenant grants. The install choices are
+read-only in `/control/`.
 To change them later, use the host management command, which validates the complete proposed policy
 and refuses to strand social-only users or superadmins:
 

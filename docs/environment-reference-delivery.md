@@ -26,11 +26,12 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `TELEGRAM_API_URL` | `'https://api.telegram.org'` |  |
 | `TELEGRAM_BOT_TOKEN` | `''` |  |
 | `TELEGRAM_WEBHOOK_SECRET` | `''` | The webhook answers 403 while unset; callbacks are acknowledged and ignored. |
-| `WHATSAPP_META_GRAPH_VERSION` | `'v25.0'` | Version used by Meta HTTP requests; factory/webhook are wired, but the remaining readiness gate is documented in the delivery contract. |
+| `WHATSAPP_META_GRAPH_VERSION` | `'v25.0'` | Canonical Meta HTTP version. Twilio/Meta adapters and the whatsapp module are wired; sender/proof/template gates and the independent cutover activation hold still apply. |
 
 These notification settings are loaded from the environment and forwarded by deployment manifests.
-OAuth returns `?notify_challenge=<id>&code=...&state=...`; the frontend posts to authenticated personal
-challenge verification. Authorization and exchange must use the identical provider-registered URI.
+OAuth returns signed code/state; authenticated endpoints GET resolves `oauth_state` to the current
+account's challenge, then the frontend posts to authenticated personal challenge verification.
+Redirect URIs are fixed registered values, without dynamic challenge IDs or placeholders. Authorization and exchange must use the identical provider-registered URI.
 See the [delivery contract](notification-contract.md#provider-connection-and-deployment) for setup.
 
 ## Sign-in: social, OIDC, native devices, member claims
@@ -41,7 +42,8 @@ See the [delivery contract](notification-contract.md#provider-connection-and-dep
 | `DEVICE_ANDROID_ATTESTATION_VERIFY_URL` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_URL` | `''` |  |
-| `DEVICE_ATTESTATION_APPS` | `{}` |  |
+| `DEVICE_ATTESTATION_APPS` | `{}` | Legacy fallback only for approved global native registrations whose signing list is empty; keys map to `signing_identity` and `environments`. New installations enter distribution digests / Apple App ID Prefix and minimum versions on registrations in `/control/`. A system warning lists empty eligible rows. See [mobile integration](mobile-integration.md). |
+| `DEVICE_ATTESTATION_DEV_INSECURE` | `False` | Accept development attestation for development registrations only; requires `DEBUG=True`. External and configured in-process verifiers take priority. |
 | `DEVICE_ATTESTATION_CHALLENGE_TTL_SECONDS` | `180` |  |
 | `DEVICE_ATTESTATION_PROVIDER_TIMEOUT_SECONDS` | `10` |  |
 | `MEMBER_CLAIM_CODE_TTL_SECONDS` | `15 * 60` |  |

@@ -46,6 +46,11 @@ def _revoke_locked(actor, membership, makerspace, reason, *, self_leave=False):
     membership.can_refer = False
     membership.can_verify = False
     membership.save()
+    from apps.integrations.models_push import PushDevice
+
+    PushDevice.objects.filter(user_id=membership.user_id, makerspace=makerspace, active=True).update(
+        active=False, invalidated_at=timezone.now(),
+    )
     if changed:
         audit.record(actor, "membership.left" if self_leave else "membership.revoked",
                      makerspace=makerspace, target=membership,

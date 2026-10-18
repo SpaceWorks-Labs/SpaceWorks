@@ -1,6 +1,7 @@
 """Bounded Graph requests; provider bodies and exceptions never become diagnostics."""
 import logging
 import re
+from dataclasses import replace
 
 import requests
 from django.conf import settings
@@ -16,7 +17,8 @@ REQUIRED = ("app_id", "app_secret", "business_account_id", "phone_number_id",
 
 def credentials(configuration):
     try:
-        values = configuration.get_credentials()
+        from .notification_sender import effective_credentials
+        values = effective_credentials(configuration)
         if not isinstance(values, dict):
             return {}
         if any(not isinstance(values.get(k), str) or not values[k]
@@ -82,6 +84,10 @@ def graph(configuration, method, resource, *, payload=None, params=None, files=N
         retry = response.headers.get("Retry-After", "")
         delay = min(int(retry), 3600) if isinstance(retry, str) and re.fullmatch(r"[0-9]{1,6}", retry) else None
         result = error_result(response.status_code, data, delay)
+        error = data.get("error") if isinstance(data, dict) else None
+        if method == "POST" and response.status_code >= 500 and not (
+                isinstance(error, dict) and type(error.get("code")) is int):
+            result = replace(result, ambiguous=True)
     logger.warning("notification.meta_request_failed", extra={
         "configuration_id": configuration.pk, "generation": configuration.generation,
         "error_code": result.error_code, "retryable": result.retryable})
@@ -98,6 +104,12 @@ def send_message(configuration, destination, content):
         "messaging_product": "whatsapp", "recipient_type": "individual",
         "to": destination[1:], **content})
     if not result.accepted:
+        if result.error_code == "blocked":
+            from .messaging.stops import suppress_recipient
+            from .messaging.protections import recipient_hash
+            from .notification_sender import configuration_sender_key
+            suppress_recipient("whatsapp", configuration_sender_key(configuration),
+                recipient_hash("phone", destination), reason="provider_opt_out")
         return result
     messages = data.get("messages")
     provider_id = messages[0].get("id") if isinstance(messages, list) and messages and isinstance(messages[0], dict) else None

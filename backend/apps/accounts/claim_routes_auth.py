@@ -11,9 +11,17 @@ def _refused(name, methods, reason):
 
 
 AUTH_CLAIM_ROUTES = {
+    **_refused("auth-account-restore-email", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-restore-phone", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-restore-social-start", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-restore-social-complete", ("POST",), "claim sessions cannot restore accounts"),
+    **_refused("auth-account-deletion", ("GET", "HEAD", "POST"), "claim sessions cannot delete accounts"),
     **_refused("auth-reauth", ("GET", "HEAD", "POST"), "claim sessions cannot reauthenticate"),
     **_refused("auth-reauth-social-start", ("POST",), "claim sessions cannot reauthenticate"),
     **_refused("auth-reauth-social-complete", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-social-factor", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-phone-start", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-phone-confirm", ("POST",), "claim sessions cannot reauthenticate"),
     **_refused("auth-reauth-enrollment-email", ("POST",), "claim sessions cannot enroll MFA"),
     **_refused("auth-reauth-enrollment-confirm", ("POST",), "claim sessions cannot enroll MFA"),
     **_refused(
@@ -71,6 +79,8 @@ AUTH_CLAIM_ROUTES = {
     ("auth-refresh", "OPTIONS"): AnonymousRead(),
     ("auth-logout", "POST"): ControlRoute(),
     ("auth-logout", "OPTIONS"): AnonymousRead(),
+    ("auth-logout-all", "POST"): ControlRoute(),
+    ("auth-logout-all", "OPTIONS"): AnonymousRead(),
     ("auth-me", "GET"): ControlRoute(),
     ("auth-me", "HEAD"): ControlRoute(),
     ("auth-me", "OPTIONS"): AnonymousRead(),

@@ -5,6 +5,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import mfa_challenges, mfa_policy
+from apps.accounts.attestation import AttestationUnavailable
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.mfa_sessions import context
 from apps.accounts.serializers_mfa import (
@@ -75,10 +76,14 @@ class MFAVerifyView(MFAEnrollmentView):
     enrolling = False
 
     @extend_schema(tags=["MFA"], auth=[], request=MFAVerifySerializer,
+                   description="Complete the server-owned login context. Native staff authority requires a staff account, its fixed tenant, password, authenticator MFA and approved app attestation. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                    responses={200: MFACompletedSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         data = _validated(MFAVerifySerializer, request)
-        result = mfa_challenges.finish(data["challenge"], data["code"], request, enrolling=self.enrolling)
+        try:
+            result = mfa_challenges.finish(data["challenge"], data["code"], request, enrolling=self.enrolling)
+        except AttestationUnavailable:
+            return Response({"detail": "Device attestation is unavailable.", "code": "attestation_unavailable"}, status=503)
         raw = result.pop("refresh") if "device_grant" not in result else None
         response = Response(result)
         if raw:

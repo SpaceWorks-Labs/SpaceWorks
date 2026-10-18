@@ -11,11 +11,12 @@ from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.accounts.reauthentication import require_recent_reauth
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.servability import servable_queryset
 from .models_endpoints import ChannelConfiguration
 from .notification_api_access import contract_space
-from .notification_api_errors import errors
+from .notification_api_errors import REAUTH_403, errors
 from .notification_slack_http import ProviderFailure
 from .notification_slack_installation import (
     CallbackStatusSerializer, OAuthStartSerializer, InstallationStatusSerializer,
@@ -176,9 +177,11 @@ class ChatInstallationView(APIView):
     serializer_class = None
 
     @extend_schema(tags=["Chat notifications"], responses={200: InstallationStatusSerializer,
-        **errors(400, 401, 403, 404, 429, 423, 503)})
+        **errors(400, 401, 403, 404, 429, 423, 503, e403=REAUTH_403)})
     def post(self, request, makerspace_id):
         space = contract_space(request.user, makerspace_id, manager=True)
+        # Every installation body carries bot/app secrets.
+        require_recent_reauth(request)
         config = configuration(space.pk, self.channel)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)

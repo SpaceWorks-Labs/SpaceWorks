@@ -14,6 +14,7 @@ from .notification_providers import CallbackEvent, EndpointProof
 from .notification_wa_meta_http import PHONE, credentials, error_result
 from .notification_wa_window import inbound_time
 from .notification_wa_meta_reference import referenced_delivery
+from .messaging.webhook_payloads import timestamp
 
 MAX_BODY = 262144
 MAX_ITEMS = 200
@@ -143,7 +144,8 @@ def callback_event(configuration, request):
         delivery_id, attempt = referenced_delivery(configuration, row.get("biz_opaque_callback_data"))
         return CallbackEvent(provider_id=provider_id, state=state,
             delivery_id=delivery_id, delivery_attempt=attempt,
-            identity_digest=identity if stopped else "", opt_out=stopped)
+            identity_digest=identity if stopped else "", opt_out=stopped,
+            provider_timestamp=timestamp(row.get("timestamp")))
     number = destination(row.get("from") if kind == "messages" else row.get("wa_id"))
     if not number:
         return None
@@ -151,12 +153,12 @@ def callback_event(configuration, request):
     if kind == "user_preferences":
         if row.get("value") in {"stop", "start"}:
             return CallbackEvent(identity_digest=identity, opt_out=row["value"] == "stop",
-                                 opt_in=row["value"] == "start")
+                                 opt_in=row["value"] == "start", provider_timestamp=timestamp(row.get("timestamp")))
         return None
     text = message_text(row)
     # A signed opt-out is honoured even when its timestamp is missing or skewed.
     if text.casefold() in STOP_WORDS:
-        return CallbackEvent(identity_digest=identity, opt_out=True)
+        return CallbackEvent(identity_digest=identity, opt_out=True, provider_timestamp=timestamp(row.get("timestamp")))
     moment = inbound_time(row.get("timestamp"))
     if moment is None or not isinstance(row.get("id"), str) or not row["id"]:
         return None

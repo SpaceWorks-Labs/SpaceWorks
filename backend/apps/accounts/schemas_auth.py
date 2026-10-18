@@ -30,6 +30,9 @@ AuthMembershipSerializer = inline_serializer(
     },
 )
 class AuthUserPayload(serializers.Serializer):
+    session_authority = serializers.CharField(
+        help_text="Effective session surface: member, native_staff, staff_api, delegated, platform or verification_only. Native staff JWTs carry staff_api plus a fixed-tenant device grant; tenant operations require matching X-Makerspace-Id. Account utilities need no selection.",
+    )
     id = serializers.IntegerField()
     username = serializers.CharField()
     email = serializers.EmailField()

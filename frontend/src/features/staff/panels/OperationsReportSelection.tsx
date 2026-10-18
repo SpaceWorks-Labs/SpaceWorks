@@ -16,7 +16,8 @@ export function ReportSelectionProvider({ selected, columns, catalog, hardware, 
   selected: string | null; columns: string[]; catalog: ReportCatalogItem[]; hardware: boolean; finance: boolean; machines: boolean; grain?: string; children: ReactNode;
 }) {
   const specialists = new Set([...COVERAGE, ...(hardware ? HARDWARE : []), ...(finance ? FINANCE : []), ...(machines ? ["machine-service", "printer-service"] : [])]);
-  const preferGeneric = selected !== null && HARDWARE.includes(selected) && grain !== "day";
+  const preferGeneric = selected !== null && (Boolean(catalog.find((report) => report.key === selected)?.chart_spec)
+    || (HARDWARE.includes(selected) && grain !== "day"));
   if (preferGeneric && selected) specialists.delete(selected);
   return <Context.Provider value={{ selected, columns, catalog, specialists, preferGeneric }}>{children}</Context.Provider>;
 }

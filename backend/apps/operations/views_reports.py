@@ -47,6 +47,7 @@ from apps.operations.views_report_helpers import (
 )
 from .report_render_throttles import ReportRenderThrottle
 from .report_download import _export_response
+from .report_definitions_machines import MACHINE_REPORT_KEYS
 
 
 ERROR_RESPONSES = {
@@ -87,10 +88,12 @@ class AnalyticsView(APIView):
         require_report_action(request.user, definition, makerspace.id, request.query_params)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
+        # Membership/money builders resolve calendar labels per space, including
+        # organization runs; only subject adapters take pre-resolved instants.
         response = Response(reports.report_data(
             report_key, makerspace.id,
             actor=request.user,
-            limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in {"member-retention", "membership-revenue"} else None),
+            limit=_limit_param(request), date_range=_date_range(request, makerspace if request.query_params.get("subject_kind") or definition.subject_kind or report_key in MACHINE_REPORT_KEYS else None),
             report_filters=_report_filters(request, report_key), grain=_grain_param(request, definition),
         ))
         if definition.subject_kind or request.query_params.get("subject_kind"):
@@ -111,11 +114,17 @@ class ReportCatalogView(APIView):
         require_module(makerspace, "reports")
         entries = []
         for definition in REPORT_DEFINITIONS:
+            if definition.key == "organization-membership":
+                continue
+            if definition.key == "presence-top-visitors" and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
+                continue
             # General report controls cannot supply an exact domain subject.
             # Subject-only reports remain available from their resource's UI.
-            if definition.subject_kind:
+            if definition.subject_kind or definition.platform_only:
                 continue
             if not rbac.can(request.user, definition.required_action, makerspace.id):
+                continue
+            if definition.key in {"machine-usage-members", "booking-top-members"} and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
                 continue
             missing = [key for key in definition.required_modules if not module_enabled(makerspace, key)]
             if definition.required_feature:
@@ -139,6 +148,8 @@ class AggregateReportCatalogView(APIView):
     )
     def get(self, request, *args, **kwargs):
         _require_superadmin(request.user)
+        from .platform_scope import _platform_context_for_view
+        _platform_context_for_view(request)
         return Response({"results": [
             _catalog_entry(definition, available=None, reason=None)
             for definition in DEPLOYMENT_AGGREGATE_REPORT_DEFINITIONS
@@ -179,12 +190,15 @@ class AggregateAnalyticsView(APIView):
         from .report_subjects import reject_aggregate
         reject_aggregate(request.query_params)
         _require_superadmin(request.user)
-        definition = reports.validate_report_key(report_key, deployment_aggregate=True)
+        from .platform_scope import _platform_context_for_view
+        context = _platform_context_for_view(request)
+        definition = reports.validate_report_key(report_key, deployment_aggregate=True, platform_context=context)
         return Response(reports.report_data(
             report_key, limit=_limit_param(request), date_range=_date_range(request),
             actor=request.user,
             report_filters=_report_filters(request, report_key),
             grain=_grain_param(request, definition),
+            platform_context=context,
         ))
 
 
@@ -242,10 +256,12 @@ class AggregateReportExportView(APIView):
         from .report_subjects import reject_aggregate
         reject_aggregate(request.query_params)
         _require_superadmin(request.user)
+        from .platform_scope import _platform_context_for_view
+        context = _platform_context_for_view(request)
         definition = reports.validate_report_key(
-            report_key, for_export=True, deployment_aggregate=True
+            report_key, for_export=True, deployment_aggregate=True, platform_context=context,
         )
-        return _export_response(request, definition, None)
+        return _export_response(request, definition, None, platform_context=context)
 
 
 def report_data(makerspace_id, report_key):
@@ -263,6 +279,7 @@ def _catalog_entry(definition, *, available, reason):
         "summary": definition.summary, "required_modules": list(definition.required_modules),
         "available": available, "unavailable_reason": reason,
         "grains": list(definition.grains or ("day",)), "chart_hint": definition.chart_hint,
+        "chart_spec": definition.chart_spec, "identity_bearing": definition.identity_bearing,
         "aggregate_supported": definition.key in STRATEGIES,
         "allowed_formats": list(definition.allowed_formats),
         "schedulable": definition.schedulable, "previewable": definition.previewable,

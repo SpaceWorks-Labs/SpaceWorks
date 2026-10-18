@@ -148,6 +148,14 @@ MODULES = (
         "email", "Email", "Outbound email delivery for this makerspace.",
         "integrations", GUARD, group=GROUP_NOTIFICATIONS,
     ),
+    ModuleDefinition(
+        "sms", "SMS", "Consented member and staff SMS notifications; OTP is independent.",
+        "integrations", GUARD, group=GROUP_NOTIFICATIONS,
+    ),
+    ModuleDefinition(
+        "whatsapp", "WhatsApp", "Consented member and staff approved-template WhatsApp notifications.",
+        "integrations", GUARD, group=GROUP_NOTIFICATIONS,
+    ),
     # One module key per notification channel, so a makerspace ships only the channels
     # it actually uses. `telegram` and `email` above are the same idea and predate these;
     # these three complete the set. All are `integrations`-owned and independently

@@ -6,8 +6,8 @@ from apps.integrations.dispatch_policy import email_module_blocks
 from apps.integrations.email_preferences import blocked_reason
 from apps.integrations.models_endpoints import ChannelConfiguration, NotificationEndpoint
 from apps.makerspaces.platform import feature_enabled, module_enabled
-from apps.notifications.models_preferences import NotificationPreference
-from apps.notifications.preferences import mandatory_email, personal_enabled
+from apps.notifications.preferences import mandatory_email
+from .notification_personal_policy import personal_enabled, preference_for, consented_channels
 from .notification_sources import source_eligible
 from apps.hardware_requests.notifications_p2_email import allowed as EQUIPMENT_EMAIL_POLICY
 
@@ -34,7 +34,7 @@ def policy_rows(model, space):
 
 def eligible(envelope):
     from apps.makerspaces.servability import is_servable
-    from apps.notifications.inbox import eligible_owner
+    from .recipients_owners import eligible_owner
     envelope.refresh_from_db()
     if not envelope.recipient_id:
         return False
@@ -137,20 +137,21 @@ def endpoint_eligible(endpoint, envelope):
 
 def selected_policy(envelope):
     space, user = envelope.makerspace, envelope.recipient
-    preference = policy_rows(NotificationPreference, space).filter(user=user, category=envelope.feature).first()
+    preference = preference_for(space, user, envelope.feature)
     if preference:
         return preference.channels, preference.email_fallback
     if envelope.feature == "presence":
         return ["in_app", "native_push"], False
+    addressed = consented_channels(space, user)
     managers = rbac.effective_actions(user, space.pk) & {
         "manage_makerspace", "edit_inventory", "manage_machines", "manage_events", "manage_bookings",
     }
     telegram = policy_rows(NotificationEndpoint, space).filter(user=user, channel="telegram", revoked_at=None).first()
     if managers and endpoint_eligible(telegram, envelope):
-        return ["telegram"], True
+        return ["telegram", *addressed], True
     if managers:
-        return ["email"], True
-    return ["email", "in_app"], True
+        return ["email", *addressed], True
+    return ["email", "in_app", *addressed], True
 
 
 def target_eligible(envelope, channel, endpoint=None):
@@ -167,6 +168,9 @@ def target_eligible(envelope, channel, endpoint=None):
         return False
     if not is_notification_enabled(envelope.makerspace, envelope.feature, channel):
         return False
+    if channel in {"sms", "whatsapp"}:
+        from .notification_addressed import eligible as addressed_eligible
+        return addressed_eligible(envelope, channel, endpoint)
     if channel == "in_app":
         return module_enabled(envelope.makerspace, "notifications") and feature_enabled(envelope.makerspace, "notifications.member_inbox")
     if channel == "native_push":
@@ -175,7 +179,7 @@ def target_eligible(envelope, channel, endpoint=None):
         return (feature_enabled(envelope.makerspace, "mobile.push") and push_configured()
                 and PushDevice.objects.filter(makerspace=envelope.makerspace,
                     user_id=envelope.recipient_id, active=True, device_grant__status="active").exists())
-    # External chat uses the existing notifications gate; WhatsApp has no new module key.
+    # Room/chat providers keep their existing optional notification-module policy.
     from .dispatch_channels import channel_module_blocks
     if not module_enabled(envelope.makerspace, "notifications") or channel_module_blocks(envelope.makerspace, channel):
         return False
@@ -187,6 +191,9 @@ def resolve(envelope, *, fallback=False):
     if not eligible(envelope):
         return []
     channels, allow_fallback = selected_policy(envelope)
+    if envelope.source_kind == "notification.test":
+        channels = [c for c in channels if c == envelope.context.get("diagnostic_channel")]
+        allow_fallback = False
     if envelope.stream == "account":
         channels = ["email"]  # mailbox authentication proofs never change mechanism
     if envelope.timing_policy == "digest" or envelope.source_kind == "notification.digest":
@@ -194,7 +201,14 @@ def resolve(envelope, *, fallback=False):
     targets = []
     for channel in channels:
         endpoint = None
-        if channel not in ("email", "in_app", "native_push"):
+        if channel == "sms":
+            from .notification_sender import sms_sender
+            from .notification_addressed import binding_current
+            config = policy_rows(ChannelConfiguration, envelope.makerspace).filter(channel="sms").first()
+            sender = sms_sender(config) if config else None
+            if not sender or not binding_current(envelope, config, sender):
+                continue
+        elif channel not in ("email", "in_app", "native_push"):
             endpoint = policy_rows(NotificationEndpoint, envelope.makerspace).filter(
                 user_id=envelope.recipient_id, channel=channel, revoked_at=None,
             ).first()
@@ -222,4 +236,4 @@ def whatsapp_template(delivery, now=None):
         return None
     return WhatsAppTemplate.objects.filter(configuration=endpoint.configuration,
         event=delivery.envelope.event, audience=delivery.envelope.audience,
-        locale=delivery.envelope.context.get("locale", "en"), approved=True).first()
+        locale=delivery.envelope.context.get("locale", "en"), approved=True, needs_review=False).first()

@@ -25,13 +25,25 @@ class TwilioWhatsAppProvider:
         config = self.configuration
         return (config.channel == "whatsapp" and config.provider == "twilio" and config.enabled
                 and config.personal_enabled and bool(config.integration_identity)
-                and is_servable(config.makerspace) and module_enabled(config.makerspace, "notifications"))
+                and is_servable(config.makerspace) and module_enabled(config.makerspace, "whatsapp")
+                and not config.activation_hold)
 
     def valid_endpoint(self, endpoint):
         config = self.configuration
         from .models_endpoints import NotificationEndpoint
-        from apps.notifications.inbox import eligible_owner
-        return bool(isinstance(endpoint, NotificationEndpoint) and endpoint.configuration_id == config.pk
+        from .recipients_owners import eligible_owner
+        if not isinstance(endpoint, NotificationEndpoint):
+            return False
+        from .notification_addressed import endpoint_sendable
+        from django.core.exceptions import ObjectDoesNotExist
+        generation, identity = config.generation, config.integration_identity
+        try:
+            config.refresh_from_db()
+            endpoint.refresh_from_db()
+        except ObjectDoesNotExist:
+            return False
+        return bool(config.generation == generation and config.integration_identity == identity
+            and endpoint_sendable(config, endpoint) and endpoint.configuration_id == config.pk
             and endpoint.makerspace_id == config.makerspace_id and endpoint.channel == "whatsapp"
             and endpoint.provider == "twilio" and endpoint.integration_generation == config.generation
             and endpoint.integration_identity == config.integration_identity
@@ -49,11 +61,22 @@ class TwilioWhatsAppProvider:
                 payload["From"] = "whatsapp:" + credentials.sender
             if delivery_id is not None:
                 payload["StatusCallback"] = callback_url(self.configuration, credentials, "status", delivery_id)
-            return send_message(credentials, payload)
+            result = send_message(credentials, payload)
+            if result.error_code in {"blocked", "invalid_endpoint"}:
+                from .messaging.stops import suppress_recipient
+                from .messaging.protections import recipient_hash
+                from .notification_sender import configuration_sender_key
+                suppress_recipient("whatsapp", configuration_sender_key(self.configuration),
+                    recipient_hash("phone", phone(destination)),
+                    reason="provider_opt_out" if result.error_code == "blocked" else "permanent_failure")
+            return result
         except ConfigurationError as exc:
             return ProviderResult(False, error_code=str(exc), sanitized_error=str(exc))
 
     def send(self, delivery, rendered):
+        from .notification_resolution import eligible, target_eligible
+        if not eligible(delivery.envelope) or not target_eligible(delivery.envelope, "whatsapp", delivery.endpoint):
+            return ProviderResult(False, error_code="invalid_endpoint")
         config = self.configuration
         endpoint = delivery.endpoint
         if (not self.active() or not self.valid_endpoint(endpoint)
@@ -95,6 +118,11 @@ class TwilioWhatsAppProvider:
                 or challenge.integration_identity != config.integration_identity
                 or challenge.consumed_at or challenge.expires_at <= timezone.now()):
             raise ValidationError({"channel": "Account linking is unavailable."})
+        if not challenge.candidate_destination:
+            return {"instructions": f"Message the WhatsApp business number with: {code}"}
+        from .notification_cutover import sending_allowed, CutoverClosed
+        if not sending_allowed():
+            raise CutoverClosed()
         payload = template_payload(config, "notification_opt_in", "member", "en", {"code": code})
         import json
         if (payload is None or code not in json.loads(payload["ContentVariables"]).values()

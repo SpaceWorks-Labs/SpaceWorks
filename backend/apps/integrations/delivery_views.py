@@ -1,3 +1,4 @@
+from .notification_cutover import guarded, sending_allowed, CutoverClosed
 from django.db import transaction
 from django.db.models import CharField, IntegerField, Value
 from django.shortcuts import get_object_or_404
@@ -91,7 +92,10 @@ class DeliveryLogRetryView(APIView):
 
     @extend_schema(tags=["Notification delivery"], request=RetrySerializer,
                    responses={200: DeliverySerializer, **errors(400, 401, 403, 404, 423, 503)})
+    @guarded(mutation=True)
     def post(self, request, makerspace_id, kind, pk):
+        if not sending_allowed():
+            raise CutoverClosed()
         space = staff_space(request.user, makerspace_id)
         if kind not in ("email", "channel"):
             raise ValidationError({"kind": "Expected email or channel."})
@@ -111,7 +115,10 @@ class DeliveryTestView(APIView):
 
     @extend_schema(tags=["Notification delivery"], request=DeliveryTestSerializer,
                    responses={200: DeliveryTestResultSerializer, **errors(400, 401, 403, 404, 423, 503)})
+    @guarded(mutation=True)
     def post(self, request, makerspace_id):
+        if not sending_allowed():
+            raise CutoverClosed()
         space = staff_space(request.user, makerspace_id)
         serializer = DeliveryTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

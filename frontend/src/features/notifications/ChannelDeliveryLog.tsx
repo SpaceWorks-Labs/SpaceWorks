@@ -5,7 +5,7 @@ import { CATEGORY_LABELS, CHANNEL_LABELS } from "./channelCatalog";
 import { useDeliveries, type Delivery } from "./channelsApi";
 
 const STATE_TONES: Record<Delivery["state"], Tone> = { accepted: "info", sent: "success", delivered: "success", read: "success",
-  retrying: "warn", failed: "danger", skipped: "neutral" };
+  held: "warn", retrying: "warn", failed: "danger", skipped: "neutral" };
 const label = (value: string) => value.replace(/_/g, " ");
 
 /**
@@ -17,12 +17,12 @@ export function ChannelDeliveryLog({ makerspaceId, member = false, title = "Deli
 }) {
   const [page, setPage] = useState(1);
   const deliveries = useDeliveries(makerspaceId, page, member);
-  const rows = deliveries.data?.results ?? [];
+  const rows = deliveries.error ? [] : deliveries.data?.results ?? [];
   return <section aria-label={title} className="grid min-w-0 gap-3">
     <h3 className="title-section">{title}</h3>
     {deliveries.isLoading ? <p className="text-sm text-muted">Loading deliveries…</p> : null}
     {deliveries.error ? <ErrorBlock error={deliveries.error} onRetry={() => { void deliveries.refetch(); }} /> : null}
-    {deliveries.data && !rows.length ? <p className="text-sm text-muted">Nothing has been sent through these channels yet.</p> : null}
+    {!deliveries.error && deliveries.data && !rows.length ? <p className="text-sm text-muted">Nothing has been sent through these channels yet.</p> : null}
     {rows.length ? <ul className="grid min-w-0 divide-y divide-line rounded-lg border border-line">
       {rows.map(row => <li key={row.id} className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
         <StatusPill label={label(row.state)} tone={STATE_TONES[row.state] ?? "neutral"} />
@@ -34,7 +34,7 @@ export function ChannelDeliveryLog({ makerspaceId, member = false, title = "Deli
           {row.next_attempt_at ? ` · next try ${new Date(row.next_attempt_at).toLocaleString()}` : ""}</span> : null}
       </li>)}
     </ul> : null}
-    {deliveries.data ? <Pagination page={page} pageSize={24} count={deliveries.data.count}
+    {!deliveries.error && deliveries.data ? <Pagination page={page} pageSize={24} count={deliveries.data.count}
       totalPages={Math.max(1, Math.ceil(deliveries.data.count / 24))} onChange={setPage} /> : null}
   </section>;
 }

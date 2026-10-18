@@ -5,7 +5,8 @@ from collections import Counter
 from django.utils import timezone
 
 from apps.accounts import rbac
-from apps.integrations.models import EmailLog, NotificationDeliveryLog
+from apps.integrations.models import EmailLog, NotificationDeliveryLog, NotificationDelivery
+from apps.integrations.models_tracking import PushDeliveryAttempt
 from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
@@ -49,11 +50,25 @@ def build_platform_dashboard(actor=None):
         "scheduler": scheduler_snapshot(now),
         "failed_deliveries": {
             "email": EmailLog.objects.filter(makerspace_id__in=ids, status="failed").count(),
-            "notifications": NotificationDeliveryLog.objects.filter(
-                makerspace_id__in=ids, status="failed",
-            ).count(),
+            "notifications": _notification_failures(ids),
         },
     }
+
+
+def _notification_failures(space_ids):
+    logs = NotificationDeliveryLog.objects.filter(makerspace_id__in=space_ids, status="failed")
+    # Staff push has per-device outcomes. A failed parent contributes only when
+    # delivery failed before any device rows existed, never alongside its children.
+    return (
+        logs.exclude(channel="native_push").count()
+        + logs.filter(channel="native_push", pushdeliveryattempt__isnull=True).count()
+        + PushDeliveryAttempt.objects.filter(
+            delivery_log__makerspace_id__in=space_ids, status="failed",
+        ).count()
+        + NotificationDelivery.objects.filter(
+            makerspace_id__in=space_ids, state="failed",
+        ).exclude(channel="email").count()
+    )
 
 
 def tenant_check_context(space, key):

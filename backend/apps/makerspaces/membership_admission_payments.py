@@ -16,6 +16,8 @@ SETTLED = ("paid_online", "paid_offline", "waived")
 
 
 def charge_admission(row, actor, policy):
+    from apps.accounts.account_obligations import lock_obligation_owner
+    row.user = lock_obligation_owner(row.user)
     if row.admission_payment_id:
         return Payment.objects.select_for_update().get(pk=row.admission_payment_id, makerspace=row.makerspace, member=row.user)
     plan = row.selected_plan

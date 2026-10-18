@@ -1,3 +1,4 @@
+from .notification_cutover import guarded
 import random
 
 # Register the shared worker even when no separable domain adapter is installed.
@@ -27,6 +28,7 @@ from apps.integrations.smtp_validation import (
     soft_time_limit=email_task_soft_limit(),
     time_limit=email_task_hard_limit(),
 )
+@guarded(sending=True)
 def deliver_email_task(self, log_id):
     record_worker_heartbeat()
     log = _claim_log(log_id)
@@ -81,6 +83,7 @@ def _claim_log(log_id):
     soft_time_limit=email_task_soft_limit(),
     time_limit=email_task_hard_limit(),
 )
+@guarded(sending=True)
 def deliver_notification_task(self, log_id):
     record_worker_heartbeat()
     log = _claim_notification_log(log_id)
@@ -126,3 +129,7 @@ def _claim_notification_log(log_id):
         log.error = ""
         log.save(update_fields=["status", "error", "updated_at"])
         return log
+
+from .tasks_messaging_settings import wipe_messaging_credentials_task  # noqa: F401
+
+from .tasks_messaging import canonical_retention_task, deliver_messaging_task, sweep_messaging_task  # noqa: F401

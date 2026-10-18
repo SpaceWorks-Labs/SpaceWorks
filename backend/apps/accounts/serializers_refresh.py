@@ -1,5 +1,5 @@
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.settings import api_settings
 
 from apps.accounts.models import User
@@ -46,6 +46,8 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
                 )
             from apps.accounts.surface_policy import validate_account_token
             validate_account_token(user, refresh)
+            from apps.accounts.session_issuance import validate_session_generation
+            validate_session_generation(user, refresh)
             from apps.accounts.session_context import validate_context
             requested = self.context.get("session_context")
             if requested is not None:
@@ -68,7 +70,8 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
             refresh.outstand()
             from apps.accounts.serializers_payload import user_payload
             data = {"access": str(refresh.access_token),
-                    "user": user_payload(_user, request=self.context.get("request"))}
+                    "user": user_payload(_user, request=self.context.get("request"),
+                                         session_authority=refresh["surface"])}
             data["refresh"] = str(refresh)
             return data
 

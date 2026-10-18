@@ -24,6 +24,9 @@ def available_channels(space, feature):
             allowed = feature_enabled(space, "notifications.member_inbox")
         elif channel == "native_push":
             allowed = feature_enabled(space, "mobile.push")
+        elif channel in {"sms", "whatsapp"}:
+            from .messaging.resolver import resolve_sender
+            allowed = bool(config and module_enabled(space, channel) and resolve_sender(space, channel))
         else:
             allowed = bool(config and not channel_module_blocks(space, channel))
         if allowed:

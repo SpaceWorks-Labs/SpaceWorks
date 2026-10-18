@@ -135,7 +135,16 @@ end-to-end (public browse, auth/RBAC, API-client HMAC, QR/box, audit/evidence, 3
 Request Workflow, procurement "To Buy", stock transfers incl. true cross-makerspace movement, stocktake,
 analytics/ledger/exports, Users CRUD, and the FabLab modules). The detailed PRDs (`docs/prd-*.md`) are
 **internal planning docs kept local only** (gitignored); "PRD §N" references point to those. Google Sheets
-OAuth publishing, native apps, and physical label-printer control remain out of scope.
+OAuth publishing remains outside this programme. Native backend contracts and physical device
+protocols are implemented; external Android/iOS app builds and real-provider/device release checks
+remain separate work. See the [mobile PRD](mobile/MOBILE-APP-PRD.md).
+
+**2026-10-18 reconciliation.** Native staff use fixed-tenant staff accounts with password/MFA/
+attestation; self-deletion/restore are member-only. Canonical personal envelopes now incorporate
+Twilio SMS, Twilio/Meta WhatsApp, durable STOP/sender history, BSUID correlation and per-device
+push with optional inbox links. Reports use canonical delivery/mapped history rather than the
+retired addressed send table. Destructive integrations 0043 is unsupplied and sending activation
+remains held pending [replay sign-off](notification-reconciliation-rollout.md).
 
 ## Observability (phase 0 of the 2026-09-03 forward plan)
 

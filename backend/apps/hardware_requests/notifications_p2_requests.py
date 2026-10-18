@@ -88,7 +88,12 @@ def eligible_charge(envelope):
         return False
     if revision(payment.created_at, payment.subject_type, payment.subject_id) != envelope.revision:
         return False
-    return envelope.audience == "staff"
+    expected = {"deposit_raised": Payment.SubjectType.LOAN_DEPOSIT,
+                "late_fee_raised": Payment.SubjectType.LOAN_LATE_FEE}.get(envelope.event)
+    return bool(envelope.audience == "staff" and expected == payment.subject_type
+                and payment.subject_id == envelope.context.get("request_id")
+                and rbac.scope_notification_policy(HardwareRequest.objects.all(),
+                    makerspace_id=envelope.makerspace_id).filter(pk=payment.subject_id).exists())
 
 
 @safe_adapter

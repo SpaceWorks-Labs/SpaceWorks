@@ -58,11 +58,14 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   operations. Historical metric rollups are append-only: corrections add revisions. Every module
   has a substantive report or an explicitly gated row.
 - **Notifications.** Transactional personal outboxes, verified Telegram, Slack, Mattermost, Discord
-  and WhatsApp connections, per-category channel selection and email fallback; staff rooms retain
+  and Twilio/Meta WhatsApp connections, Twilio SMS, per-category selection and email fallback; staff rooms retain
   their delivery matrix. Space Managers configure encrypted channel credentials. Member JWTs reach
   personal routes; browser OAuth completes through authenticated challenge verification. WhatsApp
   Twilio and Meta are registered/mounted; remaining delivery limits are recorded in the
-  [delivery contract](docs/notification-contract.md#integration-limits-in-this-tree).
+  [delivery contract](docs/notification-contract.md#integration-limits-in-this-tree). Sender-bound
+  consent, durable STOP and per-device envelope push preserve account-only owner access independently
+  of inbox installation. Sending activation and destructive retirement remain held pending
+  [conversion/replay sign-off](docs/notification-reconciliation-rollout.md).
 - **Accounts and profiles.** Separate member, tenant staff and platform accounts. Members use
   password, Google, Apple, GitHub, OIDC (Keycloak, Authentik, Azure AD, Okta) or phone/SMS;
   staff/platform use password plus authenticator MFA where required. Member methods are switchable;

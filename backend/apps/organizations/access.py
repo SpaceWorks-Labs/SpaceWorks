@@ -9,8 +9,8 @@ from apps.organizations.models import Organization, OrganizationMembership
 
 def is_superadmin(actor) -> bool:
     return bool(
-        actor
-        and getattr(actor, "is_authenticated", False)
+        governance.live_account(actor)
+        and actor.account_kind == User.AccountKind.PLATFORM
         and (actor.is_superuser or actor.role == User.Role.SUPERADMIN)
     )
 
@@ -19,6 +19,8 @@ def visible_organizations(actor):
     queryset = Organization.objects.all()
     if is_superadmin(actor):
         return queryset
+    if not governance.member_account(actor):
+        return queryset.none()
     return queryset.filter(
         is_active=True,
         memberships__user=actor,
@@ -28,6 +30,8 @@ def visible_organizations(actor):
 
 def active_membership(actor, organization):
     if is_superadmin(actor):
+        return None
+    if not governance.member_account(actor):
         return None
     return OrganizationMembership.objects.filter(
         organization=organization,
@@ -44,8 +48,13 @@ def require_governance(actor, organization, action):
 
 def lock_governance_membership(actor, organization, action):
     """Recheck organization authority under the row changed by governance edits."""
+    from apps.accounts.native_session import is_native_session
+    if not governance.live_account(actor) or is_native_session(actor):
+        raise PermissionDenied()
     if is_superadmin(actor):
         return None
+    if not governance.member_account(actor):
+        raise PermissionDenied()
     membership = OrganizationMembership.objects.select_for_update().filter(
         organization=organization,
         user=actor,

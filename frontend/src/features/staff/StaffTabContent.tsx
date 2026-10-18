@@ -1,3 +1,5 @@
+import { ModuleAnalytics } from "./panels/ModuleAnalytics";
+import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
 import { Suspense, type ReactNode } from "react";
 
 import { ListLayout } from "../../components/layouts";
@@ -105,6 +107,10 @@ export function StaffTabContent({
       {activeTab === "notifications" ? (
         <NotificationInbox key={makerspaceKey} makerspace={activeMakerspace} canManageMembers={has("manage_members")} />
       ) : null}
+      {activeTab === "channels" && !isSuperadmin && actorActions.length > 0 ? <section className="desk-panel p-5">
+        <h1 className="title-panel mb-4">My notification channels</h1>
+        <MyNotificationSettings key={makerspaceKey} makerspaceId={makerspaceKey} />
+      </section> : null}
       {activeTab === "requests" ? (
         <RequestsPanel
           key={makerspaceKey}
@@ -236,6 +242,7 @@ export function StaffTabContent({
       ) : null}
       <StaffPlatformTabContent activeTab={activeTab} activeMakerspace={activeMakerspace} makerspaces={makerspaces} isSuperadmin={isSuperadmin} canManageMakerspace={canManageMakerspace} currentUser={currentUser} onAuthRefresh={onAuthRefresh} allowedTabs={allowedTabs} singleTenantLocked={singleTenantLocked} />
       {activeTab === "audit" && canViewAudit ? <AuditLog makerspaceId={activeMakerspace?.id} /> : null}
+      <ModuleAnalytics key={`analytics:${makerspaceKey}:${activeTab}`} makerspace={activeMakerspace} tab={activeTab} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
       </Suspense>
     </StaffPanelErrorBoundary>
   );

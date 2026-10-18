@@ -44,6 +44,7 @@ class NotificationDelivery(models.Model):
         FAILED = "failed"
         SKIPPED = "skipped"
         RETRYING = "retrying"
+        HELD = "held"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     envelope = models.ForeignKey(NotificationEnvelope, on_delete=models.CASCADE, related_name="deliveries")
@@ -54,6 +55,20 @@ class NotificationDelivery(models.Model):
     provider = models.CharField(max_length=32)
     integration_generation = models.PositiveIntegerField(default=0)
     integration_identity = models.CharField(max_length=255, blank=True)
+    sender_key = models.CharField(max_length=255, blank=True)
+    provider_source = models.CharField(max_length=16, blank=True)
+    credential_version = models.PositiveIntegerField(default=0)
+    recipient_phone_hash = models.CharField(max_length=64, blank=True)
+    recipient_alias_hash = models.CharField(max_length=64, blank=True)
+    estimated_segments = models.PositiveSmallIntegerField(default=0)
+    billed_segments = models.PositiveSmallIntegerField(null=True)
+    quota_reserved_at = models.DateTimeField(null=True)
+    historical = models.BooleanField(default=False)
+    accepted_at = models.DateTimeField(null=True)
+    sent_at = models.DateTimeField(null=True)
+    delivered_at = models.DateTimeField(null=True)
+    read_at = models.DateTimeField(null=True)
+    failed_at = models.DateTimeField(null=True)
     state = models.CharField(max_length=16, choices=State.choices, default=State.RETRYING)
     provider_id = models.CharField(max_length=255, blank=True)
     attempt_count = models.PositiveSmallIntegerField(default=0)

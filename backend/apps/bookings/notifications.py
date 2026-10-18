@@ -47,7 +47,7 @@ def _effective_toggle(booking):
 
 def _restored_owner_eligible(booking):
     from apps.bookings.access import require_booking_account
-    from apps.notifications.inbox import eligible_owner
+    from apps.integrations.recipients_owners import eligible_owner
     from apps.presence.guard import MemberPresenceRequired, WaiverAcceptanceRequired
 
     if not eligible_owner(booking.space.makerspace, booking.member_id):
@@ -110,6 +110,7 @@ def grant_recipient_ids(space):
 
 def _emit(row, event, recipient_id, audience, source_kind, rendered):
     from apps.accounts.models import User
+    from apps.hardware_requests.notification_projection import addressed_context
     from apps.integrations.notification_outbox import emit
     try:
         with transaction.atomic():
@@ -117,7 +118,10 @@ def _emit(row, event, recipient_id, audience, source_kind, rendered):
                  stream="bookings", event=event, audience=audience,
                  dedup_key=f"bookings:{row.pk}:{event}:{row.calendar_sequence}:{audience}:{recipient_id}",
                  source_kind=source_kind, source_id=str(row.pk), revision=str(row.calendar_sequence), subject=row,
-                 scope=scope_for(row, event), context={"booking_id": row.pk, "space_id": row.space_id, "status": row.status},
+                 scope=scope_for(row, event),
+                 context={**addressed_context(row.space.makerspace, "bookings", event, audience,
+                                               bookings_context(row, event)),
+                          "booking_id": row.pk, "space_id": row.space_id, "status": row.status},
                  rendered=rendered)
             if audience == "staff":
                 from apps.integrations.models_contract import NotificationDelivery

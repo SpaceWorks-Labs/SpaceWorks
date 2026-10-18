@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.origin_scope_routes import (
+    QUERY_SCOPED_ROUTES,
     MAKERSPACE_KWARG_ROUTES as _MAKERSPACE_KWARG_ROUTES,
     MODEL_LOOKUPS as _MODEL_LOOKUPS,
     TARGET_SET_LOOKUPS,
@@ -68,6 +69,8 @@ def validate_native_makerspace_scope(request, user, grant):
         raise PermissionDenied('Invalid native makerspace selection.') from exc
     if makerspace_id <= 0 or str(makerspace_id) != str(raw).strip():
         raise PermissionDenied('Invalid native makerspace selection.')
+    if user.account_kind == "staff" and makerspace_id != user.staff_makerspace_id:
+        raise PermissionDenied('Staff makerspace selection is fixed to the account tenant.')
 
     origin = _origin_candidate(request)
     origin_scope = staff_origin_scope(request)
@@ -104,6 +107,12 @@ def validate_native_makerspace_scope(request, user, grant):
     if targets and targets != {makerspace_id}:
         raise PermissionDenied(
             'Makerspace target does not match the selected makerspace.'
+        )
+    if url_name in QUERY_SCOPED_ROUTES and targets != {makerspace_id}:
+        # These listings narrow by their query parameter, not by the native selection,
+        # so a native request must name the selected makerspace explicitly.
+        raise PermissionDenied(
+            'This listing requires its makerspace query parameter to match the selection.'
         )
     request.selected_makerspace_id = makerspace_id
     request.selected_makerspace_membership = membership

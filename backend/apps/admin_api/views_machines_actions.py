@@ -117,6 +117,7 @@ class MachineUsageView(APIView):
             request.user,
             data['hours'],
             data.get('note', ''),
+            member=data.get('member'), started_at=data.get('started_at'),
         )
         return Response(
             MachineUsageEntrySerializer(entry).data,

@@ -121,6 +121,10 @@ class EmailLog(ScopedPiiModelMixin, models.Model):
     stream = models.CharField(max_length=32, blank=True)
     event = models.CharField(max_length=64, blank=True)
     audience = models.CharField(max_length=16, blank=True)
+    provider_source = models.CharField(max_length=8, blank=True, choices=[("platform", "Platform"), ("own", "Own")])
+    provider_message_id = models.CharField(max_length=255, blank=True, db_index=True)
+    bounced_at = models.DateTimeField(null=True, blank=True)
+    complained_at = models.DateTimeField(null=True, blank=True)
     connection_kind = models.CharField(max_length=16, default="makerspace")
     status = models.CharField(
         max_length=8,

@@ -143,12 +143,15 @@ def redeem_invitation(token, *, actor):
         raise Http404()
     locked_actor = User.objects.select_for_update().get(pk=actor.pk)
     if (
-        not locked_actor.is_active
+        not governance.member_account(locked_actor)
         or locked_actor.access_status != User.AccessStatus.ACTIVE
         or locked_actor.must_change_password
         or not organization.is_active
     ):
         raise PermissionDenied()
+    from apps.accounts.native_session import is_native_session
+    if is_native_session(actor):
+        raise PermissionDenied("Use a member browser session for organization authority.")
     if invitation.redeemed_at is not None:
         raise InvitationRedeemed()
     if invitation.revoked_at is not None:

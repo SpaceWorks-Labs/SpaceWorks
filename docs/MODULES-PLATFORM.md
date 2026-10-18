@@ -12,10 +12,16 @@ stored credential**, so re-enabling needs no re-entry.
 ### notifications
 
 - **What it is** — the in-app notification inbox and the emitters that feed it.
-- **What it adds** — the inbox, unread state, and the emit path every other module notifies through.
-- **Without it** — no in-app notifications at all; outbound channels that are installed still deliver,
-  because they are gated separately.
-- **Data** — purgeable: in-app notification rows.
+- **What it adds** -- the inbox, unread state and its optional feature-cell preference editor.
+  Canonical personal intents live in core integrations; creating an inbox row never triggers push.
+- **Without it** -- no in-app notifications. Canonical SMS/WhatsApp and native push remain
+  independently gated; retained room/email paths keep their own rules. Other personal chat
+  providers still require the notifications module in the shared resolver. Removing this
+  inbox module differs from deployment-tombstoning its app.
+- **Data** -- purgeable: in-app notification rows. Per-device canonical delivery children keep
+  their envelope parent and optional SET_NULL inbox link; deleting inbox does not delete send history.
+  Disabling this module differs from tombstoning the whole notifications app, which owns the
+  registered push adapter.
 
 ### email
 
@@ -140,6 +146,12 @@ Requires `member_accounts`.
   payment sheet.
 - **What it adds** — device registration and revocation, push delivery (feature `mobile.push`), and
   PaymentSheet when `payments` is also on.
+  Canonical push uses per-device children beneath an envelope delivery, independently of inbox
+  creation or the inbox module. Current source-tied member/requester accounts qualify under
+  recipient policy; device registration still requires active native local selection. Staff
+  use separate staff accounts with password, MFA, attestation and a fixed tenant; phone/social/OIDC
+  native login is member-only and platform grants are forbidden. Matrix/personal policy and
+  current source/device checks apply. See [notification-inbox.md](notification-inbox.md).
 - **Without it** — native apps cannot hold a session for this space; the web app is unaffected.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
 
@@ -206,3 +218,56 @@ Opt-in, no dependencies; installed only by the `full`/`everything` profiles.
   to device managers. Printer jobs and label delivery controls arrive with their adapter lanes.
 
 ---
+
+
+### sms
+
+Opt-in and default off, independently of OTP and the optional inbox. Canonical
+`ChannelConfiguration` and personal envelopes use Twilio SMS. Eligible member accounts
+have a non-revoked membership or an owned loan/request, booking, event registration,
+machine-service request or charge. Account-only owners qualify; revoked/restricted/deleting
+accounts are excluded. Staff delivery needs a separate active local staff account and source
+role authority. Current staff SMS diagnostics cannot acquire consent via member-only APIs.
+
+SMS consent binds the verified phone instance, sender and configuration generation; phone
+verification alone does not subscribe. Matrix/category/legacy opt-outs and physical STOP win.
+Own credentials take precedence, including incomplete configurations which refuse delivery.
+Platform notification sending needs operator and tenant opt-in, initially off. OTP uses its
+separate platform number/transport; tenants may use neither OTP AccountSid nor its number.
+Never share a Twilio Messaging Service between OTP and notification numbers.
+
+Uninstall stops delivery and retains history. Channel purge removes tenant configuration/
+private rows according to the purge plan after preserving retired verification. Global sender
+identity/history, physical suppression/alias/correlation and provider references survive to
+protect other accounts/tenants and late callbacks. Reinstall never restores old consent.
+Canonical ingress commits STOP before acknowledgement even for frozen/disabled tenants.
+START does not subscribe. Quotas count logical messages once; billed SMS segments remain
+separate from estimates. See [channel setup](messaging-channels.md).
+
+### whatsapp
+
+Opt-in, default off and personal-only, with canonical Twilio or Meta providers. The module
+key is registered, resolving the old Meta missing-module blocker. A current tenant-tied
+member/account-only owner or authorized local staff account still needs its own signed
+matching inbound endpoint proof. SMS/phone login does not establish WhatsApp consent.
+Matrix/category opt-outs, source standing, physical STOP and installation generation apply.
+Platform sending needs explicit operator and tenant opt-in; broken own credentials never
+fall back. Existing operational installs require explicit conversion preserving enablement
+and opt-outs.
+
+Twilio uses approved Content SIDs; Meta uses WABA templates and a configured App ID, phone ID,
+access token, app secret and verify token. Provider refresh owns approval; imported templates
+remain needs_review. Reviewed feature/event/audience variables constrain lifecycle bodies;
+canonical document-media bindings retain private short-lived grants. Authenticated inbound
+opens a bounded 24-hour session window; outside it an approved template is required.
+
+The sender/phone BSUID barrier admits one probe before verified correlation, shared across
+tenants using the sender. Unmapped alias STOP blocks unknown-alias pairs; other sends defer
+and skip after 72 hours without confirmation. Unknown outcomes and expired addressed leases
+are held without blind resend. Explicit re-consent may reset blocked pairs; START cannot.
+
+Uninstall retains history. Purge removes tenant configuration/private data only after preserving
+retired verifiers; shared suppression/alias/correlation, sender history and provider references
+survive. Member consent/connection surfaces remain independent of inbox installation.
+Provisioning and exact callbacks: [channel guide](messaging-channels.md). Destructive integrations
+0043 retirement and sending activation remain held pending [replay sign-off](notification-reconciliation-rollout.md).

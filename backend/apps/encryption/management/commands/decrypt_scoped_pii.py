@@ -29,6 +29,7 @@ _FILTERS = {
     "integrations.NotificationEnvelope": "makerspace_id",
     "integrations.NotificationEndpoint": "makerspace_id",
     "integrations.NotificationEndpointChallenge": "makerspace_id",
+    "integrations.MessagingConsent": "makerspace_id",
     "notifications.MemberBroadcast": "makerspace_id",
     "notifications.NotificationInboxRow": "makerspace_id",
     "hardware_requests.HardwareRequest": "makerspace_id",

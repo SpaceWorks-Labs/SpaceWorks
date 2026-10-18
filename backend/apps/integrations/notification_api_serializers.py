@@ -1,7 +1,7 @@
 """Frozen Phase-1a HTTP shapes; credentials and destinations are never readable."""
 from collections.abc import Mapping
 from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_serializer
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 
 from .models_contract import NotificationDelivery
 from .models_endpoints import ChannelConfiguration, NotificationEndpoint, PERSONAL_CHAT_CHANNELS, WhatsAppTemplate
@@ -20,6 +20,7 @@ class StrictSerializer(serializers.Serializer):
 
 @extend_schema_serializer(component_name="ContractWhatsAppTemplate")
 class TemplateSerializer(serializers.ModelSerializer):
+    feature = serializers.ChoiceField(choices=NotificationFeature.values, required=False)
     event = serializers.CharField(max_length=64, help_text="Document text uses document_issued; PDF templates use "
         "document_issued.document for receipts, credit notes and bills. Both bindings may coexist.")
     audience = serializers.ChoiceField(choices=["staff", "requester", "member"])
@@ -31,6 +32,12 @@ class TemplateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         names = attrs.get("variables", [])
+        if attrs.get("feature"):
+            from .messaging.projections import PROJECTION_KEYS
+            audience = "member" if attrs["audience"] == "requester" else attrs["audience"]
+            allowed = PROJECTION_KEYS.get((attrs["feature"], attrs["event"], audience))
+            if allowed is None or set(names) - set(allowed):
+                raise serializers.ValidationError({"variables": "Use reviewed context keys for this event and audience."})
         markers = {"__document_header__", "__document_media__"} & set(names)
         if markers and (len(markers) != 1 or len(names) != len(set(names))
                 or attrs.get("event") != "document_issued.document" or attrs.get("audience") == "staff"
@@ -41,14 +48,29 @@ class TemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WhatsAppTemplate
-        fields = ["event", "audience", "locale", "template_name", "variables", "approved"]
+        fields = ["feature", "event", "audience", "locale", "template_name", "variables", "approved", "needs_review"]
+        read_only_fields = ["needs_review"]
         extra_kwargs = {"audience": {"required": True}, "approved": {"read_only": True}}
+
+
+class CallbackURLsSerializer(serializers.Serializer):
+    inbound_url = serializers.URLField(required=False, help_text="Twilio SMS or WhatsApp inbound callback URL.")
+    status_url = serializers.URLField(required=False, help_text="Twilio SMS status callback URL.")
+    status_url_template = serializers.CharField(required=False,
+        help_text="Twilio WhatsApp status URL with {delivery_id}; the sender supplies the concrete URL per message.")
+    webhook_url = serializers.URLField(required=False, help_text="Meta WhatsApp verification and signed batch callback URL.")
 
 
 @extend_schema_serializer(component_name="ContractChannel")
 class ChannelSerializer(serializers.ModelSerializer):
     credentials_set = serializers.SerializerMethodField()
     templates = TemplateSerializer(many=True, read_only=True)
+    callback_urls = serializers.SerializerMethodField(help_text="Read-only signed ingress URLs derived from the saved provider, sender and generation; empty for incomplete configurations.")
+
+    @extend_schema_field(CallbackURLsSerializer)
+    def get_callback_urls(self, obj):
+        from .notification_callback_urls import callback_urls
+        return callback_urls(obj)
 
     def get_credentials_set(self, obj) -> bool:
         return bool(obj.credentials)
@@ -56,7 +78,8 @@ class ChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChannelConfiguration
         fields = ["channel", "enabled", "room_enabled", "personal_enabled", "provider", "email_fallback",
-                  "integration_identity", "generation", "quotas", "credentials_set", "templates"]
+                  "integration_identity", "generation", "quotas", "credentials_set", "templates",
+                  "use_platform_sender", "sender_key", "credential_version", "activation_hold", "callback_urls"]
 
 
 @extend_schema_serializer(component_name="ContractQuota")
@@ -67,6 +90,8 @@ class QuotaSerializer(StrictSerializer):
 
 @extend_schema_serializer(component_name="ContractChannelPatch")
 class ChannelPatchSerializer(StrictSerializer):
+    use_platform_sender = serializers.BooleanField(required=False)
+    activation_hold = serializers.BooleanField(required=False, help_text="Clear only after reviewing the imported sender configuration.")
     enabled = serializers.BooleanField(required=False)
     room_enabled = serializers.BooleanField(required=False)
     personal_enabled = serializers.BooleanField(required=False)
@@ -159,7 +184,7 @@ class ProofVerifySerializer(StrictSerializer):
 @extend_schema_serializer(component_name="ContractSelection")
 class SelectionSerializer(StrictSerializer):
     category = serializers.ChoiceField(choices=NotificationFeature.values)
-    channels = serializers.ListField(child=serializers.ChoiceField(choices=[c for c in NotificationChannel.values if c != "webhook"]), max_length=8)
+    channels = serializers.ListField(child=serializers.ChoiceField(choices=[c for c in NotificationChannel.values if c != "webhook"]), max_length=9)
     email_fallback = serializers.BooleanField(default=True)
     available_channels = serializers.ListField(child=serializers.CharField(), read_only=True)
 
@@ -199,11 +224,19 @@ class DeliveryPageSerializer(serializers.Serializer):
 
 
 class ContractTestSerializer(StrictSerializer):
+    feature = serializers.ChoiceField(choices=NotificationFeature.values, required=False)
+    event = serializers.CharField(max_length=64, required=False)
     channel = serializers.ChoiceField(choices=NotificationChannel.values)
     endpoint_id = serializers.IntegerField(min_value=1, required=False)
     room_id = serializers.IntegerField(min_value=1, required=False)
 
     def validate(self, attrs):
+        if attrs.get("channel") == "whatsapp" and (not attrs.get("endpoint_id") or attrs.get("room_id")):
+            raise serializers.ValidationError("WhatsApp tests require your own verified endpoint.")
+        if attrs.get("channel") == "sms":
+            if attrs.get("endpoint_id") or attrs.get("room_id"):
+                raise serializers.ValidationError("SMS tests target your own verified phone only.")
+            return attrs
         if bool(attrs.get("endpoint_id")) == bool(attrs.get("room_id")):
             raise serializers.ValidationError("Choose exactly one endpoint or room.")
         return attrs

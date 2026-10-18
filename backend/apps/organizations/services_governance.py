@@ -15,7 +15,8 @@ from apps.organizations.services_invitations import _authority_actions, _clean_a
 
 def assert_governor_remains(organization, *, replaced_id, status=None, actions=None, deleting=False):
     """Legacy governorless organizations can be repaired; an existing governor cannot be lost."""
-    members = list(organization.memberships.select_for_update().order_by("pk"))
+    members = list(organization.memberships.select_for_update(of=("self",))
+                   .select_related("user").order_by("pk"))
     governors = [row for row in members if
                  governance.MANAGE_ORGANIZATION_MEMBERS in governance.actions_for_membership(row)]
     target = next((row for row in governors if row.pk == replaced_id), None)
@@ -46,6 +47,31 @@ def assert_deletable(organization):
             )
     if organization.logo_key:
         raise OrganizationConflict("Remove organization artwork through platform support before deletion.")
+
+
+@transaction.atomic
+def self_departure(organization, *, user):
+    """Internal account-deletion departure; an ordinary member may leave itself.
+
+    Stage A already holds organizations in ascending order before its User lock.
+    Reacquiring that same Organization row is safe and also makes this operation
+    safe for direct internal callers. No caller-controlled membership ID or actor
+    may select another person's authority.
+    """
+    if user.account_kind != "member":
+        raise PermissionDenied("Only member accounts hold organization memberships.")
+    locked = Organization.objects.select_for_update().get(pk=organization.pk)
+    target = locked.memberships.select_for_update().filter(user_id=user.pk).first()
+    if target is None or target.status == OrganizationMembership.Status.SUSPENDED:
+        return target
+    assert_governor_remains(
+        locked, replaced_id=target.pk, status=OrganizationMembership.Status.SUSPENDED,
+    )
+    target.status = OrganizationMembership.Status.SUSPENDED
+    target.save(update_fields=["status", "updated_at"])
+    audit.record(user, "organization.member_departed", target=target,
+                 meta={"status": target.status})
+    return target
 
 
 @transaction.atomic

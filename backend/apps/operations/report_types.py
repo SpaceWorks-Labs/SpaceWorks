@@ -40,9 +40,23 @@ class ReportDefinition:
     subject_kind: str = ""
     required_feature: str = ""
     pdf_renderer_path: str = ""
+    platform_only: bool = False
+    identity_bearing: bool = False
+    chart_spec: dict | None = None
 
     def builder(self) -> Callable:
-        return import_string(self.builder_path)
+        builder = import_string(self.builder_path)
+        if not self.platform_only:
+            return builder
+        from .platform_scope import require_platform_context
+
+        def platform_builder(makerspace_id=None, *, platform_context=None, **kwargs):
+            require_platform_context(platform_context)
+            if makerspace_id is not None:
+                raise ReportNotFound()
+            return builder(makerspace_id, platform_context=platform_context, **kwargs)
+
+        return platform_builder
 
 
 class ReportNotFound(APIException):

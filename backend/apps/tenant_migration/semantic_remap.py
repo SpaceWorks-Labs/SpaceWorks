@@ -24,6 +24,10 @@ def remap_semantic_references(label, source, row, pk_map, references):
             return False
         target = apps.get_model(PAYMENT_SUBJECT_REFERENCES[row["subject_type"]])
         row["subject_id"] = pk_map.lookup(target, row["subject_id"])
+    elif label == "machines.ConsumableCostRecord":
+        from .tracking_references import COST_SOURCE_MODELS
+        target = apps.get_model(COST_SOURCE_MODELS[row["source_kind"]])
+        row["source_id"] = pk_map.lookup(target, row["source_id"])
     elif label == "audit.AuditLog":
         _remap_audit(row, pk_map)
     elif label == "notifications.Notification":

@@ -160,6 +160,9 @@ WRAPPER_SITE_PREFIXES = {
     "makerspaces/resource_grants_services.py": ("event.staff_grant_",),
     "payments/connect.py": ("payments.connect_",),
     "tenant_migration/source_gate.py": ("tenant_migration.source_gate_",),
+    "accounts/account_deletion_grants.py": ("event.staff_grant_", "booking.staff_grant_"),
+    "integrations/messaging/outcomes.py": ("messaging.delivery_", "messaging.provider_status"),
+    "integrations/notification_cutover.py": ("notification.cutover_",),
 }
 
 DENIED_ACTION_PREFIXES = tuple(

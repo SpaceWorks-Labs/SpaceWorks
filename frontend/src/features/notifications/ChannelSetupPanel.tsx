@@ -10,6 +10,7 @@ function summary(spec: ChannelSpec, row?: Channel): { label: string; tone: Tone 
   // No settings row means today's behaviour: email sends and existing rooms post.
   if (!row) return { label: spec.key === "email" ? "On (default)" : "Not set up", tone: "neutral" };
   if (!row.enabled) return { label: "Off", tone: "neutral" };
+  if (row.activation_hold) return { label: "Review needed", tone: "warn" };
   const parts = [row.room_enabled && spec.rooms ? "rooms" : "", row.personal_enabled ? "personal" : ""].filter(Boolean);
   return { label: parts.length ? `On · ${parts.join(" + ")}` : "On", tone: "success" };
 }

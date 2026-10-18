@@ -30,6 +30,9 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
     ):
         for key in model.objects.filter(**lookup).values_list("object_key", flat=True):
             add(key)
+            if model is EvidencePhoto and include_coordination and key:
+                from apps.evidence.storage import staging_key
+                add(staging_key(key))
     collect_service(makerspace, add)
     from apps.payments.models import PaymentDocument
     for key in PaymentDocument.objects.filter(makerspace=makerspace).values_list("branding_logo_key", flat=True):
@@ -116,6 +119,7 @@ def _collect_private_coordination_keys(makerspace, add):
 
 
 def _public_coordination_keys(makerspace):
+    from apps.accounts.models_account_purge import AccountPurgeObject
     from apps.backup.models import RestoreRollbackObject
     from apps.tenant_migration.models import TenantImportObject
 
@@ -131,4 +135,8 @@ def _public_coordination_keys(makerspace):
             bucket_kind=TenantImportObject.BucketKind.PUBLIC_IMAGE,
         ).exclude(target_key="").values_list("target_key", flat=True)
     )
+    # Profiles may already be gone while durable account image deletion retries.
+    # Break-glass tenant purge must still collect those source-only keys.
+    keys.extend(AccountPurgeObject.objects.filter(makerspace=makerspace, deleted_at__isnull=True)
+                .values_list("object_key", flat=True))
     return keys

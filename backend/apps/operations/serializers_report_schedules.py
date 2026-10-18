@@ -156,6 +156,9 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
         current = self.instance
         report_key = attrs.get("report_key", getattr(current, "report_key", None))
         definition = REPORT_REGISTRY.get(report_key)
+        if definition is not None and definition.platform_only:
+            from .report_types import ReportNotFound
+            raise ReportNotFound()
         if definition is None:
             raise serializers.ValidationError({"report_key": "Report is unavailable on this deployment."})
         filters = attrs.get("filters", getattr(current, "filters", {}))

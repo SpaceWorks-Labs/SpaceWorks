@@ -8,7 +8,7 @@ export type ProviderSpec = { key: ProviderKey; label: string; identityLabel?: st
   identityCredential?: string;
   credentials: CredentialField[] };
 export type ChannelSpec = { key: ChannelKey; label: string; description: string; rooms: boolean; personal: boolean;
-  /** The module that must be installed for the channel to send (null: the notifications module alone). */
+  /** The channel's module; null means core or feature policy, independent of the optional inbox. */
   module: string | null; providers: ProviderSpec[] };
 
 const secret = (key: string, label: string, hint?: string): CredentialField => ({ key, label, secret: true, hint });
@@ -39,8 +39,11 @@ export const CHANNEL_SPECS: readonly ChannelSpec[] = [
     rooms: true, personal: true, module: "discord", providers: [{ key: "discord", label: "Discord bot",
       derivedIdentity: "discord", credentials: [secret("bot_token", "Bot token"), plain("application_id", "Application ID"),
         secret("client_secret", "OAuth client secret"), plain("public_key", "Public key"), plain("guild_id", "Server (guild) ID")] }] },
-  { key: "whatsapp", label: "WhatsApp", description: "Personal messages to people who opt in with their WhatsApp number. Outside a 24-hour reply window only approved templates are sent.",
-    rooms: false, personal: true, module: null, providers: [
+  { key: "sms", label: "SMS", description: "Personal texts to verified phone numbers with separate consent for this space and sender.",
+    rooms: false, personal: true, module: "sms", providers: [{ key: "twilio", label: "Twilio",
+      credentials: [plain("account_sid", "Account SID"), secret("auth_token", "Auth token"), plain("from_number", "Sender phone number", "E.164, for example +14155550100.")] }] },
+  { key: "whatsapp", label: "WhatsApp", description: "Personal messages to people who connect their WhatsApp account. Outside a 24-hour reply window only approved templates are sent.",
+    rooms: false, personal: true, module: "whatsapp", providers: [
       { key: "twilio", label: "Twilio", identityLabel: "WhatsApp sender number", identityHint: "E.164, for example +14155550100.",
         credentials: [plain("account_sid", "Account SID"), secret("auth_token", "Auth token"),
           plain("public_base_url", "Public callback base URL", "HTTPS origin of the API, without a path."),
@@ -72,7 +75,7 @@ export function defaultChannel(spec: ChannelSpec): Channel {
   const legacyOn = spec.key === "email" || spec.key === "native_push";
   return { channel: spec.key, enabled: legacyOn || spec.rooms, room_enabled: spec.rooms, personal_enabled: legacyOn,
     provider: spec.providers[0].key, email_fallback: true, integration_identity: "", generation: 1, quotas: {},
-    credentials_set: false, templates: [] };
+    credentials_set: false, templates: [], use_platform_sender: false, activation_hold: false };
 }
 
 export function providerSpec(spec: ChannelSpec, provider: ProviderKey) {

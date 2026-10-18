@@ -24,7 +24,7 @@ FIRST_PARTY_FIELD_NAMES = {
     'accounts.DailyOtpEmailCounter': frozenset('count day id'.split()),
     'accounts.NativeAppRegistration': frozenset('app_id approved_by created_at environment id makerspace platform revoked_at status updated_at verifier_config_key'.split()),
     'accounts.DeviceAttestationChallenge': frozenset('app_id challenge_digest consumed_at created_at environment expires_at id platform registration signing_identity'.split()),
-    'accounts.DeviceGrant': frozenset('app_id attestation_subject_fingerprint attested_at created_at environment id last_used_at platform registration revoked_at signing_identity status user'.split()),
+    'accounts.DeviceGrant': frozenset('app_id attestation_key_id attestation_public_key attestation_subject_fingerprint attested_at authority created_at credential_generation environment id last_used_at login_method platform registration revoked_at signing_identity staff_makerspace_id status user'.split()),
     'accounts.DeviceRefreshFamily': frozenset('created_at grant id reuse_detected_at revoked_at user'.split()),
     'accounts.DeviceRefreshToken': frozenset('blacklisted_at created_at expires_at family id jti rotated_at token_fingerprint'.split()),
     'accounts.PlatformLoginMethods': frozenset('apple_enabled github_enabled google_enabled id mfa_enabled password_enabled phone_enabled self_registration_enabled social_enabled updated_at'.split()),

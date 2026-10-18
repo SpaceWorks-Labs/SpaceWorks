@@ -3,6 +3,27 @@ from zoneinfo import ZoneInfo
 from .layer_rendering import ImageResource, QrResource, draw_document
 
 
+def badge_image_resource(layer, *, event_id, document):
+    """Resolve only promoted event artwork or a checksum-pinned packaged vector.
+
+    The badge renderer must call this for image layers before the typed photo/QR
+    handles. No profile selection, credential or arbitrary URL enters this path.
+    """
+    if layer["type"] != "image":
+        return None
+    from apps.events.models_certificate_templates import EventCertificateArtwork
+    from apps.events.certificate_artwork_storage import read_artwork
+    from .seed_artwork import render_packaged
+    import hashlib
+    row = EventCertificateArtwork.objects.filter(event_id=event_id,
+        resource_id=layer["resource_id"], promoted_at__isnull=False).first()
+    if row:
+        return ImageResource(read_artwork(row.object_key, row.version_id, row.sha256), row.sha256)
+    content = render_packaged(layer["resource_id"], width_mm=document["page_width_mm"],
+                              height_mm=document["page_height_mm"])
+    return ImageResource(content, hashlib.sha256(content).hexdigest())
+
+
 def verification_url(certificate):
     # This canonical, public ID grants event/date/status only, never PDF access.
     return f"{settings.PUBLIC_APP_BASE_URL.rstrip('/')}/certificates/verify/{certificate.serial}"

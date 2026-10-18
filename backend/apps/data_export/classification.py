@@ -64,6 +64,9 @@ from apps.tenant_migration.catalog_p2_events import OMITTED_MODELS as P2_EVENT_O
 OMITTED_MODELS.update(P2_EVENT_OMITTED)
 from apps.tenant_migration.catalog_p2_presence import classify as classify_presence
 classify_presence(EXPORTED_MODEL_FIELDS)
+from apps.tenant_migration.catalog_public_pages import EXPORTED_FIELDS as PAGE_FIELDS, OMITTED_MODELS as PAGE_OMITTED
+EXPORTED_MODEL_FIELDS.update(PAGE_FIELDS)
+OMITTED_MODELS.update(PAGE_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

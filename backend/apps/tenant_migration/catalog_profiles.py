@@ -4,12 +4,12 @@ PROFILE_FIELDS = ("public_visible public_consented_at show_activity_graph show_e
                   "show_projects show_machine_activity show_bookings show_loans domains skills links")
 PROJECT_FIELDS = "subtitle tags public_visible"
 EXPORTED_FIELDS = {
-    "makerspaces.PublicHandle": "id user profile handle claimed_at changed_at",
+    "makerspaces.PublicHandle": "id user profile makerspace organization handle claimed_at changed_at",
     "makerspaces.ProfileTimelineEntry": "id profile kind title organization location start end description order",
 }
 FIELD_NAMES = {label: frozenset(fields.split()) for label, fields in EXPORTED_FIELDS.items()}
 FIELD_NAMES["makerspaces.PublicHandleRedirect"] = frozenset(
-    "id profile handle released_at expires_at".split())
+    "id user profile makerspace organization handle released_at expires_at".split())
 OMITTED_MODELS = {"makerspaces.PublicHandleRedirect": "Retired namespace reservations are deployment-local."}
 
 
@@ -50,6 +50,8 @@ def prepare_import_handle(row, reservations=None):
     """
     from django.contrib.auth import get_user_model
     from apps.makerspaces.models_profiles import PublicHandle, MemberProfile
+    from apps.makerspaces.models_profiles import PublicHandleRedirect
+    from django.utils import timezone
     from apps.makerspaces.public_profile_handles import normalize_handle, lock_names, name_available
     from rest_framework.exceptions import ValidationError
     try:
@@ -58,16 +60,25 @@ def prepare_import_handle(row, reservations=None):
         return False
     reservations = reservations if reservations is not None else {}
     handles = reservations.setdefault(("makerspaces.PublicHandle", "handle"), set())
-    users = reservations.setdefault(("makerspaces.PublicHandle", "user"), set())
-    if handle in handles or row["user_id"] in users:
+    owner_key = ("user", row.get("user_id")) if row.get("user_id") else ("makerspace", row.get("makerspace_id"))
+    if row.get("organization_id") or not owner_key[1]:
         return False
-    get_user_model().objects.select_for_update(no_key=True).get(pk=row["user_id"])
+    users = reservations.setdefault(("makerspaces.PublicHandle", owner_key[0]), set())
+    if handle in handles or owner_key[1] in users:
+        return False
+    if owner_key[0] == "user":
+        get_user_model().objects.select_for_update(no_key=True).get(pk=owner_key[1])
+    else:
+        from apps.makerspaces.models import Makerspace
+        Makerspace.objects.select_for_update().get(pk=owner_key[1])
     lock_names(handle)
-    if PublicHandle.objects.filter(user_id=row["user_id"]).exists() or not name_available(handle):
+    if PublicHandle.objects.filter(**{f"{owner_key[0]}_id": owner_key[1]}).exists() or not name_available(handle):
         return False
-    if not MemberProfile.objects.filter(pk=row["profile_id"], membership__user_id=row["user_id"]).exists():
+    if PublicHandleRedirect.objects.filter(**{f"{owner_key[0]}_id": owner_key[1]}, expires_at__gt=timezone.now()).exists():
+        return False
+    if owner_key[0] == "user" and not MemberProfile.objects.filter(pk=row["profile_id"], membership__user_id=owner_key[1]).exists():
         return False
     row["handle"] = handle
     handles.add(handle)
-    users.add(row["user_id"])
+    users.add(owner_key[1])
     return True

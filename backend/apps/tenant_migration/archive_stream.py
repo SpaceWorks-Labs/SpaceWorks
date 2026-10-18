@@ -39,16 +39,21 @@ class PortableArchive:
             raise ArchiveFormatError(f"No PORTABLE dataset exists for {model_label}.")
         path = self.root / dataset.path
         if not path.is_file():
+            from .public_page_legacy import missing_dataset_allowed
+            if missing_dataset_allowed(self, model_label):
+                return
             raise ArchiveFormatError(f"Archive dataset is missing: {dataset.path}.")
         with path.open(encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             expected = {column.name for column in dataset.columns}
             actual = set(reader.fieldnames or ())
             if actual != expected:
-                raise ArchiveFormatError(
-                    f"Archive columns drifted for {model_label}; "
-                    f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}."
-                )
+                from .public_page_legacy import missing_columns_allowed
+                if actual - expected or not missing_columns_allowed(self, model_label, expected - actual):
+                    raise ArchiveFormatError(
+                        f"Archive columns drifted for {model_label}; "
+                        f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}."
+                    )
             yield from reader
 
     def json(self, relative_path):

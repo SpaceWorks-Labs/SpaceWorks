@@ -1,4 +1,4 @@
-"""Construct complete final database rows before their one allowed INSERT."""
+"""Construct final INSERTs; only allowlisted mutable page draft pointers get fixups."""
 
 from django.apps import apps
 
@@ -59,16 +59,28 @@ def final_row(
         elif field.attname in source:
             value = database_value(field, source[field.attname])
         else:
-            value = _reconstructed_value(label, field, fresh_values)
+            from .public_page_legacy import reconstructed_field
+            reconstructed, value = reconstructed_field(label, field)
+            if not reconstructed:
+                value = _reconstructed_value(label, field, fresh_values)
         row[field.column] = value
 
     _apply_target_fields(label, source, row)
+    from .page_pointer_fixups import deferred_pointer
+    for field in model._meta.local_concrete_fields:
+        if deferred_pointer(field):
+            row[field.column] = None
     rewrite_object_fields(model, row, object_key_map)
     if not _remap_foreign_keys(model, source, row, job, pk_map, target, references):
         return None
+    if label == "events.EventSession" and "identity_id" not in source:
+        from .public_page_legacy import identity_for_legacy_session
+        row["identity_id"] = identity_for_legacy_session(row, references.archive)
     _clear_walk_in_waiver_evidence(label, source, row, job)
     if not remap_semantic_references(label, source, row, pk_map, references):
         return None
+    from .public_page_document_remap import remap_documents
+    remap_documents(label, row, pk_map)
 
     for mapped in fields_for(model):
         column = model._meta.get_field(mapped.field_name).column
@@ -103,6 +115,9 @@ def final_row(
     if label == "makerspaces.PublicHandle":
         from .catalog_profiles import prepare_import_handle
         if not prepare_import_handle(row, fresh_values):
+            if not hasattr(references, "public_page_warnings"):
+                references.public_page_warnings = []
+            references.public_page_warnings.append({"code": "handle_dropped", "source_id": source["id"]})
             return None
     return row
 
@@ -224,6 +239,11 @@ def _remap_foreign_keys(model, source, row, job, pk_map, target, references):
             try:
                 row[field.column] = pk_map.lookup(field.related_model, source_value)
             except PrimaryKeyMapUnavailable:
+                if field.name == "profile" and model._meta.label in {
+                    "makerspaces.MakerspacePublicPageRevisionMember", "events.EventPageRevisionMember",
+                }:
+                    row[field.column] = None
+                    continue
                 # A crafted archive may retain the numeric id beside its snapshot.
                 # Only a declared NULL disposition authorizes turning that id inert.
                 if field.null and _null_with_provenance(

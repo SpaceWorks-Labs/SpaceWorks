@@ -2820,7 +2820,7 @@ create a copy-on-write page, even with an unchanged payload. Optimistic page rev
 refuse stale saves/releases. Release requires an own page and a published owner; the event
 publish action can atomically release a saved own page only with the explicit checkbox and
 current revision. Every write audits identifiers/revision/counts, not content. Clone uses
-Lane B's durable asset transaction, copies the effective website before optional series
+the reserve/work/finalize event asset transaction, copies the effective website before optional series
 attachment, and never copies release or live-delay history. This preserves valid short
 occurrence overrides when attaching their draft clones to a longer series template.
 
@@ -2828,17 +2828,55 @@ Always-present `makerspaces/website_assets.py` accepts multipart uploads, never 
 or final-key presigns. It bounds input to 5 MB, one frame and 16 megapixels before decode,
 reuses byte sniffing, strips metadata and re-encodes to WebP at most 2048 pixels per edge.
 New keys use `<domain>/website/<tenant>/<page>/...` in the private bucket. Staging is removed
-before commit; every new key is enlisted for rollback cleanup. Replacement redirects section
-references to a fresh asset, then deletes old versions after commit; only confirmed deletion
-frees quota. Copy/clone validates ownership and byte-size metadata, uses fresh keys and the
+before commit; every new key is enlisted for rollback cleanup. Replacement redirects working
+section references to a fresh asset; saved revisions pin their old assets until whole-owner
+removal. Only an unpinned upload or an authorized owner deletion can schedule byte deletion,
+and only confirmed deletion frees quota. Copy/clone validates ownership and byte-size metadata, uses fresh keys and the
 shared bounded-copy limits. Public images are streamed through a live-gated backend path,
 with no-store/nosniff and no object URL in JSON. Public React reads use tenant-aware blob
 transport (including client headers and external API origins); staff previews use staff
 transport and separate private/no-store endpoints.
 
+Event website upload/clone keys have a durable, FK-free cleanup intent committed before
+byte I/O. Its `owner_kind=event` owner ID is the venue makerspace ID. `storage_accounted`
+commits with the asset and tenant counter; rollback leaves unaccounted cleanup debt which
+still counts against the tenant allowance. Cleanup claims a retry in a short transaction,
+deletes both staging and final keys outside row locks, and releases accounted quota once.
+The reservation pass builds and validates a tentative graph in a transaction which is
+rolled back; only independently committed cleanup intents survive. Its event/page primary
+keys are reserved for final replay, so no partial clone or occurrence override is visible.
+HEAD, PUT, COPY and staging deletion run outside every domain transaction. Final replay
+reacquires the existing source/series/tenant/authority/page locks, repeats live permission,
+source-gate and current quota checks, and refuses changed owner/content/relational inputs
+with the existing `revision` field error. The random final key is the write claim token;
+only its exact ready, unexpired receipt with zero cleanup attempts can attach. Cleanup's
+attempt increment fences late writers. Repeated object work reuses verified final bytes,
+and repeated receipt finalization cannot charge twice. This costs two bounded graph builds
+for operations with new objects; operations with no object work commit in one transaction.
+Legacy event cover copies also run outside locks. Their event-prefix cleanup receipts use
+the public bucket; after attachment, the existing public-image lifecycle owns quota release,
+so the completed receipt only repairs late writes and never credits quota again. Live cover
+receipts are excluded before the bounded cleanup batch is selected. Bookings retains its
+separate existing transaction. The HTTP contract adds no retry/idempotency token: supplied
+event revision preconditions still reject stale HTTP replays, and legacy unconditioned
+uploads and explicit duplicate requests retain their existing semantics.
+Scheduling captures a checked `ownership_proven` receipt for imported keys before owner
+deletion can remove their original import-object journal.
+Completed event intents periodically repair late provider writes without a second quota
+credit. Owned-row ORM deletion queues cleanup in the deletion transaction; raw lifecycle
+adapters must capture the same journal before deleting rows. Unattached collection waits
+24 hours and refuses assets pinned by any revision or relational section.
+
+Account-linked speaker sections retain their row identity across content saves. Removing
+one from the draft sets `is_working=false`; it is absent from working projection, new
+snapshots, clones and new speaker-link choices, while `EventSpeaker.section` remains intact.
+Speaker history uses linked sessions in the selected released snapshot with its frozen
+series anchor, retaining the event-start fallback and account-only credit rules.
+
 Curated website text and image descriptions are intentional publication data, like event
-titles/descriptions, not private contact/answer fields or new scoped-PII sources. These five
-models have no User FKs or credentials. They have explicit export datasets, field/reference
+titles/descriptions, not private contact/answer fields or new scoped-PII sources. Editorial,
+asset and session rows have no User FKs or credentials; revision creators use nullable
+`SET_NULL` attribution, never authority. The models have explicit export datasets, field/reference
 and unique dispositions, retained object ownership, private-key collectors, quota
 reconciliation and module/tenant purge coverage. Portable content travels with remapped
 FKs and verified object-journal keys, but release and framing origins reset to false/empty.

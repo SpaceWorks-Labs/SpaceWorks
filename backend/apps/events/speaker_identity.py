@@ -57,7 +57,8 @@ def candidate_accounts(event, search):
 def _section(event, slug):
     if not slug:
         return None
-    section = EventPageSection.objects.filter(page__event=event, kind=EventPageSection.Kind.SPEAKER, slug=slug).first()
+    section = EventPageSection.objects.filter(page__event=event, kind=EventPageSection.Kind.SPEAKER,
+                                             slug=slug, is_working=True).first()
     if section is None:
         raise ValidationError({"section_slug": "No speaker section with this slug on the event website."})
     return section

@@ -5,7 +5,7 @@ import re
 
 
 def route_segments(root):
-    paths = {"/share/profiles/", "/sitemap.xml", "/robots.txt", "/favicon.ico", "/assets/"}
+    paths = {"/share/profiles/", "/share/pages/", "/e/", "/sitemap.xml", "/robots.txt", "/favicon.ico", "/assets/"}
     frontend = (root / "frontend/src/AppRoutes.tsx").read_text(encoding="utf-8")
     paths.update(re.findall(r'\bpath=["\']([^"\']+)', frontend))
     seen = set()

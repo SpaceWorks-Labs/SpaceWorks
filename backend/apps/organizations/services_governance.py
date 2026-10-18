@@ -34,7 +34,9 @@ def assert_governor_remains(organization, *, replaced_id, status=None, actions=N
 def assert_deletable(organization):
     # Enumerate concrete reverse FKs instead of importing separable domains. This
     # protects future references as well as tenant links and event organizers.
-    disposable = {"organizations.OrganizationMembership", "organizations.OrganizationInvitation"}
+    disposable = {"organizations.OrganizationMembership", "organizations.OrganizationInvitation",
+                  "organizations.OrganizationPublicPage", "organizations.OrganizationPublicPageStorage",
+                  "makerspaces.PublicHandle", "makerspaces.PublicHandleRedirect"}
     for relation in organization._meta.related_objects:
         if relation.related_model._meta.label in disposable:
             continue
@@ -103,4 +105,17 @@ def delete_organization(organization, *, actor):
     audit.record(actor, "organization.deleted", target=locked,
                  meta={"membership_count": locked.memberships.count(),
                        "invitation_count": locked.invitations.count()})
-    locked.delete()
+    from django.db import connection
+    from django.utils import timezone
+    from apps.makerspaces.models_page_cleanup import PublicPageObjectCleanup
+    from .models_public_pages import OrganizationPublicPageAsset
+    for asset in OrganizationPublicPageAsset.objects.filter(page__organization=locked):
+        PublicPageObjectCleanup.objects.update_or_create(object_key=asset.object_key, defaults={
+            "owner_kind": "organization", "owner_id": locked.pk, "page_id": asset.page_id,
+            "size_bytes": asset.size_bytes, "due_at": timezone.now(), "completed_at": None})
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT current_setting('app.allow_immutable_delete', true)")
+        previous = cursor.fetchone()[0] or "off"
+        cursor.execute("SELECT set_config('app.allow_immutable_delete', 'on', true)")
+        locked.delete()
+        cursor.execute("SELECT set_config('app.allow_immutable_delete', %s, true)", [previous])

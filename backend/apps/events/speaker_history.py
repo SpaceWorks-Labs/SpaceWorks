@@ -47,14 +47,21 @@ def speaking_rows(user, makerspace):
 
 
 def _occurred_at(speaker):
-    from .models import EventSession
+    from datetime import timedelta
+    from .website_visibility import effective_page
+    from .website_revision_projection import snapshot_sessions
 
-    if speaker.section_id:
-        first = (EventSession.objects.filter(speaker_links__speaker_id=speaker.section_id,
-                                             page__event_id=speaker.event_id)
-                 .order_by("starts_at").values_list("starts_at", flat=True).first())
-        if first is not None:
-            return first
+    page = effective_page(speaker.event)
+    if speaker.section_id and page and page.released and page.published_revision_id:
+        revision = page.published_revision
+        # Link by the retained, page-owned section, never by a display name/email.
+        if speaker.section.page_id == page.pk:
+            starts = [datetime.fromisoformat(row["starts_at"]) for row in
+                      snapshot_sessions(revision, public=True)
+                      if speaker.section.slug in row["speakers"]]
+            if starts:
+                shift = speaker.event.starts_at - revision.source_anchor_start if page.series_id else timedelta()
+                return min(starts) + shift
     return speaker.event.starts_at
 
 

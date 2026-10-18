@@ -78,3 +78,5 @@ from .catalog_notifications_contract import FIELD_NAMES as NOTIFICATION_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(NOTIFICATION_FIELDS)
 from .catalog_p2_events import FIELD_NAMES as P2_EVENT_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(P2_EVENT_FIELDS)
+from .catalog_public_pages import FIELD_NAMES as PAGE_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(PAGE_FIELD_NAMES)

@@ -3,7 +3,6 @@
 from rest_framework.fields import DateTimeField
 
 from apps.inventory import public_image_storage
-from apps.makerspaces.website_directory import public_url
 from apps.makerspaces.website_serving import PublicCard
 from apps.makerspaces.website_visibility import WebsiteAdapter, register
 
@@ -25,10 +24,29 @@ def card(event: Event, *, audience_label=None) -> PublicCard:
     image_key = event.image_key
     if event.series_id and "image_key" not in (event.series_override_fields or []):
         image_key = event.series.image_key
+    from django.http import Http404
+    from apps.makerspaces.public_page_access import canonical_origin
+    image_url, image_alt, description = public_image_storage.public_url(image_key) or None, "", event.description[:300]
+    try:
+        published = visible_page(event)
+    except Http404:
+        published = None
+    if published:
+        document = published.published_revision.document
+        editorial = document.get("editorial_document", {})
+        if document.get("section_enabled", {}).get("HERO", True):
+            description = document.get("tagline") or description
+            if editorial.get("cover_mode") == "asset":
+                asset = published.assets.get(pk=editorial["cover_asset_id"])
+                image_url = (f"{canonical_origin(event.makerspace)}/api/v1/public/{event.makerspace.slug}/events/"
+                             f"{event.public_token}/website/assets/{asset.pk}/")
+                image_alt = asset.alt_text
+            elif editorial.get("cover_mode") == "none":
+                image_url = None
     return PublicCard(
-        title=event.title, description=event.description[:300],
-        url=public_url(event.makerspace, "events", event.public_token),
-        image_url=public_image_storage.public_url(image_key) or None,
+        title=event.title, description=description[:300],
+        url=f"{canonical_origin(event.makerspace)}/e/{event.public_token}",
+        image_url=image_url, image_alt=image_alt,
         date=DateTimeField().to_representation(event.starts_at), location=event.location,
         availability=availability_label(event), audience_label=audience_label,
         registration_count=confirmed_occupancy(event) if event.show_registration_count else None,

@@ -43,7 +43,10 @@ def visible_page(event):
     require_public_surface("events")
     if not public_events(event.makerspace).filter(pk=event.pk).exists():
         raise Http404
-    return released_page(event, "events", effective_page(event))
+    page = released_page(event, "events", effective_page(event))
+    if page.published_revision_id is None:
+        raise Http404
+    return page
 
 
 def discover_events(spaces, filters=None):

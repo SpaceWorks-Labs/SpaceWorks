@@ -43,8 +43,12 @@ class AssetCopies:
         self.total_bytes = 0
         self.created = []
         self.committed = False
+        self.journal_ids = []
+        self.journal_keys = set()
 
-    def copy_image(self, makerspace, image, *, storage):
+    def copy_image(self, makerspace, image, *, storage, journal_page=None):
+        if journal_page is not None:
+            raise RuntimeError("Event copies require event_asset_transaction, which releases locks before storage work.")
         if not image.source_key:
             return ""
         if (not image.source_prefix.endswith("/")
@@ -69,7 +73,22 @@ class AssetCopies:
         return key
 
     def cleanup(self):
+        if self.journal_ids:
+            from .models_page_cleanup import PublicPageObjectCleanup as Cleanup
+            from .public_page_asset_cleanup import clean_object
+            from django.utils import timezone
+            try:
+                Cleanup.objects.filter(pk__in=self.journal_ids).update(due_at=timezone.now())
+            except Exception:
+                logger.exception("clone_journal_retry_schedule_failed")
+            for job_id in self.journal_ids:
+                try:
+                    clean_object(job_id)
+                except Exception:
+                    logger.exception("clone_journal_cleanup_failed", extra={"cleanup_id": job_id})
         for storage, key in reversed(self.created):
+            if key.removeprefix("staging/") in self.journal_keys:
+                continue
             try:
                 if storage.delete_object(key) is not True:
                     logger.error("clone_asset_cleanup_failed", extra={"object_key": key})
@@ -79,7 +98,7 @@ class AssetCopies:
 
 @contextmanager
 def clone_transaction():
-    """Own the outer commit so DB/quota rollback always cleans enlisted fresh objects.
+    """Legacy bookings boundary; event_asset_transaction owns event asset writes.
 
     A nested savepoint cannot observe a later caller rollback. Durable atomic therefore
     rejects nesting instead of pretending to provide rollback cleanup in that case.

@@ -26,6 +26,10 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("events.Event", "tags"),
         # Curated venue scalars and layout enum strings/booleans, never model IDs.
         ("events.EventPage", "venue"),
+        ("events.EventPage", "editorial_document"),
+        ("events.EventPageRevision", "document"),
+        ("makerspaces.MakerspacePublicPageRevision", "document"),
+        ("organizations.OrganizationPublicPageRevision", "document"),
         ("events.EventPage", "section_order"),
         ("events.EventPage", "section_enabled"),
         ("events.Event", "badge_template"),

@@ -187,6 +187,8 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
             locked.series_override_fields = sorted(overrides)
             update_fields.add("series_override_fields")
         locked.save(update_fields=[*sorted(update_fields), "updated_at"])
+        from .website_revisions import refresh_owner_anchor
+        refresh_owner_anchor(locked, actor)
         if set(changes) & CALENDAR_EVENT_FIELDS:
             calendar_event_changed(locked)
         if "image_key" in inherit_fields and old_image_key:

@@ -44,6 +44,8 @@ def update_series(series, *, actor, effective_from=None, **changes):
         locked.revision += 1
     _validate(locked)
     locked.save(update_fields=(*sorted(changes), "revision", "organization_admission_blocked", "updated_at"))
+    from .website_revisions import refresh_owner_anchor
+    refresh_owner_anchor(locked, actor)
     if set(changes) & CALENDAR_SERIES_FIELDS:
         calendar_series_changed(locked)
 
@@ -58,7 +60,9 @@ def update_series(series, *, actor, effective_from=None, **changes):
             # Immutable designs and owned artwork must survive recurrence edits.
             # Keep those old occurrences as cancelled history; never cascade-delete
             # a private artifact or break a protected template reference.
-            has_design = event.certificate_template_revisions.exists() or event.certificate_artworks.exists()
+            website = getattr(event, "website_page", None)
+            has_design = (event.certificate_template_revisions.exists() or event.certificate_artworks.exists()
+                          or bool(website and website.revisions.exists()))
             if event.status == Event.Status.PUBLISHED:
                 services.cancel(event, actor=actor, notify=False)
             elif has_design:

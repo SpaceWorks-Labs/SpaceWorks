@@ -1,9 +1,12 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.forms_schema.validation import validate_answers, validate_form_schema
+from .openapi import EDITOR_FORM_SCHEMA, VERSIONED_FORM_SCHEMA
 
 
+@extend_schema_field(VERSIONED_FORM_SCHEMA)
 class CustomFormSchemaField(serializers.JSONField):
     def to_internal_value(self, data):
         value = super().to_internal_value(data)
@@ -11,6 +14,11 @@ class CustomFormSchemaField(serializers.JSONField):
             return validate_form_schema(value)
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages) from exc
+
+
+@extend_schema_field(EDITOR_FORM_SCHEMA)
+class FormEditorDocumentField(serializers.JSONField):
+    """Editor commands validate in the service to preserve typed schema errors."""
 
 
 class CustomFormSubmissionMixin(metaclass=serializers.SerializerMetaclass):

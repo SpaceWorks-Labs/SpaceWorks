@@ -1,8 +1,27 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 
 import type { CustomAnswers, CustomFormQuestion, CustomFormSchema } from "./customFormTypes";
+import { FormV2Fields } from "./FormV2Fields";
+import type { Answers, FormSchemaV2, FormState, FieldErrors } from "./types";
 
-export function CustomFormFields({ schema, answers, onChange, errors = {}, disabled = false, yesNoAsCheckbox = false }: {
+type LegacyFieldsProps = Parameters<typeof LegacyCustomFormFields>[0];
+type V2FieldsProps = Omit<LegacyFieldsProps, "schema" | "answers" | "onChange" | "errors"> & {
+  schema: FormSchemaV2; answers: Answers; onChange: (answers: Answers) => void; errors?: FieldErrors;
+  formState?: FormState; onFormStateChange?: (state: FormState) => void;
+  renderAsset?: React.ComponentProps<typeof FormV2Fields>["renderAsset"];
+};
+export function CustomFormFields(props: LegacyFieldsProps): React.JSX.Element | null;
+export function CustomFormFields(props: V2FieldsProps): React.JSX.Element;
+export function CustomFormFields(props: LegacyFieldsProps | V2FieldsProps) {
+  if (props.schema && !Array.isArray(props.schema)) return <V2Bridge {...props as V2FieldsProps} />;
+  return <LegacyCustomFormFields {...props as LegacyFieldsProps} />;
+}
+function V2Bridge(props: V2FieldsProps) {
+  const [local, setLocal] = useState<FormState>({ answers: props.answers, derivations: {}, save_choices: {}, saved_detail_versions: {} });
+  return <fieldset disabled={props.disabled}><FormV2Fields schema={props.schema} errors={props.errors} renderAsset={props.renderAsset} value={props.formState ?? { ...local, answers: props.answers }} onChange={state => { setLocal(state); props.onChange(state.answers); props.onFormStateChange?.(state); }} /></fieldset>;
+}
+
+function LegacyCustomFormFields({ schema, answers, onChange, errors = {}, disabled = false, yesNoAsCheckbox = false }: {
   schema: CustomFormSchema;
   answers: CustomAnswers;
   onChange: (answers: CustomAnswers) => void;

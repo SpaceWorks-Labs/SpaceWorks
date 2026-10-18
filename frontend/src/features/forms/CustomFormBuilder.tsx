@@ -1,6 +1,8 @@
 import { useState, type ChangeEvent } from "react";
 
 import { ConfirmDialog } from "../../components/ui";
+import { FormBuilderV2 } from "./FormBuilderV2";
+import type { FormSchemaV2 } from "./types";
 
 import {
   CHOICE_QUESTION_TYPES,
@@ -31,7 +33,16 @@ function newQuestion(): CustomFormQuestion {
   return { id: questionId(), label: "", type: "short_text", options: [], required: false };
 }
 
-export function CustomFormBuilder({
+type LegacyBuilderProps = Parameters<typeof LegacyCustomFormBuilder>[0];
+type V2BuilderProps = Omit<LegacyBuilderProps, "value" | "onChange"> & { value: FormSchemaV2; onChange: (schema: FormSchemaV2) => void };
+export function CustomFormBuilder(props: LegacyBuilderProps): React.JSX.Element;
+export function CustomFormBuilder(props: V2BuilderProps): React.JSX.Element;
+export function CustomFormBuilder(props: LegacyBuilderProps | V2BuilderProps) {
+  if (props.value && !Array.isArray(props.value)) return <fieldset disabled={props.disabled}><FormBuilderV2 value={props.value} onChange={props.onChange as (schema: FormSchemaV2) => void} /></fieldset>;
+  return <LegacyCustomFormBuilder {...props as LegacyBuilderProps} />;
+}
+
+function LegacyCustomFormBuilder({
   value,
   onChange,
   disabled = false,

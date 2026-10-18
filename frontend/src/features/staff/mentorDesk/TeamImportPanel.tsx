@@ -1,0 +1,42 @@
+import { useRef, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { DetailLayout } from '../../../components/layouts'
+import { ActionControl, Card, Field, StatusPill } from '../../../components/ui'
+import { basePath, errorText, requestFor, useProgrammeCommand } from '../../events/contributions/api'
+import type { Aggregate, EventScope } from '../../events/contributions/types'
+
+interface ImportPreview extends Aggregate { preview_token: string; mapping_sha256: string; expires_at: string; practice_run_id: string | null; mapping_count: number }
+export function TeamImportPanel({ scope }: { scope: EventScope }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [practice, setPractice] = useState(true)
+  const [practiceRun] = useState(() => crypto.randomUUID())
+  const operation = useRef(crypto.randomUUID())
+  const preview = useMutation({ retry: false, mutationFn: async () => {
+    if (!file || file.size > 1_000_000) throw new Error('Select a CSV or XLSX file below 1 MB.')
+    const data = new FormData()
+    data.set('file', file); data.set('expected_version', '0'); data.set('operation_id', operation.current)
+    if (practice) data.set('practice_run_id', practiceRun)
+    return requestFor('admin')<ImportPreview>(`${basePath(scope, 'admin')}/teams-import/preview/`, { method: 'POST', body: data, headers: { 'Idempotency-Key': operation.current } })
+  } })
+  const commit = useProgrammeCommand(scope, 'admin')
+  return <DetailLayout title="Import team mappings" state={{ status: 'ready' }} main={<Card>
+    <p className="mb-4 text-sm text-muted">Use one CSV or XLSX sheet with columns team_id, member_ids, and alias. Separate member account IDs with semicolons. Names and contact details are never used to guess accounts.</p>
+    <Field label="Team mapping file"><input className="desk-input min-h-11" type="file" accept=".csv,.xlsx" onChange={event => {
+      setFile(event.target.files?.[0] ?? null); preview.reset(); operation.current = crypto.randomUUID()
+    }} /></Field>
+    <label className="my-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={practice} onChange={event => {
+      setPractice(event.target.checked); preview.reset(); operation.current = crypto.randomUUID()
+    }} />Practice session</label>
+    <p className="mb-4 text-sm text-muted">Practice data cannot send notifications, enter production analytics, publish results, or issue certificates.</p>
+    {(preview.error || commit.error) ? <p role="alert" className="mb-4 text-danger">{errorText(preview.error ?? commit.error)}</p> : null}
+    {preview.data ? <div role="status" className="mb-4"><StatusPill label={preview.data.practice_run_id ? 'Practice' : 'Production'} tone="info" />
+      <p>{preview.data.mapping_count} validated mappings · Preview expires {new Date(preview.data.expires_at).toLocaleTimeString()}</p></div> : null}
+    <div className="flex flex-wrap gap-3"><ActionControl action={{ label: 'Validate and preview', pending: preview.isPending, disabled: !file,
+      disabledReason: !file ? 'Select a mapping file first.' : undefined, onClick: () => preview.mutate() }} />
+      {preview.data ? <ActionControl primary action={{ label: 'Commit import', pending: commit.isPending,
+        confirm: { title: preview.data.practice_run_id ? 'Start this practice session?' : 'Import production team mappings?', message: 'The validated mapping will be checked once more before it is committed.' },
+        onClick: () => { if (preview.data) commit.mutate({ path: '/teams-import/commit/', version: preview.data.version,
+          fields: { preview_token: preview.data.preview_token, mapping_sha256: preview.data.mapping_sha256 } }, { onSuccess: () => preview.reset() }) } }} /> : null}
+    </div>
+  </Card>} />
+}

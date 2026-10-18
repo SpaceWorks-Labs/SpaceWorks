@@ -6,10 +6,30 @@ host_bundle_files() {
     VERSION setup.sh install.sh setup.ps1
     scripts/uninstall.sh scripts/init-cloud-environment.py
     deploy/contracts/programmes.json
+    scripts/cloud_setup/__init__.py scripts/cloud_setup/answers.py
+    scripts/cloud_setup/bootstrap.py scripts/cloud_setup/cli.py
+    scripts/cloud_setup/completion.py scripts/cloud_setup/database_probe.py
+    scripts/cloud_setup/email_config.py scripts/cloud_setup/environment.py
+    scripts/cloud_setup/errors.py scripts/cloud_setup/free_profile.py
+    scripts/cloud_setup/host_commit.py scripts/cloud_setup/interactive.py
+    scripts/cloud_setup/kubernetes.py scripts/cloud_setup/native.py
+    scripts/cloud_setup/private_files.py scripts/cloud_setup/recipes.py
+    scripts/cloud_setup/render.py scripts/cloud_setup/secret_files.py
+    scripts/cloud_setup/secrets.py scripts/cloud_setup/service_probes.py
+    scripts/cloud_setup/storage_probe.py scripts/cloud_setup/validation.py
     scripts/installer/answers.py
     scripts/installer/answers.sh
     scripts/installer/bundle-transaction.sh
     scripts/installer/capacity.sh
+    scripts/installer/capacity.py scripts/installer/capacity-metrics.py
+    scripts/installer/completion.sh scripts/installer/environment-continuity.sh
+    scripts/installer/privileged-target.sh scripts/installer/probe-bundle.py
+    scripts/installer/probe-common.py scripts/installer/probe-services.py
+    scripts/installer/probe-storage.py scripts/installer/probe-integrations.py
+    scripts/installer/restore-terminal.py scripts/installer/retention-receipts.py
+    scripts/installer/retention.sh
+    scripts/installer/retention-run.sh
+    scripts/installer/retention-schedule.py scripts/installer/retention-schedule.sh
     scripts/installer/compose-capabilities.py
     scripts/installer/compose-capabilities.sh
     scripts/installer/compose-plugin.py

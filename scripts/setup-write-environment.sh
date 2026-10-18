@@ -123,4 +123,6 @@ write_setup_environment() {
     env_setting PUBLIC_IMAGE_BASE_URL "http://$WEBHOST:9000/public-images"
     env_setting MINIO_CORS_ALLOWED_ORIGINS "$origins"
   fi
+  source "$ROOT/scripts/installer/environment-continuity.sh"
+  forward_installer_environment || return
 }

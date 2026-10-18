@@ -32,7 +32,11 @@ require_install_owner() {
       if [[ -n "${!key:-}" ]]; then forwarded+=("$key=${!key}"); fi
     done
     printf 'Root-owned install: continuing as root using sudo.\n'
-    exec sudo env ${forwarded[@]+"${forwarded[@]}"} bash "$entrypoint" "$@"
+    source "$(dirname "${BASH_SOURCE[0]}")/installer/environment-continuity.sh"
+    preserve_installer_environment
+    local preserve_args=()
+    [[ -z "$INSTALLER_PRESERVED_NAMES" ]] || preserve_args+=("--preserve-env=$INSTALLER_PRESERVED_NAMES")
+    exec sudo "${preserve_args[@]}" env ${forwarded[@]+"${forwarded[@]}"} bash "$entrypoint" "$@"
   fi
   name="$(stat -c %U "$ROOT")"
   printf 'ERROR: %s belongs to %s (UID %s). Sign in as that user and run bash %q' \

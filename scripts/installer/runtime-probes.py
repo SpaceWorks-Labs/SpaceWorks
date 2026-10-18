@@ -1,27 +1,31 @@
 #!/usr/bin/env python3
-"""Core full-host completion checks. Never sends mail or runs domain jobs."""
+"""Bounded full-host diagnostics. Print fixed status codes, never provider errors."""
 import json
+import logging
 import os
+from pathlib import Path
 import shutil
-import socket
 import subprocess
 import sys
+import time
+
+ALLOWED = {
+    "database": {"runtime_nonowner_no_pending_migrations"},
+    "runtime": {"binaries_and_printable_bundle_verified"},
+    "worker": {"task_roundtrip_verified"},
+    "scheduler": {"heartbeat_and_success_fresh"},
+    "live": {"publish_subscribe_verified", "poll_fallback_readiness_verified"},
+    "scanner": {"explicitly_disabled", "fresh_signatures_clean_and_infected_verified"},
+    "storage": {"private_public_presign_bytes_verified"},
+    "edge": {"explicit_loopback_http", "trusted_certificate_and_edge_readiness_verified"},
+    "email": {"not_selected_configure_and_test_in_control", "provider_accepted_check_recipient_inbox"},
+}
 
 
-class ProbeError(Exception):
-    def __init__(self, code):
-        self.code = code
-
-
-def main():
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-    import django
-    django.setup()
-    from django.conf import settings
+def database():
     from django.db import connection
     from django.db.migrations.executor import MigrationExecutor
-
-    statuses = {}
+    from probe_common import ProbeError
     executor = MigrationExecutor(connection)
     if executor.migration_plan(executor.loader.graph.leaf_nodes()):
         raise ProbeError("pending_migrations")
@@ -32,33 +36,78 @@ def main():
         row = cursor.fetchone()
         if row is None or any(row):
             raise ProbeError("runtime_database_privileges")
-    statuses["database"] = "runtime_nonowner_no_pending_migrations"
+    return "runtime_nonowner_no_pending_migrations"
+
+
+def runtime():
+    from probe_common import ProbeError
     for binary in ("age", "age-keygen", "ffprobe", "ffmpeg"):
         if not shutil.which(binary):
             raise ProbeError("missing_runtime_binary")
     subprocess.run([sys.executable, "-m", "scripts.verify_printable_runtime", "--bundle"],
                    check=True, timeout=60, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    statuses["runtime"] = "binaries_and_printable_bundle_verified"
-    policy = getattr(settings, "UPLOAD_SCAN_POLICY", "none")
-    if policy == "clamav":
-        with socket.create_connection((settings.CLAMD_HOST, settings.CLAMD_PORT), timeout=5) as peer:
-            peer.settimeout(5)
-            peer.sendall(b"zVERSION\0")
-            response = peer.recv(1024)
-            if not response.startswith(b"ClamAV ") or b"/" not in response:
-                raise ProbeError("scanner_version_unavailable")
-        statuses["scanner"] = "reachable_version_reported"
-    elif policy == "none":
-        statuses["scanner"] = "explicitly_disabled"
-    else:
-        raise ProbeError("invalid_scan_policy")
-    print(json.dumps(statuses, sort_keys=True))
+    return "binaries_and_printable_bundle_verified"
+
+
+def scheduler():
+    from probe_services import scheduler as verify
+    from probe_common import ProbeError
+    try:
+        from apps.operations.cloud_jobs.diagnostics import scheduler_snapshot
+    except ImportError:
+        raise ProbeError("scheduler_progress_contract_missing") from None
+    deadline = time.monotonic() + 185
+    while True:
+        try:
+            return verify(scheduler_snapshot())
+        except ProbeError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(3)
+
+
+def check(name):
+    from probe_integrations import scanner, email, edge
+    from probe_services import worker, live
+    from probe_storage import storage
+    functions = {"database": database, "runtime": runtime, "worker": worker,
+                 "scheduler": scheduler, "live": live, "scanner": scanner,
+                 "storage": storage, "edge": edge, "email": email}
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    import django
+    django.setup()
+    return functions[name]()
+
+
+def main():
+    if len(sys.argv) == 3 and sys.argv[1] == "--check":
+        print(check(sys.argv[2]))
+        return
+    extra = set(filter(None, os.environ.get("SPACEWORKS_INSTALLER_REQUIRED_PROBES", "").split(",")))
+    if not extra <= {"scanner", "email"}:
+        sys.exit("Full-host diagnostics refused unknown required probe selection.")
+    failed = False
+    for name, allowed in ALLOWED.items():
+        try:
+            result = subprocess.run([sys.executable, str(Path(__file__).resolve()), "--check", name],
+                                    capture_output=True, timeout=210 if name == "scheduler" else 90)
+            value = result.stdout.decode("ascii").strip()
+            ok = result.returncode == 0 and value in allowed
+            if name in extra and value in {"explicitly_disabled", "not_selected_configure_and_test_in_control"}:
+                ok = False
+            status = value if ok else "failed"
+        except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
+            ok, status = False, "failed_or_timed_out"
+        if not ok:
+            failed = True
+        print(json.dumps({name: status}), flush=True)
+    if failed:
+        sys.exit("Required full-host diagnostics failed; installation is incomplete. Check the named service/configuration and retry.")
 
 
 if __name__ == "__main__":
+    logging.disable(logging.CRITICAL)
     try:
         main()
-    except ProbeError as error:
-        sys.exit(f"Full-host runtime verification failed [{error.code}]; installation is incomplete.")
     except Exception:
-        sys.exit("Full-host runtime verification failed; inspect readiness and the selected runtime capabilities. Installation is incomplete.")
+        sys.exit("Full-host diagnostic failed; inspect the selected runtime capability. No provider details were logged.")

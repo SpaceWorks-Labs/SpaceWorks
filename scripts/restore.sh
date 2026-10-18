@@ -111,6 +111,7 @@ cleanup() {
           >/dev/null 2>&1 && control fail "$RESTORE_ID" \
           --message "Privileged host restore failed; inspect the private operation journal." \
           >/dev/null 2>&1 && restart_allowed=1
+        [[ "$restart_allowed" != 1 ]] || retain_rolled_back_restore || restart_allowed=0
       else
         say "Rollback database grants could not be reprovisioned; Django remains stopped."
         restart_allowed=0
@@ -131,8 +132,7 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   prior_metadata="$(control describe "$RESTORE_ID" 2>/dev/null | tail -n 1 || true)"
   prior_stage="$(printf '%s' "$prior_metadata" | sed -n 's/.*"stage": "\([a-z_]*\)".*/\1/p')"
   if [[ "$prior_stage" == "completed" || "$prior_stage" == "restored_quarantined" ]]; then
-    rm -f -- "$DESTRUCTIVE_MARKER"
-    finished=1
+    reconcile_completed_restore_work || die 'Completed restore cleanup needs private recovery.'
     say "A completed restore marker was reconciled; no rollback was required."
     exit 0
   fi
@@ -157,6 +157,7 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   control fail "$RESTORE_ID" --message \
     "Interrupted destructive restore was rolled back from the durable host journal." >/dev/null
   prove_restore_database
+  retain_rolled_back_restore || die 'Rolled-back work retained; terminal cleanup could not be proven.'
   restart_allowed=1
   rm -f -- "$DESTRUCTIVE_MARKER"
   finished=1
@@ -174,11 +175,15 @@ requested_by="$(printf '%s' "$metadata" | sed -n 's/.*"requested_by": \([0-9]*\)
 backend_container="$(${COMPOSE[@]+"${COMPOSE[@]}"} ps -a -q "$APP_SERVICE")"
 image_id="$(docker inspect --format '{{.Image}}' "$backend_container")"
 oci_digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image_id" 2>/dev/null || true)"
+source "$RESTORE_SCRIPT_DIR/installer/capacity.sh"
+require_operation_capacity restore || die 'Insufficient measured capacity before archive export.'
 control export-archive "$RESTORE_ID" --output "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar.age" >/dev/null
+require_operation_capacity restore "$ARCHIVE" || die 'Insufficient capacity before archive decryption.'
 ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management age -d \
   -i "${IDENTITY_FILE/$OPS_DIR/\/var\/lib\/spaceworks\/ops}" \
   -o "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar" \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar.age"
+require_operation_capacity restore "$ARCHIVE" "$PLAIN" || die 'Insufficient measured extraction/rollback capacity.'
 ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management python - \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/archive.tar" \
   "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/bundle" <<'PY'
@@ -240,7 +245,7 @@ if [[ "$kind" == "rollback_in_place" ]]; then
   decision="$(control diff-wait "$RESTORE_ID" --archive-database-name "$temp_db" | tail -n 1)"
   ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
     'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db" >/dev/null 2>&1 || true
-  [[ "$decision" != "abort" ]] || { finished=1; say "Restore aborted without destructive effect."; exit 0; }
+  [[ "$decision" != "abort" ]] || { finished=1; seal_terminal_restore_work aborted; say "Restore aborted without destructive effect."; exit 0; }
 else
   decision="reset"
 fi

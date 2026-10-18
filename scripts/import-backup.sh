@@ -38,6 +38,8 @@ if [[ "$SOURCE" == --recover-environment ]]; then
 fi
 [[ ! -e "$ROOT/.spaceworks-import-pending.json" && ! -L "$ROOT/.spaceworks-import-pending.json" ]] \
   || die 'Recover the interrupted environment first with scripts/import-backup.sh --recover-environment, then retry the signed archive.'
+source "$ROOT/scripts/installer/capacity.sh"
+require_operation_capacity import "$SOURCE" || die 'Insufficient measured import capacity; no archive copied.'
 WORK="$(mktemp -d "$OPS_WORK_DIR/import-XXXXXXXX")"
 if [[ "$(id -u)" == "0" ]]; then
   chown -R 10001:10001 "$WORK"
@@ -62,6 +64,8 @@ fi
 "${COMPOSE[@]}" exec -T backend age -d \
   -i "${IDENTITY_FILE/$OPS_DIR/\/var\/lib\/spaceworks\/ops}" \
   -o "$CONTAINER_WORK/archive.tar" "$CONTAINER_WORK/archive.tar.age"
+require_operation_capacity import "$WORK/archive.tar.age" "$WORK/archive.tar" \
+  || die 'Insufficient measured archive extraction capacity.'
 "${COMPOSE[@]}" exec -T backend python - \
   "$CONTAINER_WORK/archive.tar" "$CONTAINER_WORK/manifest.json" \
   "$CONTAINER_WORK/keys-env.json" <<'PY'
@@ -171,7 +175,16 @@ rm -f -- "$registration_output"
 flock -u 9
 exec 9>&-
 bash "$ROOT/scripts/restore.sh" "$restore_id"
+exec 9>"$OPS_DIR/operation.lock"
+flock -n 9 || die 'Another operation started before import completion; retain the private continuity journal.'
+"${COMPOSE[@]}" run --rm --no-deps -T backend --role management python -c \
+  "$(cat "$ROOT/scripts/installer/restore-terminal.py")" "$restore_id" >/dev/null \
+  || die 'Terminal restore completion could not be proven; retain the sealed import journal.'
 python3 "$ROOT/scripts/installer/import-journal.py" clear "$ROOT" "$OPS_DIR"
 import_env_applied=0
+source "$ROOT/scripts/installer/retention.sh"
+seal_recovery_batch "$ROOT/scripts" "$ROOT" restored "$ROOT/$env_backup" \
+  || echo 'Environment backup retained without automatic expiry: terminal receipt could not be sealed.' >&2
+expire_recovery_batches "$ROOT/scripts" "$ROOT" "$ROOT/$env_backup"
 trap - EXIT
 rm -rf -- "$WORK"

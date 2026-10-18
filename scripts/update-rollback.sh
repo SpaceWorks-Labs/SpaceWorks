@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Failed image deployment leaves forward migrations in place; never restore data here.
 rollback_application_images() {
+  UPDATE_ROLLBACK_PROVEN=0
   [[ "$previous_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-main\.[0-9]+\.[0-9a-f]{12}$ ]] || return 0
   say "Update failed; rolling application containers back to $previous_version."
   export MAKERSPACE_IMAGE_TAG="$previous_version"
@@ -15,6 +16,7 @@ rollback_application_images() {
   # --no-deps prevents old migrations from being applied to the forward schema.
   if "${COMPOSE[@]}" up -d --no-deps "${ROLLBACK_SERVICES[@]}" && refresh_update_proxy_edges && wait_for_backend; then
     printf '%s\n' "$previous_version" > "$VERSION_FILE" || return
+    UPDATE_ROLLBACK_PROVEN=1
     say "Rollback complete: $previous_version is healthy."
     cleanup_run_once_jobs || warn "Could not remove finished rollback jobs."
     say "Database changes remain; backup retained at backups/$backup_name."

@@ -3,7 +3,13 @@ run_installed() {
   local command="$1" input=/dev/tty script quoted
   [[ "${SETUP_NON_INTERACTIVE:-0}" != 1 ]] || input=/dev/null
   if [[ "$RUN_INSTALLED_AS_ROOT" == 1 ]]; then
-    ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} bash -c "cd '$INSTALL_DIR' && $command" < "$input"
+    source "$STAGE_DIR/scripts/installer/environment-continuity.sh"
+    local preserve_args=()
+    preserve_installer_environment
+    if [[ -n "$INSTALLER_PRESERVED_NAMES" && ${#RUN_ROOT[@]} -gt 0 ]]; then
+      preserve_args+=("--preserve-env=$INSTALLER_PRESERVED_NAMES")
+    fi
+    ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} "${preserve_args[@]}" bash -c "cd '$INSTALL_DIR' && $command" < "$input"
   elif [[ "$USE_DOCKER_GROUP" == 1 ]]; then
     script="cd '$INSTALL_DIR' && $command"
     quoted="${script//\'/\'\\\'\'}"

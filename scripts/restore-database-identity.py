@@ -26,7 +26,7 @@ def main():
         if len(rows) != 1:
             raise ValueError("Missing database identity singleton.")
         name, oid, database_uuid = rows[0]
-        if sys.argv[1:] == ["--active-name"]:
+        if sys.argv[1:] in (["--active-name"], ["--active-proof"]):
             from apps.backup.host_marker import MarkerState, read_marker
             marker = read_marker(Path(os.environ.get(
                 "SPACEWORKS_HOST_MARKER_PATH", "/run/spaceworks-host/restore-marker.json")))
@@ -36,7 +36,7 @@ def main():
                     or bound.server_identity is None
                     or bound.server_identity["database_uuid"] != str(database_uuid)):
                 raise ValueError("Active database does not match the host marker.")
-            print(name)
+            print(name if sys.argv[1:] == ["--active-name"] else "|".join(map(str, rows[0])))
         elif sys.argv[1:]:
             raise ValueError("Unknown identity operation.")
         else:

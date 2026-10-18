@@ -15,8 +15,41 @@ validate_restore_workspace() {
 cleanup_completed_restore_plaintext() {
   [[ "$finished" == 1 ]] || return 1
   validate_restore_workspace || return
+  prove_terminal_restore || return
   # Completed DB/object validation and cleanup-rollback have already succeeded.
   # Ambiguous/failed operations retain their private rollback material.
   rm -f -- "$PLAIN" "$PRE_DB" "$CONTROL_RECORD" || return
-  rm -rf -- "$BUNDLE"
+  rm -rf -- "$BUNDLE" || return
+  seal_terminal_restore_work restored
+}
+
+seal_terminal_restore_work() {
+  local outcome="$1"
+  validate_restore_workspace || return
+  prove_terminal_restore || return
+  source "$RESTORE_SCRIPT_DIR/installer/retention.sh"
+  # Keep receipts above app-writable work/: the runtime UID cannot forge terminal
+  # permission to age-delete a root supervisor's pre-restore database snapshot.
+  seal_recovery_batch "$RESTORE_SCRIPT_DIR" "$OPS_DIR" "$outcome" "$WORK" || return
+  expire_recovery_batches "$RESTORE_SCRIPT_DIR" "$OPS_DIR" "$WORK"
+}
+
+prove_terminal_restore() {
+  "${COMPOSE[@]}" run --rm --no-deps -T backend --role management python -c \
+    "$(cat "$RESTORE_SCRIPT_DIR/installer/restore-terminal.py")" "$RESTORE_ID" >/dev/null
+}
+
+retain_rolled_back_restore() {
+  control cleanup-rollback "$RESTORE_ID" >/dev/null || return
+  prove_terminal_restore || return
+  rm -f -- "$DESTRUCTIVE_MARKER" || return
+  seal_terminal_restore_work rolled_back
+}
+
+reconcile_completed_restore_work() {
+  control cleanup-rollback "$RESTORE_ID" >/dev/null || return
+  prove_terminal_restore || return
+  rm -f -- "$DESTRUCTIVE_MARKER" || return
+  finished=1
+  cleanup_completed_restore_plaintext
 }

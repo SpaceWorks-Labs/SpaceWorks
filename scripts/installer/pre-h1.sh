@@ -40,6 +40,11 @@ transition_pre_h1() {
   [[ ! -L "$ROOT/backups" ]] || die 'The legacy backup directory cannot be a symlink.'
   mkdir -p "$ROOT/backups"; chmod 700 "$ROOT/backups"
   local backup="$ROOT/backups/pre-h1-$(date -u +%Y%m%dT%H%M%SZ)-$$.dump"
+  COMPOSE=("${legacy[@]}")
+  source "$UPDATE_SCRIPT_DIR/installer/capacity.sh"
+  require_upgrade_capacity "$active_name" || die 'Insufficient pre-H1 database backup capacity.'
+  SPACEWORKS_CAPACITY_LEGACY=1 require_operation_capacity upgrade || die 'Insufficient measured pre-H1 peak capacity.'
+  COMPOSE=("${previous_compose[@]}")
   local db_user
   db_user="$(deployment_value POSTGRES_USER)"; db_user="${db_user:-makerspace}"
   (umask 077; "${legacy[@]}" exec -T db pg_dump --format=custom --no-owner --no-acl \
@@ -84,6 +89,9 @@ PY
   wait_for_backend || die 'Legacy transition is incomplete; writers remain fenced by the installed H1 boundary.'
   install_producer_capability
   rm -f "$ROOT/.spaceworks-transition.json"
+  source "$UPDATE_SCRIPT_DIR/installer/retention.sh"
+  seal_recovery_batch "$UPDATE_SCRIPT_DIR" "$ROOT" transitioned "$backup" "$backup.env" \
+    || die 'Transition completed, but private backup receipt failed; keep the backup for supervised recovery.'
   rm -rf -- "$stage"
   say 'Pre-H1 transition v1 complete; the private backup and original environment are retained.'
 }

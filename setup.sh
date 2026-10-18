@@ -111,6 +111,8 @@ if ! grep -q '^SPACEWORKS_SCHEDULER_MODE=' .env; then
   printf '\nSPACEWORKS_SCHEDULER_MODE=image\n' >> .env
 fi
 source "$ROOT/scripts/setup-write-environment.sh"
+source "$ROOT/scripts/installer/environment-continuity.sh"
+forward_installer_environment || die 'Could not preserve explicit deployment settings.'
 for selector in SPACEWORKS_OPS_HOST_DIR SPACEWORKS_HOST_STATE_DIR; do
   if ! grep -q "^$selector=" .env; then
     value="${!selector:-}"
@@ -168,9 +170,11 @@ for _ in $(seq 1 60); do
   sleep 3
 done
 [ "$ready" = 1 ] || die "The app did not become ready in time. Check logs with: ${COMPOSE[*]} logs backend"
-"${COMPOSE[@]}" run --rm --no-deps -T backend --role management python -c \
-  "$(cat "$ROOT/scripts/installer/runtime-probes.py")" || die 'Required full-host runtime checks failed.'
+source "$ROOT/scripts/installer/completion.sh"
+verify_full_host_completion "$ROOT/scripts" || die 'Required full-host runtime checks failed.'
 echo 'Platform Email: configure the provider in /control/ and verify a requested test delivery before invitations/recovery. External integration acceptance is separate from core readiness.'
+source "$ROOT/scripts/installer/retention-schedule.sh"
+configure_retention_maintenance install "$ROOT/scripts" || die 'Daily retention maintenance could not be installed; retry setup.'
 
 if [ "$FIRST_RUN" = 1 ]; then
   say "Creating your admin account and makerspace..."

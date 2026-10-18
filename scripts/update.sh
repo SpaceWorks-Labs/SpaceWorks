@@ -130,12 +130,14 @@ cleanup() {
   set +e
   if [[ "$deployment_started" == 1 && "$update_complete" == 0 ]]; then
     rollback_application_images
-
+    [[ "${UPDATE_ROLLBACK_PROVEN:-0}" != 1 ]] || seal_update_backups rolled_back \
+      || warn 'Healthy image rollback retained private backups without automatic expiry.'
   fi
   if [[ "$exit_code" != 0 && "$host_configuration_started" == 1 && "$deployment_started" == 0 ]]; then
     warn "Host configuration upgrade stopped before deployment; the database was not replaced."
     if declare -F rollback_host_configuration >/dev/null && rollback_host_configuration; then
       say 'Restored the exact previous host files, environment and topology records; keep the database backup.'
+      seal_update_backups rolled_back || warn 'Configuration rollback retained backups without automatic expiry.'
     else
       warn 'Host rollback needs recovery from the private host-config snapshot; keep writers stopped.'
     fi
@@ -197,6 +199,8 @@ handoff_release_bundle
 say "Updating ${current:-untracked installation} to $version."
 
 create_update_backup
+source "$UPDATE_SCRIPT_DIR/installer/privileged-target.sh"
+admit_privileged_target "$UPDATE_SCRIPT_DIR" || die 'Cannot prove the privileged migration target; no host configuration was changed.'
 export MAKERSPACE_IMAGE_TAG="$version"
 
 # Check the new backend image exists before replacing any committed host configuration.
@@ -217,6 +221,8 @@ fi
 # Persist resolved host selectors before sealing the new configuration; ambient
 # values can never redirect a deployment after this repair.
 source "$UPDATE_SCRIPT_DIR/setup-write-environment.sh"
+source "$UPDATE_SCRIPT_DIR/installer/environment-continuity.sh"
+forward_installer_environment || die 'Could not preserve explicit deployment settings.'
 for selector in SPACEWORKS_OPS_HOST_DIR SPACEWORKS_HOST_STATE_DIR; do
   grep -q "^$selector=" "$ROOT/.env" || env_setting "$selector" "${!selector}"
 done
@@ -247,8 +253,8 @@ ${COMPOSE[@]+"${COMPOSE[@]}"} up -d --remove-orphans
 refresh_update_proxy_edges
 
 wait_for_backend || die "Release $version did not become ready. The backup is backups/$backup_name."
-"${COMPOSE[@]}" run --rm --no-deps -T backend --role management python -c \
-  "$(cat "$UPDATE_SCRIPT_DIR/installer/runtime-probes.py")" || die 'Required full-host runtime checks failed.'
+source "$UPDATE_SCRIPT_DIR/installer/completion.sh"
+verify_full_host_completion "$UPDATE_SCRIPT_DIR" || die 'Required full-host runtime checks failed.'
 
 if [[ ! -e "$ROOT/.git" ]]; then
   host_bundle_files
@@ -256,11 +262,17 @@ if [[ ! -e "$ROOT/.git" ]]; then
   printf '%s\n' "${HOST_BUNDLE_FILES[@]}" | python3 "$UPDATE_SCRIPT_DIR/installer/managed-files.py" \
     "$ROOT" "$(cd "$UPDATE_SCRIPT_DIR/.." && pwd)/.spaceworks-release.json" "$project_name" || die 'Runtime registration failed.'
 fi
+source "$UPDATE_SCRIPT_DIR/installer/retention-schedule.sh"
+configure_retention_maintenance install "$UPDATE_SCRIPT_DIR" || die 'Daily retention maintenance could not be installed; retry the update.'
 printf '%s\n' "$version" > "$VERSION_FILE"
 update_complete=1
+retained_paths=("$ROOT/backups/$backup_name")
+[[ -z "${HOST_CONFIG_BACKUP_DIR:-}" ]] || retained_paths+=("$HOST_CONFIG_BACKUP_DIR")
+source "$UPDATE_SCRIPT_DIR/installer/retention.sh"
+seal_update_backups updated \
+  || warn 'Terminal backup receipt failed; recovery files will not expire automatically.'
 cleanup_run_once_jobs || warn "Could not remove finished start-up jobs."
-python3 "$UPDATE_SCRIPT_DIR/installer/retention.py" --root "$ROOT" \
-  --exclude "$ROOT/backups/$backup_name" --exclude "${HOST_CONFIG_BACKUP_DIR:-$ROOT/backups/none}" \
+expire_recovery_batches "$UPDATE_SCRIPT_DIR" "$ROOT" "${retained_paths[@]}" \
   || warn 'Private backup retention was refused; inspect the retained backups.'
 say "Release update complete: $version."
 if [[ "$MODULE_REQUESTED" == 1 ]]; then

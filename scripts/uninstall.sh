@@ -42,6 +42,8 @@ printf '%s\n' "${HOST_BUNDLE_FILES[@]}" | python3 "$ROOT/scripts/installer/unins
 if [[ "$remove_runner" == 1 ]]; then
   bash "$ROOT/scripts/install-runner.sh" --remove || die 'Runner removal failed; application services were retained.'
 fi
+source "$ROOT/scripts/installer/retention-schedule.sh"
+configure_retention_maintenance remove "$ROOT/scripts" || die 'Private retention timer removal failed; services and files were retained.'
 args=(down --remove-orphans)
 [[ "$purge" == 0 ]] || args+=(--volumes)
 "${COMPOSE[@]}" "${args[@]}"

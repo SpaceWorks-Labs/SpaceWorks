@@ -13,6 +13,15 @@ wait_for_backend() {
   return 1
 }
 
+seal_update_backups() {
+  local outcome="$1" paths=()
+  [[ -n "${backup_name:-}" && -s "$ROOT/backups/$backup_name" ]] || return 0
+  paths+=("$ROOT/backups/$backup_name")
+  [[ -z "${HOST_CONFIG_BACKUP_DIR:-}" || ! -d "$HOST_CONFIG_BACKUP_DIR" ]] || paths+=("$HOST_CONFIG_BACKUP_DIR")
+  source "$UPDATE_SCRIPT_DIR/installer/retention.sh"
+  seal_recovery_batch "$UPDATE_SCRIPT_DIR" "$ROOT" "$outcome" "${paths[@]}"
+}
+
 create_update_backup() {
   [[ ! -L "$ROOT/backups" ]] || die 'The backup directory cannot be a symlink.'
   mkdir -p "$ROOT/backups"
@@ -28,6 +37,7 @@ create_update_backup() {
     || die "The active database pointer has an invalid database name; update cancelled."
   source "$UPDATE_SCRIPT_DIR/installer/capacity.sh"
   require_upgrade_capacity "$backup_database" || die 'Insufficient verified capacity; update cancelled.'
+  require_operation_capacity upgrade || die 'Measured peak capacity admission failed; update cancelled.'
   # Write the dump first: POSIX sh pipelines otherwise hide a failed pg_dump behind gzip.
   "${COMPOSE[@]}" exec -T -e "SPACEWORKS_BACKUP_DATABASE=$backup_database" db sh -c \
     'set -e; umask 077; raw="/backups/'"$backup_name"'.raw"; trap '\''rm -f "$raw"'\'' EXIT; pg_dump -U "$POSTGRES_USER" "$SPACEWORKS_BACKUP_DATABASE" > "$raw"; test -s "$raw"; gzip -c "$raw" > "/backups/'"$backup_name"'"' \

@@ -40,6 +40,9 @@ rollback_import_environment() {
   fi
   [[ ! -e "$ROOT/.spaceworks-import-pending.json" ]] || \
     python3 "$ROOT/scripts/installer/import-journal.py" clear "$ROOT" "$OPS_DIR" || return
+  source "$ROOT/scripts/installer/retention.sh"
+  seal_recovery_batch "$ROOT/scripts" "$ROOT" rolled_back "$ROOT/$env_backup" \
+    || echo 'Configuration rollback succeeded; its private backup is retained without automatic expiry.' >&2
 }
 
 recover_import_environment() {

@@ -63,3 +63,7 @@ def extend_event_series_task():
 
 # Registered here so the worker knows the campaign channel fan-out task.
 from apps.events.broadcast_channels import event_broadcast_channels  # noqa: E402,F401
+from apps.events.tasks_programme import sweep_admission_deadlines_task  # noqa: E402,F401
+from apps.events.tasks_contributions import sweep_contributor_maintenance_task  # noqa: E402,F401
+from apps.events.certificates.tasks import process_batch, render_one  # noqa: E402,F401
+from apps.events.programme.broadcast_schedule import resume_scheduled_broadcasts  # noqa: E402,F401

@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import Q
+from .models_leave import OrganizationLeaveReceipt  # noqa: F401
 
 
 class Organization(models.Model):

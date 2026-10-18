@@ -92,6 +92,9 @@ def final_row(
             if isinstance(raw_plaintext, bytes)
             else raw_plaintext
         )
+    from .pii_events_programme import rebind_derivation_history
+    rebind_derivation_history(model, source, row, source_makerspace_id=int(job.source_makerspace_id),
+        target_makerspace_id=target.pk, deks=deks)
     if label == "events.EventRegistration":
         row.update(
             event_registration_hash_columns(
@@ -124,6 +127,8 @@ def update_resolved_row(model, source, target):
 
 def _reconstructed_value(label, field, fresh_values):
     disposition = OMITTED_FIELD_RECONSTRUCTIONS[(label, field.name)]
+    if label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"} and field.name in {"staging_key", "verification_key"}:
+        return _fresh_unique(field, fresh_values)
     if disposition is OmittedFieldDisposition.FRESH:
         value = _fresh_unique(field, fresh_values)
     elif disposition is OmittedFieldDisposition.EMPTY_STRING:
@@ -142,7 +147,11 @@ def _reconstructed_value(label, field, fresh_values):
 def _fresh_unique(field, fresh_values, generator=None):
     key = (field.model._meta.label, field.name)
     current_batch = fresh_values.setdefault(key, set())
-    generate = generator or field.get_default
+    if field.model._meta.label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"} and field.name in {"staging_key", "verification_key"}:
+        from uuid import uuid4
+        generate = lambda: f"import-coordination/{uuid4()}/{field.name}"
+    else:
+        generate = generator or field.get_default
     for _attempt in range(16):
         value = generate()
         if value in current_batch:

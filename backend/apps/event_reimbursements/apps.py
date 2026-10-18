@@ -8,5 +8,7 @@ class EventReimbursementsConfig(AppConfig):
     name = "apps.event_reimbursements"
 
     def ready(self):
+        from apps.encryption.registry import register_retained_pii
+        register_retained_pii("event_reimbursements.")
         from apps.separability.tombstones import register_separable_app
         register_separable_app("event_reimbursements")

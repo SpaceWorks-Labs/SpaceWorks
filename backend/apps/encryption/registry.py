@@ -11,6 +11,7 @@ class PiiField:
     max_length: int | None
     classification: str
     index_kind: str
+    encryption_required: bool = False
 
 
 def _fields(label, names, path, classification, indexes):
@@ -22,14 +23,18 @@ def _fields(label, names, path, classification, indexes):
 
 from .registry_7b import printer_pii_fields
 from .registry_p2_bookings import booking_departure_pii_fields
+from .registry_events_programme import programme_pii_fields
+from .registry_reimbursements import reimbursement_pii_fields
 
 SOURCE_FIELDS = (
+    *reimbursement_pii_fields(PiiField),
+    *programme_pii_fields(PiiField),
     *printer_pii_fields(PiiField),
     *booking_departure_pii_fields(PiiField),
     *_fields("hardware_requests.HardwareRequest", ("requester_username", "requester_name", "requester_contact_email", "requester_contact_phone"), "makerspace_id", "source", ((150, 200, 254, 32), ("none", "bloom", "bloom_exact", "none"))),
     *_fields("events.EventRegistration", ("name", "email", "phone"), "event.makerspace_id", "source", ((200, 254, 32), ("none", "event_exact", "none"))),
     *_fields("events.EventFeedbackResponse", ("answers_snapshot",), "survey.event.makerspace_id", "source", ((None,), ("none",))),
-    *_fields("events.EventAttendanceCertificate", ("recipient_name",), "registration.event.makerspace_id", "source", ((None,), ("none",))),
+    *_fields("events.EventAttendanceCertificate", ("recipient_name",), "event.makerspace_id", "source", ((None,), ("none",))),
     *_fields("makerspaces.MemberCard", ("printed_name",), "makerspace_id", "source", ((200,), ("none",))),
     *_fields("makerspaces.InvitationRequest", ("name", "email", "phone"), "makerspace_id", "source", ((200, 254, 32), ("none", "none", "none"))),
     *_fields("makerspaces.MembershipRequest", ("application_answers",), "makerspace_id", "source", ((None,), ("none",))),
@@ -82,6 +87,16 @@ def all_fields():
 def registered_labels():
     """Accessor for every mapped model label; see ``fields_for_label`` for why."""
     return tuple(BY_MODEL)
+
+
+def register_retained_pii(prefix):
+    """Publish package mappings even when its operational app is tombstoned."""
+    from apps.separability.registry import register_pii_fields, registered_pii_models
+
+    already = registered_pii_models()
+    for label in registered_labels():
+        if label.startswith(prefix) and label not in already:
+            register_pii_fields(label, fields_for_label(label))
 
 
 def fields_for(model_or_instance):

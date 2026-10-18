@@ -38,7 +38,7 @@ SEPARABLE_APPS = frozenset({
     # here and cannot be tombstoned -- money owed, its receipts and its reconciliation
     # must stay readable and settleable on any deployment, which is exactly what
     # splitting `payments_rail` out of `payments` bought.
-    "payments_rail",
+    "payments_rail", "event_reimbursements",
     # Superadmin-only release plumbing. A deployment updated by its own host tooling has
     # no use for the in-app control surface.
     # Deployments that never move tenants between servers ship none of these surfaces;
@@ -90,7 +90,10 @@ def tombstoned_app_labels():
     """
     raw = os.environ.get("TOMBSTONED_APPS", "")
     labels = {label.strip() for label in raw.split(",") if label.strip()}
-    return frozenset(RENAMED_LABELS.get(label, label) for label in labels)
+    labels = {RENAMED_LABELS.get(label, label) for label in labels}
+    if "events" in labels:
+        labels.add("event_reimbursements")
+    return frozenset(labels)
 
 
 def app_is_tombstoned(app_label):
@@ -109,7 +112,8 @@ def app_is_tombstoned(app_label):
     """
     from django.conf import settings
 
-    return app_label in getattr(settings, "TOMBSTONED_APPS", frozenset())
+    labels = getattr(settings, "TOMBSTONED_APPS", frozenset())
+    return app_label in labels or (app_label == "event_reimbursements" and "events" in labels)
 
 
 def register_separable_app(app_label):

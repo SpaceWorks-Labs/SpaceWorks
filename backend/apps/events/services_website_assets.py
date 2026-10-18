@@ -29,7 +29,7 @@ def upload_asset(target, *, actor, file, alt_text, replace_id=None):
             page.sections.filter(asset=old).update(asset=asset)
             old.delete()
             transaction.on_commit(lambda: website_assets.release(page.makerspace, old.object_key, old.size_bytes), robust=True)
-        bump(page)
+        bump(page, target)
         audit(page, actor, "event.website_asset_saved", revision=page.revision)
         return asset
 
@@ -42,7 +42,7 @@ def delete_asset(target, asset_id, *, actor):
     asset = get_object_or_404(page.assets, pk=asset_id)
     key, size = asset.object_key, asset.size_bytes
     asset.delete()
-    bump(page)
+    bump(page, target)
     audit(page, actor, "event.website_asset_removed", revision=page.revision)
     transaction.on_commit(lambda: website_assets.release(page.makerspace, key, size), robust=True)
 

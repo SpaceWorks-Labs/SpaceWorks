@@ -45,6 +45,7 @@ class EventCheckInResolveView(APIView):
         request=EventCheckInResolveRequestSerializer,
         responses={
             200: EventCheckInResolveResponseSerializer,
+            400: OpenApiResponse(ErrorSerializer, description="Exactly one token field is required."),
             403: OpenApiResponse(ErrorSerializer, description="Event access denied."),
             404: OpenApiResponse(ErrorSerializer, description="Registration not found."),
             429: OpenApiResponse(ErrorSerializer, description="Request rate limit exceeded."),
@@ -52,8 +53,10 @@ class EventCheckInResolveView(APIView):
     )
     def post(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, CHECK_IN)
-        value = request.data.get("checkin_token") if isinstance(request.data, dict) else None
-        if isinstance(value, str) and value.startswith("SWEC2."):
+        serializer = EventCheckInResolveRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        value = serializer.validated_data.get("credential")
+        if value is not None:
             from .credentials.resolution import resolve
             response = Response(resolve(event, value, actor=request.user))
             response["Cache-Control"] = "private, no-store"
@@ -181,7 +184,7 @@ class EventCheckInQrView(APIView):
         if registration.credential_mode == "v2":
             from .credentials.workflow import owner_payload
             payload = owner_payload(registration, actor=request.user)
-        elif registration.status == EventRegistration.Status.REGISTERED:
+        elif registration.credential_mode == "legacy" and registration.status == EventRegistration.Status.REGISTERED:
             payload = str(registration.checkin_token)
         else:
             raise NotFound()

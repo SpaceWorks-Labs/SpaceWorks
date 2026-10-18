@@ -35,6 +35,8 @@ def _owned_registration(user, makerspace_id, pk):
 
 
 def _png_available(registration):
+    if registration.credential_mode == "inert":
+        return False
     if registration.credential_mode == "v2":
         from .credentials.workflow import current
         if current(registration) is None:

@@ -165,6 +165,9 @@ def _field_disposition(fidelity: Fidelity, label: str, field_name: str):
     pair = (label, field_name)
     if pair in ALWAYS_OMITTED:
         return Omitted(ALWAYS_OMITTED[pair])
+    from .fields_events_programme import PRIVATE_FIELDS
+    if pair in PRIVATE_FIELDS and fidelity is Fidelity.REDACTED:
+        return Redacted("programme_private_redacted")
     if pair in FIVE_CONFIG_FIELDS and fidelity is Fidelity.REDACTED:
         return Omitted("Operator-authored JSON configuration is omitted from readable exports.")
     if pair == ("audit.AuditLog", "meta") and fidelity is Fidelity.REDACTED:
@@ -188,6 +191,8 @@ def _field_disposition(fidelity: Fidelity, label: str, field_name: str):
 from .classification_w7_events import EVENT_OMITTED_FIELDS
 ALWAYS_OMITTED.update(EVENT_OMITTED_FIELDS)
 
+from apps.tenant_migration.catalog_events_programme_fields import OMITTED_FIELDS as PROGRAMME_OMITTED_FIELDS
+ALWAYS_OMITTED.update(PROGRAMME_OMITTED_FIELDS)
 FIELDS = {}
 for _fidelity in Fidelity:
     for _label, _names in EXPORTED_MODEL_FIELDS.items():

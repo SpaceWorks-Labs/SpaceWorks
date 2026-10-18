@@ -83,7 +83,7 @@ class Command(BaseCommand):
                     "member_card_photos": self._sum(MemberCard.objects.filter(makerspace=makerspace).values_list("photo_object_key", "photo_size_bytes"), evidence_storage.object_size, True),
                     "booking_website_assets": self._sum(BookingResourcePageAsset.objects.filter(page__space__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                     "event_website_assets": self._sum(EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
-                    "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(registration__event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
+                    "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                     "event_certificate_artwork": self._sum(
                         EventCertificateArtwork.objects.filter(
                             event__makerspace=makerspace, promoted_at__isnull=False,

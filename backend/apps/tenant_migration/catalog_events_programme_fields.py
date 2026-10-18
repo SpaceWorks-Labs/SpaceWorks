@@ -1,0 +1,25 @@
+"""Portable operational reset and private-readable-export policy."""
+
+OMITTED_FIELDS = {
+    ('events.EventMemberCard', 'public_id'): 'Source public card URLs never become target publication authority.',
+    ('events.EventBroadcast', 'confirmed_preview'): 'Deployment-local preview proof never transfers pending dispatch authority.',
+    ('events.SubmissionAsset', 'staging_key'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.SubmissionAsset', 'verification_key'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.SubmissionAsset', 'source_version_id'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.SubmissionAsset', 'verification_version_id'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.SubmissionAsset', 'source_etag'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.SubmissionAsset', 'multipart_upload_id'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.SubmissionAsset', 'claim'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.SubmissionAsset', 'upload_not_after'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'staging_key'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'verification_key'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'source_version_id'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'verification_version_id'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'source_etag'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'multipart_upload_id'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'claim'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.HackathonParticipantAsset', 'upload_not_after'): 'Mutable upload/session coordination is reconstructed; only canonical owned bytes travel.',
+    ('events.EventMemberPresentation', 'selected_profile'): 'Foreign membership/profile selection requires fresh owner choice; never expands tenant closure.',
+    ('events.EventMemberPresentation', 'selected_membership'): 'Foreign membership/profile selection requires fresh owner choice; never expands tenant closure.',
+    ('events.EventFormRevision', 'created_by'): 'Nullable definition author attribution; never expands person closure.',
+}

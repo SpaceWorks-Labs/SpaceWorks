@@ -46,6 +46,8 @@ def _production_sources():
         from apps.events.reminders import EVENT_REMINDER_SOURCE
 
         sources.append(EVENT_REMINDER_SOURCE)
+        from apps.events.reminders_programme import PROGRAMME_REMINDER_SOURCES
+        sources.extend(PROGRAMME_REMINDER_SOURCES)
     if runtime_active("bookings"):
         from apps.bookings.reminders import BOOKING_REMINDER_SOURCE
 

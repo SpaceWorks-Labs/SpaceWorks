@@ -78,3 +78,9 @@ from .catalog_notifications_contract import FIELD_NAMES as NOTIFICATION_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(NOTIFICATION_FIELDS)
 from .catalog_p2_events import FIELD_NAMES as P2_EVENT_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(P2_EVENT_FIELDS)
+
+# Apply extensions last: older broadcast/website snapshots replace whole entries.
+from .catalog_events_programme import FIELD_NAMES as PROGRAMME_FIELDS, EXTRA_FIELDS as PROGRAMME_EXTRA
+FIRST_PARTY_FIELD_NAMES.update(PROGRAMME_FIELDS)
+for _label, _names in PROGRAMME_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= frozenset(_names.split())

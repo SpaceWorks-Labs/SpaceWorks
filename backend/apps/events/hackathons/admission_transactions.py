@@ -29,8 +29,8 @@ class CommandContext:
     created_config: bool = False
     input_sha256: str = ""
 
-    def finish(self, kind, pk, *, status=200):
-        self.receipt.response_reference = {"kind": kind, "id": pk, "status": status, "input_sha256": self.input_sha256}
+    def finish(self, kind, pk, *, status=200, **metadata):
+        self.receipt.response_reference = {**metadata, "kind": kind, "id": pk, "status": status, "input_sha256": self.input_sha256}
         self.receipt.save(update_fields=["response_reference"])
 
 

@@ -93,9 +93,7 @@ def assign(*, event_id, actor, data):
         if len(reviewers) != len(set(data["reviewer_ids"])):
             fail("not_found", "Not found.", status=404)
         missing = assign_locked(ctx, subjects, reviewers)
-        ctx.finish("review_assignment", ctx.config.pk)
-        ctx.receipt.response_reference["missing_coverage"] = missing
-        ctx.receipt.save(update_fields=["response_reference"])
+        ctx.finish("review_assignment", ctx.config.pk, missing_coverage=missing)
         return {"missing_coverage": missing}
 
 

@@ -162,6 +162,11 @@ WRAPPER_SITE_PREFIXES = {
     "tenant_migration/source_gate.py": ("tenant_migration.source_gate_",),
 }
 
+from .presentation_programme_dynamic import EXACT, NON_LITERAL, WRAPPERS
+DYNAMIC_EXACT_ACTIONS |= EXACT
+NON_LITERAL_META_ACTIONS |= NON_LITERAL
+WRAPPER_SITE_PREFIXES.update(WRAPPERS)
+
 DENIED_ACTION_PREFIXES = tuple(
     sorted({prefix for group in WRAPPER_SITE_PREFIXES.values() for prefix in group})
 )

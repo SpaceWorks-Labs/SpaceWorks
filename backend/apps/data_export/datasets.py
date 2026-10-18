@@ -58,7 +58,7 @@ DATASET_SPECS = {
     "events.EventStationBinding": ("events/station_bindings.csv", P(("event__makerspace",))),
     "events.EventFeedbackSurvey": ("events/feedback_surveys.csv", P(("event__makerspace",))),
     "events.EventFeedbackResponse": ("events/feedback_responses.csv", P(("survey__event__makerspace",))),
-    "events.EventAttendanceCertificate": ("events/attendance_certificates.csv", P(("registration__event__makerspace",))),
+    "events.EventAttendanceCertificate": ("events/attendance_certificates.csv", P(("event__makerspace",))),
     "events.EventCertificateArtwork": ("events/certificate_artwork.csv", P(("event__makerspace",))),
     "events.EventCertificateTemplateRevision": ("events/certificate_template_revisions.csv", P(("event__makerspace",))),
     "evidence.EvidencePhoto": ("evidence/photos.csv", P(("makerspace",))),
@@ -193,6 +193,8 @@ DATASET_SPECS.update(EVENT_DATASET_SPECS)
 from apps.tenant_migration.catalog_p2_bookings import DATASETS as P2_BOOKING_DATASETS
 DATASET_SPECS.update({label: (path, P(paths)) for label, (path, paths) in P2_BOOKING_DATASETS.items()})
 
+from apps.tenant_migration.catalog_events_programme_references import DATASETS as PROGRAMME_DATASETS
+DATASET_SPECS.update({label: (path, P((owner,))) for label, (path, owner) in PROGRAMME_DATASETS.items()})
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs
 DATASET_SPECS.update(wp3_dataset_specs(P))

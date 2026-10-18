@@ -121,6 +121,8 @@ urlpatterns = [
         include("apps.organizations.urls_public"),
     ),
     *separable("events", "api/v1/public/", "apps.events.urls_public"),
+    *separable("events", "api/v1/", "apps.events.urls_programme"),
+    path("api/v1/", include("apps.accounts.urls_programme")),
     *separable("events", "api/v1/events/", "apps.events.urls_integration"),
     *separable("bookings", "api/v1/public/", "apps.bookings.urls_public"),
     *separable("bookings", "api/v1/booking-integration/", "apps.bookings.urls_integration"),

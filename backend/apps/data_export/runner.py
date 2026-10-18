@@ -251,6 +251,12 @@ def _collect_user_ids(dataset, rows, closure):
 
 
 def _collect_semantic_user(dataset, row, candidates, row_values):
+    if dataset.fidelity is Fidelity.PORTABLE and dataset.model == "events.SubmissionSnapshot":
+        for value in row.sealed_member_ids:
+            if type(value) is not int or value <= 0:
+                raise ExportIntegrityError("Invalid sealed programme member reference.")
+            candidates.add(value)
+            row_values.append((row, "sealed_member_ids", type("Edge", (), {"raw": True})(), value))
     decisions = SEMANTIC_REFERENCES.get(
         (dataset.fidelity, dataset.model, "target_type+target_id"), ()
     )

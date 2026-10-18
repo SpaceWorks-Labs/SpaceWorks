@@ -70,6 +70,10 @@ SCHEDULED_TASKS = (
         360,
     ),
     ("extend-event-series", "apps.events.tasks.extend_event_series_task", 60),
+    ("event-admission-deadlines", "apps.events.tasks_programme.sweep_admission_deadlines_task", 5),
+    ("event-contributor-maintenance", "apps.events.tasks_contributions.sweep_contributor_maintenance_task", 1),
+    ("event-scheduled-broadcasts", "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts", 1),
+    ("account-saved-details", "apps.accounts.saved_details.tasks.process_saved_details", 5),
     ("purge-auth-challenges", "apps.accounts.tasks.purge_auth_challenges_task", 24 * 60),
     # Beat runs this at a fixed hour; the beat-less runner has no wall-clock schedule, so
     # the cadence is expressed as the interval instead. Daily either way.

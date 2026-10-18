@@ -21,17 +21,7 @@ from apps.organizations import governance
 from apps.organizations.services_governance import assert_governor_remains
 
 
-class OrganizationLeaveReceipt(models.Model):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="leave_receipts")
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
-    operation_id = models.UUIDField()
-    expected_version = models.PositiveBigIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        app_label = "organizations"
-        constraints = [models.UniqueConstraint(fields=("organization", "actor", "operation_id"),
-                                               name="uniq_org_leave_operation")]
+from .models_leave import OrganizationLeaveReceipt
 
 
 def membership_version(row):

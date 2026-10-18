@@ -67,6 +67,8 @@ STAFF_ACCOUNT_EXCLUSIONS = frozenset({
     "admin-staff-account-deactivate", "admin-staff-account-reactivate",
     "admin-staff-account-set-password", "admin-staff-account-resend-invite",
 })
+from .scope_registry_programme import SESSION_ONLY
+STAFF_ACCOUNT_EXCLUSIONS |= SESSION_ONLY
 
 
 def _request_match(request):
@@ -114,6 +116,15 @@ def resolve_target(request, entry):
             return None, False
         token = kwargs.get("public_token")
         view_name = getattr(match, "view_name", None)
+        from apps.accounts.programme_route_catalog import BY_NAME
+        if view_name in BY_NAME:
+            from apps.makerspaces.origin_scope_programme import programme_route_targets
+            from apps.makerspaces.models import Makerspace
+            _, targets, invalid, _ = programme_route_targets(view_name, kwargs)
+            if invalid or len(targets) != 1:
+                return None, False
+            target = Makerspace.objects.filter(pk=next(iter(targets))).first()
+            return target, target is not None
         if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
             from apps.makerspaces.public_profile_access import resolve_public_profile
             claim, _ = resolve_public_profile(kwargs.get("handle"), request)

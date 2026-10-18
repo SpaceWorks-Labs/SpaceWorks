@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from threading import Lock
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils import timezone
 
 from apps.audit.services import record
@@ -33,8 +33,9 @@ def _lock_for(makerspace_id):
         return _locks.setdefault(makerspace_id, Lock())
 
 
-def _require_enabled():
-    if not settings.PII_ENCRYPTION_ENABLED:
+def _require_enabled(*, allow_mandatory=False):
+    from .mandatory_fields import mandatory_fields
+    if not settings.PII_ENCRYPTION_ENABLED and not (allow_mandatory and mandatory_fields()):
         raise PiiUnavailable()
 
 
@@ -61,7 +62,6 @@ def _audit(action, makerspace, versions):
 
 def unwrap_dek(key_row):
     """Return an active/rotated row's DEK without caching failures or disabled rows."""
-    _require_enabled()
     if key_row.status == MakerspaceEncryptionKey.Status.DISABLED:
         raise PiiKeyUnavailable()
     cache_key = key_for(key_row)
@@ -80,14 +80,21 @@ def unwrap_dek(key_row):
     return dek
 
 
-def get_dek(makerspace_id, version):
-    _require_enabled()
+def get_dek(makerspace_id, version, *, mandatory=False):
     try:
         key_row = MakerspaceEncryptionKey.objects.get(
             makerspace_id=makerspace_id, version=version
         )
     except MakerspaceEncryptionKey.DoesNotExist as exc:
         raise PiiKeyUnavailable() from exc
+    if key_row.status == MakerspaceEncryptionKey.Status.DISABLED:
+        raise PiiKeyUnavailable()
+    from .tenant_preparation import prepared_tenant_read_key
+    prepared = prepared_tenant_read_key(makerspace_id, version)
+    if prepared is not None:
+        return prepared
+    if mandatory and connection.in_atomic_block:
+        raise PiiKeyUnavailable("Prepare the tenant key before starting the command.")
     return unwrap_dek(key_row)
 
 
@@ -131,7 +138,7 @@ def get_or_create_active_dek(makerspace_id):
 
 
 def rotate_dek(makerspace_id):
-    _require_enabled()
+    _require_enabled(allow_mandatory=True)
     from apps.makerspaces.models import Makerspace
 
     with _lock_for(makerspace_id), transaction.atomic():
@@ -159,10 +166,13 @@ def rotate_dek(makerspace_id):
 
 
 def disable_dek(makerspace_id, version=None):
-    _require_enabled()
     from apps.makerspaces.models import Makerspace
 
     with _lock_for(makerspace_id), transaction.atomic():
+        from apps.encryption.write_fence import exclusive_tenant_key_fence
+        from apps.encryption.mandatory_fields import assert_key_unreferenced
+
+        exclusive_tenant_key_fence(makerspace_id)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace_id)
         filters = {"makerspace": makerspace}
         if version is None:
@@ -170,6 +180,7 @@ def disable_dek(makerspace_id, version=None):
         else:
             filters["version"] = version
         key_row = MakerspaceEncryptionKey.objects.select_for_update().get(**filters)
+        assert_key_unreferenced(makerspace_id, key_row.version)
         if key_row.status != MakerspaceEncryptionKey.Status.DISABLED:
             key_row.status = MakerspaceEncryptionKey.Status.DISABLED
             key_row.disabled_at = timezone.now()
@@ -181,7 +192,7 @@ def disable_dek(makerspace_id, version=None):
 
 def rewrap_dek(makerspace_id, version):
     """Rewrap a local key from PII_MASTER_KEY_PREVIOUS to PII_MASTER_KEY."""
-    _require_enabled()
+    _require_enabled(allow_mandatory=True)
     with _lock_for(makerspace_id), transaction.atomic():
         key_row = MakerspaceEncryptionKey.objects.select_for_update().get(
             makerspace_id=makerspace_id, version=version

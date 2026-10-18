@@ -11,6 +11,7 @@ from .catalog_broadcasts import authority_entries as broadcast_authority
 
 from .catalog_profiles import authority_entries as profile_authority
 from .catalog_account_context import AUTHORITY_ENTRIES as ACCOUNT_CONTEXT_AUTHORITY
+from .target_projection_events_programme import TARGET_FIELDS as PROGRAMME_TARGET_FIELDS
 
 def _build(entries):
     result = {}
@@ -22,6 +23,7 @@ def _build(entries):
 
 
 AUTHORITY_FIELD_OVERRIDES = _build((
+    *((edge, authority(D.RESET, policy.reason)) for edge, policy in PROGRAMME_TARGET_FIELDS.items()),
     *AUTHORITY_ENTRIES,
     *ACCOUNT_CONTEXT_AUTHORITY,
     *profile_authority(authority, D),

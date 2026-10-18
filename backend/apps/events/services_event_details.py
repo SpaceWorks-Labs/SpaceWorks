@@ -142,6 +142,7 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
         )
 
     now = timezone.now()
+    previous_date_source = (locked.starts_at, locked.timezone_name)
     old_capacity, old_ends_at, old_image_key = locked.capacity, locked.ends_at, locked.image_key
     for field, value in changes.items():
         setattr(locked, field, value)
@@ -178,6 +179,11 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
 
     if changes:
         update_fields = set(changes)
+        locked.version += 1
+        update_fields.add("version")
+        if (locked.starts_at, locked.timezone_name) != previous_date_source:
+            locked.event_date_revision += 1
+            update_fields.add("event_date_revision")
         if "registration_audience" in changes:
             update_fields.add("organization_admission_blocked")
         if locked.series_id:

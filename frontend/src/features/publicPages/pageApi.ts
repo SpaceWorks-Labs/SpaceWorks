@@ -75,10 +75,12 @@ export function usePageOperation(owner: PageOwner) {
       method: action === "save" || action === "handle" ? "PUT" : action === "release_handle" || action === "delete_asset" ? "DELETE" : "POST",
       body: JSON.stringify(payload),
     });
-  }, onSuccess: async (data, input) => {
+  }, onSuccess: (data, input) => {
     if (input.action === "preview") return;
     client.setQueryData(editorKey(owner), data);
-    await Promise.all(["public-page", "page-handle", "public-organization", "public-page-collection", "organizations", "public-event", "public-event-website", "page-revisions"].map(key => client.invalidateQueries({ queryKey: [key] })));
+    // Not awaited: mutate()-level onSuccess must adopt the new base version in the same pass as the
+    // editor cache update, or the builder briefly sees a version mismatch and flashes its conflict alert.
+    void Promise.all(["public-page", "page-handle", "public-organization", "public-page-collection", "organizations", "public-event", "public-event-website", "page-revisions"].map(key => client.invalidateQueries({ queryKey: [key] })));
   } });
 }
 export function usePageRevisions(owner: PageOwner, enabled: boolean, page: number) {

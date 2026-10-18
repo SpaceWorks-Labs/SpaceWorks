@@ -22,13 +22,14 @@ export function PublicOrganizationPage({ profileSlug, profileOnly = false }: { p
   const organization = usePublicOrganization(slug);
   const tenant = useOptionalTenant();
   const projection = usePublicPage("organization", slug);
-  const page = projection.error ? undefined : projection.data;
+  // A failed refetch keeps the last published page; 404s resolve to null rather than an error.
+  const page = projection.data ?? undefined;
   const legacy = organization.error ? undefined : organization.data;
   const style = usePageBranding(page?.presentation.resolved_theme, page?.presentation.accent_choice);
-  const pageMissing = projection.isSuccess && !projection.data || projection.error instanceof StructuredApiError && projection.error.status === 404;
+  const pageMissing = projection.data === null || projection.error instanceof StructuredApiError && projection.error.status === 404;
   if (profileOnly && pageMissing || pageMissing && organization.error instanceof StructuredApiError && organization.error.status === 404) return <NotFoundPage />;
   // The legacy API owns adoption/withdrawal; cached consented prose never fills an unavailable builder.
-  const error = projection.error && !pageMissing ? projection.error : page ? null : organization.error;
+  const error = projection.error && projection.data === undefined && !pageMissing ? projection.error : page ? null : organization.error;
   const ready = Boolean(page || pageMissing && legacy && !profileOnly);
   const name = ready ? page?.title ?? legacy?.name ?? "Organization" : "Organization";
   // Global profiles belong on the platform frontend, even when their read API admits a tenant browser origin.

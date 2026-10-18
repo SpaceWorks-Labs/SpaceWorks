@@ -84,10 +84,11 @@ def derived_payload(kind, owner, key, payload, *, request=None):
             metrics["public_member_count"] = MakerspaceMembership.objects.filter(
                 makerspace=owner, status="active", user__account_kind="member", user__is_active=True,
                 user__access_status="active", user__is_tenant_dump_stub=False).count()
-        return {"title": title, "metrics": metrics}
+        # An empty metrics block would render a bare heading; omit the section instead.
+        return {"title": title, "metrics": metrics} if metrics else None
     if key == "location":
         if not payload["enabled_publicly"]:
-            return {"title": title, "enabled_publicly": False}
+            return None
         if payload["source"] == "makerspace_public":
             return {"title": title, "enabled_publicly": True,
                     "address": getattr(owner, "location", ""), "map_url": getattr(owner, "map_url", "")}

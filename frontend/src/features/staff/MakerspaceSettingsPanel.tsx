@@ -165,7 +165,8 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     </div>
   </SettingsRow>;
   const sections: SettingsLayoutSection[] = [
-    { id: "public-page", title: "Public page", rows: <PublicPageBuilder owner={{ kind: "makerspace", id: makerspace.id }} /> },
+    // Page editing is locked to this makerspace's local Space Manager; platform actors are always refused.
+    ...(canManageMakerspace && !isSuperadmin ? [{ id: "public-page", title: "Public page", rows: <PublicPageBuilder owner={{ kind: "makerspace", id: makerspace.id }} /> }] : []),
     { id: "general", title: "General", rows: <>
       <MakerspaceGeneralSettings {...shared} />
       <MakerspaceLocationSettings {...shared} />

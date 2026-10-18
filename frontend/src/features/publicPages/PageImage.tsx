@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { API_V1_URL, staffRequestBlob, tenantPublicRequestBlob } from "../../lib/api";
 import { publicHeaders } from "../../lib/api/client";
@@ -15,12 +15,19 @@ function legacyArtwork(value: string) {
   } catch { return false; }
 }
 
+/**
+ * Image bytes never poll: a 30 s refetch minted a new Blob (and a "Loading image…" flash) for every
+ * image and spent the shared publishable-key budget. Gating still holds, because the parent projection
+ * keeps polling and a changed publication token is a new query key, which refetches here.
+ */
+const imagePolicy = { ...publicPagePolicy, refetchInterval: false as const, refetchOnWindowFocus: false as const, retry: false as const };
+
 export function PageImage({ url, alt, slug, token, privatePreview = false }: {
   url: string; alt: string; slug?: string; token: string | null; privatePreview?: boolean;
 }) {
   const artwork = legacyArtwork(url);
-  const query = useQuery({ queryKey: ["page-image", hostScope(), privatePreview ? [currentSessionContext(), personalRecipientKey()] : "public", slug, token, url], ...publicPagePolicy, enabled: !artwork,
-    retry: false, queryFn: async () => {
+  const query = useQuery({ queryKey: ["page-image", hostScope(), privatePreview ? [currentSessionContext(), personalRecipientKey()] : "public", slug, token, url], ...imagePolicy, enabled: !artwork,
+    queryFn: async () => {
       if (privatePreview) {
         const base = new URL(API_V1_URL, window.location.origin); const address = new URL(url, base.origin);
         const prefix = base.pathname.replace(/\/$/, "");
@@ -35,13 +42,19 @@ export function PageImage({ url, alt, slug, token, privatePreview = false }: {
       return response.blob();
     },
   });
-  const [src, setSrc] = useState<{ blob: Blob; url: string } | null>(null);
+  // The shown object URL outlives a key change: it is revoked only once its replacement has rendered.
+  const [src, setSrc] = useState<string | null>(null);
+  const shown = useRef<string | null>(null);
   useEffect(() => {
-    if (!query.data || query.error) return;
-    const value = URL.createObjectURL(query.data); setSrc({ blob: query.data, url: value });
-    return () => URL.revokeObjectURL(value);
-  }, [query.data, query.error]);
+    if (!query.data) return;
+    const value = URL.createObjectURL(query.data); setSrc(value);
+    return () => { if (shown.current !== value) URL.revokeObjectURL(value); };
+  }, [query.data]);
+  useEffect(() => {
+    shown.current = src;
+    return () => { if (src) URL.revokeObjectURL(src); };
+  }, [src]);
   if (artwork) return <img src={url} alt={alt} className="max-h-96 w-full rounded-xl object-contain" />;
   if (query.error) return <p className="text-sm text-muted">Image unavailable: {alt}</p>;
-  return src && src.blob === query.data ? <img src={src.url} alt={alt} className="max-h-96 w-full rounded-xl object-contain" /> : <p role="status" className="text-sm text-muted">Loading image…</p>;
+  return src ? <img src={src} alt={alt} className="max-h-96 w-full rounded-xl object-contain" /> : <p role="status" className="text-sm text-muted">Loading image…</p>;
 }

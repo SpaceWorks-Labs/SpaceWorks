@@ -27,7 +27,8 @@ function Builder({ owner }: { owner: PageOwner }) {
   }, [query.data]);
   const state = query.error ? undefined : query.data;
   const dirty = Boolean(local && JSON.stringify(local.document) !== JSON.stringify(local.base.document));
-  const conflict = stale || Boolean(local && state && local.base.version !== state.version);
+  // While an operation settles the editor cache can lead the local base by one version; that is not a conflict.
+  const conflict = stale || Boolean(!operation.isPending && local && state && local.base.version !== state.version);
   const pending = operation.isPending;
   const disabled = pending || !state?.capabilities.can_edit_details;
   const change = (document: PageDocument) => { setLocal(current => current ? { ...current, document } : current); setPreview(null); setMessage(""); };
@@ -43,6 +44,8 @@ function Builder({ owner }: { owner: PageOwner }) {
     },
   });
   if (query.isLoading || !local && !query.error) return <p role="status">Loading public page builder…</p>;
+  if (query.error instanceof StructuredApiError && query.error.status === 403) return <p className="text-sm text-muted">{owner.kind === "makerspace"
+    ? "Only this makerspace's Space Manager can edit the public page." : "Only this organization's profile managers can edit the public page."}</p>;
   if (query.error) return <ErrorBlock error={query.error} onRetry={() => { void query.refetch(); }} />;
   if (!state || !local) return null;
   const document = local.document;

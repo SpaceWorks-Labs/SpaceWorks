@@ -11,8 +11,12 @@ from .servability import is_servable
 from .hosting import canonical_host
 
 
+def _verified_domain(space):
+    return bool(space and space.frontend_domain and space.frontend_domain_status == Makerspace.DomainStatus.VERIFIED)
+
+
 def canonical_origin(space=None):
-    if space and space.frontend_domain and space.frontend_domain_status == Makerspace.DomainStatus.VERIFIED:
+    if _verified_domain(space):
         return f"https://{space.frontend_domain}"
     return settings.PUBLIC_APP_BASE_URL.rstrip("/")
 
@@ -21,6 +25,9 @@ def canonical_url(kind, owner, handle=None):
     origin = canonical_origin(owner if kind == "makerspace" else None)
     if handle:
         return f"{origin}/{handle}"
+    if kind == "makerspace" and _verified_domain(owner):
+        # A verified tenant domain boots the single-space SPA, which has no /m/<slug> route.
+        return f"{origin}/"
     return f"{origin}/{'m' if kind == 'makerspace' else 'o'}/{owner.slug}"
 
 

@@ -694,7 +694,7 @@
     "public": {
       "schema_version": 1,
       "kind": "makerspace",
-      "canonical_url": "https://tenant.example.test/m/lab",
+      "canonical_url": "https://tenant.example.test/",
       "title": "Lab",
       "description": "",
       "publication_token": "10000000-0000-4000-8000-000000000001",
@@ -1038,7 +1038,7 @@
     "preview": {
       "schema_version": 1,
       "kind": "makerspace",
-      "canonical_url": "https://tenant.example.test/m/lab",
+      "canonical_url": "https://tenant.example.test/",
       "title": "Lab",
       "description": "",
       "publication_token": null,

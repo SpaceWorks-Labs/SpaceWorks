@@ -11,6 +11,7 @@ import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { WebsiteProgramme, WebsiteSectionCard, type WebsiteLinks } from "./PublicEventWebsite";
 import type { EventWebsite } from "./websiteTypes";
+import { markdownExcerpt } from "../../components/restrictedMarkdownTokens";
 
 /** Read the current gated projection rather than retaining a detached speaker/session snapshot. */
 export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session" | "speaker" }) {
@@ -44,7 +45,7 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
     error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? "Unable to load this event website." : "Page not found.",
     onRetry: query.error ? () => { void query.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}>
-    {visible && page ? <PageMetadata title={title} description={(speaker?.body ?? session?.body ?? "Event programme").slice(0, 200)} path={location.pathname} /> : null}
+    {visible && page ? <PageMetadata title={title} description={markdownExcerpt(speaker?.body ?? session?.body ?? "Event programme", speaker?.body_rendering_policy ?? session?.body_rendering_policy)} path={location.pathname} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} state={state} width="narrow"
       breadcrumb={[{ label: "All events", href: path("events") }, { label: "Back to event", href: base }, { label: visible ? title : "Event website" }]}
       header={{ eyebrow: view === "schedule" ? undefined : view === "speaker" ? "Speaker" : "Session", title: visible ? title : "Event website" }}>

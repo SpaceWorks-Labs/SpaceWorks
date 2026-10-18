@@ -16,7 +16,7 @@ export function useWebsiteInvalidation(target: WebsiteTarget) {
   const client = useQueryClient();
   return () => Promise.all([
     client.invalidateQueries({ queryKey: websiteKey(target) }),
-    ...["public-event", "public-event-website", "public-events", "event", "events", "event-series", "event-discover"].map((key) => client.invalidateQueries({ queryKey: [key] })),
+    ...["public-event", "public-event-website", "public-event-code", "public-page", "public-page-collection", "public-organization", "public-events", "event", "events", "event-series", "event-discover"].map((key) => client.invalidateQueries({ queryKey: [key] })),
   ]);
 }
 
@@ -36,8 +36,8 @@ export function useWebsiteRelease(target: WebsiteTarget) {
 
 export function useWebsiteDelay(target: WebsiteTarget) {
   const invalidate = useWebsiteInvalidation(target);
-  return useMutation({ mutationFn: ({ slug, minutes }: { slug: string; minutes: number }) => staffRequest<EventWebsite>(`${base(target)}sessions/${encodeURIComponent(slug)}/delay/`, {
-    method: "POST", body: JSON.stringify({ delay_minutes: minutes }),
+  return useMutation({ mutationFn: ({ slug, minutes, revision, session_id }: { slug: string; minutes: number; revision: number; session_id: string }) => staffRequest<EventWebsite>(`${base(target)}sessions/${encodeURIComponent(slug)}/delay/`, {
+    method: "POST", body: JSON.stringify({ delay_minutes: minutes, revision, session_id }),
   }), onSuccess: invalidate });
 }
 

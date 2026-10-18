@@ -20,12 +20,14 @@ import { EventRegistrationEntry } from "./EventRegistrationEntry";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
 import { useEventVenueSection } from "../bookings/EventVenueBlock";
+import { PageShare } from "../publicPages/PageShare";
 
 /** WP2 mounts this component on both central and tenant-domain event routes. */
-export function PublicEventDetailPage() {
-  const { slug, publicToken } = useParams();
+export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUrl }: { resolvedSlug?: string; resolvedToken?: string; canonicalUrl?: string } = {}) {
+  const { slug, publicToken: routeToken } = useParams();
+  const publicToken = resolvedToken ?? routeToken;
   const tenant = useTenant();
-  const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
+  const makerspaceSlug = resolvedSlug ?? (tenant.mode === "single" ? tenant.slug : slug ?? "");
   const tenantPath = useTenantPath(makerspaceSlug);
   const location = useLocation();
   // Central routes load the tenant bootstrap themselves so the header carries the brand and programme nav.
@@ -57,15 +59,16 @@ export function PublicEventDetailPage() {
   const closedNote = organizationAudience ? cutoff || undefined : `Registration is closed.${cutoff ? ` ${cutoff}` : ""}`;
   if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title="Event not found" body="This event is no longer available." primary={{ label: "All events", href: tenantPath("events") }} />;
   return <div style={brandStyle}>
-    {event ? <PageMetadata title={event.title} description={event.description.slice(0, 200)} path={location.pathname} image={event.image_url} /> : null}
+    {event ? <PageMetadata title={event.title} description={event.description.slice(0, 300)} path={canonicalUrl ?? event.canonical_url ?? location.pathname} image={event.website && "cover" in event.website ? event.website.cover?.url : event.image_url} imageAlt={event.website?.cover?.alt} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={state}
       breadcrumb={[{ label: "All events", href: tenantPath("events") }, { label: event?.title ?? "Event" }]}>
       <PublicDetailLayout title={event?.title ?? "Event"} state={state}
-        cover={event?.image_url ? { src: event.image_url, alt: "" } : undefined}
+        cover={event?.image_url && !(event.website && "cover" in event.website) ? { src: event.image_url, alt: "" } : undefined}
         chips={[...(event?.audience_label ? [{ label: event.audience_label, tone: "info" as const }] : []), ...(event?.category ? [{ label: event.category.name }] : []), ...(event?.tags ?? []).map(label => ({ label }))]}
         facts={event ? [{ identity: { kind: "date", date: event.starts_at }, primary: new Date(event.starts_at).toLocaleString(), secondary: `Until ${new Date(event.ends_at).toLocaleString()}` },
           ...(event.location ? [{ identity: { kind: "icon" as const, icon: "Info" as const, tone: "neutral" as const }, primary: event.location }] : [])] : []}
         sections={event ? [{ id: "about", label: "About", content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> },
+          ...(canonicalUrl || event.canonical_url ? [{ id: "share", label: "Share", content: <PageShare title={event.title} description={event.description} canonicalUrl={canonicalUrl ?? event.canonical_url!} /> }] : []),
           ...(event.website ? [{ id: "website", label: "Event details", content: <PublicEventWebsite website={event.website}
             links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
             image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : []), ...venueSection] : []}
@@ -80,7 +83,7 @@ export function PublicEventDetailPage() {
           form: event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} />
             : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} /> : null,
           secondary: event ? [{ label: "Add to calendar", pending: calendar.isPending, onClick: () => calendar.mutate(event) }, { label: "Share event", onClick: async () => {
-            setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: window.location.href }); else await navigator.clipboard.writeText(window.location.href); } catch { setShareError("Could not share this event."); }
+            setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: canonicalUrl ?? event.canonical_url ?? window.location.href }); else await navigator.clipboard.writeText(canonicalUrl ?? event.canonical_url ?? window.location.href); } catch { setShareError("Could not share this event."); }
           } }] : [],
           mobileBar: { summary: event?.title ?? "Event", label: event?.registration_open ? "Register" : "View event" },
           doneContent: <>{calendar.error ? <p role="alert">Could not download this calendar.</p> : null}{shareError ? <p role="alert">{shareError}</p> : null}</> }} />

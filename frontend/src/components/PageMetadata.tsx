@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-type Props = { title: string; description: string; path: string; image?: string | null; siteName?: string };
+type Props = { title: string; description: string; path: string; image?: string | null; imageAlt?: string; siteName?: string; noindex?: boolean };
 
 function absoluteUrl(value: string) {
   try {
@@ -12,7 +12,7 @@ function absoluteUrl(value: string) {
 /** Own just these head tags while mounted; restore the previous page on cleanup.
  * Reusing existing nodes avoids duplicate metadata from the static SPA shell.
  */
-export function PageMetadata({ title, description, path, image, siteName }: Props) {
+export function PageMetadata({ title, description, path, image, imageAlt = "", siteName, noindex = false }: Props) {
   useEffect(() => {
     const previousTitle = document.title;
     const marker = document.createElement("meta");
@@ -39,9 +39,11 @@ export function PageMetadata({ title, description, path, image, siteName }: Prop
     const canonical = absoluteUrl(path);
     tag('meta[name="description"]', "meta", { name: "description" }, description);
     tag('link[rel="canonical"]', "link", { rel: "canonical" }, canonical);
-    const values = { title, description, url: canonical, type: "website", site_name: siteName ?? title, image: image ? absoluteUrl(image) : "" };
+    const values = { title, description: description.slice(0, 300), url: canonical, type: "website", site_name: siteName ?? title, image: image ? absoluteUrl(image) : "", "image:alt": imageAlt };
     Object.entries(values).forEach(([key, value]) => tag(`meta[property="og:${key}"]`, "meta", { property: `og:${key}` }, value));
+    Object.entries({ card: image ? "summary_large_image" : "summary", title, description: description.slice(0, 300), image: values.image, "image:alt": imageAlt }).forEach(([key, value]) => tag(`meta[name="twitter:${key}"]`, "meta", { name: `twitter:${key}` }, value));
+    tag('meta[name="robots"]', "meta", { name: "robots" }, noindex ? "noindex, nofollow" : "index, follow");
     return () => { cleanups.reverse().forEach((cleanup) => cleanup()); marker.remove(); document.title = previousTitle; };
-  }, [title, description, path, image, siteName]);
+  }, [title, description, path, image, imageAlt, siteName, noindex]);
   return null;
 }

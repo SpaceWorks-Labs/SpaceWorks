@@ -7,21 +7,21 @@ from django.utils import timezone
 
 from apps.audit.services import record
 from apps.events.certificate_storage import CertificateStorageUnavailable, presigned_download
-from apps.events.credentials.boundary import event_command
 from apps.events.exceptions import EventInvalidTransition
 from apps.events.models_certificates import EventAttendanceCertificate as Certificate
 from apps.makerspaces import limits
 from .subjects import require_subject, require_read
+from .locked import certificate_command, save_operational
 
 logger = logging.getLogger(__name__)
 
 
-def _eligible(row):
+def _eligible(row, prepared):
     if row.event.status not in ("published", "completed"):
         raise EventInvalidTransition("The event no longer permits certificate rendering.")
     return require_subject(row.event, subject_kind="registration" if row.registration_id else "role_assignment",
                            subject_id=row.registration_id or row.role_assignment_id, kind=row.kind,
-                           award_id=row.award_id, result_revision_id=row.result_revision_id)
+                           award_id=row.award_id, result_revision_id=row.result_revision_id, prepared=prepared)
 
 
 def render_certificate(certificate):
@@ -46,11 +46,8 @@ def render_certificate(certificate):
 
 
 def _claim_render(certificate_id):
-    identity = Certificate.objects.only("event_id").get(pk=certificate_id)
-    with event_command(identity.event_id) as (event, _):
-        row = Certificate.objects.select_for_update().get(pk=certificate_id)
-        row.event = event
-        _eligible(row)
+    with certificate_command(certificate_id) as (event, _, row, prepared):
+        _eligible(row, prepared)
         if row.status == "active":
             return row
         stale = row.status == "rendering" and (
@@ -60,25 +57,22 @@ def _claim_render(certificate_id):
         row.status = "rendering"
         row.render_token, row.render_started_at = uuid4(), timezone.now()
         row.render_attempts += 1
-        row.save(update_fields=("status", "render_token", "render_started_at", "render_attempts"))
+        save_operational(row, ("status", "render_token", "render_started_at", "render_attempts"))
         record(None, "event.certificate_render_claimed", makerspace=event.makerspace, target=row,
                meta={"revision": row.revision})
         return row
 
 
 def _activate(certificate_id, size, digest, *, render_token):
-    identity = Certificate.objects.only("event_id").get(pk=certificate_id)
-    with event_command(identity.event_id) as (event, _):
-        row = Certificate.objects.select_for_update().get(pk=certificate_id)
-        row.event = event
-        _eligible(row)
+    with certificate_command(certificate_id) as (event, _, row, prepared):
+        _eligible(row, prepared)
         if row.status == "active":
             return row
         if row.status != "rendering" or row.render_token != render_token:
             raise EventInvalidTransition("Certificate render claim was lost.")
         limits.add_storage(event.makerspace, size)
         row.status, row.size_bytes, row.sha256, row.rendered_at = "active", size, digest, timezone.now()
-        row.save(update_fields=("status", "size_bytes", "sha256", "rendered_at"))
+        save_operational(row, ("status", "size_bytes", "sha256", "rendered_at"))
         record(None, "event.certificate_rendered", makerspace=event.makerspace, target=row,
                meta={"revision": row.revision, "size_bytes": size})
         _notify_owner(row, "certificate_ready")
@@ -86,13 +80,11 @@ def _activate(certificate_id, size, digest, *, render_token):
 
 
 def _fail_render(certificate_id, *, render_token):
-    identity = Certificate.objects.only("event_id").get(pk=certificate_id)
-    with event_command(identity.event_id) as (event, _):
-        row = Certificate.objects.select_for_update().get(pk=certificate_id)
+    with certificate_command(certificate_id) as (event, _, row, _prepared):
         if row.status != "rendering" or row.render_token != render_token:
             return
         row.status = "failed"
-        row.save(update_fields=("status",))
+        save_operational(row, ("status",))
         record(None, "event.certificate_render_failed", makerspace=event.makerspace, target=row,
                meta={"revision": row.revision})
 
@@ -112,16 +104,22 @@ def download_url(certificate, *, actor=None):
 
 
 def revoke(certificate, *, actor, reason):
-    with event_command(certificate.event_id, actor=actor) as (event, actor):
-        row = Certificate.objects.select_for_update().get(pk=certificate.pk)
-        if row.status != "active":
-            raise EventInvalidTransition("Only an active certificate can be revoked.")
-        row.status, row.revoked_at, row.revoked_by, row.revocation_reason = "revoked", timezone.now(), actor, reason
-        row.save(update_fields=("status", "revoked_at", "revoked_by", "revocation_reason"))
-        record(actor, "event.certificate_revoked", makerspace=event.makerspace, target=row,
-               meta={"revision": row.revision, "reason": reason})
-        _notify_owner(row, "certificate_revoked")
-        return row
+    with certificate_command(certificate.pk, actor=actor) as (event, actor, row, _prepared):
+        return revoke_locked(event, row, actor=actor, reason=reason)
+
+
+def revoke_locked(event, row, *, actor, reason):
+    if row.status != "active":
+        raise EventInvalidTransition("Only an active certificate can be revoked.")
+    if reason not in Certificate.RevocationReason.values:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError({"reason": "Choose a certificate revocation reason."})
+    row.status, row.revoked_at, row.revoked_by, row.revocation_reason = "revoked", timezone.now(), actor, reason
+    save_operational(row, ("status", "revoked_at", "revoked_by", "revocation_reason"))
+    record(actor, "event.certificate_revoked", makerspace=event.makerspace, target=row,
+           meta={"revision": row.revision, "reason": reason})
+    _notify_owner(row, "certificate_revoked")
+    return row
 
 
 def _notify_owner(certificate, event_name):

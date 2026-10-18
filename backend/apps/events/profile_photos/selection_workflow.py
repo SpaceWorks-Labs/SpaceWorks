@@ -9,6 +9,7 @@ from apps.events.credentials.boundary import event_command
 from apps.events.credentials.errors import ProgrammeConflict
 from apps.makerspaces.models_profiles import MemberProfile, PublicHandle
 from apps.makerspaces.public_profile_access import profile_is_public
+from apps.makerspaces.models import MakerspaceMembership
 
 from .models import EventMemberCard, EventMemberPresentation, EventPresentationCommand
 from .policy import require_owner_event, source_live
@@ -55,14 +56,38 @@ def select(event_id, *, actor, operation_id, expected_version, profile_id, membe
                public_card_scopes=list(public_card_scopes))
     serializer = PresentationWriteSerializer(data=raw)
     serializer.is_valid(raise_exception=True)
+    from apps.events.models_event import Event
+    require_owner_event(Event.objects.select_related("makerspace").get(pk=event_id), actor)
+    if profile_id is not None and not MemberProfile.objects.filter(
+            pk=profile_id, membership_id=membership_id, membership__user=actor).exists():
+        raise NotFound()
     digest = hashlib.sha256(json.dumps(raw, sort_keys=True).encode()).hexdigest()
     # Discover source tenants unlocked, then re-read/validate after fences/event lock.
     previous = EventMemberPresentation.objects.filter(event_id=event_id, member=actor).first()
     profile_ids = {pk for pk in (profile_id, previous.selected_profile_id if previous else None) if pk}
-    tenant_ids = tuple(MemberProfile.objects.filter(pk__in=profile_ids).values_list(
-        "membership__makerspace_id", flat=True))
-    with event_command(event_id, tenant_ids=tenant_ids) as (event, _):
+    sources = tuple(MemberProfile.objects.filter(pk__in=profile_ids).order_by("pk").values_list(
+        "pk", "membership_id", "membership__makerspace_id", "membership__user_id"))
+    tenant_ids = tuple(source[2] for source in sources)
+    previous_selection = (previous.selected_profile_id, previous.selected_membership_id) if previous else (None, None)
+
+    def revalidate(event):
+        actual = tuple(MemberProfile.objects.filter(pk__in=profile_ids).order_by("pk").values_list(
+            "pk", "membership_id", "membership__makerspace_id", "membership__user_id"))
+        current = EventMemberPresentation.objects.filter(event=event, member=actor).first()
+        selection = (current.selected_profile_id, current.selected_membership_id) if current else (None, None)
+        if actual != sources or selection != previous_selection:
+            raise ProgrammeConflict("Photo selection changed. Reload the choices.", code="photo_source_changed")
+
+    with event_command(event_id, tenant_ids=tenant_ids, account_ids=(actor.pk,), revalidate=revalidate) as (event, _):
+        from apps.accounts.models import User
+        actor = User.objects.get(pk=actor.pk)
         require_owner_event(event, actor)
+        # Lock source parents before profile/selection children. Deletion takes these
+        # same rows, so SET_NULL cannot interleave with a newly selected profile.
+        list(MakerspaceMembership.objects.select_for_update().filter(
+            pk__in=[source[1] for source in sources]).order_by("pk"))
+        list(MemberProfile.objects.select_for_update().filter(pk__in=profile_ids).order_by("pk"))
+        revalidate(event)
         row, _created = EventMemberPresentation.objects.get_or_create(event=event, member=actor)
         row = EventMemberPresentation.objects.select_for_update().get(pk=row.pk)
         receipt = EventPresentationCommand.objects.filter(presentation=row, operation_id=operation_id).first()
@@ -74,7 +99,7 @@ def select(event_id, *, actor, operation_id, expected_version, profile_id, membe
             raise ProgrammeConflict()
         profile = None
         if profile_id is not None:
-            profile = MemberProfile.objects.select_for_update().filter(
+            profile = MemberProfile.objects.filter(
                 pk=profile_id, membership_id=membership_id, membership__user=actor,
             ).first()
             if not profile or not source_live(profile, actor.pk):

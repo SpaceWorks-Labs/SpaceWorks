@@ -1,19 +1,20 @@
-"""Reserve → prepare outside locks → bind → render → reauthorize publication."""
+"""Reserve â†’ prepare outside locks â†’ bind â†’ render â†’ reauthorize publication."""
 
 from datetime import timedelta
 import hashlib
 import json
+import logging
 from uuid import uuid4
 
 from django.utils import timezone
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound
 
 from apps.audit.services import record
 from apps.events import event_authority
 from apps.events.credentials.boundary import event_command, require_version
 from apps.events.credentials.crypto import unwrap
 from apps.events.credentials.errors import ProgrammeConflict
-from apps.events.credentials.workflow import issue_locked, require_eligible
+from apps.events.credentials.workflow import issue_locked, require_eligible, prepare_issue
 from apps.events.event_permissions import CHECK_IN
 from apps.events.models_registration import EventRegistration
 from apps.events.profile_photos.models import EventMemberPresentation
@@ -25,19 +26,26 @@ from .layer_rendering import ImageResource, QrResource
 from .print_models import BadgePrintJob, BadgePrintResource, EventBadgeTemplateRevision
 from .print_policy import require_job, fields_digest
 from .print_snapshot import BadgeSnapshot
+from .print_boundary import prepare_scope, print_command
 from . import print_storage as storage
+
+logger = logging.getLogger(__name__)
 
 
 def create(event_id, *, actor, operation_id, expected_version, registration_ids,
            template_revision, stock, include_photo=False):
+    event_authority.get_event(actor, event_id, CHECK_IN)
     if (not isinstance(registration_ids, list) or not 1 <= len(registration_ids) <= 200
             or any(type(pk) is not int or pk <= 0 for pk in registration_ids)
             or len(set(registration_ids)) != len(registration_ids)):
         from rest_framework.exceptions import ValidationError
-        raise ValidationError({"registration_ids": "Choose 1–200 unique registrations."})
+        raise ValidationError({"registration_ids": "Choose 1â€“200 unique registrations."})
     digest = hashlib.sha256(json.dumps([sorted(registration_ids), expected_version, template_revision,
                                        stock, include_photo]).encode()).hexdigest()
-    with event_command(event_id, actor=actor, permission=CHECK_IN) as (event, actor):
+    scope = prepare_scope(event_id, registration_ids)
+    credentials = {pk: prepare_issue(event_id, pk) for pk in registration_ids}
+    with event_command(event_id, actor=actor, permission=CHECK_IN, account_ids=scope.account_ids,
+            tenant_ids=scope.tenant_ids, revalidate=scope.revalidate) as (event, actor):
         previous = BadgePrintJob.objects.filter(event=event, operation_id=operation_id).first()
         if previous:
             if previous.request_sha256 != digest or previous.actor_id != actor.pk:
@@ -53,6 +61,7 @@ def create(event_id, *, actor, operation_id, expected_version, registration_ids,
         eligible, failures = [], []
         manager = event_authority.can_manage_grants(actor, event)
         for row in rows:
+            scope.registrations.bind(row)
             try:
                 require_eligible(event, row)
                 if not manager and row.status != "attended":
@@ -70,7 +79,7 @@ def create(event_id, *, actor, operation_id, expected_version, registration_ids,
                 expires_at=timezone.now()+timedelta(hours=24))
         for row in eligible:
             row.event = event
-            credential = issue_locked(event, row, actor=actor)
+            credential = issue_locked(event, row, actor=actor, prepared=credentials[row.pk])
             BadgePrintResource.objects.create(job=job, registration=row, kind="qr", credential=credential,
                                               credential_generation=credential.generation, expires_at=job.expires_at,
                                               bound_at=timezone.now())
@@ -94,8 +103,9 @@ def prepare_resources(job, *, actor):
                                  profile.membership.makerspace_id, prepare_photo(profile)))
     for registration_id, presentation_id, version, source_tenant, photo in prepared:
         # Persist ownership BEFORE network I/O so a failed upload remains cleanup-owned.
-        with event_command(job.event_id, actor=actor, permission=CHECK_IN, tenant_ids=(source_tenant,)) as (event, actor):
-            require_job(job, actor)
+        with print_command(job, actor=actor) as (event, actor, scope):
+            require_job(job, actor, prepared_scope=scope)
+            require_prepared_photo(job, registration_id, presentation_id, version, photo)
             resource, created = BadgePrintResource.objects.get_or_create(job=job, registration_id=registration_id,
                 kind="photo", defaults=dict(presentation_id=presentation_id, presentation_version=version,
                     source_profile_id=photo.profile_id, source_avatar_revision=photo.source_revision,
@@ -103,16 +113,33 @@ def prepare_resources(job, *, actor):
                     sha256=photo.sha256, size_bytes=len(photo.pixels), expires_at=job.expires_at))
             if created:
                 limits.add_storage(event.makerspace, len(photo.pixels))
-            require_job(job, actor)
-        storage.put(resource.object_key, photo.pixels, "image/png")
+            if resource.sha256 != photo.sha256 or resource.presentation_version != version:
+                raise ProgrammeConflict("Prepared photo differs from its reservation.", code="photo_source_changed")
+            require_job(job, actor, prepared_scope=scope)
         if resource.bound_at:
             continue
-        with event_command(job.event_id, actor=actor, permission=CHECK_IN, tenant_ids=(source_tenant,)) as (_event, actor):
-            require_job(job, actor)
+        storage.put(resource.object_key, photo.pixels, "image/png")
+        with print_command(job, actor=actor) as (_event, actor, scope):
+            require_job(job, actor, prepared_scope=scope)
+            require_prepared_photo(job, registration_id, presentation_id, version, photo)
+            resource = BadgePrintResource.objects.select_for_update().get(pk=resource.pk)
+            if resource.bound_at:
+                continue
             resource.bound_at = timezone.now()
             resource.save(update_fields=("bound_at",))
             record(actor, "event.badge_resource_bound", makerspace=job.event.makerspace, target=resource,
                    meta={"job_id": job.pk, "kind": "photo"})
+
+
+def require_prepared_photo(job, registration_id, presentation_id, version, photo):
+    member_id = EventRegistration.objects.values_list("member_id", flat=True).get(pk=registration_id, event_id=job.event_id)
+    presentation = EventMemberPresentation.objects.filter(pk=presentation_id, event_id=job.event_id, member_id=member_id).first()
+    profile = print_profile(presentation)
+    if (not profile or presentation.version != version or profile.pk != photo.profile_id
+            or profile.membership_id != photo.membership_id
+            or profile.updated_at.isoformat().replace("+00:00", "Z") != photo.source_revision
+            or hashlib.sha256(profile.avatar_key.encode()).hexdigest() != photo.source_key_digest):
+        raise ProgrammeConflict("Photo source or consent changed.", code="photo_source_changed")
 
 
 def snapshots(job):
@@ -155,7 +182,10 @@ def render(job, *, actor):
         size, digest = storage.put(job.object_key, payload, "application/pdf")
         return finish(job, actor, size, digest)
     except Exception:
-        fail(job)
+        try:
+            fail(job)
+        except Exception:
+            logger.warning("event_badge_print_failure_deferred", extra={"job_id": job.pk})
         raise
 
 

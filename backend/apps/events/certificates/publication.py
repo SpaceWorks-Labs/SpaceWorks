@@ -14,7 +14,17 @@ def set_policy(event_id, *, actor, operation_id, expected_version, enabled, cert
     if type(enabled) is not bool or len(certificate_ids) > 200 or len(set(certificate_ids)) != len(certificate_ids):
         raise ValidationError("Choose at most 200 unique certificate IDs.")
     digest = hashlib.sha256(json.dumps(["verification_policy", expected_version, enabled, sorted(certificate_ids)]).encode()).hexdigest()
-    with event_command(event_id, actor=actor) as (event, actor):
+    def identities():
+        return tuple(EventAttendanceCertificate.objects.filter(event_id=event_id, pk__in=certificate_ids)
+                     .order_by("pk").values_list("pk", "recipient_member_id"))
+    subjects = identities()
+
+    def revalidate(event):
+        if identities() != subjects:
+            raise ProgrammeConflict("Certificate ownership changed.", code="subject_changed")
+
+    with event_command(event_id, actor=actor, account_ids=[pk for _, pk in subjects if pk],
+                       revalidate=revalidate) as (event, actor):
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.actor_id != actor.pk or receipt.request_sha256 != digest:
@@ -27,7 +37,8 @@ def set_policy(event_id, *, actor, operation_id, expected_version, enabled, cert
             raise NotFound()
         for certificate in certificates:
             certificate.public_verification_enabled = enabled
-            certificate.save(update_fields=("public_verification_enabled",))
+            # This policy flag is separate from the immutable issuance snapshot.
+            EventAttendanceCertificate.objects.filter(pk=certificate.pk).update(public_verification_enabled=enabled)
             record(actor, "event.certificate_verification_changed", makerspace=event.makerspace,
                    target=certificate, meta={"enabled": enabled})
         policy, _ = EventCertificatePublicationPolicy.objects.get_or_create(event=event)

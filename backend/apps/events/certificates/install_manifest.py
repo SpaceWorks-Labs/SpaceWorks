@@ -12,6 +12,7 @@ URL_PROVIDERS = (
 PROVIDERS = {
     "online_credential_confirm": "apps.events.credentials.resolution.confirm",
     "credential_issue_locked": "apps.events.credentials.workflow.issue_locked",
+    "credential_prepare": "apps.events.credentials.workflow.prepare_issue",
     "credential_revoke_locked": "apps.events.credentials.workflow.revoke_locked",
     "credential_expire": "apps.events.credentials.workflow.expire",
     "public_member_card": "apps.events.profile_photos.projection.project_public",
@@ -23,6 +24,10 @@ PROVIDERS = {
     "certificate_render_resume": "apps.events.certificates.tasks.resume_certificates",
     "print_cleanup": "apps.events.certificates.print_cleanup.cleanup_expired",
     "profile_invalidated_jobs": "apps.events.certificates.print_policy.invalidate_profile",
+    "certificate_prepare": "apps.events.certificates.preparation.prepare_issuance",
+    "certificate_feedback_locked": "apps.events.certificates.issuance.create_pending_locked",
+    "presentation_source_delete": "apps.events.profile_photos.deletion.delete_source",
+    "account_erasure": "apps.accounts.saved_details.lifecycle.erase_account_vault",
     "artwork_catalogue_install": "apps.events.certificates.seeds.install_catalogue",
 }
 FRONTEND_PROVIDERS = {

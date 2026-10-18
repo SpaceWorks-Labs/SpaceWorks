@@ -45,6 +45,8 @@ case "${TENANT_ORIGIN_BOOTSTRAP:-}" in
   true|1) origin_bootstrap=true ;;
   *) origin_bootstrap=false ;;
 esac
+case "${UI_DELIGHT_ENABLED:-false}" in true|1) delight_enabled=true ;; *) delight_enabled=false ;; esac
+case "${UI_EASTER_EGGS_ENABLED:-false}" in true|1) eggs_enabled=true ;; *) eggs_enabled=false ;; esac
 config_path="${TENANT_CONFIG_PATH:-/usr/share/nginx/html/config.js}"
 
 validate_api_url "$api_url"
@@ -54,6 +56,8 @@ cat > "$config_path" <<EOF
 window.__TENANT__ = {
   apiUrl: "$(json_escape "$api_url")",
   tenantToken: "$(json_escape "$tenant_token")",
-  originBootstrap: $origin_bootstrap
+  originBootstrap: $origin_bootstrap,
+  uiDelightEnabled: $delight_enabled,
+  uiEasterEggsEnabled: $eggs_enabled
 };
 EOF

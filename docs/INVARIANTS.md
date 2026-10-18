@@ -2820,7 +2820,7 @@ create a copy-on-write page, even with an unchanged payload. Optimistic page rev
 refuse stale saves/releases. Release requires an own page and a published owner; the event
 publish action can atomically release a saved own page only with the explicit checkbox and
 current revision. Every write audits identifiers/revision/counts, not content. Clone uses
-Lane B's durable asset transaction, copies the effective website before optional series
+the reserve/work/finalize event asset transaction, copies the effective website before optional series
 attachment, and never copies release or live-delay history. This preserves valid short
 occurrence overrides when attaching their draft clones to a longer series template.
 
@@ -2842,6 +2842,24 @@ byte I/O. Its `owner_kind=event` owner ID is the venue makerspace ID. `storage_a
 commits with the asset and tenant counter; rollback leaves unaccounted cleanup debt which
 still counts against the tenant allowance. Cleanup claims a retry in a short transaction,
 deletes both staging and final keys outside row locks, and releases accounted quota once.
+The reservation pass builds and validates a tentative graph in a transaction which is
+rolled back; only independently committed cleanup intents survive. Its event/page primary
+keys are reserved for final replay, so no partial clone or occurrence override is visible.
+HEAD, PUT, COPY and staging deletion run outside every domain transaction. Final replay
+reacquires the existing source/series/tenant/authority/page locks, repeats live permission,
+source-gate and current quota checks, and refuses changed owner/content/relational inputs
+with the existing `revision` field error. The random final key is the write claim token;
+only its exact ready, unexpired receipt with zero cleanup attempts can attach. Cleanup's
+attempt increment fences late writers. Repeated object work reuses verified final bytes,
+and repeated receipt finalization cannot charge twice. This costs two bounded graph builds
+for operations with new objects; operations with no object work commit in one transaction.
+Legacy event cover copies also run outside locks. Their event-prefix cleanup receipts use
+the public bucket; after attachment, the existing public-image lifecycle owns quota release,
+so the completed receipt only repairs late writes and never credits quota again. Live cover
+receipts are excluded before the bounded cleanup batch is selected. Bookings retains its
+separate existing transaction. The HTTP contract adds no retry/idempotency token: supplied
+event revision preconditions still reject stale HTTP replays, and legacy unconditioned
+uploads and explicit duplicate requests retain their existing semantics.
 Scheduling captures a checked `ownership_proven` receipt for imported keys before owner
 deletion can remove their original import-object journal.
 Completed event intents periodically repair late provider writes without a second quota

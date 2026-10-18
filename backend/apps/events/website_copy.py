@@ -13,14 +13,17 @@ SESSION_FIELDS = ("slug", "title", "body", "visibility", "starts_at", "ends_at")
 
 
 def copy_page(source, target, *, copies, preserve_delays=False, preserve_revision=False, asset_map=None, identity_map=None):
-    """Caller holds source/target locks and the durable asset-copy transaction."""
+    """Build the graph in reserve/finalize; object work runs between those passes."""
     original = (EventPage.objects.filter(series=source).first()
                 if isinstance(source, EventSeries) else effective_page(source))
+    copies.watch("source_page", original)
     if original is None:
         return None
     original = EventPage.objects.select_for_update().get(pk=original.pk)
+    from .website_copy_snapshot import watch_page
+    watch_page(copies, original)
     # An occurrence override continues the inherited optimistic concurrency token.
-    page = EventPage.objects.create(makerspace=target.makerspace,
+    page = copies.create("page", EventPage, makerspace=target.makerspace,
                                     revision=original.revision if preserve_revision else 1,
                                     **copy_fields(original, PAGE_FIELDS),
                                     **owner(target))

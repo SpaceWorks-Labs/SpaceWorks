@@ -1,9 +1,7 @@
-"""Independent cleanup intent for private event copies inside a clone transaction.
+"""Independent event-object reservations, committed before storage work.
 
-The journal deliberately has no owner FKs. Its autocommit connection can persist
-intent without waiting on the caller's uncommitted page or tenant row. The caller
-charges quota first under the tenant lock, then marks the journal accounted in its
-own transaction. Rollback leaves an unaccounted debt, counted by storage limits.
+The FK-free journal survives reservation-pass rollback and process crashes.
+Pending debt counts against quota; attachment and counter charge commit together.
 """
 
 from datetime import timedelta
@@ -12,12 +10,27 @@ from django.utils import timezone
 from .models_page_cleanup import PublicPageObjectCleanup as Cleanup
 
 
-def enlist(page, key, size, copies):
+def reserve(page, key, size, copies):
+    """Persist quota debt under the venue lock, without charging the counter yet.
+
+    The random final key is the write claim token. Cleanup increments attempts
+    before deleting; finalize accepts only that exact, unclaimed live receipt.
+    This is the evidence finalizer's claim/work/complete fence without a new model.
+    """
+    from django.db import transaction
+    from . import limits
     from .website_assets import prefix
-    if not key.startswith(prefix("events", page.makerspace_id, page.pk)):
-        raise ValueError("Cleanup intent requires a freshly owned event key.")
+    private = key.startswith(prefix("events", page.makerspace_id, page.pk))
+    cover = key.startswith(f"event/{page.makerspace_id}/")
+    if not (private or cover):
+        raise ValueError("Only fresh event keys may be reserved.")
+    # Reuse the limit policy, but leave the counter unchanged. Independently
+    # committed unaccounted intents are the reservation until domain finalize.
+    with transaction.atomic():
+        limits.add_storage(page.makerspace, size)
+        transaction.set_rollback(True)
     alias = router.db_for_write(Cleanup)
-    isolated = connections[alias].copy(alias="website_cleanup_intent")
+    isolated = connections[alias].copy(alias="website_cleanup_reservation")
     now = timezone.now()
     try:
         isolated.ensure_connection()
@@ -33,9 +46,34 @@ def enlist(page, key, size, copies):
         isolated.close()
     copies.journal_ids.append(job_id)
     copies.journal_keys.add(key)
-    # This update commits with the asset/quota rows, or rolls back with them.
-    Cleanup.objects.using(alias).filter(pk=job_id).update(storage_accounted=True)
     return job_id
+
+
+def finalize(plan):
+    """Attach a verified claim and charge once, in the domain commit transaction."""
+    from . import limits
+    from .public_page_asset_cleanup import _event_cover
+    from rest_framework.exceptions import ValidationError
+    job = Cleanup.objects.select_for_update().get(pk=plan["job_id"])
+    if (not plan["ready"] or job.object_key != plan["key"] or job.attempts
+            or job.owner_kind != "event" or job.owner_id != plan["page"].makerspace_id
+            or job.page_id != plan["page"].pk):
+        raise ValidationError({"revision": "The image reservation expired. Retry the operation."})
+    if job.storage_accounted or (_event_cover(job) and job.completed_at):
+        return
+    if job.completed_at or job.due_at <= timezone.now():
+        raise ValidationError({"revision": "The image reservation expired. Retry the operation."})
+    # Remove this debt before add_storage includes all OTHER reservations. Both
+    # this flag and the actual charge roll back if any graph finalization fails.
+    job.storage_accounted = True
+    job.save(update_fields=["storage_accounted"])
+    limits.add_storage(plan["page"].makerspace, job.size_bytes)
+    if _event_cover(job):
+        # The legacy public-image lifecycle owns quota release after attachment.
+        # Keep a late-write repair receipt, but never credit that counter again.
+        job.storage_accounted = False
+        job.completed_at = timezone.now()
+        job.save(update_fields=["storage_accounted", "completed_at"])
 
 
 def pending_bytes(makerspace_id):
@@ -44,9 +82,11 @@ def pending_bytes(makerspace_id):
         storage_accounted=False, completed_at__isnull=True).aggregate(total=Sum("size_bytes"))["total"] or 0
 
 
-def pending_count(page):
+def pending_count(page, *, exclude_ids=()):
     return Cleanup.objects.filter(owner_kind="event", owner_id=page.makerspace_id, page_id=page.pk,
-        completed_at__isnull=True).exclude(object_key__in=page.assets.values("object_key")).count()
+        completed_at__isnull=True).exclude(object_key__startswith=f"event/{page.makerspace_id}/").exclude(
+            pk__in=exclude_ids).exclude(
+            object_key__in=page.assets.values("object_key")).count()
 
 
 def accounted_pending_bytes(makerspace_id):
@@ -58,6 +98,7 @@ def accounted_pending_bytes(makerspace_id):
             object_key__in=MakerspacePublicPageAsset.objects.values("object_key"))
     if apps.is_installed("apps.events"):
         jobs = jobs.exclude(object_key__in=apps.get_model("events.EventPageAsset").objects.values("object_key"))
+        jobs = jobs.exclude(object_key__in=apps.get_model("events.Event").objects.values("image_key"))
     return jobs.aggregate(total=Sum("size_bytes"))["total"] or 0
 
 

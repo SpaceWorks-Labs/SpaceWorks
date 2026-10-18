@@ -1,7 +1,8 @@
 """Private, bounded website images. Domain adapters own rows and authorization.
 
 Uploads are multipart, never client-chosen keys or writable final-key presigns.
-The caller's durable clone transaction enlists every new object before I/O.
+Event callers reserve durable object intents, then work outside transactions and
+attach in a separate locked commit. Bookings retains its existing clone boundary.
 """
 
 from io import BytesIO
@@ -97,6 +98,8 @@ def _put(key, data, content_type):
 
 
 def upload(file, *, module, page, copies):
+    if module == "events":
+        return copies.upload(file, page)
     data = file.read(MAX_BYTES + 1)
     converted = webp(data)
     key = prefix(module, page.makerspace_id, page.pk) + uuid4().hex + ".webp"
@@ -104,9 +107,6 @@ def upload(file, *, module, page, copies):
     import sys
     this = sys.modules[__name__]
     limits.add_storage(page.makerspace, len(converted))
-    if module == "events":
-        from .website_asset_journal import enlist
-        enlist(page, key, len(converted), copies)
     copies.created.extend(((this, staged), (this, key)))
     _put(staged, data, "application/octet-stream")
     _put(key, converted, "image/webp")
@@ -119,12 +119,13 @@ def copy_asset(asset, destination, *, module, copies):
     import sys
     if not owns(asset.object_key, module, asset.page.makerspace_id, asset.page_id, asset=asset):
         raise ValidationError("Image is not owned by the source page.")
-    if object_size(asset.object_key) != asset.size_bytes:
+    if module != "events" and object_size(asset.object_key) != asset.size_bytes:
         raise ValidationError("The source image metadata does not match its private bytes.")
     return copies.copy_image(destination.makerspace, OwnedImage(
         asset.object_key, asset.object_key.rsplit("/", 1)[0] + "/",
         prefix(module, destination.makerspace_id, destination.pk), MAX_BYTES,
-    ), storage=sys.modules[__name__], **({"journal_page": destination} if module == "events" else {}))
+    ), storage=sys.modules[__name__], **({"journal_page": destination,
+        "expected_size": asset.size_bytes} if module == "events" else {}))
 
 
 def release(makerspace, key, size):

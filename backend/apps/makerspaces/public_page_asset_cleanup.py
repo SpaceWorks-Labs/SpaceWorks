@@ -73,10 +73,12 @@ def clean_object(job_id):
         job.attempts += 1
         job.due_at = timezone.now() + timedelta(minutes=min(360, 5 * 2 ** min(job.attempts, 7)))
         job.save(update_fields=["attempts", "due_at"])
+    from apps.inventory import public_image_storage
+    storage = public_image_storage if _event_cover(job) else website_assets
     try:
-        if website_assets.delete_object("staging/" + job.object_key) is not True:
+        if not _event_cover(job) and storage.delete_object("staging/" + job.object_key) is not True:
             raise RuntimeError("Staging deletion was not confirmed.")
-        if website_assets.delete_object(job.object_key) is not True:
+        if storage.delete_object(job.object_key) is not True:
             raise RuntimeError("Final deletion was not confirmed.")
     except Exception:
         logger.exception("public_page.object_cleanup_failed", extra={"cleanup_id": job.pk})
@@ -115,8 +117,15 @@ def _has_asset(job):
         from django.apps import apps
         if not apps.is_installed("apps.events"):
             return False
+        if _event_cover(job):
+            return (apps.get_model("events.Event").objects.filter(image_key=job.object_key).exists()
+                    or apps.get_model("events.EventSeries").objects.filter(image_key=job.object_key).exists())
         return apps.get_model("events.EventPageAsset").objects.filter(object_key=job.object_key).exists()
     return adapter(job.owner_kind).asset.objects.filter(object_key=job.object_key).exists()
+
+
+def _event_cover(job):
+    return job.owner_kind == "event" and job.object_key.startswith(f"event/{job.owner_id}/")
 
 
 def sweep(*, limit=100):
@@ -147,6 +156,9 @@ def sweep(*, limit=100):
     from django.apps import apps
     if apps.is_installed("apps.events"):
         due = due.exclude(object_key__in=apps.get_model("events.EventPageAsset").objects.values("object_key"))
+        for model in ("events.Event", "events.EventSeries"):
+            due = due.exclude(object_key__in=apps.get_model(model).objects.exclude(
+                image_key__isnull=True).values("image_key"))
     for pk in due.order_by("id").values_list("pk", flat=True)[:limit]:
         job = Cleanup.objects.get(pk=pk)
         from .models import Makerspace

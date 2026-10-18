@@ -47,6 +47,8 @@ class AssetCopies:
         self.journal_keys = set()
 
     def copy_image(self, makerspace, image, *, storage, journal_page=None):
+        if journal_page is not None:
+            raise RuntimeError("Event copies require event_asset_transaction, which releases locks before storage work.")
         if not image.source_key:
             return ""
         if (not image.source_prefix.endswith("/")
@@ -62,9 +64,6 @@ class AssetCopies:
             raise ValidationError("The clone asset limit was exceeded.")
         key = image.destination_prefix + uuid4().hex + PurePosixPath(image.source_key).suffix
         limits.add_storage(makerspace, size)
-        if journal_page is not None:
-            from .website_asset_journal import enlist
-            enlist(journal_page, key, size, self)
         # Enlist before I/O: a timed-out copy may still have created an object.
         self.created.append((storage, key))
         self.total_bytes += size
@@ -99,7 +98,7 @@ class AssetCopies:
 
 @contextmanager
 def clone_transaction():
-    """Own the outer commit so DB/quota rollback always cleans enlisted fresh objects.
+    """Legacy bookings boundary; event_asset_transaction owns event asset writes.
 
     A nested savepoint cannot observe a later caller rollback. Durable atomic therefore
     rejects nesting instead of pretending to provide rollback cleanup in that case.

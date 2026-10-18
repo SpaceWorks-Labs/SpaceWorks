@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
 from apps.makerspaces import website_assets
-from apps.makerspaces.resource_clone import clone_transaction
+from apps.makerspaces.event_asset_transaction import event_asset_transaction
 
 from .event_permissions import EDIT_DETAILS
 from .models_website import EventPageAsset
@@ -16,26 +16,33 @@ from .website_copy import owner
 def upload_asset(target, *, actor, file, alt_text, replace_id=None, revision=None):
     if not isinstance(alt_text, str) or not alt_text.strip() or len(alt_text) > 200:
         raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
-    with clone_transaction() as copies:
-        target, actor = locked_target(target, actor, EDIT_DETAILS)
-        from .website_projection import project
-        if revision is not None and revision != project(target)["revision"]:
-            raise ValidationError({"revision": "The page changed. Reload before uploading."})
-        page = own_page(target, copies)
-        old = get_object_or_404(page.assets, pk=replace_id) if replace_id else None
-        from apps.makerspaces.website_asset_journal import pending_count
-        if page.assets.count() + pending_count(page) >= 100:
-            raise ValidationError("A page may have at most 100 images.")
-        key, size = website_assets.upload(file, module="events", page=page, copies=copies)
-        asset = EventPageAsset.objects.create(page=page, object_key=key,
-                                               size_bytes=size, alt_text=alt_text)
-        if old:
-            page.sections.filter(asset=old).update(asset=asset)
-        from .website_revisions import save_draft
-        save_draft(page, actor)
-        bump(page)
+    return event_asset_transaction(lambda copies: _upload_asset(
+        target, actor, file, alt_text, replace_id, revision, copies))
+
+
+def _upload_asset(target, actor, file, alt_text, replace_id, revision, copies):
+    target, actor = locked_target(target, actor, EDIT_DETAILS)
+    copies.watch("target", target)
+    from .website_projection import project
+    if revision is not None and revision != project(target)["revision"]:
+        raise ValidationError({"revision": "The page changed. Reload before uploading."})
+    remapped = {}
+    page = own_page(target, copies, asset_map=remapped)
+    old = get_object_or_404(page.assets, pk=remapped.get(replace_id, replace_id)) if replace_id else None
+    from apps.makerspaces.website_asset_journal import pending_count
+    if page.assets.count() + pending_count(page, exclude_ids=copies.journal_ids) >= 100:
+        raise ValidationError("A page may have at most 100 images.")
+    key, size = website_assets.upload(file, module="events", page=page, copies=copies)
+    asset = EventPageAsset.objects.create(page=page, object_key=key,
+                                           size_bytes=size, alt_text=alt_text)
+    if old:
+        page.sections.filter(asset=old).update(asset=asset)
+    from .website_revisions import save_draft
+    save_draft(page, actor)
+    bump(page)
+    if copies.phase == "finalize":
         audit(page, actor, "event.website_asset_saved", revision=page.revision)
-        return asset
+    return asset
 
 
 @transaction.atomic

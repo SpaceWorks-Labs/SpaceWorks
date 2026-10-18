@@ -49,6 +49,14 @@ HMAC, typed-target, cursor and re-auth contracts; Events is never imported.
 BK-F resource websites are mapped in [SOURCE-MAP-BOOKING-WEBSITES.md](SOURCE-MAP-BOOKING-WEBSITES.md).
 Bookings supplies typed adapters to the always-present website/asset/clone infrastructure.
 
+Event uploads, website copy-on-write and duplication use
+`makerspaces/event_asset_transaction.py` to reserve keys/quota, release all domain row
+locks for `event_asset_work.py` storage operations, then revalidate and commit the complete
+graph. `events/website_copy_snapshot.py` freezes relational copy inputs across that gap.
+`makerspaces/website_asset_journal.py` owns the durable cleanup-intent/write-claim fence
+and exactly-once attachment charge. `resource_clone.py` retains the existing Bookings
+transaction and the shared compensation helper; event callers use its phased subclass.
+
 BK-G printable passes are mapped in [SOURCE-MAP-BOOKING-PASSES.md](SOURCE-MAP-BOOKING-PASSES.md).
 They consume the existing core positioned-layout/PDF primitives without importing Events.
 

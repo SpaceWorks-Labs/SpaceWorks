@@ -5,13 +5,13 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit.services import record
 from apps.makerspaces.guards import require_module_locked
-from apps.makerspaces.resource_clone import clone_transaction
+from apps.makerspaces.event_asset_transaction import event_asset_transaction
 
 from . import event_authority
 from .event_permissions import EDIT_DETAILS, PUBLISH_SCHEDULE
 from .feature_gates import require_feature
 from .models import Event, EventSeries
-from .models_website import EventPage, EventPageSection, EventSession, EventSessionSpeaker
+from .models_website import EventPage, EventSession, EventSessionSpeaker
 from .serializers_website import WebsiteContentInput
 from .staff_grant_locks import lock_authority
 from .website_copy import copy_page, owner
@@ -45,12 +45,13 @@ def audit(page, actor, action, **meta):
 
 def own_page(target, copies, asset_map=None, identity_map=None):
     page = EventPage.objects.select_for_update().filter(**owner(target)).first()
+    copies.watch("own_page", page)
     if page is not None:
         return page
     if isinstance(target, Event) and target.series_id:
         page = copy_page(target, target, copies=copies, preserve_delays=True,
                          preserve_revision=True, asset_map=asset_map, identity_map=identity_map)
-    return page or EventPage.objects.create(makerspace=target.makerspace, **owner(target))
+    return page or copies.create("page", EventPage, makerspace=target.makerspace, **owner(target))
 
 
 def bump(page):
@@ -93,95 +94,102 @@ def save_content(target, *, actor, data):
     serializer = WebsiteContentInput(data=data)
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
-    with clone_transaction() as copies:
-        from .event_permissions import VIEW
-        target, actor = locked_target(target, actor, VIEW)
-        if not (event_authority.can(actor, target, EDIT_DETAILS) or event_authority.can(actor, target, PUBLISH_SCHEDULE)):
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied()
-        existing = EventPage.objects.filter(**owner(target)).first()
-        from .website_projection import project
-        if data["revision"] != project(target)["revision"]:
-            raise ValidationError({"revision": "The page changed. Reload before saving."})
-        before = project(target)
-        if legacy_order:
-            data["section_order"].remove("EDITORIAL")
-            data["section_order"].insert(before["section_order"].index("EDITORIAL"), "EDITORIAL")
-        if legacy_enabled:
-            data["section_enabled"]["EDITORIAL"] = before["section_enabled"].get("EDITORIAL", True)
-        from .website_revisions import validate_bodies
-        validate_bodies(data, before)
-        # An older full-content client must not erase newly added editorial fields.
-        previous = {row["slug"]: row for row in before["sections"]}
+    from copy import deepcopy
+    return event_asset_transaction(lambda copies: _save_content(
+        target, actor, deepcopy(data), legacy_order, legacy_enabled, copies))
+
+
+def _save_content(target, actor, data, legacy_order, legacy_enabled, copies):
+    from .event_permissions import VIEW
+    target, actor = locked_target(target, actor, VIEW)
+    copies.watch("target", target)
+    if not (event_authority.can(actor, target, EDIT_DETAILS) or event_authority.can(actor, target, PUBLISH_SCHEDULE)):
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied()
+    existing = EventPage.objects.filter(**owner(target)).first()
+    from .website_projection import project
+    if data["revision"] != project(target)["revision"]:
+        raise ValidationError({"revision": "The page changed. Reload before saving."})
+    before = project(target)
+    if legacy_order:
+        data["section_order"].remove("EDITORIAL")
+        data["section_order"].insert(before["section_order"].index("EDITORIAL"), "EDITORIAL")
+    if legacy_enabled:
+        data["section_enabled"]["EDITORIAL"] = before["section_enabled"].get("EDITORIAL", True)
+    from .website_revisions import validate_bodies
+    validate_bodies(data, before)
+    # An older full-content client must not erase newly added editorial fields.
+    previous = {row["slug"]: row for row in before["sections"]}
+    for row in data["sections"]:
+        for key, default in SECTION_DETAIL_DEFAULTS.items():
+            row.setdefault(key, previous.get(row["slug"], {}).get(key, default))
+    section_fields = (*SECTION_FIELDS, "asset_id")
+    if ([{key: row[key] for key in section_fields} for row in before["sections"]] != data["sections"]
+            or any(data[key] != before[key] for key in PAGE_FIELDS if key in data)):
+        event_authority.require(actor, target, EDIT_DETAILS)
+    remapped, identity_map = {}, {}
+    page = own_page(target, copies, asset_map=remapped, identity_map=identity_map)
+    for row in data["sessions"]:
+        if row.get("session_id") is not None and existing is None:
+            if row["session_id"] not in identity_map:
+                raise ValidationError({"session_id": "Choose an inherited session identity."})
+            row["session_id"] = identity_map[row["session_id"]]
+    # Resolve exact inherited asset IDs, including renamed/new sections.
+    if existing is None and remapped:
         for row in data["sections"]:
-            for key, default in SECTION_DETAIL_DEFAULTS.items():
-                row.setdefault(key, previous.get(row["slug"], {}).get(key, default))
-        section_fields = (*SECTION_FIELDS, "asset_id")
-        if ([{key: row[key] for key in section_fields} for row in before["sections"]] != data["sections"]
-                or any(data[key] != before[key] for key in PAGE_FIELDS if key in data)):
-            event_authority.require(actor, target, EDIT_DETAILS)
-        remapped, identity_map = {}, {}
-        page = own_page(target, copies, asset_map=remapped, identity_map=identity_map)
-        for row in data["sessions"]:
-            if row.get("session_id") is not None and existing is None:
-                if row["session_id"] not in identity_map:
-                    raise ValidationError({"session_id": "Choose an inherited session identity."})
-                row["session_id"] = identity_map[row["session_id"]]
-        # Resolve exact inherited asset IDs, including renamed/new sections.
-        if existing is None and remapped:
-            for row in data["sections"]:
-                if row["asset_id"] is not None:
-                    if row["asset_id"] not in remapped:
-                        raise ValidationError("Images must belong to the inherited page.")
-                    row["asset_id"] = remapped[row["asset_id"]]
-            if "editorial_document" in data:
-                editorial = data["editorial_document"]
-                if editorial.get("cover_asset_id") is not None:
-                    if editorial["cover_asset_id"] not in remapped:
-                        raise ValidationError("Cover must belong to the inherited page.")
-                    editorial["cover_asset_id"] = remapped[editorial["cover_asset_id"]]
-                for group in editorial["sections"]:
-                    if group["type"] == "gallery":
-                        for item in group["payload"]["items"]:
-                            if item["asset_id"] not in remapped:
-                                raise ValidationError("Gallery images must belong to the inherited page.")
-                            item["asset_id"] = remapped[item["asset_id"]]
-        assets = set(page.assets.values_list("pk", flat=True))
-        _validate_content(target, data, assets)
-        # Schedule fields belong to publish_schedule; detail editors cannot smuggle them.
-        if not event_authority.can(actor, target, PUBLISH_SCHEDULE):
-            current = project(target)["sessions"]
-            fields = ("slug", "title", "body", "starts_at", "ends_at", "track", "room", "speakers", "visibility")
-            if ([{key: row[key] for key in fields} for row in current]
-                    != [{key: row[key] for key in fields} for row in data["sessions"]]):
-                raise ValidationError("Schedule changes require publish_schedule.")
-            by_slug = {row["slug"]: row["session_id"] for row in current}
-            if any(row.get("session_id") is not None and str(row["session_id"]) != by_slug.get(row["slug"])
-                   for row in data["sessions"]):
-                raise ValidationError({"session_id": "Changing session identity requires publish_schedule."})
-        from .website_session_identity import reconcile
-        sessions = reconcile(page, data["sessions"])
-        page.sessions.all().delete()
-        from .website_sections import reconcile_sections
-        sections = reconcile_sections(page, data["sections"])
-        for row in sessions:
-            values = dict(row)
-            speakers = values.pop("speakers")
-            values["track"] = sections.get(values["track"])
-            values["room"] = sections.get(values["room"])
-            session = EventSession.objects.create(page=page, **values)
-            for name in speakers:
-                EventSessionSpeaker.objects.create(session=session, speaker=sections[name])
-        changed = [key for key in PAGE_FIELDS if key in data]
-        for key in changed:
-            setattr(page, key, data[key])
-        if changed:
-            page.save(update_fields=changed)
-        from .website_revisions import save_draft
-        save_draft(page, actor)
-        bump(page)
+            if row["asset_id"] is not None:
+                if row["asset_id"] not in remapped:
+                    raise ValidationError("Images must belong to the inherited page.")
+                row["asset_id"] = remapped[row["asset_id"]]
+        if "editorial_document" in data:
+            editorial = data["editorial_document"]
+            if editorial.get("cover_asset_id") is not None:
+                if editorial["cover_asset_id"] not in remapped:
+                    raise ValidationError("Cover must belong to the inherited page.")
+                editorial["cover_asset_id"] = remapped[editorial["cover_asset_id"]]
+            for group in editorial["sections"]:
+                if group["type"] == "gallery":
+                    for item in group["payload"]["items"]:
+                        if item["asset_id"] not in remapped:
+                            raise ValidationError("Gallery images must belong to the inherited page.")
+                        item["asset_id"] = remapped[item["asset_id"]]
+    assets = set(page.assets.values_list("pk", flat=True))
+    _validate_content(target, data, assets)
+    # Schedule fields belong to publish_schedule; detail editors cannot smuggle them.
+    if not event_authority.can(actor, target, PUBLISH_SCHEDULE):
+        current = project(target)["sessions"]
+        fields = ("slug", "title", "body", "starts_at", "ends_at", "track", "room", "speakers", "visibility")
+        if ([{key: row[key] for key in fields} for row in current]
+                != [{key: row[key] for key in fields} for row in data["sessions"]]):
+            raise ValidationError("Schedule changes require publish_schedule.")
+        by_slug = {row["slug"]: row["session_id"] for row in current}
+        if any(row.get("session_id") is not None and str(row["session_id"]) != by_slug.get(row["slug"])
+               for row in data["sessions"]):
+            raise ValidationError({"session_id": "Changing session identity requires publish_schedule."})
+    from .website_session_identity import reconcile
+    sessions = reconcile(page, data["sessions"])
+    page.sessions.all().delete()
+    from .website_sections import reconcile_sections
+    sections = reconcile_sections(page, data["sections"])
+    for row in sessions:
+        values = dict(row)
+        speakers = values.pop("speakers")
+        values["track"] = sections.get(values["track"])
+        values["room"] = sections.get(values["room"])
+        session = EventSession.objects.create(page=page, **values)
+        for name in speakers:
+            EventSessionSpeaker.objects.create(session=session, speaker=sections[name])
+    changed = [key for key in PAGE_FIELDS if key in data]
+    for key in changed:
+        setattr(page, key, data[key])
+    if changed:
+        page.save(update_fields=changed)
+    from .website_revisions import save_draft
+    save_draft(page, actor)
+    bump(page)
+    if copies.phase == "finalize" or not copies.plans:
         audit(page, actor, "event.website_saved", revision=page.revision)
-        return target
+    return target
 
 
 def set_release_locked(target, *, actor, released, revision):

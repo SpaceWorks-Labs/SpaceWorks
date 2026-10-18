@@ -5,6 +5,7 @@ from dataclasses import asdict
 from django.utils import timezone
 
 from .models_contract import NotificationEnvelope
+from .notification_cutover import guarded, sending_allowed
 
 
 def persist(makerspace, feature, event, payload, event_key, occurred_at):
@@ -27,12 +28,19 @@ def snapshot(envelope, payload):
     envelope.save(update_fields=["scope", "message_body"])
 
 
+@guarded()
 def dispatch(envelope, build, sync, occurred_at, event_key):
     from .notify import _run_guarded
     def materialize():
         payload = build()
         snapshot(envelope, payload)
         return payload
+    if not sending_allowed():
+        # Freeze the closure's content durably; no inbox, quota or transport writer
+        # runs while the compatibility ingress/conversion barrier is active.
+        materialize()
+        from .notify import NotificationResult
+        return NotificationResult(True)
     result = _run_guarded(envelope.makerspace, envelope.feature, envelope.event,
                           materialize, sync, occurred_at, event_key)
     NotificationEnvelope.objects.filter(pk=envelope.pk).update(processed_at=timezone.now())
@@ -47,7 +55,7 @@ def recover(envelope):
     from uuid import UUID
     from .destinations import NotificationScope
     from .notify import EmailDelivery, LifecyclePayload
-    from apps.notifications.inbox import InboxDelivery
+    from types import SimpleNamespace as InboxDelivery
     content = json.loads(envelope.message_body)
     payload = LifecyclePayload(text=content["text"], emails=tuple(EmailDelivery(**v) for v in content["emails"]),
         scope=NotificationScope.from_dict(envelope.scope), data=content["data"],

@@ -43,7 +43,7 @@ def apply_destination_event(configuration, event, *, identity_digest=""):
             values = {}
             if event.inbound:
                 values["last_inbound_at"] = timezone.now()
-            if event.opt_in:
-                values["consented_at"] = timezone.now()
-            NotificationEndpoint.objects.filter(pk__in=[row.pk for row in endpoints]).update(**values)
+            # START is not an account-bound consent proof. Only consume() can grant it.
+            if values:
+                NotificationEndpoint.objects.filter(pk__in=[row.pk for row in endpoints]).update(**values)
         return bool(endpoints)

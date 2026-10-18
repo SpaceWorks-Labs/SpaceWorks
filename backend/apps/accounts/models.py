@@ -1,13 +1,4 @@
-from django.db import models
 from .models_user import User
-
-# MERGE-RECON(A): move these O lifecycle fields into models_user with forward guards.
-# Contribute to T's concrete model; defining a second User would lose kind constraints.
-for _field_name in ("deletion_requested_at", "deletion_purge_after", "purge_started_at",
-                    "account_restored_at", "account_purged_at"):
-    User.add_to_class(_field_name, models.DateTimeField(null=True, blank=True))
-User.add_to_class("deletion_email_ciphertext", models.TextField(blank=True, default=""))
-User.add_to_class("deletion_username", models.CharField(max_length=150, blank=True, default=""))
 
 
 

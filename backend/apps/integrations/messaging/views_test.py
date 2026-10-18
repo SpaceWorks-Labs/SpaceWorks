@@ -50,26 +50,16 @@ class MessagingTestView(APIView):
 
     @extend_schema(tags=["Messaging"], request=MessagingTestSerializer,
         description="Diagnostic to your own verified, consented phone. The chosen event must pass feature/matrix, channel, consent, suppression, template and quota gates.", responses={
-        202: MessagingTestResponseSerializer, **errors(400, 401, 403, 404, 423, 429)})
+        202: MessagingTestResponseSerializer, **errors(400, 401, 403, 404, 423, 429, 503)})
     def post(self, request, makerspace_id):
         serializer = MessagingTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         space = settings_space(request.user, makerspace_id)
         values = serializer.validated_data
-        with tenant_write(space.pk):
-            row = MessagingDelivery.objects.create(makerspace=space, user=request.user,
-                channel=values["channel"], feature=values["feature"], event=values["event"], audience="staff",
-                event_key=f"test:{uuid4()}", source_type="messaging_test", source_id=str(request.user.pk),
-                context=project_context(values["feature"], values["event"], "staff", {"makerspace": space}))
-            reason = eligibility(row)
-            if reason == "ok" and not reserve_quota(row):
-                reason = "quota_exceeded"
-            if reason != "ok":
-                row.status = "suppressed" if reason == "suppressed" else "skipped"
-                row.skip_reason = "" if reason == "suppressed" else reason
-                row.save(update_fields=["status", "skip_reason"])
-            record(request.user, "messaging.test_enqueued", makerspace=space, target=row,
-                   meta={"fields": ["channel", "status", "skip_reason"]})
-            if row.status == "pending":
-                transaction.on_commit(lambda: schedule_delivery(row.pk), robust=True)
-        return Response({"delivery_id": row.pk, "status": row.status, "skip_reason": row.skip_reason}, status=202)
+        from apps.integrations.notification_diagnostics import queue
+        row, envelope = queue(space, request.user, values["channel"],
+            feature=values["feature"], event=values["event"])
+        record(request.user, "messaging.test_enqueued", makerspace=space, target=envelope,
+            meta={"fields": ["channel"]})
+        return Response({"delivery_id": row.pk if row else 0,
+            "status": row.state if row else "skipped", "skip_reason": row.last_error if row else "live_eligibility_changed"}, status=202)

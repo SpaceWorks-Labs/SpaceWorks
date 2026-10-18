@@ -34,6 +34,22 @@ class AuthorityRegistryError(AssertionError):
 
 APPS_DIR = Path(project_apps.__file__).resolve().parent
 AUTHORIZATION_SOURCES = (
+    APPS_DIR / "accounts" / "surface_policy.py",
+    APPS_DIR / "accounts" / "credential_locks.py",
+    APPS_DIR / "accounts" / "session_issuance.py",
+    APPS_DIR / "accounts" / "services_staff_authority.py",
+    APPS_DIR / "organizations" / "governance.py",
+    APPS_DIR / "organizations" / "access.py",
+    APPS_DIR / "events" / "organizer_authority.py",
+    APPS_DIR / "events" / "series_authority.py",
+    APPS_DIR / "bookings" / "booking_authority_page.py",
+    APPS_DIR / "integrations" / "recipients_addressed.py",
+    APPS_DIR / "integrations" / "recipients_owners.py",
+    APPS_DIR / "integrations" / "notification_sources.py",
+    APPS_DIR / "integrations" / "dispatch_policy.py",
+    APPS_DIR / "integrations" / "messaging" / "eligibility.py",
+    APPS_DIR / "integrations" / "messaging" / "ties.py",
+    APPS_DIR / "integrations" / "messaging" / "consent.py",
     APPS_DIR / "accounts" / "staff_account_policy.py",
     APPS_DIR / "accounts" / "staff_account_services.py",
     APPS_DIR / "accounts" / "staff_account_lifecycle.py",
@@ -111,6 +127,9 @@ SCANNED_MODEL_LABELS = frozenset({
 
 
 EXPLICIT_AUTHORITY_FIELDS = {
+    ("makerspaces.MakerspaceMembership", "renewal_cancelled_at"): (
+        "Historical cancellation stops source renewal; target automation resets independently."
+    ),
     ("makerspaces.MembershipAdditionalRole", "membership"): "Dropped membership role authority.",
     ("makerspaces.MembershipAdditionalRole", "role"): "Dropped additional role authority.",
     ("makerspaces.MembershipAdditionalRole", "assigned_by"): "Dropped role assignment provenance.",

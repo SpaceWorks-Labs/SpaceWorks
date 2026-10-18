@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 def schedule_revocations(user):
     """Called with the Stage A User lock; work rows commit with the departure."""
+    from apps.accounts.account_kind_guards import require_member_account
+    require_member_account(user)
     credentials = AppleRefreshCredential.objects.filter(social_identity__user=user)
     found = False
     for credential in credentials:
@@ -94,7 +96,7 @@ def revoke_one(pk):
 
 def sweep_revocations(user_id=None):
     # Also recover pre-upgrade Stage A departures that had no work-row code yet.
-    archived = User.objects.filter(deletion_requested_at__isnull=False, account_purged_at__isnull=True)
+    archived = User.objects.filter(account_kind="member", deletion_requested_at__isnull=False, account_purged_at__isnull=True)
     if user_id is not None:
         archived = archived.filter(pk=user_id)
     for pk in archived.values_list("pk", flat=True).iterator():

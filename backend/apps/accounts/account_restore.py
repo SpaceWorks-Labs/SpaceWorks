@@ -13,7 +13,8 @@ from apps.audit import services as audit
 
 def recovery_eligible(user):
     """The same authority exclusions apply to reset issuance and archive recovery."""
-    return bool(user and not user.is_tenant_dump_stub and not user.is_walk_in
+    return bool(user and user.account_kind == User.AccountKind.MEMBER
+                and user.retired_at is None and not user.is_tenant_dump_stub and not user.is_walk_in
                 and not is_anonymous_requester(user)
                 and not (user.is_superuser or user.role == User.Role.SUPERADMIN)
                 and user.access_status == User.AccessStatus.ACTIVE)
@@ -29,6 +30,7 @@ def restorable(user, *, now=None):
 def identifier_fingerprint(user):
     identities = list(user.social_identities.order_by("pk").values_list("pk", "provider", "provider_sub"))
     return _hmac(f"account-restore:v1:{user.pk}:{user.email.strip().lower()}:"
+                 f"{user.account_kind}:{user.credential_generation}:{user.account_restored_at}:"
                  f"{user.phone_e164}:{user.email_verified_at}:{user.phone_verified_at}:"
                  f"{user.deletion_requested_at}:{user.password}:{identities}")
 
@@ -63,9 +65,11 @@ def restore_locked(user, *, fingerprint, new_password="", social=False):
     user.deletion_email_ciphertext = ""
     user.deletion_username = ""
     user.is_active = True
+    user.credential_generation += 1
     user.must_change_password = False
     user.save(update_fields=["deletion_requested_at", "deletion_purge_after", "is_active", "password",
-                             "must_change_password", "deletion_email_ciphertext", "deletion_username", "account_restored_at"])
+                             "must_change_password", "deletion_email_ciphertext", "deletion_username", "account_restored_at",
+                             "credential_generation"])
     audit.record(user, "account.restored", target=user, meta={"method": "social" if social else "recovery"})
     return user
 

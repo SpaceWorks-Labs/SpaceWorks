@@ -36,6 +36,8 @@ class MachineUsageCandidatesView(APIView):
         query = rbac.scope_by_makerspace(request.user, MakerspaceMembership.objects.all()).filter(
             makerspace_id=machine.makerspace_id, status="active", user__is_active=True,
             user__access_status="active", user__is_tenant_dump_stub=False,
+            user__account_kind="member", user__retired_at__isnull=True,
+            user__deletion_requested_at__isnull=True,
         )
         term = request.query_params.get("q", "").strip()[:100]
         if term:

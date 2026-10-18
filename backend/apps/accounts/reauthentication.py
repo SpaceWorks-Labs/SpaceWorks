@@ -35,6 +35,8 @@ def binding(request):
     if token is not None:
         from apps.accounts.surface_policy import assert_surface, validate_account_token
         validate_account_token(user, token)
+        from apps.accounts.session_issuance import validate_session_generation
+        validate_session_generation(user, token)
         assert_surface(user, token.get("surface"), request=request)
         if token.get("device_grant_id"):
             from apps.accounts.models_devices import DeviceRefreshFamily
@@ -48,7 +50,12 @@ def binding(request):
                 raise PermissionDenied("A current device session is required.") from exc
             if (family is None or not registration_is_eligible(family.grant.registration)
                     or token.get("surface") not in {"member", "staff_api"}
-                    or family.grant.authority != user.account_kind):
+                    or family.grant.authority != user.account_kind
+                    or family.grant.credential_generation != user.credential_generation
+                    or family.grant.staff_makerspace_id != user.staff_makerspace_id
+                    or user.account_kind == "staff" and (
+                        token.get("mfa_source") != "verified" or family.grant.login_method != "password"
+                        or family.grant.registration.makerspace_id not in (None, user.staff_makerspace_id))):
                 raise PermissionDenied("A current device session is required.")
             return "device:" + str(family.pk), token["surface"]
         if token.get("surface") not in {"staff", "staff_api", "member", "delegated", "platform"}:

@@ -1,4 +1,5 @@
 """Provider delivery behind the stable non-email dispatch barrel."""
+from apps.integrations.notification_cutover import guarded, sending_allowed
 
 import logging
 from django.utils import timezone
@@ -7,8 +8,15 @@ from .dispatch_channels import channel_module_blocks, sanitize_notification_erro
 
 logger = logging.getLogger(__name__)
 
+@guarded()
 def _deliver_notification(log) -> NotificationDeliveryLog:
+    if not sending_allowed():
+        return log
     if log.status in {NotificationDeliveryStatus.SENT, NotificationDeliveryStatus.SKIPPED}:
+        return log
+    if log.channel in {"sms", "whatsapp"} or log.channel not in NonEmailNotificationChannel.values:
+        log.status, log.error = NotificationDeliveryStatus.SKIPPED, "personal_envelope_required"
+        log.save(update_fields=["status", "error", "updated_at"])
         return log
 
     # Re-checked here, not only at dispatch: a PENDING row can sit in the Celery queue

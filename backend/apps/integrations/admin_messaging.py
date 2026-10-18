@@ -19,11 +19,11 @@ class PlatformWhatsAppSettingsForm(forms.ModelForm):
 
     class Meta:
         model = PlatformWhatsAppSettings
-        fields = ("is_enabled", "phone_number_id", "business_account_id")
+        fields = ("is_enabled", "app_id", "phone_number_id", "business_account_id")
 
     def clean(self):
         cleaned = super().clean()
-        for key in ("phone_number_id", "business_account_id"):
+        for key in ("app_id", "phone_number_id", "business_account_id"):
             value = cleaned.get(key, "")
             if value and (not value.isascii() or not value.isdigit()):
                 self.add_error(key, "Enter the numeric Meta identifier.")
@@ -56,7 +56,7 @@ class PlatformWhatsAppSettingsForm(forms.ModelForm):
 class PlatformWhatsAppSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdmin, ModelAdmin):
     audit_action = "platform.whatsapp_settings_updated"
     form = PlatformWhatsAppSettingsForm
-    fields = ("is_enabled", "phone_number_id", "business_account_id", "access_token_raw", "clear_access_token",
+    fields = ("is_enabled", "app_id", "phone_number_id", "business_account_id", "access_token_raw", "clear_access_token",
               "app_secret_raw", "clear_app_secret", "webhook_verify_token", "callback_url", "updated_at")
     readonly_fields = ("webhook_verify_token", "callback_url", "updated_at")
 
@@ -120,6 +120,12 @@ class PlatformTemplateBindingAdmin(AuditedControlChangeMixin, SuperuserOnlyModel
     form = PlatformTemplateBindingForm
     fields = ("feature", "event", "audience", "template_name", "language", "parameters", "components", "is_active")
     list_display = ("feature", "event", "audience", "template_name", "language", "needs_review")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(makerspace__isnull=True)

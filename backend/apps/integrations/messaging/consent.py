@@ -1,4 +1,5 @@
 """Explicit per-tenant consent, serialized with phone changes and account deletion."""
+from apps.integrations.notification_cutover import guarded
 from django.utils import timezone
 from rest_framework.exceptions import APIException, NotFound
 
@@ -31,10 +32,24 @@ def member_space(user, makerspace_id):
     return space
 
 
-def live_consent(makerspace, user, channel):
+def live_consent(makerspace, user, channel, *, configuration=None):
+    from apps.integrations.models_endpoints import ChannelConfiguration
+    configuration = configuration or ChannelConfiguration.objects.filter(makerspace=makerspace, channel=channel).first()
     row = MessagingConsent.objects.filter(makerspace=makerspace, user=user, channel=channel).order_by("-id").first()
-    return bool(row and row.action == "opted_in" and user.phone_e164 and user.phone_verified_at
-                and row.phone_e164 == user.phone_e164 and row.phone_verified_at == user.phone_verified_at)
+    if not row or row.action != "opted_in" or configuration is None:
+        return False
+    from apps.integrations.notification_sender import configuration_sender_key
+    try:
+        current_sender = configuration_sender_key(configuration)
+    except Exception:
+        return False
+    if row.sender_key != current_sender or row.configuration_generation != configuration.generation:
+        return False
+    if channel == "whatsapp":
+        from apps.integrations.notification_resolution import endpoint_current
+        return bool(row.endpoint_id and endpoint_current(row.endpoint) and row.endpoint.user_id == user.pk)
+    return bool(user.phone_e164 and user.phone_verified_at and row.phone_e164 == user.phone_e164
+        and row.phone_verified_at == user.phone_verified_at)
 
 
 def member_payload(space, user):
@@ -42,16 +57,28 @@ def member_payload(space, user):
     result = {}
     for channel in ("sms", "whatsapp"):
         sender = resolve_sender(space, channel)
+        consented = live_consent(space, user, channel)
+        verified = bool(phone and user.phone_verified_at)
+        display_phone = phone
+        if channel == "whatsapp":
+            from apps.integrations.models_endpoints import NotificationEndpoint
+            from apps.integrations.notification_resolution import endpoint_current
+            endpoint = NotificationEndpoint.objects.filter(makerspace=space, user=user, channel=channel, revoked_at=None).first()
+            latest = MessagingConsent.objects.filter(makerspace=space, user=user, channel=channel).order_by("-pk").first()
+            verified = endpoint_current(endpoint)
+            consented = bool(verified and (latest is None or latest.action == "opted_in"))
+            display_phone = endpoint.destination if endpoint else phone
         result[channel] = {
             "available": module_enabled(space, channel) and sender is not None,
-            "consented": live_consent(space, user, channel),
-            "phone_verified": bool(phone and user.phone_verified_at),
-            "phone_masked": "***" + phone[-4:] if phone else "",
-            "suppressed": bool(sender and phone and suppressed(channel, sender.sender_key, recipient_hash("phone", phone))),
+            "consented": consented,
+            "phone_verified": verified,
+            "phone_masked": "***" + display_phone[-4:] if display_phone else "",
+            "suppressed": bool(sender and display_phone and suppressed(channel, sender.sender_key, recipient_hash("phone", display_phone))),
         }
     return result
 
 
+@guarded(mutation=True)
 def grant_consent(*, user, makerspace_id, channel, action, source="member_settings"):
     if channel not in {"sms", "whatsapp"} or action not in MessagingConsent.Action.values:
         from rest_framework.exceptions import ValidationError
@@ -80,11 +107,26 @@ def _grant(user, space, channel, action, source, sender):
         current = resolve_sender(space, channel)
         if getattr(current, "sender_key", None) != getattr(sender, "sender_key", None):
             raise _SenderChanged()
-        if action == "opted_in" and not (user.phone_e164 and user.phone_verified_at):
+        if channel == "sms" and action == "opted_in" and not (user.phone_e164 and user.phone_verified_at):
             raise VerifiedPhoneRequired()
+        from apps.integrations.models_endpoints import ChannelConfiguration, NotificationEndpoint
+        config = ChannelConfiguration.objects.filter(makerspace=space, channel=channel).first()
+        endpoint = None
+        if action == "opted_in":
+            from rest_framework.exceptions import ValidationError
+            if config is None or sender is None:
+                raise ValidationError({"channel": "Configure a sender before consenting."})
+            if channel == "whatsapp":
+                from apps.integrations.notification_resolution import endpoint_current
+                endpoint = NotificationEndpoint.objects.filter(configuration=config, user=user, revoked_at=None).first()
+                if not endpoint_current(endpoint):
+                    raise ValidationError({"channel": "Complete the signed WhatsApp account-link proof first."})
+        if channel == "whatsapp" and action == "opted_out":
+            NotificationEndpoint.objects.filter(configuration=config, user=user, revoked_at=None).update(
+                revoked_at=timezone.now(), verification_state="revoked")
         lifted = []
         if action == "opted_in" and sender:
-            phone_hash = recipient_hash("phone", user.phone_e164)
+            phone_hash = recipient_hash("phone", endpoint.destination if endpoint else user.phone_e164)
             lock_suppression_key(channel, sender.sender_key, phone_hash)
             rows = suppression_rows(channel, sender.sender_key, phone_hash).select_for_update().order_by("pk")
             lifted = list(rows.values_list("pk", flat=True))
@@ -96,7 +138,8 @@ def _grant(user, space, channel, action, source, sender):
                     record(user, "messaging.correlation_reset", makerspace=space, meta={"fields": ["state"]})
         row = MessagingConsent.objects.create(makerspace=space, user=user, channel=channel, action=action,
             source=source, phone_e164=user.phone_e164 or "", phone_verified_at=user.phone_verified_at,
-            lifted_suppression_id=lifted)
+            lifted_suppression_id=lifted, sender_key=sender.sender_key if sender else "",
+            configuration_generation=config.generation if config else 0, endpoint=endpoint)
         record(user, "messaging.consent_recorded", makerspace=space, target=row,
                meta={"fields": ["channel", "action", "source", "lifted_suppression_id"]})
         return member_payload(space, user)

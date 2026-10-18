@@ -8,7 +8,6 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.models import User
-from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.organizations import governance
@@ -19,15 +18,17 @@ from apps.organizations.services_console import OrganizationConflict
 def creation_policy(actor):
     enabled = bool(getattr(settings, "ORGANIZATION_SELF_CREATION_ENABLED", False))
     verified = bool(actor.email and actor.email_verified_at and not actor.is_tenant_dump_stub)
+    from apps.accounts.native_session import is_native_session
+    eligible = governance.member_account(actor) and verified and not is_native_session(actor)
     return {
         "enabled": enabled,
-        "eligible": enabled and active_user(actor) and verified,
+        "eligible": enabled and eligible,
         "max_owned": getattr(settings, "ORGANIZATION_SELF_CREATION_MAX_OWNED", 3),
         "max_per_day": getattr(settings, "ORGANIZATION_SELF_CREATION_MAX_PER_DAY", 1),
         "reason": (
             "Organization self-creation is disabled by the operator." if not enabled
-            else "An active account with a verified email is required."
-            if not active_user(actor) or not verified else ""
+            else "A verified member browser account is required."
+            if not eligible else ""
         ),
     }
 

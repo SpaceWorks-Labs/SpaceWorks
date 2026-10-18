@@ -2,7 +2,11 @@
 
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
-from apps.accounts.delegated_routes import DELEGABLE, SHARED_ACCOUNT_UTILITY, route_class
+from apps.accounts.delegated_routes import (
+    DELEGABLE, MEMBER_ONLY, PLATFORM_ONLY, SHARED_ACCOUNT_UTILITY, SIGNED_PROTOCOL,
+    route_class,
+)
+from apps.accounts.delegated_route_catalog import PLATFORM_ONLY_ROUTES
 
 
 PLATFORM_ROUTES = frozenset("""
@@ -29,6 +33,7 @@ tenant-migration-import-detail tenant-migration-import-decisions tenant-migratio
 tenant-migration-import-verification tenant-migration-target-activate tenant-migration-target-abort
 admin-backup-download-url
 """.split())
+PLATFORM_ROUTES |= PLATFORM_ONLY_ROUTES
 
 
 def _active(user):
@@ -81,19 +86,22 @@ def _platform_route(name):
     return name in PLATFORM_ROUTES or bool(name and name.startswith("admin-staff-account"))
 
 
-def _delegated(user, targets, name):
+def _delegated(user, targets, name, *, native=False):
     from apps.accounts.rbac_organizations import _org_actions_for, has_any_org_authority
     from apps.makerspaces.resource_grant_sources import has_authority
     # Organization governance routes have no tenant of their own. Their views check
     # the particular organization; a grant in one organization cannot authorize another.
     if name and (name.startswith("admin-organization") or name == "organization-analytics"):
+        if native:
+            return False
         from apps.organizations.governance import has_any_governance
         if has_any_governance(user):
             return True
     if targets:
-        return all(_org_actions_for(user, target) or has_authority(user, makerspace_ids=[target])
+        return all((not native and _org_actions_for(user, target))
+                   or has_authority(user, makerspace_ids=[target])
                    for target in targets)
-    return has_any_org_authority(user) or has_authority(user)
+    return (not native and has_any_org_authority(user)) or has_authority(user)
 
 
 def enforce_request(user, token, request):
@@ -104,12 +112,17 @@ def enforce_request(user, token, request):
     match = getattr(request, "resolver_match", None)
     name = getattr(match, "url_name", None)
     classification = route_class(name)
+    if classification == SIGNED_PROTOCOL:
+        raise PermissionDenied("Provider signature required.")
+    if classification == MEMBER_ONLY and user.account_kind != "member":
+        raise PermissionDenied("Use a member account for this action.")
     _name, targets, invalid, _recognized = request_route_targets(request)
     kind = user.account_kind
     if kind == "staff":
         if invalid or targets - {user.staff_makerspace_id}:
             raise PermissionDenied("Account context does not match this makerspace.")
-        if classification is None or request.path.startswith("/api/v1/admin/platform/"):
+        if (classification in {None, PLATFORM_ONLY}
+                or request.path.startswith("/api/v1/admin/platform/")):
             raise PermissionDenied("Staff account context is required.")
         if classification != SHARED_ACCOUNT_UTILITY and request.path.startswith("/api/v1/auth/"):
             raise PermissionDenied("Use a member account for this action.")
@@ -121,6 +134,10 @@ def enforce_request(user, token, request):
         return
     if classification == SHARED_ACCOUNT_UTILITY:
         return
+    if classification == MEMBER_ONLY:
+        if invalid:
+            raise PermissionDenied("Invalid account scope.")
+        return
     # This mixed-audience download revalidates its signed, user-bound grant and
     # own-charge/VIEW_FINANCE authority in the view, including on every retry.
     if name == "payment-document-download":
@@ -131,5 +148,6 @@ def enforce_request(user, token, request):
         raise PermissionDenied("Unknown account route.")
     if _member_surface_path_allowed(request.path):
         return
-    if classification != DELEGABLE or invalid or not _delegated(user, targets, name):
+    if (classification != DELEGABLE or invalid
+            or not _delegated(user, targets, name, native=bool(token.get("device_grant_id")))):
         raise PermissionDenied("A delegated authority source is required.")

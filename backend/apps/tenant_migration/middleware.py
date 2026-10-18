@@ -15,7 +15,7 @@ from apps.tenant_migration.gate_locks import (
     shared_boundary,
     unscoped_writer_shared_boundary,
 )
-from apps.tenant_migration.gate_policy import HTTP_EXEMPTIONS
+from apps.tenant_migration.gate_policy import HTTP_EXEMPTIONS, PROVIDER_INGRESS_ROUTES
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
 
 
@@ -36,6 +36,13 @@ class SourceMigrationGateMiddleware:
         except Resolver404:
             return self.get_response(request)
         request.resolver_match = match
+        if match.view_name in PROVIDER_INGRESS_ROUTES:
+            # Signature validation and durable receipts are deployment operations.
+            # In particular, sender-level STOP must not wait for a tenant freeze.
+            # An outer tenant/unscoped lock here would invert the processor's
+            # sender/cutover/source lock order. Tenant status/proof application
+            # remains protected by its own inner tenant_write transaction.
+            return self.get_response(request)
         makerspace_ids = _makerspace_ids(request, match)
         try:
             refusal_exempt = match.view_name in HTTP_EXEMPTIONS

@@ -68,9 +68,12 @@ def provider_for(configuration):
 
 
 def safe_error(result):
+    if isinstance(result.error_code, str) and result.error_code.isascii() and result.error_code.isdigit() and len(result.error_code) <= 16:
+        return result.error_code
     # Provider text can contain destination ids, tokens or echoed message bodies.
     # Persist only a fixed code; sanitized_error is for typed adapter diagnostics.
     allowed = {"timeout", "rate_limited", "unavailable", "blocked", "invalid_endpoint",
                "template_required", "not_configured", "provider_error", "quota_exceeded", "unsupported",
-               "document_render_failed", "document_size_exceeded", "document_not_authorized"}
+               "document_render_failed", "document_size_exceeded", "document_not_authorized",
+               "ambiguous_timeout", "connection_failed", "invalid_response", "attempts_exhausted"}
     return result.error_code if result.error_code in allowed else "provider_error"

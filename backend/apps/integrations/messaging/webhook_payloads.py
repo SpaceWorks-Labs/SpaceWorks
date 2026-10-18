@@ -48,7 +48,7 @@ def twilio_payload(params, kind):
         return None
     if kind == "inbound":
         opt_out = params.get("OptOutType", "").upper()
-        stop = opt_out == "STOP" if opt_out else params.get("Body", "").strip().upper() in SMS_STOP
+        stop = opt_out == "STOP" or params.get("Body", "").strip().upper() in SMS_STOP
         return message_id, {"message_id": message_id, "phone_hash": phone_hash(params.get("From")), "stop": stop,
                             "opt_out_type": opt_out if opt_out in {"STOP", "START", "HELP"} else "",
                             "timestamp": timestamp(params.get("Timestamp"))}
@@ -63,11 +63,13 @@ def twilio_payload(params, kind):
         "timestamp": timestamp(params.get("Timestamp") or params.get("DateSent"))}
 
 
-def meta_payloads(document, phone_number_id):
+def meta_payloads(document, phone_number_id, business_account_id=None):
     if not isinstance(document, dict) or not isinstance(document.get("entry", []), list):
         return
     for entry in document.get("entry", []):
         if not isinstance(entry, dict):
+            continue
+        if business_account_id is not None and str(entry.get("id", "")) != business_account_id:
             continue
         changes = entry.get("changes", [])
         if not isinstance(changes, list):
@@ -97,6 +99,7 @@ def meta_payloads(document, phone_number_id):
                     "message_id": message_id, "status": status, "timestamp": timestamp(item.get("timestamp")),
                     "error_code": code(errors[0].get("code")) if isinstance(errors[0], dict) else "",
                     "delivery_id": str(item.get("biz_opaque_callback_data", ""))[:64],
+                    "client_reference": str(item.get("biz_opaque_callback_data", ""))[:512],
                     "alias_hash": alias_hash(item.get("user_id") or item.get("recipient_user_id") or recipient.get("user_id")),
                     "phone_hash": phone_hash(item.get("recipient_id") or recipient.get("wa_id")),
                 }
@@ -126,4 +129,16 @@ def meta_payloads(document, phone_number_id):
                 yield "inbound", message_id, {"message_id": message_id,
                     "phone_hash": phone_hash(phone), "alias_hash": alias_hash(alias),
                     "context_id": str(context.get("id", ""))[:255],
-                    "stop": keyword in WHATSAPP_STOP, "timestamp": timestamp(item.get("timestamp"))}
+                    "stop": keyword in WHATSAPP_STOP, "timestamp": timestamp(item.get("timestamp")),
+                    "proof_code": body.strip() if isinstance(body, str) and re.fullmatch(r"[A-Za-z0-9_-]{43}", body.strip()) else "",
+                    "destination": (str(phone) if str(phone).startswith("+") else "+" + str(phone)) if phone_hash(phone) else ""}
+            preferences = value.get("user_preferences") or []
+            for item in preferences if isinstance(preferences, list) else []:
+                if not isinstance(item, dict) or item.get("value") not in {"stop", "start"}:
+                    continue
+                phone, alias = item.get("wa_id"), item.get("user_id")
+                moment = timestamp(item.get("timestamp"))
+                dedupe = f"preference:{phone_hash(phone)}:{alias_hash(alias)}:{moment}:{item['value']}"
+                yield "inbound", dedupe, {"phone_hash": phone_hash(phone), "alias_hash": alias_hash(alias),
+                    "stop": item["value"] == "stop", "timestamp": moment, "correlation_missing": not moment,
+                    "destination": (str(phone) if str(phone).startswith("+") else "+" + str(phone)) if phone_hash(phone) else ""}

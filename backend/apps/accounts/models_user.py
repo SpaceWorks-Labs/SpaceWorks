@@ -23,6 +23,13 @@ class User(AbstractUser):
     )
     retired_at = models.DateTimeField(null=True, blank=True)
     credential_generation = models.PositiveIntegerField(default=0)
+    deletion_requested_at = models.DateTimeField(null=True, blank=True)
+    deletion_purge_after = models.DateTimeField(null=True, blank=True)
+    purge_started_at = models.DateTimeField(null=True, blank=True)
+    account_restored_at = models.DateTimeField(null=True, blank=True)
+    account_purged_at = models.DateTimeField(null=True, blank=True)
+    deletion_email_ciphertext = models.TextField(blank=True, default="")
+    deletion_username = models.CharField(max_length=150, blank=True, default="")
 
     class Role(models.TextChoices):
         SUPERADMIN = "superadmin", "Super Admin"

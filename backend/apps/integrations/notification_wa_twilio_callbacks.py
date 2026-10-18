@@ -16,7 +16,7 @@ from .notification_wa_twilio_config import ConfigurationError, callback_path, ph
 STATES = {"accepted": "accepted", "queued": "accepted", "sending": "accepted", "sent": "sent",
           "delivered": "delivered", "read": "read", "failed": "failed", "undelivered": "failed",
           "canceled": "failed"}
-SINGLE_FIELDS = {"AccountSid", "MessageSid", "MessageStatus", "SmsStatus", "From", "To", "Body", "MessagingServiceSid"}
+SINGLE_FIELDS = {"AccountSid", "MessageSid", "MessageStatus", "SmsStatus", "From", "To", "Body", "MessagingServiceSid", "OptOutType", "ErrorCode", "NumSegments"}
 
 
 def authenticated_form(config, credentials, request):
@@ -73,7 +73,8 @@ def verify_callback(config, credentials, request):
         digest = salted_hmac("notification.endpoint.identity.v1",
             f"{config.pk}:{config.generation}:{sender}", algorithm="sha256").hexdigest()
         body = params.get("Body", "").strip()
-        if body.upper() in {"STOP", "UNSUBSCRIBE"}:
+        from .messaging.stops import WHATSAPP_STOP
+        if params.get("OptOutType", "").upper() == "STOP" or body.upper() in WHATSAPP_STOP:
             return CallbackEvent(identity_digest=digest, opt_out=True, inbound=True)
         if body.upper() in {"START", "UNSTOP", "YES"}:
             return CallbackEvent(identity_digest=digest, opt_in=True, inbound=True)

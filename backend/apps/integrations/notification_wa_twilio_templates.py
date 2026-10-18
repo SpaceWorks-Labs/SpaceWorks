@@ -1,6 +1,7 @@
 """Approved Twilio Content SIDs and bounded variables from the safe context only."""
 import json
 import math
+import re
 
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
@@ -11,13 +12,14 @@ from apps.tenant_migration.gate_runtime import tenant_write
 from .models_endpoints import ChannelConfiguration, WhatsAppTemplate
 from .notification_wa_twilio_config import sid
 from .notification_wa_twilio_http import CONTENT_ROOT, call
+from .notification_cutover import guarded
 
 DOCUMENT_MEDIA = "__document_media__"
 
 
 def template_payload(config, event, audience, locale, context, *, document_url=None):
     binding = WhatsAppTemplate.objects.filter(configuration=config, event=event,
-        audience=audience, locale=locale, approved=True).first()
+        audience=audience, locale=locale, approved=True, needs_review=False).first()
     if binding is None or not sid(binding.template_name, "HX"):
         return None
     names = binding.variables
@@ -63,6 +65,22 @@ def approved_document_content(config, credentials, binding, content):
         and sample.lower().endswith(".pdf") and "{{" + index + "}}" not in str(media.get("body", "")))
 
 
+def approved_text_content(credentials, binding, content):
+    if (not isinstance(content, dict) or content.get("account_sid") != credentials.account_sid
+            or content.get("sid") != binding.template_name or content.get("language") != binding.locale):
+        return False
+    types = content.get("types")
+    if not isinstance(types, dict) or set(types) != {"twilio/text"}:
+        return False
+    text = types["twilio/text"]
+    body = text.get("body") if isinstance(text, dict) else None
+    samples = content.get("variables") or {}
+    positions = [str(index) for index in range(1, len(binding.variables) + 1)]
+    return (isinstance(body, str) and isinstance(samples, dict) and set(samples) == set(positions)
+        and re.findall(r"\{\{\s*(.*?)\s*\}\}", body) == positions)
+
+
+@guarded(mutation=True)
 def refresh_approvals(config, credentials, actor, *, content_sids=None):
     """Do provider I/O without locks, then reject a concurrent installation rotation."""
     generation, identity = config.generation, config.integration_identity
@@ -88,13 +106,14 @@ def refresh_approvals(config, credentials, actor, *, content_sids=None):
                 approved = (data.get("account_sid") == credentials.account_sid
                     and data.get("sid") == binding.template_name and isinstance(whatsapp, dict)
                     and whatsapp.get("status") == "approved")
-                if approved and DOCUMENT_MEDIA in binding.variables:
+                if approved:
                     if binding.template_name not in contents:
                         contents[binding.template_name] = call(credentials, f"{CONTENT_ROOT}/{binding.template_name}")
                     content, content_error = contents[binding.template_name]
                     if content_error:
                         unavailable += 1
-                    approved = not content_error and approved_document_content(config, credentials, binding, content)
+                    approved = not content_error and (approved_document_content(config, credentials, binding, content)
+                        if DOCUMENT_MEDIA in binding.variables else approved_text_content(credentials, binding, content))
         results[binding.pk] = approved
     with tenant_write(config.makerspace_id), transaction.atomic():
         current = rbac.scope_notification_policy(ChannelConfiguration.objects.select_for_update(),
@@ -107,7 +126,9 @@ def refresh_approvals(config, credentials, actor, *, content_sids=None):
             # A concurrent settings edit may have replaced the bindings entirely.
             changed += WhatsAppTemplate.objects.filter(pk=binding.pk, configuration=current,
                 template_name=binding.template_name, variables=binding.variables).exclude(
-                approved=results[binding.pk]).update(approved=results[binding.pk])
+                approved=results[binding.pk], needs_review=not results[binding.pk]).update(
+                    approved=results[binding.pk], needs_review=not results[binding.pk],
+                    provider_identity=current.integration_identity, validation_schema={"body": binding.variables})
         audit.record(actor, "notification.whatsapp_templates_refreshed", makerspace=current.makerspace,
             target=current, meta={"changed": changed, "unavailable": unavailable})
     return {"checked": len(bindings), "approved": sum(results.values()), "unavailable": unavailable}

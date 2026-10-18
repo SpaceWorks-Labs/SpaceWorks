@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from .notification_cutover import guarded, sending_allowed, CutoverClosed
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -46,11 +47,28 @@ class ContractTestView(APIView):
 
     @extend_schema(tags=["Notification contract"], request=ContractTestSerializer,
                    responses={200: ProviderResultSerializer, **errors(400, 401, 403, 404, 429, 423, 503)})
+    @guarded(mutation=True)
     def post(self, request, makerspace_id):
+        if not sending_allowed():
+            raise CutoverClosed()
         space = contract_space(request.user, makerspace_id, manager=True)
         serializer = ContractTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        if data["channel"] in {"sms", "whatsapp"}:
+            if data["channel"] == "whatsapp":
+                get_object_or_404(policy_rows(NotificationEndpoint, space), pk=data["endpoint_id"],
+                    user=request.user, channel="whatsapp", verification_state="verified", revoked_at=None)
+            from .notification_diagnostics import queue
+            row, _ = queue(space, request.user, data["channel"],
+                feature=data.get("feature", "hardware_requests"), event=data.get("event", "accepted"))
+            from .notification_delivery import send
+            if row:
+                send(row.pk)
+                row.refresh_from_db()
+            result = ProviderResult(bool(row and row.state in {"accepted", "sent", "delivered", "read"}),
+                provider_id=row.provider_id if row else "", error_code=row.last_error if row else "not_configured")
+            return Response(ProviderResultSerializer(asdict(result)).data)
         config = get_object_or_404(policy_rows(ChannelConfiguration, space), channel=data["channel"], enabled=True)
         if data.get("endpoint_id"):
             target = get_object_or_404(policy_rows(NotificationEndpoint, space), pk=data["endpoint_id"],

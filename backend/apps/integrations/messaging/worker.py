@@ -161,14 +161,5 @@ def complete(pk, token, sender, result, *, probe=False):
 
 
 def deliver(pk):
-    snapshot = MessagingDelivery.objects.filter(pk=pk).values("makerspace_id").first()
-    if snapshot is None:
-        return
-    # A dedicated shared source lock spans provider I/O without a long DB transaction.
-    with boundary_tenant_write(snapshot["makerspace_id"]):
-        prepared = _prepare(pk)
-        if prepared is None:
-            return
-        pk, token, sender, kwargs, probe = prepared
-        result = send_message(sender, **kwargs)
-        complete(pk, token, sender, result, probe=probe)
+    """Stale Celery messages are inert after reconciliation code is deployed."""
+    return None

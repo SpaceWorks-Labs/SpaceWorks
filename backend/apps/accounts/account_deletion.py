@@ -59,6 +59,8 @@ def _gates(ids):
 
 
 def preview(request):
+    from apps.accounts.account_kind_guards import require_member_account
+    require_member_account(request.user)
     from apps.accounts.account_restore import restore_disclosure
     from apps.accounts.reauthentication_methods import methods
     with transaction.atomic():
@@ -77,6 +79,8 @@ def preview(request):
 
 def request_deletion(request):
     user = request.user
+    from apps.accounts.account_kind_guards import require_member_account
+    require_member_account(user)
     if user.is_superuser or user.role == User.Role.SUPERADMIN:
         refused = [blocker("superadmin", detail="Superadmin accounts cannot request account deletion.")]
         _audit_refusal(user, refused)
@@ -106,6 +110,8 @@ def _attempt(request):
         spaces = list(Makerspace.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
         organizations = list(Organization.objects.select_for_update().filter(pk__in=org_ids).order_by("pk"))
         user = User.objects.select_for_update(no_key=True).get(pk=request.user.pk)
+        from apps.accounts.account_kind_guards import require_member_account
+        require_member_account(user)
         if not tenant_ids(user).issubset(ids) or not organization_ids(user).issubset(org_ids):
             raise _DiscoveryChanged()
         request.user = user
@@ -144,10 +150,12 @@ def _attempt(request):
 
 def _depart(user, spaces, organizations, now):
     from apps.accounts.account_deletion_credentials import revoke
+    from apps.accounts.account_deletion_presence import end_owned_presence
     from apps.accounts.account_deletion_grants import revoke_resource_grants
     from apps.makerspaces.membership_admission_payments import close_admission
     from apps.makerspaces.membership_revocation import _revoke_locked
     from apps.organizations.services_governance import self_departure
+    end_owned_presence(user, spaces, now)
     # Cancel as the applicant before membership revocation closes applications as
     # revoked; this is the exact service used by MemberAdmissionCancelView.
     for row in MembershipRequest.objects.select_for_update().filter(

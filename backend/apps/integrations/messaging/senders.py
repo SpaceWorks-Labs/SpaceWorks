@@ -30,13 +30,17 @@ def reserve_sender(*, sender_key, channel, owner, makerspace=None, webhook_secre
     try:
         with transaction.atomic():
             identity, _ = MessagingSenderIdentity.objects.get_or_create(
-                sender_key=sender_key, defaults={"channel": channel, "owner": owner, "makerspace": makerspace},
+                sender_key=sender_key, defaults={"channel": channel, "owner": owner, "makerspace": makerspace,
+                    "tenant_reference": getattr(makerspace, "pk", None)},
             )
     except IntegrityError as exc:
         raise SenderInUse() from exc
     identity = MessagingSenderIdentity.objects.select_for_update().get(pk=identity.pk)
     now = timezone.now()
     if identity.owner != owner or identity.makerspace_id != getattr(makerspace, "pk", None) or identity.channel != channel:
+        from apps.integrations.models_cutover import NotificationIngress
+        if NotificationIngress.objects.filter(sender_key=sender_key).exclude(state="processed").exists():
+            raise SenderInUse()
         if (identity.active or not identity.retired_at or identity.retired_at > now - timedelta(days=14)
             or identity.owner == "platform_otp" or identity.channel != channel):
             raise SenderInUse()
@@ -44,6 +48,7 @@ def reserve_sender(*, sender_key, channel, owner, makerspace=None, webhook_secre
         # Wipe the old owner's verification material before transferring reservation.
         identity.credentials.filter(wiped_at__isnull=True).update(webhook_secret="", verify_token="", wiped_at=now)
         identity.owner, identity.makerspace = owner, makerspace
+        identity.tenant_reference = getattr(makerspace, "pk", None)
     current = identity.credentials.filter(retired_at__isnull=True).first()
     if current and not force_rotate and (current.get_secret("webhook_secret"), current.verify_token) == (webhook_secret, verify_token):
         pass
@@ -54,7 +59,7 @@ def reserve_sender(*, sender_key, channel, owner, makerspace=None, webhook_secre
         credential.set_secret("webhook_secret", webhook_secret)
         credential.save()
     identity.active, identity.retired_at = True, None
-    identity.save(update_fields=["owner", "makerspace", "active", "retired_at"])
+    identity.save(update_fields=["owner", "makerspace", "tenant_reference", "active", "retired_at"])
     return identity
 
 
@@ -70,8 +75,9 @@ def callback_credentials(*, channel, owner, makerspace_id=None):
     """Active credentials first, then retired versions within the overlap window."""
     cutoff = timezone.now() - timedelta(days=14)
     return MessagingSenderCredential.objects.filter(
-        identity__channel=channel, identity__owner=owner, identity__makerspace_id=makerspace_id,
+        identity__channel=channel, identity__owner=owner,
         wiped_at__isnull=True,
+    ).filter(Q(identity__makerspace_id=makerspace_id) | Q(identity__makerspace_id=None, identity__tenant_reference=makerspace_id)
     ).filter(Q(retired_at__isnull=True) | Q(retired_at__gte=cutoff)).select_related("identity").annotate(verification_order=Case(
         When(retired_at__isnull=True, identity__active=True, then=Value(0)),
         default=Value(1), output_field=IntegerField(),
@@ -81,7 +87,10 @@ def callback_credentials(*, channel, owner, makerspace_id=None):
 @transaction.atomic
 def wipe_retired_credentials():
     cutoff = timezone.now() - timedelta(days=14)
-    count = MessagingSenderCredential.objects.filter(retired_at__lt=cutoff, wiped_at__isnull=True).update(
+    from apps.integrations.models_cutover import NotificationIngress
+    pending_senders = NotificationIngress.objects.exclude(state="processed").values("sender_key")
+    count = MessagingSenderCredential.objects.filter(retired_at__lt=cutoff, wiped_at__isnull=True).exclude(
+        identity__sender_key__in=pending_senders).update(
         webhook_secret="", verify_token="", wiped_at=timezone.now(),
     )
 

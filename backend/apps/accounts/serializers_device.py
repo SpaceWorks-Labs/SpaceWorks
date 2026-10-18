@@ -11,6 +11,8 @@ class DeviceIdentitySerializer(serializers.Serializer):
 
 
 class DeviceLoginSerializer(DeviceIdentitySerializer):
+    context = serializers.ChoiceField(choices=("member", "staff", "platform"), default="member")
+    makerspace = serializers.SlugField(required=False, max_length=150)
     username = serializers.CharField(max_length=254, trim_whitespace=True)
     password = serializers.CharField(max_length=1024, write_only=True, trim_whitespace=False)
     challenge = serializers.CharField(max_length=512, trim_whitespace=False)
@@ -20,6 +22,13 @@ class DeviceLoginSerializer(DeviceIdentitySerializer):
         if not isinstance(value, dict) or not value or len(value) > 16:
             raise serializers.ValidationError("Invalid attestation payload.")
         return value
+
+    def validate(self, attrs):
+        if attrs["context"] == "staff" and not attrs.get("makerspace"):
+            raise serializers.ValidationError({"makerspace": "This field is required for staff sign-in."})
+        if attrs["context"] != "staff" and attrs.get("makerspace"):
+            raise serializers.ValidationError({"makerspace": "Use a makerspace only for staff sign-in."})
+        return attrs
 
 
 class DeviceRefreshSerializer(serializers.Serializer):
@@ -32,6 +41,9 @@ class DeviceGrantSerializer(serializers.Serializer):
     app_id = serializers.CharField()
     environment = serializers.CharField()
     status = serializers.CharField()
+    authority = serializers.ChoiceField(choices=("member", "staff"))
+    staff_makerspace_id = serializers.IntegerField(allow_null=True)
+    login_method = serializers.CharField()
     attested_at = serializers.DateTimeField()
     last_used_at = serializers.DateTimeField()
     created_at = serializers.DateTimeField()

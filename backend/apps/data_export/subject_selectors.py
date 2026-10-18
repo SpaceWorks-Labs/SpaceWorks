@@ -13,6 +13,9 @@ from .datasets import DATASET_SPECS
 
 
 SUBJECT_PATHS = {
+    "integrations.NotificationEnvelope": ("recipient",),
+    "integrations.NotificationDelivery": ("envelope__recipient",),
+    "integrations.NotificationEndpoint": ("user",),
     "notifications.NotificationPreference": ("user",),
     "notifications.MemberNotificationPreference": ("user",),
     "presence.PresencePreference": ("account",),

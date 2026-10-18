@@ -4,17 +4,21 @@ from .gate_policy_replay import REPLAY_HTTP_PARTICIPANTS
 from .gate_policy_p2_wa_twilio import HTTP_ANONYMOUS_PARTICIPANTS as WA_TWILIO_PARTICIPANTS
 
 
-# MERGE-RECON(M/C): consolidate signed ingress behind the durable cutover gate;
-# retain both provider route families while ordinary tenant writes stay fenced.
+# Signature ingress stays reachable while ordinary tenant mutations are frozen.
+# The provider owner must commit durable receipts/sender STOP protection before
+# acknowledging, and gate tenant status/proof writes inside the processor.
+PROVIDER_INGRESS_ROUTES = frozenset({
+    "messaging-twilio-platform-status", "messaging-twilio-platform-inbound",
+    "messaging-twilio-status", "messaging-twilio-inbound", "messaging-meta-platform", "messaging-meta",
+    "whatsapp-meta-webhook", "whatsapp-twilio-inbound", "whatsapp-twilio-status",
+})
 HTTP_EXEMPTIONS = {
     "notification-media": (
         "Single-use GET resolves its tenant from the hashed media grant, then takes "
         "tenant_write for atomic consumption and audit; closed source gates refuse disclosure."
     ),
-    **{name: "Signed provider ingress durably records deployment events; status writes gate their resolved tenant; STOP protection must survive frozen tenants." for name in (
-        "messaging-twilio-platform-status", "messaging-twilio-platform-inbound",
-        "messaging-twilio-status", "messaging-twilio-inbound", "messaging-meta-platform", "messaging-meta",
-    )},
+    **{name: "Signed provider ingress durably records deployment events; status writes gate their resolved tenant; STOP protection must survive frozen tenants."
+       for name in PROVIDER_INGRESS_ROUTES},
     "auth-account-restore-email": "Global identity recovery never reinstates tenant authority.",
     "auth-account-restore-phone": "Global identity recovery never reinstates tenant authority.",
     "auth-account-restore-social-start": "Global provider recovery intent has no tenant mutation.",

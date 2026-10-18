@@ -37,7 +37,7 @@ class MessagingSettingsView(APIView):
         return Response(MessagingSettingsSerializer(settings_payload(space)).data)
 
     @extend_schema(tags=["Messaging"], request=MessagingSettingsSerializer,
-                   responses={200: MessagingSettingsSerializer, **errors(400, 401, 403, 404, 409, 423, 503)})
+                   responses={200: MessagingSettingsSerializer, **errors(400, 401, 403, 404, 409, 410, 423, 503)})
     def patch(self, request, makerspace_id):
         space = settings_space(request.user, makerspace_id)
         require_recent_reauth(request)

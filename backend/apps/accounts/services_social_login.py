@@ -23,6 +23,8 @@ def assert_social_user_active(user):
         user.account_kind != "member"
         or user.is_tenant_dump_stub
         or not user.is_active
+        or user.retired_at is not None
+        or user.deletion_requested_at is not None
         or user.access_status != User.AccessStatus.ACTIVE
     ):
         from apps.accounts.services_social_identity import SocialResolutionError

@@ -10,18 +10,9 @@ def lock_token_issuance(user):
     Issuers need no invitation/tenant locks and must not acquire them afterwards.
     Keep this lock through minting in the caller's atomic transaction.
     """
-    from rest_framework.exceptions import AuthenticationFailed
+    from apps.accounts.session_issuance import lock_session_user
 
-    try:
-        locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
-    except User.DoesNotExist as exc:
-        raise AuthenticationFailed("Account is not available.") from exc
-    if locked.credential_generation != user.credential_generation:
-        raise AuthenticationFailed("Account credentials have changed.")
-    for attr in ("_mfa_verified_version", "_mfa_provider_verified", "_mfa_source"):
-        if hasattr(user, attr):
-            setattr(locked, attr, getattr(user, attr))
-    return locked
+    return lock_session_user(user)
 
 
 def lock_credentials(user_or_id, *, extra_user_ids=()):

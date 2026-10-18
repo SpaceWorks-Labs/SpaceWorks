@@ -8,12 +8,17 @@ from .notification_slack_installation import DiscordInstallationSerializer, Matt
 
 def validate_configuration(row, data):
     enabling_personal = data.get("personal_enabled") and not row.personal_enabled
-    if not any(key in data for key in ("credentials", "provider", "integration_identity")) and not enabling_personal:
+    if not any(key in data for key in ("credentials", "provider", "integration_identity", "use_platform_sender")) and not enabling_personal:
         return
     provider = data.get("provider", row.provider)
     identity = data.get("integration_identity", row.integration_identity)
     try:
         values = data["credentials"] if "credentials" in data else row.get_credentials()
+        if (row.channel in {"sms", "whatsapp"} and "credentials" in data and not values
+                and not data.get("enabled", row.enabled) and not data.get("personal_enabled", row.personal_enabled)
+                and not data.get("use_platform_sender", row.use_platform_sender)):
+            data["integration_identity"] = ""
+            return
         if provider == "slack":
             from .notification_slack import validate_credentials
             if "credentials" in data and not {"bot_token", "team_id"} & set(values) and "integration_identity" not in data:
@@ -28,18 +33,39 @@ def validate_configuration(row, data):
             if ("integration_identity" in data or "credentials" not in data) and identity and identity != expected:
                 raise ValueError()
             identity = expected
+        elif provider == "twilio" and row.channel == "sms":
+            import re
+            from .messaging.settings_service import validate_otp_reservation
+            if not values and data.get("use_platform_sender", row.use_platform_sender):
+                from .messaging.resolver import resolve_sender
+                sender = resolve_sender(None, "sms")
+                if sender is None:
+                    raise ValueError()
+                identity = sender.sender_key
+            else:
+                if set(values) != {"account_sid", "auth_token", "from_number"} or not (
+                    re.fullmatch(r"AC[0-9a-fA-F]{32}", values.get("account_sid", ""))
+                    and re.fullmatch(r"[0-9a-fA-F]{32}", values.get("auth_token", ""))
+                    and re.fullmatch(r"\+[1-9][0-9]{6,14}", values.get("from_number", ""))):
+                    raise ValueError()
+                validate_otp_reservation(values["account_sid"], values["from_number"])
+                identity = f"twilio:{values['account_sid']}:{values['from_number']}"
         elif provider == "twilio":
             from .notification_wa_twilio_config import validate_credentials
             validate_credentials(values)
         elif provider == "meta":
             from .notification_wa_meta_http import credentials
-            if not credentials(SimpleNamespace(get_credentials=lambda: values)) or set(values) != {
+            from .notification_sender import effective_credentials
+            probe = SimpleNamespace(get_credentials=lambda: values, channel=row.channel, provider=provider,
+                use_platform_sender=data.get("use_platform_sender", row.use_platform_sender))
+            effective = effective_credentials(probe)
+            if not credentials(probe) or set(effective) != {
                 "app_id", "app_secret", "business_account_id", "phone_number_id", "access_token", "webhook_verify_token",
             }:
                 raise ValueError()
-            if ("integration_identity" in data or "credentials" not in data) and identity and identity != values["phone_number_id"]:
+            if ("integration_identity" in data or "credentials" not in data) and identity and identity != effective["phone_number_id"]:
                 raise ValueError()
-            identity = values["phone_number_id"]
+            identity = effective["phone_number_id"]
         elif provider == "telegram":
             if set(values) != {"bot_token"} or not values.get("bot_token"):
                 raise ValueError()

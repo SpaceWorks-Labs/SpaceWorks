@@ -19,6 +19,10 @@ class ChannelConfiguration(models.Model):
     provider = models.CharField(max_length=32)
     integration_identity = models.CharField(max_length=255, blank=True)
     generation = models.PositiveIntegerField(default=1)
+    use_platform_sender = models.BooleanField(default=False)
+    sender_key = models.CharField(max_length=255, blank=True)
+    credential_version = models.PositiveIntegerField(default=0)
+    activation_hold = models.BooleanField(default=False)
     credentials = models.TextField(blank=True)
     quotas = models.JSONField(default=dict)
     usage = models.JSONField(default=dict)
@@ -85,13 +89,21 @@ class NotificationEndpointChallenge(ScopedPiiModelMixin, models.Model):
 
 
 class WhatsAppTemplate(models.Model):
-    configuration = models.ForeignKey(ChannelConfiguration, on_delete=models.CASCADE, related_name="templates")
+    configuration = models.ForeignKey(ChannelConfiguration, null=True, on_delete=models.CASCADE, related_name="templates")
     event = models.CharField(max_length=64)
     audience = models.CharField(max_length=16)
     locale = models.CharField(max_length=16, default="en")
-    template_name = models.CharField(max_length=255)
+    template_name = models.CharField(max_length=512)
     variables = models.JSONField(default=list)
     approved = models.BooleanField(default=False)
+    feature = models.CharField(max_length=32, blank=True)
+    provider_identity = models.CharField(max_length=255, blank=True)
+    validation_schema = models.JSONField(default=dict)
+    needs_review = models.BooleanField(default=False)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["configuration", "event", "audience", "locale"], name="uniq_whatsapp_template_binding")]
+        constraints = [
+            models.UniqueConstraint(fields=["configuration", "event", "audience", "locale"], name="uniq_whatsapp_template_binding"),
+            models.UniqueConstraint(fields=["provider_identity", "template_name", "locale", "feature", "event", "audience"],
+                condition=models.Q(configuration=None), name="uniq_platform_wa_template"),
+        ]

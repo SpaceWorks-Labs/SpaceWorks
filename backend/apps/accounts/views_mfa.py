@@ -76,7 +76,7 @@ class MFAVerifyView(MFAEnrollmentView):
     enrolling = False
 
     @extend_schema(tags=["MFA"], auth=[], request=MFAVerifySerializer,
-                   description="Complete the server-owned login context. New device grants retain login provenance and derive native_staff authority only for password/social local staff. New superadmin grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
+                   description="Complete the server-owned login context. Native staff authority requires a staff account, its fixed tenant, password, authenticator MFA and approved app attestation. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                    responses={200: MFACompletedSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         data = _validated(MFAVerifySerializer, request)

@@ -13,7 +13,6 @@ from apps.accounts.models_devices import DeviceGrant, NativeAppRegistration
 from apps.accounts.services_device_tokens import (
     assert_mobile_grant_creation_enabled, issue_device_token_pair,
 )
-from apps.accounts.services_staff_authority import has_local_staff_authority
 from apps.accounts.session_issuance import lock_session_user
 
 
@@ -32,7 +31,7 @@ class DeviceSuperadminNotSupported(PermissionDenied):
 
 
 def assert_grant_user_allowed(user):
-    if user.is_superuser or user.role == User.Role.SUPERADMIN:
+    if user.account_kind == User.AccountKind.PLATFORM or user.is_superuser or user.role == User.Role.SUPERADMIN:
         raise DeviceSuperadminNotSupported(user)
 
 
@@ -49,8 +48,14 @@ def audit_grant_refusal(exc):
 
 def authority_for_login(user, *, login_method):
     # Provenance comes from the issuer or server-owned MFA context, never request data.
-    if login_method in {"password", "social"} and has_local_staff_authority(user):
+    assert_grant_user_allowed(user)
+    if user.account_kind == User.AccountKind.STAFF:
+        from apps.accounts.mfa_policy import VERIFIED, source_for
+        if login_method != "password" or source_for(user) != VERIFIED:
+            raise AuthenticationFailed("Native staff sessions require password and MFA.")
         return DeviceGrant.Authority.STAFF
+    if user.account_kind != User.AccountKind.MEMBER:
+        raise AuthenticationFailed("Invalid device authorization.")
     return DeviceGrant.Authority.MEMBER
 
 
@@ -64,38 +69,10 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
         raise DeviceGrantCreationRetryRequired
     try:
         assert_mobile_grant_creation_enabled()
-        now = timezone.now()
         with transaction.atomic():
             user = lock_session_user(user)
-            assert_grant_user_allowed(user)
-            registration = (
-                NativeAppRegistration.objects.select_for_update()
-                .filter(
-                    eligible_registration_q(), pk=challenge.registration_id,
-                    platform=challenge.platform,
-                    app_id=challenge.app_id,
-                    environment=challenge.environment,
-                )
-                .first()
-            )
-            if registration is None:
-                raise DeviceGrantCreationRetryRequired
-            grant = DeviceGrant.objects.create(
-                registration=registration,
-                user=user,
-                authority=authority_for_login(user, login_method=login_method),
-                platform=challenge.platform,
-                app_id=challenge.app_id,
-                signing_identity=matched_signing_identity(challenge, verified_attestation.metadata),
-                environment=challenge.environment,
-                attestation_subject_fingerprint=audit_events.fingerprint(
-                    verified_attestation.subject
-                ),
-                attestation_key_id=verified_attestation.metadata.get("key_id"),
-                attestation_public_key=verified_attestation.metadata.get("public_key"),
-                attested_at=now,
-                last_used_at=now,
-            )
+            grant = create_device_grant(user, challenge, metadata=verified_attestation.metadata,
+                subject_hash=audit_events.fingerprint(verified_attestation.subject), login_method=login_method)
             access, refresh, _family = issue_device_token_pair(user, grant)
             audit_events.record_auth_event(
                 user, "auth.device_login_succeeded", target=user,
@@ -107,3 +84,40 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
     except AuthenticationFailed as exc:
         raise DeviceGrantCreationRetryRequired from exc
     return access, refresh, grant
+
+
+def create_device_grant(user, challenge, *, metadata, subject_hash, login_method):
+    """Caller holds User; every first grant uses this registration/provenance policy."""
+    now = timezone.now()
+    assert_grant_user_allowed(user)
+    authority = authority_for_login(user, login_method=login_method)
+    registration = (
+        NativeAppRegistration.objects.select_for_update()
+        .filter(
+            eligible_registration_q(), pk=challenge.registration_id,
+            platform=challenge.platform,
+            app_id=challenge.app_id,
+            environment=challenge.environment,
+        )
+        .first()
+    )
+    if (registration is None or user.account_kind == "staff"
+            and registration.makerspace_id not in (None, user.staff_makerspace_id)):
+        raise AuthenticationFailed("Device registration is no longer approved.")
+    return DeviceGrant.objects.create(
+        registration=registration,
+        user=user,
+        authority=authority,
+        staff_makerspace_id=user.staff_makerspace_id,
+        credential_generation=user.credential_generation,
+        login_method=login_method,
+        platform=challenge.platform,
+        app_id=challenge.app_id,
+        signing_identity=matched_signing_identity(challenge, metadata),
+        environment=challenge.environment,
+        attestation_subject_fingerprint=subject_hash,
+        attestation_key_id=metadata.get("key_id"),
+        attestation_public_key=metadata.get("public_key"),
+        attested_at=now,
+        last_used_at=now,
+    )

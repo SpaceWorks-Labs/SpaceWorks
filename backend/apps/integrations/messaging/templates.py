@@ -1,4 +1,5 @@
 """Pinned Meta languages and positional BODY-only binding validation."""
+from apps.integrations.notification_cutover import guarded
 import re
 
 from django.db import transaction
@@ -55,30 +56,6 @@ def binding_for(makerspace, sender, feature, event, audience):
         feature=feature, event=event, audience=audience, is_active=True, needs_review=False).first()
 
 
-@transaction.atomic
 def save_binding(actor, space, values, pk=None, *, delete=False):
-    with tenant_write(space.pk):
-        space = Makerspace.objects.select_for_update().get(pk=space.pk)
-        if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk):
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied()
-        row = get_object_or_404(WhatsAppTemplateBinding, makerspace=space, pk=pk) if pk else WhatsAppTemplateBinding(makerspace=space)
-        if delete:
-            record(actor, "messaging.template_deleted", makerspace=space, target=row, meta={"fields": []})
-            row.delete()
-            return None
-        validate_binding(values, row)
-        own = MakerspaceMessagingSettings.objects.filter(makerspace=space).first()
-        if not own or not own.whatsapp_business_account_id:
-            raise ValidationError({"business_account_id": "Configure your own WhatsApp business account first; platform bindings are managed by the operator."})
-        for key, value in values.items():
-            setattr(row, key, value)
-        row.business_account_id = own.whatsapp_business_account_id
-        from .templates_provider import validate_provider_template
-        from .settings_service import read_secret
-        validate_provider_template(business_account_id=row.business_account_id, access_token=read_secret(own, "whatsapp_access_token"),
-                                   template_name=row.template_name, language=row.language, parameters=row.parameters)
-        row.needs_review = False
-        row.save()
-        record(actor, "messaging.template_saved", makerspace=space, target=row, meta={"fields": sorted(values)})
-        return row
+    from apps.integrations.notification_legacy_api import deny_legacy_write
+    deny_legacy_write()

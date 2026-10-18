@@ -55,6 +55,9 @@ class PasswordResetEnvelope(models.Model):
 
     class Meta:
         constraints = [
+            models.CheckConstraint(condition=(models.Q(purpose="reset") | models.Q(
+                purpose="restore", context="member", makerspace__isnull=True,
+            )), name="reset_restore_member_context"),
             models.UniqueConstraint(
                 fields=["user"],
                 name="uniq_password_reset_account",

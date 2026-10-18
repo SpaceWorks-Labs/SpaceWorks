@@ -45,7 +45,7 @@ def apple_post(path, data):
 
 
 def store_refresh_credential(user, claims, authorization_code, redirect_uri=""):
-    if not authorization_code:
+    if user.account_kind != "member" or not authorization_code:
         return
     try:
         client_id = claims["aud"]
@@ -63,7 +63,7 @@ def store_refresh_credential(user, claims, authorization_code, redirect_uri=""):
         encrypted = encrypt_value(token)
         with transaction.atomic():
             locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
-            if locked.account_purged_at or (not locked.is_active and not locked.deletion_requested_at):
+            if locked.account_kind != "member" or locked.account_purged_at or (not locked.is_active and not locked.deletion_requested_at):
                 return
             identity = SocialIdentity.objects.filter(user=locked, provider="apple", provider_sub=claims["sub"]).first()
             if identity is None:

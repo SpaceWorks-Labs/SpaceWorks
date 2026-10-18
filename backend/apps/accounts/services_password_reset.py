@@ -15,7 +15,7 @@ from apps.accounts.password_reset_context import (
     lock_recovery_account, resolve_account, recoverable, mail_available, recovery_transaction,
 )
 from .services_password_reset_confirmation import (
-    confirm_password_reset as _confirm_context_password_reset,
+    confirm_password_reset as confirm_password_reset,
     validate_recovery_password as validate_recovery_password,
 )
 
@@ -154,19 +154,3 @@ def _reenter_pending(envelope, normalized, requested_at):
     envelope.superseded_at = None
     envelope.terminal_at = None
     envelope.save()
-
-
-# MERGE-RECON(A): move purpose/restore-epoch checks into the split confirmation service.
-def confirm_password_reset(email, code, new_password, *, context="member", makerspace=None, origin="", now=None):
-    from rest_framework import serializers
-    account = resolve_account(str(email).strip(), context=context, makerspace=makerspace)
-    with recovery_transaction(account):
-        user = lock_recovery_account(account)
-        envelope = (PasswordResetEnvelope.objects.select_for_update().filter(user=user).first()
-                    if user else None)
-        if (user and user.deletion_requested_at is not None
-                or envelope and (envelope.purpose != "reset"
-                    or user.account_restored_at and envelope.requested_at <= user.account_restored_at)):
-            raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
-        return _confirm_context_password_reset(email, code, new_password, context=context,
-                                              makerspace=makerspace, origin=origin, now=now)

@@ -40,7 +40,7 @@ class WhatsAppTemplateListView(APIView):
         return paginator.get_paginated_response(WhatsAppBindingSerializer(paginator.paginate_queryset(rows, request), many=True).data)
 
     @extend_schema(tags=["Messaging"], request=WhatsAppBindingSerializer,
-                   responses={201: WhatsAppBindingSerializer, **errors(400, 401, 403, 404, 409, 423, 503)})
+                   responses={201: WhatsAppBindingSerializer, **errors(400, 401, 403, 404, 409, 410, 423, 503)})
     def post(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id)
         serializer = WhatsAppBindingSerializer(data=request.data)
@@ -53,7 +53,7 @@ class WhatsAppTemplateDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=["Messaging"], request=WhatsAppBindingSerializer,
-                   responses={200: WhatsAppBindingSerializer, **errors(400, 401, 403, 404, 409, 423, 503)})
+                   responses={200: WhatsAppBindingSerializer, **errors(400, 401, 403, 404, 409, 410, 423, 503)})
     def patch(self, request, makerspace_id, pk):
         space = staff_space(request.user, makerspace_id)
         row = get_object_or_404(WhatsAppTemplateBinding, makerspace=space, pk=pk)
@@ -61,7 +61,7 @@ class WhatsAppTemplateDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(WhatsAppBindingSerializer(_save(request.user, space, serializer.validated_data, pk)).data)
 
-    @extend_schema(tags=["Messaging"], responses={204: None, **errors(401, 403, 404, 423, 503)})
+    @extend_schema(tags=["Messaging"], responses={204: None, **errors(401, 403, 404, 410, 423, 503)})
     def delete(self, request, makerspace_id, pk):
         space = staff_space(request.user, makerspace_id)
         save_binding(request.user, space, {}, pk, delete=True)

@@ -159,6 +159,9 @@ def _session_authority(user, request, issued_surface):
     if user.self_registered_at is not None and user.email_verified_at is None:
         return VERIFICATION_ONLY_SURFACE
     surface = issued_surface or getattr(request, "session_authority", None)
+    grant = getattr(request, "device_grant", None)
+    if grant is not None and user.account_kind == "staff" and grant.authority == "staff":
+        return "native_staff"
     if surface is None:
         grant = getattr(request, "device_grant", None)
         if grant is not None:

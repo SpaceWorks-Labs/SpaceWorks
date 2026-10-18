@@ -69,6 +69,8 @@ def validate_native_makerspace_scope(request, user, grant):
         raise PermissionDenied('Invalid native makerspace selection.') from exc
     if makerspace_id <= 0 or str(makerspace_id) != str(raw).strip():
         raise PermissionDenied('Invalid native makerspace selection.')
+    if user.account_kind == "staff" and makerspace_id != user.staff_makerspace_id:
+        raise PermissionDenied('Staff makerspace selection is fixed to the account tenant.')
 
     origin = _origin_candidate(request)
     origin_scope = staff_origin_scope(request)

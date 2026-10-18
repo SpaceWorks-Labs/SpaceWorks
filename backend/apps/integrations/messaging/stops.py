@@ -11,7 +11,7 @@ from .locks import lock_whatsapp_sender
 from .protections import lock_suppression_key, recipient_hash
 
 SMS_STOP = frozenset({"STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT", "REVOKE", "OPTOUT"})
-WHATSAPP_STOP = frozenset({"STOP", "UNSUBSCRIBE"})
+WHATSAPP_STOP = SMS_STOP | frozenset({"OPT OUT", "OPT-OUT", "BLOCK"})
 
 
 @transaction.atomic
@@ -47,6 +47,10 @@ def process_stop(event):
             # Context is useful only when it names a message we sent on this sender.
             delivery = MessagingDelivery.objects.filter(channel=channel, sender_key=sender,
                 provider_message_id=data.get("context_id") or "__missing__").first()
+            if delivery is None:
+                from apps.integrations.models_contract import NotificationDelivery
+                delivery = NotificationDelivery.objects.filter(channel=channel, sender_key=sender,
+                    provider_id=data.get("context_id") or "__missing__").first()
             if delivery and delivery.recipient_phone_hash:
                 phone = delivery.recipient_phone_hash
                 map_alias(sender, alias, phone)

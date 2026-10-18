@@ -22,6 +22,11 @@ def user_constraints():
                           & ~Q(role="superadmin"))),
             name="user_platform_flags",
         ),
+        models.CheckConstraint(condition=(Q(account_kind="member") | Q(
+            deletion_requested_at__isnull=True, deletion_purge_after__isnull=True,
+            purge_started_at__isnull=True, account_restored_at__isnull=True,
+            account_purged_at__isnull=True, deletion_email_ciphertext="", deletion_username="",
+        )), name="user_member_lifecycle"),
         models.UniqueConstraint(Lower("email"), condition=Q(account_kind="member") & ~Q(email=""),
                                 name="uniq_member_email"),
         models.UniqueConstraint(Lower("email"), F("staff_makerspace"),

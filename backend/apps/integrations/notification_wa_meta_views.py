@@ -44,10 +44,13 @@ class MetaWebhookView(APIView):
     def configuration(self, makerspace_id, generation, phone_number_id):
         if type(makerspace_id) is not int or makerspace_id < 1 or not ID.fullmatch(phone_number_id):
             return None
-        rows = rbac.scope_notification_policy(ChannelConfiguration.objects.select_related("makerspace"),
-            makerspace_id=makerspace_id)
-        return get_object_or_404(servable_queryset(rows, relation="makerspace"), channel="whatsapp",
-                                 provider="meta", generation=generation)
+        from .notification_sender import callback_configurations
+        rows = callback_configurations(makerspace_id, "meta", generation)
+        for config in rows:
+            values = credentials(config)
+            if values and values["phone_number_id"] == phone_number_id:
+                return config
+        return None
 
     @extend_schema(tags=["Notification contract"], auth=[], parameters=[
         OpenApiParameter("hub.mode", str, required=True, description="Must equal subscribe."),
@@ -89,13 +92,13 @@ class MetaWebhookView(APIView):
         except ValueError:
             return Response({"detail": "Invalid webhook payload.", "code": "invalid_payload"}, status=400)
         try:
-            for index, item in enumerate(batch):
-                apply_item(config, request, index, item)
+            from .notification_wa_journal import accept_meta_item
+            from .notification_cutover import boundary
+            with boundary():
+                for index, item in enumerate(batch):
+                    accept_meta_item(config, request, index, item)
         except Exception as exc:
-            # No payload, exception text, destination, provider id or token is logged.
-            from apps.tenant_migration.gate_errors import SourceMigrationGateClosed
-            if isinstance(exc, SourceMigrationGateClosed):
-                return Response({"detail": "Makerspace writes are frozen.", "code": "tenant_migration_quiesced"}, status=423)
-            logger.warning("notification.meta_callback_unavailable", extra={"configuration_id": config.pk})
-            return Response({"detail": "Webhook processing is temporarily unavailable.", "code": "unavailable"}, status=503)
+            logger.warning("notification.meta_callback_unavailable", extra={"configuration_id": config.pk,
+                "failure_type": type(exc).__name__})
+            return Response({"detail": "Callback storage is temporarily unavailable.", "code": "unavailable"}, status=503)
         return Response({"accepted": True})

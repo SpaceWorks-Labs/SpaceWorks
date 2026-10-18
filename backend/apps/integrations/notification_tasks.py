@@ -6,11 +6,13 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .models_contract import NotificationEnvelope
+from .notification_cutover import guarded
 
 logger = logging.getLogger(__name__)
 
 
 @shared_task
+@guarded(sending=True)
 def deliver_envelope(envelope_id):
     from .notification_delivery import ensure_deliveries, fallback_if_exhausted, send
     from .notification_outbox import ready
@@ -45,6 +47,8 @@ def deliver_envelope(envelope_id):
 
 @shared_task
 def sweep_notification_outbox():
+    from .notification_ingress import recover
+    recover()
     from .notification_media import cleanup_grants
     try:
         cleanup_grants()

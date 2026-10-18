@@ -4,7 +4,6 @@ import logging
 from uuid import uuid4
 
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.account_deletion_discovery import tenant_ids
@@ -32,7 +31,7 @@ def purge_account(user_id, counts):
     # It also recovers departures recorded before Stage B was installed.
     with transaction.atomic():
         user = User.objects.select_for_update(no_key=True).get(pk=user_id)
-        if (user.account_purged_at or not user.deletion_requested_at or not user.deletion_purge_after
+        if (user.account_kind != "member" or user.account_purged_at or not user.deletion_requested_at or not user.deletion_purge_after
                 or user.deletion_purge_after > timezone.now()):
             return
         if not user.purge_started_at:
@@ -66,7 +65,7 @@ def _scrub(user_id, tenant):
         space = Makerspace.objects.select_for_update().get(pk=tenant)
         user = User.objects.select_for_update(no_key=True).get(pk=user_id)
         progress, _ = AccountPurgeProgress.objects.get_or_create(user=user, makerspace=space)
-        if not user.deletion_requested_at or user.account_purged_at or progress.done_at:
+        if user.account_kind != "member" or not user.deletion_requested_at or user.account_purged_at or progress.done_at:
             return
         scrub_tenant(user, tenant, username=deleted_username(user), address=recorded_address(user))
         audit.record(None, "account.tenant_identity_scrubbed", makerspace=space, target=user)
@@ -89,7 +88,7 @@ def _finish_tenant(user_id, tenant):
 def _finish_global(user_id, expected, counts):
     with transaction.atomic():
         user = User.objects.select_for_update(no_key=True).get(pk=user_id)
-        if not user.deletion_requested_at or user.account_purged_at:
+        if user.account_kind != "member" or not user.deletion_requested_at or user.account_purged_at:
             return
         done = set(AccountPurgeProgress.objects.filter(user=user, done_at__isnull=False)
                    .values_list("makerspace_id", flat=True))
@@ -120,10 +119,7 @@ def _global_rows(user):
     PhoneVerificationChallenge.objects.filter(user=user).delete()
     MFAChallenge.objects.filter(user=user).delete()
     AccountRestoreIntent.objects.filter(user=user).delete()
-    predicate = Q(user=user)
-    if address:
-        predicate |= Q(email_normalized__iexact=address)
-    PasswordResetEnvelope.objects.filter(predicate).delete()
+    PasswordResetEnvelope.objects.filter(user=user).delete()
     SocialIdentity.objects.filter(user=user).delete()
     # Includes unselected (NULL-makerspace) activity. Wait for every tenant gate
     # before removing this grant-owned history; the revoked grants themselves stay.
@@ -141,7 +137,7 @@ def purge_deleted_accounts():
     from apps.accounts.apple_revocation import sweep_revocations
     sweep_revocations()
     counts = {"purged": 0, "skipped": 0, "failed": 0}
-    ids = User.objects.filter(deletion_requested_at__isnull=False, deletion_purge_after__lte=timezone.now(),
+    ids = User.objects.filter(account_kind="member", deletion_requested_at__isnull=False, deletion_purge_after__lte=timezone.now(),
                               account_purged_at__isnull=True).values_list("pk", flat=True)
     for pk in ids.iterator():
         try:

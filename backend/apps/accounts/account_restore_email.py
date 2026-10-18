@@ -42,7 +42,10 @@ def confirm_email(email, token, new_password):
             row.attempts = min(5, attempts + 1)
             row.save(update_fields=["attempts"])
         audit_events.record_auth_event(None, "auth.account_restore_attempted", target=row)
-        valid = (row and user and equal and row.purpose == "restore" and row.digest_is_live
+        valid = (row and user and user.account_kind == "member" and equal
+                 and row.context == "member" and row.makerspace_id is None
+                 and row.purpose == "restore" and row.digest_is_live
+                 and row.credential_generation == user.credential_generation
                  and row.status == PasswordResetEnvelopeStatus.ISSUED and not row.consumed_at
                  and row.expires_at and row.expires_at > now and attempts < 5)
         if valid:

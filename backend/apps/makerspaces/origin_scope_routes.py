@@ -89,6 +89,8 @@ NATIVE_HEADER_GLOBAL_ROUTES = {
     'device-grant-detail',
     'push-device-list-create',
     'push-device-detail',
+    'auth-logout-all', 'auth-logout', 'device-logout', 'auth-reauth',
+    'auth-reauth-phone-start', 'auth-reauth-phone-confirm', 'auth-reauth-social-factor',
 }
 REQUEST_ACTIONS = {
     'request-accept',

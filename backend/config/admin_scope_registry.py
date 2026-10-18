@@ -68,6 +68,7 @@ GLOBAL_ADMIN_MODELS = {
     # Platform-scoped for the same reason identity is: a sign-in code is sent before any
     # makerspace has been selected, so there is no tenant to own the credentials.
     "integrations.platformsmssettings",
+    "integrations.platformwhatsappsettings",
     "integrations.dailyotpsmscounter",
     "payments.platformstripeconnectsettings",
     "backup.platformbackupsettings",

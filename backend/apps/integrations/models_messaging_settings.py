@@ -24,6 +24,7 @@ class MessagingSecrets(models.Model):
 
 class PlatformWhatsAppSettings(MessagingSecrets, models.Model):
     is_enabled = models.BooleanField(default=False)
+    app_id = models.CharField(max_length=64, blank=True)
     phone_number_id = models.CharField(max_length=64, blank=True)
     business_account_id = models.CharField(max_length=64, blank=True)
     access_token = models.TextField(blank=True)
@@ -64,7 +65,8 @@ class MessagingSenderIdentity(models.Model):
     sender_key = models.CharField(max_length=255, unique=True)
     channel = models.CharField(max_length=16, choices=[("sms", "SMS"), ("whatsapp", "WhatsApp")])
     owner = models.CharField(max_length=16, choices=Owner.choices)
-    makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True, on_delete=models.CASCADE)
+    makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True, on_delete=models.SET_NULL)
+    tenant_reference = models.BigIntegerField(null=True)
     active = models.BooleanField(default=True)
     retired_at = models.DateTimeField(null=True, blank=True)
 

@@ -83,57 +83,15 @@ def _status(event):
 
 
 def process_event(pk):
-    _protect_status_event(pk)
-    snapshot = MessagingWebhookEvent.objects.get(pk=pk)
-    delivery = _delivery_for_status(snapshot) if snapshot.kind == "status" else None
-    with transaction.atomic():
-        gate_error = None
-        if delivery is not None:
-            try:
-                with transaction.atomic():
-                    # Tenant gate precedes sender/event/delivery/correlation locks.
-                    assert_write_allowed(delivery.makerspace_id)
-            except (SourceMigrationGateError, TenantNotRestored) as exc:
-                gate_error = exc
-        if snapshot.channel == "whatsapp":
-            lock_whatsapp_sender(snapshot.sender_key)
-        event = MessagingWebhookEvent.objects.select_for_update().get(pk=pk)
-        if event.state != "pending":
-            return True
-        event.attempts += 1
-        try:
-            with transaction.atomic():
-                if gate_error is not None:
-                    raise gate_error
-                if event.kind == "inbound":
-                    process_stop(event)
-                    done = True
-                else:
-                    done = _status(event)
-        except Exception as exc:
-            if isinstance(exc, DatabaseError):
-                raise
-            done = False
-            logger.warning("messaging_webhook_processing_deferred", extra={"event_id": pk, "failure_type": type(exc).__name__})
-        if done:
-            event.state, event.processed_at = "processed", timezone.now()
-        else:
-            event.next_attempt_at = timezone.now() + timedelta(seconds=min(60 * 2 ** min(event.attempts, 10), 86400))
-        event.save(update_fields=["makerspace", "attempts", "state", "processed_at", "next_attempt_at"])
-        if done and event.kind == "inbound" and event.payload.get("stop"):
-            # Sender protection commits before optional User/consent annotations.
-            transaction.on_commit(lambda: _annotate_stop_safely(event.pk), robust=True)
-        return done
+    """Compatibility recovery imports the old inbox without mutating legacy outcomes."""
+    event = MessagingWebhookEvent.objects.get(pk=pk)
+    return accept_event(provider=event.provider, channel=event.channel, sender_key=event.sender_key,
+        makerspace_id=event.makerspace_id, dedupe_id=event.dedupe_id, kind=event.kind, payload=event.payload)
 
 
 def accept_event(**values):
-    # Commit the durable event before processing. A processor/DB failure returns
-    # 500, while the committed pending event remains available to the sweep.
-    with transaction.atomic():
-        event, _ = MessagingWebhookEvent.objects.get_or_create(provider=values.pop("provider"),
-            dedupe_id=values.pop("dedupe_id"), defaults=values)
-    process_event(event.pk)
-    return event
+    from apps.integrations.notification_ingress import accept_legacy
+    return accept_legacy(**values)
 
 
 def _annotate_stop_safely(pk):

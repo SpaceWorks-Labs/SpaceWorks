@@ -9,7 +9,7 @@ from apps.makerspaces.models import MakerspaceMembership
 
 def owner_accounts():
     return User.objects.filter(is_active=True, access_status=User.AccessStatus.ACTIVE,
-                               is_tenant_dump_stub=False)
+                               is_tenant_dump_stub=False, deletion_requested_at__isnull=True)
 
 
 def owner_membership(makerspace, user_id):

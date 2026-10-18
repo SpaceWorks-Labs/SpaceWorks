@@ -19,7 +19,8 @@ def confirm_phone(data):
     # Attempts and successful consumption must survive a failed attestation or restore.
     with transaction.atomic():
         otp = _confirm(PhoneVerificationChallenge.objects.filter(
-            purpose="restore", attestation_challenge__isnull=data["delivery"] == "web"),
+            purpose="restore", user__account_kind="member",
+            attestation_challenge__isnull=data["delivery"] == "web"),
             data["code"], phone, on_failure=lambda row: audit_events.record_auth_event(
                 None, "auth.account_restore_attempted", target=row))
         if otp is not None:

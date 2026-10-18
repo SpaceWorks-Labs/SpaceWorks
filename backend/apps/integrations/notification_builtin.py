@@ -42,31 +42,18 @@ def send_builtin(delivery, rendered):
     return ProviderResult(False, error_code="not_configured")
 
 
+_native_push_sender = None
+
+
+def register_native_push_sender(sender):
+    """P registers its per-device lease adapter from AppConfig.ready()."""
+    global _native_push_sender
+    if _native_push_sender is not None and _native_push_sender is not sender:
+        raise ValueError("Duplicate native-push envelope adapter")
+    _native_push_sender = sender
+
+
 def _push(delivery, rendered):
-    from django.utils import timezone
-    from .models_push import PlatformPushSettings, PushDevice
-    from .push_fcm import PushProviderError, send_fcm
-    from .push_apns import send_apns
-    config = PlatformPushSettings.load()
-    devices = PushDevice.objects.filter(makerspace=delivery.makerspace,
-        user_id=delivery.envelope.recipient_id, active=True, device_grant__status="active")
-    sent, failed = 0, False
-    for device in devices:
-        try:
-            data = {"feature": delivery.envelope.feature, "event": delivery.envelope.event}
-            if device.provider == "fcm" and config.fcm_configured:
-                send_fcm(config, device.get_token(), "Space Works", rendered.get("text", "")[:300], data)
-            elif device.provider == "apns" and config.apns_configured:
-                send_apns(config, device.get_token(), device.environment, "Space Works", rendered.get("text", "")[:300], data)
-            else:
-                continue
-            sent += 1
-        except PushProviderError as exc:
-            if exc.invalid_token:
-                PushDevice.objects.filter(pk=device.pk).update(active=False, invalidated_at=timezone.now())
-            else:
-                failed = True
-        except Exception:
-            failed = True
-    return ProviderResult(sent > 0 and not failed, retryable=failed,
-                          error_code="provider_error" if failed else "not_configured")
+    if _native_push_sender is None:
+        return ProviderResult(False, error_code="not_configured")
+    return _native_push_sender(delivery, rendered)

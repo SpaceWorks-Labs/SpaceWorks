@@ -1,15 +1,13 @@
 """Finish the original login after MFA without accepting client authority claims."""
 
-from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
-from apps.accounts.native_app_identity import eligible_registration_q, matched_signing_identity
+from apps.accounts.native_app_identity import eligible_registration_q
 from apps.accounts import audit_events
-from apps.accounts.models_devices import DeviceAttestationChallenge, DeviceGrant, NativeAppRegistration
+from apps.accounts.models_devices import DeviceAttestationChallenge, DeviceGrant
 from apps.accounts.serializers_device import DeviceGrantSerializer
 from apps.accounts.services_device_tokens import issue_device_token_pair, assert_mobile_grant_creation_enabled
 from apps.accounts.services_social_login import assert_staff_authority
-from apps.accounts.services_device_grants import assert_grant_user_allowed
 from apps.accounts.tokens import SpaceWorksRefreshToken
 from apps.accounts.session_issuance import lock_session_user
 
@@ -34,8 +32,6 @@ def device_context(challenge, verified, grant=None, *, login_method=None):
 def issue_session(user, data, request):
     from apps.accounts.serializers import user_payload
     # The MFA service already holds User; keep it first for native issuance too.
-    from apps.accounts.credential_locks import lock_token_issuance
-    lock_token_issuance(user)
     user = lock_session_user(user)
     from apps.accounts.surface_policy import assert_surface, validate_account_token
     validate_account_token(user, data)
@@ -62,24 +58,11 @@ def issue_session(user, data, request):
                 pk=device["grant_id"], user=user, status=DeviceGrant.Status.ACTIVE,
             ).first()
         else:
-            assert_grant_user_allowed(user)
+            from apps.accounts.services_device_grants import create_device_grant
             attestation = DeviceAttestationChallenge.objects.get(pk=device["attestation_id"])
-            registration = NativeAppRegistration.objects.select_for_update().filter(
-                eligible_registration_q(), pk=attestation.registration_id,
-                platform=attestation.platform, app_id=attestation.app_id, environment=attestation.environment,
-            ).first()
-            grant = None
-            if registration:
-                grant = DeviceGrant.objects.create(
-                    registration=registration, user=user, platform=attestation.platform,
-                    authority=user.account_kind,
-                    app_id=attestation.app_id, environment=attestation.environment,
-                    signing_identity=matched_signing_identity(attestation, device.get("attestation_metadata", {})),
-                    attestation_subject_fingerprint=device["subject_hash"],
-                    attestation_key_id=device.get("attestation_metadata", {}).get("key_id"),
-                    attestation_public_key=device.get("attestation_metadata", {}).get("public_key"),
-                    attested_at=timezone.now(), last_used_at=timezone.now(),
-                )
+            grant = create_device_grant(user, attestation,
+                metadata=device.get("attestation_metadata", {}),
+                subject_hash=device["subject_hash"], login_method=device.get("login_method"))
         if grant is None:
             raise AuthenticationFailed("Device authorization is no longer active.")
         if user.account_kind == "staff" and grant.registration.makerspace_id not in (None, user.staff_makerspace_id):

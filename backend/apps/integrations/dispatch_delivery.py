@@ -1,3 +1,4 @@
+from apps.integrations.notification_cutover import guarded, sending_allowed
 import logging
 
 from django.core.mail import EmailMultiAlternatives
@@ -10,7 +11,10 @@ from .dispatch_policy import email_module_blocks
 
 logger = logging.getLogger(__name__)
 
+@guarded()
 def _deliver(log):
+    if not sending_allowed():
+        return log
     if log.status in {EmailLog.Status.SENT, EmailLog.Status.SKIPPED}:
         from .delivery_sources import finished
         finished(log)

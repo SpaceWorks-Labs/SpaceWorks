@@ -20,6 +20,7 @@ class ClaimAuditContext:
     issued_by_id: int | None
     redemption_ip: str | None
     absolute_expires_at: datetime
+    credential_generation: int = 0
 
 
 class ClaimSessionInvalid(Exception):
@@ -53,6 +54,7 @@ def validated_claim_session(token, *, for_update=False):
         membership__user__access_status="active",
         membership__user__is_walk_in=True,
         membership__user__password__startswith=UNUSABLE_PASSWORD_PREFIX,
+        membership__user__deletion_requested_at__isnull=True,
         membership__user__email_verified_at__isnull=True,
         has_social_identity=False,
         has_active_device_grant=False,
@@ -77,6 +79,7 @@ def audit_context(claim):
         issued_by_id=claim.issued_by_id,
         redemption_ip=claim.consumed_ip,
         absolute_expires_at=claim.absolute_expires_at,
+        credential_generation=claim.membership.user.credential_generation,
     )
 
 
@@ -97,6 +100,7 @@ def token_payload_for_context(context, user_id):
         "absolute_expires_at": int(context.absolute_expires_at.timestamp()),
         "user_id": user_id,
         "kind": "member",
+        "credential_generation": context.credential_generation,
     }
 
 
@@ -106,7 +110,8 @@ def _claims_match_row(token, claim):
             int(token["absolute_expires_at"]), tz=datetime_timezone.utc
         )
         return (
-            str(token["claim_session_id"]) == str(claim.session_id)
+            token.get("credential_generation") == claim.membership.user.credential_generation
+            and str(token["claim_session_id"]) == str(claim.session_id)
             and int(token["claim_membership_id"]) == claim.membership_id
             and int(token["claim_makerspace_id"]) == claim.membership.makerspace_id
             and int(token["user_id"]) == claim.membership.user_id

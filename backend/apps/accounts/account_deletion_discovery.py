@@ -70,8 +70,12 @@ def tenant_ids(user):
         from apps.makerspaces.secrets import decrypt_value
         address = decrypt_value(user.deletion_email_ciphertext).strip().lower()
     email_log = _model("integrations.EmailLog")
-    if email_log is not None and address:
-        for row in email_log.objects.exclude(makerspace__isnull=True).only("makerspace_id", "to_email").iterator():
+    from apps.accounts.models import User
+    exclusive = address and not User.objects.exclude(pk=user.pk).filter(email__iexact=address).exists()
+    if email_log is not None and exclusive:
+        for row in email_log.objects.filter(recipient__isnull=True).exclude(makerspace__isnull=True).only(
+            "makerspace_id", "to_email",
+        ).iterator():
             if row.to_email.strip().lower() == address:
                 result.add(row.makerspace_id)
     from apps.accounts.models_account_purge import AccountPurgeObject

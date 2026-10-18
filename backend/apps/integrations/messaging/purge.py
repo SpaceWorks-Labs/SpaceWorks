@@ -8,6 +8,7 @@ from apps.integrations.models import (
     MessagingWebhookEvent, WhatsAppTemplateBinding,
 )
 from .locks import advisory_lock
+from apps.integrations.notification_cutover import guarded
 
 
 @contextmanager
@@ -23,17 +24,19 @@ def consent_purge():
             cursor.execute("SELECT set_config('app.allow_immutable_delete', %s, true)", [previous])
 
 
+@guarded(mutation=True)
 @transaction.atomic
 def purge_channel(makerspace, channel):
     if channel not in {"sms", "whatsapp"}:
         raise ValueError("Unsupported addressed channel.")
     advisory_lock("messaging-settings")
+    from apps.integrations.notification_privacy import prepare_channel_purge
+    prepare_channel_purge(makerspace, channel)
     counts = {}
     with consent_purge():
         counts["messaging_consents"] = MessagingConsent.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
     counts["messaging_deliveries"] = MessagingDelivery.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
     MessagingWebhookEvent.objects.filter(makerspace=makerspace, channel=channel).delete()
-    MessagingSenderIdentity.objects.filter(makerspace=makerspace, channel=channel).delete()
     values = ({"sms_account_sid": "", "sms_auth_token": "", "sms_from_number": "", "sms_sender_key": None}
               if channel == "sms" else {"whatsapp_phone_number_id": "", "whatsapp_business_account_id": "",
               "whatsapp_access_token": "", "whatsapp_app_secret": "", "whatsapp_webhook_verify_token": "", "whatsapp_sender_key": None})
@@ -51,12 +54,16 @@ def whatsapp_delete(makerspace, cursor):
     return purge_channel(makerspace, "whatsapp")
 
 
+@guarded(mutation=True)
 def purge_user(user, makerspace_id):
+    from apps.integrations.notification_privacy import scrub_account
+    scrub_account(user, makerspace_id)
     with consent_purge():
         MessagingConsent.objects.filter(user=user, makerspace_id=makerspace_id).delete()
     MessagingDelivery.objects.filter(user=user, makerspace_id=makerspace_id).delete()
 
 
+@guarded(mutation=True)
 def archive_consents(user, spaces):
     from apps.audit.services import record
     from .consent import live_consent
@@ -67,3 +74,5 @@ def archive_consents(user, spaces):
                     action="opted_out", source="account_archive", phone_e164=user.phone_e164 or "",
                     phone_verified_at=user.phone_verified_at)
                 record(user, "messaging.consent_archived", makerspace=space, target=row, meta={"fields": ["action", "source"]})
+        from apps.integrations.notification_privacy import scrub_account
+        scrub_account(user, space.pk)

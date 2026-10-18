@@ -78,6 +78,19 @@ def _delete_object_graph(makerspace):
         else:
             cursor.execute("SET LOCAL session_replication_role = 'replica'")
 
+        # Staff retirement has completed and immutable deletion is now authorized.
+        # The provider owner removes tenant-private rows while retaining shared
+        # sender suppression/aliases; never collect through a shared sender.
+        from apps.integrations.messaging.purge import purge_channel
+        purge_channel(makerspace, "sms")
+        purge_channel(makerspace, "whatsapp")
+        from apps.integrations.models_contract import NotificationEnvelope
+        from apps.integrations.models_endpoints import ChannelConfiguration
+        # Canonical sends/proofs cannot outlive whole-tenant deletion. They are
+        # independent of the optional inbox, so its module collector leaves them.
+        NotificationEnvelope.objects.filter(makerspace=makerspace).delete()
+        ChannelConfiguration.objects.filter(makerspace=makerspace).delete()
+
         QrPrintBatch.objects.filter(makerspace=makerspace).delete()
         StockTransfer.objects.filter(
             Q(makerspace=makerspace)

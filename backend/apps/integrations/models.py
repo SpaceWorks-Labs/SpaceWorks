@@ -89,7 +89,7 @@ __all__ += ["NotificationDelivery", "NotificationEnvelope", "ChannelConfiguratio
 from .models_notification_media import NotificationMediaGrant
 
 __all__ += ["NotificationMediaGrant"]
-# MERGE-RECON(M): retain legacy messaging models until mapped history/ingress cutover.
+# Historical models stay importable while deployment checkpoint verification is pending.
 from .models_tracking import SmsSendLog, PushDeliveryAttempt, EmailProviderEvent  # noqa: F401
 from .models_messaging_settings import (
     PlatformWhatsAppSettings, MakerspaceMessagingSettings, MessagingSenderIdentity,
@@ -104,3 +104,10 @@ __all__ += ["PlatformWhatsAppSettings", "MakerspaceMessagingSettings", "Messagin
             "MessagingSenderCredential", "WhatsAppTemplateBinding", "MessagingConsent",
             "MessagingSuppression", "MessagingRecipientAlias", "MessagingRecipientCorrelation",
             "MessagingDelivery", "MessagingWebhookEvent"]
+from .models_cutover import (
+    NotificationCutover, NotificationIngress, NotificationLegacyMapping, NotificationCredentialVersion,
+    NotificationProviderReference,
+)
+
+__all__ += ["NotificationCutover", "NotificationIngress", "NotificationLegacyMapping", "NotificationCredentialVersion"]
+__all__ += ["NotificationProviderReference"]

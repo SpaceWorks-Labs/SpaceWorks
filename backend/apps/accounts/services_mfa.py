@@ -18,6 +18,7 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 def active(user):
     if (not user.is_active or user.is_tenant_dump_stub or user.is_walk_in or user.retired_at is not None
+            or user.deletion_requested_at is not None
             or user.access_status != User.AccessStatus.ACTIVE):
         raise AuthenticationFailed("Account is not available.")
     from apps.accounts.principal_guards import refuse_anonymous_requester_credential

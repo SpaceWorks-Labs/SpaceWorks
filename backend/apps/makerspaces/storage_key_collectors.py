@@ -30,6 +30,9 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
     ):
         for key in model.objects.filter(**lookup).values_list("object_key", flat=True):
             add(key)
+            if model is EvidencePhoto and include_coordination and key:
+                from apps.evidence.storage import staging_key
+                add(staging_key(key))
     collect_service(makerspace, add)
     from apps.payments.models import PaymentDocument
     for key in PaymentDocument.objects.filter(makerspace=makerspace).values_list("branding_logo_key", flat=True):

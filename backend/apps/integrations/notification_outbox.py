@@ -84,6 +84,11 @@ def emit(*, makerspace, recipient, feature, stream, event, audience, dedup_key,
     bindings = {endpoint.channel: {"id": endpoint.pk, "generation": endpoint.integration_generation,
                                   "provider": endpoint.provider, "identity": endpoint.integration_identity}
                 for endpoint in NotificationEndpoint.objects.filter(makerspace=makerspace, user=recipient, revoked_at=None)}
+    from types import SimpleNamespace
+    from .notification_addressed import snapshot as sms_snapshot
+    sms_binding = sms_snapshot(SimpleNamespace(makerspace=makerspace, recipient=recipient))
+    if sms_binding:
+        bindings["sms"] = sms_binding
     with transaction.atomic():
         envelope, created = NotificationEnvelope.objects.get_or_create(dedup_key=dedup_key, defaults={
             "makerspace": makerspace, "recipient": recipient, "feature": feature,

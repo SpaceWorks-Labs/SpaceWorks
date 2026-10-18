@@ -26,6 +26,9 @@ class MessagingConsent(ScopedPiiModelMixin, models.Model):
     phone_e164 = models.TextField(blank=True)
     phone_verified_at = models.DateTimeField(null=True, blank=True)
     source = models.CharField(max_length=24, choices=Source.choices)
+    sender_key = models.CharField(max_length=255, blank=True)
+    configuration_generation = models.PositiveIntegerField(default=0)
+    endpoint = models.ForeignKey("integrations.NotificationEndpoint", null=True, on_delete=models.PROTECT)
     # An ordered JSON list records every lifted phone and alias suppression, W1.
     lifted_suppression_id = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,7 +56,8 @@ class MessagingSuppression(models.Model):
     channel = models.CharField(max_length=16, choices=CHANNELS)
     sender_key = models.CharField(max_length=255)
     recipient_hash = models.CharField(max_length=64)
-    recipient_kind = models.CharField(max_length=8, choices=[("phone", "Phone"), ("alias", "Provider alias")], default="phone")
+    recipient_kind = models.CharField(max_length=8, choices=[("phone", "Phone"), ("alias", "Provider alias"),
+        ("sender", "Unresolved sender protection")], default="phone")
     reason = models.CharField(max_length=24, choices=Reason.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     provider_at = models.DateTimeField(null=True, blank=True)
@@ -89,6 +93,8 @@ class MessagingRecipientCorrelation(models.Model):
     state = models.CharField(max_length=16, choices=State.choices, default=State.PROBING)
     alias_known = models.BooleanField(default=False)
     probe_delivery = models.ForeignKey("integrations.MessagingDelivery", null=True, blank=True, on_delete=models.SET_NULL)
+    probe_notification_delivery = models.ForeignKey("integrations.NotificationDelivery", null=True,
+        blank=True, on_delete=models.SET_NULL)
     probe_started_at = models.DateTimeField(null=True, blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
 

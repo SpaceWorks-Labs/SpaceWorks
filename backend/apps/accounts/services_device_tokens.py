@@ -11,7 +11,6 @@ from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.settings import api_settings
 
 from apps.accounts import audit_events
-from apps.accounts.credential_locks import lock_token_issuance
 from apps.accounts.native_app_identity import registration_is_eligible
 from apps.accounts.models import User
 from apps.accounts.models_devices import (
@@ -46,9 +45,9 @@ def issue_device_token_pair(user, grant, *, family=None):
     from apps.backup.recovery import assert_token_issuance_allowed
     from apps.accounts.surface_policy import assert_surface
 
-    # MERGE-RECON(A): consolidate these User-first issuance fences in one service.
-    lock_token_issuance(user)
     user = lock_session_user(user)
+    if user.account_kind not in {"member", "staff"}:
+        raise AuthenticationFailed("Invalid device authorization.")
     surface = "staff_api" if user.account_kind == "staff" else "member"
     assert_surface(user, surface)
     if grant.user_id != user.pk or grant.authority != user.account_kind:
@@ -62,6 +61,9 @@ def issue_device_token_pair(user, grant, *, family=None):
     if (grant is None or grant.status != grant.Status.ACTIVE
             or grant.revoked_at is not None or not registration_is_eligible(grant.registration)
             or grant.authority != user.account_kind
+            or grant.credential_generation != user.credential_generation
+            or grant.staff_makerspace_id != user.staff_makerspace_id
+            or (user.account_kind == "staff" and grant.login_method != "password")
             or (user.account_kind == "staff" and grant.registration.makerspace_id not in (None, user.staff_makerspace_id))):
         raise AuthenticationFailed("Invalid device authorization.")
     if family is not None:
@@ -74,6 +76,8 @@ def issue_device_token_pair(user, grant, *, family=None):
     refresh["device_grant_id"] = str(grant.pk)
     refresh["device_family_id"] = str(family.pk)
     raw = str(refresh)
+    from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+    OutstandingToken.objects.filter(jti=refresh["jti"], user=user).update(token=raw)
     DeviceRefreshToken.objects.create(
         family=family,
         jti=refresh["jti"],
@@ -121,6 +125,8 @@ def rotate_device_refresh(raw):
         family, grant = row.family, row.family.grant
         from apps.accounts.surface_policy import validate_account_token
         validate_account_token(user, claims)
+        from apps.accounts.session_issuance import validate_session_generation
+        validate_session_generation(user, claims)
         if (user.account_kind not in {"member", "staff"} or grant.user_id != user.pk
                 or grant.authority != user.account_kind):
             raise AuthenticationFailed("Invalid device refresh token.")

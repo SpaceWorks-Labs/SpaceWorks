@@ -92,7 +92,8 @@ TASK_INTERNAL_PARTICIPANTS = {
     "apps.integrations.tasks_messaging.sweep_messaging_task": "Recovery/retention use per-tenant skip-and-count gates; sender protections and operational webhook/credential retention are deployment-local.",
     "apps.inventory.tasks.snapshot_stock_task": "Daily stock observations gate each tenant separately.",
     "apps.notifications.tasks.deliver_member_push": (
-        "Resolves inbox_row.makerspace and holds its dedicated source boundary through delivery."
+        "Resolves the canonical envelope delivery's tenant and holds its source boundary; "
+        "an optional inbox never provides sending authority."
     ),
     "apps.notifications.tasks.sweep_member_push": (
         "Recovery enqueues each tenant's rows inside a skip-and-count source boundary."

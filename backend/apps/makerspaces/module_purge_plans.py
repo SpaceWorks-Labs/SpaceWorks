@@ -103,7 +103,7 @@ NOT_SEPARABLE = {
 }
 
 
-from apps.integrations.messaging.purge import sms_delete, whatsapp_delete
+from .module_purge_collectors_addressed import sms_delete, whatsapp_delete
 
 PLANS = (
     ModulePurgePlan("sms", "SMS credentials, sender identities, consent and delivery history.", sms_delete),
@@ -142,9 +142,7 @@ PLANS = (
     ),
     ModulePurgePlan(
         "notifications", "In-app notification rows.", notifications_delete,
-        pii_labels=("notifications.NotificationInboxRow", "notifications.MemberBroadcast",
-                    "integrations.NotificationEnvelope", "integrations.NotificationEndpoint",
-                    "integrations.NotificationEndpointChallenge"),
+        pii_labels=("notifications.NotificationInboxRow", "notifications.MemberBroadcast"),
     ),
     # No plan lists payments any more -- see ModulePurgePlan above. Membership dues were
     # always the exception; they are now simply the rule.

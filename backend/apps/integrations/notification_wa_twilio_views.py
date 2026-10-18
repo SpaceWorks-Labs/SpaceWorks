@@ -90,69 +90,41 @@ class TwilioWhatsAppWebhookView(APIView):
     @extend_schema(tags=["WhatsApp Twilio"], auth=[], request=TwilioCallbackSerializer,
         parameters=[OpenApiParameter("X-Twilio-Signature", str, location="header", required=True)],
         responses={200: OpenApiResponse(description="Empty TwiML response; no outbound reply."),
-                   **errors(400, 403, 404, 415, 423, 429, 503)},
+                   **errors(400, 403, 404, 415, 423, 429, 500, 503)},
         description="Signed form callbacks; URL generation must match the current integration. Extra Twilio fields are signed too.")
     def post(self, request, makerspace_id, generation, kind, delivery_id=None):
-        rows = rbac.scope_notification_policy(servable_queryset(ChannelConfiguration.objects.all(), relation="makerspace"),
-            makerspace_id=makerspace_id)
-        config = get_object_or_404(rows, channel="whatsapp", provider="twilio", generation=generation)
-        provider = TwilioWhatsAppProvider(config)
-        if provider.verify_callback(request) is None:
-            raise PermissionDenied("Invalid provider callback.")
-        # Twilio retries the same inbound MessageSid. A short cache reservation
-        # prevents those retries from extending the 24h session window repeatedly.
-        key = ""
-        if kind == "inbound":
-            digest = hashlib.sha256(f"{config.pk}:{generation}:{request.POST['MessageSid']}".encode()).hexdigest()
-            key = "whatsapp:twilio:inbound:" + digest
-            try:
-                reserved = cache.add(key, True, timeout=86400)
-            except Exception:
-                raise CallbackDependencyUnavailable() from None
-            if not reserved:
-                return HttpResponse("<Response/>", content_type="application/xml")
-        try:
-            proof_error = None
-            with tenant_write(makerspace_id), transaction.atomic():
-                from apps.encryption.write_fence import assert_mapped_write_allowed
-                assert_mapped_write_allowed(makerspace_id)
-                # Rotation and proof consumption use this same lock. Reverify after
-                # acquiring it so a rotated installation cannot win a callback race.
-                config = rows.select_for_update(of=("self",)).get(pk=config.pk)
-                provider = TwilioWhatsAppProvider(config)
-                event = provider.verify_callback(request)
-                if event is None:
-                    raise PermissionDenied("Invalid provider callback.")
-                # Delivery switches cannot discard STOP or in-flight delivery state.
-                # New consent proofs still require the live send/proof policy.
-                if event.proof and not provider.active():
-                    raise PermissionDenied("Account linking is unavailable.")
-                if event.state == "failed":
-                    # A fast failure can arrive before the REST response marks
-                    # acceptance. Failure proves Twilio accepted the message first;
-                    # bridge that acknowledgement through the same monotonic seam.
-                    from .notification_delivery import apply_callback
-                    apply_callback(config, replace(event, state="accepted"))
-                try:
-                    result = verified_callback(config, request)
-                except ValidationError as exc:
-                    # consume() deliberately raises AFTER saving a failed attempt.
-                    # Preserve it when our wider rotation lock transaction commits.
-                    proof_error, result = exc, False
-                    audit.record(None, "notification.whatsapp_proof_rejected", makerspace=config.makerspace,
-                                 target=config)
-                if not proof_error and (result or (event.inbound and event.endpoint_id and not event.opt_out)):
-                    audit.record(None, "notification.whatsapp_callback_applied", makerspace=config.makerspace,
-                        target=config, meta={"kind": kind, "state": event.state or "inbound"})
-            if proof_error:
-                raise proof_error
-        except Exception:
-            if key:
-                try:
-                    cache.delete(key)
-                except Exception:
-                    logger.warning("whatsapp_twilio_replay_release_failed")
-            raise
+        from .notification_sender import callback_configurations
+        from .notification_ingress import accept_callback
+        from .messaging.webhook_payloads import phone_hash
+        from .notification_cutover import boundary
+        with boundary():
+            config = None
+            for candidate in callback_configurations(makerspace_id, "twilio", generation):
+                event = TwilioWhatsAppProvider(candidate).verify_callback(request)
+                if event is not None:
+                    config = candidate
+                    break
+            if config is None:
+                raise PermissionDenied("Invalid provider callback.")
+            params = request.POST
+            protection = {"stop": event.opt_out,
+                "phone_hash": phone_hash(params.get("From") if kind == "inbound" else params.get("To")),
+                "error_code": params.get("ErrorCode", "")}
+            # The provider MessageSid and event state identify a retry, not receipt time.
+            identity = [params["MessageSid"], kind, event.state, params.get("ErrorCode", ""), event.opt_out, event.opt_in]
+            moment = None
+            if kind == "inbound":
+                from .messaging.webhook_payloads import timestamp
+                from .notification_wa_window import inbound_time
+                from django.utils import timezone
+                moment = inbound_time(timestamp(params.get("Timestamp"))) if params.get("Timestamp") else timezone.now()
+                if event.proof:
+                    from django.utils.crypto import salted_hmac
+                    event = replace(event, identity_digest=salted_hmac("notification.endpoint.identity.v1",
+                        f"{config.pk}:{config.generation}:{event.proof.subject}", algorithm="sha256").hexdigest())
+                event = replace(event, inbound=False)
+            accept_callback(config, event, identity=identity, protection=protection,
+                inbound_at=moment.isoformat() if moment else None)
         return HttpResponse("<Response/>", content_type="application/xml")
 
 

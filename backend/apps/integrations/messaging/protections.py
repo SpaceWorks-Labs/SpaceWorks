@@ -25,7 +25,9 @@ def suppression_rows(channel, sender_key, phone_hash):
 
 
 def suppressed(channel, sender_key, phone_hash):
-    return suppression_rows(channel, sender_key, phone_hash).exists()
+    return (MessagingSuppression.objects.filter(channel=channel, sender_key=sender_key,
+        recipient_kind="sender", lifted_at=None).exists()
+        or suppression_rows(channel, sender_key, phone_hash).exists())
 
 
 def unmapped_alias_suppressions(sender_key):

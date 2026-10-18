@@ -54,6 +54,14 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         if user.is_tenant_dump_stub or user.deletion_requested_at is not None:
             raise AuthenticationFailed("Account is not available.")
         validate_auth_generation(token)
+        from apps.accounts.session_issuance import validate_session_generation
+        validate_session_generation(user, token)
+        # Set before route policy runs: native members cannot use organization
+        # grants/governance to enter delegated staff routes.
+        if token.get("device_grant_id"):
+            from apps.accounts.native_session import mark_native_session
+            user.native_device_session = True
+            mark_native_session(user)
         from apps.accounts.surface_policy import enforce_request
         enforce_request(user, token, request)
         from apps.accounts.mfa_policy import assert_verified
@@ -90,7 +98,6 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             _assert_source_gate(request)
             request.session_authority = surface
             return authenticated
-        # MERGE-RECON(A/C): canonical staff_api claims retain native grant and fixed-tenant checks.
         if user.account_kind == "staff" and token.get("mfa_source") != "verified":
             raise AuthenticationFailed("Native staff sessions require MFA.")
         if user.account_kind not in {"member", "staff"}:
@@ -109,6 +116,9 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
                 and registration_is_eligible(grant.registration)
                 and user.is_active and user.access_status == User.AccessStatus.ACTIVE
                 and grant.authority == user.account_kind
+                and grant.credential_generation == user.credential_generation
+                and grant.staff_makerspace_id == user.staff_makerspace_id
+                and (user.account_kind != "staff" or grant.login_method == "password")
                 and (user.account_kind != "staff" or grant.registration.makerspace_id in (None, user.staff_makerspace_id))
                 and DeviceRefreshFamily.objects.filter(
                     pk=family_id, grant=grant, user=user, revoked_at__isnull=True
@@ -127,9 +137,10 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         mark_native_session(user)
         from apps.makerspaces.origin_scope import validate_native_makerspace_scope
 
-        if user.account_kind == "staff":
-            if request.headers.get("X-Makerspace-Id") is None:
-                raise PermissionDenied("Native staff APIs require X-Makerspace-Id.")
+        from apps.accounts.delegated_routes import SHARED_ACCOUNT_UTILITY, route_class
+        utility = route_class(getattr(request.resolver_match, "url_name", None)) == SHARED_ACCOUNT_UTILITY
+        if user.account_kind == "staff" and not utility and request.headers.get("X-Makerspace-Id") is None:
+            raise PermissionDenied("Native staff APIs require X-Makerspace-Id.")
         selected = validate_native_makerspace_scope(request, user, grant)
         if user.account_kind == "staff" and selected is not None:
             if str(selected) != str(user.staff_makerspace_id):

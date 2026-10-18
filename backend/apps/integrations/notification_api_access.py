@@ -13,10 +13,12 @@ def contract_space(user, makerspace_id, *, manager=False):
     if (not user.is_active or user.access_status != "active" or user.is_tenant_dump_stub
             or rbac.personal_notification_membership_refused(user, space.pk)):
         raise PermissionDenied()
-    require_module(space, "notifications")
     if manager:
         if not rbac.is_space_manager_identity(user, space.pk):
             raise PermissionDenied("Channel settings require a Space Manager.")
+        return space
+    from .messaging.ties import has_tenant_tie
+    if has_tenant_tie(user, space):
         return space
     if rbac.scope_by_makerspace(user, MakerspaceMembership.objects.all()).filter(
         makerspace=space, user=user, status="active",

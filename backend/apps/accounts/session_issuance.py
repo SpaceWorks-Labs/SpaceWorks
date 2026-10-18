@@ -7,6 +7,11 @@ from rest_framework.exceptions import AuthenticationFailed
 from apps.accounts.models import User
 
 
+def validate_session_generation(user, token):
+    if token.get("credential_generation") != user.credential_generation:
+        raise AuthenticationFailed("Account credentials have changed. Sign in again.")
+
+
 def lock_session_user(authenticated):
     """Caller holds an atomic block through minting.
 
@@ -19,8 +24,12 @@ def lock_session_user(authenticated):
     user = User.objects.select_for_update(no_key=True).filter(pk=authenticated.pk).first()
     if (
         user is None or user.is_tenant_dump_stub or not user.is_active
+        or user.retired_at is not None
         or user.deletion_requested_at is not None
         or user.access_status != User.AccessStatus.ACTIVE
+        or user.account_kind != authenticated.account_kind
+        or user.staff_makerspace_id != authenticated.staff_makerspace_id
+        or user.credential_generation != authenticated.credential_generation
         or not hmac.compare_digest(user.password, authenticated.password)
         or user.account_restored_at != authenticated.account_restored_at
     ):

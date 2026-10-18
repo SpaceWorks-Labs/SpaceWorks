@@ -20,5 +20,5 @@ def deliver_messaging_task(delivery_id):
 
 @shared_task
 def sweep_messaging_task():
-    from .messaging.sweep import run_sweep
-    return run_sweep()
+    from .notification_ingress import recover
+    return recover()

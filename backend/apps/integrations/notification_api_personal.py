@@ -1,3 +1,4 @@
+from .notification_cutover import guarded
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -9,7 +10,7 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from apps.audit import services as audit
-from apps.notifications.models_preferences import NotificationPreference
+from .notification_personal_policy import selection_model
 from .notification_api_errors import errors
 from apps.tenant_migration.gate_runtime import tenant_write
 from .models_endpoints import ChannelConfiguration, NotificationEndpoint, NotificationEndpointChallenge
@@ -107,6 +108,7 @@ class EndpointRevokeView(APIView):
 
     @extend_schema(tags=["Personal notification contract"], request=None,
                    responses={200: RevokedSerializer, **errors(400, 401, 403, 404, 423, 503)})
+    @guarded(mutation=True)
     def delete(self, request, makerspace_id, pk):
         space = contract_space(request.user, makerspace_id)
         endpoint = get_object_or_404(policy_rows(NotificationEndpoint, space), pk=pk, user=request.user)
@@ -139,7 +141,11 @@ class PersonalSelectionView(APIView):
     @extend_schema(tags=["Personal notification contract"], request=PreferencesSerializer,
                    description="Replace selections for supplied categories only. Omitted categories retain saved choices or product defaults.",
                    responses={200: PreferencesSerializer, **errors(400, 401, 403, 404, 423, 503)})
+    @guarded(mutation=True)
     def put(self, request, makerspace_id):
+        NotificationPreference = selection_model()
+        if NotificationPreference is None:
+            raise ValidationError("Category preferences are unavailable.")
         space = contract_space(request.user, makerspace_id)
         serializer = PreferencesSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

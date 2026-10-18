@@ -1,3 +1,4 @@
+from apps.integrations.notification_cutover import guarded
 import logging
 
 from django.utils import timezone
@@ -12,6 +13,7 @@ from apps.notifications.member_push_leases import claim, complete
 logger = logging.getLogger(__name__)
 
 
+@guarded(sending=True)
 def send_device_push(settings_row, device, title, body, data):
     """One provider call shared by staff fan-out and leased member delivery."""
     data = {key: str(value) for key, value in data.items()}
@@ -47,6 +49,7 @@ def push_configured():
         return False
 
 
+@guarded(sending=True)
 def deliver_native_push(log):
     # Additive master switch (plan A6): the platform credential check below still runs,
     # so enabling the feature on an unconfigured platform delivers nothing.

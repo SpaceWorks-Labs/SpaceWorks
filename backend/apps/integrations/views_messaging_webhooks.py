@@ -73,7 +73,7 @@ class TwilioMessagingWebhookView(APIView):
                 return Response({"detail": "Invalid callback fields."}, status=400)
             dedupe, payload = normalized
             accept_event(provider="twilio", channel="sms", sender_key=credential.identity.sender_key,
-                         makerspace_id=makerspace_id, dedupe_id=dedupe, kind=kind, payload=payload)
+                         makerspace_id=makerspace_id, credential_version=credential.version, dedupe_id=dedupe, kind=kind, payload=payload)
         except DatabaseError:
             return _db_failure()
         if kind == "inbound":
@@ -133,10 +133,10 @@ class MetaMessagingWebhookView(APIView):
                 if identity.pk in seen:
                     continue
                 seen.add(identity.pk)
-                phone_number_id = identity.sender_key.split(":", 2)[2]
-                for kind, dedupe, payload in meta_payloads(document, phone_number_id):
+                _, business_account_id, phone_number_id = identity.sender_key.split(":", 2)
+                for kind, dedupe, payload in meta_payloads(document, phone_number_id, business_account_id):
                     accept_event(provider="meta", channel="whatsapp", sender_key=identity.sender_key,
-                        makerspace_id=makerspace_id, dedupe_id=dedupe, kind=kind, payload=payload)
+                        makerspace_id=makerspace_id, credential_version=credential.version, dedupe_id=dedupe, kind=kind, payload=payload)
         except DatabaseError:
             return _db_failure()
         return Response({"accepted": True})

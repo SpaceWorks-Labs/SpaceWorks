@@ -50,6 +50,13 @@ def webhook_base():
 def resolve_sender(makerspace, channel):
     if channel not in ("sms", "whatsapp"):
         raise ValueError("Unsupported addressed channel.")
+    if makerspace is not None:
+        from apps.integrations.notification_sender import canonical_sender
+        try:
+            return canonical_sender(makerspace, channel)
+        except Exception:
+            logger.warning("canonical_sender_unreadable", extra={"channel": channel, "makerspace_id": makerspace.pk})
+            return None
     if not webhook_base():
         return None
     own = MakerspaceMessagingSettings.objects.filter(makerspace=makerspace).first() if makerspace else None

@@ -43,7 +43,8 @@ def _code(value):
 
 def send_request(req, *, provider):
     try:
-        with request.urlopen(req, timeout=10) as response:
+        from apps.integrations.notification_wa_twilio_http import NoRedirect
+        with request.build_opener(NoRedirect()).open(req, timeout=10) as response:
             data = _json(response)
             message_id = data.get("sid", "") if provider == "twilio" else next(
                 (item.get("id", "") for item in (data.get("messages") or []) if isinstance(item, dict)), "",

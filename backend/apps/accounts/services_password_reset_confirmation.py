@@ -112,9 +112,12 @@ def confirm_password_reset(email, code, new_password, *, context="member", maker
 
 def _credential_state_matches(user, envelope, normalized, *, makerspace=None, origin=""):
     return bool(
-        recoverable(user, context=envelope.context, makerspace=makerspace, origin=origin)
+        envelope.purpose == "reset"
+        and user.deletion_requested_at is None
+        and (user.account_restored_at is None or envelope.requested_at > user.account_restored_at)
+        and recoverable(user, context=envelope.context, makerspace=makerspace, origin=origin)
         and normalize_email(user.email) == envelope.email_normalized == normalized
-        and (envelope.context == "member" or user.credential_generation == envelope.credential_generation)
+        and user.credential_generation == envelope.credential_generation
         and hmac.compare_digest(envelope.credential_fingerprint, credential_fingerprint(user, normalized))
     )
 

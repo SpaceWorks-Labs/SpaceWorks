@@ -9,11 +9,11 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 from apps.accounts import audit_events
+from apps.accounts.models import User
 from apps.accounts.auth_cookies import clear_refresh_cookies
 from apps.accounts.models_devices import DeviceGrant
-from apps.accounts.services_tokens import blacklist_outstanding_tokens, revoke_device_grant
 from apps.accounts.web_sessions import (
-    active_sessions, legacy_sessions, revoke_legacy_session, revoke_session,
+    active_sessions, legacy_sessions,
 )
 from apps.hardware_requests.exceptions import ErrorSerializer
 
@@ -40,26 +40,27 @@ class LogoutAllView(APIView):
     def post(self, request):
         user = request.user
         with transaction.atomic():
+            user = User.objects.select_for_update(no_key=True).get(pk=user.pk)
             sessions = list(active_sessions(user))
             legacy = list(legacy_sessions(user))
-            grants = list(DeviceGrant.objects.select_for_update().filter(
+            grants = list(DeviceGrant.objects.filter(
                 user=user, status=DeviceGrant.Status.ACTIVE,
             ))
             refresh_tokens = OutstandingToken.objects.filter(
                 user=user, blacklistedtoken__isnull=True,
             ).exclude(token="").count()
-            for session in sessions:
-                revoke_session(user, session.jti)
-            for session in legacy:
-                revoke_legacy_session(user, session.jti)
-            for grant in grants:
-                revoke_device_grant(grant)
-            blacklist_outstanding_tokens(user)
+            from apps.accounts.credential_revocation import revoke_account_sessions
+            revoke_account_sessions(user)
             audit_events.record_auth_event(
                 user, "auth.logout_all", target=user,
                 meta={"web_sessions": len(sessions), "legacy_sessions": len(legacy),
                       "devices": len(grants), "refresh_tokens": refresh_tokens},
             )
         response = Response({"web_sessions": len(sessions) + len(legacy), "devices": len(grants)})
-        clear_refresh_cookies(response)
+        from apps.accounts.session_context import token_context
+        if request.auth:
+            context = token_context(request.auth)
+        else:
+            context = "staff:" + user.staff_makerspace.slug if user.account_kind == "staff" else user.account_kind
+        clear_refresh_cookies(response, context=context)
         return response

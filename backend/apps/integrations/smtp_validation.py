@@ -41,6 +41,10 @@ def sending_claim_is_stale(log) -> bool:
 
 
 def validate_smtp_settings(attrs, instance=None):
+    tls = attrs.get("smtp_use_tls", getattr(instance, "smtp_use_tls", False))
+    ssl = attrs.get("smtp_use_ssl", getattr(instance, "smtp_use_ssl", False))
+    if tls and ssl:
+        raise ValidationError({"smtp_use_tls": "Select STARTTLS or implicit SSL, not both."})
     host = attrs.get("smtp_host")
     port = attrs.get("smtp_port")
     if host is None and instance is not None:

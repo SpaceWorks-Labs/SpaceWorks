@@ -61,6 +61,9 @@ def _hash(value):
 
 
 def remap_programme(label, source, row, map_id):
+    if label == "events.EventRegistration" and isinstance(row.get("custom_answers"), dict):
+        from apps.events.answer_derivations.portability import remap_canonical_answers
+        row["custom_answers"] = remap_canonical_answers(row["custom_answers"], map_id)
     if label == "events.EventFormRevision" and row["selector_id"] is not None:
         target = {"posting": "EventRolePosting", "round": "MentorRound", "track": "HackathonTrack"}.get(row["selector_kind"])
         if target is None:
@@ -68,6 +71,9 @@ def remap_programme(label, source, row, map_id):
         row["selector_id"] = map_id("events." + target, row["selector_id"])
     for path, target in SLOTS.get(label, {}).items():
         root = path.split(".", 1)[0]
+        if root == "project" and not isinstance(row.get(root), dict):
+            # The private document is remapped after authenticated decryption.
+            continue
         if root in row:
             row[root] = deepcopy(row[root])
         _walk(row, path.split("."), target, map_id)
@@ -76,6 +82,8 @@ def remap_programme(label, source, row, map_id):
         if target is None:
             raise ValueError("Invalid certificate batch subject.")
         row["subject_id"] = map_id(target, row["subject_id"])
+    if label == "events.SubmissionSnapshot" and not isinstance(row.get("project"), dict):
+        return
     if label in {"events.SubmissionSnapshot", "events.EventResultRevision"}:
         row["source_content_sha256"] = source.get("source_content_sha256") or source["content_sha256"]
         if label == "events.SubmissionSnapshot":

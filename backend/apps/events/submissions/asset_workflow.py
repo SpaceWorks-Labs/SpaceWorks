@@ -13,6 +13,7 @@ from .ports import boundary
 from .quota import reserve, usage_locked
 from .workflow import canonical_digest
 from .upload_deadlines import upload_deadline
+from .pii import prepare_documents
 
 
 def model_for(participant):
@@ -44,7 +45,7 @@ def initialize_asset(*, actor, event_id, team_id, operation_id, data, participan
         raise SubmissionError("file_too_large", 413)
     port = boundary()
     digest = request_digest or canonical_digest({"create": data, "team": team_id, "participant": participant, "saved_source": saved_source})
-    with port.locked(actor=actor, event_id=event_id, team_id=team_id, action="upload") as ctx:
+    with prepare_documents(event_id), port.locked(actor=actor, event_id=event_id, team_id=team_id, action="upload") as ctx:
         replay = _receipt(port, ctx, actor, operation_id, digest)
         if replay is not None:
             return replay

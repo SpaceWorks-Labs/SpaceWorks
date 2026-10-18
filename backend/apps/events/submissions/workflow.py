@@ -12,6 +12,7 @@ from .models_projects import (HackathonSubmission, SubmissionSnapshot, SnapshotA
                               SnapshotLink, SnapshotTrack, SnapshotPrize)
 from .ports import boundary
 from .project_validation import PROJECT_FIELDS, validate_project_patch
+from .pii import prepare_documents
 
 
 def canonical_digest(data):
@@ -35,7 +36,7 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
         raise SubmissionError("invalid_version")
     data, now, port = data or {}, now or timezone.now(), boundary()
     digest = canonical_digest({"team": team_id, "action": action, "version": expected_version, "data": data})
-    with port.locked(actor=actor, event_id=event_id, team_id=team_id, action=action) as context:
+    with prepare_documents(event_id), port.locked(actor=actor, event_id=event_id, team_id=team_id, action=action) as context:
         replay = port.receipt(event_id=event_id, actor_id=actor.pk, operation_id=str(operation_id), digest=digest)
         if replay is not None:
             return replay

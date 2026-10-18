@@ -16,7 +16,8 @@ GROUP_CAPS = {"video": 500, "deck": 50, "images": 50, "source": 200, "hardware-p
 def usage_locked(context):
     # The boundary already locks the owning event, serializing first-use insertion.
     row, _ = EventAssetUsage.objects.get_or_create(event=context.event, defaults={
-        "budget_bytes": MANAGED_ALLOWANCE if context.managed else context.budget_bytes,
+        "budget_bytes": (min(MANAGED_ALLOWANCE, context.budget_bytes) if context.budget_bytes is not None
+                         else MANAGED_ALLOWANCE) if context.managed else context.budget_bytes,
     })
     return EventAssetUsage.objects.select_for_update().get(pk=row.pk)
 

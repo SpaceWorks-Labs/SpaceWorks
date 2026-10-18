@@ -77,6 +77,8 @@ def resume_upload(*, actor, event_id, team_id, asset_id, participant, expected_v
         asset.last_activity_at = timezone.now()
         asset.upload_not_after = upload_deadline(ctx, now=asset.last_activity_at, expires_at=asset.expires_at)
         asset.save(update_fields=["last_activity_at", "upload_not_after"])
+        from apps.makerspaces.storage_events_programme import refresh_obligation_locked
+        refresh_obligation_locked(asset)
         record(actor, "event.asset_upload_refreshed", makerspace=ctx.event.makerspace, target=asset)
         if replay is None:
             port.store_receipt(event_id=event_id, actor_id=actor.pk, operation_id=operation_id, digest=digest,

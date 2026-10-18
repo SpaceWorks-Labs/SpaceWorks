@@ -32,6 +32,16 @@ def delete_keys(storage, keys):
             for page in uploads.paginate(Bucket=storage.bucket, Prefix=key):
                 if any(v["Key"] == key for v in page.get("Uploads", [])):
                     raise SubmissionError("storage_cleanup_pending", 503)
+            for page in paginator.paginate(Bucket=storage.bucket, Prefix=key):
+                if any(v["Key"] == key for name in ("Versions", "DeleteMarkers") for v in page.get(name, [])):
+                    raise SubmissionError("storage_cleanup_pending", 503)
+            try:
+                storage.client.head_object(Bucket=storage.bucket, Key=key)
+            except Exception as exc:
+                if getattr(exc, "response", {}).get("Error", {}).get("Code") not in {"404", "NoSuchKey", "NotFound"}:
+                    raise
+            else:
+                raise SubmissionError("storage_cleanup_pending", 503)
     except SubmissionError:
         raise
     except Exception as exc:

@@ -31,11 +31,11 @@ def anchor_locked(*, event, usage, actor, kind, at):
     return deadline
 
 
-def expire_locked(*, event, actor, at=None):
+def expire_locked(*, event, actor, at=None, limit=100):
     at = at or timezone.now()
     for cls in (SubmissionAsset, HackathonParticipantAsset):
         rows = cls.objects.select_for_update().filter(event=event, expires_at__lte=at, expired_at__isnull=True)
-        for asset in rows:
+        for asset in rows.order_by("pk")[:min(max(limit, 1), 500)]:
             asset.expired_at, asset.state = at, "expiring"
             asset.expired_size_bytes = asset.actual_bytes
             asset.version += 1

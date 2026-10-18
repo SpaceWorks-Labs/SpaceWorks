@@ -3,13 +3,14 @@ from .errors import SubmissionError
 from .models_projects import HackathonSubmission
 from .ports import boundary
 from .workflow import canonical_digest
+from .pii import prepare_documents
 
 
 def triage(*, actor, event_id, submission_id, operation_id, expected_version, triage, reason):
     if triage not in {"pending", "eligible", "ineligible", "hidden"} or not isinstance(reason, str) or not 1 <= len(reason) <= 1000:
         raise SubmissionError("triage_reason_required")
     port = boundary()
-    with port.locked(actor=actor, event_id=event_id, team_id=None, action="triage") as ctx:
+    with prepare_documents(event_id), port.locked(actor=actor, event_id=event_id, team_id=None, action="triage") as ctx:
         digest = canonical_digest({"submission": submission_id, "version": expected_version, "triage": triage, "reason": reason})
         replay = port.receipt(event_id=event_id, actor_id=actor.pk, operation_id=operation_id, digest=digest)
         if replay is not None:

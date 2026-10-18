@@ -77,6 +77,9 @@ def save_form(event, *, actor, key, data):
         raise ValidationError({"code": "invalid_form_schema", "detail": "Event context is read-only.",
                                "fields": {"event_context": ["Remove this read-only field before saving."]}})
     schema = _schema(data["schema"])
+    if key == "registration" and isinstance(schema, dict) and schema.get("schema_version") == 2:
+        from apps.events.registration_form_adapter import require_private_registration_answers
+        require_private_registration_answers()
     selector = selector_for(key, data)
 
     def apply(locked, locked_actor):

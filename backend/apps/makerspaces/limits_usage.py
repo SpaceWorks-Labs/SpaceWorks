@@ -151,7 +151,10 @@ def _machine_service_submit(makerspace) -> int:
 
 
 def _storage(makerspace) -> int:
-    return makerspace.storage_bytes_used
+    from .storage_events_programme import accounted_bytes
+    # Dedicated event pools count toward provider usage but not the ordinary
+    # tenant entitlement; otherwise an event would consume both allowances.
+    return max(0, makerspace.storage_bytes_used - accounted_bytes(makerspace))
 
 
 def add_storage(makerspace, size_bytes) -> None:
@@ -176,7 +179,7 @@ def add_storage(makerspace, size_bytes) -> None:
 
     with transaction.atomic():
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-        if locked.storage_bytes_used + size_bytes > limit:
+        if _storage(locked) + size_bytes > limit:
             raise serializers.ValidationError(
                 {
                     "limit": "You've reached the free storage limit for this space — ask the operator to raise it or self-host."

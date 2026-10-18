@@ -34,11 +34,12 @@ class ProgrammeReceipts:
 
 
 class SubmissionBoundaryAdapter(ProgrammeReceipts):
-    def __init__(self, *, ordered_context, gate, teams, participants, projects, judging, configuration, storage_pool):
+    def __init__(self, *, ordered_context, gate, teams, participants, projects, judging, configuration, storage_pool=None):
         self.ordered_context, self.gate = ordered_context, gate
         self.teams, self.participants, self.projects = teams, participants, projects
         self.judging, self.configuration = judging, configuration
-        self.storage_pool = storage_pool
+        from apps.makerspaces.storage_events_programme import EventAssetStoragePool
+        self.storage_pool = storage_pool if storage_pool is not None else EventAssetStoragePool()
 
     @contextmanager
     def locked(self, *, actor, event_id, team_id, action):

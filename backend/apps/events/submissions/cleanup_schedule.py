@@ -7,7 +7,7 @@ from apps.audit.services import record
 from .models_assets import SubmissionAsset, HackathonParticipantAsset, SubmissionAssetWork
 
 
-def enqueue_abandoned_locked(*, event, actor=None, now=None):
+def enqueue_abandoned_locked(*, event, actor=None, now=None, limit=100):
     now = now or timezone.now()
     for cls in (SubmissionAsset, HackathonParticipantAsset):
         candidates = cls.objects.select_for_update().filter(event=event, deleted_at__isnull=True)
@@ -16,12 +16,13 @@ def enqueue_abandoned_locked(*, event, actor=None, now=None):
             from .models_projects import SnapshotAsset
             referenced = SnapshotAsset.objects.values("asset_id")
             unattached = cls.objects.exclude(pk__in=referenced).filter(event=event).values("pk")
-            abandoned |= Q(pk__in=unattached, state__in=["reserved", "uploading", "ready", "rejected", "aborted"])
-        for asset in candidates.filter(abandoned).order_by("pk"):
+            abandoned |= Q(pk__in=unattached, state__in=["reserved", "uploading", "ready"])
+        for asset in candidates.filter(abandoned).order_by("pk")[:min(max(limit, 1), 500)]:
             asset.state, asset.expired_at = "aborted", asset.expired_at or now
             asset.version += 1
             asset.save(update_fields=["state", "expired_at", "version"])
-            work = asset.work
+            work, _ = SubmissionAssetWork.objects.get_or_create(**{
+                "participant_asset" if cls is HackathonParticipantAsset else "asset": asset})
             work.state, work.next_attempt_at, work.lease_token, work.lease_until = "pending", now, None, None
             work.save()
             record(actor, "event.asset_abandoned", makerspace=event.makerspace, target=asset,
@@ -36,7 +37,19 @@ def due_work_ids(*, now=None, limit=100):
     this equivalently under tombstoning or its external scheduler.
     """
     now = now or timezone.now()
-    return tuple(SubmissionAssetWork.objects.filter(next_attempt_at__lte=now,
+    rows = SubmissionAssetWork.objects.filter(next_attempt_at__lte=now,
         state__in=["pending", "verify_absence", "processing"]).filter(
         Q(lease_until__isnull=True) | Q(lease_until__lte=now)
-    ).order_by("next_attempt_at", "pk").values_list("pk", flat=True)[:limit])
+    ).exclude(Q(asset__state__in=["reserved", "uploading"]) | Q(participant_asset__state__in=["reserved", "uploading"]))
+    from apps.events.tasks_sweeps import take_ids
+    return tuple(take_ids("asset-work", rows, limit=limit))
+
+
+def rebuild_cleanup_work_locked(*, event, limit=100):
+    """Deployment recovery may omit leases/work; retained metadata is the source."""
+    for model in (SubmissionAsset, HackathonParticipantAsset):
+        rows = model.objects.filter(event=event, work__isnull=True, state__in=(
+            "ready", "expired", "expiring", "deleting", "aborted", "rejected", "quarantined"))
+        for pk in rows.order_by("pk").values_list("pk", flat=True)[:min(max(limit, 1), 500)]:
+            SubmissionAssetWork.objects.get_or_create(**{
+                "participant_asset_id" if model is HackathonParticipantAsset else "asset_id": pk})

@@ -14,6 +14,40 @@ PORTABLE_FIELDS = (
 )
 
 
+def remap_canonical_answers(document, map_id):
+    """Remap F's discriminated descriptors, never recurse through user values.
+
+    v1 maps have no typed references. A v2 age descriptor carries evidence, not
+    a numeric age; an asset reference names an independently event-owned resume.
+    """
+    result = deepcopy(document)
+    if not isinstance(result, dict) or result.get("version") != 2:
+        return result
+    if not {"form_id", "form_revision", "answers"} <= result.keys():
+        return result  # A legacy question may itself be named "version".
+    if not isinstance(result["answers"], list):
+        raise ValueError("Invalid canonical answer document.")
+    for answer in result["answers"]:
+        if not isinstance(answer, dict) or not {"id", "type"} <= answer.keys():
+            raise ValueError("Invalid canonical answer descriptor.")
+        if answer["type"] == "age_at_event":
+            if "value" in answer or "derivation_id" not in answer:
+                raise ValueError("An age answer must retain its source reference only.")
+            answer["derivation_id"] = _reference("events.EventAnswerDerivation", answer["derivation_id"], map_id)
+        elif answer["type"] == "asset_reference":
+            value = answer.get("value")
+            if not isinstance(value, dict) or set(value) != {"asset_id", "sha256"}:
+                raise ValueError("Invalid canonical asset descriptor.")
+            value["asset_id"] = _reference("events.HackathonParticipantAsset", value["asset_id"], map_id)
+    return result
+
+
+def _reference(label, value, map_id):
+    if type(value) is not int or value <= 0:
+        raise ValueError("Invalid typed answer reference.")
+    return map_id(label, value)
+
+
 def capture_event_sources(*, event_id):
     """Canonical tenant evidence only. The global vault/key registry is not read.
 

@@ -28,9 +28,12 @@ def process_batch(batch_id):
     return batch.pk
 
 
+@shared_task
 def resume_batches(limit=100):
     from .models import CertificateIssueBatch
-    rows = CertificateIssueBatch.objects.filter(state__in=("queued", "running")).order_by("pk")[:limit]
+    from apps.events.tasks_sweeps import take_ids
+    ids = take_ids("certificate-batches", CertificateIssueBatch.objects.filter(state__in=("queued", "running")), limit=limit)
+    rows = CertificateIssueBatch.objects.filter(pk__in=ids).order_by("pk")
     for batch in rows:
         dispatch_batch(batch.pk)
 
@@ -49,13 +52,16 @@ def render_one(self, certificate_id):
         raise self.retry(countdown=300) from None
 
 
+@shared_task
 def resume_certificates(limit=100):
     from datetime import timedelta
     from django.db.models import Q
     from django.utils import timezone
     from apps.events.models_certificates import EventAttendanceCertificate
     pending = Q(status__in=("pending", "failed")) | Q(status="rendering", render_started_at__lte=timezone.now()-timedelta(minutes=5)) | Q(status="rendering", render_started_at__isnull=True)
-    rows = EventAttendanceCertificate.objects.filter(pending).order_by("render_attempts", "issued_at", "pk")[:limit]
+    from apps.events.tasks_sweeps import take_ids
+    ids = take_ids("certificate-renders", EventAttendanceCertificate.objects.filter(pending), limit=limit)
+    rows = EventAttendanceCertificate.objects.filter(pk__in=ids).order_by("pk")
     for row in rows:
         try:
             render_one.delay(row.pk)

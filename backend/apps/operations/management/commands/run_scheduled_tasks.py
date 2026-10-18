@@ -73,6 +73,14 @@ SCHEDULED_TASKS = (
     ("event-admission-deadlines", "apps.events.tasks_programme.sweep_admission_deadlines_task", 5),
     ("event-contributor-maintenance", "apps.events.tasks_contributions.sweep_contributor_maintenance_task", 1),
     ("event-scheduled-broadcasts", "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts", 1),
+    ("event-asset-work", "apps.events.tasks_assets.sweep_asset_work_task", 1),
+    ("event-asset-deadlines", "apps.events.tasks_assets.sweep_asset_deadlines_task", 1),
+    ("event-asset-retention", "apps.events.tasks_assets.sweep_asset_retention_task", 5),
+    ("event-asset-obligations", "apps.events.tasks_assets.reconcile_asset_obligations_task", 5),
+    ("event-certificate-batches", "apps.events.certificates.tasks.resume_batches", 1),
+    ("event-certificate-renders", "apps.events.certificates.tasks.resume_certificates", 5),
+    ("event-print-cleanup", "apps.events.tasks_recovery.sweep_print_cleanup_task", 5),
+    ("event-judging-notices", "apps.events.tasks_recovery.sweep_judging_notices_task", 1),
     ("account-saved-details", "apps.accounts.saved_details.tasks.process_saved_details", 5),
     ("purge-auth-challenges", "apps.accounts.tasks.purge_auth_challenges_task", 24 * 60),
     # Beat runs this at a fixed hour; the beat-less runner has no wall-clock schedule, so
@@ -178,7 +186,9 @@ if "tenant_migration" in settings.TOMBSTONED_APPS:
         task for task in SCHEDULED_TASKS if ".tenant_migration." not in task[1]
     )
 if "events" in settings.TOMBSTONED_APPS:
-    SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".events." not in task[1])
+    SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".events." not in task[1] or task[0] in {
+        "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+    })
 
 
 if "devices" in settings.TOMBSTONED_APPS:

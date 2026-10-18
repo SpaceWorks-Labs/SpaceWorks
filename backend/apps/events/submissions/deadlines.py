@@ -7,10 +7,10 @@ from .models_projects import HackathonSubmission
 from .ports import boundary
 
 
-def lock_event_submissions(*, event_id, now=None):
+def lock_event_submissions(*, event_id, now=None, limit=100):
     now = now or timezone.now()
     identities = tuple(HackathonSubmission.objects.filter(event_id=event_id, state="submitted")
-                       .values_list("pk", "team_id"))
+                       .order_by("pk").values_list("pk", "team_id")[:min(max(limit, 1), 500)])
     count = 0
     for identity, team_id in identities:
         with boundary().locked(actor=None, event_id=event_id, team_id=team_id, action="deadline_lock") as context:

@@ -71,6 +71,8 @@ class AssetJob:
                 descriptor, upload_id, part_size = self.storage.initialize(asset, now=timezone.now())
                 def started(a, w, ctx):
                     a.multipart_upload_id, a.part_size, a.state = upload_id, part_size, "uploading"
+                    from apps.makerspaces.storage_events_programme import refresh_obligation_locked
+                    refresh_obligation_locked(a)
                     record(self.actor, "event.asset_uploading", makerspace=ctx.event.makerspace, target=a)
                     w.state, w.lease_token, w.lease_until = "waiting", None, None
                 self.edit(started)
@@ -212,7 +214,7 @@ class AssetJob:
                 boundary().storage_pool_locked(context=ctx, asset=a,
                     operation="release_all" if not temporary_only else "release_temporary", bytes=released)
             if not temporary_only:
-                a.deleted_at = timezone.now()
+                a.deleted_at = a.deleted_at or timezone.now()
                 a.expired_size_bytes = a.actual_bytes
                 a.state = "expired" if a.state in {"expiring", "expired"} else a.state
             _done(w, "verify_absence")

@@ -18,8 +18,10 @@ def functional_links(space):
                  for key in ("events", "bookings", "machines", "membership")}
     available["inventory"] = bool(module_enabled(space, "public_inventory") and public_surface_available("public_inventory") and space.public_inventory_enabled
                                   and feature_enabled(space, "loans.enabled"))
-    return {"links": [{"family": key, "url": f"{origin}{home}" if key == "inventory" else f"{origin}{home}/{key}"} for key in
-                       ("inventory", "events", "bookings", "machines", "membership") if available[key]]}
+    routes = {"inventory": "", "events": "/events", "bookings": "/bookings",
+              "machines": "/machines", "membership": "/member"}
+    return {"links": [{"family": key, "url": f"{origin}{home}{path}"}
+                      for key, path in routes.items() if available[key]]}
 
 
 def project_team(entries, revision, request):

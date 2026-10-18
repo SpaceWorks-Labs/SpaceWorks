@@ -94,8 +94,10 @@ def validate_snapshot_window(target, revision, *, inherited=False):
             raise ValidationError("The window excludes sessions in the released website. Release a fitting draft or unrelease it first.")
 
 
-def operational_snapshot(page, identity, minutes, actor):
-    revision = page.published_revision
+def operational_snapshot(page, identity, minutes, actor, *, source_revision=None):
+    # Copy the selected saved version and its typed references. An operational
+    # delay must not re-admit editorial members whose consent has since changed.
+    revision = source_revision if source_revision is not None else page.published_revision
     document = deepcopy(revision.document)
     for row in document["sessions"]:
         if row["session_id"] == str(identity):

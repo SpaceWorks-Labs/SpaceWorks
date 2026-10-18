@@ -8,7 +8,6 @@ from collections import Counter
 from copy import deepcopy
 
 from django.apps import apps
-from django.db import connections
 from django.db.models import Sum
 
 from .recipient_selection import BackupBuildError
@@ -134,15 +133,14 @@ def verify_quota(*, using):
             refuse("global storage accounting or allowance")
     # Tenant counters include other domains too. Never replace one with a page subtotal.
     from apps.makerspaces import limits
-    if not limits.is_self_host():
-        with connections[using].cursor() as cursor:
-            cursor.execute("""
-                SELECT 1 FROM makerspaces_makerspace m WHERE m.storage_bytes_used <
-                  (SELECT coalesce(sum(size_bytes),0) FROM makerspaces_makerspacepublicpageasset a
-                   JOIN makerspaces_makerspacepublicpage p ON p.id=a.page_id WHERE p.makerspace_id=m.id)
-                + (SELECT coalesce(sum(a.size_bytes),0) FROM events_eventpageasset a
-                   JOIN events_eventpage p ON p.id=a.page_id WHERE p.makerspace_id=m.id)
-                LIMIT 1
-            """)
-            if cursor.fetchone():
-                refuse("tenant storage counter below retained page bytes")
+    Space = apps.get_model("makerspaces.Makerspace")
+    for space in Space.objects.using(using).iterator(chunk_size=100):
+        if limits.resource_limit(space, "storage") is None:
+            continue  # Unlimited storage intentionally does not increment its counter.
+        total = 0
+        # Events retains its models and bytes even when its runtime is tombstoned.
+        for label in ("makerspaces.MakerspacePublicPageAsset", "events.EventPageAsset"):
+            total += apps.get_model(label).objects.using(using).filter(
+                page__makerspace=space).aggregate(n=Sum("size_bytes"))["n"] or 0
+        if space.storage_bytes_used < total:
+            refuse("tenant storage counter below retained page bytes")

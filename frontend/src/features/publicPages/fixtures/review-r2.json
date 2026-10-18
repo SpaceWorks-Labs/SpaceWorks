@@ -410,7 +410,7 @@
         },
         {
           "family": "membership",
-          "url": "https://platform.example.test/m/lab/membership"
+          "url": "https://platform.example.test/m/lab/member"
         }
       ]
     }

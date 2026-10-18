@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from .event_permissions import PUBLISH_SCHEDULE
 from .models_website import EventPage
 from .website_copy import owner
-from .website_revisions import operational_snapshot, save_draft
+from .website_revisions import operational_snapshot
 from .website_revision_projection import snapshot_sessions
 
 
@@ -32,7 +32,9 @@ def set_delay(target, slug, *, actor, minutes, revision=None, session_id=None):
     if working is not None:
         working.delay_minutes = minutes
         working.save(update_fields=["delay_minutes"])
-        save_draft(page, actor)
+        page.draft_revision = operational_snapshot(
+            page, alias.identity_id, minutes, actor, source_revision=page.draft_revision)
+        page.save(update_fields=["draft_revision"])
     if public is not None:
         page.published_revision = operational_snapshot(page, alias.identity_id, minutes, actor)
         page.save(update_fields=["published_revision"])

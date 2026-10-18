@@ -17,6 +17,8 @@ from apps.payments_rail.views_connect import (
     StripeConnectWebhookView,
 )
 from apps.separability.registry import runtime_active
+from django.conf import settings
+from config.cloud_settings.urls import free_tick_paths
 
 
 def separable_paths(app_label, *routes):
@@ -71,6 +73,7 @@ from apps.accounts.reauthentication_control import control_reauthentication
 from apps.operations.control_storage import control_storage
 
 urlpatterns = [
+    *free_tick_paths(settings.SPACEWORKS_DEPLOYMENT_PROFILE),
     path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
     path("", include("apps.makerspaces.website_urls")),
     path("mfa/control/", control_mfa, name="control-mfa"),

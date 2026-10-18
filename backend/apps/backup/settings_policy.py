@@ -21,6 +21,9 @@ class SettingPolicy:
 # Literal by design: the env-surface test compares this with its existing scanner, so a
 # newly read setting cannot silently inherit a policy.
 ENV_SURFACE = frozenset("""
+SPACEWORKS_DEPLOYMENT_MODE SPACEWORKS_DEPLOYMENT_PROFILE CLOUD_TASK_PROFILE CLOUD_SCHEDULER
+EMAIL_PROVIDER FREE_TICK_SECRET FREE_TICK_INTERVAL_SECONDS FREE_TICK_BUDGET_SECONDS
+FREE_TICK_RATE_LIMIT_PER_MINUTE FREE_DB_CAP_BYTES FREE_OBJECT_CAP_BYTES FREE_EMAIL_DAILY_CAP
 MFA_CHALLENGE_TTL_SECONDS MFA_MAX_ATTEMPTS
 THROTTLE_MFA_VERIFY THROTTLE_MFA_CHALLENGE THROTTLE_MFA_USER THROTTLE_MFA_MANAGE
 THROTTLE_STAFF_INVITE THROTTLE_STAFF_INVITE_ACCEPT
@@ -137,6 +140,9 @@ WEB_ANALYTICS_SCRIPT_URL WEB_ANALYTICS_COLLECT_URL WEB_ANALYTICS_DOMAIN
 # The source-gate lease and presign-drain settings are portable operational timing
 # knobs, like the neighbouring backup lease/drain settings. They therefore receive
 # the generated EXCLUDED policy rather than participating in restore compatibility.
+# Cloud launch/task selectors are operational admission/topology inputs, validated
+# by their own gates. The rotatable free tick secret is EXCLUDED but secret-bearing:
+# adding a required fingerprint would reject all pre-cloud full-profile archives.
 
 EXACT = frozenset({
     "SECRET_KEY", "API_CLIENT_ENC_KEY", "PII_MASTER_KEY", "PII_MASTER_KEY_PREVIOUS",
@@ -156,6 +162,7 @@ CAPABILITY = frozenset({
 # neither affects restored data or target compatibility. Self-creation policy and
 # analytics destinations are compared, non-blocking operator-visible differences.
 VALUE = frozenset({
+    "EMAIL_PROVIDER",
     "NOTIFICATION_SLACK_REDIRECT_URI", "NOTIFICATION_MATTERMOST_REDIRECT_URI",
     "NOTIFICATION_DISCORD_REDIRECT_URI", "NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS",
     "WHATSAPP_META_GRAPH_VERSION",
@@ -200,6 +207,7 @@ POLICIES = {
             "AWS_SECRET_ACCESS_KEY", "EMAIL_HOST_PASSWORD", "CELERY_BROKER_URL",
             "CELERY_RESULT_BACKEND", "DATABASE_URL", "SPACEWORKS_RUNTIME_DATABASE_URL",
             "BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY", "METRICS_TOKEN", "SENTRY_DSN", "LIVE_REDIS_URL",
+            "FREE_TICK_SECRET",
         },
         blocks_restore=name in EXACT or name in CAPABILITY or name in BLOCKING_VALUE,
     )

@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "status": "reserved_not_implemented_no_migrations",
+  "owner": "I_later_integration",
+  "module": "apps.operations.models_cloud",
+  "classification": "deployment_operational; omit from tenant dumps/projections; explicit backup/encryption/portability catalog entries required before registration",
+  "rules": [
+    "No nullable-FK select_related combined with select_for_update",
+    "Every service state change audits via apps.audit.services.record",
+    "No business/domain row transaction across remote I/O",
+    "CAS uses attempt_id+generation; uncertainty survives lease expiry/restart",
+    "No PII, secrets, signed URLs, bodies or local scratch paths in checkpoints/detail",
+    "No migration numbers reserved; integrator chains actual leaves"
+  ],
+  "models": {
+    "FreeTickRun": {
+      "id": "UUID pk",
+      "fields": [
+        "started_at datetime",
+        "finished_at nullable datetime",
+        "status started|completed|failed",
+        "elapsed_seconds float",
+        "completed positive int",
+        "deferred positive int",
+        "failed positive int",
+        "reason_codes bounded JSON"
+      ],
+      "retention": "30 days terminal detail; audit retained"
+    },
+    "FreeTaskProgress": {
+      "id": "auto pk",
+      "unique": [
+        [
+          "task_key"
+        ]
+      ],
+      "fields": [
+        "task_key varchar(100)",
+        "generation positive bigint",
+        "attempt_id nullable UUID",
+        "state idle|running|deferred|uncertain|failed",
+        "checkpoint bounded JSON",
+        "last_attempted_at nullable datetime",
+        "last_completed_at nullable datetime",
+        "next_due_at nullable datetime",
+        "reason_code varchar(100)"
+      ],
+      "retention": "current progress and unresolved uncertainty never age-pruned"
+    },
+    "FreeTaskAttempt": {
+      "id": "UUID pk",
+      "unique": [
+        [
+          "task_key",
+          "generation"
+        ]
+      ],
+      "fields": [
+        "tick_run PROTECT FK FreeTickRun",
+        "task_key varchar(100)",
+        "generation positive bigint",
+        "started_at datetime",
+        "finished_at nullable datetime",
+        "state running|completed|deferred|failed|uncertain",
+        "guard_backend_pid nullable int",
+        "reason_code varchar(100)",
+        "processed positive bigint"
+      ],
+      "retention": "30 days resolved; unresolved uncertainty retained"
+    },
+    "FreeTickRateWindow": {
+      "id": "auto pk",
+      "unique": [
+        [
+          "key",
+          "window_start"
+        ]
+      ],
+      "fields": [
+        "key varchar(100) opaque limiter namespace",
+        "window_start datetime",
+        "count positive int"
+      ],
+      "retention": "expire ended windows after 24 hours; atomic PostgreSQL admission"
+    },
+    "FreeMailBudgetWindow": {
+      "id": "auto pk",
+      "unique": [
+        [
+          "account_key",
+          "period",
+          "window_start"
+        ]
+      ],
+      "fields": [
+        "account_key varchar(100)",
+        "period day|month",
+        "window_start datetime",
+        "window_end datetime",
+        "cap positive bigint",
+        "reserved positive bigint",
+        "accepted positive bigint",
+        "uncertain positive bigint"
+      ],
+      "retention": "closed resolved windows 90 days; unsettled reservations prohibit pruning"
+    },
+    "FreeMailReservation": {
+      "id": "UUID pk",
+      "unique": [
+        [
+          "account_key",
+          "delivery_key"
+        ]
+      ],
+      "fields": [
+        "account_key varchar(100)",
+        "delivery_key varchar(128) opaque stable delivery identity",
+        "day_window PROTECT FK FreeMailBudgetWindow",
+        "month_window nullable PROTECT FK FreeMailBudgetWindow",
+        "recipients positive int",
+        "state reserved|accepted|not_accepted|uncertain",
+        "created_at datetime",
+        "settled_at nullable datetime"
+      ],
+      "retention": "unresolved uncertainty retained; resolved receipts at least delivery replay horizon and 90 days"
+    },
+    "CloudUsageSample": {
+      "id": "auto pk",
+      "fields": [
+        "metric database|objects|email",
+        "makerspace nullable CASCADE FK",
+        "scope deployment|tenant|provider_account",
+        "used nullable positive bigint",
+        "uncertain positive bigint",
+        "sampled_at datetime",
+        "source varchar(100)",
+        "reason_code varchar(100)",
+        "checkpoint bounded JSON",
+        "configured_cap nullable positive bigint",
+        "cap_source varchar(200)",
+        "cap_verified_on nullable date"
+      ],
+      "retention": "latest sample and reconciliation cursor retained; superseded samples 30 days"
+    },
+    "CloudObjectUsageReceipt": {
+      "id": "UUID pk",
+      "unique": [
+        [
+          "operation_key"
+        ]
+      ],
+      "fields": [
+        "operation_key varchar(128) opaque idempotency key",
+        "makerspace nullable CASCADE FK",
+        "bucket_alias varchar(100)",
+        "object_key_digest varchar(64)",
+        "generation varchar(100)",
+        "bytes positive bigint",
+        "operation finalize|delete_confirmed",
+        "created_at datetime"
+      ],
+      "retention": "keep for reconciliation/replay horizon; never substitutes immutable evidence/deletion receipts"
+    }
+  },
+  "handoff": "J/E/S may target these field names but must not define or register these models. Send additional required fields to I before implementation."
+}

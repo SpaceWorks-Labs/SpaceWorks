@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "rules": {
+    "missing_selectors": "host+full",
+    "unknown_or_empty_selectors": "refuse_exit_78_before_Django",
+    "host_free": "refused",
+    "full_free_knobs": "unread_and_inert",
+    "secrets": "protected mounts/provider stores; never browser, argv or logs",
+    "runtime_roles": [
+      "backend",
+      "worker",
+      "beat",
+      "cron",
+      "management"
+    ],
+    "maintenance_credentials": "finite release/adopt/qualified maintenance jobs only; never web/common anchors",
+    "rotation": "validate and release/restart consumers; preserve generated continuity secrets",
+    "unimplemented_names": "reserved interfaces, not proof of a runtime read"
+  },
+  "implemented_by_i": {
+    "SPACEWORKS_DEPLOYMENT_MODE": {
+      "default": "host",
+      "enum": [
+        "host",
+        "managed"
+      ],
+      "secret": false,
+      "roles": "all",
+      "policy": "excluded"
+    },
+    "SPACEWORKS_DEPLOYMENT_PROFILE": {
+      "default": "full",
+      "enum": [
+        "full",
+        "free"
+      ],
+      "secret": false,
+      "roles": "all",
+      "policy": "excluded"
+    },
+    "CLOUD_TASK_PROFILE": {
+      "default": "legacy host; derived managed",
+      "enum": [
+        "redis",
+        "brokerless"
+      ],
+      "secret": false,
+      "roles": "all",
+      "policy": "excluded"
+    },
+    "CLOUD_SCHEDULER": {
+      "default": "legacy host; derived managed",
+      "enum": [
+        "beat",
+        "loop",
+        "external",
+        "tick"
+      ],
+      "secret": false,
+      "roles": "all",
+      "policy": "excluded"
+    },
+    "EMAIL_PROVIDER": {
+      "default": "",
+      "enum": [
+        "",
+        "smtp",
+        "resend",
+        "postmark",
+        "ses",
+        "brevo",
+        "mailgun",
+        "sendgrid"
+      ],
+      "secret": false,
+      "roles": "mail consumers",
+      "policy": "value"
+    },
+    "FREE_TICK_SECRET": {
+      "default": "",
+      "profile": "free",
+      "secret": true,
+      "roles": [
+        "backend",
+        "external trigger"
+      ],
+      "policy": "excluded"
+    },
+    "FREE_TICK_INTERVAL_SECONDS": {
+      "default": 600,
+      "minimum": 60,
+      "maximum": 86400,
+      "profile": "free",
+      "secret": false,
+      "roles": [
+        "backend",
+        "external trigger"
+      ],
+      "policy": "excluded"
+    },
+    "FREE_TICK_BUDGET_SECONDS": {
+      "default": 20,
+      "minimum": 1,
+      "maximum": 20,
+      "profile": "free",
+      "secret": false,
+      "roles": [
+        "backend"
+      ],
+      "policy": "excluded"
+    },
+    "FREE_TICK_RATE_LIMIT_PER_MINUTE": {
+      "default": 6,
+      "minimum": 1,
+      "maximum": 60,
+      "profile": "free",
+      "secret": false,
+      "roles": [
+        "backend"
+      ],
+      "policy": "excluded"
+    },
+    "FREE_DB_CAP_BYTES": {
+      "default": null,
+      "minimum": 1,
+      "missing": "unknown",
+      "profile": "free",
+      "secret": false,
+      "roles": [
+        "backend"
+      ],
+      "policy": "excluded"
+    },
+    "FREE_OBJECT_CAP_BYTES": {
+      "default": null,
+      "minimum": 1,
+      "missing": "unknown",
+      "profile": "free",
+      "secret": false,
+      "roles": [
+        "backend"
+      ],
+      "policy": "excluded"
+    },
+    "FREE_EMAIL_DAILY_CAP": {
+      "default": null,
+      "minimum": 1,
+      "missing": "refuse mail until verified budget",
+      "profile": "free",
+      "secret": false,
+      "roles": [
+        "backend"
+      ],
+      "policy": "excluded"
+    }
+  },
+  "reserved_by_owner": {
+    "M": [
+      "SPACEWORKS_DEPLOYMENT_ID",
+      "DATABASE_CONNECTION_MODE",
+      "DATABASE_MAINTENANCE_URL",
+      "DATABASE_MAINTENANCE_CONNECTION_MODE",
+      "CLOUD_SCRATCH_DATABASES_FILE"
+    ],
+    "S": [
+      "STORAGE_CAPABILITIES_FILE",
+      "AWS_SESSION_TOKEN"
+    ],
+    "E": [
+      "EMAIL_PROVIDER_CONFIG_FILE",
+      "EMAIL_USE_SSL"
+    ],
+    "J": [
+      "CRON_INTERVAL_SECONDS"
+    ],
+    "I_later": [
+      "UPLOAD_SCAN_POLICY",
+      "CLAMD_HOST",
+      "CLAMD_PORT",
+      "CLAMD_TIMEOUT_SECONDS",
+      "CLAMD_MAX_SCAN_BYTES",
+      "EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS",
+      "EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS",
+      "EVENT_REIMBURSEMENT_FILE_MAX_BYTES",
+      "EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES",
+      "EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES",
+      "EVENT_STAGE_FILE_RETENTION_DAYS"
+    ]
+  },
+  "reserved_defaults": {
+    "DATABASE_CONNECTION_MODE": "direct",
+    "DATABASE_MAINTENANCE_CONNECTION_MODE": "direct",
+    "EMAIL_USE_SSL": false,
+    "CRON_INTERVAL_SECONDS": 60,
+    "UPLOAD_SCAN_POLICY": "none for managed; preserve explicit host policy",
+    "CLAMD_PORT": 3310,
+    "CLAMD_TIMEOUT_SECONDS": 5,
+    "CLAMD_MAX_SCAN_BYTES": 2147483648,
+    "EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS": 2555,
+    "EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS": 30,
+    "EVENT_REIMBURSEMENT_FILE_MAX_BYTES": 10485760,
+    "EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES": 104857600,
+    "EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES": 1073741824,
+    "EVENT_STAGE_FILE_RETENTION_DAYS": 365
+  }
+}

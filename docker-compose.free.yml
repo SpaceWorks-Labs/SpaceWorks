@@ -1,0 +1,34 @@
+# CL-I step-1 preparation, NOT an accepted deploy recipe. Requires the later free
+# image/build metadata and M/J/E/S implementations plus Q's fit/isolation evidence.
+# Standalone. Finite external release first; steady state is ONLY one web service.
+x-spaceworks-preparation: true
+services:
+  backend:
+    image: ${MAKERSPACE_FREE_BACKEND_IMAGE:?set reviewed immutable free-variant image digest}
+    env_file: ${SPACEWORKS_RUNTIME_ENV_FILE:?set protected runtime-only env file, never maintenance credentials}
+    environment:
+      SPACEWORKS_DEPLOYMENT_MODE: managed
+      SPACEWORKS_DEPLOYMENT_PROFILE: free
+      SPACEWORKS_DEPLOYMENT_ID: ${SPACEWORKS_DEPLOYMENT_ID:?set persistent deployment identity}
+      DATABASE_URL: ${DATABASE_URL:?set narrow runtime database URL}
+      DATABASE_CONNECTION_MODE: ${DATABASE_CONNECTION_MODE:-direct}
+      CLOUD_TASK_PROFILE: brokerless
+      CLOUD_SCHEDULER: tick
+      CELERY_BROKER_URL: ""
+      CELERY_RESULT_BACKEND: ""
+      CELERY_TASK_ALWAYS_EAGER: "True"
+      CACHE_URL: ""
+      LIVE_REDIS_URL: ""
+      FREE_TICK_SECRET: ${FREE_TICK_SECRET:?set protected backend and trigger secret}
+      FREE_TICK_INTERVAL_SECONDS: ${FREE_TICK_INTERVAL_SECONDS:-600}
+      FREE_TICK_BUDGET_SECONDS: ${FREE_TICK_BUDGET_SECONDS:-20}
+      FREE_TICK_RATE_LIMIT_PER_MINUTE: ${FREE_TICK_RATE_LIMIT_PER_MINUTE:-6}
+      FREE_DB_CAP_BYTES: ${FREE_DB_CAP_BYTES:?set verified database cap}
+      FREE_OBJECT_CAP_BYTES: ${FREE_OBJECT_CAP_BYTES:?set verified object cap}
+      FREE_EMAIL_DAILY_CAP: ${FREE_EMAIL_DAILY_CAP:?set verified mail cap and account budget config}
+      GUNICORN_WORKERS: "1"
+    command: ["--role", "backend", "python", "-m", "scripts.run_cloud_role", "web"]
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.1
+    ports: ["127.0.0.1:${BACKEND_PORT:-8000}:8000"]

@@ -16,6 +16,19 @@ env = environ.Env(
     DEBUG=(bool, False),
 )
 environ.Env.read_env(BASE_DIR / ".env")
+from cloud_contracts.deployment import parse_selection
+
+try:
+    _deployment = parse_selection({
+        "SPACEWORKS_DEPLOYMENT_MODE": env("SPACEWORKS_DEPLOYMENT_MODE", default="host"),
+        "SPACEWORKS_DEPLOYMENT_PROFILE": env("SPACEWORKS_DEPLOYMENT_PROFILE", default="full"),
+    })
+except ValueError as exc:
+    raise ImproperlyConfigured(str(exc)) from exc
+SPACEWORKS_DEPLOYMENT_MODE = _deployment.mode
+SPACEWORKS_DEPLOYMENT_PROFILE = _deployment.profile
+CLOUD_TASK_PROFILE = env("CLOUD_TASK_PROFILE", default="")
+CLOUD_SCHEDULER = env("CLOUD_SCHEDULER", default="")
 # Imported after read_env: both read TOMBSTONED_APPS straight from the environment,
 # and the sidebar in config.unfold is built at import time.
 from apps.separability.tombstones import tombstoned_app_labels
@@ -248,6 +261,9 @@ DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool("CONN_HEALTH_CHECKS", defa
 DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = env.bool(
     "DISABLE_SERVER_SIDE_CURSORS", default=False
 )
+if SPACEWORKS_DEPLOYMENT_MODE == "managed":
+    from config.cloud_settings.wiring import managed_database
+    DATABASES["default"] = managed_database(DATABASES["default"], env)
 SPACEWORKS_HOST_MARKER_PATH = env(
     "SPACEWORKS_HOST_MARKER_PATH",
     default="/run/spaceworks-host/restore-marker.json",
@@ -462,6 +478,14 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Makerspace <noreply@makerspace.local>")
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="")
+if EMAIL_PROVIDER:
+    from config.cloud_settings.wiring import provider_email
+    # E returns only validated Django email settings, never arbitrary globals.
+    _provider_email = provider_email(env)
+    EMAIL_BACKEND = _provider_email["EMAIL_BACKEND"]
+    ANYMAIL = _provider_email.get("ANYMAIL", {})
+    INSTALLED_APPS.insert(0, "anymail")
 
 # Async email runs through a Celery worker ONLY when a broker is configured (the Compose
 # stack + prod set CELERY_BROKER_URL). With no broker - e.g. the documented local flow
@@ -1318,3 +1342,38 @@ SPECTACULAR_SETTINGS.setdefault("APPEND_COMPONENTS", {}).setdefault("securitySch
                    "(when present), body. X-Client-Id and X-Timestamp also required; "
                    "see API client protocol.",
 }
+
+# Applied after legacy settings so host/full with no explicit task selector is
+# byte-for-byte equivalent in effective values. No free knobs are read under full.
+from config.cloud_settings.tasks import task_settings
+try:
+    _cloud_tasks = task_settings(
+        env, _deployment, profile=CLOUD_TASK_PROFILE, scheduler=CLOUD_SCHEDULER,
+    )
+    CLOUD_TASK_PROFILE = _cloud_tasks.get("CLOUD_TASK_PROFILE", "")
+    CLOUD_SCHEDULER = _cloud_tasks.get("CLOUD_SCHEDULER", "")
+    if _cloud_tasks:
+        CELERY_BROKER_URL = _cloud_tasks["CELERY_BROKER_URL"]
+        CELERY_TASK_ALWAYS_EAGER = _cloud_tasks["CELERY_TASK_ALWAYS_EAGER"]
+        CELERY_RESULT_BACKEND = _cloud_tasks["CELERY_RESULT_BACKEND"]
+        LIVE_REDIS_URL = _cloud_tasks["LIVE_REDIS_URL"]
+        CACHES = {"default": cache_config(_cloud_tasks["CACHE_URL"])}
+    if _deployment.is_free:
+        from config.cloud_settings.free import free_settings
+        globals().update(free_settings({
+            "FREE_TICK_SECRET": env("FREE_TICK_SECRET", default=""),
+            "FREE_TICK_INTERVAL_SECONDS": env.int("FREE_TICK_INTERVAL_SECONDS", default=600),
+            "FREE_TICK_BUDGET_SECONDS": env.int("FREE_TICK_BUDGET_SECONDS", default=20),
+            "FREE_TICK_RATE_LIMIT_PER_MINUTE": env.int("FREE_TICK_RATE_LIMIT_PER_MINUTE", default=6),
+            "FREE_DB_CAP_BYTES": env.int("FREE_DB_CAP_BYTES", default=None),
+            "FREE_OBJECT_CAP_BYTES": env.int("FREE_OBJECT_CAP_BYTES", default=None),
+            "FREE_EMAIL_DAILY_CAP": env.int("FREE_EMAIL_DAILY_CAP", default=None),
+        }))
+        # Free ticks use J's typed catalog, never Celery beat or its whole sweeps.
+        CELERY_BEAT_SCHEDULE = {}
+except ValueError as exc:
+    raise ImproperlyConfigured(str(exc)) from exc
+
+if SPACEWORKS_DEPLOYMENT_MODE == "managed" or CLOUD_TASK_PROFILE:
+    from config.cloud_settings.wiring import cloud_task_modules
+    CELERY_IMPORTS = cloud_task_modules()

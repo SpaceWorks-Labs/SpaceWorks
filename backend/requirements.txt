@@ -1,6 +1,8 @@
 Django>=6.0,<6.1
 djangorestframework>=3.17
 django-environ>=0.14
+# HTTP transports; SES uses the existing boto3 dependency. Selection stays explicit.
+django-anymail>=15.2,<16
 django-unfold>=0.100,<0.101
 psycopg2-binary>=2.9
 django-cors-headers>=4.9

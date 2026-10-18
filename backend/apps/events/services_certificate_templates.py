@@ -51,6 +51,10 @@ def save_template(event, *, actor, parameters, artwork_id=None):
     event = _locked(event, actor)
     parameters = normalize_certificate_template(parameters)
     artwork = _artwork(event, artwork_id)
+    if parameters.get("version") == 2:
+        from types import SimpleNamespace
+        from .certificate_templates import issuance_layout
+        issuance_layout(SimpleNamespace(parameters=parameters, artwork=artwork, event_id=event.pk))
     revision = EventCertificateTemplateRevision.objects.create(
         event=event, artwork=artwork, parameters=parameters,
     )
@@ -110,10 +114,11 @@ def preview_context(event, *, actor, parameters, artwork_id=None):
     require_design(event, actor)
     artwork = _artwork(event, artwork_id)
     snapshot = issuance_layout(SimpleNamespace(
-        parameters=normalize_certificate_template(parameters), artwork=artwork,
+        parameters=normalize_certificate_template(parameters), artwork=artwork, event_id=event.pk,
     ))
     audit.record(actor, "event.certificate_template_previewed", makerspace=event.makerspace,
                  target=event, meta={"revision_id": None})
     return SimpleNamespace(layout_snapshot=snapshot, recipient_name="Sample attendee",
                            event_title=event.title, issuer_name=event.makerspace.name,
-                           event_starts_at=event.starts_at, serial="PREVIEW", revision=0)
+                           event_starts_at=event.starts_at, event_ends_at=event.ends_at,
+                           issued_at=timezone.now(), serial="PREVIEW", revision=0)

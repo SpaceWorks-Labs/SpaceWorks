@@ -11,10 +11,14 @@ import { useTenant, useTenantPath } from "../../lib/tenant";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { googleCalendarUrl, saveTicketBlob, type CalendarFields } from "./eventConfirmation";
+import { LiveTicketState } from "./eventPresentation/LiveTicketState";
+import { PhotoChoice } from "./eventPresentation/PhotoChoice";
 
 export type MemberEventTicket = {
   registration_id: number; status: string; ticket_png_available: boolean;
-  event: CalendarFields & { public_token: string; timezone_name: string; status: string };
+  attended_at?: string | null;
+  credential_mode?: "legacy" | "v2";
+  event: CalendarFields & { id?: number; public_token: string; timezone_name: string; status: string };
 };
 
 const confirmed = (status: string) => ["registered", "attended"].includes(status);
@@ -40,6 +44,8 @@ export function MemberEventTicketPage() {
     queryFn: () => memberRequest<MemberEventTicket>(`${base}/ticket/`),
     enabled: !restoring && !identity.error && Boolean(identity.data?.id && makerspaceId) && /^\d+$/.test(registrationId),
     retry: false, staleTime: 0, gcTime: 0, refetchOnMount: "always",
+    refetchInterval: (query) => !query.state.error && query.state.data && confirmed(query.state.data.status) ? 5000 : false,
+    refetchOnWindowFocus: true,
   });
   const download = useMutation({ mutationFn: async () => {
     const blob = await memberRequestBlob(`${base}/ticket.png`);
@@ -66,6 +72,7 @@ export function MemberEventTicketPage() {
       {authError ? <ErrorText message={authError instanceof StructuredApiError && authError.status === 404 ? "Ticket not found." : authError.message} /> : null}
       {bootstrap.error ? <ErrorText message="Unable to load this makerspace." /> : null}
       {current ? <>
+        <LiveTicketState status={current.status} attendedAt={current.attended_at} />
         <TicketCard organisation={spaceName} title={current.event.title}
           fields={[
             { label: "When", value: <time dateTime={current.event.starts_at}>{new Date(current.event.starts_at).toLocaleString()}</time> },
@@ -81,6 +88,7 @@ export function MemberEventTicketPage() {
           <button className="desk-button flex-1" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>Download registration calendar</button>
         </div>
         <RouteLink className="desk-button" href={tenantPath("member/events/history")}>Your event history</RouteLink>
+        {current.event.id && makerspaceId ? <PhotoChoice makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
         {calendar.error ? <ErrorText message="Could not download this calendar." /> : null}
         {download.error ? <ErrorText message={download.error.message} /> : null}
       </> : null}

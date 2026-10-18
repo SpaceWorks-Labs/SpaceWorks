@@ -57,7 +57,7 @@ class EventBadgePdfView(APIView):
 
     @extend_schema(
         tags=["Admin events"], request=BadgePdfRequestSerializer,
-        description="Private audited positioned badge PDF, 30/hour per account. No contacts or bearer QR. Custom answers require the event's manage_registrations permission (tenant manage_events or an event staff grant); tenant view_audit is not required.",
+        description="Private audited display badge PDF, 30/hour. No contacts. Custom answers require manage_registrations AND tenant VIEW_AUDIT. Authorized event credential cards use the separate print-job workflow.",
         responses={
             (200, "application/pdf"): OpenApiResponse(
                 OpenApiTypes.BINARY, description="Print-ready badge PDF."

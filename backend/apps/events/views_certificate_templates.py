@@ -9,7 +9,7 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.events import event_authority
 from apps.events.event_permissions import EDIT_DETAILS
 from apps.events.models import EventCertificateArtwork
-from apps.events.certificate_templates import DEFAULT_CERTIFICATE_TEMPLATE
+from apps.events.certificate_templates import DEFAULT_CERTIFICATE_TEMPLATE, read_parameters
 from apps.events.certificate_rendering import render_certificate_pdf
 from apps.events import certificate_artwork_storage as storage
 from apps.events.services_certificate_templates import (
@@ -17,6 +17,7 @@ from apps.events.services_certificate_templates import (
 )
 from apps.events.serializers_certificate_templates import (
     CertificateTemplateWriteSerializer, CertificateTemplateRevisionSerializer,
+    CertificateTemplateCommandSerializer, CertificateTemplateCommandResultSerializer,
     CertificateArtworkPresignSerializer, CertificateArtworkUploadSerializer, CertificateArtworkSerializer,
 )
 from apps.events.serializers_staff_tools import StrictSerializer
@@ -50,6 +51,9 @@ class EventCertificateTemplateView(APIView):
         data = (CertificateTemplateRevisionSerializer(revision).data if revision else
                 {"id": None, "parameters": DEFAULT_CERTIFICATE_TEMPLATE,
                  "artwork_id": None, "created_at": None})
+        data["parameters"] = read_parameters(revision.parameters if revision else {},
+                                              has_artwork=bool(revision and revision.artwork_id))
+        data["event_version"] = event.version
         return _private(Response(data))
 
     @extend_schema(tags=["Admin events"], request=CertificateTemplateWriteSerializer,
@@ -61,6 +65,15 @@ class EventCertificateTemplateView(APIView):
         serializer.is_valid(raise_exception=True)
         revision = save_template(event, actor=request.user, **serializer.validated_data)
         return _private(Response(CertificateTemplateRevisionSerializer(revision).data, status=201))
+
+    @extend_schema(tags=["Admin events"], request=CertificateTemplateCommandSerializer,
+                   responses={200: CertificateTemplateCommandResultSerializer, **ERRORS})
+    def put(self, request, pk):
+        from .certificates.template_commands import save_command
+        _event(request, pk)
+        serializer = CertificateTemplateCommandSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return _private(Response(save_command(pk, actor=request.user, **serializer.validated_data)))
 
 
 class EventCertificatePreviewView(APIView):
@@ -107,7 +120,7 @@ class EventCertificateArtworkFinalizeView(APIView):
         serializer = StrictSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         row = finalize_artwork(event, artwork_id, actor=request.user)
-        return _private(Response({"id": row.pk}))
+        return _private(Response({"id": row.pk, "resource_id": str(row.resource_id)}))
 
 
 class EventCertificateArtworkView(APIView):

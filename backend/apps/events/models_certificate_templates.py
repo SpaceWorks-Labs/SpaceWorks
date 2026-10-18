@@ -2,9 +2,11 @@
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from uuid import uuid4
 
 
 class EventCertificateArtwork(models.Model):
+    resource_id = models.UUIDField(default=uuid4, unique=True, editable=False)
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE,
                               related_name="certificate_artworks")
     object_key = models.CharField(max_length=512, unique=True)

@@ -1,0 +1,15 @@
+import { Modal } from "../../../components/ui";
+
+export function QuickPrintSheet({ open, canPrint, name, pending, onPrint, onSkip, onEdit }: {
+  open: boolean; canPrint: boolean; name: string; pending: boolean;
+  onPrint: () => void; onSkip: () => void; onEdit: () => void;
+}) {
+  return <Modal open={open && canPrint} onClose={onSkip} title="Print an event ID card?"
+    footer={<div className="flex flex-wrap gap-2"><button className="desk-button" type="button" onClick={onSkip}>Skip</button>
+      <button className="desk-button" type="button" onClick={onEdit}>Edit design</button>
+      <button className="desk-button-primary" type="button" autoFocus disabled={pending} onClick={onPrint}>Print (Enter)</button></div>}>
+    <div onKeyDown={(event) => { if (event.key === "Enter" && !pending && event.target === event.currentTarget) { event.preventDefault(); onPrint(); } }} tabIndex={0}>
+      <p className="text-sm text-ink">{name} is checked in. Print the current event credential and separately consented profile photo.</p>
+    </div>
+  </Modal>;
+}

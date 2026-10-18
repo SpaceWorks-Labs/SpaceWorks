@@ -1,6 +1,5 @@
 """Locked, audited content writes; all callers recheck live event authority."""
 
-from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.audit.services import record
@@ -17,6 +16,7 @@ from .staff_grant_locks import lock_authority
 from .website_copy import copy_page, owner
 from .website_projection import window
 from .website_content import PAGE_FIELDS, SECTION_FIELDS, SECTION_DETAIL_DEFAULTS
+from .services_write_boundary import event_write
 
 
 def locked_target(target, actor, permission):
@@ -89,6 +89,7 @@ def _validate_content(target, data, assets):
                 raise ValidationError(f"Choose {kind} sections from this page.")
 
 
+@event_write
 def save_content(target, *, actor, data):
     serializer = WebsiteContentInput(data=data)
     serializer.is_valid(raise_exception=True)
@@ -166,13 +167,13 @@ def set_release_locked(target, *, actor, released, revision):
     return page
 
 
-@transaction.atomic
+@event_write
 def set_release(target, *, actor, released, revision):
     target, actor = locked_target(target, actor, PUBLISH_SCHEDULE)
     return set_release_locked(target, actor=actor, released=released, revision=revision)
 
 
-@transaction.atomic
+@event_write
 def set_delay(target, slug, *, actor, minutes):
     target, actor = locked_target(target, actor, PUBLISH_SCHEDULE)
     if not 0 <= minutes <= 1440:

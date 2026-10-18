@@ -54,7 +54,7 @@ class FormPort(Protocol):
     def attach_locked(self, *, application, prepared, locks, store_intent: bool): ...
     def validate_schema(self, schema): ...
     def project_owner(self, *, application, snapshot) -> OwnerAnswers: ...
-    def lock_answers_locked(self, *, application, at, locks): ...
+    def lock_answers_locked(self, *, application, at, locks, closing=False): ...
     def archive_answers_locked(self, *, application, revision_id, locks): ...
     def project_intent(self, *, application): ...
     def date_review_locked(self, *, application, revision, as_of_date, locks): ...
@@ -80,6 +80,7 @@ class AdmissionIntegrations:
     upload_policy_supported: Callable
     default_attendance_required: Callable
     event_scopes: Callable
+    lock_actor: Callable | None = None
 
 
 _ports = None
@@ -96,3 +97,11 @@ def ports() -> AdmissionIntegrations:
     if _ports is None:
         fail("programme_dependency_unavailable", "Event admission is temporarily unavailable.", status=503)
     return _ports
+
+
+def install_production(**providers):
+    """Startup supplies F/P/C/B/E providers; registration and lock order are fixed."""
+    from apps.events.programme_locks import fences, lock_event, event_scopes, lock_authority
+    from .admission_bridge import CanonicalRegistrationBridge
+    install(AdmissionIntegrations(registration=CanonicalRegistrationBridge(), fences=fences,
+        lock_event=lock_event, event_scopes=event_scopes, lock_actor=lock_authority, **providers))

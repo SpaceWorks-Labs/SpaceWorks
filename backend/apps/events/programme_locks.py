@@ -35,6 +35,93 @@ def assert_lock_context(locks):
         raise RuntimeError("Programme call requires the predeclared transaction/fence context.")
 
 
+def current_locks(event_id):
+    from .contracts.providers import LockedContext
+    held = _scopes.get()
+    if not connection.in_atomic_block or held is None:
+        raise RuntimeError("Acquire programme fences before event locks.")
+    return LockedContext(event_id=event_id, tenant_ids=held[0], account_ids=held[1])
+
+
+def event_scopes(*, event_id, account_ids=()):
+    """Nonlocking discovery, repeated after the event lock; never expand fences."""
+    from .models import Event, EventRegistration
+    from .hackathons.admission_models import HackathonApplication
+    from .hackathons.review_models import ApplicationReviewAssignment
+    from .contributions.models_roles import EventRoleAssignment
+    from .organization_audience import candidate_ids
+    from apps.organizations.audience import owned_space_ids
+
+    event = Event.objects.get(pk=event_id)
+    tenants = {event.makerspace_id}
+    tenants.update(event.collaborators.filter(status="accepted").values_list("makerspace_id", flat=True))
+    tenants.update(owned_space_ids(candidate_ids(event)))
+    accounts = set(account_ids)
+    for model, field in ((EventRegistration, "member_id"), (HackathonApplication, "member_id"),
+                         (EventRoleAssignment, "member_id"), (ApplicationReviewAssignment, "reviewer_id")):
+        accounts.update(model.objects.filter(event_id=event_id).values_list(field, flat=True))
+    for field in ("registered_via_makerspace_id", "payment_via_makerspace_id"):
+        tenants.update(EventRegistration.objects.filter(event_id=event_id).values_list(field, flat=True))
+    return tuple(sorted(tenants - {None})), tuple(sorted(accounts - {None}))
+
+
+def lock_event(*, event_id, account_ids=()):
+    """Canonical admission event/tenant lock adapter. Authority follows this call."""
+    from .models import Event, EventSeries
+    from apps.makerspaces.models import Makerspace
+    from apps.makerspaces.guards import require_module_locked
+    from .programme.commands import ProgrammeConflict
+
+    locks = current_locks(event_id)
+    series_id = Event.objects.values_list("series_id", flat=True).get(pk=event_id)
+    if series_id:
+        EventSeries.objects.select_for_update().get(pk=series_id)
+    event = Event.objects.select_for_update().get(pk=event_id)
+    tenants, accounts = event_scopes(event_id=event_id, account_ids=account_ids)
+    if (event.series_id != series_id or not set(tenants) <= set(locks.tenant_ids)
+            or not set(accounts) <= set(locks.account_ids)):
+        raise ProgrammeConflict("scope_changed", "Event participants changed. Retry the command.")
+    list(Makerspace.objects.select_for_update().filter(pk__in=locks.tenant_ids).order_by("pk"))
+    tenants, accounts = event_scopes(event_id=event_id, account_ids=account_ids)
+    if not set(tenants) <= set(locks.tenant_ids) or not set(accounts) <= set(locks.account_ids):
+        raise ProgrammeConflict("scope_changed", "Event participants changed. Retry the command.")
+    event.makerspace = require_module_locked(event.makerspace_id, "events")
+    return event
+
+
+def lock_membership_sources(organization_ids, user_ids, space_ids):
+    """Programme variant: account fences replace locks on User/key rows."""
+    from apps.organizations.models import OrganizationMakerspace
+    for user_id in user_ids:
+        assert_account_fence_held(user_id)
+    list(Organization.objects.select_for_update().filter(pk__in=organization_ids).order_by("pk"))
+    list(OrganizationMakerspace.objects.select_for_update().filter(makerspace_id__in=space_ids).order_by("pk"))
+    list(OrganizationMembership.objects.select_for_update().filter(
+        organization_id__in=organization_ids, user_id__in=user_ids).order_by("pk"))
+    list(MakerspaceMembership.objects.select_for_update().filter(
+        makerspace_id__in=space_ids, user_id__in=user_ids).order_by("pk"))
+
+
+def lock_admission_sources(event, user_ids=(), *, extra_space_ids=(), include_authority=False):
+    from .organization_audience import AUDIENCE, AudienceChanged, candidate_ids
+    from apps.organizations.audience import owned_space_ids
+    from apps.makerspaces.models import Makerspace
+    if event.registration_audience != AUDIENCE:
+        return
+    locks = current_locks(event.pk)
+    organizations = candidate_ids(event)
+    spaces = owned_space_ids(organizations) | {event.makerspace_id} | set(extra_space_ids)
+    if not spaces <= set(locks.tenant_ids):
+        raise AudienceChanged()
+    list(Makerspace.objects.select_for_update().filter(pk__in=spaces).order_by("pk"))
+    if candidate_ids(event) != organizations or not owned_space_ids(organizations) <= spaces:
+        raise AudienceChanged()
+    authority = authority_sources(event)[3] if include_authority else set()
+    lock_membership_sources(organizations | authority, set(user_ids) - {None}, spaces)
+    if candidate_ids(event) != organizations or not owned_space_ids(organizations) <= spaces:
+        raise AudienceChanged()
+
+
 def lock_authority(actor, target):
     """Stabilize membership, organization and grant sources, without account row locks."""
     if actor is None:

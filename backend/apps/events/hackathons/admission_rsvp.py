@@ -54,6 +54,8 @@ def rsvp(*, event_id, actor, data, application_id=None):
         check_version(app, data["expected_version"])
         if app.state != "offered" or any(a.state != "offered" for a in applications):
             fail("invalid_transition", "This offer cannot be answered.")
+        if data["decision"] == "accept" and any(a.date_review_required for a in applications):
+            fail("event_date_changed", "Review your answers for the event start date.")
         now = timezone.now()
         if any(not a.rsvp_due_at or now >= a.rsvp_due_at for a in applications):
             fail("offer_expired", "The RSVP deadline has passed.")

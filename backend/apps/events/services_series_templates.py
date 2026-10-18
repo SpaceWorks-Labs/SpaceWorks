@@ -205,6 +205,8 @@ def _apply_template(series, event, changed_fields, *, actor=None):
         event.organization_admission_blocked = series.organization_admission_blocked
         applied.append("organization_admission_blocked")
     if applied:
+        event.version += 1
+        applied.append("version")
         event.save(update_fields=(*sorted(applied), "updated_at"))
         if was_blocked and not event.organization_admission_blocked:
             from .services_core import _may_promote

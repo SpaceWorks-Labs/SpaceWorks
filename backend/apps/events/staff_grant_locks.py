@@ -23,6 +23,9 @@ def authority_sources(target):
 
 
 def lock_authority(actor, target):
+    from .programme_locks import _scopes, lock_authority as lock_programme_authority
+    if _scopes.get() is not None:
+        return lock_programme_authority(actor, target)
     from apps.makerspaces.resource_grant_locks import lock_tenant_authority
     links, events, series, organization_ids = authority_sources(target)
     return lock_tenant_authority(actor, target, extra_organization_ids=organization_ids,

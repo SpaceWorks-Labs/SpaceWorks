@@ -7,6 +7,12 @@ from .admission_ports import ports
 from .admission_transactions import command, record
 
 
+def date_changed_locked(*, event, actor, locks):
+    """The same orchestration serves ordinary, application and role answers."""
+    from apps.events.answer_derivations.lifecycle import date_changed_locked as changed
+    return changed(event_id=event.pk, actor_id=getattr(actor, "pk", None), locks=locks)
+
+
 def review_date(*, event_id, actor, data):
     with command(event_id=event_id, actor=actor, data=data, action="application.date_review", owner=True) as ctx:
         app = get_object_or_404(HackathonApplication.objects.select_for_update(), event=ctx.event, member=actor)

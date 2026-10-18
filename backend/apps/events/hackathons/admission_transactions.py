@@ -68,6 +68,14 @@ def notice(ctx, application, kind):
                            application_id=application.pk, revision=application.version, kind=kind)
 
 
+def lock_accounts(integration, event, accounts):
+    if integration.lock_actor is None:
+        return {}
+    from apps.accounts.models import User
+    return {candidate.pk: integration.lock_actor(candidate, event)
+            for candidate in User.objects.filter(pk__in=accounts).order_by("pk")}
+
+
 @contextmanager
 def command(*, event_id, actor, data, action, permission=None, owner=False, account_ids=(), configuration=False, normalized_body=None):
     integration = ports()
@@ -94,7 +102,12 @@ def command(*, event_id, actor, data, action, permission=None, owner=False, acco
         locked = integration.lock_event(event_id=event_id, account_ids=accounts)
         if locked.pk != event_id or locked.makerspace_id != event.makerspace_id:
             raise RuntimeError("Event scope changed; restart before acquiring locks.")
+        if integration.lock_actor is not None:
+            actor = lock_accounts(integration, locked, accounts).get(actor.pk)
+            if actor is None:
+                fail("account_inactive", "An active account is required.", status=403)
         if owner:
+            require_member(actor)
             integration.context_gate(event=locked, actor=actor)
             require_registration_access(locked, actor)
         else:
@@ -131,9 +144,11 @@ def assert_locked(locks, event_id):
 def lock_domain_parents(event_id):
     # Event serialization makes this stable. Parents precede all application,
     # review and membership children, including downstream eligibility repair.
-    from apps.events.models import EventTicketType
+    from apps.events.models import EventTicketType, EventInvite, EventPromoCode
     from .team_models import HackathonTeam
     from .admission_models import HackathonApplicationCohort
     list(EventTicketType.objects.select_for_update().filter(event_id=event_id).order_by("pk"))
+    list(EventInvite.objects.select_for_update().filter(event_id=event_id).order_by("pk"))
+    list(EventPromoCode.objects.select_for_update().filter(event_id=event_id).order_by("pk"))
     list(HackathonTeam.objects.select_for_update().filter(event_id=event_id).order_by("pk"))
     list(HackathonApplicationCohort.objects.select_for_update().filter(event_id=event_id).order_by("pk"))

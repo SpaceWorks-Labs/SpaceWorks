@@ -1,7 +1,8 @@
 """Fence the complete series projection before authority and waiter promotion."""
 
 from apps.makerspaces.models import Makerspace
-from apps.organizations.audience import lock_membership_sources, owned_space_ids
+from apps.organizations.audience import owned_space_ids
+from .programme_locks import lock_membership_sources
 
 from .models import EventRegistration
 from .organization_audience import AUDIENCE, AudienceChanged, candidate_ids

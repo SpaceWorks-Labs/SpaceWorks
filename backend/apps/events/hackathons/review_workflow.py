@@ -70,7 +70,8 @@ def assign_locked(ctx, subjects, reviewers):
 
 
 def assign(*, event_id, actor, data):
-    with command(event_id=event_id, actor=actor, data=data, action="reviews.assign", permission="review_applications") as ctx:
+    with command(event_id=event_id, actor=actor, data=data, action="reviews.assign", permission="review_applications",
+                 account_ids=tuple(data["reviewer_ids"])) as ctx:
         if ctx.reference:
             return {"missing_coverage": ctx.reference.get("missing_coverage", [])}
         check_version(ctx.config, data["expected_version"])

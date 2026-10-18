@@ -1,12 +1,12 @@
 """Append-only attendance correction with certificate revocation."""
 
-from django.db import transaction
 from django.utils import timezone
 from .exceptions import EventInvalidTransition
 from .models import EventAttendanceCertificate, EventRegistration
 from .registration_locks import _boundary, _lock_registration
+from .services_write_boundary import event_write
 
-@transaction.atomic
+@event_write(permission="check_in")
 def correct_attendance(registration, *, actor):
     services = _boundary()
     event = services._locked_event(registration.event_id)
@@ -20,7 +20,11 @@ def correct_attendance(registration, *, actor):
         )
     )
     locked.status = EventRegistration.Status.REGISTERED
-    locked.save(update_fields=["status"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version"])
+    from .hackathons.admission_lifecycle import attendance_changed_locked
+    from .programme_locks import current_locks
+    attendance_changed_locked(event=event, registration=locked, actor=actor, locks=current_locks(event.pk))
     now = timezone.now()
     for certificate in certificates:
         certificate.status = EventAttendanceCertificate.Status.REVOKED

@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
@@ -11,9 +10,10 @@ from apps.events.services_recurrence import recurrence_exhausted
 from apps.events.services_calendar import calendar_series_changed
 from apps.makerspaces import limits
 from apps.makerspaces.guards import require_module_locked
+from .services_write_boundary import event_write
 
 
-@transaction.atomic
+@event_write(permission="publish_schedule")
 def publish_series(series, *, actor):
     from apps.events.services_series import _materialize_locked, _validate
 
@@ -31,6 +31,7 @@ def publish_series(series, *, actor):
     now = timezone.now()
     Event.objects.filter(pk__in=[event.pk for event in events]).update(
         status=Event.Status.PUBLISHED,
+        version=F("version") + 1,
         calendar_sequence=F("calendar_sequence") + 1,
         calendar_updated_at=now,
     )
@@ -45,7 +46,7 @@ def publish_series(series, *, actor):
     return locked, len(events)
 
 
-@transaction.atomic
+@event_write(permission="publish_schedule")
 def cancel_series(series, *, actor):
     locked = EventSeries.objects.select_for_update().get(pk=series.pk)
     if locked.status != EventSeries.Status.PUBLISHED:
@@ -67,7 +68,7 @@ def cancel_series(series, *, actor):
     return locked, len(events)
 
 
-@transaction.atomic
+@event_write(permission="publish_schedule")
 def complete_series(series, *, actor):
     locked = EventSeries.objects.select_for_update().get(pk=series.pk)
     if locked.status != EventSeries.Status.PUBLISHED:

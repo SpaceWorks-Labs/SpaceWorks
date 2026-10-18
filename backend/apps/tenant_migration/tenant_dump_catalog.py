@@ -43,7 +43,7 @@ class TenantDumpCatalogError(AssertionError):
 # Literal graph reconstruction reproduced BOTH parent pins before computing this
 # merged snapshot digest. Historical repin commentary lives in git history.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "8885884feca6fdb33f8a7e840de6491abb1e1b78e7755c0af743ef78e35bd500"
+CATALOG_SCHEMA_SHA256 = "5c14b0b619a750dcc0fdf9d9e43fe68019731f62b8b9f767c88ce96eddbc2272"
 
 
 def catalog_models(apps_registry=apps):

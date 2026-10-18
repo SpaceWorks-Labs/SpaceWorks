@@ -88,7 +88,7 @@ FIRST_PARTY_FIELD_NAMES.update({
     'accounts.AppleRevocation': frozenset('attempts client_id created_at credential_id credential_version done_at id last_error next_attempt_at token_ciphertext user'.split()),
     'accounts.AttestationVerificationLog': frozenset('created_at id mode outcome platform'.split()),
     'accounts.DeviceActivityDay': frozenset('created_at grant id local_day makerspace platform'.split()),
-    'accounts.PlatformAttestationSettings': frozenset('id play_integrity_service_account updated_at'.split()),
+    'accounts.PlatformAttestationSettings': frozenset('app_display_name id play_integrity_service_account updated_at'.split()),
     'integrations.EmailProviderEvent': frozenset('created_at event_id id makerspace reason'.split()),
     'integrations.MakerspaceMessagingSettings': frozenset('id makerspace sms_account_sid sms_auth_token sms_from_number sms_sender_key updated_at use_platform_sender whatsapp_access_token whatsapp_app_secret whatsapp_business_account_id whatsapp_phone_number_id whatsapp_sender_key whatsapp_webhook_verify_token'.split()),
     'integrations.MessagingConsent': frozenset('action channel configuration_generation created_at endpoint id lifted_suppression_id makerspace phone_e164 phone_verified_at sender_key source user'.split()),

@@ -79,6 +79,7 @@ export const openApiTags = [
   "Personal notification contract",
   "Personal notifications",
   "Platform",
+  "Platform tenant reports",
   "Presence",
   "Presence staff",
   "Procurement",
@@ -543,6 +544,10 @@ export const openApiPaths = [
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}",
   "/api/v1/admin/organized-events/",
   "/api/v1/admin/platform/analytics/makerspaces",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/analytics/{report_key}",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/dashboard",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/catalog",
+  "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/{report_key}/export",
   "/api/v1/admin/platform/analytics/{report_key}",
   "/api/v1/admin/platform/backup-destinations",
   "/api/v1/admin/platform/backup-destinations/push",
@@ -2467,6 +2472,13 @@ export type CallbackStatus = {
   "verified": boolean;
 };
 
+export type CallbackURLs = {
+  "inbound_url"?: string;
+  "status_url"?: string;
+  "status_url_template"?: string;
+  "webhook_url"?: string;
+};
+
 export type CashBookReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<CashPeriod>;
@@ -2983,6 +2995,7 @@ export type ContractChannel = {
   "sender_key"?: string;
   "credential_version"?: number;
   "activation_hold"?: boolean;
+  "callback_urls": CallbackURLs;
 };
 
 export type ContractChannelPage = {
@@ -7350,11 +7363,23 @@ export type MyMemberships = {
   "requests": Array<MyMembershipRequest>;
 };
 
+export type NativeAppIdentities = {
+  "android": NativeAppIdentity | null;
+  "ios": NativeAppIdentity | null;
+};
+
+export type NativeAppIdentity = {
+  "app_id": string;
+  "signing_identities": Array<string>;
+};
+
 export type NativeApple = {
   "enabled": boolean;
 };
 
 export type NativeConfig = {
+  "app_display_name": string;
+  "app_identity": NativeAppIdentities;
   "min_app_version": NativeMinVersion;
   "providers": NativeProviders;
 };

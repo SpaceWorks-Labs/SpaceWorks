@@ -52640,7 +52640,7 @@
         "/api/v1/admin/platform/analytics/makerspaces": {
             "get": {
                 "operationId": "api_v1_admin_platform_analytics_makerspaces_retrieve",
-                "description": "Paginated picker. A hidden makerspace requires an active local membership granting the selected report's action. Platform analytics always use their stricter visibility policy.",
+                "description": "Paginated platform picker. Hidden makerspaces are blocked. Each tenant read rechecks report actions and modules through explicit platform read routes.",
                 "summary": "List makerspaces available for tenant analytics",
                 "parameters": [
                     {
@@ -52673,6 +52673,612 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/AnalyticsMakerspacePage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Invalid report request."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Permission denied."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Makerspace or report not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/analytics/{report_key}": {
+            "get": {
+                "operationId": "api_v1_admin_platform_analytics_makerspaces_analytics_retrieve",
+                "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated. Active-loan and return detail rows include count=1 for chart summaries of returned rows. Event, booking and audit detail exports retain their explicit column allowlists and use table specs. FabLab health rows include makerspace_id in tenant previews.",
+                "summary": "Get analytics report",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "end",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "grain",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "day",
+                                "month",
+                                "week"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "months",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Retention anniversary in months (1-120); default 3, 6 and 12."
+                    },
+                    {
+                        "in": "path",
+                        "name": "report_key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "start",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "canceled",
+                                "paid_offline",
+                                "paid_online",
+                                "pending",
+                                "waived"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "subject_id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "subject_kind",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
+                    },
+                    {
+                        "in": "query",
+                        "name": "subject_type",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "booking",
+                                "event_registration",
+                                "loan_deposit",
+                                "loan_late_fee",
+                                "machine_service_request",
+                                "makerspace_membership",
+                                "membership_request",
+                                "membership_term"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AnalyticsReportResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Invalid report request."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Permission denied."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Makerspace or report not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/dashboard": {
+            "get": {
+                "operationId": "api_v1_admin_platform_analytics_makerspaces_dashboard_retrieve",
+                "description": "Platform browser read only. Hidden tenants are blocked; the canonical dashboard action checks apply.",
+                "summary": "Staff operations counts, action-scoped widgets and handover queues",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform tenant reports"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Dashboard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Permission denied."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Makerspace not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/{report_key}/export": {
+            "get": {
+                "operationId": "api_v1_admin_platform_analytics_makerspaces_reports_export_retrieve",
+                "description": "Subject reports require live resource management plus tenant VIEW_AUDIT. For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; reservation detail includes overlapping windows. No credentials are exported. Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated. Active-loan and return detail rows include count=1 for chart summaries of returned rows. Event, booking and audit detail exports retain their explicit column allowlists and use table specs. FabLab health rows include makerspace_id in tenant previews.",
+                "summary": "Export report",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "end",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "format",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "csv",
+                                "pdf",
+                                "xlsx"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "grain",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "day",
+                                "month",
+                                "week"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "months",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Retention anniversary in months (1-120); default 3, 6 and 12."
+                    },
+                    {
+                        "in": "path",
+                        "name": "report_key",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "accounting-journal",
+                                "active-loans",
+                                "asset-usage",
+                                "audit-activity",
+                                "audit-activity-hours",
+                                "audit-top-actors",
+                                "audit-trail",
+                                "booking-answers",
+                                "booking-lead-time",
+                                "booking-occupancy",
+                                "booking-reservations",
+                                "booking-resource-utilization",
+                                "booking-resource-utilization-pdf",
+                                "booking-top-members",
+                                "booking-utilization",
+                                "cash-book",
+                                "certification-coverage",
+                                "communications-health",
+                                "community-engagement",
+                                "consumable-pools",
+                                "consumable-usage",
+                                "damaged-lost",
+                                "damaged-missing",
+                                "device-health",
+                                "event-attendance",
+                                "event-attendance-pdf",
+                                "event-checkin-times",
+                                "event-feedback",
+                                "event-feedback-scores",
+                                "event-funnel",
+                                "event-registrations",
+                                "event-revenue",
+                                "event-signups",
+                                "evidence-compliance",
+                                "fablab-health",
+                                "import-quality",
+                                "inventory-control",
+                                "inventory-utilisation",
+                                "inventory-watch-demand",
+                                "loan-throughput",
+                                "longest-loans",
+                                "machine-downtime",
+                                "machine-errors",
+                                "machine-service",
+                                "machine-usage",
+                                "machine-usage-heatmap",
+                                "machine-usage-members",
+                                "maintenance-activity",
+                                "member-activity",
+                                "member-retention",
+                                "membership-growth",
+                                "membership-revenue",
+                                "mobile-auth",
+                                "mobile-devices",
+                                "module-operational-health",
+                                "most-lent",
+                                "organization-membership",
+                                "overdue-loans",
+                                "payment-cash-book",
+                                "payment-reconciliation",
+                                "payments-ageing",
+                                "payments-ledger",
+                                "platform-services",
+                                "platform-usage",
+                                "presence-activity",
+                                "presence-activity-hours",
+                                "presence-top-visitors",
+                                "printer-jobs",
+                                "printer-service",
+                                "problem-reports",
+                                "procurement-performance",
+                                "qr-scan-actors",
+                                "qr-scans",
+                                "recently-added",
+                                "request-funnel",
+                                "returns",
+                                "revenue-over-time",
+                                "service-queue-times",
+                                "stock-health",
+                                "stock-transfers",
+                                "stocktake-variance",
+                                "summary",
+                                "taken-items",
+                                "top-borrowers",
+                                "warranty-expiry"
+                            ]
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "start",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "canceled",
+                                "paid_offline",
+                                "paid_online",
+                                "pending",
+                                "waived"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "subject_id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "subject_kind",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."
+                    },
+                    {
+                        "in": "query",
+                        "name": "subject_type",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "booking",
+                                "event_registration",
+                                "loan_deposit",
+                                "loan_late_fee",
+                                "machine_service_request",
+                                "makerspace_membership",
+                                "membership_request",
+                                "membership_term"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Render rate limit exceeded."
+                    },
+                    "200": {
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Invalid report request."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Permission denied."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportError"
+                                }
+                            }
+                        },
+                        "description": "Makerspace or report not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/catalog": {
+            "get": {
+                "operationId": "api_v1_admin_platform_analytics_makerspaces_reports_catalog_retrieve",
+                "description": "Platform browser read only. Hidden tenants are blocked; the canonical tenant report RBAC and module checks apply.",
+                "summary": "List makerspace report catalog",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportCatalog"
                                 }
                             }
                         },
@@ -101100,6 +101706,30 @@
                     "verified"
                 ]
             },
+            "CallbackURLs": {
+                "type": "object",
+                "properties": {
+                    "inbound_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Twilio SMS or WhatsApp inbound callback URL."
+                    },
+                    "status_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Twilio SMS status callback URL."
+                    },
+                    "status_url_template": {
+                        "type": "string",
+                        "description": "Twilio WhatsApp status URL with {delivery_id}; the sender supplies the concrete URL per message."
+                    },
+                    "webhook_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Meta WhatsApp verification and signed batch callback URL."
+                    }
+                }
+            },
             "CashBookReport": {
                 "type": "object",
                 "properties": {
@@ -103222,9 +103852,19 @@
                     },
                     "activation_hold": {
                         "type": "boolean"
+                    },
+                    "callback_urls": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CallbackURLs"
+                            }
+                        ],
+                        "readOnly": true,
+                        "description": "Read-only signed ingress URLs derived from the saved provider, sender and generation; empty for incomplete configurations."
                     }
                 },
                 "required": [
+                    "callback_urls",
                     "channel",
                     "credentials_set",
                     "provider",
@@ -121486,6 +122126,49 @@
                     "requests"
                 ]
             },
+            "NativeAppIdentities": {
+                "type": "object",
+                "properties": {
+                    "android": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NativeAppIdentity"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "ios": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NativeAppIdentity"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "android",
+                    "ios"
+                ]
+            },
+            "NativeAppIdentity": {
+                "type": "object",
+                "properties": {
+                    "app_id": {
+                        "type": "string"
+                    },
+                    "signing_identities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "app_id",
+                    "signing_identities"
+                ]
+            },
             "NativeApple": {
                 "type": "object",
                 "properties": {
@@ -121500,6 +122183,12 @@
             "NativeConfig": {
                 "type": "object",
                 "properties": {
+                    "app_display_name": {
+                        "type": "string"
+                    },
+                    "app_identity": {
+                        "$ref": "#/components/schemas/NativeAppIdentities"
+                    },
                     "min_app_version": {
                         "$ref": "#/components/schemas/NativeMinVersion"
                     },
@@ -121508,6 +122197,8 @@
                     }
                 },
                 "required": [
+                    "app_display_name",
+                    "app_identity",
                     "min_app_version",
                     "providers"
                 ]

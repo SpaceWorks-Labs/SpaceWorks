@@ -4869,8 +4869,17 @@ releases would therefore not just lose history, it would eventually strand that 
 SMS and WhatsApp address a verified person, never a room destination. Their independent
 `sms` and `whatsapp` modules and matrix cells default off. Their availability checks
 must never fall through to `mobile.push`. Consent settings are core account surfaces,
-including when `notifications` is off or tombstoned. Sending requires an active local
-membership; account-only owners retain their existing inbox/email/push behavior.
+including when `notifications` is off or tombstoned. Member consent and delivery require
+`integrations.messaging.ties.has_tenant_tie`: a non-revoked local membership or ownership
+of an existing tenant hardware request/direct loan, booking, event registration,
+machine-service request or payment. Identity and owner eligibility are shared in core
+integrations with the inbox; inbox recipient behavior is unchanged. Ties are derived
+from current rows, never consent history or free-text contact fields. Inactive,
+restricted, suspended, deletion-pending and stub accounts and global superadmins are
+excluded from the member audience. A revoked local membership wins over old owned rows.
+Membership `receives_notifications` opt-out still wins at delivery; account-only owners
+use the consent ledger, STOP suppression and optional personal preferences. Staff
+audience still requires active local membership and role authority.
 
 Own sender configuration takes precedence, including incomplete or unreadable credentials
 (which make the channel unavailable). Platform notification sending requires both the
@@ -4930,10 +4939,11 @@ The addressed pipeline lives in core integrations, including recipient extractio
 imports that selection without changing its own feature/in_app gates or member-wording
 precedence. Disabling or tombstoning notifications must not disable consented SMS/WhatsApp.
 Eligibility is read-only and runs both at enqueue and just before submission: servability,
-channel module, feature/matrix, account/membership, current domain source and scope,
+channel module, feature/matrix, account/tenant tie, current domain source and scope,
 recipient authority/reach, optional personal preference, verified phone, live consent,
 resolved sender, suppression, and approved audience binding. Deleted/moved sources skip
-as source_changed; inactive/missing local memberships skip as no_membership. Diagnostic
+as source_changed; absent or revoked tenant ties skip as no_tenant_tie. Historical
+no_membership outcomes remain readable in analytics. Diagnostic
 tests require settings authority and target only the caller's own verified/consented
 phone; settings authority authorizes that test recipient, while the selected event must
 still pass feature/matrix gates, consent and sender protections.

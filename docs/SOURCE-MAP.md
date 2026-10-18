@@ -826,7 +826,10 @@ is `integrations/notification_scope_contract.py`; the optional inbox re-exports 
 
 
 Addressed delivery pipeline (1h-B): `integrations/recipients_addressed.py` is the core
-recipient resolver imported by the optional inbox. `messaging/sources.py` persists and
+recipient resolver imported by the optional inbox. `recipients_owners.py` shares inbox
+owner eligibility and tenant-row ownership; `messaging/ties.py::has_tenant_tie` derives
+SMS/WhatsApp member admission from membership or owned rows without importing notifications.
+`messaging/sources.py` persists and
 revalidates domain identity/scope; `eligibility.py` separates pure policy from idempotent
 quota reservation. `dispatch.py` owns the unique transactional outbox and on-commit queue.
 `worker.py`, `outcomes.py` and `correlation.py` own fenced claims/completion, derived provider

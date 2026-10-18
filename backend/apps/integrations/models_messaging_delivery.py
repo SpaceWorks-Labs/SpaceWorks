@@ -15,6 +15,7 @@ class MessagingDelivery(models.Model):
         MATRIX_DISABLED = "matrix_disabled", "Notification rule disabled"
         ACCOUNT_INACTIVE = "account_inactive", "Account inactive or restricted"
         NO_MEMBERSHIP = "no_membership", "No active local membership"
+        NO_TENANT_TIE = "no_tenant_tie", "No tie to this makerspace"
         MEMBERSHIP_OPTED_OUT = "membership_opted_out", "Membership notifications disabled"
         RECIPIENT_CHANGED = "recipient_changed", "Recipient selection or scope changed"
         PERSONAL_DISABLED = "personal_disabled", "Personal preference disabled"

@@ -10,7 +10,8 @@ from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.notifications.models_inbox import NotificationInboxRow
 from apps.notifications.inbox_scope import scope_snapshot
 from apps.notifications.preferences import personal_enabled
-from apps.integrations.recipients_addressed import addressed_recipients, eligible_owner
+from apps.integrations.recipients_addressed import addressed_recipients
+from apps.integrations.recipients_owners import eligible_owner
 
 logger = logging.getLogger(__name__)
 

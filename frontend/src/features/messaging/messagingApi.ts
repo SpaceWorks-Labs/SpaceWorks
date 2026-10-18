@@ -28,7 +28,7 @@ export function useMessagingSettings(id: number, enabled = true) {
   return useQuery({ queryKey: messagingSettingsKey(id), enabled,
     queryFn: () => staffRequest<MessagingSettings>(messagingSettingsPath(id)) });
 }
-export function useMemberMessaging(id: number) {
-  return useQuery({ queryKey: memberMessagingKey(id), retry: false,
+export function useMemberMessaging(id: number, enabled = true) {
+  return useQuery({ queryKey: memberMessagingKey(id), enabled, retry: false,
     queryFn: () => memberRequest<MemberMessaging>(`/me/messaging?makerspace=${id}`) });
 }

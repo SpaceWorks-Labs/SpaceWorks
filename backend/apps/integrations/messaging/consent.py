@@ -2,17 +2,17 @@
 from django.utils import timezone
 from rest_framework.exceptions import APIException, NotFound
 
-from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.audit.services import record
 from apps.integrations.models import MessagingConsent, MessagingRecipientCorrelation
-from apps.makerspaces.models import Makerspace, MakerspaceMembership
+from apps.makerspaces.models import Makerspace
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import is_servable
 from apps.tenant_migration.gate_runtime import tenant_write
 from .locks import lock_whatsapp_sender
 from .protections import lock_suppression_key, recipient_hash, suppressed, suppression_rows
 from .resolver import resolve_sender
+from .ties import has_tenant_tie
 
 
 class VerifiedPhoneRequired(APIException):
@@ -25,12 +25,8 @@ class _SenderChanged(Exception):
 
 
 def member_space(user, makerspace_id):
-    if not user.is_active or user.is_tenant_dump_stub:
-        raise NotFound()
     space = Makerspace.objects.filter(pk=makerspace_id).first()
-    if space is None or not is_servable(space) or not rbac.scope_notification_policy(
-        MakerspaceMembership.objects.all(), makerspace_id=space.pk,
-    ).filter(user=user, status="active").exists():
+    if space is None or not is_servable(space) or not has_tenant_tie(user, space):
         raise NotFound()
     return space
 

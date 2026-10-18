@@ -38,6 +38,7 @@ import { admissionKeys, publicAdmission, ownAdmission, type AdmissionRequest } f
 import type { CustomAnswers } from "../forms/customFormTypes";
 import { MemberNotifications } from "../notifications/MemberNotifications";
 import { MemberMessaging } from "./MemberMessaging";
+import { useMemberMessaging } from "../messaging/messagingApi";
 import { MemberPhoneVerification } from "./MemberPhoneVerification";
 
 type Membership = { makerspace: { slug: string; name: string }; membership_status: string; role: string; waiver_acceptance_required: boolean; can_refer: boolean; can_verify: boolean; verified_at: string | null; referrals_enabled: boolean };
@@ -84,8 +85,13 @@ export function MemberArea() {
   // errors -- the dashboard simply does not exist for a space that runs no memberships.
   const activeTab = useMemberTab(bootstrap.data?.modules ?? []);
   const membershipModuleOn = (bootstrap.data?.modules ?? []).includes("membership");
-  const accountSections = ["profile", "card", "certifications", "community", "invitations", "messaging", "phone"].filter(key => ["messaging", "phone"].includes(key)
-    ? membership?.membership_status === "active"
+  // The server derives ties from owned loans/bookings/events as well as memberships.
+  const messagingEnabled = makerspaceId >= 0 && Boolean(memberAccess) && !restoring && !claimSession;
+  const messaging = useMemberMessaging(makerspaceId, messagingEnabled);
+  const messagingAllowed = messagingEnabled && messaging.isSuccess;
+  const accountSections = ["profile", "card", "certifications", "community", "invitations", "messaging", "phone"].filter(key => key === "messaging"
+    ? messagingAllowed
+    : key === "phone" ? messagingAllowed || membership?.membership_status === "active"
     : key === "certifications"
     ? membership?.membership_status === "active" && Boolean(bootstrap.data?.modules.includes("machines"))
     : key === "invitations" ? Boolean(memberAccess && resolvedSlug && makerspaceId >= 0)
@@ -188,8 +194,6 @@ export function MemberArea() {
       {/* Notices first: they are the reason to open a dashboard at all. */}
       {(activeTab === "overview" || activeTab === "inbox" && section === "notices") && memberActivity ? <MemberNotices notices={memberActivity.notices} /> : null}
       {activeTab === "account" && section === "certifications" && membership?.membership_status === "active" && (bootstrap.data?.modules ?? []).includes("machines") ? <MemberCertifications key={makerspaceId} makerspaceId={makerspaceId} /> : null}
-      {activeTab === "account" && section === "messaging" && membership.membership_status === "active" ? <MemberMessaging key={makerspaceId} makerspaceId={makerspaceId} verifyPhoneHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=phone`} /> : null}
-      {activeTab === "account" && section === "phone" && membership.membership_status === "active" ? <MemberPhoneVerification /> : null}
       {activeTab === "inbox" && membership.membership_status === "active" && bootstrap.data?.modules.includes("notifications") ? <MemberNotifications makerspaceId={makerspaceId} features={bootstrap.data.features ?? []} /> : null}
       {(["overview", "events", "bookings"].includes(activeTab) && section !== "partners" || activeTab === "loans" && section !== "history") && memberActivity ? <MemberActivityPanel modules={bootstrap.data?.modules ?? []} section={activeTab === "overview" ? "overview" : activeTab as "loans" | "bookings" | "events"} activity={memberActivity} eventPeriod={section === "past" ? "past" : "going"} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} makerspaceName={spaceName} /> : null}
       {activeTab === "overview" && memberActivity ? <MemberTerm term={memberActivity.membership_term} /> : null}
@@ -199,6 +203,8 @@ export function MemberArea() {
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
       {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
     {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberUsagePanel key={makerspaceId} makerspaceId={makerspaceId} /> : null}
+    {activeTab === "account" && section === "messaging" && messagingAllowed ? <MemberMessaging key={makerspaceId} makerspaceId={makerspaceId} verifyPhoneHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=phone`} /> : null}
+    {activeTab === "account" && section === "phone" && (messagingAllowed || membership?.membership_status === "active") ? <MemberPhoneVerification /> : null}
     {activeTab === "overview" && memberships.data ? <MakerspaceDiscovery currentSlug={resolvedSlug} memberships={memberships.data.memberships} requests={memberships.data.requests} /> : null}
     {/* OUTSIDE the membership branch. A loan deposit is raised against a borrower, who
         needs an active account rather than a membership -- nesting this meant the person

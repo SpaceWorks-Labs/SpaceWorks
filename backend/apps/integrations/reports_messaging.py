@@ -49,6 +49,7 @@ def _deliveries(space, channel, grain, date_range):
         safe_feature=category("feature", NotificationFeature.values),
         safe_audience=category("audience", ("member", "staff")),
         source=category("provider_source", ("own", "platform")),
+        # Include no_tenant_tie and retain no_membership for historical cohorts.
         reason=Case(When(status="skipped", then=category("skip_reason", MessagingDelivery.SkipReason.values)),
                     default=Value("none"), output_field=CharField()),
         segment_basis=Value("not_applicable", output_field=CharField()) if channel != "sms" else Case(

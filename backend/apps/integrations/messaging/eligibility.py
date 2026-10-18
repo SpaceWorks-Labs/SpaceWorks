@@ -17,6 +17,7 @@ from .protections import recipient_hash, suppressed
 from .resolver import resolve_sender
 from .sources import current_scope, current_source, owner_matches
 from .templates import binding_for
+from .ties import has_tenant_tie
 
 
 def eligibility(candidate_or_delivery):
@@ -32,13 +33,16 @@ def eligibility(candidate_or_delivery):
         return "feature_unavailable"
     if not is_notification_enabled(space, row.feature, row.channel):
         return "matrix_disabled"
-    if not user.is_active or user.access_status != "active" or user.is_tenant_dump_stub:
+    if not user.is_active or user.access_status != "active" or user.is_tenant_dump_stub or user.deletion_requested_at:
         return "account_inactive"
     membership = rbac.scope_notification_policy(MakerspaceMembership.objects.all(),
         makerspace_id=space.pk).filter(user=user, status="active").first()
-    if membership is None:
-        return "no_membership"
-    if not membership.receives_notifications:
+    if row.audience == "staff" or diagnostic:
+        if membership is None:
+            return "no_tenant_tie"
+    elif not has_tenant_tie(user, space):
+        return "no_tenant_tie"
+    if membership is not None and not membership.receives_notifications:
         return "membership_opted_out"
     source = current_source(row)
     if source is None or current_scope(row, source) != row.scope:

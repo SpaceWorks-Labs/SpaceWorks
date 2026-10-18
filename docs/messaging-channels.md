@@ -1,10 +1,16 @@
 # SMS and WhatsApp notifications
 
 SMS and WhatsApp are addressed channels. Enable the relevant module, configure its
-sender, enable the desired notification matrix cells, and ask each member to verify
+sender, enable the desired notification matrix cells, and ask each recipient to verify
 their phone and consent in account settings. Both channels default off. Delivery
-requires an active local membership with notifications enabled; account-only borrowers
-continue to receive their existing inbox/email/push notices.
+requires a tie to the makerspace: a non-revoked membership or an owned hardware
+request/direct loan, booking, event registration, machine-service request or payment.
+Account-only borrowers and other owners can opt in through Account → Messaging.
+Inactive, restricted, suspended, deletion-pending accounts and global superadmins are
+excluded from this member audience. A revoked membership disqualifies even an owner of
+old rows. Ties are checked again at delivery; membership notification opt-out, personal
+preferences, consent withdrawal and STOP suppression still prevent delivery. Staff
+recipients retain their existing membership and role requirements.
 
 Own credentials take precedence. An incomplete or broken own sender does not fall
 back to the platform. Platform notifications also require the operator's channel switch

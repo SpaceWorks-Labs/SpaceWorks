@@ -664,6 +664,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts",
         "schedule": crontab(minute="*"),
     },
+    "event-asset-work": {"task": "apps.events.tasks_assets.sweep_asset_work_task", "schedule": crontab(minute="*")},
+    "event-asset-deadlines": {"task": "apps.events.tasks_assets.sweep_asset_deadlines_task", "schedule": crontab(minute="*")},
+    "event-asset-retention": {"task": "apps.events.tasks_assets.sweep_asset_retention_task", "schedule": crontab(minute="*/5")},
+    "event-asset-obligations": {"task": "apps.events.tasks_assets.reconcile_asset_obligations_task", "schedule": crontab(minute="*/5")},
+    "event-certificate-batches": {"task": "apps.events.certificates.tasks.resume_batches", "schedule": crontab(minute="*")},
+    "event-certificate-renders": {"task": "apps.events.certificates.tasks.resume_certificates", "schedule": crontab(minute="*/5")},
+    "event-print-cleanup": {"task": "apps.events.tasks_recovery.sweep_print_cleanup_task", "schedule": crontab(minute="*/5")},
+    "event-judging-notices": {"task": "apps.events.tasks_recovery.sweep_judging_notices_task", "schedule": crontab(minute="*")},
     "account-saved-details": {
         "task": "apps.accounts.saved_details.tasks.process_saved_details",
         "schedule": crontab(minute="*/5"),
@@ -761,7 +769,9 @@ if "events" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry
         for name, entry in CELERY_BEAT_SCHEDULE.items()
-        if ".events." not in entry["task"]
+        if ".events." not in entry["task"] or name in {
+            "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+        }
     }
 
 if "devices" in TOMBSTONED_APPS:

@@ -1,7 +1,7 @@
 {
   "lane": "B",
   "schema_version": 1,
-  "migrations_created": false,
+  "migrations_created": true,
   "models": [
     {
       "model": "AssetFields",
@@ -338,8 +338,129 @@
       "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=Q(asset__isnull=False, participant_asset__isnull=True) | Q(asset__isnull=True, participant_asset__isnull=False), name='asset_work_one_subject')]"
     },
     {
+      "model": "EventAssetObligation",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "asset_uuid",
+          "definition": "models.UUIDField(unique=True)"
+        },
+        {
+          "name": "asset_label",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "asset_id_snapshot",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "event_id_snapshot",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "makerspace_id_snapshot",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "staging_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "verification_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "multipart_upload_id",
+          "definition": "models.TextField(blank=True)"
+        },
+        {
+          "name": "initial_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "canonical_extra_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "reserved_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "charged_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "temporary_released",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "fully_released",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "managed",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "write_not_after",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "next_attempt_at",
+          "definition": "models.DateTimeField(default=timezone.now, db_index=True)"
+        },
+        {
+          "name": "lease_token",
+          "definition": "models.UUIDField(null=True)"
+        },
+        {
+          "name": "lease_until",
+          "definition": "models.DateTimeField(null=True)"
+        },
+        {
+          "name": "attempts",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "last_code",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "last_cleaned_at",
+          "definition": "models.DateTimeField(null=True)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'"
+    },
+    {
+      "model": "EventProgrammeSweepCursor",
+      "bases": [
+        "models.Model"
+      ],
+      "source": "backend/apps/events/submissions/models_assets.py",
+      "fields": [
+        {
+          "name": "namespace",
+          "definition": "models.CharField(max_length=64, unique=True)"
+        },
+        {
+          "name": "last_id",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        }
+      ],
+      "meta": "class Meta:\n    app_label = 'events'"
+    },
+    {
       "model": "HackathonSubmission",
       "bases": [
+        "PrivateDocumentMixin",
         "models.Model"
       ],
       "source": "backend/apps/events/submissions/models_projects.py",
@@ -398,7 +519,7 @@
         },
         {
           "name": "form_answers",
-          "definition": "models.JSONField(default=dict)"
+          "definition": "models.TextField(default='{}')"
         },
         {
           "name": "track_ids",
@@ -430,7 +551,7 @@
         },
         {
           "name": "triage_reason",
-          "definition": "models.CharField(max_length=1000, blank=True)"
+          "definition": "models.TextField(max_length=1000, blank=True)"
         },
         {
           "name": "submitted_at",
@@ -446,6 +567,7 @@
     {
       "model": "SubmissionSnapshot",
       "bases": [
+        "PrivateDocumentMixin",
         "models.Model"
       ],
       "source": "backend/apps/events/submissions/models_projects.py",
@@ -472,7 +594,7 @@
         },
         {
           "name": "project",
-          "definition": "models.JSONField()"
+          "definition": "models.TextField()"
         },
         {
           "name": "content_sha256",
@@ -492,7 +614,7 @@
         },
         {
           "name": "amendment_reason",
-          "definition": "models.CharField(max_length=1000, blank=True)"
+          "definition": "models.TextField(max_length=1000, blank=True)"
         }
       ],
       "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=['submission', 'sequence'], name='snapshot_sequence_unique')]"
@@ -626,6 +748,7 @@
     {
       "model": "SubmissionIntegrityFlag",
       "bases": [
+        "PrivateDocumentMixin",
         "models.Model"
       ],
       "source": "backend/apps/events/submissions/models_projects.py",
@@ -660,10 +783,11 @@
         },
         {
           "name": "reason",
-          "definition": "models.CharField(max_length=1000, blank=True)"
+          "definition": "models.TextField(max_length=1000, blank=True)"
         }
       ],
       "meta": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=models.Q(severity='informational'), name='submission_flag_information_only'), models.UniqueConstraint(fields=['snapshot', 'rule_key'], name='submission_integrity_rule_unique')]"
     }
-  ]
+  ],
+  "integration_lane": "EV2-C"
 }

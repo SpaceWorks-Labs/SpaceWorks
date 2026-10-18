@@ -3,6 +3,11 @@
 
 def programme_pii_fields(field):
     return (
+        field("events.HackathonSubmission", "form_answers", "event.makerspace_id", None, "source", "none"),
+        field("events.SubmissionSnapshot", "project", "submission.event.makerspace_id", None, "source", "none"),
+        field("events.HackathonSubmission", "triage_reason", "event.makerspace_id", 1000, "source", "none"),
+        field("events.SubmissionSnapshot", "amendment_reason", "submission.event.makerspace_id", 1000, "source", "none"),
+        field("events.SubmissionIntegrityFlag", "reason", "snapshot.submission.event.makerspace_id", 1000, "source", "none"),
         field("events.EventAnswerDerivation", "source_dob_envelope", "event.makerspace_id", None, "source", "none"),
         field("events.HackathonApplication", "answers_snapshot", "event.makerspace_id", None, "source", "none"),
         field("events.HackathonApplication", "profile_snapshot", "event.makerspace_id", None, "source", "none"),

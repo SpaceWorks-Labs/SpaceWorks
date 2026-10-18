@@ -63,6 +63,14 @@ def final_row(
         row[field.column] = value
 
     _apply_target_fields(label, source, row)
+    if label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"}:
+        from apps.events.submissions.portability import asset_import_values
+        row = asset_import_values(row)
+        if source["state"] not in {"ready", "expired"}:
+            # Pending source bytes do not travel. Preserve inert metadata under
+            # a fresh target locator, never a source multipart/final key.
+            from uuid import uuid4
+            object_key_map = {**object_key_map, source["object_key"]: f"import-coordination/{uuid4()}/final"}
     rewrite_object_fields(model, row, object_key_map)
     if not _remap_foreign_keys(model, source, row, job, pk_map, target, references):
         return None
@@ -78,7 +86,11 @@ def final_row(
             "pk": source[model._meta.pk.attname],
             "field": mapped.field_name,
         }
-        row[column], raw_plaintext = reencrypt_mapped_value_with_plaintext(
+        from .pii_events_programme import rebind_programme_document
+        transformed = rebind_programme_document(model, mapped.field_name, row[column], source=source, row=row,
+            source_id=int(job.source_makerspace_id), target_id=target.pk, deks=deks,
+            map_id=lambda label, value: pk_map.lookup(apps.get_model(label), value))
+        row[column], raw_plaintext = transformed if transformed is not None else reencrypt_mapped_value_with_plaintext(
             row[column],
             source_aad=source_aad,
             target_makerspace_id=target.pk,

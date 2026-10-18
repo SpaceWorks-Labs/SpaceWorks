@@ -2,9 +2,12 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from .pii import PrivateDocumentMixin
 
 
-class HackathonSubmission(models.Model):
+class HackathonSubmission(PrivateDocumentMixin, models.Model):
+    pii_document_fields = frozenset({"form_answers"})
+    pii_text_fields = frozenset({"triage_reason"})
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="submissions")
     team = models.OneToOneField("events.HackathonTeam", on_delete=models.PROTECT, related_name="submission")
     state = models.CharField(max_length=24, default="draft")
@@ -18,7 +21,7 @@ class HackathonSubmission(models.Model):
     tech_tags = models.JSONField(default=list)
     ai_declaration = models.JSONField(default=dict)
     reuse_declaration = models.JSONField(default=dict)
-    form_answers = models.JSONField(default=dict)
+    form_answers = models.TextField(default="{}")
     track_ids = models.JSONField(default=list)
     prize_ids = models.JSONField(default=list)
     asset_ids = models.JSONField(default=list)
@@ -26,7 +29,7 @@ class HackathonSubmission(models.Model):
     public_requested = models.BooleanField(default=False)
     current_snapshot = models.ForeignKey("events.SubmissionSnapshot", null=True, on_delete=models.PROTECT, related_name="+")
     triage = models.CharField(max_length=16, default="pending")
-    triage_reason = models.CharField(max_length=1000, blank=True)
+    triage_reason = models.TextField(max_length=1000, blank=True)
     submitted_at = models.DateTimeField(null=True)
     locked_at = models.DateTimeField(null=True)
 
@@ -38,18 +41,20 @@ class HackathonSubmission(models.Model):
                                    name="submission_valid_triage")]
 
 
-class SubmissionSnapshot(models.Model):
+class SubmissionSnapshot(PrivateDocumentMixin, models.Model):
+    pii_document_fields = frozenset({"project"})
+    pii_text_fields = frozenset({"amendment_reason"})
     submission = models.ForeignKey(HackathonSubmission, on_delete=models.CASCADE, related_name="snapshots")
     sequence = models.PositiveIntegerField()
     submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     submitted_at = models.DateTimeField(default=timezone.now)
     sealed_member_ids = models.JSONField(default=list)
-    project = models.JSONField()
+    project = models.TextField()
     content_sha256 = models.CharField(max_length=64)
     source_content_sha256 = models.CharField(max_length=64, blank=True)
     late = models.BooleanField(default=False)
     amendment_of = models.ForeignKey("self", null=True, on_delete=models.PROTECT, related_name="+")
-    amendment_reason = models.CharField(max_length=1000, blank=True)
+    amendment_reason = models.TextField(max_length=1000, blank=True)
 
     class Meta:
         app_label = "events"
@@ -117,7 +122,8 @@ class SnapshotPrize(models.Model):
         constraints = [models.UniqueConstraint(fields=["snapshot", "prize"], name="snapshot_prize_unique")]
 
 
-class SubmissionIntegrityFlag(models.Model):
+class SubmissionIntegrityFlag(PrivateDocumentMixin, models.Model):
+    pii_text_fields = frozenset({"reason"})
     snapshot = models.ForeignKey(SubmissionSnapshot, on_delete=models.CASCADE, related_name="integrity_flags")
     rule_key = models.CharField(max_length=64)
     severity = models.CharField(max_length=16, default="informational", editable=False)
@@ -125,7 +131,7 @@ class SubmissionIntegrityFlag(models.Model):
     checked_at = models.DateTimeField(default=timezone.now)
     state = models.CharField(max_length=16, default="open")
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
-    reason = models.CharField(max_length=1000, blank=True)
+    reason = models.TextField(max_length=1000, blank=True)
 
     class Meta:
         app_label = "events"

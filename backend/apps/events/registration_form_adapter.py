@@ -15,6 +15,21 @@ from rest_framework.exceptions import ValidationError
 from .contracts.subjects import AnswerSubject
 
 
+def require_private_registration_answers():
+    """v2 must never fall through to the legacy unencrypted JSON column."""
+    from django.apps import apps
+    from django.db import models
+    from apps.encryption.registry import field_for
+    from .submissions.pii import PrivateDocumentMixin
+    from .programme.commands import ProgrammeUnavailable
+    model = apps.get_model("events.EventRegistration")
+    if (not issubclass(model, PrivateDocumentMixin)
+            or "custom_answers" not in model.pii_document_fields
+            or not isinstance(model._meta.get_field("custom_answers"), models.TextField)
+            or field_for(model, "custom_answers") is None):
+        raise ProgrammeUnavailable("private_answer_storage_unavailable", "Private registration answer storage is unavailable.")
+
+
 class MemberInputValidator(Protocol):
     def __call__(
         self, *, schema: object, payload: Mapping, subject: AnswerSubject,
@@ -84,6 +99,8 @@ def validate_registration_form(
     validator: MemberInputValidator, application: bool = False,
 ) -> ValidatedRegistrationForm:
     version = schema.get("schema_version") if isinstance(schema, dict) else 1
+    if version == 2 and not application:
+        require_private_registration_answers()
     normalized = normalize_registration_input(
         payload, schema_version=version, application=application,
     )

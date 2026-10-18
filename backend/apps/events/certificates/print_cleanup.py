@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.db.models import Q
 from datetime import timedelta
 from apps.audit.services import record
-from apps.events.credentials.boundary import event_command
+from apps.events.tasks_retention import _retention_event
 from apps.makerspaces import limits
 from .print_models import BadgePrintJob, BadgePrintResource
 from . import print_storage
@@ -14,8 +14,10 @@ def cleanup_job(job_id, *, force=False):
     if not force and job.expires_at > timezone.now() and job.state != "cancelled":
         return False
     # All versions are removed before quota is released. Repeated cleanup is safe.
-    with event_command(job.event_id) as (event, _):
+    with _retention_event(job.event_id) as event:
         locked = BadgePrintJob.objects.select_for_update().get(pk=job.pk)
+        if not force and locked.expires_at > timezone.now() and locked.state != "cancelled":
+            return False
         if locked.state != "cancelled":
             locked.state = "cancelled"
             locked.save(update_fields=("state",))
@@ -27,7 +29,7 @@ def cleanup_job(job_id, *, force=False):
         if row.object_key:
             print_storage.delete(row.object_key)
     print_storage.delete(job.object_key)
-    with event_command(job.event_id) as (event, _):
+    with _retention_event(job.event_id) as event:
         locked = BadgePrintJob.objects.select_for_update().get(pk=job.pk)
         for resource in BadgePrintResource.objects.select_for_update().filter(job=locked, cleaned_at__isnull=True):
             limits.free_storage(event.makerspace, resource.size_bytes)
@@ -44,9 +46,14 @@ def cleanup_job(job_id, *, force=False):
 
 
 def cleanup_expired(limit=100):
-    ids = list(BadgePrintJob.objects.filter(Q(next_cleanup_at__isnull=True) | Q(next_cleanup_at__lte=timezone.now()),
-                                           expires_at__lte=timezone.now())
-               .order_by("pk").values_list("pk", flat=True)[:limit])
+    import logging
+    from apps.events.tasks_sweeps import take_ids
+    eligible = BadgePrintJob.objects.filter(Q(next_cleanup_at__isnull=True) | Q(next_cleanup_at__lte=timezone.now())).filter(
+        Q(expires_at__lte=timezone.now()) | Q(state="cancelled"))
+    ids = take_ids("badge-print-cleanup", eligible, limit=limit)
     for pk in ids:
-        cleanup_job(pk)
+        try:
+            cleanup_job(pk)
+        except Exception:
+            logging.getLogger(__name__).warning("event_badge_cleanup_deferred", extra={"job_id": pk})
     return len(ids)

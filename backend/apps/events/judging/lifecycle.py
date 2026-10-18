@@ -39,18 +39,25 @@ def invalidate_snapshot_locked(*, event, snapshot_id, locks, actor):
     return count
 
 
-def sweep_notices(*, after_id=0, limit=100):
+def sweep_notices(*, after_id=None, limit=100):
     """F/G deduplicates by notice ID and rechecks released source + recipients on send.
 
     No lease or network call is held under an event transaction. Retrying a notice
     is intentional: the notification envelope/outbox owns durable dispatch claims.
     """
-    ids = list(JudgingNotice.objects.filter(pk__gt=after_id).order_by("pk").values_list("pk", flat=True)[:min(limit, 500)])
+    from apps.events.tasks_sweeps import take_ids
+    from apps.tenant_migration.gate_runtime import fanout_tenant_write
+    ids = (take_ids("judging-notices", JudgingNotice.objects.all(), limit=limit) if after_id is None else
+           list(JudgingNotice.objects.filter(pk__gt=after_id).order_by("pk").values_list("pk", flat=True)[:min(limit, 500)]))
     failed = 0
+    counts = {"skipped": 0}
     for pk in ids:
         try:
-            runtime().notify_intent(pk)
+            notice = JudgingNotice.objects.select_related("event").get(pk=pk)
+            with fanout_tenant_write(notice.event.makerspace_id, operation="event_judging_notices", counts=counts) as allowed:
+                if allowed:
+                    runtime().notify_intent(pk)
         except Exception:
             failed += 1
             logger.warning("event_judging_notice_retry_failed", extra={"notice_id": pk})
-    return {"last_id": ids[-1] if ids else after_id, "count": len(ids), "failed": failed}
+    return {"last_id": ids[-1] if ids else (after_id or 0), "count": len(ids), "failed": failed, **counts}

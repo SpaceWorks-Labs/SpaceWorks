@@ -124,3 +124,49 @@ class SubmissionAssetWork(models.Model):
         constraints = [models.CheckConstraint(condition=(
             Q(asset__isnull=False, participant_asset__isnull=True) |
             Q(asset__isnull=True, participant_asset__isnull=False)), name="asset_work_one_subject")]
+
+
+class EventAssetObligation(models.Model):
+    """Deployment custody/accounting survives deletion of the complete tenant graph.
+
+    No FK: tenant dumps omit this record; target import creates its own custody.
+    Locators remain permanently reserved against reuse by another upload/import.
+    """
+    asset_uuid = models.UUIDField(unique=True)
+    asset_label = models.CharField(max_length=64)
+    asset_id_snapshot = models.PositiveBigIntegerField()
+    event_id_snapshot = models.PositiveBigIntegerField()
+    makerspace_id_snapshot = models.PositiveBigIntegerField()
+    object_key = models.CharField(max_length=512, unique=True)
+    staging_key = models.CharField(max_length=512, unique=True)
+    verification_key = models.CharField(max_length=512, unique=True)
+    multipart_upload_id = models.TextField(blank=True)
+    initial_bytes = models.PositiveBigIntegerField(default=0)
+    canonical_extra_bytes = models.PositiveBigIntegerField(default=0)
+    reserved_bytes = models.PositiveBigIntegerField(default=0)
+    charged_bytes = models.PositiveBigIntegerField(default=0)
+    temporary_released = models.BooleanField(default=False)
+    fully_released = models.BooleanField(default=False)
+    managed = models.BooleanField(default=False)
+    write_not_after = models.DateTimeField(null=True)
+    next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
+    lease_token = models.UUIDField(null=True)
+    lease_until = models.DateTimeField(null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    last_code = models.CharField(max_length=64, blank=True)
+    last_cleaned_at = models.DateTimeField(null=True)
+
+    class Meta:
+        app_label = "events"
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Storage obligations permanently reserve their locators.")
+
+
+class EventProgrammeSweepCursor(models.Model):
+    """Deployment-only bounded recovery progress; never portable authority."""
+    namespace = models.CharField(max_length=64, unique=True)
+    last_id = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        app_label = "events"

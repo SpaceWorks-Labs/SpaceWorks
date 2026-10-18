@@ -51,7 +51,7 @@ payment and loan owners do not acquire a universal membership requirement.
 | Event start `reminder` | Explicit watcher/member/owner | Personal; preserve existing address eligibility and authenticated document links; no rooms | TRUE — account-only reminder source, no membership dependency [E] |
 | Event broadcast campaign | Live campaign audience only | Personal selected channels; email retains verified-email/module/unsubscribe gates; live original sender authority + resource + audience rechecked every batch; no staff-room campaign bodies | TRUE — batch cursor and envelopes commit together; saved selections use personal email/fallback, others keep legacy email; both recheck live policy on retry [E] |
 | Event bulk invitation | Explicit invitee | Verified email / manually shared invite for unknown accounts; proven accounts may receive private navigation notices; never room bearers | RETAINED — verified-email/share path; optional account-linked notice not added [E] |
-| Event certificate creation/render/reissue/revoke | Certificate registration owner | Personal navigation notice to authenticated document; no bearer or recipient details in rooms | TRUE — owner navigation notices with live certificate state [E] |
+| Event certificate creation/render/reissue/revoke | Direct certificate recipient (registration, contribution or award subject) | Personal navigation; eligible ready active PDF may use typed private attachment; no badge secret/recipient details in rooms | Existing owner source plus programme direct-subject adapter; full programme eligibility/recovery/provider acceptance remains pending below [E] |
 | Booking `created`, `confirmed`, `rejected`, `cancelled`, `restored`, `completed`, `no_show` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — staff/owner/grant envelopes, legacy rooms and same-owner contact email compatibility [B] |
 | Booking start `reminder` | Explicit watcher/member/owner | Personal; preserve existing address eligibility and authenticated document links; no rooms | TRUE — account-only personal reminder source plus same-owner contact email compatibility [B] |
 | Booking broadcast campaign | Live campaign audience only | Personal selected channels; email retains verified-email/module/unsubscribe gates; live original sender authority + resource + audience rechecked every batch; no staff-room campaign bodies | TRUE — saved selections use envelopes; others batch email [B] |
@@ -108,6 +108,52 @@ other room summaries retain legacy retry policy. Registration alone does not wir
 Presence adds a separate TRUE producer: `presence/notifications.py` emits `presence.expiry` at
 expiry, default in-app/native push, no email fallback. Revision/new-session checks and the ten-minute
 window suppress stale prompts. The catalog has the event, but the feature enum/editor lacks it.
+
+## Events programme checkpoint (2026-10-18)
+
+Checked against `f1ef7736`; programme features remain OFF. These rows supplement the
+ordinary-event inventory above and supersede its registration-only certificate subject
+description. **PARTIAL means authored, not accepted delivery.** No runtime/provider pass
+is claimed here. The [contract](notification-contract.md#events-programme-contract-checkpoint-2026-10-18)
+defines recipient/privacy/retry rules for every kind.
+
+| New kinds / family | Actual source / producer | Coverage and required verification |
+| --- | --- | --- |
+| `application_submitted` | `hackathons/admission_workflow.py` → `admission_transactions.notice` | PARTIAL: required `AdmissionIntegrations.enqueue_notice` not installed |
+| `application_offered`, `application_waitlisted`, `application_rejected` | `hackathons/admission_decisions.py` release | PARTIAL: no staging notices; real enqueue/released-source/review/recipient proof pending |
+| `application_confirmed`, `application_declined`, `application_expired`, `application_withdrawn` | A admission/RSVP/maintenance services | PARTIAL: canonical registration bridge, envelope dedup and expiry/current-revision proof pending |
+| `rsvp_extended`, `team_eligibility_changed`, application `event_cancelled` | A RSVP/team lifecycle/admission lifecycle | PARTIAL: owner-safe renderer exists; actual producer adapter and ordinary-event dedup pending |
+| Contributor `week`, `two_days`, `day_of`, `booking_cancelled` | `contributions/notifications.py`, persisted `EventContributorNotice` | PARTIAL: schedule/recovery/claims exist; `ports().deliver_contribution` live recipient/render/provider adapter pending |
+| Help `created`, `claim`, `renew`, `reopen`, `assign`, `cancel`, `claim_released`, `lease_expired`, `expired` | `mentoring/help_workflow.py`, `help_expiry.py`, `MentorNotificationIntent` | PARTIAL: durable intents and sweeps; `ports().deliver_help` and source-backed personal/in-app adapters pending |
+| Help `attention` | `mentoring/notifications.py::escalate` | PARTIAL: 15-minute open-period intent; current organizer/expiry/generation checks authored, actual delivery pending |
+| `results_published` | `judging/results_workflow.py` → `JudgingNotice` + after-commit `notify_intent` | PARTIAL: real notify/source/recipient adapter and periodic `lifecycle.sweep_notices` installation pending |
+| `certificate_ready`, `certificate_revoked` | `certificates/lifecycle.py`, `notifications.py`; registered `events.certificate` source | PARTIAL programme acceptance: direct recipient/status/revision and document resolver installed; C/D eligibility and render/batch recovery/real provider proof pending |
+| Broadcast v2 | `programme/broadcast_*`, `broadcast_channels.py` | Authored preview/test/schedule/cancel, current source and shared HTML handoff; scheduled-release recovery registered. Full provider/race/browser acceptance pending; no assertion that every legacy fan-out has recovery |
+| `events.team`, `events.submission`, `events.help`, `events.contribution`, `events.judging`, `events.results` source names | `programme/notification_manifest.py::SOURCE_OWNERS` | MANIFEST ONLY as common personal sources: no complete runtime registration from `programme_runtime.py`. Domain intent sweeps do not substitute for transport registration |
+
+`programme_runtime.py` actually installs `events.application` with an eligibility predicate
+(current owner/revision, module/feature/config/servable gate), the certificate document
+resolver, and template catalogue. It does not install A's enqueue/render adapter or the
+other listed lane ports. `notification_sources.py` registers the certificate source.
+Application MESSAGES include the eleven literals listed above; some are only adapter
+contracts until their canonical lifecycle is integrated. No general claim that every
+declared kind has an exercised live producer is made.
+
+`reminders_programme.py` registers `events.volunteer_shift`, `events.office_hours` and
+`events.mentor_help` with the existing reminder scheduler. Contributor maintenance runs
+help expiry/escalation and committed-notice recovery. Admission maintenance, scheduled
+broadcast recovery and account Saved details jobs are also scheduled. Certificate batch/
+render/print and judging recovery remain GF1 item 8; asset jobs/retention/cleanup item 7.
+
+Typed personal PDF source/dispatch/media code supports payment and certificate sources
+by default, not badge secrets or rooms. Evidence targets are
+`tests/events/programme/attachments/test_default_pdfs.py`, `test_dispatch.py`,
+`test_media_binding.py`, `test_notification_manifest.py`, admission
+`test_notification_contract.py`, mentoring `test_notifications_triggers_diagnostics.py`,
+communications schedule/self-test files and existing `tests/billing_docs/test_r2_*.py`.
+They must run with real installed sources and provider failure/revocation boundaries.
+Role/judge assignment, submission/scan and complete correction notifications are still
+missing production integration; owner decisions requiring them are not waived.
 
 Code ownership for the status column (all paths under `backend/apps/`):
 

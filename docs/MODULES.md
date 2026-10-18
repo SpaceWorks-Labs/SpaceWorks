@@ -188,6 +188,44 @@ Requires `machines`: installing maintenance also installs its machine inventory.
 
 [Read the events module reference](MODULES-WORKSHOPS.md#events).
 
+**Programme checkpoint (2026-10-18, `f1ef7736`): keep the new features off.** Hackathons
+are features inside Events, not a separate module. Five declared switches default off:
+`events.hackathons`, `events.mentoring` (requires hackathons), `events.mentor_rounds`
+(requires mentoring), `events.volunteering`, and `events.project_gallery` (requires
+hackathons). Each hackathon also needs its disabled-by-default event config enabled.
+Volunteering can serve ordinary events. Schema, routes and generated API exist; live
+provider installation and acceptance remain incomplete. See the [runbooks](events/README.md)
+and [exact integration closure ledger](events/integration-status.md).
+
+The current `setup_areas.features_for()` selects every child of a chosen area, including
+these five when Events is selected. That setup path still needs an explicit independent
+opt-in/exclusion before programme acceptance; do not infer safe installation from the
+registry's false defaults alone.
+
+Authored workflows cover applications/review/private decision release/RSVP/waitlists,
+three team modes plus opt-in finder, contributor shifts/hours, Mentor Desk, immutable
+upload/link submissions, weighted or top-three judging, results/gallery, v2 badge
+credentials, certificate verification/library/bulk/print, forms v2 and operations tools.
+Account-owned Saved details is independent of Events and host membership; its vault is
+not organizer-readable. Reimbursement and full staged forms remain pending in this tree.
+
+Feature disablement removes its gated live actions/reads and retains definitions, history
+and private objects. Events uninstall retains those rows; deployment tombstoning removes
+runtime surfaces while retention/PII/purge/backup declarations survive. Events purge uses
+the child-before-parent graph and removes owned programme rows and keys, preserving the
+core money ledger, global account vault and foreign profile bytes. **Durable multipart/
+version cleanup receipts and storage reconciliation still need integration**; collecting
+keys is not proof that purge removed bytes. Imported public/consent/grant/credential state
+is inert until fresh target-side authorization; imported storage allowance is zero until
+target accounting is installed.
+
+Managed hackathon storage is a separate decimal **25 GB per event** pool (25,000,000,000
+bytes); self-host can configure a byte budget or unlimited event pool. File/group/submission
+bounds and used+reserved accounting still apply. Files expire 365 days from the recorded
+results/cancellation/fallback anchor without deleting records/hashes; corrections do not
+extend expiry. Live expiry does not erase older backup archives. [Media limits](events/media.md)
+and [operator notes](events/operations.md) explain pending storage/scheduler adapters.
+
 Events can run with membership and the online payments rail off. Members-only remains the
 default audience; opt-in account registration, invitations, ticket types and promo codes
 support public workshops. Paid tickets still create core ledger charges for offline settlement.
@@ -223,16 +261,20 @@ issued certificates freeze the selected design, so later changes never alter pen
 retried certificates. Turning the feature off removes editing and preview access while
 existing certificate snapshots remain readable through their ordinary authorized path.
 Artwork, revisions and certificates are removed by an Events purge in dependency order.
-Badges use the shared positioned layout engine with bundled fonts and overflow validation;
-printed contacts and bearer QR codes are forbidden. Custom answers require registration
+Legacy display badges use the shared positioned layout engine and remain free of contacts
+and bearer QR codes. The separate v2 desk-badge workflow permits only its typed opaque,
+event-bound check-in credential QR; it requires authenticated online resolution and
+generation-bound confirmation. It never permits contact fields, arbitrary bearer URLs or
+offline v2 admission. Custom answers require registration
 management plus the tenant audit permission. These badge changes use the existing Events
 module rather than a new feature switch.
 
 Opt-in `events.broadcasts` requires Notifications and Email. Staff with event registration
 authority compose email campaigns filtered by registration status and attendance, review
 drafts, send and cancel from the Events drawer. Only verified eligible accounts receive
-mail; preferences, suppression and quiet hours apply. Personal channel envelopes supplement the
-existing campaign email worker, with email pre-skipped there to avoid duplicate mail. Staff rooms
+mail; preferences, suppression and quiet hours apply. With a saved personal category selection,
+envelopes own channels including email/fallback; otherwise the campaign worker owns email
+and extra-channel envelopes pre-skip it to avoid duplicate mail. Staff rooms
 never receive campaign bodies. Delivery history survives uninstall;
 events purge removes campaigns and their event-source outboxes. Imported unfinished
 campaigns are cancelled and cannot resume. Bulk email-bound invitations reuse Events
@@ -533,6 +575,11 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `bookings.utilization_pdf` | `bookings` (needs `reports`, `bookings.analytics`) | | Audited resource PDF for a complete tenant-local period, requiring full tenant booking management AND audit | Resource PDF refuses; stored booking history stays |
 | `bookings.exports` | `bookings` (needs `reports`) | | Tenant-local reservation contacts and custom-answer previews/CSV/XLSX, requiring resource management AND audit | New detail exports refuse; booking history stays |
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
+| `events.hackathons` | `events` | | Off-default programme applications, RSVP, teams and submissions; event config also required; integration pending | Programme actions refuse; history retained |
+| `events.mentoring` | `events` | `events.hackathons` feature | Off-default mentor assignments/help/office hours; integration pending | Mentor surfaces refuse; retained work/history remain |
+| `events.mentor_rounds` | `events` | `events.mentoring` feature | Off-default leased mentor check-in rounds; integration pending | Round actions refuse; history retained |
+| `events.volunteering` | `events` | | Off-default ordinary-event/hackathon postings/shifts/verified hours; integration pending | Volunteer actions refuse; retained hours/history remain |
+| `events.project_gallery` | `events` | `events.hackathons` feature | Off-default frozen public project selections with live consent; integration pending | Public gallery/bytes refuse; private snapshots retained |
 | `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
 | `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
 

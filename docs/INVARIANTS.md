@@ -2725,6 +2725,107 @@ Load-bearing details that carried over unchanged:
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
+### Events programme integration contract (2026-10-18)
+
+Checkpoint `f1ef7736` adds the programme schema/mounts and generated API, not completed
+runtime acceptance. Keep `events.hackathons`, `events.mentoring`, `events.mentor_rounds`,
+`events.volunteering`, `events.project_gallery` and event hackathon config OFF until the
+[closure ledger](events/integration-status.md) and [AO evidence](events/acceptance.md) pass.
+The rules here are binding; a rule's presence does not claim every adapter is installed.
+
+- **One admission writer and real hard capacity.** A application lifecycle calls the
+  canonical registration/payment/ticket/waiver bridge, never a second status writer.
+  Draft/context GET creates no registration, charge, QR, redeemed code or vault intent.
+  Private staged decisions change no owner/public admission/count and send nothing.
+  Explicit atomic release rechecks current versions/reviews/live nonconflicted authority.
+  RSVP defaults to four days from release. Offer reservations/overbooking are separate
+  from hard confirmed event/ticket seats. Cohorts count people, require each member's own
+  RSVP and confirm all-or-none; decline/expiry releases the cohort. Zero/unlimited semantics
+  remain owned by existing capacity helpers, not duplicated by clients.
+- **Consent is specific evidence.** Each applicant accepts the current immutable CoC;
+  host waiver follows existing audience/provenance policy and cannot be inferred from
+  a draft ID/checkbox. MLH sharing, gallery metadata/items, sponsor recruiting résumé,
+  print photo, public card and public certificate verification are independent choices.
+  Role approval, upload, leader consent and publication never manufacture another choice.
+  Only D's `ParticipantSponsorResumeConsent` workflow grants/revokes sponsor access,
+  including contributor UI and B asset replacement/deletion. Own-track frozen project,
+  exact current ready asset/hash and live grant are all required; no vault access.
+- **Roles are scoped sources, not tenant roles.** Helpers/contributors use member accounts.
+  Delegation cannot exceed the issuer's current permissions/scope/window; imported roles
+  are inert. Manual and shift/contribution entitlement sources remain distinct. Expiring
+  one source must not revoke an independent manual permission. Display roles alone grant
+  nothing. Shift attendance is separate from event attendance; verified positive work
+  minutes require a second person and gate volunteer thanks. Practice stays isolated.
+- **Programme lock contract supersedes legacy order for migrated paths.** Prepare keys,
+  KMS material and immutable resources outside event row transactions. Enter declared
+  source boundary → global PII fence → sorted tenant fences → sorted affected-account
+  fences → series/event → sorted makerspaces → live authority → parents → children.
+  Declare every affected owner/reviewer/print subject before locking; never expand the
+  scope afterward or lock User/key rows beneath Event. Recheck prepared epoch/hash/date/
+  source revision inside fences. Never combine `select_for_update()` with nullable-FK
+  `select_related()`. `programme_locks.py` alone does not migrate ordinary/legacy callers;
+  GF1 items 2–4 track their incomplete conversion and required real PostgreSQL proof.
+- **Snapshots and scores freeze their inputs.** B's submit is the sole content-snapshot
+  writer; roster, exact ready assets/links/tracks/prizes/form references and hashes freeze.
+  Later drafts/uploads cannot alter judging or a published card. Amendment requires a
+  reason/new snapshot and invalidates old judging; submitted scores/results remain history.
+  Missing/recused work is not zero. Results finalize separately from publication and
+  corrections append revisions. One initial gallery publish selects exact consented items;
+  live teammate withdrawal stops bytes immediately, regrant requires a fresh amendment.
+- **Accepted bytes have immutable ownership.** Stage-only grants, server-side size/hash/
+  signature checks, optional explicit scan policy, bounded non-root video probe and
+  conditional final promotion precede ready state. A configured scanner outage never
+  means clean. Live authorization runs before storage and between bounded chunks (at most
+  1 MiB, policy interval at most two seconds); no positive policy cache/download presign
+  bypass survives consent/role/source revocation. HEAD has the same gate. Public IDs reveal
+  no private keys. No accepted source/firmware/toolpath is executed.
+- **Quota and expiry are independent of permission switches.** Managed allowance is decimal
+  25,000,000,000 bytes per event; self-host may use a bounded or unlimited event pool.
+  Per-file/group/submission caps still apply. Used+reserved includes pending and failed
+  cleanup; release follows confirmed deletion. First results/cancellation/fallback retention
+  is 365 days and cannot extend an existing deadline. Logical expiry denies reads even
+  while deletion retries; retained records/hashes are not removed. All final/staging/
+  verification versions/multipart locators need durable cleanup, even after runtime-off,
+  migration or purge. Accounting/cleanup scheduling remains open under GF1 item 7.
+- **Backup is distinct from live file retention.** Typed capture reads direct asset state/
+  expiry/size/hash. Missing ready unexpired bytes fail; terminal expired absence is valid;
+  in-progress cleanup/promotion and overdue-ready rows require finalization before capture.
+  Existing archives have their own retention and can retain prior bytes. Portable import
+  preserves absolute expiry, typed hash provenance and evidence but resets live consent,
+  public/claim/credential authority; no in-flight upload resumes abroad. Account vault/keys
+  never enter tenant closure. Nested canonical answer/asset import proof is still pending.
+- **Saved details is private account data.** F's single standard-key/form validator controls
+  mappings/show-if/disclosure; P owns always-encrypted account values/intent preparation.
+  Only explicit true per-field choices on visible validated submitted answers create intents;
+  sensitive DOB/résumé/diet/accessibility/emergency choices default false. Conflicts never
+  overwrite a newer saved value. Organizer sees actual submitted answers only. Vault delete
+  does not delete independent submitted evidence. Account erasure permanently fences new
+  writes and removes owner drafts through explicit lifecycle hooks, still pending integration.
+- **DOB is a source; age is a projection.** Registration, application and role-only assignment
+  derive age as of the event-local start date from encrypted DOB/source history. No numeric
+  age is persisted in a field, snapshot, audit or coordination cache. Prelock date changes
+  require source review/recomputation; locked revisions keep the frozen as-of date; reopening
+  archives the old source. Explicit DOB questions disclose that fact before submit; ordinary
+  age questions expose age only. No age limit, guardian/minor gate, age bounds or age/DOB
+  visibility dependencies may control admission, roles, shifts, CoC or another answer.
+- **Selected photos never default to private identity.** Choose both own active profile and
+  membership explicitly, or neither; print and public-card scopes require separate consent.
+  Public handle/profile/module eligibility is live. Source deletion must clear both FKs and
+  consent atomically, invalidating print/card readers without deleting independent evidence.
+  Foreign profile bytes and the global vault are never collected by an Events-only purge.
+- **Verification is not document access.** Explicit event policy plus per-certificate opt-in
+  exposes only snapshotted event title/local event date and valid/revoked state. No recipient,
+  reason, PDF URL, answers or bearer. Unknown/private/pending is uniform 404; no-store/throttle.
+  Ended/private website does not defeat an independently enabled policy; host servability,
+  Events module and withdrawal still gate. Historical opt-in defaults false. Private certificate
+  PDFs may use authorized personal attachment delivery; bearer badge/QR PDFs never do.
+
+UI acceptance includes Space Works tokens in both themes, approved Gilroy/one Unbounded
+accent, lucide controls, AppShell layouts, original artwork, keyboard/44px/reduced motion/
+real contrast checks. Account and retention mechanisms survive optional Events removal;
+runtime providers/pages/reports do not. Reimbursement (decision 34 superseding earlier
+exclusion) and full staged forms (35) remain required pending work in the separate R lane.
+
 ### Event printable credentials (Lane E)
 
 - Badge templates read as version 2 with top-left millimetre boxes, grid snapping,
@@ -2736,7 +2837,14 @@ Load-bearing details that carried over unchanged:
   Shared `operations/printable_*` geometry, serializers, fonts and PDF primitives
   never import events or bookings. Noto fonts ship in the backend image; CJK uses
   the standard PDF CID fallback. RTL wraps logical lines before bidi reordering.
-- Printed badges never contain email, phone or a bearer check-in QR. Custom-answer
+- Legacy display badges never contain email, phone or a bearer check-in QR. The separate
+  v2 desk-badge workflow permits only its typed opaque event-bound registration credential
+  QR, resolved by an authorized authenticated online scanner. Confirmation rechecks live
+  authority, payload and generation through the canonical attendance writer; resolve itself
+  is read-only. Rotation/cancellation/adoption invalidate old credentials; legacy UUID,
+  offline roster/sync and station paths must refuse v2/inert mode. This exception permits
+  no contacts, arbitrary bearer URLs, public credential resolution or badge PDFs in chat.
+  Full scanner/legacy integration is still pending under GF1 items 2/10. Custom-answer
   bindings retain current-form validation and require live registration-management
   authority AND tenant `VIEW_AUDIT` before reading answers. Template-edit authority
   cannot widen printing authority. Check-in-only staff may print attended rows only;
@@ -3627,11 +3735,14 @@ responsibility; local purges never delete shared global organizations or foreign
   host remove → `EventCollaborator.event__makerspace_id`, collaborator inbox → its `makerspace_id`
   kwarg, accept/decline → `EventCollaborator.makerspace_id`. Registering accept against the host would
   **403 it from the collaborator's own domain**, which is the entire feature.
-- **Lock order in `apps.events` is `event → makerspace(s)`**, matching shipped `publish()`,
+- **Legacy Events paths use `event → makerspace(s)`**, matching shipped `publish()`,
   `update_event()` and image attach. `require_module_locked` goes **after** `_locked_event` in
   `register()` (before would deadlock against `publish`), two makerspaces lock in **sorted pk order**,
   and `remove_collaborator` reads the event id **unlocked** first — a `select_for_update()
-  .select_related("event")` locks both rows in the wrong order.
+  .select_related("event")` locks both rows in the wrong order. Programme paths require the
+  source/global/tenant/account-first contract above. These legacy callers still need the
+  coordinated conversion in GF1 items 2–4; this historical rule is not permission to mix
+  incompatible orders or to claim conversion complete.
 - **The host waiver lives on the `EventRegistration`, not a membership** (a visitor membership would
   corrupt the host's member reporting, roster, quota and dues — `reports_members` counts every row).
   Three fields under an all-or-none check constraint, `PROTECT`, with acceptance an **explicit API

@@ -16,7 +16,7 @@ function legacyArtwork(value: string) {
 }
 
 export function PageImage({ url, alt, slug, token, privatePreview = false }: {
-  url: string; alt: string; slug?: string; token: string; privatePreview?: boolean;
+  url: string; alt: string; slug?: string; token: string | null; privatePreview?: boolean;
 }) {
   const artwork = legacyArtwork(url);
   const query = useQuery({ queryKey: ["page-image", hostScope(), privatePreview ? [currentSessionContext(), personalRecipientKey()] : "public", slug, token, url], ...publicPagePolicy, enabled: !artwork,

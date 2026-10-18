@@ -15,11 +15,11 @@ export function PublicSpaceCards({ rows }: { rows: SpaceCard[] }) {
 export function PublicEventCards({ rows, past = false }: { rows: PublicEventCard[]; past?: boolean }) {
   return rows.length ? <ul className="grid gap-3">{rows.map((row, index) => <li key={`${row.starts_at}-${index}`} className="grid gap-2 rounded-xl border border-line bg-panel p-4">
     <h3 className="title-section">{!past && safePublicLink(row.event_url) ? <RouteLink className="inline-flex min-h-11 items-center text-brand-ink underline" href={row.event_url!}>{row.title}</RouteLink> : row.title}</h3>
-    <p className="text-sm text-muted"><time dateTime={row.starts_at}>{new Date(row.starts_at).toLocaleString(undefined, { timeZone: row.timezone })}</time> – <time dateTime={row.ends_at}>{new Date(row.ends_at).toLocaleString(undefined, { timeZone: row.timezone })}</time></p>
-    {row.description ? <p className="whitespace-pre-wrap text-sm">{row.description.slice(0, 300)}</p> : null}
-    {!past && row.payment_amount !== undefined && row.currency ? <dl className="text-sm"><EventPrice amount={row.payment_amount} currency={row.currency} /></dl> : null}
-    {!past && row.availability ? <p className="text-sm text-muted">{row.availability}</p> : null}
-    {row.host ? <p className="text-sm">Hosted by <RouteLink className="inline-flex min-h-11 items-center text-brand-ink underline" href={safePublicLink(row.host.canonical_url)}>{row.host.name}</RouteLink></p> : null}
+    <p className="text-sm text-muted"><time dateTime={row.starts_at}>{new Date(row.starts_at).toLocaleString(undefined, { timeZone: "timezone" in row ? row.timezone : undefined })}</time> – <time dateTime={row.ends_at}>{new Date(row.ends_at).toLocaleString(undefined, { timeZone: "timezone" in row ? row.timezone : undefined })}</time></p>
+    {"description" in row && row.description ? <p className="whitespace-pre-wrap text-sm">{row.description.slice(0, 300)}</p> : null}
+    {!past && "payment_amount" in row && row.payment_amount !== undefined && row.currency ? <dl className="text-sm"><EventPrice amount={row.payment_amount} currency={row.currency} /></dl> : null}
+    {!past && "availability" in row && row.availability ? <p className="text-sm text-muted">{row.availability}</p> : null}
+    {"host" in row && row.host ? <p className="text-sm">Hosted by {"canonical_url" in row.host ? <RouteLink className="inline-flex min-h-11 items-center text-brand-ink underline" href={safePublicLink(row.host.canonical_url)}>{row.host.name}</RouteLink> : row.host.name}</p> : null}
   </li>)}</ul> : <p className="text-sm text-muted">{past ? "No past events to show." : "No upcoming events. Check back soon."}</p>;
 }
 

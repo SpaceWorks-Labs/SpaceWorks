@@ -9,6 +9,7 @@ class PublicOrganizationSerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     catalogue_links = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
+    canonical_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Organization
@@ -20,12 +21,21 @@ class PublicOrganizationSerializer(serializers.ModelSerializer):
             "logo_url",
             "catalogue_links",
             "collections",
+            "canonical_url",
         )
         read_only_fields = fields
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_logo_url(self, obj):
         return public_image_storage.public_url(obj.logo_key) or None
+
+    @extend_schema_field(serializers.URLField())
+    def get_canonical_url(self, obj):
+        from apps.makerspaces.public_page_access import canonical_url
+        claim = getattr(obj, "public_handle", None)
+        page = getattr(obj, "public_page", None)
+        handle = claim.handle if claim and page and page.published_revision_id else None
+        return canonical_url("organization", obj, handle)
 
     @extend_schema_field(
         serializers.DictField(child=serializers.CharField())

@@ -9873,6 +9873,7 @@ export type PublicOrganization = {
   [key: string]: string;
 };
   "collections": unknown;
+  "canonical_url": string;
 };
 
 export type PublicOrganizationEvent = {

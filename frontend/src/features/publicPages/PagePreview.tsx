@@ -1,11 +1,11 @@
 import { PageImage } from "./PageImage";
 import { PublicPageSections } from "./PublicPageSections";
 import { usePageBranding } from "./usePageBranding";
-import type { PublicPageProjection } from "./pageTypes";
+import type { PreviewProjection } from "./pageTypes";
 import { SocialCardPreview } from "./SocialCardPreview";
 
 /** A region, rather than another page layout, keeps preview landmarks out of the console shell. */
-export function PagePreview({ page }: { page: PublicPageProjection }) {
+export function PagePreview({ page }: { page: PreviewProjection }) {
   const style = usePageBranding(page.presentation.resolved_theme, page.presentation.accent_choice);
   return <div role="region" aria-label="Validated draft preview" style={style} className="grid min-w-0 gap-5 rounded-xl border border-dashed border-line bg-bg p-5 text-ink">
     <p className="eyebrow">Draft preview · not published</p><h3 className="title-panel">{page.title}</h3><p className="text-muted">{page.description}</p>

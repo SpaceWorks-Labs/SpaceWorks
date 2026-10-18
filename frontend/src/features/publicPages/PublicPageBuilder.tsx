@@ -9,7 +9,7 @@ import { PagePreview } from "./PagePreview";
 import { PageRevisionHistory } from "./PageRevisionHistory";
 import { PageSectionsEditor } from "./PageSectionsEditor";
 import { usePageEditor, usePageOperation, type PageOperation } from "./pageApi";
-import type { EditorState, PageDocument, PageOwner, PublicPageProjection } from "./pageTypes";
+import type { EditorState, PageDocument, PageOwner, PreviewProjection } from "./pageTypes";
 
 export function PublicPageBuilder({ owner }: { owner: PageOwner }) {
   return <Builder key={`${owner.kind}-${owner.id}`} owner={owner} />;
@@ -18,7 +18,7 @@ function Builder({ owner }: { owner: PageOwner }) {
   const query = usePageEditor(owner);
   const operation = usePageOperation(owner);
   const [local, setLocal] = useState<{ base: EditorState; document: PageDocument } | null>(null);
-  const [preview, setPreview] = useState<PublicPageProjection | null>(null);
+  const [preview, setPreview] = useState<PreviewProjection | null>(null);
   const [message, setMessage] = useState("");
   const [stale, setStale] = useState(false);
   useEffect(() => {
@@ -33,7 +33,7 @@ function Builder({ owner }: { owner: PageOwner }) {
   const change = (document: PageDocument) => { setLocal(current => current ? { ...current, document } : current); setPreview(null); setMessage(""); };
   const run = (input: PageOperation) => operation.mutate(input, {
     onSuccess: result => {
-      if (input.action === "preview") { setPreview(result as PublicPageProjection); setMessage("Preview validated. This is still a draft."); return; }
+      if (input.action === "preview") { setPreview(result as PreviewProjection); setMessage("Preview validated. This is still a draft."); return; }
       const saved = result as EditorState; setLocal({ base: saved, document: saved.document }); setStale(false); setPreview(null);
       setMessage(input.action === "save" ? "Draft saved. Your published page stays unchanged until you publish."
         : input.action === "publish" ? "Latest saved draft published." : input.action === "unpublish" || input.action === "release_handle" ? "Page unpublished. Your draft and history are retained." : "Page settings updated.");

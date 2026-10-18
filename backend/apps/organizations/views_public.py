@@ -40,8 +40,8 @@ class PublicOrganizationDetailView(APIView):
         responses={200: PublicOrganizationSerializer, **PUBLIC_ERRORS},
     )
     def get(self, request, slug):
-        from apps.makerspaces.public_profile_access import _request_tenant_ids
-        _request_tenant_ids(request)
+        # Legacy profiles are global compatibility reads. Builder pages and assets
+        # enforce Host/Origin scope separately; live consent still applies here.
         response = Response(PublicOrganizationSerializer(_public_organization(slug)).data)
         response["Cache-Control"] = "no-store"
         return response

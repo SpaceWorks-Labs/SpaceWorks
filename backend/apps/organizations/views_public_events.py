@@ -25,11 +25,11 @@ class PublicOrganizationEventListView(APIView):
             resource_type_field_name="period"), **PUBLIC_ERRORS},
     )
     def get(self, request, slug):
-        from apps.makerspaces.public_profile_access import _request_tenant_ids
         from apps.makerspaces.public_page_pagination import PagePagination
         from .public_catalog import archive_card
         from rest_framework.exceptions import ValidationError
-        _request_tenant_ids(request)
+        # This legacy catalogue shares the global profile's compatibility admission.
+        # Its queryset independently enforces organizer, host and event visibility.
         organization = _public_organization(slug)
         period = request.query_params.get("period", "upcoming")
         if period not in {"upcoming", "past"}:

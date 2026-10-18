@@ -5,9 +5,7 @@ import type { OrganizationDetail, OrganizationMember } from "../staff/organizati
 import { refreshOrganizationAuthority } from "./refreshOrganizationAuthority";
 
 export const organizationSelfServiceKey = ["organizations", "self-service"] as const;
-export type OrganizationCreationPolicy = {
-  enabled: boolean; eligible: boolean; max_owned: number; max_per_day: number; reason: string;
-};
+export type OrganizationCreationPolicy = import("../../generated/api").OrganizationCreationPolicy;
 
 /** `enabled` lets a caller share this cache entry without fetching where self-service cannot exist. */
 export function useOrganizationCreationPolicy(enabled = true) {

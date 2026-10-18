@@ -4,46 +4,12 @@ import { publicV1Request } from "../../lib/api";
 import { hostScope, publicPagePolicy } from "../publicPages/pageApi";
 import type { SpaceCard } from "../publicPages/pageTypes";
 
-export type PublicOrganization = {
-  slug: string;
-  name: string;
-  description: string;
-  website: string;
-  logo_url: string | null;
-  catalogue_links: { events: string };
-  canonical_url?: string;
-};
-
-export type OrganizationPublicEvent = {
-  public_token: string;
-  title: string;
-  description: string;
-  starts_at: string;
-  ends_at: string;
-  location: string;
-  capacity: number;
-  payment_amount: string;
-  currency: string;
-  availability: "Available" | "Limited" | "Full";
-  image_url: string | null;
-  status: "published";
-  event_url: string;
-  timezone?: string;
-  host: { slug: string; name: string; logo_url: string | null; canonical_url: string };
-};
-export type OrganizationPastEvent = {
-  title: string; description: string; starts_at: string; ends_at: string; timezone: string;
-  host: { name: string; canonical_url: string }; event_url: null;
-};
-export type OrganizationEvents = (Page<OrganizationPublicEvent> & { period: "upcoming" })
-  | (Page<OrganizationPastEvent> & { period: "past" });
-
-export type Page<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-};
+// canonical_url is added by this round's serializer change; regenerate the client with the schema.
+export type PublicOrganization = import("../../generated/api").PublicOrganization & { canonical_url: string };
+export type OrganizationPublicEvent = import("../../generated/api").PublicOrganizationEvent;
+export type OrganizationPastEvent = import("../../generated/api").OrganizationArchiveEvent;
+export type OrganizationEvents = import("../../generated/api").OrganizationEventCollection;
+export type Page<T> = import("../publicPages/pageTypes").Collection<T>;
 
 export const publicOrganizationKeys = {
   root: (slug: string) => ["public-organization", hostScope(), slug] as const,

@@ -35,11 +35,11 @@ def public_events_for(organization, *, period="upcoming", now=None):
     organized = EventOrganizer.objects.filter(event_id=OuterRef("pk"), organization=organization)
     rows = Event.objects.filter(
         Exists(organized), makerspace__in=directory_spaces(),
-        makerspace__enabled_modules__contains=["events"], is_public=True, status="published",
+        makerspace__enabled_modules__contains=["events"], is_public=True,
     ).select_related("makerspace__payment_settings").prefetch_related("organizers__organization")
     if period == "past":
-        return rows.filter(ends_at__lt=now).order_by("-ends_at", "-id")
-    return rows.filter(ends_at__gte=now).annotate(confirmed_count=Count("registrations", filter=Q(
+        return rows.filter(status__in=("published", "completed"), ends_at__lt=now).order_by("-ends_at", "-id")
+    return rows.filter(status="published", ends_at__gte=now).annotate(confirmed_count=Count("registrations", filter=Q(
         registrations__status__in=("registered", "attended")))).order_by("starts_at", "id")
 
 

@@ -8,7 +8,7 @@ import type { EditorState, PageOwner } from "./pageTypes";
 
 export function PageHandleForm({ state, owner, disabled, run }: { state: EditorState; owner: PageOwner; disabled: boolean; run: (input: PageOperation) => void }) {
   const [handle, setHandle] = useState(state.handle ?? "");
-  const availability = useMutation({ mutationFn: (name: string) => staffRequest<{ handle: string; available: boolean }>(`${editorBase(owner)}handle-availability/?handle=${encodeURIComponent(name)}`, { cache: "no-store" }) });
+  const availability = useMutation({ mutationFn: (name: string) => staffRequest<import("../../generated/api").HandleAvailability>(`${editorBase(owner)}handle-availability/?handle=${encodeURIComponent(name)}`, { cache: "no-store" }) });
   return <section className="grid gap-3" aria-label="Public handle">
     <h3 className="title-section">Public handle</h3>
     <p className="text-sm text-muted">Current handle: {state.handle ? `/${state.handle}` : "Not claimed"}. Changes and retired-name reservations last 30 days. Releasing the handle also unpublishes the page.</p>

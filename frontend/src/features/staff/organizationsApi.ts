@@ -4,54 +4,18 @@ import { staffRequest } from "../../lib/api";
 import { publicOrganizationKeys } from "../organizations/publicOrganizationsApi";
 import { refreshOrganizationAuthority } from "../organizations/refreshOrganizationAuthority";
 
-export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
-export type OrganizationSummary = {
-  id: number;
-  slug: string;
-  name: string;
-  is_active: boolean;
-  governance_actions: string[];
-  granted_actions: string[];
-};
-export type OrganizationDetail = OrganizationSummary & {
-  description: string;
-  website: string;
-  logo_url: string | null;
-  public_profile_enabled: boolean;
-  /** Listed in the staff organization directory that event organizers search. */
-  is_discoverable?: boolean;
-  legal_name?: string;
-  registration_number?: string;
-  contact_email?: string;
-  billing_email?: string;
-};
-export type OrganizationMember = {
-  id: number;
-  user_id: number;
-  username: string;
-  display_name: string;
-  email: string;
-  status: "active" | "suspended";
-  governance_actions: string[];
-  granted_actions: string[];
-  created_at: string;
-  updated_at: string;
-};
-export type OrganizationInvitation = {
-  id: number;
-  organization_id: number;
-  governance_actions: string[];
-  granted_actions: string[];
-  expires_at: string;
-  redeemed_at: string | null;
-  revoked_at: string | null;
-  created_by_id: number | null;
-  redeemed_by_id: number | null;
-  created_at: string;
-  state: "active" | "expired" | "revoked" | "redeemed";
-};
-export type CreatedInvitation = OrganizationInvitation & { token: string; redeem_path: string };
-export type OrganizationLink = { id: number; makerspace_id: number; makerspace_name: string; relationship: "owner" | "manager" | "affiliate" };
+export type Page<T> = import("../publicPages/pageTypes").Collection<T>;
+export type OrganizationSummary = import("../../generated/api").OrganizationSummary;
+type ApiDetail = import("../../generated/api").OrganizationDetail;
+type SensitiveFields = "legal_name" | "registration_number" | "contact_email" | "billing_email";
+// The serializer omits these fields for readers without profile-governance authority.
+export type OrganizationDetail = Omit<ApiDetail, SensitiveFields> & Partial<Pick<ApiDetail, SensitiveFields>>;
+type Actions = { governance_actions: string[]; granted_actions: string[] };
+// These two model JSON fields are validated action lists; OpenAPI currently emits unknown.
+export type OrganizationMember = Omit<import("../../generated/api").OrganizationMembership, keyof Actions> & Actions;
+export type OrganizationInvitation = Omit<import("../../generated/api").OrganizationInvitation, keyof Actions> & Actions;
+export type CreatedInvitation = Omit<import("../../generated/api").OrganizationInvitationCreated, keyof Actions> & Actions;
+export type OrganizationLink = import("../../generated/api").OrganizationLink;
 
 export function useOrganizationLinks(id: number, enabled: boolean, page = 1) {
   return useQuery({ queryKey: ["organizations", id, "links", page], enabled,

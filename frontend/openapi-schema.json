@@ -131462,9 +131462,15 @@
                     },
                     "collections": {
                         "readOnly": true
+                    },
+                    "canonical_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
                     }
                 },
                 "required": [
+                    "canonical_url",
                     "catalogue_links",
                     "collections",
                     "description",

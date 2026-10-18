@@ -5,9 +5,9 @@ import { publicV1Request, StructuredApiError } from "../../lib/api";
 import { NotFoundPage } from "../NotFoundPage";
 import { PublicEventDetailPage } from "../inventory/PublicEventDetailPage";
 import { hostScope, pageApiPath, publicOrMissing, publicPagePolicy } from "../publicPages/pageApi";
-import type { PublicEventDetail } from "./eventTicketTypes";
 
-export type PublicEventCode = PublicEventDetail & { canonical_url: string; content_url: string };
+
+export type PublicEventCode = import("../../generated/api").PublicEventCode;
 export function PublicEventCodePage() {
   const { publicToken = "" } = useParams();
   const valid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(publicToken);

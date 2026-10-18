@@ -30,10 +30,10 @@ const PAGE_SIZE = 24;
  * request panel itself; `aside` is the same request card the standalone catalogue docks beside its body. */
 export type EmbeddedCatalogue = (parts: { body: ReactNode; request: ReactNode; aside: PublicActionCardProps }) => ReactNode;
 
-export function PublicInventoryPage({ embedded }: { embedded?: EmbeddedCatalogue }) {
+export function PublicInventoryPage({ embedded, resolvedSlug }: { embedded?: EmbeddedCatalogue; resolvedSlug?: string }) {
   const { slug } = useParams();
   const tenant = useTenant();
-  const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
+  const makerspaceSlug = resolvedSlug ?? (tenant.mode === "single" ? tenant.slug : slug ?? "");
   const tenantPath = useTenantPath(makerspaceSlug);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");

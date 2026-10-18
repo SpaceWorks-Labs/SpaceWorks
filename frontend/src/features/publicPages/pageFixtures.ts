@@ -21,6 +21,6 @@ const resolvedPalette = (mode: "light" | "dark") => {
 export function projectionFixture(overrides: Partial<PublicPageProjection> = {}): PublicPageProjection {
   return { schema_version: 1, kind: "makerspace", canonical_url: "https://space.example/forge", title: "Forge", description: "Build together.",
     publication_token: "10000000-0000-4000-8000-000000000002", cover: null, presentation: { accent_choice: "inherit", resolved_theme: { theme_config: { primary_color: "#9375ad" }, light: resolvedPalette("light"), dark: resolvedPalette("dark") } },
-    sections: [{ id: "20000000-0000-4000-8000-000000000001", type: "about", payload: { title: "Our story", markdown: "Published story" } },
-      { id: "20000000-0000-4000-8000-000000000002", type: "functional_content", payload: { links: [] } }], ...overrides };
+    sections: [{ id: "20000000-0000-4000-8000-000000000001", type: "about", enabled: true, payload: { title: "Our story", markdown: "Published story" } },
+      { id: "20000000-0000-4000-8000-000000000002", type: "functional_content", enabled: true, payload: { links: [] } }], ...overrides };
 }

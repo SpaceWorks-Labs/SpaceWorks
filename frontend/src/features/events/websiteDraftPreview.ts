@@ -1,11 +1,13 @@
 import type { PublicEventEditorialSection } from "../../generated/api";
 import { previewSessions } from "./websiteProgramme";
-import type { EventWebsite, PublicEventWebsiteData, WebsiteTarget } from "./websiteTypes";
+import { websiteGroups, type EventWebsite, type PublicEventWebsiteData, type WebsiteTarget } from "./websiteTypes";
 
 /** Private local preview only. It never resolves member identities or manufactures public eligibility. */
 export function websiteDraftPreview(page: EventWebsite, target: WebsiteTarget): PublicEventWebsiteData {
+  const projected = { ...page, sections: page.sections.map(row => ({ ...row, image_url: row.image_url ?? null, image_alt_text: row.image_alt_text ?? "" })),
+    section_enabled: page.section_enabled ? Object.fromEntries(websiteGroups.map(group => [group, page.section_enabled?.[group] !== false])) as import("../../generated/api").WebsiteGroupVisibility : undefined };
   const document = page.editorial_document;
-  if (!document) return { ...page, editorial_document: undefined, sessions: previewSessions(page.sessions) };
+  if (!document) return { ...projected, editorial_document: undefined, sessions: previewSessions(page.sessions) };
   const asset = (id: number) => {
     const found = page.assets?.find(row => row.id === id);
     return found ? { url: `/api/v1/admin/${target.kind}/${target.id}/website/assets/${id}`, alt: found.alt_text } : null;
@@ -24,5 +26,5 @@ export function websiteDraftPreview(page: EventWebsite, target: WebsiteTarget): 
     }
   });
   const cover = document.cover_mode === "none" ? null : document.cover_mode === "asset" && document.cover_asset_id ? asset(document.cover_asset_id) : page.cover;
-  return { ...page, presentation: undefined, cover, sessions: previewSessions(page.sessions), editorial_document: { ...document, sections } };
+  return { ...projected, presentation: undefined, cover, sessions: previewSessions(page.sessions), editorial_document: { ...document, sections } };
 }

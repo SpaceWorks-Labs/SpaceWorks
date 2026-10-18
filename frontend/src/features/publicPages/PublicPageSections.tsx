@@ -18,20 +18,20 @@ function Content({ section, image, functional, organizationCollections, token, s
   token?: string; slug?: string;
 }) {
   switch (section.type) {
-    case "about": return <RestrictedMarkdown text={section.payload.markdown} mode={section.payload.rendering_policy} />;
+    case "about": return <RestrictedMarkdown text={section.payload.markdown} />;
     case "gallery": return <div className="grid gap-4 sm:grid-cols-2">{section.payload.items.map((item, index) => <figure key={index} className="grid gap-2">{item.url ? image(item.url, item.alt) : null}{item.caption ? <figcaption className="text-sm text-muted">{item.caption}</figcaption> : null}</figure>)}</div>;
     case "team": return <ul className="grid gap-3 sm:grid-cols-2">{section.payload.entries.map((entry, index) => <li key={entry.id ?? index} className="rounded-xl border border-line bg-panel p-4">
-      {entry.avatar_url ? <img src={entry.avatar_url} alt="" width={64} height={64} className="h-16 w-16 rounded-full object-cover" /> : null}
+      {entry.kind === "member" && entry.avatar_url ? <img src={entry.avatar_url} alt="" width={64} height={64} className="h-16 w-16 rounded-full object-cover" /> : null}
       <h3 className="title-section">{safePublicLink(entry.url) ? <RouteLink className="inline-flex min-h-11 items-center text-brand-ink underline" href={entry.url}>{entry.display_name}</RouteLink> : entry.display_name}</h3><p className="text-sm text-muted">{entry.role}</p>
     </li>)}</ul>;
-    case "stats": return <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">{Object.entries(section.payload.metrics).map(([key, value]) => <div key={key} className="rounded-xl border border-line bg-panel p-4"><dt className="text-sm text-muted">{metricLabels[key as keyof typeof metricLabels]}</dt><dd className="text-2xl font-semibold tabular-nums">{value.toLocaleString()}</dd></div>)}</dl>;
+    case "stats": return <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">{Object.entries(section.payload.metrics).map(([key, value]) => <div key={key} className="rounded-xl border border-line bg-panel p-4"><dt className="text-sm text-muted">{metricLabels[key as keyof typeof metricLabels]}</dt><dd className="text-2xl font-semibold tabular-nums">{value?.toLocaleString()}</dd></div>)}</dl>;
     case "testimonials": return <div className="grid gap-4 sm:grid-cols-2">{section.payload.entries.map(entry => <figure key={entry.id} className="rounded-xl border border-line bg-panel p-4"><blockquote className="whitespace-pre-wrap">{entry.quote}</blockquote><figcaption className="mt-3 text-sm text-muted">{entry.attribution}</figcaption></figure>)}</div>;
     case "links": return <ul className="flex flex-wrap gap-2">{section.payload.entries.filter(entry => safePublicLink(entry.url)).map(entry => <li key={entry.id}><a className="desk-button" href={entry.url} rel="noopener noreferrer">{entry.label}</a></li>)}</ul>;
     case "location": return section.payload.enabled_publicly ? <div className="grid gap-3"><p className="whitespace-pre-wrap">{section.payload.address}</p><p className="whitespace-pre-wrap text-sm text-muted">{section.payload.directions}</p>{safePublicLink(section.payload.map_url) ? <a className="desk-button justify-self-start" href={section.payload.map_url} rel="noopener noreferrer">View map</a> : null}</div> : null;
     case "upcoming_events": return <ProjectedEventCollection key={`${section.id}-${token}`} collection={section.payload} token={token} slug={slug} />;
     case "linked_makerspaces": return <PublicSpaceCards rows={section.payload.results} />;
     case "organization_events": return organizationCollections ?? <div className="grid gap-6"><section><h3 className="title-section mb-3">Upcoming events</h3><PublicEventCards rows={section.payload.upcoming.results} /></section><section><h3 className="title-section mb-3">Past event archive</h3><PublicEventCards rows={section.payload.past.results} past /></section></div>;
-    case "functional_content": return functional ?? <ul className="flex flex-wrap gap-2">{section.payload.links.map(link => <li key={link.url}><RouteLink className="desk-button" href={safePublicLink(link.url)}>{link.label}</RouteLink></li>)}</ul>;
+    case "functional_content": return functional ?? <ul className="flex flex-wrap gap-2">{section.payload.links.map(link => <li key={link.url}><RouteLink className="desk-button" href={safePublicLink(link.url)}>{({ inventory: "Browse inventory", events: "See events", bookings: "Book a space", machines: "Explore machines", membership: "Member area" })[link.family]}</RouteLink></li>)}</ul>;
     default: return null;
   }
 }

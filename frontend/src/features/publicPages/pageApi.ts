@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_V1_URL, publicV1Request, staffRequest, StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { currentSessionContext } from "../../lib/api/sessionContext";
 import { personalRecipientKey } from "../notifications/personalQueryKeys";
-import type { Collection, EditorState, HandleResolution, PageDocument, PageOwner, PublicPageProjection, RevisionMetadata } from "./pageTypes";
+import type { Collection, EditorState, HandleResolution, PageDocument, PageOwner, PublicPageProjection, PreviewProjection, RevisionMetadata } from "./pageTypes";
 
 export const hostScope = () => `${window.location.origin}|${API_V1_URL}`;
 export const publicPagePolicy = {
@@ -61,17 +61,17 @@ export type PageOperation = { action: "save" | "preview"; version: number; docum
 
 export function usePageOperation(owner: PageOwner) {
   const client = useQueryClient();
-  return useMutation({ mutationFn: async (input: PageOperation): Promise<EditorState | PublicPageProjection> => {
+  return useMutation({ mutationFn: async (input: PageOperation): Promise<EditorState | PreviewProjection> => {
     const { action, ...body } = input;
     const base = editorBase(owner);
     if (input.action === "upload") {
       const data = new FormData(); data.set("version", String(input.version)); data.set("file", input.file); data.set("alt_text", input.alt_text);
-      return (await staffRequest<{ asset: EditorState["assets"][number]; state: EditorState }>(`${base}assets/`, { method: "POST", body: data })).state;
+      return (await staffRequest<Omit<import("../../generated/api").AssetUploadResult, "state"> & { state: EditorState }>(`${base}assets/`, { method: "POST", body: data })).state;
     }
     const path = action === "save" ? base : action === "release_handle" || action === "handle" ? `${base}handle/`
       : input.action === "delete_asset" ? `${base}assets/${input.id}/` : `${base}${action}/`;
     const payload = input.action === "delete_asset" ? { version: input.version } : body;
-    return staffRequest<EditorState | PublicPageProjection>(path, {
+    return staffRequest<EditorState | PreviewProjection>(path, {
       method: action === "save" || action === "handle" ? "PUT" : action === "release_handle" || action === "delete_asset" ? "DELETE" : "POST",
       body: JSON.stringify(payload),
     });

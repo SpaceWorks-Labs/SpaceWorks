@@ -6,8 +6,7 @@ import { EmptyState, ErrorText, ListRow, Skeleton, StatusPill } from "../../comp
 import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 
-type Card = { title: string; description: string; url: string; image_url: string | null; date: string; location: string; availability: string; audience_label: string; registration_count?: number | null; makerspace_name?: string };
-type Results = { count: number; next: string | null; previous: string | null; results: Card[] };
+type Results = import("../../generated/api").Discovery;
 const field = "grid min-w-0 flex-1 basis-40 gap-1 text-sm font-semibold sm:flex-none";
 
 export function EventDiscoverPage() {

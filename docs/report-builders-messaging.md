@@ -1,114 +1,97 @@
-# Messaging analytics handoff (1h-C)
+# Canonical communications and messaging measurements
 
-`communications-health` v3 composes addressed SMS/WhatsApp facts from
-`integrations/reports_messaging.py`. Room `CHANNELS` is unchanged. Each addressed
-section requires its own module; neither requires the inbox module. All sources
-are explicitly tenant-scoped. Deployment rows retain `makerspace_id`.
+`communications-health` version 4 is registered to
+`operations.reports_communications.build_communications_health`. It composes canonical personal
+chat and SMS/WhatsApp delivery facts with retained room logs, physical email outcomes from EmailLog,
+per-device push ledgers and optional inbox reads. Each section uses its real module. SMS/WhatsApp
+and canonical push do not require inbox installation; push adapter registration still belongs to
+the notifications app. All reads are tenant-scoped. Deployment rows retain makerspace_id.
+Reports are read-only: they never replay callbacks, activate sending or dispatch queues.
 
-## Measurements
+## Sources and cohorts
 
-Delivery cohorts use `MessagingDelivery.created_at`, bucketed by tenant-local day,
-ISO Monday week or month through `period_expression`. Calendar filters rebind to
-the tenant timezone; rolling/precise tuple windows keep their instants. Outcomes
-are the current recorded outcomes of those creation cohorts, not historical
-as-of-window-end reconstructions. Retention limits the available history.
+`integrations.reports_messaging`, `operations.reports_notification_facts`,
+`reports_notification_receipts`, `reports_notification_consent` and `reports_push_facts` project
+canonical data. The retired MessagingDelivery table is never queried by production reporting.
+Unique encrypted NotificationLegacyMapping records supplement original observations after exact
+canonical-target and tenant validation. Mappings are history, not another delivery. Foundation
+mappings preserve observations predating expanded timestamps. Push children supply outcomes once;
+their parent is not counted again. Parent tenant/audience attribution works without an inbox row.
 
-Rows group by period, channel/module, feature, audience and provider source, plus
-closed-vocabulary skip reason and segment source. Unknown source values become
-`unknown`; no free text, sender identity, provider message ID, phone, body, context,
-template name, error code or credential enters the report.
+Creation cohorts use canonical NotificationDelivery.created_at (device rows use their ledger's
+creation time), bucketed by tenant-local day, ISO Monday week or month. Calendar labels resolve
+in each tenant before filtering, including DST; precise windows retain instants. Current recorded
+outcomes are not historical as-of-window-end reconstructions. Retention limits available history.
+Groups retain period, module/channel, feature, audience including requester, own/platform source,
+platform, closed-vocabulary skip reason, segment source and measurement. Unknown categories map
+to unknown. No phone, sender key, provider ID, body/context, template name, provider text or
+credential enters report rows. Failures do not erase delivered/read observations.
 
-- `accepted_count`: `progress_rank >= 1`.
-- `sent_count`: `progress_rank >= 2`, including later undelivered/failed outcomes.
-- `delivered_count`: `progress_rank >= 3`.
-- `read_count`: `progress_rank == 4`.
-- `failed_count`: derived persisted `status == failed`, not `failed_at` presence.
-  A delivery/read with a failure observation therefore is not counted as failed.
-- `skipped_count`: current skipped outcomes, split by the model's skip-reason
-  vocabulary; `suppressed_count` is a separate current outcome.
-- `delivery_rate`: delivered / accepted; `read_rate`: read / delivered. Both are
-  fractions, null with zero denominators. Each exposes `<rate>_numerator` and
-  `<rate>_denominator`. Existing percent fields remain percentages; inbox read
-  percentages retain their original read/created definition.
-- SMS `estimated_segments` sums local estimates, `billed_segments` sums recorded
-  provider bills, and `segments` chooses billed when present (including zero),
-  otherwise estimated. `segment_source=billed|estimated` keeps that choice labelled.
-  These are recorded segment observations, including any retained estimates on
-  skipped rows, not an inferred financial charge. WhatsApp is `not_applicable`.
-- `abandoned_webhook_count` counts current abandoned events by receipt cohort
-  (`received_at`), in separate `measurement=webhook_receipts` rows. Unattributed
-  platform events cannot be guessed onto a tenant. Rejected signatures have no
-  durable source in this tree: no zero-valued rejection metric is fabricated.
-- `consented_member_count` is a current, date-filter-independent snapshot with
-  `measurement=current_consent_snapshot` and `period=null`. It counts active,
-  unrestricted local members whose latest ledger row is opted-in and whose phone
-  and verification-instance snapshots both still match. Encrypted phones are
-  compared through the scoped model mapper with a joined user lookup rather than
-  SQL ciphertext comparison or a separate live-consent lookup per member.
+## Counts, rates and provenance
 
-`measurement=delivery_cohort` identifies delivery rows. Non-addressed sections use
-neutral values for the added dimensions. All new counts/rates are in the public
-allowlist and numeric condition registry; previews and CSV/XLSX use the same
-disclosure projection. Typed OpenAPI rows are in `serializers_reports_messaging.py`.
+- Cumulative accepted/sent/delivered/read counts derive from the canonical progress observations
+  plus mapped original history. accepted_count includes later sent/delivered/read; sent_count
+  includes later delivery failure. read_count is the highest observed progress.
+- Current failed_count reflects the derived current failure, not merely failed_at. Exclusive
+  outcomes distinguish pending, sending, accepted_only, sent_only, delivered_only, read, failed,
+  skipped, suppressed and held. Canceled legacy queues retain their disposition in immutable
+  mappings and inert canonical history; cancellation never schedules work.
+- delivery_rate = delivered / accepted; read_rate = read / delivered. Zero denominators return
+  null. Each rate exposes numerator/denominator; existing percent fields remain percentages.
+  Inbox read percentage retains its separate read/created meaning.
+- SMS estimated_segments and billed_segments are separate. segments prefers a recorded bill,
+  **including zero**, otherwise the estimate; segment_source labels billed/estimated. Retained
+  estimates on skipped rows are observations, not incurred financial charges. WhatsApp is
+  not_applicable for segments.
+- held_webhook_count measures current held NotificationIngress by original received_at cohort,
+  with measurement=webhook_receipts. abandoned_webhook_count measures original abandoned legacy
+  receipt snapshots with their original dates. Those observations do not assert a replayed
+  receipt remains abandoned. Unattributed platform receipts cannot be assigned to a guessed
+  tenant; rejected signatures have no fabricated zero-valued metric.
+- consented_member_count is a current, date-filter-independent member-account snapshot with
+  measurement=current_consent_snapshot and period=null. It excludes restricted/inactive/deleting
+  members. SMS compares current phone verification instance, sender and generation; WhatsApp
+  requires current signed endpoint proof and no opt-out. Staff sharing the contact never enter
+  the member count. Account-only recipients enter delivery cohorts even though this specifically
+  named member snapshot does not count them.
 
-## Organization and chart contracts
+Public numeric allowlists/condition metrics include held_count and held_webhook_count.
+Previews, exports, dashboards and typed responses use the same sanitized projection.
 
-`org_reports_messaging.combine_communications` group-sums additive observations,
-preserving every dimension, and recomputes rates from summed numerators and
-denominators. Current consent snapshot rows are excluded entirely from combined
-totals, while remaining in tenant breakdowns. The strategy declares the consent
-column breakdown-only, because summing it would double-count shared people.
+## Organizations, charts and platform metering
 
-The F1 chart retains its required top-level keys and gains optional per-value
-`kind=line|stacked_bar`. Existing values without this property retain their chart
-hint. Messaging current outcomes use the exclusive fields `pending_count`,
-`sending_count`, `accepted_only_count`, `sent_only_count`, `delivered_only_count`,
-`read_count`, `failed_count`, `skipped_count`, `suppressed_count` as stacked bars.
-Cumulative sent counts, event overlays and delivery/read ratios are lines.
-Dimensions and units must stay separate; cumulative progress must never be stacked.
-The backend validator and OpenAPI chart serializer declare the extension. Frontend
-rendering of per-value kinds is an integration concern for the frontend lane.
+Organization combination preserves dimensions, sums additive observations and recomputes weighted
+rates from summed numerators/denominators. Current consent snapshots remain in tenant breakdowns
+and are excluded from combined totals. Keep the combined total beside every tenant breakdown.
+Only exclusive outcomes may be stacked; cumulative progress, overlays and ratios remain lines.
+Chart specifications preserve units, tenant and currency partitions and full table fallback.
 
-## Platform services
+`platform-services` and `module-operational-health` are version 3; `mobile-devices` and
+`mobile-auth` are version 2. SMS OTP comes from SmsSendLog, independently of canonical notification
+SMS/WhatsApp. Logical notifications count once despite retries. Own/platform source remains visible
+for visible tenants; own-provider rows expose counts/outcomes without segment billing or amounts.
+Pending debt never contributes to collected platform revenue; document/settlement accounting stays
+on the canonical ledger. Historical usage is not erased by later module disablement.
 
-`platform-services` v2 adds `purpose=otp|notifications`: SMS OTP comes only from
-`SmsSendLog`, notification SMS/WhatsApp only from `MessagingDelivery`. Logical
-delivery rows are counted once, irrespective of retry attempts. Recorded
-`provider_source` separates platform and own senders; own usage has counts and
-outcomes only, with no segment billing, monetary amounts or configuration reads.
-Platform metering retains historical recorded usage even when a tenant module is
-now off; source-module associations do not erase those facts.
+A server-owned PlatformContext is required. Hidden platform-provider usage passes through the
+anonymous hidden_makerspaces bucket with only service/day/count; no tenant, outcome, purpose or
+source breakdown survives. Hidden own-provider usage is excluded, even with local operator membership.
+Mobile reports recognize fixed-tenant native staff grants and current per-device children.
 
-The existing server-minted PlatformContext remains mandatory. Visible tenants
-retain their per-makerspace counts. Hidden platform-provider observations pass
-through `hidden_platform_service_bucket`, now also allowing `whatsapp`, and emerge
-only as service/day/bucket/count. Tenant ID, outcome, purpose, source and every
-other breakdown are absent (null in public matrix projection). Hidden own-provider
-usage is excluded, even for an operator with a local membership.
+## HTTP and rollout
 
-## Integration and verification
+Use endpoint paths, with the regenerated OpenAPI response shapes:
 
-No models, migrations or routes were added. Shared generated schema/type and
-tenant-dump pins were untouched. Regenerate OpenAPI/TypeScript after integrating
-the typed report responses and optional chart value kind. Changed payloads:
+- GET `/api/v1/admin/makerspace/{id}/analytics/communications-health` and its
+  `/reports/communications-health/export` companion under the same tenant prefix.
+- GET `/api/v1/admin/analytics/communications-health`, `/api/v1/admin/reports/catalog`,
+  and `/api/v1/admin/reports/communications-health/export` for authorized deployment scope.
+- GET `/api/v1/admin/platform/analytics/platform-services` for platform metering.
+- GET `/api/v1/admin/organizations/{id}/analytics/communications-health` for breakdown/totals.
+- GET `/api/v1/admin/makerspace/{id}/reports/catalog` and `/dashboard` for authorized catalog,
+  condition fields, widgets and chart metadata. Machine scope and identity-bearing audit gates apply.
 
-- GET `/api/v1/admin/makerspace/{makerspace_id}/analytics/{report_key}`:
-  `communications-health`.
-- GET `/api/v1/admin/analytics/{report_key}` and
-  `/api/v1/admin/reports/{report_key}/export`: communications and platform services.
-- GET `/api/v1/admin/makerspace/{makerspace_id}/reports/{report_key}/export`:
-  communications export columns.
-- GET `/api/v1/admin/platform/analytics/{report_key}`: `platform-services`.
-- GET `/api/v1/admin/organizations/{organization_id}/analytics/{report_key}`:
-  communications totals/breakdowns and chart value kinds.
-- GET `/api/v1/admin/makerspace/{makerspace_id}/reports/catalog`,
-  `/api/v1/admin/reports/catalog`, and
-  `/api/v1/admin/makerspace/{makerspace_id}/dashboard`: communications fields,
-  numeric condition metrics and/or chart value kinds.
-
-Tests: `backend/tests/analytics/test_messaging_reports_m1h.py` and
-`test_messaging_report_contract_m1h.py`; existing H/I expectations and the completed
-coverage acceptance block were updated. These test paths are repository-ignored:
-the orchestrator must include them explicitly. Docker/pytest/review/commits belong
-to the orchestrator and were not run by this implementer. Static AST parsing and
-whitespace checks are the local verification.
+OpenAPI/TypeScript regeneration and runtime verification belong to the orchestrator after lanes
+converge. Static/documentation checks establish no provider or migration success. Sending activation,
+destructive integrations 0043 and callback compatibility remain subject to
+[replay sign-off checkpoints](notification-reconciliation-rollout.md).

@@ -1,10 +1,13 @@
 # Space Works mobile apps — PRD and build plan (Android + iOS)
 
-Version 2 · 2026-10-17 · Owner: Shaan (Space Works) · Builder: app developer + Codex
+Version 3 | 2026-10-18 · Owner: Shaan (Space Works) · Builder: app developer + Codex
 
 This document is **self-contained**. The app developer has **no access to the backend repository**;
 everything needed to build the apps is here, in the API schema file shipped with it, and in the public
 design repository. Copy this file into both app repos as `docs/PRD.md` and keep the two copies identical.
+The owner will supply OpenAPI regenerated after backend reconciliation. Until then, review
+endpoint paths and wire fields below; old generated type names/schema may be stale. No rollout
+sign-off is implied: notification sending remains held pending conversion/replay verification.
 
 | Repo | Purpose |
 |---|---|
@@ -27,15 +30,21 @@ apps never compute availability, permissions or money.
 | User | In the app |
 |---|---|
 | **Member** | Browse inventory, request hardware, see loans and due dates, renew, bookings, events (register, ticket QR), membership card, payments (pay dues/charges), notification inbox, profile |
-| **Staff** (any role a makerspace gives them: Space Manager, Inventory Manager, Machine Manager, Handover and combinable fixed built-in roles) | Everything a member sees **plus** the staff tools their role allows: review requests (accept/reject), QR scan, issue/return with evidence photo, direct handout, booking approvals, event check-in |
-| **Superadmin** | **Not supported.** The server refuses to sign a superadmin in on a phone. Show "Use the web console" |
+| **Staff** (fixed built-in staff roles) | Separate staff account for one makerspace; review, issue/return, direct handout, booking approvals, event check-in and dashboards only when current actions allow |
+| **Platform / superadmin** | No native grants. Show "Use the web console" on refusal |
 
-**One app** serves both. Staff tools appear only when the signed-in user's role in the **selected
-makerspace** grants the action (from the `actions` list in the user payload). The server still
-enforces every permission, so hiding a button is just UX; a 403 must always be handled gracefully.
+One app supports separate member and staff sign-ins. `account_kind` is immutable and is
+`member`, `staff` or `platform`; the same person/email can have accounts in different
+namespaces. A member never gains staff tools from role assignment, social login or refresh.
+Staff use password + authenticator MFA + attestation; the grant is fixed to `staff_makerspace`.
+A member can participate in several spaces and has a makerspace switcher. Staff stay in their
+one tenant and use their separate member account for community activity. Switching accounts
+clears tokens, private caches, pending navigation and prior-account push registrations.
 
-A user can belong to several makerspaces. The app has a **makerspace switcher**, and every request is
-made "as" the selected makerspace.
+Drive staff UI from `account_kind=staff`, `session_authority=native_staff`, grant
+`authority=staff` and the current action list. The API rechecks every permission; handle 403.
+Resource helpers and organization delegates remain member accounts and gain no native staff
+or organization-derived authority.
 
 ## 3. What you get, and what you do not
 
@@ -167,21 +176,25 @@ is authoritative. These are the rules the schema cannot express:
    the challenge and attestation. Nonce request: `{provider,surface:"member",delivery:"device",
    client_platform,challenge}` -> `{nonce,expires_in}`. Login request:
    `{id_token,nonce,surface:"member",delivery:"device",client_platform,challenge,attestation,
-   authorization_code?,apple_name?}` -> `SocialLoginResponse` (device tokens or MFA challenge).
+   authorization_code?,apple_name?}` -> device tokens or an MFA challenge.
    OIDC provider keys use `oidc:{slug}` in the nonce request.
    Apple must use the configured native bundle audience. Supply the authorization code when
    available so the server can revoke Apple credentials on account deletion.
 5. Phone OTP is available: `POST /auth/phone/login/start` with
    `{phone, delivery:"device", client_platform:"android"|"ios", challenge}` → `{detail}`;
    `/auth/phone/login/confirm` takes those fields plus six-digit `code` and `attestation`.
-   Success is a `DeviceTokenResponse` or the schema's MFA challenge. Phone sign-in is member-only.
+   Success is a device-token response or an MFA challenge. Phone sign-in is member-only.
    `GET /config` publishes `native: {min_app_version:{android:string|null, ios:string|null},
    providers:{password:boolean, phone:boolean, google:{android_client_id,ios_client_id}|null,
    apple:{enabled:boolean}|null, oidc:[{key,display_name,client_id,issuer}]}}`.
    Read it on launch, show only enabled methods, and require an update below the platform minimum
    (compare dotted numeric components, not strings). Null means no minimum.
-6. Staff device sessions are available. Password/social login snapshots staff capability for active
-   local staff memberships; phone login never grants it. A member promoted after login must sign in again.
+6. Staff password sign-in MUST send `context:"staff"` and `makerspace:"<slug>"` to
+   `/auth/device/login`, with username/password, platform/app/environment, challenge and attestation.
+   It selects only staff accounts in that tenant and always requires MFA (including enrollment
+   when requested). Member password sign-in sends `context:"member"` (default) with no makerspace.
+   Phone, Google, Apple and OIDC are member-only; they never issue staff grants. Platform sign-in
+   cannot issue a device grant. Wrong namespace/tenant returns generic credential failure.
 7. `POST /auth/device/refresh` rotates tokens. **Refresh is single-flight**: if two requests 401 at
    once, only one refresh runs and the others wait for it. **Re-using an old refresh token revokes the
    whole device session** (security feature). Persist the new pair atomically before retrying.
@@ -192,30 +205,33 @@ is authoritative. These are the rules the schema cannot express:
 10. `GET /auth/me` = the user payload: identity + per-makerspace memberships with `actions`. Drive the
    makerspace switcher and all staff-tool visibility from it, and refetch on app foreground.
    The payload includes `session_authority`. Show staff tools only when it is
-   `native_staff` **and** the membership has the action. Phone sign-in never gets staff tools, and a member
-   who was given a staff role after signing in must sign in again.
+   `native_staff`, account is `staff`, grant is `staff` and local membership has the action.
+   Payload includes `account_kind` and `staff_makerspace:{id,slug,name}|null`. Refresh never
+   changes account kind, grant authority or the fixed staff tenant.
 11. On staff screens, `X-Makerspace-Id` is **mandatory** and must equal any makerspace
     id in the URL. Without it, staff calls are refused.
 
 Device request/response details: the attestation challenge takes
 `{platform:"android"|"apple", app_id, environment:"development"|"production"}`.
-Password login takes the same fields plus `{username,password,challenge,attestation}`;
+Password login takes the same fields plus `{username,password,challenge,attestation,
+context:"member"|"staff",makerspace?:slug}` (makerspace required only for staff);
 success is `{access,refresh,user,device_grant}`. The grant is
-`{id:UUID,platform,app_id,environment,status,attested_at,last_used_at,created_at}`.
+`{id:UUID,platform,app_id,environment,status,authority:"member"|"staff",
+staff_makerspace_id:number|null,login_method,attested_at,last_used_at,created_at}`.
 MFA returns `{mfa_required,enrollment_required,challenge,expires_in}`; complete
 `POST /auth/mfa/verify` with `{challenge,code}` (or enroll/confirm using the schema when
 `enrollment_required`). `POST /auth/device/refresh` takes `{refresh}` and returns
 `{access,refresh,device_grant}`. Logout takes no body and returns `{detail}`. Grant lists
 are a bare array; individual revocation returns 204. All paths in §7 are relative to
 `/api/v1` unless written in full. The schema's attestation operation description specifies
-all three proof types above; its shared generated `type` enum currently collapses to
-`play_integrity`. Use its open-object proof alternative for Apple/development rather
-than changing their wire `type` to the Android value.
+the supported proof shapes above. Generate against the reconciled schema; never change Apple
+`type:app_attest` or development `type:development` to Android proof to fit an older client.
 
 **Sign out everywhere — available**
 `POST /auth/logout-all` takes no body and returns 200 `{web_sessions:number,devices:number}`.
 It revokes browser sessions, device grants, refresh families and their push destinations across
-this server. Clear all local tokens and session caches after success. This is separate from
+this account on this server and clears its selected context. Other accounts held by the same
+person remain independent. Clear all local tokens and session caches after success. This is separate from
 single-device logout and needs no selected makerspace or optional module.
 
 **Push notifications — available for members and staff**
@@ -232,20 +248,29 @@ single-device logout and needs no selected makerspace or optional module.
   PATCH takes `{feature,channel,enabled,daily_digest?}` and returns the same cells. Inbox rows are
   `{id,feature,event,title,summary,link,read_at:datetime|null,created_at}`.
 - Payload `data` has string values: `v:"2"`, `event_id`, `makerspace_id`, `feature`, `event`,
-  member-only `inbox_row_id`, and optional allowlisted `link`. The title is the makerspace name;
+  optional `inbox_row_id`, and optional allowlisted `link`. The title is the makerspace name;
   iOS uses the makerspace thread ID. Ignore unknown keys and accept missing `v` as v1.
-  Deduplicate by `event_id`; tapping selects the makerspace, then opens a supported link or its inbox.
-- Member push follows personal member-audience inbox rows and respects membership, module,
-  tenant channel matrix, requester selection and personal preferences. Account-only inbox readers
-  without an active local membership do not receive push. Staff have their own operational push path.
-  Push is best effort and may duplicate: always refetch the authoritative API after a tap/foreground.
+  Canonical `event_id` is stable for the envelope intent; inbox ID is optional. Deduplicate by
+  `event_id`; tapping selects an authorized makerspace and opens the supported link, inbox if
+  available, or home. Never navigate a staff grant into another tenant.
+- Canonical push is an envelope channel with per-device children, independent of inbox creation.
+  Recipient policy admits current source-tied member/requester accounts, including account-only
+  owners, without the inbox module. Registration still requires an active local membership through
+  `X-Makerspace-Id`; do not promise new registration to account-only owners until the owner supplies
+  a widened backend/schema contract. Staff use fixed-tenant staff grants. Handle unavailable inbox
+  routes separately from push. Disabling the inbox module preserves the canonical adapter;
+  tombstoning the whole notifications app removes it.
+- Unknown outcomes/expired leases are held without blind resend; definitive rejections may retry
+  within the server budget. Apps never retry a notification send. Push is best effort: deduplicate
+  by `event_id` and refetch authoritative APIs after tap/foreground.
 
 **Payments — both native rails available**
 The provider is selected per makerspace on the server; the app never chooses or receives secrets.
-See §9 for operator provisioning. The server's current settings UI/API exposes Stripe setup only;
-Razorpay backend/native support exists but needs operator provisioning before an app can use it.
+See the operator provisioning section. The Space Manager's web payment settings support both
+Stripe and Razorpay, write-only credentials and exact webhook URLs. The native app consumes
+the selected rail and public values at runtime.
 
-- `GET /member/makerspaces/{makerspace_id}/payments` → paginated `MemberPayment` rows:
+- `GET /member/makerspaces/{makerspace_id}/payments` -> paginated payment rows:
   `{id,subject_type,subject_label,status,amount:string,currency,due_at:datetime|null,
   due_date:string|null,due_state,checkout_url,online_payment_available,settlement,
   refunded_amount,refunds,created_at}`. Use `online_payment_available` before offering online pay.
@@ -274,22 +299,59 @@ Razorpay backend/native support exists but needs operator provisioning before an
   History and receipts survive an unavailable online rail.
 - Payments are for real-world makerspace services; use the native payment SDKs.
 
-**SMS / WhatsApp member consent and phone verification — available**
-- Authenticated `POST /auth/phone/link/start` takes `{phone}` → `{detail}`.
-  `POST /auth/phone/link/confirm` takes `{phone,code}` (six digits) →
-  `{phone_e164,verified:boolean}`. This verifies the signed-in account's phone; it does not opt in.
-- `GET /me/messaging?makerspace={id}` → `{sms:Channel,whatsapp:Channel}` where each Channel is
-  `{available:boolean,consented:boolean,phone_verified:boolean,phone_masked:string,suppressed:boolean}`.
-  `POST /me/messaging/consent` takes `{makerspace:id,channel:"sms"|"whatsapp",
-  action:"opted_in"|"opted_out"}` and returns the same whole response. Send no extra fields.
-- Show one consent switch per channel. Require verified phone and channel availability to opt in;
-  allow opt-out. Verification, membership and personal notification preferences are separate
-  from consent. Consent is specific to the current number and makerspace. Changing the number
-  needs fresh verification/consent. Provider STOP suppression may also block delivery/re-consent;
-  show the server's reason for 409/423/503 and refetch instead of assuming a toggle succeeded.
-- These settings require an active local membership, but remain accessible when the optional
-  `membership` or `notifications` module is off. `sms` and `whatsapp` are independent opt-in
-  modules and do not fall through to push. Never expose staff sender credentials in member UI.
+**Personal notification channels and messaging consent**
+Paths below are relative to `/api/v1`. Core personal APIs are independent of membership and
+optional inbox installation; the account still needs a current tenant tie: membership or owned
+loan/request, booking, event registration, machine-service request or charge. Revoked membership
+wins over old ownership; restricted, inactive, deleting/retired accounts are refused. Staff use
+their separate staff account and fixed tenant. No preference grants staff authority. Native
+`X-Makerspace-Id` selection currently requires active local membership: do not invent a bypass
+for account-only personal APIs if refused. Request a backend update for that app flow.
+
+- Phone verification: `POST /auth/phone/link/start` with `{phone}`, then
+  `POST /auth/phone/link/confirm` with `{phone,code}` -> `{phone_e164,verified}`. This is not consent.
+- SMS: `GET /me/messaging?makerspace={id}` returns `{sms,whatsapp}`; each contains
+  `{available,consented,phone_verified,phone_masked,suppressed}`. The member-only consent write is
+  `POST /me/messaging/consent` with `{makerspace:id,channel:"sms",action:"opted_in"|"opted_out"}`
+  -> the same whole response. Send no extra fields. Consent binds current phone verification
+  instance, sender and configuration generation. Phone A -> B -> A needs fresh consent after
+  verification. Opt-out remains available. Staff cannot use this member-only write: never borrow
+  a member's phone/consent to show staff an SMS-subscribe control.
+- WhatsApp: `POST /integrations/makerspace/{id}/personal/endpoints/start` with
+  `{channel:"whatsapp",consent:true,consent_version:"<app consent version>",phone_number?:E164}`
+  returns `{challenge_id,expires_at,connect_url?,instructions?,oauth_state?}`. Follow provider
+  instructions: only a signed matching inbound code proves the endpoint. Typed numbers, SMS OTP
+  and phone login never prove WhatsApp consent. Complete through
+  `POST /integrations/makerspace/{id}/personal/challenges/{challenge_id}/verify` using only the
+  proof fields in the supplied schema, never destination IDs. Proofs expire in ten minutes and
+  consume once. Do not present WhatsApp as an SMS-style toggle.
+- `GET /integrations/makerspace/{id}/personal/endpoints` is paginated; endpoint rows include
+  `id,channel,provider,integration_generation,verification_state,verified_at,consented_at,
+  consent_version,revoked_at,created_at,effective_valid`. Use `effective_valid` for current state.
+  `DELETE /personal/endpoints/{endpoint_id}` under that tenant prefix returns `{revoked:true}`.
+  Invalidated endpoints can still be disconnected.
+- Category choices: `GET/PUT /integrations/makerspace/{id}/personal/preferences`.
+  Response `{preferences:[{category,channels:[],email_fallback,available_channels:[]}]}`;
+  PUT `{preferences:[{category,channels:[],email_fallback}]}` replaces supplied categories only.
+  Submit only edited available categories; empty channels is explicit. Matrix/module, current
+  connection/consent and retained legacy false preferences constrain availability. This differs
+  from the legacy feature-cell `/notifications/preferences/{id}` inbox editor.
+- `GET /integrations/makerspace/{id}/personal/deliveries` is paginated. Rows contain metadata:
+  `id,envelope_id,channel,state,attempt_count,next_attempt_at,last_error,retryable,event,feature,
+  created_at,updated_at`. Show held outcomes as awaiting reconciliation, never delivered or
+  with an app-side resend. No bodies, destinations or credentials are returned.
+- Telegram/Slack/Mattermost/Discord use the same start/verify/endpoints routes. OAuth returns
+  signed code/state; resolve state with endpoints GET `?oauth_state=...`, then verify the returned
+  `oauth_return.challenge_id` for this account. Untrusted query parameters never choose the
+  challenge. No browser token/WebView replaces device auth.
+
+STOP suppresses a physical sender/phone or provider alias, including across tenants sharing
+one sender. START never subscribes; explicit current proof/consent is required. A delayed proof
+cannot lift a newer STOP. Changing accounts must not reuse another account's endpoints. SMS and
+WhatsApp modules start off; platform sending also needs operator and tenant opt-in. Neither falls
+through to push. Handle 409 conflicts, 410 retired APIs, 423 tenant holds, 429 throttling and 503
+cutover/dependency failures with server copy and a fresh read. Sending activation is held until
+replay/sign-off. Never expose credentials or use retired messaging-settings/whatsapp-templates APIs.
 
 **Evidence photos (staff issue/return)**
 - Request an upload (`/admin/makerspaces/{id}/uploads/evidence-url`), then upload exactly as the
@@ -309,7 +371,9 @@ Razorpay backend/native support exists but needs operator provisioning before an
 `draft → pending_approval → rejected | accepted → issued → partially_returned | returned | closed_with_issue`.
 
 **Account deletion and restore — available**
-Deletion applies to the whole account on this server across all makerspaces, separately from leaving
+Self-deletion/90-day archive, restore, purge and Apple revocation are **member-only**. Hide
+these controls for staff/platform; staff retirement is an administrator workflow. Member
+deletion applies to the whole member account across all makerspaces, separately from leaving
 one makerspace. `GET /auth/account/deletion` returns
 `{deletable,restorable,restore_reason,blockers:[Blocker],reauth:{required,methods:string[]}}`.
 Each Blocker contains `{code,makerspace_id:number|null,makerspace_slug:string|null,
@@ -399,7 +463,7 @@ is no target-member parameter, and this response must be cached only within the 
 session/makerspace and cleared on sign-out or makerspace switch. The existing
 membership-gated `/activity` contract remains unchanged.
 
-The dashboard response (`Dashboard`) has required `scope_mode:"full"|"machine"|"handover"`
+The dashboard endpoint response has required `scope_mode:"full"|"machine"|"handover"`
 and optional numeric counters: `upcoming_events`, `pending_event_registrations`, `pending_bookings`,
 `upcoming_bookings`, `overdue_loans`, `pending_requests`, `awaiting_issue`, `open_problem_reports`,
 `low_stock`, `pending_prints`, `active_prints`, `prints_awaiting_collection`, `failed_emails`,
@@ -409,7 +473,8 @@ Omitted counters are unavailable to this actor; do not turn them into zero-value
 Each widget's `kind` is `count|trend|top_n|heatmap|queue`; `chart_spec` may be null and `data`
 is a report object. Requests to dashboard and my-usage are GETs with no body.
 
-`MemberUsage` has required `usage_available:boolean` and optional sections:
+The `/member/makerspaces/{id}/my-usage` response has required `usage_available:boolean`
+and optional sections:
 
 | Section | Shape |
 |---|---|
@@ -424,8 +489,8 @@ A `Series` is `{rows:[{[field]:value}],chart_spec:ReportChartSpec}`. Monthly loa
 `machine_id,machine,hours`; booking rows `period,count`; event rows `metric,count`; payment rows
 `currency,paid_total,outstanding_total`. Missing sections mean gated/unavailable, not zero usage.
 
-**Staff analytics — available within native local-membership authority**
-`GET /admin/makerspace/{makerspace_id}/reports/catalog` returns `{results:[ReportCatalogItem]}`
+**Staff analytics — available within native fixed-tenant staff authority**
+`GET /admin/makerspace/{makerspace_id}/reports/catalog` returns `{results:[catalog entry]}`
 (no page envelope). Each entry is `{key,title,fields:string[],exportable,summary,
 required_modules:string[],available:boolean|null,unavailable_reason:string|null,grains:string[],
 chart_hint,chart_spec:ReportChartSpec|null,identity_bearing,aggregate_supported,
@@ -435,8 +500,8 @@ availability is not a guarantee of access; handle 403/404 from the actual query.
 
 `GET /admin/makerspace/{makerspace_id}/analytics/{report_key}` takes optional
 `start=YYYY-MM-DD`, `end=YYYY-MM-DD`, `grain=day|week|month` (only catalog-supported values),
-`limit`; dates are tenant-local and end-inclusive. Use the generated `AnalyticsReportResponse`
-union for the selected key. Most reports expose `rows:[[header,...],[value,...],...]`, optional
+`limit`; dates are tenant-local and end-inclusive. Use the response schema for that endpoint and selected report key.
+Most reports expose `rows:[[header,...],[value,...],...]`, optional
 `typed_rows:[{field:value,?}]` and optional `meta:{?}`; summary reports can return a flat
 object instead. Prefer typed rows, preserve table fallback, and show metadata limitations.
 Subject reports use the schema's paired `subject_kind` / `subject_id` only for supported keys.
@@ -466,8 +531,10 @@ are anonymous; do not try to identify hidden tenants.
 ## 8. Phases
 
 Each phase ends with **tests green in CI, a commit (or a few small ones) per repo, and a short phase
-note** in `docs/CHANGELOG.md`. No phase starts until the previous one is merged. All backend
-dependencies below are available in the supplied 2026-10-17 schema; app implementation and deployment credentials still need verification.
+note** in `docs/CHANGELOG.md`. No phase starts until the previous one is merged.
+Use the owner-supplied regenerated reconciliation schema before dependent phases. Deployment
+credentials, provider round trips and notification replay/activation remain operator checks;
+an older 2026-10-17 schema is not the reconciled contract.
 
 | Phase | Content | Backend dependency |
 |---|---|---|
@@ -476,7 +543,7 @@ dependencies below are available in the supplied 2026-10-17 schema; app implemen
 | A2 Member — read | Inventory browse/search/detail, my requests & loans with due dates, bookings, events, member dashboard/activity + my-usage, membership card, inbox (read/unread) | none |
 | A3 Member — act | Submit hardware request, renew loan, book, register/cancel event + ticket QR, profile edit, notification preferences, phone verification and SMS/WhatsApp consent | none |
 | A4 Push + deep links | Device registration, notification tap routing, universal/app links | available - member/staff push and association files; owner configures hosts |
-| A5 Payments | Payments list, Stripe PaymentSheet, Razorpay Checkout, receipts/documents | available - Stripe PaymentSheet and Razorpay Orders; provisioning limitation in §7 |
+| A5 Payments | Payments list, Stripe PaymentSheet, Razorpay Checkout, receipts/documents | available - Stripe PaymentSheet and Razorpay Orders; server provisioning in §7 |
 | A6 Staff | Pending requests accept/reject, QR scanner, issue (QR + photo), return (photo + remark), direct handout, booking approvals, event check-in, role dashboard and authorized analytics | available - native staff grants and scoped APIs |
 | A7 Account + store readiness | Device sessions list/revoke, leave/cancel membership, **delete account** (blocker list → fix links → re-auth → confirm, §7), privacy labels, accessibility pass, localisation-ready strings | available - deletion, identity-only restore and logout-all |
 | A8 Release | White-label guide, TestFlight + Play closed test, store listings, reviewer demo account | — |
@@ -567,6 +634,6 @@ For later phases, reuse the same prompt with the phase name, e.g. "Implement **p
 
 ## 11. Out of scope (v1)
 
-Superadmin / control-plane features, organisation-only staff (staff must hold a membership of the
-makerspace), kiosk and printer device protocols, offline mode beyond showing cached data read-only,
+Superadmin/control-plane features, organization-derived native staff authority (staff use a
+separate fixed-tenant account with active local staff membership), kiosk and printer device protocols, offline mode beyond showing cached data read-only,
 tablets-specific layouts, GitHub sign-in.

@@ -92,49 +92,41 @@ JSON with `List-Unsubscribe=One-Click`; GET has no effect. Forged/expired tokens
 CSRF session are required. Configure the SMTP provider to DKIM-sign both unsubscribe
 headers as required by RFC 8058; the application cannot enforce provider signing.
 
-## Member native push
+## Native push beneath personal envelopes
 
-New inbox rows record `audience=staff|member` and a minimal validated subject scope
-(`machine_id`, `machine_type_id`, `category_id`, positive integer IDs only). Existing
-rows backfill as staff. Requester wording wins for dual staff/member recipients and
-sets the audience to member. Creation of a member row queues `deliver_member_push`
-with `transaction.on_commit`, so rolled-back inbox writes cannot send a push.
+Canonical native push is a channel delivery under `NotificationEnvelope`, with one
+`MemberPushDelivery` child per `(envelope_delivery, push_device)`. The required parent is
+`integrations.NotificationDelivery`; optional `inbox_row` uses SET_NULL. Creating or reading
+an inbox row never starts a push and deleting inbox rows cannot cascade delivery history.
+Old enqueue/deliver-row/Celery identifiers remain inert compatibility shims.
 
-Delivery rechecks `mobile.push`, the tenant `(feature, native_push)` matrix cell,
-platform push configuration, makerspace servability, source module availability,
-the notifications module and `notifications.member_inbox`. A failed global gate
-returns without marking delivery rows. Recipient checks require `eligible_owner`
-plus an active local membership, `receives_notifications`, requester selection
-re-evaluated using the saved scope, and the personal native-push preference. Account-only
-borrowers can still read their inbox but receive no member push without membership.
-Devices must belong to that recipient and makerspace, be active, and have an active
-grant belonging to that User with an approved deployment-global app registration.
-Recipient/device failures create or mark retryable device deliveries skipped.
+Current member/requester owners with a proved source tie qualify without an active membership
+or inbox installation. Revoked memberships and account/source restrictions still refuse.
+Staff require a separate staff-kind password/MFA/attested grant fixed to their tenant; native
+platform grants do not exist. Each attempt rechecks source revision, account/generation, module,
+tenant matrix, intersected personal choices, registration, grant and current device identity.
+The notifications app registers the adapter: disabling the inbox module is supported, whereas
+tombstoning the entire app removes that adapter.
 
-The title is the makerspace name clipped to 64 characters. The body is the inbox
-row's member summary read through the normal decryption accessor and clipped to 178
-characters; staff payload text is never used for this path. Staff push keeps its
-existing independent matrix delivery and uses the same one-device provider sender.
+Atomic UUID claims fence provider completions. Definitive transport rejections can retry within
+the parent's four-attempt budget; unknown outcomes and expired leases are held without blind
+resend. A late actual response can settle only its original token; rotation cannot invalidate
+a replacement push token. The five-minute sweep re-enters the envelope dispatcher and respects
+parent backoff and inert historical records. Provider I/O runs outside application transactions.
 
-`MemberPushDelivery` is unique per inbox row/device. Each attempt atomically claims
-pending/failed work or an expired sending lease, only while attempts < 5, increments
-attempts and sets a new UUID token with a two-minute expiry. Sent/failed completion
-updates require that exact token. Transient errors use exponential backoff; invalid
-tokens deactivate the device and exhaust the five-attempt budget. Every five minutes,
-beat or `run_scheduled_tasks --due-only` re-enqueues retryable work and expired leases,
-skipping frozen/not-restored tenants through their source-gate boundaries. Provider
-I/O runs outside application database transactions. Delivery is **best-effort with
-possible duplicates** if a provider accepted before a worker recorded sent. An enqueue
-failure or exhausted delivery leaves the inbox readable. Delivery telemetry is omitted
-from portable exports and deleted when its inbox row or device is deleted.
+Payload v2 has string values `v`, `event_id`, `makerspace_id`, `feature`, `event`, optional
+`inbox_row_id` and allowlisted local `link`. Canonical `event_id` is
+`uuid5(NAMESPACE_URL, envelope.dedup_key)`. Content is rendered for the personal recipient,
+not copied from a room. Titles name the makerspace; APNs groups by its thread ID. Retained
+legacy staff matrix legs preserve their stable identities and matching envelope pre-skips.
+Apps deduplicate, refetch source APIs on foreground/tap and fall back to inbox when available
+or makerspace home when it is absent.
 
-Both staff and member pushes carry payload v2: string-valued `v`, `event_id`,
-`makerspace_id`, `feature`, `event`, and member-only `inbox_row_id`. The stable event
-identity is the inbox event UUID for members and the persisted delivery-log event key
-for staff (pre-v2 logs use their stable log ID). Optional links must pass both
-`inbox.safe_link` and `integrations.mobile_link_contract.is_supported_link`;
-without one the app opens the makerspace inbox. APNs groups using `aps.thread-id`
-equal to the makerspace ID. This grouping does not promise collapse or deduplication.
+Notifications 0008 expands nullable parents before the shared barrier; 0009 maps every old
+push row and creates inert historical parents; 0010 verifies original fingerprints and makes
+the parent required. Terminal rows stay inert, untouched pending rows become canceled and
+uncertain attempts held. Conversion never sends. Follow the separate
+[deployment checkpoints](notification-reconciliation-rollout.md) before activation or retirement.
 
 ## Retention and data hygiene
 
@@ -160,8 +152,8 @@ Export/model/User-edge and tenant field catalogues declare all new models. Inbox
 and deployment-keyed suppressions are omitted from portable artifacts. Preferences
 are included in manager datasets but dropped at target import, following the existing
 target-owned notification policy; target Users must re-establish them before optional
-communications are enabled. Tenant backups preserve source data normally. The target
-catalogue schema digest remains the Wave 1 `RECOMPUTE` marker for coordinator pinning.
+communications are enabled. Tenant backups preserve source data normally. The reconciled catalog and concrete field snapshot define the target schema digest;
+regenerate/verify it with the owning registry workflow rather than retaining either parent pin.
 
 ## Structured webhooks
 

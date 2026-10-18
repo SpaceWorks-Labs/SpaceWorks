@@ -1,6 +1,10 @@
 # Account deletion privacy note
 
-Deleting an account applies across every makerspace on this deployment. It requires a
+Self-service deletion/archive/restore/purge and Apple revocation apply only to member accounts.
+Staff/platform accounts use administrator lifecycle services; separate accounts sharing email/phone
+are never deleted or restored together.
+
+Deleting a member account applies across every makerspace on this deployment. It requires a
 fresh identity check and typing `DELETE`. All outstanding obligations must be settled
 first; the account page lists blockers and links to the relevant screens. Accounts with
 no usable verification method must contact their makerspace.
@@ -28,7 +32,11 @@ snapshots on hardware requests, bookings, event registrations and owned machine-
 requests; booking notes and custom answers; registration custom answers; membership
 application answers and invitation addresses; and email-log recipients/content addressed
 to the account or its address recorded when deletion was requested. Membership cards
-are already revoked and redacted during immediate account closure.
+are already revoked and redacted during immediate account closure. Canonical envelope bodies,
+routing/context and account-bound proof receipts/mapping snapshots must be scrubbed by account
+ID; optional-inbox push children require their envelope ownership path. Shared sender/STOP,
+provider-reference and other accounts' protections survive. See the reconciliation rollout
+checkpoints for the required cross-lane privacy-hook verification before activation.
 
 The following records remain after account deletion:
 

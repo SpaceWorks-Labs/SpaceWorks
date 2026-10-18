@@ -26,11 +26,12 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `TELEGRAM_API_URL` | `'https://api.telegram.org'` |  |
 | `TELEGRAM_BOT_TOKEN` | `''` |  |
 | `TELEGRAM_WEBHOOK_SECRET` | `''` | The webhook answers 403 while unset; callbacks are acknowledged and ignored. |
-| `WHATSAPP_META_GRAPH_VERSION` | `'v25.0'` | Version used by Meta HTTP requests; factory/webhook are wired, but the remaining readiness gate is documented in the delivery contract. |
+| `WHATSAPP_META_GRAPH_VERSION` | `'v25.0'` | Canonical Meta HTTP version. Twilio/Meta adapters and the whatsapp module are wired; sender/proof/template gates and the independent cutover activation hold still apply. |
 
 These notification settings are loaded from the environment and forwarded by deployment manifests.
-OAuth returns `?notify_challenge=<id>&code=...&state=...`; the frontend posts to authenticated personal
-challenge verification. Authorization and exchange must use the identical provider-registered URI.
+OAuth returns signed code/state; authenticated endpoints GET resolves `oauth_state` to the current
+account's challenge, then the frontend posts to authenticated personal challenge verification.
+Redirect URIs are fixed registered values, without dynamic challenge IDs or placeholders. Authorization and exchange must use the identical provider-registered URI.
 See the [delivery contract](notification-contract.md#provider-connection-and-deployment) for setup.
 
 ## Sign-in: social, OIDC, native devices, member claims

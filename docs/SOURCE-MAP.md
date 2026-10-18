@@ -8,9 +8,12 @@
 
 ## Current source map (real paths)
 
-Canonical personal delivery uses the envelope/configuration/provider pipeline in
-SOURCE-MAP-NOTIFICATIONS.md. Addressed enqueue/worker compatibility shims are inert;
-legacy schema remains for replay and separately approved retirement.
+Canonical personal delivery is the envelope/configuration/provider pipeline indexed in
+[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). SMS, Twilio/Meta WhatsApp,
+physical sender/STOP protection, device children and canonical reports are reconciled there.
+Addressed enqueue/worker compatibility shims are inert; legacy schema and historical import
+helpers remain for replay pending the independent
+[retirement and activation checkpoints](notification-reconciliation-rollout.md).
 
 Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
 `bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
@@ -40,7 +43,9 @@ Mobile analytics prerequisites (1f-1): `accounts/models_activity.py` owns grant/
 anonymous attestation outcomes; `device_activity.py` records validated authentication
 activity. `integrations/models_tracking.py` owns staff push attempts, anonymous SMS
 outcomes and tenant-bound bounce replay identities. Staff delivery uses `push.py`; member
-delivery keeps `notifications/member_push.py` and its fenced lease helpers.
+delivery uses `notifications/member_push.py`, `envelope_push_leases.py` and
+`envelope_push_transport.py` beneath the canonical envelope delivery. The older lease helpers
+remain for retained legacy staff matrix legs.
 `integrations/email.py` stamps connection provenance, `dispatch_delivery.py` retains
 provider IDs and `views_bounce.py` handles exact correlation and replay protection.
 
@@ -48,8 +53,9 @@ Addressed template values share domain adapters without importing the optional i
 `payments/notification_projections.py` owns audience-specific payment bags and local due
 dates; `machines/service_printing_projection.py` owns the kernel-to-printing projection
 (including capability quantity and printing status). Payment and printing notification
-adapters retain these shared projections (finance still needs canonical-renderer reuse); `integrations/messaging/sources.py` selects the audience
-and passes only reviewed scalar keys to the outbox projection.
+adapters pass reviewed scalar projections into canonical envelopes.
+`hardware_requests/notification_projection.py` supplies the source-backed audience projection;
+legacy `integrations/messaging/sources.py` remains a compatibility seam, not another outbox.
 
 `machines/models_tracking.py`, `status_tracking.py` and `consumable_costs.py` own immutable
 status/cost facts. `service_manual_usage.py` contains typed manual logging behind the
@@ -117,24 +123,19 @@ now import `frontend/src/generated/api.ts`; widget JSON is projected at the char
 Vitest panel suites live beside these components, with registry fixtures and shared
 fetch/provider helpers in `src/test/reportChartCases.ts` and `analyticsFixtures.tsx`.
 
-Addressed messaging frontend (1h-D): `features/messaging/messagingApi.ts` imports the generated
-serializer TypeScript contracts (refining untyped WhatsApp parameter JSON for the editor)
-and owns tenant-specific TanStack Query keys;
-`MessagingFeedback.tsx` provides inline errors and exact-value copy controls.
-`features/staff/MakerspaceMessagingSettings.tsx` and `MessagingTestSend.tsx` own sender
-credentials, source/availability indicators, callback setup and caller-only diagnostics.
-`WhatsAppTemplateBindings.tsx` owns binding CRUD/pagination and `WhatsAppBindingForm.tsx`
-owns catalog-constrained, ordered BODY variables. `MakerspaceSettingsPanel.tsx` mounts
-them under Email & integrations for settings managers with the relevant module enabled.
-`NotificationChannelPreferences.tsx` renders API-supplied SMS/WhatsApp columns and sender
-setup warnings. `features/members/MemberMessaging.tsx` owns per-makerspace consent in
-Account → Messaging, mounted by `MemberArea.tsx` independently of `notifications` and
-`membership` module gates for eligible members and account-only owners with a current tenant tie.
-Revoked/restricted accounts remain excluded by the server. `MemberPhoneVerification.tsx` exposes
-the existing authenticated phone-link OTP endpoints under Account → Verify phone;
-verification alone never grants messaging consent. Focused mocked-fetch component tests
-live beside both staff panels and the member section; fixtures are in
-`src/test/messagingFixtures.tsx`.
+Personal channel UI is consolidated in `features/notifications/`: `channelsApi.ts`,
+`channelCatalog.ts`, `ChannelSetupPanel/Form`, `WhatsAppTemplatesEditor`, `ChannelTestSend`
+and `ChannelDeliveryLog` own canonical configuration, approval, diagnostics and history.
+`PersonalChannels`, `ChannelPreferences`, `MyNotificationSettings` and `SmsConsent` own
+connections, category selections and current phone/sender-bound consent. `smsConsentApi.ts`
+uses the retained core consent endpoints. `features/messaging/MessagingFeedback.tsx` supplies
+shared inline feedback. The old messagingApi, MakerspaceMessagingSettings, MessagingTestSend,
+WhatsAppTemplateBindings/BindingForm and MemberMessaging components are deleted.
+`MemberArea.tsx` exposes Channels to server-authorized account-only owners independently of
+membership/inbox; old messaging section links remain aliases. Staff have a core My channels tab;
+platform navigation remains separate. Query keys bind account, context and tenant; session
+switches clear private caches and late mutation results cannot populate another account.
+`MemberPhoneVerification.tsx` refreshes consent reads after linking without subscribing anyone.
 
 The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
 `AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
@@ -333,9 +334,11 @@ owns its durable release claims. `views_timing.py` configures tenant timing and 
 encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs and writes
 address-hash suppression. `notifications/models_broadcasts.py`, `broadcasts.py` and
 `views_broadcasts.py` own scoped member segments, matrix fan-out and personal announcements.
-`notifications/models_push.py` owns member push delivery leases; `member_push.py`,
-`member_push_policy.py` and `member_push_leases.py` separate sending, delivery-time gates
-and fenced claims. `notifications/tasks.py` queues delivery and five-minute recovery.
+`notifications/models_push.py` owns canonical per-device children; `member_push.py`,
+`member_push_policy.py`, `envelope_push_leases.py` and `envelope_push_transport.py` separate
+registered fan-out, current source/device gates, fenced claims and transport. The old
+member_push_leases helper remains for legacy staff matrix use. `notifications/tasks.py`
+re-enters canonical envelope delivery for five-minute recovery; old enqueue IDs are inert.
 `notifications/inbox_scope.py` validates persisted requester-selection subjects.
 `integrations/push.py` shares one-device provider sending; `push_payload.py` builds v2
 data through the existing `mobile_link_contract.py` routing contract.
@@ -682,58 +685,49 @@ dialog state, outside Query caches/storage. Staff offline rosters, jobs and toas
 member offline cards/loans retain their separate lifecycle. Tests: `backend/tests/account_split/`
 and frontend `*.accountSplit.test.*`, `sessionContexts.test.ts`, `contextStores.test.ts`.
 
-Addressed messaging foundation (1h-A) lives in `integrations/models_messaging_settings.py`
-(platform/tenant credentials, sender ownership/versions and WhatsApp template bindings),
-`models_messaging_consent.py` (immutable ledger and shared recipient protection), and
-`models_messaging_delivery.py` (delivery and normalized durable callback inbox contracts).
-The models barrel re-exports all concrete models. Migration `0034_messaging_m1h` installs
-the consent mutation/write-fence triggers; notifications `0006_messaging_m1h` updates
-personal preference choices.
+Addressed messaging is part of core integrations, not a second delivery pipeline.
+`models_endpoints.py` owns canonical channel configuration and templates; `models_contract.py`
+owns personal envelopes/deliveries; `models_cutover.py` owns `NotificationCutover`, encrypted
+`NotificationIngress`, `NotificationLegacyMapping`, credential versions and provider references.
+`models_messaging_consent.py` retains append-only consent and shared physical suppression,
+alias/correlation protection. Platform sender settings and sender identity/history remain in
+`models_messaging_settings.py`; its old tenant settings/binding models and the old
+`models_messaging_delivery.py` send records survive only for conversion/import compatibility.
 
-`integrations/messaging/resolver.py` owns credential precedence, sender keys and exact
-callback URLs; `senders.py` owns reservation, rotation and retired-credential wiping.
-`locks.py::lock_whatsapp_sender` is the shared sender serialization seam for delivery,
-callback correlation and re-consent. `protections.py` defines phone/alias hashes and
-suppression lookup; `consent.py` owns admission, live consent and re-consent lifting/reset.
-`settings_service.py` and `templates.py` own audited staff mutations; `templates_provider.py`
-checks authoritative Meta approval/shape. `projections.py` is the reviewed event/audience
-variable and SMS default catalogue. `transport.py` defines SendResult and classifies
-provider outcomes; `twilio.py`, `whatsapp.py` and `segments.py` implement provider sends
-and SMS accounting. Existing `sms/` retains OTP's bool behavior.
+`notification_sender.py` owns canonical own/platform resolution, sender snapshots and retired
+verifiers; `notification_addressed.py` rechecks addressed eligibility, SMS routing snapshots,
+segments and WhatsApp correlation before provider I/O. `messaging/ties.py`, `consent.py`,
+`protections.py`, `stops.py`, `correlation.py`, `segments.py` and reviewed `projections.py`
+provide the ported safeguards. `recipients_addressed.py` / `recipients_owners.py` share source
+recipient extraction without requiring inbox installation. `notification_personal_policy.py`
+keeps opt-outs effective even when the optional inbox app is absent. OTP remains in `sms/`.
 
-The three `messaging/views_*` modules, serializers and URL lists supply the staff and
-member APIs. `admin_messaging.py` exposes platform settings/templates only.
-`messaging/purge.py` supplies independent module purge and account departure hooks.
-`data_export/classification_messaging.py` and `tenant_migration/catalog_messaging.py`
-classify history, credentials and inert target projection. `tasks_messaging_settings.py`
-is registered through integrations tasks and both schedulers. The core scope validator
-is `integrations/notification_scope_contract.py`; the optional inbox re-exports it.
+`notification_ingress.py`, `notification_ingress_apply.py`, `notification_legacy_ingress.py`,
+`notification_callbacks.py` and provider ingress modules authenticate/journal/replay callbacks.
+The old messaging webhook URLs remain signed compatibility ingress, not send authority.
+`notification_cutover.py` and `management/commands/notification_cutover.py` own barrier, route,
+replay, verify and activate. Integrations 0041 expands; 0042 converts/maps restartably without
+sending. Destructive 0043 remains unsupplied. Historical migrations, including
+0035_messaging_tenant_tie and frozen conversion helpers, are retained.
 
+`notifications/member_push.py`, `envelope_push_leases.py`, `envelope_push_transport.py` and
+`models_push.py` own registered device fan-out beneath `NotificationDelivery(native_push)`.
+Notifications 0008 expands nullable parents, 0009 converts/maps old rows, 0010 verifies/enforces
+parent/device uniqueness. `inbox.py::write_envelope_inbox` supplies source audience/scope and a
+stable identity without triggering push; `privacy.py` owns push/inbox mapping redaction hooks.
+Deleting inbox rows preserves children through their canonical parent. The entire notifications
+app still owns adapter registration; disabling its inbox module is a distinct operation.
 
-Addressed delivery pipeline (1h-B): `integrations/recipients_addressed.py` is the core
-recipient resolver imported by the optional inbox. `recipients_owners.py` shares inbox
-owner eligibility and tenant-row ownership; `messaging/ties.py::has_tenant_tie` derives
-SMS/WhatsApp member admission from membership or owned rows without importing notifications.
-`messaging/sources.py` persists and
-revalidates domain identity/scope; `eligibility.py` separates pure policy from idempotent
-quota reservation. `dispatch.py` owns the unique transactional outbox and on-commit queue.
-`worker.py`, `outcomes.py` and `correlation.py` own fenced claims/completion, derived provider
-status and the WhatsApp correlation barrier. `stops.py` owns shared sender suppression and
-optional consent annotations; `webhook_signatures.py`, `webhook_payloads.py` and
-`webhook_processing.py` verify, normalize and durably process provider callbacks behind
-`views_messaging_webhooks.py` and `messaging/urls_webhooks.py`. `messaging/views_test.py`
-limits diagnostics to the caller. `tasks_messaging.py` registers worker and recovery;
-`messaging/sweep.py` owns recovery/retention in both scheduler modes. Origin targets,
-API-client explicit denies (`apiclients/scope_registry_messaging.py`) and source-gate
-participation are declared in their existing registries. Operator setup and recovery:
-`docs/messaging-channels.md`. No new model or field is introduced by lane B.
+`messaging/dispatch.py` and `worker.py` and old member-push enqueue/deliver task names are inert
+import/broker shims. `tasks_messaging.py` recovers canonical ingress; settings wipe tasks retain
+retired-secret hygiene. Duplicate settings/template writes return 503 then 410. Source adapter
+coverage and deliberate legacy pre-skips are indexed in notification-coverage.md.
 
-Messaging analytics (1h-C): `integrations/reports_messaging.py` projects addressed
-SMS/WhatsApp creation cohorts, segment provenance, abandoned callback receipts and
-current live-consent snapshots into `reports_communications.py`. Shared public fields
-are `operations/report_fields_hi.py`; `org_reports_messaging.py` combines weighted
-rates and excludes person snapshots from organization totals. `reports_platform_services.py`
-splits SMS OTP/notifications via `purpose` and adds WhatsApp counts through the existing
-anonymous hidden-service projection. `serializers_reports_messaging.py` declares typed
-OpenAPI rows; chart values optionally declare line/stacked-bar kinds. Measurement and
-integration details: [report-builders-messaging.md](report-builders-messaging.md).
+Messaging analytics uses `operations/reports_communications.py::build_communications_health`
+(version 4), `integrations/reports_messaging.py` and the operations canonical delivery-fact
+helpers. `NotificationDelivery` plus exact legacy mappings preserve original observations
+without counting another send; EmailLog and device children supply physical outcomes once.
+`report_fields_hi.py` owns public fields; `org_reports_messaging.py` combines weighted rates
+and excludes current consent snapshots from totals. Platform services/module health are v3;
+mobile devices/auth v2. Held ingress, original abandoned receipts, current proof-bound consent
+and billed-zero segments keep distinct measurements. See [measurement notes](report-builders-messaging.md).

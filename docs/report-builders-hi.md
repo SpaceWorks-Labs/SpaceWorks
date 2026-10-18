@@ -10,8 +10,9 @@ All time axes support tenant-local day, ISO week and month.
 registration IDs, message bodies, raw metadata, provider errors or credentials.
 Audit dimensions and reasons are projected through closed vocabularies.
 
-- `communications-health` v3 extends the original v2 measures below with addressed
-  SMS/WhatsApp cohorts, rates, segments, abandoned callbacks and current consent
+- `communications-health` v4 extends the original v2 measures below with addressed
+  canonical/mapped SMS/WhatsApp cohorts, rates, segments, held ingress, original abandoned
+  callbacks and current proof-bound consent
   snapshots. Measurement/combination/chart contracts: [Messaging analytics](report-builders-messaging.md).
   Original measures: period/module/channel/feature/provider source/platform;
   triggered, delivery, attempt, sent, failed, skipped, suppressed, bounced, complained,
@@ -19,17 +20,17 @@ Audit dimensions and reasons are projected through closed vocabularies.
   last activity time. Chart: multiple lines, time axis, explicit per-value units,
   tenant partition, no top-N truncation. Organization strategy: weighted rates,
   summed numerators/denominators, latest activity; dimensions stay separate.
-- `mobile-devices`: period/metric/platform/environment/authority/status/count.
+- `mobile-devices` v2: period/metric/platform/environment/authority/status/count.
   Chart: line, metric-separated observations, tenant partition, no truncation.
   Organization strategy: group sum by every dimension. Requires `mobile`.
-- `mobile-auth`: period/metric/platform/environment/outcome/reason/count.
+- `mobile-auth` v2: period/metric/platform/environment/outcome/reason/count.
   Chart: stacked bar, metric-separated event counts, tenant partition, no truncation.
   Organization strategy: group sum by every dimension. Requires `mobile`.
 
 Communications sections independently require their real module: `email`, each
 chat channel, `notifications` for personal inbox, and `mobile` for staff native
-push. Member native push requires both `mobile` and `notifications`. Native push
-uses `PushDeliveryAttempt` and its tracked member sibling `MemberPushDelivery`,
+push. Canonical member/requester push is independent of the inbox module; the
+notifications app still registers its adapter. Native push uses `PushDeliveryAttempt` for retained staff matrix legs and envelope-parented `MemberPushDelivery`,
 never the parent log's aggregate outcome or a device's later state. Retries add
 attempts to one delivery, not extra sent messages. Invalid outcomes are disjoint
 from other failures. Sent/delivery-cohort count is the success-rate definition.

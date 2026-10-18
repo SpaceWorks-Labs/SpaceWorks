@@ -81,9 +81,12 @@ A module another installed module depends on cannot be uninstalled until the dep
 core modules cannot be uninstalled at all.
 
 The registry contains 37 keys (36 in the main catalogue plus presence): six core,
-backup enabled by default, and 30 opt-in. Migration 0097 preserves only previously
-enabled canonical WhatsApp installations; new SMS/WhatsApp installations remain off.
-Module-list validation uses the registry rather than scalar JSONField choices.
+backup enabled by default, and 30 opt-in. SMS/WhatsApp are separate opt-in modules.
+Migration 0097 preserves only previously enabled canonical WhatsApp installations;
+new SMS/WhatsApp installations remain off. Existing operational channel conversion
+preserves enablement/opt-outs and never enables platform sending. Module-list validation
+uses the registry rather than scalar JSONField choices. Follow the independent
+[conversion/replay/activation checkpoints](notification-reconciliation-rollout.md).
 
 ## Index
 
@@ -419,8 +422,10 @@ multi-select category preferences and email fallback. Space Managers configure e
 credentials under Communication channels; staff manage their own connections under My channels,
 and a member Channels tab exists. Manager defaults prefer verified Telegram, otherwise email;
 other accounts default email/in-app. Tenant matrix/module/suppression rules still apply. WhatsApp
-is a personal channel with `twilio|meta` provider configuration, **not a separate module key**;
-Twilio and Meta are registered/mounted, but Meta's readiness still requires an unregistered module.
+is personal-only with `twilio|meta` providers and an independent default-off `whatsapp` module;
+both providers are registered/mounted and the former missing-module blocker is resolved.
+SMS uses Twilio under its own default-off module. Physical sender/STOP history, BSUID correlation
+and device push live beneath canonical envelope delivery. The inbox module is optional.
 Member JWTs reach exactly the six personal routes and OAuth uses authenticated challenge verification.
 Remaining delivery limits are recorded in the
 [delivery contract](notification-contract.md#integration-limits-in-this-tree). Security mail and
@@ -512,7 +517,7 @@ state/sharing and drop schedules, so neither restores source disclosure rules.
 ### payments
 
 [Read the payments module reference](MODULES-PLATFORM.md#payments).
-Native Stripe/Razorpay flows and the current provider-provisioning limitation:
+Native Stripe/Razorpay flows and both providers' settings/webhook provisioning:
 [mobile integration operator guide](mobile-integration.md#payments-stripe-and-razorpay).
 The module gates the online rail; core charge history, receipts and desk settlement remain available.
 
@@ -522,10 +527,13 @@ The module gates the online rail; core charge history, receipts and desk settlem
 
 [Read the mobile module reference](MODULES-PLATFORM.md#mobile).
 Configure branded app registrations, identity, associations and readiness with the
-[mobile integration operator guide](mobile-integration.md). Native staff grants require
-active local membership actions; phone login stays member-only. Member push follows personal
-inbox eligibility and active local membership. Core logout-all, account deletion/restore and
-messaging consent are not purchased by this module; SMS/WhatsApp each have their own opt-in key.
+[mobile integration operator guide](mobile-integration.md). Native staff require a separate
+staff account, password/MFA/attestation and fixed-tenant local actions. Phone/social/OIDC
+native login is member-only; platform grants are forbidden. Push uses envelope-owned device
+children independently of inbox creation. Delivery policy admits source-tied account-only
+owners, while native selection/new registration still require local membership. Logout-all
+is account-wide; self-deletion/restore are member-only. Core messaging consent is independent
+of this module; SMS/WhatsApp each have their own opt-in key.
 
 ## Backup & custody
 

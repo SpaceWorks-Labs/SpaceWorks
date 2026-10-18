@@ -44,6 +44,28 @@ from optional push, Apple revocation and associations. The superadmin API presen
 GET /api/v1/admin/platform/mobile-readiness. Checks read configuration only; they do not probe providers
 or reveal secret values. Save operations are audited; reading the report is not audited.
 
+## Reconciled account and notification authority
+
+Native staff sign in with a separate staff-kind account, password, MFA and attestation,
+`context=staff` and their makerspace slug. Grants carry `authority=staff` and the immutable
+`staff_makerspace_id`; selected X-Makerspace-Id must match that tenant and URL/body targets.
+Member grants use member accounts; phone/social/OIDC never grant staff authority. Platform
+native grants are forbidden. Refresh cannot promote a grant. Self-deletion/90-day archive,
+restore, purge and Apple revocation remain member-only. Logout-all revokes sessions/devices
+of that account and clears its context, without affecting another account held by the person.
+Accounts 0032 development role reset is not authorized for live authority data.
+
+Personal push uses envelope deliveries with per-device children and optional inbox links;
+inbox creation is not a trigger. Account-only source-tied recipients pass delivery policy,
+but new native device registration/selection still requires active local membership. Disabling
+the inbox module is supported; tombstoning the whole notifications app removes its adapter.
+SMS consent binds the current phone instance/sender; WhatsApp requires separate signed endpoint
+proof. STOP/suppression and ambiguous-outcome holds apply across device-independent delivery.
+See the self-contained [builder contract](mobile/MOBILE-APP-PRD.md) for endpoint paths and
+[rollout checkpoints](notification-reconciliation-rollout.md) for paused sending, original
+mapping/replay sign-off, retained callback URLs and unsupplied destructive integrations 0043.
+Regenerate OpenAPI after reconciliation; old generated type names are not the builder contract.
+
 ## Build inputs to hand to the app developer
 
 Give the developer these inputs directly; there is no build-input API:

@@ -1,5 +1,11 @@
 # Messaging 1h-A integration handoff
 
+Historical implementation handoff. The current [personal contract](notification-contract.md),
+[channel guide](messaging-channels.md) and [rollout checkpoints](notification-reconciliation-rollout.md)
+supersede its old runtime/settings, ambiguity, inbox-coupling and readiness claims. SMS/WhatsApp
+use canonical envelopes; duplicate addressed models/worker entry points are inert compatibility
+history. Sending activation and destructive retirement remain held pending replay sign-off.
+
 Foundation implementation for `lane/mobile-1h-a`. No staging, commits, CLI review,
 Docker or pytest execution was performed. Python syntax, migration field-set coverage,
 file ceilings and whitespace were checked statically. Django is not installed in the

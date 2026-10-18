@@ -112,8 +112,10 @@ Those definitions already carried specs. `PlatformAnalyticsReportSerializer` doc
 the required typed response field. Loan detail serializers document their count fields;
 event and booking serializers keep their existing export allowlists.
 
-SMS and WhatsApp have module-health coverage rows; communications-health does not yet
-aggregate their addressed-delivery models. Module health retains its registered local export
+SMS and WhatsApp have module-health coverage rows; communications-health v4 reads canonical
+NotificationDelivery and original legacy mappings, with physical email and device-ledger outcomes
+counted once. Held attempts/ingress, original abandonment history and proof-bound current consent
+retain separate measurements. Module health/platform services are v3 and mobile reports v2. Module health retains its registered local export
 fields and includes tenant identifiers only at deployment scope. Most-lent v2 preserves
 undated legacy loans as a null period in unbounded reports instead of inventing an issue date;
 dated windows naturally exclude those unknown timestamps.

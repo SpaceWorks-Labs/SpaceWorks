@@ -34,10 +34,13 @@ channel. Terminal channel failure can also release a single email fallback. Emai
 digests rebuild their constituent sources, and transport mail remains attached to envelope
 authority even if somebody tries to retry its legacy EmailLog.
 
-Delivery states are retrying, accepted, sent, delivered, read, failed and skipped.
+Delivery states include retrying, accepted, sent, delivered, read, failed, skipped and held.
+Converted canceled queues are inert history (canonical parent state skipped with canceled disposition).
 Acceptance is not proof of delivery. Claims release database locks before provider I/O.
 Retries have exponential delay/jitter, bounded Retry-After, and four attempts maximum;
-ambiguous timeouts get one retry. Callbacks cannot regress successful acknowledgements or
+ambiguous SMS/WhatsApp outcomes and expired addressed leases are held without blind retry.
+Push children also hold uncertain outcomes; other transports retain their bounded ambiguity policy.
+Callbacks cannot regress successful acknowledgements or
 cross an installation generation. Provider response text is never persisted as an error.
 
 ## Frozen HTTP surface
@@ -67,19 +70,21 @@ The views still enforce tenant/account standing and ownership.
 | GET | `/personal/preferences` | â€” | preferences: Selection[] |
 | PUT | `/personal/preferences` | preferences: Selection[] (replace supplied categories) | preferences: Selection[] |
 | GET | `/personal/deliveries?page=` | â€” | count, next, previous, results: Delivery[] |
-| POST | `/channels-test` | channel and exactly one of endpoint_id/room_id | accepted, provider_id, retryable, error_code, sanitized_error |
+| POST | `/channels-test` | channel; SMS omits target IDs, WhatsApp needs own endpoint_id; other channels choose endpoint_id or room_id; optional feature/event | accepted, provider_id, retryable, error_code, sanitized_error |
 
 ChannelWrite = enabled, room_enabled, personal_enabled, email_fallback, provider,
-integration_identity, credentials (write-only map), quotas and templates. Channel returns
+integration_identity, credentials (write-only map), quotas, templates, use_platform_sender and
+activation_hold. Imported sender conflicts require review before clearing activation_hold. Channel returns
 channel, enabled, room_enabled, personal_enabled, email_fallback, provider,
-integration_identity, generation, credentials_set, quotas and templates.
+integration_identity, generation, credentials_set, quotas, templates, use_platform_sender,
+sender_key, credential_version and activation_hold.
 WhatsApp providers are exactly `twilio|meta`. Credentials/identity/provider updates advance
-the generation; old consent never becomes valid for a new installation. A database trigger also revokes personal endpoints
-and advances the generation when their channel module or notifications is removed, so a
-module reinstall never restores consent. Quotas accept
-daily_limit and recipient_daily_limit. Template bindings contain event, audience, locale,
-template_name and variables; approved is read-only and must be established by a provider.
-WhatsApp has no staff rooms or registered module key. Telegram rooms prefer the contract bot token;
+the generation; old consent never becomes valid for a new installation. Channel module removal also invalidates installation authority; a module reinstall never
+restores old consent. The optional inbox is independent of core SMS/WhatsApp delivery. Quotas accept
+daily_limit and recipient_daily_limit. Template bindings contain feature, event, audience, locale,
+template_name, variables and needs_review; approved and needs_review are read-only and must be established by a provider.
+SMS and WhatsApp have separate default-off module keys and no staff rooms. SMS uses Twilio;
+WhatsApp supports Twilio or Meta. The former Meta missing-module readiness blocker is resolved. Telegram rooms prefer the contract bot token;
 other existing room transports retain their destination credentials;
 the new room enable switch gates them without changing their audience.
 
@@ -99,14 +104,17 @@ Categories absent from the request keep their existing rows; if no row exists, t
 resolving product defaults. Clients submit only edited, available categories, so saving
 another category never turns a disabled module into a durable opt-out.
 Manager defaults are Telegram when personal Telegram is enabled and verified; otherwise
-email. Members default email plus in-app. Availability gates still apply.
+email. Members default email plus in-app. Current explicitly consented addressed channels may
+join these defaults; consent never bypasses matrix/module/standing gates. Availability gates still apply.
 Presence defaults to in-app/native push with no email fallback for every audience, before
 any expiry or preference write. Explicit personal selections still win.
 Delivery = id, envelope_id, channel, state, attempt_count, next_attempt_at, last_error,
-retryable, event, feature, created_at, updated_at. All list endpoints use the standard
+retryable, event, feature, created_at, updated_at. Held outcomes need evidence/reconciliation;
+clients must not offer a resend that could duplicate an uncertain send. All list endpoints use the standard
 page size 24 and return count, next, previous and results.
 
-Errors document 400 validation (field errors or detail/code), 401, 403 and 404; mutations
+Errors document 400 validation (field errors or detail/code), 401, 403 and 404; retired
+duplicate settings/template writes return 503 before canonical routing, then 410. Mutations
 also document 423/503 and proof/test routes document 429. Connection starts have a durable
 5/hour/account/tenant limit plus a 60-second cooldown and API throttling. Proofs expire in
 10 minutes and consume once, with at most five matching attempts.
@@ -146,9 +154,12 @@ event/audience template. SMS-login proof/consent does not establish WhatsApp con
 `notification_fake.FakeProvider` is available only through explicit test registration.
 Production startup never registers it. All private bodies/destinations/candidate numbers
 use the scoped PII registry; integration credentials always use the existing Fernet secret
-pattern. All seven new model types are omitted from readable exports and DROP on import,
-so there are no new export datasets, JSON remaps or subject selectors. Their User edges
-are explicitly classified as excluded. Module purge removes the graph in dependency order.
+pattern. Canonical envelopes, endpoints, configuration, ingress, credential history and legacy mappings
+have explicit export/tenant-migration/privacy classifications. Imported credentials, endpoints,
+consent and live delivery rules cannot grant target authority. Account cleanup uses account IDs,
+not shared contacts. Channel/tenant purge preserves retired verification and global physical
+STOP/alias/provider-reference protection; optional inbox purge retains push children through
+their canonical parent. See the catalog/source map for model-specific dispositions.
 
 ## Provider connection and deployment
 
@@ -191,11 +202,12 @@ canonical origin; inbox navigation never receives an absolute URL.
   Meta uses the same bindings and is registered with its webhook mounted. The shared
   `notification_wa_window.in_session_window` governs both providers, resolution and delivery:
   exactly 24 h and future inbound timestamps are outside the window. SMS-login consent grants
-  no WhatsApp consent. Meta's remaining readiness gate is recorded below.
+  no WhatsApp consent. Both providers use the independent registered whatsapp module.
   Browser PATCH cannot self-approve templates; provider refresh owns approval.
   The Twilio setup form exposes Refresh approval for saved bindings and reads back the provider's
   approval states; unsaved credentials or binding edits must be saved first.
-  Status callbacks correlate installation/message and advance monotonically. Ambiguous retries may duplicate sends.
+  Status callbacks correlate installation/message and advance monotonically. Ambiguous addressed
+  outcomes are held without resend; STOP and suppression apply before acknowledgement.
   Meta sends a signed `biz_opaque_callback_data` reference with the delivery, installation generation
   and attempt. Early status webhooks bind through that reference before the REST response stores its
   provider message ID. Callback transitions win over the later response; transient failures retain
@@ -248,37 +260,62 @@ summaries are staff-only, avoiding a second owner charge notice. Existing authen
 synchronous/redacted email; custody and mandatory reminders retain their independent policy.
 The [coverage inventory](notification-coverage.md) records which producers actually call the adapters.
 
+## Reconciled SMS, consent and push ownership
+
+Canonical SMS uses `ChannelConfiguration(channel=sms, provider=twilio)` and the reviewed
+scalar source projection. Its consent read/write remains `GET /api/v1/me/messaging?makerspace={id}`
+and `POST /api/v1/me/messaging/consent`, with `{makerspace,channel,action}`. SMS live consent
+matches current phone verification instance, sender and generation. WhatsApp uses the signed
+endpoint flow above; SMS phone/login consent is unrelated. Current member accounts with an
+owned booking/event/charge/loan/service tie qualify without membership or inbox installation.
+Revoked membership, restricted/deleting account, source invalidation and explicit opt-outs win.
+Staff use their own active fixed-tenant account; personal choices never grant staff authority.
+The retained member-only SMS-consent API does not support staff SMS diagnostics yet; expose
+its refusal rather than borrowing member consent. WhatsApp diagnostics use the staff account's
+own proved endpoint.
+
+Own credentials take precedence, even if incomplete. Platform senders need operator enablement
+and tenant `use_platform_sender`, default false. Sender identity/credential history, durable STOP,
+BSUID correlation barrier, billed/estimated segments and once-only quotas are canonical. Signed
+callbacks and compatibility URLs feed encrypted deduplicated `NotificationIngress`; STOP commits
+before acknowledgement even when a tenant is frozen. Correlation uses exact sender/provider/
+tenant/generation/attempt mappings. Replay uses original inbound time; START grants no consent.
+
+`NotificationDelivery(native_push)` owns per-device `MemberPushDelivery` children unique per
+parent/device. Optional `inbox_row` uses SET_NULL. Inbox insertion never initiates push. Current
+source-tied account-only recipients can receive it, independent of the inbox module; fixed-tenant
+staff grants are separate and platform grants forbidden. Native selection/new device registration
+still require active local membership; recipient eligibility alone does not widen that route. The notifications app registers the
+push adapter, so tombstoning that entire app removes it even though disabling the inbox module
+does not. Device claims recheck source, grant/account generation, matrix and personal selections;
+explicit rejections may retry within four parent attempts, while unknown outcomes/expired leases
+are held. Payload v2 uses `uuid5(NAMESPACE_URL, envelope.dedup_key)` and optional inbox ID/local
+link, with rendered personal content. See [inbox/push contract](notification-inbox.md).
+
 ## Integration limits in this tree
 
-Verified against the merged Phase 3 wiring tree (`3fd2c82e`) on 2026-10-17:
+The reconciliation removes Meta's former missing-module blocker and the duplicate addressed
+send loop/UI. Both WhatsApp providers and the Twilio SMS path are present; configuration is not
+proof of a successful provider round trip. Integrations 0043 destructive retirement and sending
+activation remain held. Follow [deployment checkpoints](notification-reconciliation-rollout.md)
+for expansion, original mapping fingerprints, push conversion, callback compatibility and replay
+sign-off. Legacy settings/templates/delivery models and import helpers remain inert until then.
 
-- Meta's factory and webhook are registered/mounted, but `MetaWhatsAppProvider._ready` still requires
-  `module_enabled(..., "whatsapp")`. No such module key is registered; normal installs therefore
-  refuse its send/start/test as not configured. Mounted callbacks do not establish operational delivery.
-- `notification_resolution` retains category `printing`→module `printing` for generic machine jobs,
-  and `stock`→`procurement` for stocktake. Their requested source-specific module overrides are
-  absent. A producer being wired does not guarantee delivery in a machine-service-only or
-  stocktake-without-procurement install.
-- Equipment email policy/render helpers are still not called by the shared resolver/builtin mail
-  transport. `hardware.owner_mailbox` separately preserves same-owner verified-contact email when
-  account email is unverified; the shared resolver has not adopted `proven_address`. A different
-  contact mailbox is not a personal endpoint. `source_ready` conservatively refuses affected owner
-  intents when an email mute would otherwise leak through; selected chat can be suppressed too.
-- Presence expiry is a personal category with default in-app/native push and no email fallback.
-  It has no staff-room delivery. Room live-source enforcement covers equipment;
-  other converted room summaries retain legacy retry semantics. Scheduled-report legacy status is not
-  provider acknowledgement. Revoked memberships still refuse application-owner personal notices.
-- Event campaign channel tasks still have no periodic lost-task resume; legacy campaign workers own
-  their email. Optional account-linked event/staff/organization invitation notices remain unadded.
+Equipment email rendering/policy hooks now participate in the shared mail/resolver path;
+`hardware.owner_mailbox` and `bookings.owner_mailbox` preserve narrow same-owner contact
+compatibility. Source-backed equipment, booking, event, machine, membership, payment and device
+adapters reserve one canonical intent per source/revision/audience and recheck current ownership.
+Existing staff matrix/inbox and campaign-email pre-skips prevent duplicate legs.
 
-Maintenance/procurement compatibility barrels now delegate to the source-backed machine adapters;
-member broadcasts call `notifications_p2_broadcasts.notify_broadcast` in the audited transaction.
-Stocktake/first-email-failure legacy inbox mirrors remain intentionally, but share source intent and
-`uuid5(NAMESPACE_URL, envelope.dedup_key)`/get-or-create identity with personal delivery. The catalog
-now includes membership joined/verified/invitation/vouched, document_issued, problem_report.filed,
-subdomain_request_resolved, email.failed, scheduled_report and stock scheduled/completed.
+Remaining limits include event campaign channel tasks without periodic lost-task resume,
+optional account-linked invitation notices not added for every invitation family, and legacy
+room retry policies outside the equipment source/scope checks. Presence expiry has no staff
+room and defaults to personal in-app/native push without email fallback. Scheduled-report legacy
+status is not provider acknowledgement. Source-specific module overrides now map machines.service to machine_service,
+operations.stocktake to stocktake, inventory.watch to request_workflow and inventory.threshold
+to core inventory; these avoid the former generic printing/procurement gates.
 
-The historical lane notes under `docs/p2-*.md` retain integration/test requests. No runtime test
-result is asserted by this documentation pass. Model/API/provider ownership is indexed in
-[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md); run changed-code tests and their registry
-checks through the isolated runner in the final integration pass.
+The [coverage inventory](notification-coverage.md) distinguishes producers and intentional legacy
+paths; it is not runtime test evidence. Source ownership is indexed in
+[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). OpenAPI/TypeScript regeneration,
+runtime checks, provider tests and rollout sign-offs belong to the orchestrator/operator.

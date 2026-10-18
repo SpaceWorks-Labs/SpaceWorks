@@ -53,11 +53,11 @@ columns are absent internally and NULL in the public matrix projection.
 - **organization-membership:** period, organization_id, invitations, redeemed,
   revoked, expired, open_invitations, memberships, active_memberships,
   suspended_memberships, redemption_percent.
-- **module-operational-health v2:** module_key, enabled, runtime_available,
+- **module-operational-health v3:** module_key, enabled, runtime_available,
   coverage_kind, activity_count, failure_count, last_activity_at,
   rollup_watermark, rollup_state, period, delivery_kind, delivery_count,
   success_count, success_rate_percent.
-- **platform-services v2:** makerspace_id, period, day, service, provider_source,
+- **platform-services v3:** makerspace_id, period, day, service, provider_source,
   status, bucket, count, currency, amount, purpose. SMS distinguishes OTP from
   addressed notifications; WhatsApp notification counts and the hidden bucket
   follow [Messaging analytics](report-builders-messaging.md).

@@ -8,6 +8,12 @@
 
 ## Current source map (real paths)
 
+The [Events programme map](SOURCE-MAP-EVENTS-PROGRAMME.md) covers application/team,
+upload/retention, contributor/Mentor Desk, judging/gallery, credential/certificate,
+form/Saved details and runtime/retention adapters at `f1ef7736`. It includes incomplete
+provider installation explicitly; see the [closure ledger](events/integration-status.md)
+before interpreting a mounted route as an enabled/accepted workflow.
+
 Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
 `bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
 to `inventory/public_image_promotion.py`. Membership owner mail is classified as staff/account

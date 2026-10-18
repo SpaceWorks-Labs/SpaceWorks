@@ -11,6 +11,44 @@ GitHub member sign-in is available through browser OAuth with PKCE, verified pri
 > integrations and overall implementation status. The rules these areas impose live in
 > `docs/INVARIANTS.md`; when a feature landed is in `docs/PROJECT-HISTORY.md`.
 
+## Events programme integration checkpoint — 2026-10-18
+
+At `f1ef7736` the A–F/P/ARTWORK lane code and GF1 schema/registry/route work are present;
+217 programme paths / 400 method entries are recorded by GF1, including C2 completion
+routes. OpenAPI/client/catalogue digest regeneration landed in this baseline. **This is
+not an accepted/enableable release. Keep all five new Events programme capabilities and
+per-event hackathon configuration OFF.** The independent account Saved details deployment
+switch also defaults off and needs its own configured encrypted-key readiness.
+
+Setup currently selects every child of the chosen Events area, including those five;
+`setup_areas.features_for()` needs an explicit opt-in/exclusion fix before an installer
+selection can be considered safe. Registry false defaults alone do not cover that path.
+
+Authored domains: applications/private review/release/RSVP/teams, uploads and immutable
+snapshots, contributors/Mentor Desk, judging/results/gallery/sponsor consent, v2 credentials,
+certificate verification/library/bulk/print/selected photos, forms/composer/operations,
+Saved details/DOB and original artwork/delight exports. This describes implementation
+presence, not mounted UI, installed production adapters or exercised end-to-end behavior.
+
+GF1's real registration/money/waiver/QR bridge, full lock/date/erasure lifecycle, nested
+portable answers/assets, project PII mapping, storage accounting/durable cleanup, E/D
+recovery, entitlement/provider/notice installation, owned artwork seeds and clone integration
+remain open here. All seven migrations need PostgreSQL forward/reverse/drift/raw-SQL tests.
+No Docker/Django, real provider/storage/scanner/probe, integrated browser/physical QR/PDF,
+brand/accessibility or independent review success is established by this docs pass.
+
+Required owner additions 34/35 (reimbursement and full staged forms) are pending separate
+R-lane implementation; decision 34 overrides the earlier travel exclusion. Expanded shared
+handle/makerspace/organization public pages remain Pages-lane work, not completed by D's
+section-provider seam. Later cloud/free-tier/VPS decisions have separate owners and no
+acceptance evidence in this checkpoint. Nothing is silently dropped.
+
+Use the [role runbooks](events/README.md), [operator/migration notes](events/operations.md),
+[source map](SOURCE-MAP-EVENTS-PROGRAMME.md), [per-GF1 closure ledger](events/integration-status.md)
+and [AO1–AO18/AO23 traceability](events/acceptance.md). They distinguish declared behavior,
+actual registration and pending evidence. Sibling lanes must reconcile them against their
+merged implementation before enabling. The owner alone merges/pushes after final QA.
+
 ## Admin control plane (superadmin-only)
 
 The **Unfold Django admin is the Super Admin's sole control plane**, mounted at **`/control/`** (NOT

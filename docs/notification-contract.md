@@ -227,8 +227,10 @@ completion is gone; `ChatOAuthCallbackView` retains only authenticated, actor-bo
 Events and Bookings now use source-backed personal envelopes for lifecycle, reminders and campaigns.
 Event delegates use `events.grant_staff`; booking delegates use `bookings.grant_alert`, both audience
 `member` with live resource authority. Event staff envelopes pre-skip in-app/native push because the
-legacy matrix still owns those legs. Event campaigns pre-skip email because the campaign worker owns
-it; the extra channel task has no periodic lost-task resume. Booking campaigns with a saved category
+legacy matrix still owns those legs. Event campaigns without a saved category selection
+pre-skip envelope email because the campaign worker owns it; saved selections use personal
+resolution including email/fallback. Programme scheduled release has periodic recovery;
+the older extra-channel fan-out still needs its own recovery proof. Booking campaigns with a saved category
 selection use envelopes and skip batch email; others keep the existing batch-email path.
 Booking lifecycle/reminder mail preserves an unverified owner's same booking contact mailbox through
 the email-only `bookings.owner_mailbox` source. It proves explicit ownership and equal decrypted
@@ -247,6 +249,61 @@ provider delivery. Loan financial owner notices belong to the Payment adapter; h
 summaries are staff-only, avoiding a second owner charge notice. Existing authentication mail stays
 synchronous/redacted email; custody and mandatory reminders retain their independent policy.
 The [coverage inventory](notification-coverage.md) records which producers actually call the adapters.
+
+## Events programme contract (checkpoint 2026-10-18)
+
+At `f1ef7736` the programme remains off pending integration. This contract applies to
+the authored notices below; the [coverage table](notification-coverage.md#events-programme-checkpoint-2026-10-18)
+states which sources/producers are installed. A source manifest or a scheduled sweep
+alone is not delivery. Missing actual recipient/render/dispatch adapters must refuse.
+
+| Notice kinds | Recipient / timing contract |
+| --- | --- |
+| `application_submitted` | Owner after successful submit; no draft/context GET notice |
+| `application_offered`, `application_waitlisted`, `application_rejected` | Owner only after committed release of current decision, never private staging/cancel |
+| `application_confirmed`, `application_declined`, `application_expired`, `application_withdrawn` | Owner after corresponding committed RSVP/admission transition; recheck current revision |
+| `rsvp_extended` | Exact affected owner; reasoned staff action updates displayed deadline |
+| `team_eligibility_changed` | Affected application owners, safe navigation only; no member contact/answers |
+| `event_cancelled` (application source) | Affected owner, deduplicate against existing event lifecycle delivery |
+| Contributor `week`, `two_days`, `day_of` | Current approved signup owner, shift-version generation; 7/2 days before start and event-local midnight, skip past schedules |
+| Contributor `booking_cancelled` | Owning team/booking recipients selected by live provider; booking-version generation |
+| Help `created`, `claim`, `renew`, `reopen`, `assign`, `cancel`, `claim_released`, `lease_expired`, `expired` | Durable intents use request-version generation. Actual recipient/renderer policy must respect current on-shift eligibility and private assignment; no private queue content is a chat body |
+| Help `attention` | Authorized organizers after 15 minutes open, deduplicated by open-period generation; stale/expired/practice alerts suppressed |
+| `results_published` | Released result audience selected by live provider, exact result revision; no private draft/shortlist/notes |
+| `certificate_ready`, `certificate_revoked` | Direct registration/contribution/award recipient, live certificate revision/status; private navigation; only eligible ready active PDF is attachable |
+| Broadcast v2 | Explicit confirmed current audience and original sender authority; schedule at least five seconds ahead; cancelled/stale sources cannot deliver |
+
+Help transition names are internal intent kinds, not new broad notification preferences.
+`resolve`/`release` normally produce `claim_released` when an assignee is cleared. Team
+invitation, submission/scan, role decision, judge assignment and result-correction notices
+have no complete installed producer in this checkpoint; do not describe the generic source
+names `events.team/submission/judging/results` as operational coverage. Admission notice
+render text exists, but production enqueue/recipient plumbing remains a required provider.
+
+Persist the safe source ID/revision intent in the business transaction; enqueue after
+commit and recover from persisted work after broker loss. Transport runs outside row
+locks. Recheck event/feature/host, account standing, current authority/assignment/window,
+consent, source generation/revision and private recipient on every retry/digest. Imported
+claims/outboxes cannot resume production side effects. Use stable dedup identity across
+overlapping ordinary registration/application/certificate paths. No answers, review/rating
+text, DOB, contacts, raw invitations/credentials, presigns or private file keys in rooms,
+outbox/receipt metadata or logs. Help chat contains event ID, team alias, category,
+priority and authenticated navigation only. In-app and configured on-shift personal chat
+are required acceptance, not replaced by a manifest row.
+
+Personal document attachments are **default on** for supported eligible payment documents
+and certificate-ready sources, without a new opt-in switch. `notification_attachment_sources.py`
+admits only typed `payments.document`/`events.certificate`, exact document/owner/tenant/
+revision and at most one PDF. Certificates use direct subject ownership and collaborative
+origin plus storage-host boundary, with no badge source. Frozen PDFs are size/hash-bound;
+private one-use provider media and live source checks apply. Existing payment PDFs must
+keep working with Events tombstoned. No public-room PDF, badge/QR PDF or arbitrary message
+JSON object-key attachment is allowed. The generic document path bounds PDFs to 5 MiB;
+oversize/render errors retry under the shared budget. Definitive unsupported/rejected
+provider attachment can fall back to authenticated navigation; ambiguous or retryable
+provider failures do not immediately send duplicate text. A provider-accepted attachment
+cannot be retracted by cancelling the source later. Real provider/host/revocation/fresh-default
+tests are pending; a default-on code path is not proof every provider delivered it.
 
 ## Integration limits in this tree
 
@@ -268,8 +325,10 @@ Verified against the merged Phase 3 wiring tree (`3fd2c82e`) on 2026-10-17:
   It has no staff-room delivery. Room live-source enforcement covers equipment;
   other converted room summaries retain legacy retry semantics. Scheduled-report legacy status is not
   provider acknowledgement. Revoked memberships still refuse application-owner personal notices.
-- Event campaign channel tasks still have no periodic lost-task resume; legacy campaign workers own
-  their email. Optional account-linked event/staff/organization invitation notices remain unadded.
+- At the later programme checkpoint `f1ef7736`, scheduled broadcast release has periodic
+  recovery in `programme/broadcast_schedule.py`, beat and the beat-less runner. This does
+  not establish recovery for every older channel-fan-out task. Optional account-linked
+  event/staff/organization invitation notices remain unadded.
 
 Maintenance/procurement compatibility barrels now delegate to the source-backed machine adapters;
 member broadcasts call `notifications_p2_broadcasts.notify_broadcast` in the audited transaction.

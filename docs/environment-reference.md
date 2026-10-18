@@ -177,6 +177,41 @@ storage endpoint and expire no later than the archive retention boundary.
 | `WARRANTY_DOC_ALLOWED_MIME` | `['application/pdf', 'image/jpeg', 'image/png', 'image/webp']` |  |
 | `WARRANTY_DOC_MAX_BYTES` | `10485760` |  |
 
+## Events programme and account Saved details
+
+Read by `backend/config/settings.py` at checkpoint `f1ef7736`. **Keep programme features
+and Saved details off until [integration acceptance](events/integration-status.md).**
+These are independent deployment secrets/settings, not extra module keys.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `ACCOUNT_SAVED_DETAILS_ENABLED` | `False` | Enables configured owner vault/key readiness. No host membership required; missing/unhealthy account broker fails closed. Does not enable tenant PII or any Events feature. |
+| `ACCOUNT_PII_KEY_BROKER` | `'local'` | `local` or `aws_kms`; independent account wrapping broker, never a tenant-key or SECRET_KEY fallback. |
+| `ACCOUNT_PII_MASTER_KEY` | `''` | Local account wrapping key in Fernet format (URL-safe base64 of 32 bytes). Required for local readiness; secret, retain with deployment backup custody. |
+| `ACCOUNT_PII_MASTER_KEY_PREVIOUS` | `''` | Previous local account wrapping key for transition/read compatibility; not permission to discard keys still needed by retained ciphertext. |
+| `ACCOUNT_PII_AWS_KMS_KEY_ID` | `''` | Account KMS wrapping key identifier; AWS broker uses account/version-specific encryption context and bounded calls outside transactions. IAM credentials use the normal SDK chain. |
+| `ACCOUNT_SAVED_ASSET_BUDGET_BYTES` | `50 * 1024**2` | Default 50 MiB account résumé pool. Managed mode stays at 50 MiB; self-host may raise it, never below that floor. File cap remains 10 MiB. Separate from event storage. |
+| `ACCOUNT_SAVED_RESUME_SCAN_REQUIRED` | `False` | When true, every saved PDF must pass the configured callback; missing/error fails closed. Separate from B's event scanner runtime options. |
+| `ACCOUNT_SAVED_RESUME_SCANNER` | `''` | Dotted import path to a core callable `(bytes) -> 'clean'`. Blank/broken while required refuses. No production callback is installed here; do not point core Accounts at separable Events. |
+| `EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY` | `''` | Independent standard-base64 32-byte HMAC key for event-bound v2 lookup. Changing it requires coordinated invalidation/reissue, not an unnoticed rotation. |
+| `EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION` | `1` | Current integer keyring version; its string form must exist in the JSON map below. |
+| `EVENT_REGISTRATION_CREDENTIAL_KEYS` | `{}` | JSON object mapping string versions to standard-base64 32-byte AES-GCM keys. Keep old versions needed by stored credentials. Empty configuration refuses v2; no Django/PII-key fallback. |
+
+**Deployment wiring pending:** the Compose manifests do not explicitly forward these
+eleven settings at this checkpoint. Adding them to an interpolation `.env` alone does
+not configure Django containers. The deployment lane must wire relevant web, migration,
+worker/beat and cloud processes and verify fresh/upgrade installs. Account keys and
+credential keyring/digest secrets have backup custody/continuity policy; tenant dumps
+exclude global vault/key and live credential material.
+
+Event budgets, lower file/group caps and retention anchors are database/domain policy,
+not environment variables. B's `scan_options` and `sandbox_command` are runtime-provider
+inputs awaiting installation; there is no shipped `CLAMAV_*` or `FFPROBE_*` environment
+contract. [Scanner/probe setup](events/operations.md#optional-malware-scanner) documents
+the actual adapters. `UI_DELIGHT_ENABLED` and `UI_EASTER_EGGS_ENABLED` are requested
+integration controls but are not read by this backend yet; do not rely on setting them.
+Certificate verify uses a fixed 30/min anonymous throttle, rather than a new env setting.
+
 ## API clients (HMAC)
 
 See `docs/api-client-protocol.md`.

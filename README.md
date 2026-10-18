@@ -696,6 +696,11 @@ suggested when **no** makerspace on the deployment uses any of its modules.
 
 ## Documentation
 
+The expanded Events programme is at an **integration checkpoint**, with its new features
+off by default. See [current status and remaining work](docs/events/integration-status.md)
+before enabling hackathons, Mentor Desk, volunteering or project gallery. Schema/routes
+alone do not establish release acceptance.
+
 | I want… | Go to |
 |---|---|
 | What a **module** is and what happens without it | **[docs/MODULES.md](docs/MODULES.md)** |
@@ -703,6 +708,14 @@ suggested when **no** makerspace on the deployment uses any of its modules.
 | **Production** reference (env vars, TLS, upgrades, releases) | **[docs/self-hosting.md](docs/self-hosting.md)** |
 | **Advanced** config (Telegram, HMAC, Supabase, cron) | **[.github/ADVANCED.md](.github/ADVANCED.md)** |
 | **Develop / contribute** (run from source, tests, releases) | **[.github/DEVELOPMENT.md](.github/DEVELOPMENT.md)** |
+| Organize an event/hackathon: review, RSVP, results and certificates | [Organizer runbook](docs/events/organizer.md) |
+| Apply, form a team and submit files/links | [Participant runbook](docs/events/participant.md) |
+| Operate Mentor Desk, office hours and rounds | [Mentor runbook](docs/events/mentor.md) |
+| Apply for shifts and verify volunteer work | [Volunteer runbook](docs/events/volunteer.md) |
+| Judge frozen projects or review sponsor-track submissions | [Judge/sponsor runbook](docs/events/judge.md) |
+| Prepare migrations, credential/account keys, online scanner, optional ClamAV and ffprobe | [Events operator setup](docs/events/operations.md) |
+| Understand managed 25 GB/self-host budgets, media limits and file expiry | [Uploads and retention](docs/events/media.md) |
+| Review owner add-on code/test/route evidence | [AO traceability](docs/events/acceptance.md) |
 
 ## Roadmap
 

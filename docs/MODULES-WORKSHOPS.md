@@ -74,6 +74,13 @@ Required by `printing`.
 
 ### events
 
+The 2026-10-18 programme adds five **off-by-default Events features**, not another
+module: hackathons, mentoring, mentor rounds, volunteering and project gallery.
+Their schema/routes are authored but runtime integration and acceptance are pending;
+keep them off. [Switches, disable/purge/storage semantics](MODULES.md#events),
+[role runbooks](events/README.md) and [remaining work](events/integration-status.md)
+describe this checkpoint without changing the existing ordinary-event guarantees below.
+
 **Independent of `membership`.** Installing events does not install membership. Existing events
 keep the `members` audience, requiring active membership and its waiver. With
 `events.account_registration`, staff can select `accounts`; with `events.invites`, they can select

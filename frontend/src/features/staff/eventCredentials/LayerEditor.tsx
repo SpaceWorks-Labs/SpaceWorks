@@ -34,7 +34,7 @@ export function LayerEditor({ document, onChange, disabled = false, kind = "cert
     <legend className="font-semibold text-ink">Layers ({document.layers.length}/20)</legend>
     <p className="text-sm text-muted">Canvas is approximate. The server PDF preview checks final fonts, wrapping and image placement.</p>
     <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={!history.length} onClick={() => {
-      const prior = history.at(-1); if (prior) { onChange(prior); setHistory(history.slice(0, -1)); }
+      const prior = history[history.length - 1]; if (prior) { onChange(prior); setHistory(history.slice(0, -1)); }
     }}><Undo2 size={16} aria-hidden="true" />Undo</button>
       {addTypes.map((type) => <button className="desk-button" key={type} type="button" disabled={document.layers.length >= 20} onClick={() => add(type)}><Plus size={16} aria-hidden="true" />Add {type.replace(/_/g, " ")}</button>)}</div>
     <LayerCanvas document={document} onChange={(value) => change(value.layers)} />

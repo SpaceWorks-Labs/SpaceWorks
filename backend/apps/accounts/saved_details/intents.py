@@ -16,9 +16,10 @@ from apps.encryption.crypto import PiiUnavailable
 from .access import require_owner
 from .crypto import canonical, open_value, seal
 from .errors import SavedDetailsError
-from .fields import normalize
+from .fields import require_form_operation, require_form_slot, selected_values
 from .models import MemberSavedDetail, SavedDetailUpdateIntent
 from .workflow import put_locked
+from .subject_binding import require_subject
 
 _SEAL = object()
 
@@ -48,28 +49,52 @@ class PreparedSave:
     base_versions: tuple
     chosen_fields: tuple
     _proof: object = field(repr=False)
+    outer_operation_id: UUID | None = None
+    form_slot: str | None = None
 
 
 def digest(value):
     return hashlib.sha256(canonical(value).encode()).hexdigest()
 
 
-def prepare_saved_detail_intent(*, actor_id, subject, validated_form, choices, base_versions, operation_id):
+def validate_form_save_conflicts(forms):
+    """G calls before any domain writes; slot -> (validated input, choices, CAS).
+
+    Compare normalized values in memory only. Error payloads contain slots/keys,
+    never values or their hashes. G owns deterministic child UUID generation.
+    """
+    selected_by_key, owner = {}, None
+    for slot, (form, choices, versions) in sorted(forms.items()):
+        require_form_slot(slot)
+        if not isinstance(form, ValidatedSaveInput):
+            raise SavedDetailsError("invalid_form_input", "Use the validated owner form.")
+        require_subject(form.subject)
+        scope = (form.subject.event_id, form.subject.owner_member_id)
+        if (owner is not None and owner != scope) or (slot != "base") != (str(form.subject.kind) == "stage_response"):
+            raise SavedDetailsError("invalid_subject", "Forms must belong to the same participant.", 409)
+        owner = scope
+        for key, value in selected_values(form, choices, versions).items():
+            prior = selected_by_key.get(key)
+            if prior and (prior[1] != value or prior[2] != versions[key]):
+                raise SavedDetailsError("saved_detail_form_conflict", "Review conflicting save choices across forms.", 409,
+                                        form_slots=[prior[0], slot], field_keys=[key])
+            selected_by_key[key] = (slot, value, versions[key])
+
+
+def prepare_saved_detail_intent(*, actor_id, subject, validated_form, choices, base_versions, operation_id,
+                              outer_operation_id=None, form_slot=None):
     if connection.in_atomic_block:
         raise RuntimeError("Prepare saved details before entering domain transactions.")
     require_owner(actor_id)
+    require_subject(subject)
+    require_form_operation(outer_operation_id, form_slot, subject)
     if not isinstance(validated_form, ValidatedSaveInput) or validated_form.subject != subject or subject.owner_member_id != actor_id:
         raise SavedDetailsError("invalid_form_input", "Use the validated owner form.")
-    if not isinstance(operation_id, UUID) or any(type(v) is not bool for v in choices.values()):
+    if not isinstance(operation_id, UUID):
         raise SavedDetailsError("invalid_save_choices", "Check save choices and operation ID.")
-    if set(choices) - set(validated_form.mapped_values):
-        # F must remove hidden known choices before constructing this object.
-        raise SavedDetailsError("invalid_save_choices", "Choose visible mapped answers only.")
-    selected = {k: normalize(k, validated_form.mapped_values[k]) for k, save in choices.items() if save}
+    selected = selected_values(validated_form, choices, base_versions)
     if not selected:
         return None
-    if any(type(base_versions.get(k)) is not int or base_versions[k] < 0 for k in selected):
-        raise SavedDetailsError("saved_version_required", "Review saved detail versions before submitting.")
     if len(canonical(selected).encode()) > 32_768:
         raise SavedDetailsError("saved_details_too_large", "Saved details exceed the size limit.", 413)
     key = prepare_account_key(actor_id)
@@ -81,6 +106,7 @@ def prepare_saved_detail_intent(*, actor_id, subject, validated_form, choices, b
         form_sha256=digest(validated_form.form_descriptor), event_date_revision=validated_form.event_date_revision,
         expires_at=timezone.now() + timedelta(seconds=60), base_versions=tuple((k, base_versions[k]) for k in sorted(selected)),
         chosen_fields=tuple(sorted(selected)), _proof=_SEAL,
+        outer_operation_id=outer_operation_id, form_slot=form_slot,
     )
 
 
@@ -90,6 +116,8 @@ def insert_prepared_locked(prepared, *, subject, locks):
         raise RuntimeError("An in-process preparation and domain transaction are required.")
     if timezone.now() >= prepared.expires_at:
         raise SavedDetailsError("save_preparation_expired", "Review saved details and submit again.", 409)
+    require_subject(prepared.subject)
+    require_subject(subject)
     prior = prepared.subject
     same = (prior.event_id, prior.owner_member_id, prior.kind) == (subject.event_id, subject.owner_member_id, subject.kind)
     binding = prior.subject_id == subject.subject_id if prior.subject_id is not None else prior.creation_operation_id == prepared.operation_id
@@ -100,7 +128,7 @@ def insert_prepared_locked(prepared, *, subject, locks):
     if prepared.form_sha256 != binding.form_sha256:
         raise SavedDetailsError("form_revision_changed", "Review the revised form.", 409)
     if prepared.event_date_revision != binding.event_date_revision:
-        raise SavedDetailsError("event_date_changed", "Review age at the revised event start.", 409)
+        raise SavedDetailsError("event_date_changed", "Reload the form for the revised event date.", 409)
     if prepared.canonical_answer_sha256 != binding.canonical_answer_sha256:
         raise SavedDetailsError("answers_changed", "Review the changed answers.", 409)
     if set(binding.chosen_fields) != set(prepared.chosen_fields):
@@ -166,11 +194,14 @@ def apply_intent(intent_id):
             row.field_status = {name: {"state": "failed", "code": "account_key_changed"} for name in row.chosen_fields}
         elif row.expires_at <= timezone.now():
             row.state, row.failure_code = "failed", "save_intent_expired"
+            row.field_status = {name: {"state": "failed", "code": row.failure_code} for name in row.chosen_fields}
         else:
             for name in sorted(row.chosen_fields):
                 current = MemberSavedDetail.objects.filter(user=actor, field_key=name).first()
                 version = current.version if current else 0
-                if version != row.base_versions[name]:
+                if current is not None and not current.deleted_at and open_value(current, "value_envelope") == values[name]:
+                    row.field_status[name] = {"state": "unchanged", "version": version}
+                elif version != row.base_versions[name]:
                     row.field_status[name] = {"state": "conflict", "current_version": version}
                 else:
                     try:

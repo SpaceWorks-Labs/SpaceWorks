@@ -1213,6 +1213,11 @@ export type ApiIntegrationSettings = {
   "cors_allowed_origins": Array<string>;
   "telegram_group_chat_id"?: string;
   "telegram_bot_token"?: string;
+  "email_provider"?: EmailProviderEnum | BlankEnum;
+  "email_provider_config"?: {
+  [key: string]: unknown;
+};
+  "email_provider_configured": boolean;
   "telegram_bot_token_set": boolean;
   "smtp_host"?: string;
   "smtp_port"?: number;
@@ -1477,7 +1482,7 @@ export type AvailabilityEnum = "Available" | "Limited" | "Full";
 
 export type BackupArchive = {
   "id": string;
-  "scope": ScopeEnum;
+  "scope": BackupArchiveScopeEnum;
   "makerspace": number | null;
   "status": BackupArchiveStatusEnum;
   "manifest": unknown;
@@ -1490,6 +1495,8 @@ export type BackupArchive = {
   "created_at": string;
   "purge_warning": string;
 };
+
+export type BackupArchiveScopeEnum = "deployment" | "makerspace";
 
 export type BackupArchiveStatusEnum = "pending" | "running" | "promoting" | "available" | "failed" | "expired";
 
@@ -2940,6 +2947,8 @@ export type Dashboard = {
 };
 };
 
+export type DatabaseStatusEnum = "verified" | "unavailable" | "unknown";
+
 export type DataExportCreate = {
   "fidelity"?: FidelityEnum;
 };
@@ -3015,6 +3024,26 @@ export type DeploymentIdentity = {
   "fingerprint": string;
   "age_recipient": string;
 };
+
+export type DeploymentSummary = {
+  "mode": ModeE8dEnum;
+  "profile": Profile3dfEnum;
+  "scanner": ScannerEnum;
+  "media_validation_available": boolean;
+  "scope": DeploymentSummaryScopeEnum;
+  "topology": string;
+  "database_transport": string;
+  "database_major": number;
+  "storage": Array<StorageGuarantee>;
+  "last_worker_success_at": string | null;
+  "last_scheduler_success_at": string | null;
+  "portable_dump_available": boolean;
+  "portable_dump_reason"?: string;
+  "provider_recovery"?: ProviderRecovery;
+  "free_usage"?: FreeUsage;
+};
+
+export type DeploymentSummaryScopeEnum = "deployment";
 
 export type DestinationDispatch = {
   "detail": string;
@@ -3316,10 +3345,25 @@ export type DownloadGrant = {
   "expires_in": number;
 };
 
+export type DrillStatusEnum = "verified" | "failed" | "never" | "unknown";
+
 export type EducationEntry = {
   "institution": string;
   "qualification"?: string;
   "year"?: string;
+};
+
+export type EmailAccountUsage = {
+  "label": string;
+  "provider": string;
+  "accepted": number;
+  "reserved": number;
+  "uncertain": number;
+  "daily_cap": number | null;
+  "monthly_cap": number | null;
+  "monthly_charged": number;
+  "reset_timezone": string;
+  "provider_usage_known": boolean;
 };
 
 export type EmailLog = {
@@ -3337,6 +3381,8 @@ export type EmailLog = {
 };
 
 export type EmailLogStatusEnum = "pending" | "sending" | "sent" | "failed" | "skipped";
+
+export type EmailProviderEnum = "inherit" | "smtp" | "resend" | "postmark" | "ses" | "brevo" | "mailgun" | "sendgrid";
 
 export type EmailTemplateDetail = {
   "stream": string;
@@ -4099,6 +4145,24 @@ export type ForgotPasswordRequest = {
   "email": string;
 };
 
+export type FreeUsage = {
+  "profile": FreeUsageProfileEnum;
+  "visibility": FreeUsageVisibilityEnum;
+  "database": UsageSample | null;
+  "objects": UsageSample;
+  "email": UsageSample;
+  "email_pending": number | null;
+  "email_uncertain": number | null;
+  "email_accounts": Array<EmailAccountUsage>;
+  "notification_uncertain": number;
+  "tick": TickStatus;
+  "notices": Array<string>;
+};
+
+export type FreeUsageProfileEnum = "free";
+
+export type FreeUsageVisibilityEnum = "deployment" | "tenant";
+
 export type FrontendDomainStatusEnum = "pending" | "verified" | "failed";
 
 export type GenericAnalyticsReport = {
@@ -4387,6 +4451,7 @@ export type IntegrationBookingResourcePage = {
 export type IntegrationConfiguredHealth = {
   "status"?: Status83eEnum;
   "detail"?: string;
+  "provider"?: string;
   "configured"?: boolean;
 };
 
@@ -4423,6 +4488,7 @@ export type IntegrationEventPage = {
 };
 
 export type IntegrationHealth = {
+  "deployment"?: TenantDeployment;
   "status": Status00eEnum;
   "email": IntegrationEmailHealth;
   "deliveries_by_stream": IntegrationDeliveriesByStream;
@@ -5632,6 +5698,11 @@ export type Makerspace = {
   "telegram_group_chat_id"?: string;
   "telegram_bot_token"?: string;
   "telegram_bot_token_set": boolean;
+  "email_provider"?: EmailProviderEnum | BlankEnum;
+  "email_provider_config"?: {
+  [key: string]: unknown;
+};
+  "email_provider_configured": boolean;
   "smtp_host"?: string;
   "smtp_port"?: number;
   "smtp_username"?: string;
@@ -6552,6 +6623,8 @@ export type MobilePaymentIntentResponse = {
 
 export type Mode087Enum = "preview" | "apply";
 
+export type ModeE8dEnum = "host" | "managed";
+
 export type ModuleAction = {
   "key": string;
 };
@@ -6785,6 +6858,8 @@ export type OAuthStart = {
 };
 
 export type ObjectEnum = "whatsapp_business_account";
+
+export type ObjectStatusEnum = "verified" | "unavailable" | "unknown";
 
 export type OccurrenceResult = {
   "occurrence": number;
@@ -7663,6 +7738,11 @@ export type PatchedApiIntegrationSettings = {
   "cors_allowed_origins"?: Array<string>;
   "telegram_group_chat_id"?: string;
   "telegram_bot_token"?: string;
+  "email_provider"?: EmailProviderEnum | BlankEnum;
+  "email_provider_config"?: {
+  [key: string]: unknown;
+};
+  "email_provider_configured"?: boolean;
   "telegram_bot_token_set"?: boolean;
   "smtp_host"?: string;
   "smtp_port"?: number;
@@ -8097,6 +8177,11 @@ export type PatchedMakerspace = {
   "telegram_group_chat_id"?: string;
   "telegram_bot_token"?: string;
   "telegram_bot_token_set"?: boolean;
+  "email_provider"?: EmailProviderEnum | BlankEnum;
+  "email_provider_config"?: {
+  [key: string]: unknown;
+};
+  "email_provider_configured"?: boolean;
   "smtp_host"?: string;
   "smtp_port"?: number;
   "smtp_username"?: string;
@@ -8262,6 +8347,11 @@ export type PatchedPlatformBackupSettings = {
 
 export type PatchedPlatformEmailSettings = {
   "id"?: number;
+  "email_provider"?: EmailProviderEnum | BlankEnum;
+  "email_provider_config"?: {
+  [key: string]: unknown;
+};
+  "email_provider_configured"?: boolean;
   "smtp_host"?: string;
   "smtp_port"?: number;
   "smtp_username"?: string;
@@ -8676,6 +8766,7 @@ export type PlatformBackupSettings = {
 };
 
 export type PlatformDashboard = {
+  "deployment"?: DeploymentSummary;
   "checked_at": string;
   "tenants_by_state": {
   [key: string]: number;
@@ -8692,6 +8783,11 @@ export type PlatformDashboard = {
 
 export type PlatformEmailSettings = {
   "id": number;
+  "email_provider"?: EmailProviderEnum | BlankEnum;
+  "email_provider_config"?: {
+  [key: string]: unknown;
+};
+  "email_provider_configured": boolean;
   "smtp_host"?: string;
   "smtp_port"?: number;
   "smtp_username"?: string;
@@ -8984,6 +9080,8 @@ export type ProductQrHistory = {
   "scans": Array<QrHistoryItem>;
 };
 
+export type Profile3dfEnum = "full" | "free";
+
 export type ProfileActivity = {
   "events_attended"?: number;
   "events_registered"?: number;
@@ -9127,6 +9225,15 @@ export type PromoList = {
   "next": string | null;
   "previous": string | null;
   "results": Array<Promo>;
+};
+
+export type ProviderRecovery = {
+  "database_status": DatabaseStatusEnum;
+  "object_status": ObjectStatusEnum;
+  "drill_status": DrillStatusEnum;
+  "last_drill_at": string | null;
+  "reason": string;
+  "runbook_url"?: string;
 };
 
 export type ProvisionSubdomainRequest = {
@@ -10641,6 +10748,8 @@ export type SavedViewList = {
   "results": Array<SavedView>;
 };
 
+export type ScannerEnum = "none" | "clamav";
+
 export type Schedule = {
   "id": number;
   "name": string;
@@ -10650,8 +10759,6 @@ export type Schedule = {
   "blind"?: boolean;
   "is_active"?: boolean;
 };
-
-export type ScopeEnum = "deployment" | "makerspace";
 
 export type ScopeModeEnum = "machine" | "full";
 
@@ -11424,6 +11531,13 @@ export type StockTransferLineInput = {
 
 export type StockTransferStatusEnum = "applied" | "cancelled";
 
+export type StorageGuarantee = {
+  "label": string;
+  "upload": UploadEnum;
+  "versioned": boolean;
+  "object_lock": boolean;
+};
+
 export type StrategyEnum = "sum" | "group_sum" | "row_union" | "weighted_rate" | "global_rank" | "distinct_person";
 
 export type StreamEnum = "hardware" | "printing" | "events" | "bookings" | "maintenance" | "membership" | "devices" | "payments" | "stock" | "certifications";
@@ -11606,6 +11720,18 @@ export type TenantBootstrapPublicApi = {
   "inventory_path": string;
 };
 
+export type TenantDeployment = {
+  "mode": ModeE8dEnum;
+  "profile": Profile3dfEnum;
+  "scanner": ScannerEnum;
+  "media_validation_available": boolean;
+  "scope": TenantDeploymentScopeEnum;
+  "deployment_warning": boolean;
+  "objects"?: UsageSample;
+};
+
+export type TenantDeploymentScopeEnum = "tenant";
+
 export type TextAlignEnum = "left" | "center";
 
 export type Ticket = {
@@ -11646,6 +11772,17 @@ export type TicketPublicFields = {
   "public_token": string;
   "timezone_name": string;
 };
+
+export type TickStatus = {
+  "last_completed_at": string | null;
+  "last_contact_at": string | null;
+  "age_seconds": number | null;
+  "interval_seconds": number;
+  "state": TickStatusStateEnum;
+  "failed_tasks": number;
+};
+
+export type TickStatusStateEnum = "ok" | "late" | "never" | "failed" | "unknown";
 
 export type TimelineActor = {
   "username": string;
@@ -11840,6 +11977,8 @@ export type UnsubscribeResult = {
   "detail": string;
 };
 
+export type UploadEnum = "put" | "post";
+
 export type UsageResource = {
   "key": string;
   "label": string;
@@ -11849,6 +11988,26 @@ export type UsageResource = {
 };
 
 export type UsageResourceUnitEnum = "bytes" | "count";
+
+export type UsageSample = {
+  "used": number | null;
+  "cap": number | null;
+  "unit": UsageSampleUnitEnum;
+  "state": UsageSampleStateEnum;
+  "source": string;
+  "cap_source": string;
+  "cap_verified_on": string | null;
+  "scope": UsageSampleScopeEnum;
+  "sampled_at": string | null;
+  "uncertain": number;
+  "reason_code": string;
+};
+
+export type UsageSampleScopeEnum = "deployment" | "tenant" | "provider_account";
+
+export type UsageSampleStateEnum = "ok" | "warning" | "critical" | "reached" | "unknown" | "stale";
+
+export type UsageSampleUnitEnum = "bytes" | "recipients";
 
 export type User = {
   "id": number;

@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 # Sourced by host entry points. The directory owner also owns setup and cron.
 require_install_owner() {
+  (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )) || {
+    echo 'SpaceWorks requires Bash 4.4+ (install modern Bash on macOS).' >&2; exit 64;
+  }
+  if ! python3 -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' >/dev/null 2>&1 \
+    && python -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' >/dev/null 2>&1; then
+    SPACEWORKS_INSTALL_PYTHON="$(command -v python)"; export SPACEWORKS_INSTALL_PYTHON
+    python3() { "$SPACEWORKS_INSTALL_PYTHON" "$@"; }
+    export -f python3
+  fi
   local entrypoint="$1"; shift
   local owner current name key
   local forwarded=()

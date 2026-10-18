@@ -37,7 +37,13 @@ question() {
       return 1
     }
   fi
+  local attempts=0 input_key="$key"
+  [[ "$key" != AREA_ENABLE ]] || input_key="AREA_ENABLE_${SETUP_AREAS[index]}"
   while true; do
+    attempts=$((attempts + 1))
+    if [[ "${SETUP_NON_INTERACTIVE:-0}" == 1 && "$attempts" -gt 1 ]]; then
+      echo "Invalid noninteractive answer: $input_key" >&2; return 64
+    fi
     local hint="${default:-required}"
     case "$rule" in secret|google|cidrs|port) hint="${default:-skip}" ;; esac
     [[ "$key" != ADMINPASS ]] || hint=auto-generate
@@ -46,7 +52,12 @@ question() {
       [[ "$default" =~ ^[Yy] ]] && hint=Y/n || hint=y/N
     fi
     printf '%s [%s]: ' "$label" "$hint"
-    if [[ "$rule" == secret ]]; then
+    if [[ "${SETUP_NON_INTERACTIVE:-0}" == 1 ]]; then
+      value="${INPUT_ANSWERS[$input_key]:-}"
+      [[ -z "${INPUT_ANSWERS[$input_key]+present}" ]] || INPUT_USED["$input_key"]=1
+      [[ "$key" != proceed ]] || value=Y
+      echo '(private answers file)'
+    elif [[ "$rule" == secret ]]; then
       IFS= read -r -s -u 3 value || return 1
       echo
     else
@@ -129,6 +140,7 @@ question() {
 }
 
 SETUP_ANSWER_KEYS=(HOSTING_MODEL RUN_FRONTEND SITE_ORIGINS PLATFORM_DOMAIN PUBLIC_DOMAIN
+  SETUP_SCAN_MODE SETUP_CLAMD_HOST SETUP_CLAMD_PORT
   TLS_EMAIL HTTPS_MODE STORAGE WEBHOST MSNAME ORG_NAME MS_SUBDOMAIN SPACEWORKS_EDITION
   CONTROL_PLANE_PROXY CONTROL_PLANE_ALLOW_CIDRS CONTROL_PLANE_TUNNEL_PORT
   SETUP_SELECTED_AREAS AREA_SETTINGS_JSON AREA_ORGANIZATION AREA_CREATE_PLAN REQUEST_ACCESS ADMINUSER ADMINEMAIL ADMINPASS GEN_PASS SETUP_MFA_ENABLED SETUP_SOCIAL_PROVIDERS
@@ -140,28 +152,26 @@ save_setup_answers() {
   local target="$1" key
   (umask 077; set -o noclobber; : > "$target") || return 1
   chmod 600 "$target"
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) python3 "$(dirname "${BASH_SOURCE[0]}")/installer/private_files.py" secure "$target" || return ;;
+  esac
   for key in "${SETUP_ANSWER_KEYS[@]}"; do
     printf '%s=%q\n' "$key" "${!key:-}" >> "$target"
   done
 }
 
 persist_setup_answers() {
-  local key
-  case "$(uname -s)" in
-    MINGW*|MSYS*|CYGWIN*)
-      # Native Windows cannot represent POSIX mode 600 reliably. Inherit the
-      # confirmed answers in process environment instead of writing a secret file.
-      for key in "${SETUP_ANSWER_KEYS[@]}"; do export "$key"; done
-      ;;
-    *) save_setup_answers "$1" ;;
-  esac
+  save_setup_answers "$1"
 }
 
 load_setup_answers() {
   local target="$1" mode
   [[ -f "$target" && ! -L "$target" && -O "$target" ]] || { echo 'Answers must be a regular file owned by the operator.' >&2; return 1; }
   mode="$(stat -c %a "$target" 2>/dev/null || stat -f %Lp "$target")"
-  [[ "$mode" == 600 ]] || { echo 'Answers file must have mode 600.' >&2; return 1; }
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) python3 "$(dirname "${BASH_SOURCE[0]}")/installer/private_files.py" check "$target" || return ;;
+    *) [[ "$mode" == 600 ]] || { echo 'Answers file must have mode 600.' >&2; return 1; } ;;
+  esac
   source "$target"
   validate_setup_login_answers || return 1
   [[ "${ANSWERS_CONFIRMED:-}" == yes ]] || { echo 'Deployment answers have not been confirmed.' >&2; return 1; }

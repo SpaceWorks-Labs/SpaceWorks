@@ -32,7 +32,10 @@ def select_release(raw, version="", repository=""):
         return version
     if not isinstance(releases, list):
         raise ValueError("GitHub did not return a release list.")
-    candidates = [r for r in releases[:100] if published_main(r)]
+    candidates = [r for r in releases[:100] if published_main(r) and (
+        not repository or str(r.get("html_url", "")).lower() ==
+        f'https://github.com/{repository}/releases/tag/{r["tag_name"]}'.lower()
+    )]
     if not candidates:
         raise ValueError("No published, non-prerelease main release is available.")
     # GitHub lists creation order; publication order determines the newest release.

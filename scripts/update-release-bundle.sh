@@ -3,26 +3,12 @@
 handoff_release_bundle() {
   [[ "${SPACEWORKS_SELECTED_BUNDLE_VERSION:-}" != "$version" || "$UPDATE_SCRIPT_DIR" == "$ROOT/scripts" ]] || return 0
   command -v tar >/dev/null 2>&1 || die "tar is required to install the selected host bundle."
-  local commit archive stage status
-  commit="$(curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
-    --connect-timeout 10 --max-time 30 --retry 2 \
-    "https://api.github.com/repos/$SPACEWORKS_REPOSITORY/commits/v$version" | \
-    "${COMPOSE[@]}" exec -T "$APP_SERVICE" python -c \
-    "$(cat "$UPDATE_SCRIPT_DIR/release-host-bundle.py")" commit "${version##*.}")" \
-    || die 'Could not prove the selected release commit.'
-  commit="$(printf '%s' "$commit" | tr -d '\r\n')"
-  [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || die 'Invalid selected release commit.'
+  command -v python3 >/dev/null 2>&1 || die 'Verified updates require Python 3.10+; use the current install.sh bootstrap to prepare it.'
   BUNDLE_STAGE="$(mktemp -d "$ROOT/.spaceworks-update.XXXXXX")"
-  archive="$BUNDLE_STAGE/release.tar.gz"; stage="$BUNDLE_STAGE/runtime"
-  mkdir "$stage"
-  curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
-    --connect-timeout 10 --max-time 300 --retry 2 --max-filesize 100000000 \
-    "https://github.com/$SPACEWORKS_REPOSITORY/archive/$commit.tar.gz" -o "$archive" \
-    || die 'Could not download the selected release host bundle.'
-  "${COMPOSE[@]}" exec -T "$APP_SERVICE" python -c \
-    "$(cat "$UPDATE_SCRIPT_DIR/release-host-bundle.py")" archive "${version%%-main.*}" < "$archive" \
-    || die 'Selected release host bundle is invalid; installation was not changed.'
-  tar -xzf "$archive" -C "$stage" --strip-components=1 --no-same-owner
+  python3 -I "$UPDATE_SCRIPT_DIR/installer/release-fetch.py" --repository "$SPACEWORKS_REPOSITORY" \
+    --version "$version" --destination "$BUNDLE_STAGE" >/dev/null \
+    || die 'Could not verify the complete selected release bundle.'
+  local stage="$BUNDLE_STAGE/runtime" status
   # Validate the complete runtime manifest before executing any downloaded code.
   validate_host_bundle "$stage"
   say "Continuing with host tooling from $SPACEWORKS_REPOSITORY v$version."

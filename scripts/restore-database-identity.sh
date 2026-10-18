@@ -9,7 +9,7 @@ prove_restore_database() {
     'psql -X -v ON_ERROR_STOP=1 -At -F "|" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT current_database(), d.oid, i.database_uuid FROM pg_database d CROSS JOIN backup_deploymentdatabaseidentity i WHERE d.datname=current_database() AND i.id=1"')" \
     || die 'Cannot prove the bootstrap database identity; restore refused.'
   active="${active//$'\r'/}"; bootstrap="${bootstrap//$'\r'/}"
-  [[ "$active" =~ ^([A-Za-z0-9_][A-Za-z0-9_-]{0,62})\|[0-9]+\|[0-9a-f-]{36}$ ]] \
+  [[ "$active" =~ ^([A-Za-z_][A-Za-z0-9_$]{0,62})\|[0-9]+\|[0-9a-f-]{36}$ ]] \
     || die 'Invalid active database identity; restore refused.'
   [[ "$active" == "$bootstrap" ]] \
     || die 'Active database pointer differs from the bootstrap database; legacy restore refused. Use the supported cutover recovery coordinator.'

@@ -4,6 +4,44 @@
 host_bundle_files() {
   HOST_BUNDLE_FILES=(
     VERSION setup.sh install.sh setup.ps1
+    scripts/uninstall.sh scripts/init-cloud-environment.py
+    deploy/contracts/programmes.json
+    scripts/installer/answers.py
+    scripts/installer/answers.sh
+    scripts/installer/bundle-transaction.sh
+    scripts/installer/capacity.sh
+    scripts/installer/compose-capabilities.py
+    scripts/installer/compose-capabilities.sh
+    scripts/installer/compose-plugin.py
+    scripts/installer/credential.py
+    scripts/installer/host-paths.sh
+    scripts/installer/host-preflight.sh
+    scripts/installer/import-environment.sh
+    scripts/installer/import-journal.py
+    scripts/installer/install-finish.sh
+    scripts/installer/install-runtime.sh
+    scripts/installer/key-backfill-probe.py
+    scripts/installer/key-backfill.sh
+    scripts/installer/key-format.py
+    scripts/installer/legacy-identity.py
+    scripts/installer/linux-dependencies.sh
+    scripts/installer/managed-files.py
+    scripts/installer/pre-h1.sh
+    scripts/installer/private_files.py
+    scripts/installer/project-name.py
+    scripts/installer/record-snapshot.py
+    scripts/installer/release-fetch.py
+    scripts/installer/restore-owner.sh
+    scripts/installer/restore-work.sh
+    scripts/installer/retention.py
+    scripts/installer/runtime-probes.py
+    scripts/installer/setup-lock.sh
+    scripts/installer/setup-scan.sh
+    scripts/installer/setup-state.sh
+    scripts/installer/state.py
+    scripts/installer/uninstall-admission.py
+    scripts/installer/uninstall-files.py
+    scripts/installer/update-backup.sh
     docker-compose.prod.yml docker-compose.cloud.yml
     docker/compose.build.yml docker/compose.tls.yml docker/compose.saas.yml
     docker/compose.api-only.yml docker/compose.api-only-edge.yml docker/compose.external-storage.yml
@@ -38,27 +76,20 @@ validate_host_bundle() {
 }
 
 install_staged_host_bundle() {
-  local source_root="$1" destination backup relative temporary
+  local source_root="$1"
   [[ "$source_root" != "$ROOT" ]] || die "Release tooling must be staged outside the existing install."
   validate_host_bundle "$source_root"
-  backup="$ROOT/backups/host-config-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-  HOST_CONFIG_BACKUP_DIR="$backup"
-  mkdir -p "$ROOT/backups"
-  chmod 700 "$ROOT/backups"
-  for relative in "${HOST_BUNDLE_FILES[@]}"; do
-    destination="$ROOT/$relative"
-    mkdir -p "$(dirname "$destination")" "$(dirname "$backup/$relative")"
-    [[ ! -f "$destination" ]] || cp -p "$destination" "$backup/$relative"
-    temporary="$(mktemp "$(dirname "$destination")/.deploy-bundle.XXXXXX")"
-    cp -p "$source_root/$relative" "$temporary"
-    mv -f -- "$temporary" "$destination"
-  done
-  for relative in scripts/install-auto-update.sh scripts/install-auto-update.ps1 \
-    scripts/update-rollback-host.sh scripts/filter-main-releases.py docker/compose.single.yml; do
-    if [[ -f "$ROOT/$relative" ]]; then
-      mkdir -p "$(dirname "$backup/$relative")"
-      mv -- "$ROOT/$relative" "$backup/$relative"
-    fi
-  done
-  say "Installed pinned host runtime files; previous files are in $backup."
+  source "$(dirname "${BASH_SOURCE[0]}")/installer/bundle-transaction.sh"
+  RETIRED_HOST_FILES=(scripts/install-auto-update.sh scripts/install-auto-update.ps1
+    scripts/update-rollback-host.sh scripts/filter-main-releases.py docker/compose.single.yml)
+  HOST_CONFIG_BACKUP_DIR="$ROOT/backups/host-config-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  bundle_path_safe backups || die 'The private backup directory is redirected.'
+  mkdir -p "$ROOT/backups" || return
+  chmod 700 "$ROOT/backups" || return
+  snapshot_host_configuration || die 'Cannot snapshot the previous host configuration; no bundle was applied.'
+  if ! apply_host_bundle "$source_root"; then
+    rollback_host_configuration || die 'Host-file rollback failed; keep writers stopped and recover the private host-config snapshot.'
+    die 'Host bundle apply failed; the previous files and records were restored.'
+  fi
+  say "Installed pinned host runtime files; previous files are in $HOST_CONFIG_BACKUP_DIR."
 }

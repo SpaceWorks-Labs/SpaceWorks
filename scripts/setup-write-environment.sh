@@ -4,7 +4,7 @@ env_setting() {
   local value="$2"
   value="${value//\\/\\\\}"
   value="${value//\'/\\\'}"
-  printf "%s='%s'\n" "$1" "$value" >> .env
+  printf "%s='%s'\n" "$1" "$value" >> "${3:-.env}"
 }
 
 write_setup_environment() {
@@ -17,6 +17,9 @@ write_setup_environment() {
   fi
   (umask 077; set -o noclobber; : > .env)
   chmod 600 .env
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) python3 "$ROOT/scripts/installer/private_files.py" secure "$ROOT/.env" || return ;;
+  esac
   local scheme=http app_url origins proxy_count=1 layer=none
   [[ "$HTTPS_MODE" == 1 ]] || scheme=https
   app_url="$scheme://$WEBHOST"
@@ -37,11 +40,17 @@ write_setup_environment() {
   env_setting EVENT_STATION_PIN_PEPPER "$(rand_key 50)"
   env_setting API_CLIENT_ENC_KEY "$(fernet_key)"
   env_setting AUDIT_MAC_MASTER_KEY "$(fernet_key)"
+  # Finance encryption is mandatory even when optional PII encryption is off.
+  env_setting PII_MASTER_KEY "$(fernet_key)"
+  env_setting PII_SEARCH_HASH_KEY "$(fernet_key)"
+  source "$(dirname "${BASH_SOURCE[0]}")/installer/setup-scan.sh"
+  write_setup_scanner_environment || die 'Invalid scanner selection.'
   configure_release_repository || die 'Invalid GitHub repository.'
   env_setting SPACEWORKS_REPOSITORY "$SPACEWORKS_REPOSITORY"
   env_setting MAKERSPACE_BACKEND_IMAGE "$MAKERSPACE_BACKEND_IMAGE"
   env_setting MAKERSPACE_FRONTEND_IMAGE "$MAKERSPACE_FRONTEND_IMAGE"
   env_setting SPACEWORKS_OPS_HOST_DIR "${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}"
+  env_setting SPACEWORKS_HOST_STATE_DIR "${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}"
   env_setting SPACEWORKS_HOSTING_MODEL "$HOSTING_MODEL"
   env_setting SPACEWORKS_RUN_FRONTEND "$([[ "$RUN_FRONTEND" == 1 ]] && echo yes || echo no)"
   env_setting SPACEWORKS_STORAGE "$([[ "$STORAGE" == 1 ]] && echo bundled || echo external)"

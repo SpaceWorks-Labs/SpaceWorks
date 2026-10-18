@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 # Import a downloaded full-deployment archive, record intent, then run disaster restore.
+set +x
 set -euo pipefail
+umask 077
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="${SPACEWORKS_UPDATE_INSTALL_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT"
+source "$ROOT/scripts/installer/restore-owner.sh"
+require_restore_root "$ROOT/scripts/import-backup.sh" "$@"
 COMPOSE=("$ROOT/scripts/spaceworks-compose.sh" bundled)
-OPS_DIR="${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}"
+source "$ROOT/scripts/installer/host-paths.sh"
+resolve_host_paths || exit $?
+source "$ROOT/scripts/compose-deployment.sh"
+deployment_services
+source "$ROOT/scripts/installer/import-environment.sh"
 OPS_WORK_DIR="$OPS_DIR/work"
 IDENTITY_FILE="${BACKUP_AGE_IDENTITY_FILE:-$OPS_WORK_DIR/age-identity.txt}"
 SOURCE="${1:-}"
@@ -13,19 +21,38 @@ USERNAME="${2:-}"
 EXPECTED_SHA256="${3:-}"
 
 die() { printf '[Space Works backup import] ERROR: %s\n' "$*" >&2; exit 1; }
-[[ -f "$SOURCE" && -n "$USERNAME" ]] \
-  || die "Usage: scripts/import-backup.sh <archive.tar.age> <target-superadmin-username> [expected-sha256]"
-[[ -d "$OPS_DIR" && -f "$IDENTITY_FILE" ]] || die "The operation directory or age identity is missing."
+if [[ "$SOURCE" != --recover-environment ]]; then
+  [[ -f "$SOURCE" && -n "$USERNAME" ]] \
+    || die "Usage: scripts/import-backup.sh <archive.tar.age> <target-superadmin-username> [expected-sha256] (or --recover-environment)"
+  [[ -f "$IDENTITY_FILE" ]] || die 'The age identity is missing.'
+fi
+[[ -d "$OPS_DIR" && ! -L "$OPS_WORK_DIR" ]] || die 'The operation directory is missing or redirected.'
 command -v flock >/dev/null 2>&1 || die "flock is required."
+[[ "$(uname -s)" == Linux ]] || die 'Backup import/restore requires Linux or WSL2.'
 
 exec 9>"$OPS_DIR/operation.lock"
 flock -n 9 || die "Another backup, restore, verification, or update is running."
+if [[ "$SOURCE" == --recover-environment ]]; then
+  recover_import_environment || die 'Interrupted continuity installation requires private recovery.'
+  exit 0
+fi
+[[ ! -e "$ROOT/.spaceworks-import-pending.json" && ! -L "$ROOT/.spaceworks-import-pending.json" ]] \
+  || die 'Recover the interrupted environment first with scripts/import-backup.sh --recover-environment, then retry the signed archive.'
 WORK="$(mktemp -d "$OPS_WORK_DIR/import-XXXXXXXX")"
 if [[ "$(id -u)" == "0" ]]; then
   chown -R 10001:10001 "$WORK"
 fi
 CONTAINER_WORK="${WORK/$OPS_WORK_DIR/\/var\/lib\/spaceworks\/ops\/work}"
-cleanup() { rm -rf -- "$WORK"; }
+cleanup() {
+  local status=$?
+  trap - EXIT
+  if ! rollback_import_environment; then
+    echo "Import recovery requires the private state in $WORK; writers remain stopped." >&2
+    exit 1
+  fi
+  rm -rf -- "$WORK"
+  exit "$status"
+}
 trap cleanup EXIT
 cp -- "$SOURCE" "$WORK/archive.tar.age"
 if [[ "$(id -u)" == "0" ]]; then
@@ -65,7 +92,7 @@ if [[ -n "$EXPECTED_SHA256" ]]; then
   preflight_args+=(--expected-sha256 "$EXPECTED_SHA256")
 fi
 "${COMPOSE[@]}" run --rm --no-deps -T backend \
-  python manage.py preflight_backup_import "${preflight_args[@]}"
+  --role management python manage.py preflight_backup_import "${preflight_args[@]}"
 
 [[ -f .env ]] || die "The target deployment has no .env file to receive continuity secrets."
 cp -p -- .env "$WORK/target.env"
@@ -81,39 +108,42 @@ import re
 import sys
 
 target, source = map(Path, sys.argv[1:])
-required = {
-    "SECRET_KEY", "API_CLIENT_ENC_KEY", "PII_MASTER_KEY",
-    "PII_MASTER_KEY_PREVIOUS", "PII_SEARCH_HASH_KEY", "HMAC_SECRET",
-    "PUSH_TOKEN_HMAC_KEY", "CRON_SECRET", "AUDIT_MAC_MASTER_KEY",
-}
+try:
+    from apps.backup.continuity import validate_continuity_secrets
+except ImportError:
+    raise SystemExit("The matching release continuity schema is unavailable; import refused.") from None
 values = json.loads(source.read_text(encoding="utf-8"))
-if set(values) != required or not isinstance(values.get("SECRET_KEY"), str) or not values["SECRET_KEY"]:
-    raise SystemExit("The archive continuity-secret set is invalid.")
+try:
+    values = validate_continuity_secrets(values)
+except (ValueError, TypeError):
+    raise SystemExit("Archive continuity is incompatible. Recover the original station pepper and matching keys; never generate replacement archive keys.") from None
 if any(not isinstance(value, str) or "\n" in value or "\r" in value for value in values.values()):
     raise SystemExit("A continuity secret cannot be represented safely in the Compose environment.")
 lines = target.read_text(encoding="utf-8").splitlines()
 remaining = dict(values)
+seen = set()
 for index, line in enumerate(lines):
     match = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)=", line)
     if match and match.group(1) in remaining:
         name = match.group(1)
         value = remaining.pop(name).replace("\\", "\\\\").replace("'", "\\'")
         lines[index] = f"{name}='{value}'"
+        seen.add(name)
+    elif match and match.group(1) in seen:
+        raise SystemExit("The target environment repeats a continuity key; import refused.")
 for name, raw in sorted(remaining.items()):
     value = raw.replace("\\", "\\\\").replace("'", "\\'")
     lines.append(f"{name}='{value}'")
 temporary = target.with_suffix(".new")
-with temporary.open("w", encoding="utf-8") as handle:
+descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
     handle.write("\n".join(lines) + "\n")
     handle.flush()
     os.fsync(handle.fileno())
 temporary.replace(target)
 PY
-env_backup=".env.pre-restore-$(date -u +%Y%m%dT%H%M%SZ)"
-cp -p -- .env "$env_backup"
-install -m 600 "$WORK/target.env" .env
-printf '[Space Works backup import] Continuity secrets installed; previous environment retained at %s.\n' "$env_backup"
-"${COMPOSE[@]}" up -d --force-recreate backend worker beat >/dev/null
+install_import_environment || die 'Continuity installation failed; restoring the previous environment and topology.'
+printf '[Space Works backup import] Continuity installed; private recovery environment: %s.\n' "$env_backup"
 
 import_args=(
   --username "$USERNAME"
@@ -125,10 +155,23 @@ import_args=(
 if [[ -n "$EXPECTED_SHA256" ]]; then
   import_args+=(--expected-sha256 "$EXPECTED_SHA256")
 fi
-restore_id="$("${COMPOSE[@]}" run --rm --no-deps -T backend --role management python manage.py import_backup_archive \
-  "${import_args[@]}" | tail -n 1)"
-[[ "$restore_id" =~ ^[0-9a-fA-F-]{36}$ ]] || die "The app did not record a restore intent."
-trap - EXIT
-cleanup
+# No writer may continue on a possibly mixed DB/key generation after registration.
+"${COMPOSE[@]}" stop "$APP_SERVICE" "${WORKER_SERVICES[@]}"
+python3 "$ROOT/scripts/installer/import-journal.py" seal "$ROOT" "$OPS_DIR"
+import_env_ambiguous=1
+registration_output="$(mktemp "$ROOT/.spaceworks-import-result.XXXXXX")"
+if ! "${COMPOSE[@]}" run --rm --no-deps -T backend --role management python manage.py import_backup_archive \
+  "${import_args[@]}" > "$registration_output" 2>&1; then
+  die "Restore registration failed. Private diagnostic file: $registration_output. Keep writers stopped and inspect the retained recovery journals."
+fi
+restore_id="$(tail -n 1 "$registration_output" | tr -d '\r')"
+[[ "$restore_id" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || die "The app did not record a restore intent."
+python3 "$ROOT/scripts/installer/import-journal.py" registered "$ROOT" "$OPS_DIR" "$restore_id"
+rm -f -- "$registration_output"
 flock -u 9
-exec "$ROOT/scripts/restore.sh" "$restore_id"
+exec 9>&-
+bash "$ROOT/scripts/restore.sh" "$restore_id"
+python3 "$ROOT/scripts/installer/import-journal.py" clear "$ROOT" "$OPS_DIR"
+import_env_applied=0
+trap - EXIT
+rm -rf -- "$WORK"

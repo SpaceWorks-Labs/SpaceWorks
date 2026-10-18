@@ -37,7 +37,8 @@ refresh_compose_config() {
 prepare_compose_wrapper() {
   local host_gid
   host_gid="$(id -g)"
-  OPS_HOST_DIR="${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}"
+  source "$ROOT/scripts/installer/host-paths.sh"
+  resolve_host_paths || return
   export OPS_HOST_DIR
   export HOST_CONFIG_IMAGE
   if [[ "${SPACEWORKS_HOST_CONFIG_BUILD:-1}" == "1" ]]; then
@@ -48,6 +49,8 @@ prepare_compose_wrapper() {
   docker run --rm --user 0:0 --entrypoint sh \
     -v "$OPS_HOST_DIR:/ops" "$HOST_CONFIG_IMAGE" -c \
     "mkdir -p /ops/work && chown 10001:10001 /ops/work && chmod 700 /ops/work && touch /ops/operation.lock && chown 0:0 /ops/operation.lock && chmod 666 /ops/operation.lock && chown 0:$host_gid /ops && chmod 750 /ops"
+  source "$ROOT/scripts/installer/setup-lock.sh"
+  lock_setup_operation || return
   if ! docker run --rm --user 0:0 --entrypoint test \
     -v "$OPS_HOST_DIR:/ops" "$HOST_CONFIG_IMAGE" -f /ops/database-pointer.env; then
     docker run --rm --user 0:0 --entrypoint python \
@@ -81,11 +84,12 @@ install_producer_capability() {
 
 configure_setup_instance() {
   SETUP_MFA_ENABLED="${SETUP_MFA_ENABLED:-Y}" SETUP_SOCIAL_PROVIDERS="${SETUP_SOCIAL_PROVIDERS:-google}" \
+  SETUP_SUPERADMIN_PASSWORD_GENERATED="${GEN_PASS:-0}" \
   SETUP_SUPERADMIN_PASSWORD="$ADMINPASS" SETUP_SUPERADMIN_USERNAME="$ADMINUSER" \
   SETUP_SUPERADMIN_EMAIL="$ADMINEMAIL" SETUP_MAKERSPACE_NAME="$MSNAME" SETUP_MAKERSPACE_SLUG="$MS_SUBDOMAIN" \
   ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T -e SETUP_SUPERADMIN_PASSWORD -e SETUP_SUPERADMIN_USERNAME \
     -e SETUP_SUPERADMIN_EMAIL -e SETUP_MAKERSPACE_NAME -e SETUP_MAKERSPACE_SLUG \
-    -e SETUP_MFA_ENABLED -e SETUP_SOCIAL_PROVIDERS \
+    -e SETUP_MFA_ENABLED -e SETUP_SOCIAL_PROVIDERS -e SETUP_SUPERADMIN_PASSWORD_GENERATED \
     backend --role management python manage.py setup_instance --organization-name "${ORG_NAME:-}"
 }
 

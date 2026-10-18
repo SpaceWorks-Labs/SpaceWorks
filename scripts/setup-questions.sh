@@ -2,10 +2,12 @@
 # No filesystem or Docker effects: gather every deployment choice, then confirm once.
 source "$(dirname "${BASH_SOURCE[0]}")/setup-question-input.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/setup-area-questions.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/installer/answers.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/installer/setup-scan.sh"
 
 ask_setup_questions() {
   CONTROL_PLANE_PROXY=false; CONTROL_PLANE_ALLOW_CIDRS=''; CONTROL_PLANE_TUNNEL_PORT=''
-  exec 3</dev/tty
+  if [[ "${SETUP_NON_INTERACTIVE:-0}" == 1 ]]; then exec 3</dev/null; else exec 3</dev/tty; fi
   echo 'SpaceWorks deployment questions. Enter accepts the [default].'
   echo 'Hosting model:'
   echo '  1) One makerspace on this server - one community, at /m/<slug>.'
@@ -102,6 +104,7 @@ ask_setup_questions() {
   question SETUP_MFA_ENABLED 'Turn on two-step sign-in (authenticator app)?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
   question SETUP_SOCIAL_PROVIDERS 'Which sign-in options besides email + password? Google, Apple, GitHub — comma list, or none' google providers || return 1
   ask_setup_areas || return 1
+  ask_setup_scanner || return $?
   question ADMINUSER 'Admin login username' admin username || return 1
   question ADMINEMAIL 'Admin email' '' email || return 1
   question ADMINPASS 'Admin password (blank generates one)' '' secret || return 1
@@ -133,7 +136,8 @@ ask_setup_questions() {
   local proceed
   question proceed 'Proceed?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
   exec 3<&-
-  [[ "$proceed" =~ ^[Yy] ]] || { echo 'Cancelled; nothing was installed or configured.'; return 1; }
+  [[ "$proceed" =~ ^[Yy] ]] || { echo 'Cancelled; nothing was installed or configured.'; return 130; }
+  check_unused_answers || return $?
   ANSWERS_CONFIRMED=yes
 }
 
@@ -158,6 +162,7 @@ setup_summary() {
     "$MSNAME" "${MS_SUBDOMAIN:-none}" "$SPACEWORKS_EDITION" "$([[ ",${SETUP_SELECTED_AREAS}," == *,inventory,* ]] && echo "$REQUEST_ACCESS" || echo 'lending disabled')"
   printf '  Organization: %s (owner of %s)\n' "$ORG_NAME" "$MSNAME"
   setup_areas_summary
+  printf '  File scanning: %s\n' "${SETUP_SCAN_MODE:-none}"
   printf '  Admin: %s <%s>; password: %s (hidden)\n' "$ADMINUSER" "$ADMINEMAIL" "$([[ "$GEN_PASS" == 1 ]] && echo generated || echo entered)"
   printf '  Two-step sign-in: %s; sign-in providers: %s (keys configured later in the console)\n' \
     "$SETUP_MFA_ENABLED" "$SETUP_SOCIAL_PROVIDERS"

@@ -4,10 +4,10 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db.models import Subquery
 from rest_framework.exceptions import PermissionDenied
+from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.integrations.broadcasts_registry import BroadcastAdapter, register
-from apps.integrations.broadcasts_templates import render
 from apps.integrations.email_preferences import blocked_reason
 from apps.integrations.notification_catalog import is_notification_enabled
 from apps.makerspaces.guards import require_feature, require_module
@@ -34,6 +34,9 @@ def authorize(campaign, actor):
     require_feature(event.makerspace, "events.broadcasts")
     for module in ("notifications", "email"):
         require_module(event.makerspace, module)
+    if (campaign.status in {"queued", "sending"} and campaign.available_at
+            and campaign.available_at > timezone.now()):
+        raise PermissionDenied("This campaign is not due.")
 
 
 def registrations(campaign):
@@ -73,12 +76,16 @@ def render_recipient(campaign, account):
     registration = registrations(campaign).filter(member=account).select_related(
         "registered_via_makerspace",
     ).order_by("pk").first()
+    if registration is None:
+        return None
     ticket_space = registration.registered_via_makerspace or event.makerspace
-    return render(campaign.subject, campaign.body, {
+    from .programme.broadcast_content import render_content
+    return render_content(campaign, {
         "name": account.get_full_name() or account.username,
         "event_title": event.title, "event_date": event.starts_at.isoformat(),
         "event_location": event.location,
         "ticket_url": public_url(ticket_space, "member", f"events/{registration.pk}/ticket"),
+        "event_url": public_url(event.makerspace, "events", str(event.public_token)),
     })
 
 
@@ -87,3 +94,5 @@ def register_broadcasts():
     register("event_broadcast", BroadcastAdapter(EventBroadcast, EventBroadcastDelivery, authorize,
              recipients, eligible, render_recipient, "events", "event.broadcast",
              reserve_personal=emit_channels))
+    from .programme.broadcast_test import register_test_source
+    register_test_source()

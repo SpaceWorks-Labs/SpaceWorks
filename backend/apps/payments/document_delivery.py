@@ -5,16 +5,13 @@ from urllib.parse import urlencode
 
 from django.core import signing
 from django.urls import reverse
+from apps.integrations.notification_attachment_sources import DocumentDeliveryError
 
 logger = logging.getLogger(__name__)
 DOWNLOAD_TTL = 300
 SALT = "payments.document.download.v1"
 DOCUMENT_KINDS = {"receipt", "credit_note", "bill"}
 MAX_PDF_BYTES = 5 * 1024 * 1024
-
-
-class DocumentDeliveryError(ValueError):
-    """A fixed diagnostic, safe to persist in delivery health."""
 
 
 def attachment_references(envelope):

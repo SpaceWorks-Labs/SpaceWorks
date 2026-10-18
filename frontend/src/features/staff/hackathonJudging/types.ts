@@ -1,0 +1,18 @@
+import type { Envelope } from '../../events/hackathonGallery/types';
+export type Scope = { makerspaceId: number; eventId: number; actorId: number; context: string };
+export type Criterion = { key: string; label: string; weight: string; anchors: Record<string, string> };
+export type ResultRow = { snapshot_id: number; n: number; rank: number; score: string | null; raw_score?: string | null;
+  warnings: string[]; coverage_complete: boolean; criterion_averages?: Record<string, string>; distribution?: Record<string, number> };
+export type Round = Envelope & { key: string; mode: 'weighted_1_5' | 'top3'; min_reviews: number; normalization: 'none' | 'zscore';
+  opens_at: string | null; closes_at: string | null; criteria: Criterion[]; assigned: number; submitted: number;
+  recused: number; skipped: number; rows: ResultRow[]; coverage_complete: boolean; algorithm_version: string;
+  estimated_judges: number; minutes_per_view: number; judging_minutes: number };
+export type Assignment = Envelope & { round_id: number; snapshot_id: number; title: string; description: string;
+  mode: 'weighted_1_5' | 'top3'; batch: string; configuration: { criteria: Criterion[] }; scores: Record<string, number>;
+  notes: string; asset_ids: number[]; batch_projects: { snapshot_id: number; title: string }[] };
+export type ResultState = Envelope & { sponsor_proposals?: { id: number; prize_id: number; submission_snapshot_id: number; created_at: string }[];
+  aggregates: { rounds?: { round_id: number; rows: ResultRow[] }[];
+  awards?: { prize_id: number; snapshot_id: number; rank: number; public_requested: boolean }[] } };
+export type Track = Envelope & { name: string; description: string; capacity: number; order: number };
+export type Prize = Envelope & { name: string; description: string; track_id: number | null; sponsor_id: number | null;
+  award_count: number; winner_selection_mode: 'manager' | 'sponsor_proposal' };

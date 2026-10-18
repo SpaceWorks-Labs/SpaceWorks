@@ -140,6 +140,8 @@ def install_manifest_enforcement(*, inputs, manifest, using="default"):
 
 
 def verify_pre_cutover_state(*, inputs, using="default"):
+    from .public_page_verification import verify_public_pages
+    verify_public_pages(using=using)
     operation = B1RestoreOperationState.objects.using(using).get(pk=inputs.run_id)
     with transaction.atomic(using=using):
         reservations = B1ReservationEntry.objects.using(using).filter(

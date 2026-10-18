@@ -36,6 +36,11 @@ def audit_target_dispositions(models=MODELS):
     dispositions = {}
     for label, model_disposition in models.items():
         key = normalize_audit_target_type(label)
+        if label in {"makerspaces.MakerspacePublicPage", "makerspaces.MakerspacePublicPageRevision",
+                     "events.EventPageRevision"}:
+            dispositions[key] = AuditReference(
+                AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, label, "audit_public_page_history_target")
+            continue
         if label in {"notifications.NotificationPreference", "notifications.MemberNotificationPreference", "presence.PresenceSession", "presence.PresenceSettings", "presence.PresencePreference", "operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule", "events.EventCertificateArtwork", "events.EventPage", "bookings.BookingResourcePage", "events.EventTicketType", "events.EventCategory", "bookings.BookableSpacePhoto"}:
             # Preferences can be deleted; unpromoted artwork reservations do not
             # travel. Their immutable audit history still survives projection.

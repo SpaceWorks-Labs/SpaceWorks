@@ -66,10 +66,19 @@ REFERENCE_COLUMNS = {
 
 
 def canonical_owner_q(predicate, makerspace_id):
-    """Compile Lane E's one canonical owner path, excluding global helper rows."""
-    path = predicate.any_paths[0]
-    lookup = path if path in {"pk", "id"} else f"{path}_id"
-    return Q(**{lookup: makerspace_id})
+    """Keep canonical ownership, with the reviewed mixed-handle exception only.
+
+    Other alternative paths describe foreign collaboration/transfer participation,
+    not ownership of a lossless tenant slice.
+    """
+    paths = predicate.any_paths
+    if paths != ("profile__membership__makerspace", "makerspace"):
+        paths = paths[:1]
+    query = Q(pk__in=())
+    for path in paths:
+        lookup = path if path in {"pk", "id"} else f"{path}_id"
+        query |= Q(**{lookup: makerspace_id})
+    return query
 
 
 class _RawValueProxy:

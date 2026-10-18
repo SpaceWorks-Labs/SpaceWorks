@@ -3,6 +3,8 @@ from .module_purge_collectors_single_model import _counts, _delete
 
 
 def events_delete(makerspace, cursor):
+    from .public_page_lifecycle import enqueue_tenant_pages
+    enqueue_tenant_pages(makerspace, events_only=True)
     from apps.events.models_broadcasts import EventBroadcast
     from apps.integrations.models import EmailLog
     # Remove only this domain's source outboxes, including deferred digest inputs.

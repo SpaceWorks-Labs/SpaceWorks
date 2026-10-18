@@ -54,6 +54,9 @@ NON_LITERAL_META_ACTIONS = frozenset({
 
 # Every constant a resolvable dynamic action (``a if x else b``) can produce.
 DYNAMIC_EXACT_ACTIONS = frozenset({
+    "public_page.updated", "public_page.published", "public_page.unpublished",
+    "public_page.handle_claimed", "public_page.handle_released", "public_page.asset_reserved",
+    "public_page.asset_uploaded", "public_page.asset_deleted",
     "backup.destination_created",
     "backup.destination_updated",
     "booking.feed_created",
@@ -111,6 +114,11 @@ DYNAMIC_EXACT_ACTIONS = frozenset({
 # Reviewed namespaces for call sites that take the action from a parameter, an
 # attribute or an f-string (path relative to backend/apps -> denied prefixes).
 WRAPPER_SITE_PREFIXES = {
+    "makerspaces/public_page_services.py": (
+        "public_page.updated", "public_page.published", "public_page.unpublished",
+        "public_page.handle_claimed", "public_page.handle_released", "public_page.asset_reserved",
+        "public_page.asset_uploaded", "public_page.asset_deleted",
+    ),
     "devices/services_events.py": ("devices.",),
     "devices/services_label_events.py": ("devices.",),
     "devices/services_printer_events.py": ("devices.",),

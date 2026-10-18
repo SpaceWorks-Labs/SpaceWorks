@@ -146,3 +146,5 @@ def validate_restored_state(restore_id):
         )
     validate_token_configuration()
     validate_recovery_route_allowlists()
+    from .public_page_verification import verify_public_pages
+    verify_public_pages()

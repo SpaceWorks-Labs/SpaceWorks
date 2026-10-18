@@ -10,8 +10,9 @@ TARGET_GLOBAL = "global"
 TARGET_TENANT_SLUG = "tenant_slug"
 TARGET_TENANT_TOKEN = "tenant_token"
 TARGET_CLIENT_SUBJECT = "client_subject"
+TARGET_PUBLIC_HANDLE = "public_handle"
 TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN,
-                          TARGET_CLIENT_SUBJECT})
+                          TARGET_CLIENT_SUBJECT, TARGET_PUBLIC_HANDLE})
 
 PUBLIC_READ_SCOPES = frozenset({PUBLIC_READ, PUBLIC_ALL})
 PUBLIC_WRITE_SCOPES = frozenset({PUBLIC_WRITE, PUBLIC_ALL})
@@ -35,6 +36,14 @@ _WRITE = ("POST",)
 # target mode, tenant-app admission, legacy-v1 admission). Legacy admission is explicit
 # so adding a route cannot silently widen the frozen cutover capability.
 _ROUTE_DEFINITIONS = (
+    ("public-page-handle", _READ, PUBLIC_READ_SCOPES, TARGET_PUBLIC_HANDLE, True, False),
+    ("public-event-code", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-makerspace-page", "public-makerspace-page-asset",
+    )),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, False) for name in (
+        "public-organization-page", "public-organization-page-asset", "public-organization-makerspaces",
+    )),
     # /api/v1/discover/ is outside HMAC_PROTECTED_PATH_PREFIXES, so "website-discover"
     # must not be registered: an entry there is stale by construction.
     *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False) for name in (

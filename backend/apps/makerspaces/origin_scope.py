@@ -99,6 +99,9 @@ def validate_native_makerspace_scope(request, user, grant):
     url_name, targets, invalid, native_route_allowed = request_route_targets(
         request
     )
+    from .origin_scope_routes_public_pages import GLOBAL_ROUTES
+    if url_name in GLOBAL_ROUTES:
+        raise PermissionDenied("Global organization pages cannot select a makerspace.")
     if invalid or not native_route_allowed:
         raise PermissionDenied('Makerspace target could not be resolved.')
     if targets and targets != {makerspace_id}:
@@ -136,6 +139,12 @@ def require_native_selected_makerspace(request, makerspace_id=None):
 
 
 def staff_origin_scope_allows(request, view=None):
+    from .origin_scope_routes_public_pages import (
+        ORGANIZATION_PAGE_EDITORS, organization_editor_origin_allowed,
+    )
+    match = getattr(request, 'resolver_match', None)
+    if getattr(match, 'url_name', '') in ORGANIZATION_PAGE_EDITORS:
+        return organization_editor_origin_allowed(request)
     scope = staff_origin_scope(request)
     if scope is NO_STAFF_ORIGIN_SCOPE:
         return True

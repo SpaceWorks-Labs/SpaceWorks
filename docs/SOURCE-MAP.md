@@ -474,3 +474,31 @@ using the handwritten contract in `lib/api/staffAccounts.ts`. Password secrets r
 dialog state, outside Query caches/storage. Staff offline rosters, jobs and toasts are context-bound;
 member offline cards/loans retain their separate lifecycle. Tests: `backend/tests/account_split/`
 and frontend `*.accountSplit.test.*`, `sessionContexts.test.ts`, `contextStores.test.ts`.
+
+## Public pages and shared handles
+
+`makerspaces/public_page_*` owns the typed makerspace/organization page contract, authority,
+revision projections, handles, private uploads and cleanup. `public_page_urls.py`,
+`public_page_editor_urls.py` and `public_page_share_urls.py` are attached by `config/urls.py`.
+`events/urls_public_codes.py` supplies venue-targeted short-event reads only while Events is active.
+`organizations/urls_public_page_collections.py` adds linked-space collections; the existing event
+catalogue supplies independent upcoming and minimal past periods.
+
+`accounts/claim_routes_public_pages.py`, `accounts/delegated_routes.py`,
+`apiclients/scope_registry_public_pages.py` and `makerspaces/origin_scope_routes_public_pages.py`
+classify safe reads, full-session editors, tagged tenant/global handles, venue tokens and platform
+organization origins. `tenant_migration/gate_policy_public_pages.py` declares write participation.
+`audit/presentation_catalog_profiles.py` labels page mutations; `presentation_discovery.py` holds
+the closed `finish` wrapper vocabulary exact while keeping its dynamic metadata redacted.
+
+`backup/public_page_registry.py` guards the four portable pointer exceptions, global ownership,
+creator User edges and private object declarations. `backup/public_page_verification.py`,
+`event_page_verification.py` and `event_page_draft_verification.py` check candidate database state
+before deployment/slice restore checkpoints and readable-main verification. They do not fetch
+public content or mutate restored documents. `makerspaces/public_page_lifecycle.py` enlists tenant
+and event asset deletion before purge; the durable cleanup worker retains retry and quota ownership.
+`tenant_migration/page_pointer_fixups.py` retains the separate draft-only portable import protocol.
+
+Edge crawler dispatch lives in `frontend/nginx.conf`, `deploy/Caddyfile.saas` and
+`deploy/Caddyfile.saas-install`; root-segment inventory lives in `public_profile_route_inventory.py`.
+Integration regression files are `backend/tests/public_pages/test_l3_*.py`.

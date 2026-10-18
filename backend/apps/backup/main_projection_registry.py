@@ -66,6 +66,7 @@ EMPTIED_NON_MODEL_TABLES = frozenset(
 INERT_SHELL_BOUNDARIES = frozenset({("accounts.User", "staff_makerspace")})
 
 PROJECT_GLOBAL_BOUNDARIES = frozenset({
+    ("organizations.OrganizationPublicPageRevisionMember", "profile"),
     ("backup.BackupArchive", "makerspace"),
     ("backup.RestoreRollbackObject", "makerspace"),
     ("tenant_migration.TenantImportJob", "target_makerspace"),
@@ -176,7 +177,7 @@ def boundary_rules(rules):
     """Declare every non-owner FK that can point into a sliced table."""
     by_model = {rule.model: rule for rule in rules}
     owner_paths = {
-        rule.model: {rule.predicate.any_paths[0]}
+        rule.model: set(rule.predicate.any_paths)
         for rule in rules
         if rule.disposition == RowDisposition.COPY_TO_SLICE
     }
@@ -263,7 +264,7 @@ def boundary_queryset(rule, using, makerspace_ids):
 def _is_canonical_owner(rule, field):
     return bool(
         rule.predicate is not None
-        and field.name == rule.predicate.any_paths[0].split("__", 1)[0]
+        and field.name in {path.split("__", 1)[0] for path in rule.predicate.any_paths}
     )
 
 

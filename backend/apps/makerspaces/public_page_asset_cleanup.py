@@ -48,7 +48,6 @@ def clean_object(job_id):
     from django.apps import apps
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     snapshot = Cleanup.objects.get(pk=job_id)
-    typed = adapter(snapshot.owner_kind)
     Owner = apps.get_model("makerspaces.Makerspace" if snapshot.owner_kind == "makerspace" else "organizations.Organization")
     with transaction.atomic():
         if snapshot.owner_kind == "makerspace" and Owner.objects.filter(pk=snapshot.owner_id).exists():
@@ -57,9 +56,21 @@ def clean_object(job_id):
         job = Cleanup.objects.select_for_update().get(pk=job_id)
         if job.completed_at or job.due_at > timezone.now():
             return False
-        if typed.asset.objects.filter(object_key=job.object_key).exists():
+        from apps.events.models_website import EventPageAsset
+        from .models_public_pages import MakerspacePublicPageAsset
+        from apps.organizations.models_public_pages import OrganizationPublicPageAsset
+        if (MakerspacePublicPageAsset.objects.filter(object_key=job.object_key).exists()
+                or OrganizationPublicPageAsset.objects.filter(object_key=job.object_key).exists()
+                or EventPageAsset.objects.filter(object_key=job.object_key).exists()):
             return False
         proven = job.object_key.startswith(prefix(job.owner_kind, job.owner_id, job.page_id))
+        if job.owner_kind == "makerspace":
+            proven = proven or job.object_key.startswith(f"events/website/{job.owner_id}/{job.page_id}/")
+            # Whole-tenant deletion removes its import journals too. This exact-key
+            # intent was validated and committed before that graph was removed.
+            if owner is None:
+                from apps.inventory.public_image_storage import is_safe_object_key
+                proven = is_safe_object_key(job.object_key)
         if not proven and job.owner_kind == "makerspace":
             from apps.tenant_migration.models_import_objects import TenantImportObject
             proven = TenantImportObject.objects.filter(target_key=job.object_key, bucket_kind="private",
@@ -98,8 +109,9 @@ def sweep(*, limit=100):
     counts = {"deleted": 0, "skipped": 0}
     for owner_id in MakerspacePublicPage.objects.values_list("makerspace_id", flat=True).iterator():
         with fanout_tenant_write(owner_id, operation="public_page_asset_cleanup", counts=counts) as allowed:
-            if allowed:
-                collect_unattached("makerspace", owner_id)
+            if not allowed:
+                continue
+            collect_unattached("makerspace", owner_id)
     for owner_id in OrganizationPublicPage.objects.values_list("organization_id", flat=True).iterator():
         collect_unattached("organization", owner_id)
     from .models_public_pages import MakerspacePublicPageAsset
@@ -107,13 +119,16 @@ def sweep(*, limit=100):
     due = Cleanup.objects.filter(completed_at__isnull=True, due_at__lte=timezone.now()).exclude(
         object_key__in=MakerspacePublicPageAsset.objects.values("object_key")).exclude(
         object_key__in=OrganizationPublicPageAsset.objects.values("object_key"))
+    from apps.events.models_website import EventPageAsset
+    due = due.exclude(object_key__in=EventPageAsset.objects.values("object_key"))
     for pk in due.order_by("id").values_list("pk", flat=True)[:limit]:
         job = Cleanup.objects.get(pk=pk)
         from .models import Makerspace
         if job.owner_kind == "makerspace" and Makerspace.objects.filter(pk=job.owner_id).exists():
             with fanout_tenant_write(job.owner_id, operation="public_page_asset_cleanup", counts=counts) as allowed:
-                if allowed:
-                    counts["deleted"] += int(clean_object(pk))
+                if not allowed:
+                    continue
+                counts["deleted"] += int(clean_object(pk))
         else:
             counts["deleted"] += int(clean_object(pk))
     return counts

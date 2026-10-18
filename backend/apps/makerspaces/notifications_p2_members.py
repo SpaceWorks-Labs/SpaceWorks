@@ -228,6 +228,7 @@ def notify_member(row, event, *, owner=True, staff=True):
         source_kind=MEMBERSHIP, revision=version,
         owner=row.user if owner else None, owner_body=member_body(row, event, "requester"),
         staff_body=member_body(row, event, "staff"), staff=staff, context={"verification_id": proof_id},
+        owner_context={"subject": bag(id=row.pk, status=row.status)},
         staff_feature="members", staff_stream="membership",
         staff_context=membership_context(row.makerspace, event, user=row.user) if event == "member_joined" else
             {"makerspace": bag(name=row.makerspace.name), "event_name": event,
@@ -246,6 +247,7 @@ def notify_request(row, event):
     feature, stream = routing(row, event)
     return fanout(row=row, space=row.makerspace, feature=feature, stream=stream, event=event,
         source_kind=REQUEST, revision=request_revision(row, event), owner=row.user,
+        owner_context={"request": bag(id=row.pk), "subject": bag(id=row.pk, status=row.state)},
         owner_body=request_body(row, event, "requester"), staff_body=request_body(row, event, "staff"),
         staff_feature="members", staff_stream="membership",
         staff=event != "invitation", staff_context=membership_context(row.makerspace, event, request=row)

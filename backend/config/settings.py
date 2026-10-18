@@ -597,8 +597,8 @@ REMINDER_SWEEP_BATCH_SIZE = env.int("REMINDER_SWEEP_BATCH_SIZE", default=200)
 if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
-# MERGE-RECON(M/P): retain both recovery paths for bootstrap; keep workers and
-# schedulers paused until canonical messaging/push conversion and cutover.
+# Canonical outbox and per-device recovery share the sending cutover fence.
+# Deployment activation remains an explicit operator checkpoint after replay.
 CELERY_BEAT_SCHEDULE = {
     "missing-payment-bills": {
         "task": "apps.payments.tasks.issue_missing_bills_task",

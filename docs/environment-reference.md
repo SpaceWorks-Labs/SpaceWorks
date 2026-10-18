@@ -319,16 +319,17 @@ there; setup creates it once and upgrades must preserve it.
 
 ## Addressed messaging
 
-<!-- MERGE-RECON(G/M): consolidate provider configuration after durable callback/STOP cutover;
-keep both version settings and compatibility callback secrets until mappings/replay are verified. -->
+Canonical Twilio/Meta configuration lives in ChannelConfiguration. Compatibility
+callback verifiers and encrypted retired versions remain available during replay;
+retirement and sending activation require separate operator checkpoints.
 The canonical provider pipeline also uses `WHATSAPP_META_GRAPH_VERSION` (default `v25.0`),
 documented in [the delivery reference](environment-reference-delivery.md). The legacy
-`WHATSAPP_GRAPH_VERSION` below remains separate during bootstrap; neither setting enables a sender.
+`WHATSAPP_GRAPH_VERSION` below remains for retained compatibility helpers; neither setting enables a sender.
 
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `MESSAGING_WEBHOOK_BASE_URL` | empty | Operator-owned absolute externally reachable origin (scheme and host, optional deployment prefix). Required for SMS/WhatsApp notification senders to resolve. Callback paths shown in settings use `/api/v1/integrations/messaging/`. Twilio signatures use this configured base, never forwarded headers. |
-| `WHATSAPP_GRAPH_VERSION` | `v23.0` | Pinned Meta Graph version for template checks and approved-template sends; must match `v<number>.<number>`. |
+| `WHATSAPP_GRAPH_VERSION` | `v23.0` | Retained legacy Meta helper version; canonical sending uses WHATSAPP_META_GRAPH_VERSION; must match `v<number>.<number>`. |
 
 Provider credentials live encrypted in the platform or tenant settings, not environment
 variables. OTP SMS keeps its existing independent platform configuration. Retired callback

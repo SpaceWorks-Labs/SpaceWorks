@@ -1,5 +1,7 @@
 """Stage A: one locked, retried platform departure; identity purge is a later stage."""
 
+from apps.integrations.notification_cutover import guarded
+
 import logging
 from uuid import uuid4
 from datetime import timedelta
@@ -77,6 +79,7 @@ def preview(request):
             "reauth": {"required": required, "methods": methods(request.user)}}
 
 
+@guarded()
 def request_deletion(request):
     user = request.user
     from apps.accounts.account_kind_guards import require_member_account

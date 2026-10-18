@@ -87,6 +87,10 @@ def _platform_route(name):
 
 
 def _delegated(user, targets, name, *, native=False):
+    from apps.accounts.native_session import is_native_session
+    native = native or is_native_session(user)
+    if native:
+        return False
     from apps.accounts.rbac_organizations import _org_actions_for, has_any_org_authority
     from apps.makerspaces.resource_grant_sources import has_authority
     # Organization governance routes have no tenant of their own. Their views check
@@ -112,6 +116,15 @@ def enforce_request(user, token, request):
     match = getattr(request, "resolver_match", None)
     name = getattr(match, "url_name", None)
     classification = route_class(name)
+    from apps.accounts.native_session import is_native_session
+    native = is_native_session(user) or bool(token.get("device_grant_id"))
+    if user.account_kind == "member" and native and (
+        classification == DELEGABLE or name in {
+            "auth-organization-invitation-redeem", "auth-organizations-self-service",
+            "booking-staff-invite-redeem", "event-staff-invite-redeem",
+        }
+    ):
+        raise PermissionDenied("Native member sessions cannot use delegated authority.")
     if classification == SIGNED_PROTOCOL:
         raise PermissionDenied("Provider signature required.")
     if classification == MEMBER_ONLY and user.account_kind != "member":
@@ -149,5 +162,5 @@ def enforce_request(user, token, request):
     if _member_surface_path_allowed(request.path):
         return
     if (classification != DELEGABLE or invalid
-            or not _delegated(user, targets, name, native=bool(token.get("device_grant_id")))):
+            or not _delegated(user, targets, name, native=native)):
         raise PermissionDenied("A delegated authority source is required.")

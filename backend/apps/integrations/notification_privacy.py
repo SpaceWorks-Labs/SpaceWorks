@@ -1,4 +1,5 @@
 """Account/tenant cleanup seams; sender protection and authenticated receipts survive."""
+from django.apps import apps
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -34,6 +35,9 @@ def prepare_channel_purge(makerspace, channel):
 @transaction.atomic
 def scrub_account(user, makerspace_id=None):
     """Use account IDs only: another account kind may share every contact field."""
+    if apps.is_installed("apps.notifications"):
+        from apps.notifications.privacy import scrub_account as scrub_push
+        scrub_push(user, makerspace_id)
     scope = {"makerspace_id": makerspace_id} if makerspace_id is not None else {}
     envelopes = NotificationEnvelope.objects.filter(recipient=user, **scope)
     owned_delivery_ids = NotificationDelivery.objects.filter(envelope__in=envelopes).values_list("pk", flat=True)
@@ -48,28 +52,29 @@ def scrub_account(user, makerspace_id=None):
         revoked_at=timezone.now(), verification_state="revoked")
     # Scrub only account-bound proofs. Provider facts and sender suppressions are
     # deployment history, shared with accounts/tenants using that physical sender.
-    receipts = NotificationIngress.objects.filter(signed_user=user)
+    receipts = NotificationIngress.objects.all()
+    scrubbed_receipts = []
     if makerspace_id is not None:
         receipts = receipts.filter(Q(makerspace_reference=makerspace_id) | Q(makerspace_reference=None))
     for receipt in receipts:
         data = receipt.get_payload()
         proof = (data.get("event") or {}).get("proof")
         legacy_code = data.get("proof_code")
-        if proof or legacy_code:
-            from .notification_proofs import digest
-            challenge_matches = receipt.signed_user_id == user.pk or digest(proof.get("code", "") if proof else legacy_code) in proof_digests
-            if challenge_matches:
-                if proof:
-                    data["event"]["proof"] = None
-                data["proof_code"], data["proof_user_id"], data["destination"] = "", None, ""
-                receipt.signed_user = None
-                receipt.set_payload(data)
-                receipt.save(update_fields=["payload", "signed_user"])
-        elif receipt.signed_user_id == user.pk:
-            data["proof_user_id"] = None
-            receipt.signed_user = None
-            receipt.set_payload(data)
-            receipt.save(update_fields=["payload", "signed_user"])
+        from .notification_proofs import digest
+        proof_code = proof.get("code", "") if proof else legacy_code
+        owns_proof = bool(proof_code and digest(proof_code) in proof_digests)
+        if (receipt.signed_user_id != user.pk and data.get("proof_user_id") != user.pk
+                and not owns_proof):
+            continue
+        scrubbed_receipts.append(receipt.pk)
+        if proof:
+            data["event"]["proof"] = None
+        data["proof_code"], data["proof_user_id"], data["destination"] = "", None, ""
+        receipt.signed_user = None
+        receipt.set_payload(data)
+        receipt.save(update_fields=["payload", "signed_user"])
+    NotificationLegacyMapping.objects.filter(canonical_model="NotificationIngress",
+        canonical_id__in=scrubbed_receipts).update(snapshot="")
     from .models_messaging_consent import MessagingConsent
     from .models_messaging_delivery import MessagingDelivery
     consent_ids = MessagingConsent.objects.filter(user=user, **scope).values_list("pk", flat=True)
@@ -80,7 +85,7 @@ def scrub_account(user, makerspace_id=None):
         | Q(canonical_model="NotificationDelivery", canonical_id__in=owned_delivery_ids)).update(snapshot="")
     from apps.audit.services import record
     record(user, "notification.account_scrubbed", makerspace=envelopes.first().makerspace if envelopes.exists() else None,
-        meta={"fields": ["message_body", "context", "routing_snapshot", "proof", "snapshot"]})
+        meta={"fields": ["message_body", "context", "routing_snapshot", "proof", "snapshot", "inbox", "push_children"]})
 
 
 @guarded(mutation=True)

@@ -34,8 +34,9 @@ def runtime_subject_query(model, user, makerspace_id):
             Q(makerspace_id=makerspace_id) | Q(makerspace__isnull=True),
         )
     if label == "notifications.MemberPushDelivery":
-        return model.objects.filter(inbox_row__user=user,
-                                    inbox_row__makerspace_id=makerspace_id)
+        return model.objects.filter(envelope_delivery__envelope__recipient=user,
+                                    envelope_delivery__makerspace_id=makerspace_id,
+                                    envelope_delivery__envelope__makerspace_id=makerspace_id)
     if label == "integrations.PushDeliveryAttempt":
         return model.objects.filter(recipient=user, delivery_log__makerspace_id=makerspace_id)
     return model.objects.none()

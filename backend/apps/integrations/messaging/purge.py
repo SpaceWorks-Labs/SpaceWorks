@@ -1,6 +1,7 @@
 """Channel-only purge preserves shared phone/alias protection and the other rail."""
 from contextlib import contextmanager
 
+from django.apps import apps
 from django.db import connection, transaction
 
 from apps.integrations.models import (
@@ -35,6 +36,10 @@ def purge_channel(makerspace, channel):
     counts = {}
     with consent_purge():
         counts["messaging_consents"] = MessagingConsent.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
+    from apps.integrations.models_contract import NotificationDelivery
+    from apps.integrations.models_endpoints import ChannelConfiguration
+    counts["canonical_deliveries"] = NotificationDelivery.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
+    counts["channel_configurations"] = ChannelConfiguration.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
     counts["messaging_deliveries"] = MessagingDelivery.objects.filter(makerspace=makerspace, channel=channel).delete()[0]
     MessagingWebhookEvent.objects.filter(makerspace=makerspace, channel=channel).delete()
     values = ({"sms_account_sid": "", "sms_auth_token": "", "sms_from_number": "", "sms_sender_key": None}
@@ -56,11 +61,17 @@ def whatsapp_delete(makerspace, cursor):
 
 @guarded(mutation=True)
 def purge_user(user, makerspace_id):
+    if apps.is_installed("apps.notifications"):
+        from apps.notifications.privacy import scrub_account as scrub_push
+        scrub_push(user, makerspace_id, purge=True)
     from apps.integrations.notification_privacy import scrub_account
     scrub_account(user, makerspace_id)
     with consent_purge():
         MessagingConsent.objects.filter(user=user, makerspace_id=makerspace_id).delete()
     MessagingDelivery.objects.filter(user=user, makerspace_id=makerspace_id).delete()
+    from apps.integrations.models_endpoints import NotificationEndpoint, NotificationEndpointChallenge
+    NotificationEndpointChallenge.objects.filter(user=user, makerspace_id=makerspace_id).delete()
+    NotificationEndpoint.objects.filter(user=user, makerspace_id=makerspace_id).delete()
 
 
 @guarded(mutation=True)

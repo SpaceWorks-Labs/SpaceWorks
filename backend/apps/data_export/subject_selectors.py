@@ -24,7 +24,7 @@ SUBJECT_PATHS = {
     "integrations.MessagingConsent": ("user",),
     "integrations.MessagingDelivery": ("user",),
     "accounts.DeviceActivityDay": ("grant__user",),
-    "notifications.MemberPushDelivery": ("inbox_row__user",),
+    "notifications.MemberPushDelivery": ("envelope_delivery__envelope__recipient",),
     "integrations.PushDeliveryAttempt": ("recipient",),
     "operations.SavedView": ("owner",),
     "apiclients.ApiKeyRequest": ("requester",),

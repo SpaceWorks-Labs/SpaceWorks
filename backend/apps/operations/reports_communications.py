@@ -50,13 +50,13 @@ def _push(space, grain, date_range):
             sent=Count("pk", filter=Q(status="sent")), failed=Count("pk", filter=Q(status="failed") & ~invalid),
             invalid=Count("pk", filter=invalid), skipped=Count("pk", filter=Q(status="skipped")),
             pending=Count("pk", filter=Q(status="pending")), sending=Count("pk", filter=Q(status="sending")),
-            held=Count("pk", filter=Q(status="held")), attempts=Sum("attempts"), last=Max("created_at")):
+            held=Count("pk", filter=Q(status="held")), canceled=Count("pk", filter=Q(status="canceled")), attempts=Sum("attempts"), last=Max("created_at")):
             rows.append(messaging_row("native_push", module_key="mobile", period=cohort["period"].date().isoformat(),
                 feature=cohort["safe_feature"], provider_source=cohort["source"], platform=cohort["device_platform"],
                 audience=cohort.get("safe_audience", "staff"), triggered_count=cohort["count"], delivery_count=cohort["count"],
                 attempt_count=cohort["attempts"] or 0, sent_count=cohort["sent"], sent_only_count=cohort["sent"],
                 failed_count=cohort["failed"], invalid_count=cohort["invalid"], skipped_count=cohort["skipped"],
-                pending_count=cohort["pending"], sending_count=cohort["sending"], held_count=cohort["held"], last_activity_at=cohort["last"]))
+                pending_count=cohort["pending"], sending_count=cohort["sending"], held_count=cohort["held"], canceled_count=cohort["canceled"], last_activity_at=cohort["last"]))
     return rows
 
 

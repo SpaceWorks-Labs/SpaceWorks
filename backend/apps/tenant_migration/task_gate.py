@@ -16,6 +16,11 @@ class TenantGateTask(Task):
     abstract = True
 
     def __call__(self, *args, **kwargs):
+        from apps.integrations.notification_cutover import boundary
+        with boundary():
+            return self._dispatch(*args, **kwargs)
+
+    def _dispatch(self, *args, **kwargs):
         resolver = TASK_TENANT_RESOLVERS.get(self.name)
         makerspace_id = (
             _resolve_makerspace_id(resolver, args, kwargs)

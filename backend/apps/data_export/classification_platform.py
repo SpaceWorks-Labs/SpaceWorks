@@ -23,7 +23,7 @@ OMITTED_MODELS = {
     "accounts.PlatformAttestationSettings": "Platform attestation credentials; never tenant data.",
     "accounts.ReauthenticationSession": "Deployment-local browser step-up proof; never tenant authority.",
     "notifications.NotificationInboxRow": "Short-lived personal delivery text and read telemetry; target inbox starts empty.",
-    "notifications.MemberPushDelivery": "Tenant delivery telemetry through inbox_row.makerspace; inbox and live device destinations are omitted on the target.",
+    "notifications.MemberPushDelivery": "Per-device telemetry owned through envelope_delivery.makerspace and its envelope recipient; optional inbox linkage grants no authority and all push rows are omitted on the target.",
     "integrations.EmailSuppression": "Deployment-keyed address suppression must be re-established on the target.",
     "makerspaces.SpacePackProfile": "Deployment-global configuration preset, never tenant-owned or tenant authority.",
     "accounts.UserMFA": "Platform MFA credentials never become target authority.",

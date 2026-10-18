@@ -71,7 +71,7 @@ def claim(delivery_id):
             return None
         if row.claim_until and row.claim_until > now:
             return None
-        if row.claim_until and row.claim_until <= now and row.channel in {"sms", "whatsapp"}:
+        if row.claim_until and row.claim_until <= now and row.channel in {"sms", "whatsapp", "native_push"}:
             row.state, row.retryable, row.last_error = "held", False, "unknown_provider_outcome"
             row.save(update_fields=["state", "retryable", "last_error", "updated_at"])
             return None
@@ -177,9 +177,6 @@ def finish_skipped(pk, reason):
 
 
 def record_result(row, result):
-    if result.error_code == "skipped":
-        finish_skipped(row.pk, "transport_suppressed")
-        return Delivery.objects.get(pk=row.pk)
     with transaction.atomic():
         current = Delivery.objects.select_for_update().get(pk=row.pk)
         if current.attempt_count != row.attempt_count:
@@ -187,13 +184,20 @@ def record_result(row, result):
         # A callback can win the race with the send response.
         if current.state in SUCCESS or (current.state == "failed" and not current.retryable):
             return current
+        # A sweep can quarantine this very attempt while its provider call is
+        # still running. Only proved success from that attempt can settle it.
+        if current.state == "held" and not result.accepted:
+            return current
+        if result.error_code == "skipped":
+            finish_skipped(current.pk, "transport_suppressed")
+            return Delivery.objects.get(pk=current.pk)
         if current.provider == "meta" and current.provider_id and current.claim_until is None:
             # A transient callback already scheduled this attempt's retry.
             return current
         current.claim_until = None
         current.provider_id = result.provider_id or current.provider_id
         current.ambiguous_count += int(result.ambiguous)
-        addressed_hold = result.ambiguous and current.channel in {"sms", "whatsapp"}
+        addressed_hold = result.ambiguous and current.channel in {"sms", "whatsapp", "native_push"}
         retry = result.retryable and not addressed_hold and current.attempt_count < MAX_ATTEMPTS and current.ambiguous_count < 2
         current.state = ("sent" if current.provider == "builtin" else "accepted") if result.accepted else "retrying" if retry else "failed"
         current.retryable = bool(retry and not result.accepted)

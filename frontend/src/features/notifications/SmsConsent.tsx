@@ -3,9 +3,9 @@ import { ErrorBlock, StatusPill } from "../../components/ui";
 import { MemberPhoneVerification } from "../members/MemberPhoneVerification";
 import { useSaveSmsConsent, useSmsConsent } from "./smsConsentApi";
 
-export function SmsConsent({ makerspaceId }: { makerspaceId: number }) {
-  const settings = useSmsConsent(makerspaceId);
-  const save = useSaveSmsConsent(makerspaceId);
+export function SmsConsent({ makerspaceId, member = true }: { makerspaceId: number; member?: boolean }) {
+  const settings = useSmsConsent(makerspaceId, true, member);
+  const save = useSaveSmsConsent(makerspaceId, member);
   const [verify, setVerify] = useState(false);
   if (settings.isLoading) return <p role="status">Loading SMS consent…</p>;
   if (settings.error || !settings.data) return <ErrorBlock error={settings.error ?? new Error("Couldn't load SMS consent.")}
@@ -18,8 +18,9 @@ export function SmsConsent({ makerspaceId }: { makerspaceId: number }) {
     <p className="text-sm text-muted">Phone: {sms.phone_masked || "No phone linked"}</p>
     {!sms.available ? <p className="text-sm text-muted">This space has no available SMS sender. You can still withdraw consent.</p> : null}
     {sms.suppressed ? <p className="text-sm text-warn-ink">You replied STOP. Explicitly subscribing again lifts the block for this sender.</p> : null}
-    {!sms.phone_verified ? <button type="button" className="desk-button w-fit" onClick={() => setVerify(value => !value)}>Verify your phone first</button> : null}
-    {verify ? <MemberPhoneVerification /> : null}
+    {member && !sms.phone_verified ? <button type="button" className="desk-button w-fit" onClick={() => setVerify(value => !value)}>Verify your phone first</button> : null}
+    {member && verify ? <MemberPhoneVerification /> : null}
+    {!member && !sms.phone_verified ? <p className="text-sm text-muted">SMS requires a verified phone on this staff account. Member phone verification cannot verify a staff account.</p> : null}
     <label className="flex min-h-11 items-center gap-2 text-sm">
       <input type="checkbox" className="h-4 w-4" checked={sms.consented}
         disabled={save.isPending || (!sms.consented && (!sms.available || !sms.phone_verified))}

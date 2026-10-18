@@ -1,7 +1,7 @@
 """Messaging history/configuration disclosure was reviewed independently of the rail."""
 EXPORTED_FIELDS = {
     "integrations.WhatsAppTemplateBinding": "id makerspace feature event audience business_account_id template_name language parameters is_active needs_review",
-    "integrations.MessagingConsent": "id makerspace user channel action phone_e164 phone_verified_at source lifted_suppression_id created_at",
+    "integrations.MessagingConsent": "id makerspace user channel action phone_e164 phone_verified_at source lifted_suppression_id created_at sender_key configuration_generation endpoint",
 }
 OMITTED_MODELS = {
     "integrations.PlatformWhatsAppSettings": "Deployment-wide provider credentials never travel.",

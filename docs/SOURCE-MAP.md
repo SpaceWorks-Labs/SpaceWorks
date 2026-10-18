@@ -8,9 +8,9 @@
 
 ## Current source map (real paths)
 
-<!-- MERGE-RECON(G/M/P/R/U): the bootstrap retains both source families below. Canonical delivery
-is the envelope/configuration/provider pipeline indexed in SOURCE-MAP-NOTIFICATIONS.md. Port addressed
-protections and reports, map legacy push/history and consolidate UI before retiring duplicate runtimes. -->
+Canonical personal delivery uses the envelope/configuration/provider pipeline in
+SOURCE-MAP-NOTIFICATIONS.md. Addressed enqueue/worker compatibility shims are inert;
+legacy schema remains for replay and separately approved retirement.
 
 Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
 `bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion

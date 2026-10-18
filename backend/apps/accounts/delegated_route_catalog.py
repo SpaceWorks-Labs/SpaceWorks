@@ -202,7 +202,6 @@ MEMBER_ROUTES = frozenset("""
 auth-account-deletion auth-account-restore-email auth-account-restore-phone
 auth-account-restore-social-start auth-account-restore-social-complete
 auth-reauth-phone-start auth-reauth-phone-confirm auth-reauth-social-factor
-member-messaging member-messaging-consent
 """.split())
 
 PLATFORM_ONLY_ROUTES = frozenset("""
@@ -221,4 +220,4 @@ messaging-twilio-platform-status messaging-twilio-platform-inbound
 messaging-twilio-status messaging-twilio-inbound messaging-meta-platform messaging-meta
 """.split())
 
-SHARED_ROUTES |= {"auth-logout-all"}
+SHARED_ROUTES |= {"auth-logout-all", "member-messaging", "member-messaging-consent"}

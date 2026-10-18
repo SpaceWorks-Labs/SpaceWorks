@@ -10,6 +10,8 @@ whatsapp-twilio-inbound whatsapp-twilio-status notification-slack-oauth
 notification-slack-inbound notification-mattermost-oauth notification-mattermost-inbound
 notification-discord-oauth notification-discord-inbound stripe-connect-webhook
 stripe-connect-callback stripe-webhook razorpay-webhook
+messaging-twilio-platform-status messaging-twilio-platform-inbound
+messaging-twilio-status messaging-twilio-inbound messaging-meta-platform messaging-meta
 """.split())
 
 NON_ACCOUNT_ROUTES = frozenset("""

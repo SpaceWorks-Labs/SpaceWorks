@@ -184,3 +184,23 @@ provider/route mounting; provider source files alone do not imply a mounted inte
 `ChannelTestSend.tsx`, `ConnectChannel.tsx`, `MyNotificationSettings.tsx`, `PersonalChannels.tsx`,
 `WhatsAppTemplatesEditor.tsx`, `channelCatalog.ts`, `channelsApi.ts`.
 
+
+## Reconciled history, privacy and reporting
+
+`integrations/models_cutover.py` stores the closed-by-default cutover, encrypted
+receipt journal/mappings/credential versions and physical provider references.
+`notification_cutover.py` owns the processing fence and operator checkpoints;
+`notification_ingress.py` commits protection before optional tenant writes.
+`notification_privacy.py` calls `notifications/privacy.py` before clearing envelope
+context. Account discovery and push reports use the canonical envelope parent.
+`notifications/envelope_push_leases.py` and `envelope_push_transport.py` own device
+claims and fenced completion; `inbox.write_envelope_inbox` never enqueues push.
+`integrations/notification_projection.py` projects allowlisted scalar template keys;
+workflow adapters retain independent source/revision and audience checks.
+`operations/reports_communications.py` is the communications-health builder;
+`integrations/reports_communications.py` is its lazy compatibility delegate.
+`reports_notification_facts.py` reads inert mapping history without counting a second
+send; `reports_push_facts.py` reads device children through their delivery parent.
+Report versions: communications 4; platform services/module health 3; mobile device/auth 2.
+Frontend `MyNotificationSettings` composes canonical settings, proofs, preferences,
+SMS consent and diagnostics for separate staff/member contexts.

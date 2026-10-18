@@ -114,6 +114,8 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "machines" / "access.py",
     APPS_DIR / "bookings" / "booking_authority.py",
 )
+from .authority_reconciliation import SOURCE_PATHS, AUTHORITY_FIELDS as RECONCILIATION_FIELDS
+AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in SOURCE_PATHS)
 SCANNED_MODEL_LABELS = frozenset({
     "makerspaces.MembershipAdditionalRole",
     "machines.MembershipMachineTypeScope",
@@ -127,6 +129,7 @@ SCANNED_MODEL_LABELS = frozenset({
 
 
 EXPLICIT_AUTHORITY_FIELDS = {
+    **RECONCILIATION_FIELDS,
     ("makerspaces.MakerspaceMembership", "renewal_cancelled_at"): (
         "Historical cancellation stops source renewal; target automation resets independently."
     ),

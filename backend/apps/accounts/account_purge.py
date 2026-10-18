@@ -1,5 +1,7 @@
 """Stage B: one tenant boundary per scrub, platform identity last."""
 
+from apps.integrations.notification_cutover import guarded
+
 import logging
 from uuid import uuid4
 
@@ -26,6 +28,7 @@ def recorded_address(user):
     return decrypt_value(user.deletion_email_ciphertext) if user.deletion_email_ciphertext else user.email
 
 
+@guarded()
 def purge_account(user_id, counts):
     # This global-only preparation commits before acquiring any tenant locks.
     # It also recovers departures recorded before Stage B was installed.

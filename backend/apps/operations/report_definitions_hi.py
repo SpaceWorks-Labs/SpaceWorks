@@ -32,6 +32,7 @@ _COMMUNICATION_CHART["values"] = [
     {"field": field, "unit": unit, "kind": "line"} for field, unit in (
         ("sent_count", "deliveries"), ("invalid_count", "deliveries"),
         ("bounced_count", "events"), ("complained_count", "events"),
+        ("held_webhook_count", "receipts"), ("abandoned_webhook_count", "receipts"),
         ("inbox_created_count", "inbox rows"), ("inbox_read_count", "inbox rows"),
         ("delivery_rate", "ratio"), ("read_rate", "ratio"),
     )

@@ -77,7 +77,7 @@ def finish_reminder(space, reminder, now, result):
 
 def fanout(*, row, space, feature, stream, event, source_kind, revision,
            owner=None, owner_body=None, staff_body=None, context=None, scope=None,
-           staff=True, rooms=True, staff_context=None, staff_feature=None, staff_stream=None):
+           staff=True, rooms=True, staff_context=None, staff_feature=None, staff_stream=None, owner_context=None):
     """Call inside the domain transaction; repeat calls reserve the same intent."""
     from apps.integrations import recipients
     from apps.integrations.destinations import NotificationScope
@@ -89,11 +89,14 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
     if not is_servable(space):
         return NotificationResult(False)
     context = context or {}
+    from apps.integrations.notification_projection import addressed_context
+    owner_values = {**addressed_context(space, feature, event, "requester", owner_context), **context}
     scope = scope or NotificationScope()
     # Account notices can retain a separate community staff summary. Its
     # recipients, module gate and matrix must continue to use that category.
     staff_feature = staff_feature or feature
     staff_stream = staff_stream or stream
+    staff_values = {**addressed_context(space, staff_feature, event, "staff", staff_context), **context}
     key = identity(space.pk, source_kind, row.pk, revision, event)
     envelopes = []
     # The domain owner is explicit, and may have no membership at all.
@@ -104,7 +107,7 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
         envelopes.append(emit(makerspace=space, recipient=owner, feature=feature,
             stream=stream, event=event, audience="requester", source_kind=source_kind,
             source_id=row.pk, subject=row, revision=revision, scope=scope,
-            dedup_key=f"p2:{key}:u:{owner.pk}", context=context, rendered=owner_body))
+            dedup_key=f"p2:{key}:u:{owner.pk}", context=owner_values, rendered=owner_body))
     staff_ids = staff_user_ids_for_feature(space, staff_feature, event, scope) if staff else []
     for account in User.objects.filter(pk__in=staff_ids).order_by("pk"):
         if owner is not None and owner.pk == account.pk and envelopes:
@@ -112,7 +115,7 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
         envelopes.append(emit(makerspace=space, recipient=account, feature=staff_feature,
             stream=staff_stream, event=event, audience="staff", source_kind=source_kind,
             source_id=row.pk, subject=row, revision=revision, scope=scope,
-            dedup_key=f"p2:{key}:u:{account.pk}", context=context,
+            dedup_key=f"p2:{key}:u:{account.pk}", context=staff_values,
             rendered=staff_body or body("Space Works", "A staff update is available.")))
     if staff and rooms and staff_body and space.staff_notifications_enabled:
         from apps.integrations.chat_templates import render_chat_text

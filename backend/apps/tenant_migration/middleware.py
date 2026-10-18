@@ -31,6 +31,11 @@ class SourceMigrationGateMiddleware:
     def __call__(self, request):
         if request.method in SAFE_METHODS:
             return self.get_response(request)
+        from apps.integrations.notification_cutover import boundary
+        with boundary():
+            return self._write(request)
+
+    def _write(self, request):
         try:
             match = resolve(request.path_info)
         except Resolver404:

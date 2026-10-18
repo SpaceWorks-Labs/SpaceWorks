@@ -58,6 +58,9 @@ SECONDARY_FIELDS += _fields("integrations.NotificationEndpoint", ("destination",
                             "makerspace_id", "secondary", ((None, None), ("none", "none")))
 SECONDARY_FIELDS += _fields("integrations.NotificationEndpointChallenge", ("candidate_destination",),
                             "makerspace_id", "secondary", ((None,), ("none",)))
+# Cutover ingress.payload, legacy_mapping.snapshot and credential_version.credentials
+# use deployment encrypt_value/decrypt_value in models_cutover. They deliberately
+# stay outside scoped PII backfill: receipts/verifiers must survive tenant purge.
 ALL_FIELDS = SOURCE_FIELDS + SECONDARY_FIELDS
 BY_MODEL = {}
 for _field in ALL_FIELDS:

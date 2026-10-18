@@ -11,8 +11,9 @@ def _delete_channel(makerspace, channel):
     # empty queryset so an import's FK-free provenance is removed as well.
     labels = {
         "integrations.MessagingConsent", "integrations.MessagingDelivery",
-        "integrations.MessagingWebhookEvent", "integrations.MessagingSenderIdentity",
-        "integrations.MessagingSenderCredential",
+        "integrations.MessagingWebhookEvent", "integrations.NotificationDelivery",
+        "integrations.ChannelConfiguration", "integrations.NotificationEndpoint",
+        "integrations.NotificationEndpointChallenge",
     }
     if channel == "whatsapp":
         labels.add("integrations.WhatsAppTemplateBinding")

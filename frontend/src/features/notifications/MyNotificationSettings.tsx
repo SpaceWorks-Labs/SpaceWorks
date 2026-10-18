@@ -23,7 +23,7 @@ const RETURN_KEYS = ["notify_challenge", "code", "state", "error", "error_descri
 export function MyNotificationSettings({ makerspaceId, member = false }: { makerspaceId: number; member?: boolean }) {
   const preferences = usePreferences(makerspaceId, member);
   const endpoints = useEndpoints(makerspaceId, member);
-  const smsConsent = useSmsConsent(makerspaceId, member);
+  const smsConsent = useSmsConsent(makerspaceId, true, member);
   const verify = useVerifyChallenge(makerspaceId, member);
   const install = useCompleteSlackInstall(makerspaceId);
   const [search, setSearch] = useSearchParams();
@@ -59,7 +59,7 @@ export function MyNotificationSettings({ makerspaceId, member = false }: { maker
     {verify.isSuccess ? <p role="status" className="text-sm text-muted">Connected.</p> : null}
     {install.isError ? <p role="alert">Couldn't install Slack: {install.error.message}</p> : null}
     {install.isSuccess ? <p role="status">Slack app installed. You can now enable personal messages in channel settings.</p> : null}
-    {member ? <SmsConsent makerspaceId={makerspaceId} /> : null}
+    <SmsConsent makerspaceId={makerspaceId} member={member} />
     <section aria-label="Connected channels" className="grid min-w-0 gap-3">
       <h3 className="title-section">Your channels</h3>
       <PersonalChannels makerspaceId={makerspaceId} channels={chat} member={member} />

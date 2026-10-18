@@ -12,11 +12,11 @@
 The load-bearing rules, grouped by area. These were established across many shipped batches and matter
 beyond any single module. Read the subsection covering what you are touching.
 
-<!-- MERGE-RECON(G): this bootstrap is nondeployable; finalize these contracts after lane verification. -->
 The mobile reconciliation retains immutable member/staff/platform kinds and the development-only
 `0032_account_context` role reset; no authority-preserving live-data reset is authorized. T's envelopes,
-channel configurations and Twilio/Meta providers own the final delivery pipeline. O's addressed sender,
-consent, STOP, callback, template and analytics protections must be ported before duplicate retirement.
+channel configurations and Twilio/Meta providers own the final delivery pipeline. Addressed sender,
+consent, STOP, callback, template and analytics protections run through that pipeline. Legacy schema
+and compatibility ingress remain until separately verified destructive retirement.
 Workers/schedulers stay stopped until durable ingress, conversion, replay and activation checkpoints pass.
 
 ## Account kinds (member / staff / platform)
@@ -1821,45 +1821,28 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   stale rows for an uninstalled module fall back rather than mute. Native push is filtered by the same
   selection, which is why `dispatch_channel` stores the scope on the log — push resolves recipients at
   DELIVERY time and would otherwise match nothing.
-<!-- MERGE-RECON(P): convert every legacy push row to an envelope-delivery parent before retirement.
-The final contract permits push without an inbox/module; terminal rows stay inert, unattempted rows
-are canceled/revalidated, and ambiguous attempted or expired-lease rows are held without blind resend.
-The following describes the retained legacy runtime pending that conversion. -->
-- **Legacy member push is coupled to personal inbox rows.** Only newly created
-  `NotificationInboxRow.audience=member` rows enqueue `deliver_member_push` after commit;
-  the tenant and personal `in_app` switches must therefore have admitted the inbox row.
-  A requester who is also staff gets one member-audience row with requester wording.
-  Existing rows backfill to `staff`. Scope snapshots contain only validated positive
-  `machine_id`, `machine_type_id` and `category_id` values for requester-selection rechecks.
-  Delivery rechecks `mobile.push`, the tenant `(feature, native_push)` matrix cell,
-  platform credentials, tenant servability, source module availability, the notifications
-  module and `notifications.member_inbox`. These global gates leave delivery rows unchanged.
-  Recipient gates recheck `inbox.eligible_owner`, an **active local membership** (account-only
-  inbox readers do not qualify for push), `receives_notifications`, scoped requester
-  selection and personal `native_push`. Each device must be active in that makerspace,
-  owned by the recipient, with an active matching grant and approved global registration.
-  Recipient/device failures create or mark retryable per-device work `skipped`.
-  The title is the makerspace name (64 characters); the body is the normally decrypted
-  row summary (178 characters), never the staff `LifecyclePayload.text`.
-  `MemberPushDelivery` is unique per inbox row/device, omitted from portable exports like
-  inbox telemetry, and cascades with its inbox row/device; it has no direct User FK.
-  Claims atomically admit `pending`/`failed` or **expired `sending`**, require attempts < 5,
-  increment attempts and set a fresh UUID token plus a two-minute lease. Completion is
-  fenced by that token; stale workers cannot overwrite a newer attempt. Transient failures
-  back off; invalid tokens deactivate the device and exhaust the delivery budget. A
-  five-minute sweep recovers retryable and expired work in beat and the beat-less runner,
-  inside per-tenant source-gate boundaries. Provider calls never span an application DB
-  transaction. **Best-effort with possible duplicates**: provider acceptance can precede a
-  worker crash before `sent` is recorded. Enqueue failure or exhausted retries preserve
-  the readable inbox row. Staff retain their independent matrix push path.
-- **Native push payload v2 is shared by staff and member delivery.** String-valued data
-  carries `v=2`, stable `event_id`, `makerspace_id`, `feature`, `event`, and member-only
-  `inbox_row_id`. Member identity is the inbox event UUID; staff logs persist the lifecycle
-  event key in their payload (older logs fall back to their stable log ID). Both titles
-  name the makerspace. A `link` is included only after `inbox.safe_link` **and** the existing
-  `integrations.mobile_link_contract.is_supported_link` accept it; otherwise apps fall
-  back to the makerspace inbox. APNs adds `aps.thread-id=makerspace_id`; there are no
-  collapse semantics. Both paths use the same one-device FCM/APNs sender.
+- **Canonical native push belongs to an envelope delivery.** Each native-push
+  `NotificationDelivery` owns `MemberPushDelivery` children unique per parent/device.
+  The optional inbox FK uses SET_NULL; creating an inbox row never starts push.
+  Current source revision, separate account kind/generation, fixed staff tenant or
+  proved member/requester tie, recipient selection, intersected personal policy,
+  device/grant/registration and `mobile.push` are rechecked before provider I/O.
+  Membership and the inbox module are not required for account-only source owners.
+  Tombstoning the notifications app removes its registered push adapter.
+  A UUID lease fences each device result. Expired leases and ambiguous provider
+  outcomes are held without email fallback or blind resend. A proved completion
+  from the original fenced worker may settle its own held attempt. Account cleanup
+  cancels outstanding children, clears leases and redacts original mappings before
+  clearing envelope ownership metadata. Inbox-only purge retains push history.
+  Conversion maps every original child and preserves exact original snapshots:
+  terminal history stays inert, untouched pending work is canceled, and attempted
+  pending/sending/expired work is held. Sending activation and destructive retirement
+  remain separate operator checkpoints after replay and reconciliation.
+- **Native push payload v2 carries string values.** It contains `v=2`,
+  `event_id=uuid5(NAMESPACE_URL, envelope.dedup_key)`, tenant, feature and event;
+  `inbox_row_id` is optional. The body is rendered personal content. Local links
+  must pass both the inbox sanitizer and native link contract. APNs thread ID is
+  the tenant. Retained legacy staff logs keep their stable event/log identifiers.
 - **`NotificationDestination` — one row per room, and `[None]` means the legacy column.**
   `destinations.resolve_destinations` returns rows **or the single sentinel `None`**, which every sender
   already handles. No rows for a channel ⇒ `[None]` ⇒ byte-for-byte the old behaviour, which is what makes
@@ -5441,9 +5424,9 @@ releases would therefore not just lose history, it would eventually strand that 
 
 ## Addressed messaging channels
 
-<!-- MERGE-RECON(M): port the protections below into canonical envelopes/configuration/providers;
-retain legacy models/history/import helpers until durable compatibility ingress, the shared processing
-barrier, mappings and callback/STOP replay are verified. Do not activate a second send loop. -->
+Canonical `NotificationEnvelope`/`NotificationDelivery` and `ChannelConfiguration`
+own addressed sending. Old addressed enqueue/worker APIs are inert shims; historical
+models and compatibility callbacks remain until separately approved retirement.
 
 SMS and WhatsApp address a verified person, never a room destination. Their independent
 `sms` and `whatsapp` modules and matrix cells default off. Their availability checks
@@ -5527,15 +5510,16 @@ tests require settings authority and target only the caller's own verified/conse
 phone; settings authority authorizes that test recipient, while the selected event must
 still pass feature/matrix gates, consent and sender protections.
 
-A unique (makerspace, event_key, user, channel) outbox key prevents duplicate lifecycle
-fan-out. reserve_quota runs only in the creating transaction and records quota_reserved_at;
+A source-backed envelope deduplication key and one channel leg per intent prevent duplicate
+lifecycle fan-out. Quota reservation records quota_reserved_at exactly once;
 retries, duplicate enqueue and crash recovery never spend again. Managed sms/whatsapp
-limits count logical messages, including eligible test sends. Claims use one conditional
-UPDATE with attempts < max_attempts and a fresh token/90-second lease. Completion is
-fenced by that token, and acceptance never lowers observed webhook progress. Source-gate
+limits count logical messages, including eligible test sends. Canonical claims use short locking transactions and a four-attempt budget. Expired
+addressed leases and ambiguous outcomes become held. Per-device push additionally
+fences completion by its UUID token; acceptance never lowers observed webhook progress. Source-gate
 protection spans provider I/O using a dedicated boundary, not a long SQL transaction.
 
-Tenant mutations acquire the source gate FIRST (reusing any existing boundary), then the
+Tenant mutations acquire the shared cutover boundary, then the source gate (reusing
+any existing same-tenant boundary), then the
 WhatsApp sender lock, then delivery/correlation rows; callback event rows precede delivery
 rows. Consent uses gate -> sender -> tenant -> User -> suppression/correlation rows;
 recovery and STOP consent annotations follow the same gate-before-sender order.
@@ -5545,8 +5529,7 @@ uses the submitted phone hash and provider message ID
 or echoed delivery ID, never the user's later phone. Alias confirmation is atomic with its
 mapping; phone-only confirmation requires no unmapped alias suppression. An ambiguous
 probe is never resubmitted, including after a worker crashes with an expired probe lease.
-Only explicit provider rejections may retry a probe. Ordinary correlated sends remain
-at least once. A new unmapped STOP blocks alias-unknown pairs until re-consent. Concurrent
+Only explicit provider rejections may retry a probe. Ambiguous ordinary sends also remain held until evidence resolves the outcome. A new unmapped STOP blocks alias-unknown pairs until re-consent. Concurrent
 workers and platform-sharing tenants cannot submit a second probe before confirmation.
 
 Twilio callbacks admit form bodies only and validate every repeated parameter using the
@@ -5563,10 +5546,19 @@ Twilio error protection and its server-owned inbox payload marker commit togethe
 the gated status transaction. The hashed status recipient also protects early callbacks
 before delivery correlation. Status retries never replay that protection after re-consent.
 
-Both beat and run_scheduled_tasks run messaging-recovery every five minutes. Recovery
-bounds pending/sending age at seven days, enforces attempts_exhausted, expires waiting
-probes at 72 hours, retries status events for 30 days, and audits abandonment. Retention
+Beat and run_scheduled_tasks recover the canonical outbox and durable ingress. Replay
+uses original receipt/provider time, never recovery time. Unresolved receipts back off
+and remain held; recovery never retries a held send to discover its outcome. Retention
 uses derived status: failed deliveries 365 days, other terminal outcomes 90 days from
 creation; processed/abandoned webhook events 30 days after processing/abandonment. Provider
 timestamps are never invented; delivery/read wins in either failure order and billed
 segments remain distinct. Operator setup and exact versioned routes: messaging-channels.md.
+
+Staff SMS consent uses the same core own-account endpoints, restricted to an active
+staff account's fixed tenant and its own verified phone. Member phone linking cannot
+verify a separate staff account. Platform accounts cannot grant tenant consent.
+Explicit canonical channel enables lift the same account/category/channel's legacy
+false preference in the same transaction; conversion never clears an opt-out.
+Communications reporting is read-only over canonical delivery facts and immutable
+legacy mappings; email and push are counted once from physical/device ledgers.
+Held sends, held ingress and original abandoned-receipt cohorts remain distinct.

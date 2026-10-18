@@ -81,6 +81,8 @@ def _delete_object_graph(makerspace):
         # Staff retirement has completed and immutable deletion is now authorized.
         # The provider owner removes tenant-private rows while retaining shared
         # sender suppression/aliases; never collect through a shared sender.
+        from apps.integrations.notification_privacy import prepare_tenant_purge
+        prepare_tenant_purge(makerspace)
         from apps.integrations.messaging.purge import purge_channel
         purge_channel(makerspace, "sms")
         purge_channel(makerspace, "whatsapp")

@@ -82,7 +82,8 @@ def notify_term(term, event, *, reminder=None):
         return
     return fanout(row=term, space=space, feature="members", stream="membership", event=event,
         source_kind=SOURCE, revision=term_revision(term, event, reminder), owner=term.membership.user,
-        owner_body=term_body(term, event), staff=False, context={"reminder_id": reminder.pk if reminder else None})
+        owner_body=term_body(term, event), staff=False, context={"reminder_id": reminder.pk if reminder else None},
+        owner_context={"subject": bag(id=term.membership_id, status=term.status)})
 
 
 def register():

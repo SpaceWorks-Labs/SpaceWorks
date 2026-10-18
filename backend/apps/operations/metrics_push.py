@@ -15,6 +15,6 @@ def push_outcome_samples():
     for model in models:
         for row in model.objects.order_by().values("platform", "status").annotate(count=Count("pk")):
             platform = row["platform"] if row["platform"] in ("apple", "android") else "unknown"
-            status = row["status"] if row["status"] in ("pending", "sending", "sent", "failed", "skipped", "held") else "unknown"
+            status = row["status"] if row["status"] in ("pending", "sending", "sent", "failed", "skipped", "held", "canceled") else "unknown"
             counts[(platform, status)] += row["count"]
     return [({"platform": platform, "status": status}, count) for (platform, status), count in sorted(counts.items())]

@@ -1,8 +1,5 @@
 import type { Dashboard } from "../../../generated/api";
-// MERGE-RECON(G): regenerate Dashboard from the union serializer, then remove this scope bridge.
-export type DashboardCounts = Omit<Dashboard, "widgets" | "queue_tiles" | "outstanding_by_currency" | "scope_mode"> & {
-  scope_mode: Dashboard["scope_mode"] | "handover";
-};
+export type DashboardCounts = Omit<Dashboard, "widgets" | "queue_tiles" | "outstanding_by_currency">;
 
 // Tiles keep their semantic intent; only emphasis is a filled attention pill.
 // Numbers and labels otherwise sit on neutral panels.

@@ -122,4 +122,4 @@ FIRST_PARTY_FIELD_NAMES['machines.MachineConsumablePool'] |= frozenset('cost_cur
 FIRST_PARTY_FIELD_NAMES['machines.MachineUsageEntry'] |= frozenset('member started_at'.split())
 FIRST_PARTY_FIELD_NAMES['notifications.NotificationInboxRow'] |= frozenset('audience scope'.split())
 
-# MERGE-RECON(C): revalidate the final catalog/digest after lane A/M/P schema reconciliation.
+# Orchestrator re-pins the live catalog after final schema/migration verification.

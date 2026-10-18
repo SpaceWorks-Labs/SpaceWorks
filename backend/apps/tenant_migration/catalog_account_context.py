@@ -4,6 +4,9 @@ from .tenant_dump_types import AuthorityDisposition as D, authority
 
 
 AUTHORITY_ENTRIES = (
+    *((('accounts.DeviceGrant', field), authority(
+        D.DROP, 'Device account generation, login method and raw historical staff tenant never travel as target authority.',
+    )) for field in ('staff_makerspace_id', 'credential_generation', 'login_method')),
     *((('accounts.StaffInvitation', field), authority(
         D.DROP, 'Initial-password role/scope/generation proofs are deployment-local and never travel.',
     )) for field in ('role_snapshot', 'machine_scope_snapshot', 'credential_generation')),

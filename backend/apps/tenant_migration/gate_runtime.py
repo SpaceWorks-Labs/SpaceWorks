@@ -60,6 +60,10 @@ def _assert_gate_state(makerspace_id):
 def boundary_tenant_write(makerspace_id):
     """Validate under a dedicated lock transaction without transacting dispatch."""
     makerspace_id = int(makerspace_id)
+    if makerspace_id in _boundary_shared_locks.get():
+        assert_write_allowed(makerspace_id)
+        yield
+        return
     with shared_boundary(makerspace_id):
         token = _boundary_shared_locks.set(
             _boundary_shared_locks.get() + (makerspace_id,)

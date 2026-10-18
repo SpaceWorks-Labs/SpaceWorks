@@ -6,12 +6,12 @@ COMMUNICATION_GROUPS = (
 )
 MESSAGING_STATUS_COUNTS = (
     "pending_count", "sending_count", "accepted_only_count", "sent_only_count",
-    "delivered_only_count", "read_count", "failed_count", "skipped_count", "suppressed_count", "held_count",
+    "delivered_only_count", "read_count", "failed_count", "skipped_count", "suppressed_count", "held_count", "canceled_count",
 )
 MESSAGING_COUNTS = (
     "accepted_count", "delivered_count", "read_count", "pending_count", "sending_count",
     "accepted_only_count", "sent_only_count", "delivered_only_count",
-    "estimated_segments", "billed_segments", "segments", "abandoned_webhook_count", "held_webhook_count", "held_count",
+    "estimated_segments", "billed_segments", "segments", "abandoned_webhook_count", "held_webhook_count", "held_count", "canceled_count",
     "delivery_rate_numerator", "delivery_rate_denominator", "read_rate_numerator", "read_rate_denominator",
 )
 COMMUNICATION_COUNTS = (

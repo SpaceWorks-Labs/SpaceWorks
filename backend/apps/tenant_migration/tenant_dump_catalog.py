@@ -42,7 +42,7 @@ class TenantDumpCatalogError(AssertionError):
 # O native grants, account lifecycle, push, analytics and addressed messaging.
 # Literal graph reconstruction reproduced BOTH parent pins before computing this
 # merged snapshot digest. Historical repin commentary lives in git history.
-# MERGE-RECON(C): validate against Django and re-pin after final lane schema changes.
+# Orchestrator re-pins the live catalog after final schema/migration verification.
 CATALOG_SCHEMA_SHA256 = "f8f7f7232b3a49945cbeba383d1f7f7e9053c4a9990d487807817692673b79a0"
 
 

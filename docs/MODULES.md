@@ -80,7 +80,10 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
-<!-- MERGE-RECON(G/M): verify module/profile counts and existing-installation conversion after lanes. -->
+The registry contains 37 keys (36 in the main catalogue plus presence): six core,
+backup enabled by default, and 30 opt-in. Migration 0097 preserves only previously
+enabled canonical WhatsApp installations; new SMS/WhatsApp installations remain off.
+Module-list validation uses the registry rather than scalar JSONField choices.
 
 ## Index
 

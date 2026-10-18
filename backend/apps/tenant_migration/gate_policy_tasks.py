@@ -77,13 +77,13 @@ TASK_TENANT_RESOLVERS = {
     "apps.integrations.tasks.deliver_notification_task": (
         "integrations.NotificationDeliveryLog", 0, "makerspace_id"
     ),
-    "apps.integrations.notification_tasks.deliver_envelope": (
-        "integrations.NotificationEnvelope", 0, "makerspace_id"
-    ),
 }
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.integrations.notification_tasks.deliver_envelope": (
+        "Cutover fence precedes per-leg tenant boundaries; no external call holds an application transaction."
+    ),
     "apps.integrations.notification_tasks.sweep_notification_outbox": (
         "Enqueues tenant-resolved delivery tasks; media cleanup uses per-tenant skip-and-count gates."
     ),

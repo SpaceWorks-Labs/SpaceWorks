@@ -1,3 +1,4 @@
+from apps.integrations.notification_cutover import guarded
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 
@@ -10,6 +11,7 @@ from apps.makerspaces.storage_key_collectors import (
 )
 
 
+@guarded()
 def purge(makerspace, actor):
     require_platform_superadmin(actor)
     with transaction.atomic():

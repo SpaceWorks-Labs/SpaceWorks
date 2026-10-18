@@ -156,7 +156,17 @@ class PersonalSelectionView(APIView):
                 raise ValidationError({"channels": "Choose channels enabled by this makerspace for the category."})
         with tenant_write(space.pk), transaction.atomic():
             # Replace supplied categories only; absence is neither opt-out nor reset.
+            from apps.notifications.models_inbox import MemberNotificationPreference
             for preference in preferences:
+                # Only this explicit user write may lift a legacy opt-out.
+                # Conversion and ordinary reads continue to intersect both stores.
+                enabled = set(preference["channels"])
+                if preference["email_fallback"]:
+                    enabled.add("email")
+                MemberNotificationPreference.objects.filter(
+                    makerspace=space, user=request.user, feature=preference["category"],
+                    channel__in=enabled, enabled=False,
+                ).update(enabled=True)
                 policy_rows(NotificationPreference, space).update_or_create(
                     makerspace=space, user=request.user, category=preference["category"],
                     defaults={key: preference[key] for key in ("channels", "email_fallback")})

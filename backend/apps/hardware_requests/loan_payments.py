@@ -129,7 +129,16 @@ def on_request_closed(request_id, actor, now=None):
         return None
 
 
+@transaction.atomic
 def raise_late_fee(request, actor, now):
+    # Unlike new voluntary obligations, return fees survive an in-flight departure.
+    # Serialize the check and debt with Stage A, and keep its extra audit atomic.
+    from apps.accounts.models import User
+    from apps.makerspaces.models import Makerspace
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+    assert_write_allowed(request.makerspace_id)
+    Makerspace.objects.select_for_update().get(pk=request.makerspace_id)
+    owner = User.objects.select_for_update(no_key=True).filter(pk=request.requester_id).first()
     settings_row = MakerspacePaymentSettings.for_makerspace(request.makerspace)
     per_day = Decimal(settings_row.loan_late_fee_per_day or 0)
     if per_day <= 0 or request.return_due_at is None or not loans_enabled(request.makerspace):
@@ -158,6 +167,12 @@ def raise_late_fee(request, actor, now):
             actor, "loan.late_fee_raised", makerspace=request.makerspace, target=request,
             meta={"request_id": request.pk, "payment_id": payment.pk},
         )
+        if owner is not None and owner.deletion_requested_at is not None:
+            audit.record(
+                actor, "account.obligation_after_deletion", makerspace=request.makerspace,
+                target=owner, meta={"request_id": request.pk, "payment_id": payment.pk,
+                                    "subject_type": Payment.SubjectType.LOAN_LATE_FEE},
+            )
         notifications.notify_loan_charge(request, "late_fee_raised", payment)
     if payment.status == Payment.Status.PENDING:
         _schedule_checkout(payment)

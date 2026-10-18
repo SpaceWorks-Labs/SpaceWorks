@@ -1,41 +1,17 @@
 from django.db import models
 from .models_user import User
 
-
-class EmailVerificationChallenge(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="email_challenges"
-    )
-    email = models.CharField(max_length=254)
-    code_digest = models.CharField(max_length=128)
-    expires_at = models.DateTimeField()
-    consumed_at = models.DateTimeField(null=True, blank=True)
-    failed_attempts = models.PositiveSmallIntegerField(default=0)
-    last_sent_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["user", "email", "expires_at"]),
-            models.Index(
-                fields=["user", "email"],
-                condition=models.Q(consumed_at__isnull=True),
-                name="email_challenge_active_idx",
-            ),
-        ]
-
-    def is_usable(self, now):
-        return (
-            self.consumed_at is None
-            and self.failed_attempts < 5
-            and self.expires_at > now
-        )
+# MERGE-RECON(A): move these O lifecycle fields into models_user with forward guards.
+# Contribute to T's concrete model; defining a second User would lose kind constraints.
+for _field_name in ("deletion_requested_at", "deletion_purge_after", "purge_started_at",
+                    "account_restored_at", "account_purged_at"):
+    User.add_to_class(_field_name, models.DateTimeField(null=True, blank=True))
+User.add_to_class("deletion_email_ciphertext", models.TextField(blank=True, default=""))
+User.add_to_class("deletion_username", models.CharField(max_length=150, blank=True, default=""))
 
 
-class DailyOtpEmailCounter(models.Model):
-    day = models.DateField(unique=True)
-    count = models.PositiveIntegerField(default=0)
 
+from apps.accounts.models_email import EmailVerificationChallenge, DailyOtpEmailCounter  # noqa: E402
 
 from apps.accounts.models_devices import (  # noqa: E402
     DeviceAttestationChallenge,
@@ -47,6 +23,7 @@ from apps.accounts.models_devices import (  # noqa: E402
     NativeAppRegistration,
 )
 from apps.accounts.models_login_methods import PlatformLoginMethods  # noqa: E402
+from apps.accounts.models_attestation import PlatformAttestationSettings  # noqa: E402
 from apps.accounts.models_claim import MemberClaimCode  # noqa: E402
 from apps.accounts.models_oidc_browser import OidcBrowserAttempt  # noqa: E402
 from apps.accounts.models_phone import (  # noqa: E402
@@ -72,11 +49,13 @@ from apps.accounts.models_reauthentication import ReauthenticationSession  # noq
 from apps.accounts.models_staff_invitations import StaffInvitation  # noqa: E402
 
 __all__ = [
+    'DeviceActivityDay',
+    'AttestationVerificationLog',
+
     'ReauthenticationSession',
     'UserMFA',
     'MFAChallenge',
     'StaffInvitation',
-    "UserMFA", "MFAChallenge", "StaffInvitation",
     'DailyOtpEmailCounter',
     'DeviceAttestationChallenge',
     'DeviceEnvironment',
@@ -92,6 +71,7 @@ __all__ = [
     'PhoneVerificationChallenge',
     'PasswordResetEnvelope',
     'PasswordResetEnvelopeStatus',
+    'PlatformAttestationSettings',
     'PlatformLoginMethods',
     'PlatformSocialAuthSettings',
     'SocialClientPlatform',
@@ -102,3 +82,12 @@ __all__ = [
     'SocialSurface',
     'User',
 ]
+
+from apps.accounts.models_account_purge import (  # noqa: E402
+    AccountPurgeProgress, AccountPurgeObject, AppleRefreshCredential, AppleRevocation,
+)
+__all__ += ["AccountPurgeProgress", "AccountPurgeObject", "AppleRefreshCredential", "AppleRevocation"]
+
+from apps.accounts.models_account_restore import AccountRestoreIntent  # noqa: E402
+__all__ += ["AccountRestoreIntent"]
+from .models_activity import DeviceActivityDay, AttestationVerificationLog  # noqa: F401

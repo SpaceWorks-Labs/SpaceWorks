@@ -17,6 +17,10 @@ RAW_USER_REFERENCE_FIELDS = frozenset(  # Raw integers are not discoverable as F
 RELATIONAL_USER_FIELDS = frozenset(
     {
         ("makerspaces.PublicHandle", "user"),
+        ("accounts.AccountRestoreIntent", "user"),
+        ("accounts.AccountPurgeProgress", "user"),
+        ("accounts.AccountPurgeObject", "user"),
+        ("accounts.AppleRevocation", "user"),
         ("bookings.BookingBroadcast", "created_by"),
         ("bookings.BookingBroadcastDelivery", "recipient"),
         ("events.EventBroadcast", "created_by"),
@@ -202,6 +206,10 @@ RELATIONAL_USER_FIELDS = frozenset(
 
 _EXCLUDED_USER_EDGE_REASONS = {
     ("accounts.StaffInvitation", "account"): "Account-bound invitation credential is deployment-local; reissue on the target.",
+    ("accounts.AccountRestoreIntent", "user"): "Deployment-local recovery proof never expands portable closure.",
+    ("accounts.AccountPurgeProgress", "user"): "Deployment-local erasure coordination never expands portable closure.",
+    ("accounts.AccountPurgeObject", "user"): "Deployment-local object cleanup never expands portable closure.",
+    ("accounts.AppleRevocation", "user"): "Deployment-local credential revocation never expands portable closure.",
     ("accounts.ReauthenticationSession", "user"): "Source-bound browser proof is never portable and never expands the user closure.",
     **{edge: "Booking resource authority and credentials are omitted at both fidelities."
        for edge in (

@@ -31,6 +31,7 @@ class LedgerLineSerializer(FinanceAmountsSerializer):
 class RevenuePeriodSerializer(FinanceAmountsSerializer):
     period = serializers.DateField()
     subject_type = serializers.CharField()
+    rail = serializers.ChoiceField(choices=("online", "offline", "unallocated"))
     owed_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
     waived_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
     net_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
@@ -69,3 +70,14 @@ class CashBookReportSerializer(ReportRowsFieldMixin):
 
 class AccountingJournalReportSerializer(ReportRowsFieldMixin):
     typed_rows = JournalLineSerializer(many=True)
+
+
+class PaymentAgeingRowSerializer(TypedReportBaseSerializer):
+    currency = serializers.CharField()
+    age_bucket = serializers.ChoiceField(choices=("0-30", "31-60", "61-90", "90+"))
+    payment_count = serializers.IntegerField()
+    outstanding_amount = serializers.DecimalField(max_digits=24, decimal_places=2)
+
+
+class PaymentsAgeingReportSerializer(ReportRowsFieldMixin):
+    typed_rows = PaymentAgeingRowSerializer(many=True)

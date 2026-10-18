@@ -9,10 +9,10 @@ from django.utils import timezone
 
 from apps.accounts import rbac
 from apps.makerspaces.local_time import to_local
-from apps.makerspaces.models import Makerspace
 from apps.operations.membership_report_history import active_at, membership_intervals
-from apps.operations.report_scope import scoped_ids
 from apps.operations.report_types import ReportResult
+from apps.operations.reports_fg_common import scoped_spaces
+from apps.operations.reports_finance_sources import finance_window
 
 FIELDS = (
     "cohort_month", "months_after_join", "cohort_members", "eligible_members",
@@ -22,20 +22,18 @@ FIELDS = (
 
 def build_member_retention(makerspace_id, *, limit=None, date_range=None, months=None, now=None, actor=None):
     now = now or timezone.now()
-    observed = min(now, date_range[1] - timedelta(microseconds=1)) if date_range and date_range[1] else now
+    observed = now
     records = []
-    spaces = Makerspace.objects.filter(
-        pk__in=scoped_ids(makerspace_id, "membership"),
-    )
-    spaces = (rbac.scope_by_action(actor, rbac.Action.VIEW_AUDIT, spaces, field="id") if actor
-              else rbac.scope_for_scheduled_work(spaces, field="id")).order_by("pk")
+    spaces = scoped_spaces(makerspace_id, rbac.Action.VIEW_AUDIT, actor=actor, modules=("membership",))
     for space in spaces:
+        start, end = finance_window(space, date_range)
+        observed = min(now, end - timedelta(microseconds=1)) if end else now
         cohorts = defaultdict(list)
         for intervals in membership_intervals(space, actor=actor).values():
             if not intervals:
                 continue
             joined = intervals[0][0]
-            if joined > observed or (date_range and date_range[0] and joined < date_range[0]):
+            if joined > observed or (start and joined < start):
                 continue
             cohorts[to_local(space, joined).strftime("%Y-%m")].append(intervals)
         for cohort, members in sorted(cohorts.items()):
@@ -61,7 +59,7 @@ def build_member_retention(makerspace_id, *, limit=None, date_range=None, months
                 records.append(row)
     fields = (("makerspace_id",) + FIELDS) if makerspace_id is None else FIELDS
     return ReportResult(fields, records if limit is None else records[:limit], {
-        "definition": "Retained = active on the local calendar-month anniversary; immature members are excluded from the denominator.",
+        "definition": "Retained = active on the local calendar-month anniversary; immature memberships are excluded from the denominator. Organization totals count memberships, not distinct people.",
         "history": "Lifecycle audits, with membership timestamps for legacy rows; reasons and identities are omitted.",
         "observed_at": observed.isoformat(),
     })

@@ -77,6 +77,9 @@ MEMBER_CLAIM_ROUTES = {
     ("member-activity", "GET"): LocallyFiltered(tenant=ID),
     ("member-activity", "HEAD"): LocallyFiltered(tenant=ID),
     **_options("member-activity"),
+    ("member-my-usage", "GET"): LocallyFiltered(tenant=ID),
+    ("member-my-usage", "HEAD"): LocallyFiltered(tenant=ID),
+    **_options("member-my-usage"),
     ("hardware_requests:member-loan-renew", "POST"): Allowed(
         tenant=ID, audited=True, ownership=RowOwnership.LOCAL_OWNER_ENFORCED,
     ),

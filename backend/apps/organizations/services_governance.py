@@ -49,6 +49,29 @@ def assert_deletable(organization):
 
 
 @transaction.atomic
+def self_departure(organization, *, user):
+    """Internal account-deletion departure; an ordinary member may leave itself.
+
+    Stage A already holds organizations in ascending order before its User lock.
+    Reacquiring that same Organization row is safe and also makes this operation
+    safe for direct internal callers. No caller-controlled membership ID or actor
+    may select another person's authority.
+    """
+    locked = Organization.objects.select_for_update().get(pk=organization.pk)
+    target = locked.memberships.select_for_update().filter(user_id=user.pk).first()
+    if target is None or target.status == OrganizationMembership.Status.SUSPENDED:
+        return target
+    assert_governor_remains(
+        locked, replaced_id=target.pk, status=OrganizationMembership.Status.SUSPENDED,
+    )
+    target.status = OrganizationMembership.Status.SUSPENDED
+    target.save(update_fields=["status", "updated_at"])
+    audit.record(user, "organization.member_departed", target=target,
+                 meta={"status": target.status})
+    return target
+
+
+@transaction.atomic
 def update_membership(organization, membership_id, *, actor, **changes):
     unknown = set(changes) - {"status", "governance_actions", "granted_actions"}
     if unknown:

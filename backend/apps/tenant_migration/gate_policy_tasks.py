@@ -4,6 +4,12 @@ from .gate_policy_replay import REPLAY_TASK_PARTICIPANTS, REPLAY_FANOUT_PARTICIP
 
 
 TASK_EXEMPTIONS = {
+    "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task": (
+        "Deployment-local callback credential retention: wipes expired verification material "
+        "on operational credential versions, never tenant settings or portable domain rows. "
+        "Must continue after source migration and channel uninstall."
+    ),
+    "apps.accounts.tasks.revoke_apple_tokens_task": "Platform-global Apple credential revocation; no tenant writes.",
     "apps.operations.tasks_platform.run_platform_problem_checks_task": (
         "Read-only platform monitoring; writes only a disposable deployment cache marker."
     ),
@@ -82,6 +88,16 @@ TASK_INTERNAL_PARTICIPANTS = {
         "Enqueues tenant-resolved delivery tasks; media cleanup uses per-tenant skip-and-count gates."
     ),
     "apps.payments.tasks.issue_missing_bills_task": "Bill recovery gates each tenant before discovering or issuing documents.",
+    "apps.integrations.tasks_messaging.deliver_messaging_task": "Worker acquires sender lock first and holds tenant_write during claims and fenced completion.",
+    "apps.integrations.tasks_messaging.sweep_messaging_task": "Recovery/retention use per-tenant skip-and-count gates; sender protections and operational webhook/credential retention are deployment-local.",
+    "apps.inventory.tasks.snapshot_stock_task": "Daily stock observations gate each tenant separately.",
+    "apps.notifications.tasks.deliver_member_push": (
+        "Resolves inbox_row.makerspace and holds its dedicated source boundary through delivery."
+    ),
+    "apps.notifications.tasks.sweep_member_push": (
+        "Recovery enqueues each tenant's rows inside a skip-and-count source boundary."
+    ),
+    "apps.accounts.tasks.purge_deleted_accounts_task": "Account erasure uses one skip-and-count boundary per tenant.",
     "apps.integrations.broadcasts_worker.broadcast_batch": "Typed adapter resolves one tenant; shared source and PII fences precede campaign/outbox locks.",
     "apps.integrations.broadcasts_worker.resume_broadcasts": "Campaign/outbox recovery uses per-tenant skip-and-count boundaries.",
     "apps.data_export.subject_tasks.sweep_subject_exports_task": (
@@ -147,6 +163,11 @@ FANOUT_GATE_PARTICIPANTS = {
     "apps.makerspaces.profile_github_tasks.refresh_public_calendars": (
         "Public calendars refresh under the existing per-tenant GitHub source boundary; cache only."
     ),
+    "apps.integrations.messaging.sweep.run_sweep": "Recovery and delivery retention skip frozen tenants; operational callbacks remain durable.",
+    "apps.integrations.messaging.stops.append_stop_consents": "Optional consent annotations skip frozen tenants after committing sender-level STOP protection.",
+    "apps.inventory.stock_snapshots.snapshot_inventory_stock": "Daily stock observations gate each tenant separately.",
+    "apps.notifications.tasks.sweep_member_push": "Member push recovery gates each tenant separately.",
+    "apps.accounts.account_purge.purge_account": "Account erasure and durable object cleanup gate each tenant separately.",
     "apps.integrations.broadcasts_worker.recover_for_tenants": "Recover durable campaigns and outboxes only inside each tenant's source gate.",
     "apps.data_export.subject_tasks.sweep_subject_exports_task": "Personal export recovery gates each tenant.",
     "apps.makerspaces.membership_admission_payments.sweep_admissions": (

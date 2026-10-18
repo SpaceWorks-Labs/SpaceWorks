@@ -110,6 +110,7 @@ BASE_MODEL_LOOKUPS = {
     'admin-event-collaborators': ('events.Event', 'makerspace_id'),
     'admin-event-collaboration-remove': ('events.EventCollaborator', 'event__makerspace_id'),
     'admin-event-collaboration-respond': ('events.EventCollaborator', 'makerspace_id'),
+    'admin-machine-usage-candidates': ('machines.Machine', 'makerspace_id'),
     'admin-machine-operator-candidates': ('machines.Machine', 'makerspace_id'),
     'admin-machine-publicity': ('machines.Machine', 'makerspace_id'),
     'makerspace-verify-domain': ('makerspaces.Makerspace', 'id'),

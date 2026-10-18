@@ -25,6 +25,8 @@ _SETTLEMENT_ACTIONS = ("payment.paid_offline", "payment.settlement_amended")
 
 
 PAYMENT_AUDIT_EDGES = {
+    **_edges("hardware_requests.HardwareRequest", [("account.obligation_after_deletion", "request_id")]),
+    **_edges("payments.Payment", [("account.obligation_after_deletion", "payment_id")]),
     **_edges("payments.Refund", [("payment.refund_amended", "amends_id")]),
     **_edges(
         "payments.ManualSettlement",

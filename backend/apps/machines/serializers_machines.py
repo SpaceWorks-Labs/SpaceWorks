@@ -53,6 +53,8 @@ class MachineUsageEntrySerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'hours',
+            'member',
+            'started_at',
             'source',
             'note',
             'logged_by_username',

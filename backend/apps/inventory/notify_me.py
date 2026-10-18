@@ -107,6 +107,8 @@ def dispatch(space, reminder, message, now, local_tz):
     if row is None:
         return None
 
+    # eligible_watch reloads source, membership and opt-out state at delivery;
+    # keep one source-backed intent instead of a second lifecycle fan-out.
     row.notified_at = now
     row.save(update_fields=["notified_at"])
     from .notifications_p2 import notify_watch

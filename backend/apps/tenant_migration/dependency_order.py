@@ -8,7 +8,7 @@ from .insertion_errors import DependencyCycleError
 
 
 def concrete_fk_dependencies(models):
-    """Return model -> exported concrete FK targets, excluding legitimate self-FKs."""
+    """Return concrete FK dependencies plus finalized-consumption source dependencies."""
     by_label = {model._meta.label: model for model in models}
     dependencies = {label: set() for label in by_label}
     for label, model in by_label.items():
@@ -18,6 +18,9 @@ def concrete_fk_dependencies(models):
             target = field.related_model._meta.label
             if target in by_label and target != label:
                 dependencies[label].add(target)
+    if "machines.ConsumableCostRecord" in dependencies:
+        from .tracking_references import COST_SOURCE_MODELS
+        dependencies["machines.ConsumableCostRecord"].update(set(COST_SOURCE_MODELS.values()) & by_label.keys())
     return dependencies
 
 

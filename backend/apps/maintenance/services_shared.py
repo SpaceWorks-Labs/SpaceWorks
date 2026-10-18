@@ -3,7 +3,6 @@ from decimal import Decimal, InvalidOperation
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.audit.services import record
 from apps.accounts import rbac
 from apps.machines import access
 from apps.machines.models import Machine
@@ -117,13 +116,5 @@ def ensure_idle_transition(machine, set_idle):
 
 
 def apply_idle_transition(machine, actor):
-    old_status = machine.status
-    machine.status = Machine.Status.IDLE
-    machine.save(update_fields=["status", "updated_at"])
-    record(
-        actor,
-        "machine.status_changed",
-        makerspace=machine.makerspace,
-        target=machine,
-        meta={"old": old_status, "new": Machine.Status.IDLE},
-    )
+    from apps.machines.status_tracking import change_status
+    change_status(machine, Machine.Status.IDLE, source="maintenance", actor=actor)

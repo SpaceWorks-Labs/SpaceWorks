@@ -17,6 +17,9 @@ def _default(reason, *, allow_superadmin_override=False):
 from .target_projection_w7_events import EVENT_FIELD_PROJECTION
 
 TARGET_FIELD_PROJECTION = {
+    ("accounts.User", "account_restored_at"): TargetField(None, reason="Target issues its own revocable sessions."),
+    ("accounts.User", "deletion_username"): TargetField("", reason="Target chooses its own random erasure pseudonym."),
+    ("accounts.User", "deletion_email_ciphertext"): TargetField("", reason="Source platform-encrypted erasure address never travels."),
     ("bookings.BookingResourcePage", "released"): TargetField(False, reason="Target staff explicitly release resource content."),
     ("events.EventCertificateArtwork", "version_id"): TargetField(
         "", reason="Source bucket version identity is replaced; SHA-256 pins imported bytes.",
@@ -177,3 +180,6 @@ from .projection_wp4 import FIELD_PROJECTION
 TARGET_FIELD_PROJECTION.update(FIELD_PROJECTION)
 from .catalog_broadcasts import projections as broadcast_projections
 TARGET_FIELD_PROJECTION.update(broadcast_projections(TargetField))
+
+from .catalog_messaging import projections as messaging_projections
+TARGET_FIELD_PROJECTION.update(messaging_projections(TargetField))

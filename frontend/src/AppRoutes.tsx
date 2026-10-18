@@ -36,6 +36,7 @@ const PublicOrganizationPage = lazy(() => import("./features/organizations/Publi
 const OrganizationInvitationRedeemPage = lazy(() => import("./features/organizations/OrganizationInvitationRedeemPage").then((m) => ({ default: m.OrganizationInvitationRedeemPage })));
 const ResetPasswordPage = lazy(() => import("./features/staff/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
 const ConsolePasswordResetPage = lazy(() => import("./features/auth/ConsolePasswordResetPage").then((m) => ({ default: m.ConsolePasswordResetPage })));
+const AccountRestorePage = lazy(() => import("./features/auth/AccountRestorePage").then((m) => ({ default: m.AccountRestorePage })));
 const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
@@ -98,6 +99,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/admin/reset-password" element={<ConsolePasswordResetPage />} />
       <Route path="/m/:slug/admin/reset-password" element={<ConsolePasswordResetPage />} />
     </Routes>;
+  } else if (location.pathname === "/account/restore") {
+    routes = <Routes><Route path="/account/restore" element={<AccountRestorePage />} /></Routes>;
   } else if (location.pathname === "/mfa") {
     routes = <Routes><Route path="/mfa" element={<MfaAccountPage />} /></Routes>;
   } else if (location.pathname === "/staff-invitations/accept") {

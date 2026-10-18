@@ -20,6 +20,7 @@ FILTERS = {
     "integrations.NotificationEnvelope": {"makerspace_id": None},
     "integrations.NotificationEndpoint": {"makerspace_id": None},
     "integrations.NotificationEndpointChallenge": {"makerspace_id": None},
+    "integrations.MessagingConsent": {"makerspace_id": None},
     "notifications.MemberBroadcast": {"makerspace_id": None},
     "notifications.NotificationInboxRow": {"makerspace_id": None},
     "hardware_requests.HardwareRequest": {"makerspace_id": None},
@@ -37,6 +38,7 @@ class Command(BaseCommand):
     help = "Backfill authenticated scoped PII and its generation-bound indexes."
 
     def add_arguments(self, parser):
+        parser.add_argument("--fence-operation", type=str, default="")
         parser.add_argument("--makerspace", type=int, required=True)
         parser.add_argument("--model", choices=sorted(registered_labels()), required=True)
         parser.add_argument("--batch-size", type=int, default=100)
@@ -62,7 +64,8 @@ class Command(BaseCommand):
             ids = list(model.objects.filter(**filters, pk__gt=checkpoint).order_by("pk").values_list("pk", flat=True)[:options["batch_size"]])
             if not ids:
                 break
-            with transaction.atomic():
+            from apps.encryption.write_fence import fence_operation
+            with transaction.atomic(), fence_operation(options["fence_operation"]):
                 rows = list(model.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
                 for row in rows:
                     for field in fields_for_label(label):
@@ -82,7 +85,10 @@ class Command(BaseCommand):
                         counts["plaintext"] += 1
                     if mutate:
                         # save() uses the row PK + registry resolver and only encrypts source fields.
-                        row.save()
+                        if label == "integrations.MessagingConsent":
+                            row.save(update_fields=["phone_e164"])
+                        else:
+                            row.save()
                 checkpoint = rows[-1].pk
             self.stdout.write(f"checkpoint={checkpoint} plaintext={counts['plaintext']} encrypted={counts['encrypted']} empty={counts['empty']}")
         self.stdout.write(" ".join(f"{key}={value}" for key, value in counts.items()))

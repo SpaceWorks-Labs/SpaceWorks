@@ -7,6 +7,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.boxes.access import inventory_qr_codes
 from apps.boxes.models import Box, QrCode, QrScanEvent
 from apps.evidence.models import EvidencePhoto
@@ -62,7 +63,10 @@ def issue_direct_loan(
         raise RequestValidationError("Provide qr_payloads, items, or a container.")
     finalized = validate_evidence_upload(evidence, label="Issue")
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        borrower = lock_obligation_owner(borrower)
         if not lock_evidence_for_attachment(evidence.pk):
             raise RequestValidationError("Evidence has expired under the retention policy.")
         if HardwareRequest.objects.filter(issue_evidence=evidence).exists():

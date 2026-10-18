@@ -103,7 +103,11 @@ NOT_SEPARABLE = {
 }
 
 
+from apps.integrations.messaging.purge import sms_delete, whatsapp_delete
+
 PLANS = (
+    ModulePurgePlan("sms", "SMS credentials, sender identities, consent and delivery history.", sms_delete),
+    ModulePurgePlan("whatsapp", "WhatsApp credentials, sender identities, bindings, consent and delivery history.", whatsapp_delete),
     ModulePurgePlan(
         # The one-line description is what the purge confirmation shows an operator, so it
         # has to name what actually goes: registrations are only the first layer.

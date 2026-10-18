@@ -21,6 +21,8 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     # UUID identifying one inbox fan-out, never a bucket locator.
     ("notifications.NotificationInboxRow", "event_key"),
     ("accounts.NativeAppRegistration", "verifier_config_key"),
+    # App Attest credential PEM, never an object-storage locator.
+    ("accounts.DeviceGrant", "attestation_public_key"),
     ("accounts.PlatformSocialAuthSettings", "apple_private_key"),
     ("audit.AuditMacKey", "wrapped_key"),
     ("audit.AuditSigningKey", "public_key"),

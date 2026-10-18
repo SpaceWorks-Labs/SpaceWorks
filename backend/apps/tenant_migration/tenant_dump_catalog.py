@@ -36,89 +36,14 @@ class TenantDumpCatalogError(AssertionError):
     pass
 
 
-# SHA-256 of the ordered model/table/field graph produced by ``catalog_schema``.
+# SHA-256 of the ordered model/table/field graph produced by catalog_schema.
 # Updating it is an explicit review act; runtime introspection never blesses drift.
-# Re-blessed once for the WHOLE merged model graph: the events programme (series,
-# check-in ledger, feedback, certificates, station credential), the organization layer
-# and the evidence retention state. Neither branch's pinned value describes the merge,
-# so this was recomputed after the merge rather than taken from either side.
-# Re-blessed again after both evidence retention models gained a normal auto primary key
-# so that it can travel with a tenant at all.
-# Re-blessed for the forward plan (2026-09-04): trigger-maintained `search_vector` columns on
-# Event/InventoryProduct/Machine (phase 1, DERIVED on import), MemberCard, CertificationType,
-# CertificationGrant, BookableSpace.machine_type and MemberProfile.show_certifications (phase 5);
-# again for phase 6: Refund, loan settings/deposit_amount, MembershipPlan/Term, InvitationRequest,
-# Makerspace.lapsed_members_cannot_borrow, ReportSchedule/ReportDelivery.
-# Re-blessed for the manual-settlement ledger: `payments.ManualSettlement` is the
-# append-only cash book recording how and when an offline charge was actually paid, so
-# it must travel with the payments it explains.
-# Re-blessed again for `TenantDumpCapture.money_fingerprint_sha256`, which binds a
-# capture to the tenant's unsettled money so publication can refuse a dump the source
-# has since moved past.
-# Re-blessed on integration: phases 11 and 10, the backup lane, Wave-0 offline refunds,
-# the 7a-7d devices chain and the 9a-9e kiosk chain all changed the catalog; recomputed
-# from the merged snapshot.
-# Recompute after merging lane/w1-events, lane/w1-sweeper, lane/w1-profile,
-# lane/w1-rbac and lane/w1-security. Reminder schedules, makerspace profile fields,
-# and MFA credentials/challenges and staff invitations change the merged catalog.
-# lane/w5-lists adds operations.SavedView to the merged snapshot.
-# Merge lane/w5-theme into integration/2026-10 (including lane/w5-lists);
-# the coordinator recomputes the digest after all lanes are integrated.
-# The security models are DROP in portable artifacts; the coordinator pins the digest.
-# Merge lane/w6-platform into integration/2026-10 (including lane/w5-lists and
-# lane/w5-theme); the coordinator recomputes the digest for the merged lanes.
-# Merge lane/w1-membership with integration/2026-10 (including lane/w6-platform,
-# lane/w5-lists and lane/w5-theme); the coordinator recomputes the merged digest.
-# Merge lane/w1-payments with integration/2026-10 (including lane/w1-membership,
-# lane/w6-platform, lane/w5-lists and lane/w5-theme). Billing policy, Payment.due_at
-# and Refund.amends change the catalog; the coordinator recomputes the merged digest.
-# Merge lane/w2-loans with integration/2026-10 (including lane/w1-payments,
-# lane/w1-membership, lane/w6-platform, lane/w5-lists and lane/w5-theme).
-# The coordinator recomputes the digest for the combined loan and policy graph.
-# Merge lane/w2-machines with integration/2026-10 (including lane/w2-loans);
-# the coordinator recomputes the combined machine, maintenance and loan catalog.
-# Merge lane/w2-events with integration/2026-10 (including lane/w2-loans and
-# lane/w2-machines); the coordinator recomputes the merged event/booking catalog.
-# Merge lane/w2-notify with integration/2026-10 (including lane/w2-events,
-# lane/w2-machines and lane/w2-loans); the coordinator recomputes the merged digest.
-# Re-blessed after permanent removal of the deployment updater singleton.
-# Lane A grants plus the inherited installer audience/digest-default fields. The
-# literal snapshot reconstruction reproduced the previous pin before those additions;
-# Django's runtime catalog guard still verifies the complete graph on supported hosts.
-# OIDC browser attempts now bind the staff/member surface; these transient rows remain DROP.
-# Lane B publication choice and cancellation/FIFO provenance. Literal reconstruction
-# reproduced the preceding pin before adding these four fields.
-# Lane D: two concrete history models and durable outbox source identity. The
-# standalone graph check reproduced the preceding pin before adding these fields.
-# BK-B: nullable cancellation timestamp and prior reservation state.
-# BK-G: reconcile the integrated Lane E/BK-C graph plus the scalar pass template.
-# Literal reconstruction reproduces b90ce9de before the later merged model additions.
-# Integration of design-revamp, yuyu-parity, setup-areas, org-setup and fixed-roles:
-# re-pinned from Django's schema_digest() over the merged live graph.
-# Re-blessed for TenantImportJob.upload_total_bytes/upload_received_bytes. The
-# frozen snapshot graph reproduced the prior digest exactly before adding them.
-# Re-blessed for TenantImportJob.run_request/run_attempt after reproducing the prior
-# digest from the frozen graph with schema_digest's canonical JSON encoding.
-# Phase 1 merge (notification + profile contracts) and feature/async-tenant-import:
-# re-pinned from schema_digest() over the merged live graph.
-# Phase 2+3 merge, then the account split (member/staff/platform kinds): re-pinned from schema_digest().
-CATALOG_SCHEMA_SHA256 = "016722107327879fd49cc4fa8183242dfad2ee52ac0df3281cea15595c6777a3"
-# int-events: DROP-only EventAudienceOrganization, display-only staff-grant role_label and
-# Organization.is_discoverable; the runtime guard reproduced 7a7132b9 before these fields.
-# Phase 0 merge: re-pinned again by the catalog guard test after merging int-events.
-# BK-D adds typed booking campaign/delivery history. Literal reconstruction
-# reproduced HEAD's complete graph before computing the new digest.
-# Lane F: platform-only, nonportable session reauthentication proof.
-# Lane C: five typed editorial/asset models plus the separate framing-origin field.
-# Literal graph reconstruction reproduced HEAD before pinning this reviewed graph;
-# Django's runtime catalog guard remains the integration verification.
-# BK-D adds typed booking campaign/delivery history. Literal reconstruction
-# reproduces the integrated checkpoint graph, including both broadcast histories.
-# Re-blessed for PlatformLoginMethods.mfa_enabled (platform-only, dropped on import).
-# Re-blessed for encrypted GitHub OAuth credentials (platform-only, dropped on import).
-# Re-blessed for install-time built-in provider switches (platform-only, dropped on import).
-# Integration 2026-10-16: re-pinned after merging yuyu-parity + setup-areas (see the catalog guard test).
-# Fixed roles: MembershipAdditionalRole + MembershipMachineTypeScope added, role machine scopes removed.
+# Bootstrap union: T account kinds, governance, documents, profiles and presence;
+# O native grants, account lifecycle, push, analytics and addressed messaging.
+# Literal graph reconstruction reproduced BOTH parent pins before computing this
+# merged snapshot digest. Historical repin commentary lives in git history.
+# MERGE-RECON(C): validate against Django and re-pin after final lane schema changes.
+CATALOG_SCHEMA_SHA256 = "f8f7f7232b3a49945cbeba383d1f7f7e9053c4a9990d487807817692673b79a0"
 
 
 def catalog_models(apps_registry=apps):

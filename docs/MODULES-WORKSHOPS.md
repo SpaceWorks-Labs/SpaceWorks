@@ -41,7 +41,8 @@ Required by `printing`.
   or by message; nothing records who ran what, on which machine, using how much material. `printing`
   cannot be installed while this is off.
 - **Data** — purgeable: service requests, queues, uploads, consumption ledgers and the usage entries they
-  produced. Consumable pools stay — they belong to `machines`.
+  produced, including recorded costs for those consumption sources. Consumable pools and
+  independent manual pool usage/costs stay — they belong to `machines`.
 
 ### printing
 
@@ -203,4 +204,3 @@ Required by `mobile`.
   are platform state.
 
 ---
-

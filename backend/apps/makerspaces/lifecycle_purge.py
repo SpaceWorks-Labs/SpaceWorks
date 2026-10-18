@@ -24,6 +24,11 @@ def purge(makerspace, actor):
         audit.record(actor, "makerspace.purge_started", makerspace=None, target=None, meta=meta)
         from .staff_retirement import retire_staff_accounts
         retire_staff_accounts(locked, actor=actor)
+        # MERGE-RECON(C): move channel cleanup into lifecycle_purge_graph's
+        # deletion graph after bootstrap; preserve shared sender protections.
+        from apps.integrations.messaging.purge import purge_channel
+        purge_channel(locked, "sms")
+        purge_channel(locked, "whatsapp")
         _delete_object_graph(locked)
         # A bulk admin action can purge several tenants inside one transaction.
         # Evaluate this tenant's deferred deletion guards before the next GUC.

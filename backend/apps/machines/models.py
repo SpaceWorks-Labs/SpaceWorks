@@ -36,6 +36,9 @@ from .models_usage import (
 )
 
 __all__ = [
+    'MachineStatusEvent',
+    'ConsumableCostRecord',
+
     "CertificationGrant",
     "CertificationType",
     "Machine",
@@ -60,3 +63,5 @@ __all__ = [
     "ServiceRequestFile",
     "get_or_create_default_bucket",
 ]
+
+from .models_tracking import MachineStatusEvent, ConsumableCostRecord  # noqa: F401

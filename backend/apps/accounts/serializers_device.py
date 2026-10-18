@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.accounts.models_devices import DeviceEnvironment, DevicePlatform
+from apps.accounts.serializers_attestation import AttestationPayloadField
 
 
 class DeviceIdentitySerializer(serializers.Serializer):
@@ -13,7 +14,7 @@ class DeviceLoginSerializer(DeviceIdentitySerializer):
     username = serializers.CharField(max_length=254, trim_whitespace=True)
     password = serializers.CharField(max_length=1024, write_only=True, trim_whitespace=False)
     challenge = serializers.CharField(max_length=512, trim_whitespace=False)
-    attestation = serializers.JSONField()
+    attestation = AttestationPayloadField()
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
@@ -27,7 +28,7 @@ class DeviceRefreshSerializer(serializers.Serializer):
 
 class DeviceGrantSerializer(serializers.Serializer):
     id = serializers.UUIDField()
-    platform = serializers.CharField()
+    platform = serializers.ChoiceField(choices=DevicePlatform.choices)
     app_id = serializers.CharField()
     environment = serializers.CharField()
     status = serializers.CharField()

@@ -15,7 +15,7 @@ from apps.accounts.password_reset_context import (
     lock_recovery_account, resolve_account, recoverable, mail_available, recovery_transaction,
 )
 from .services_password_reset_confirmation import (
-    confirm_password_reset as confirm_password_reset,
+    confirm_password_reset as _confirm_context_password_reset,
     validate_recovery_password as validate_recovery_password,
 )
 
@@ -66,6 +66,12 @@ def request_password_reset(email, *, context="member", makerspace=None, origin="
         if context != "member" and (not mail_available(context) or not recoverable(
                 user, context=context, makerspace=makerspace, origin=origin)):
             user = None
+        if context == "member" and user:
+            from apps.accounts.account_restore import recovery_eligible, restorable
+            if not (user.account_kind == "member" and recovery_eligible(user)
+                    and user.email and (restorable(user, now=requested_at)
+                    or user.is_active and user.deletion_requested_at is None)):
+                user = None
         if user:
             normalized = normalize_email(user.email)
         envelope, created = _lock_or_create(user, normalized, requested_at, context=context, origin=origin) if user else (None, False)
@@ -74,9 +80,10 @@ def request_password_reset(email, *, context="member", makerspace=None, origin="
                 cooled_down = True
             else:
                 _reenter_pending(envelope, normalized, requested_at)
+                envelope.purpose = "reset"
                 envelope.request_origin = origin
                 envelope.credential_generation = user.credential_generation
-                envelope.save(update_fields=["request_origin", "credential_generation"])
+                envelope.save(update_fields=["purpose", "request_origin", "credential_generation"])
         elif envelope is not None and not created and envelope.status not in BLOCKED_STATUSES:
             # Fail closed if a future state is added without defining its resend rule.
             cooled_down = True
@@ -147,3 +154,19 @@ def _reenter_pending(envelope, normalized, requested_at):
     envelope.superseded_at = None
     envelope.terminal_at = None
     envelope.save()
+
+
+# MERGE-RECON(A): move purpose/restore-epoch checks into the split confirmation service.
+def confirm_password_reset(email, code, new_password, *, context="member", makerspace=None, origin="", now=None):
+    from rest_framework import serializers
+    account = resolve_account(str(email).strip(), context=context, makerspace=makerspace)
+    with recovery_transaction(account):
+        user = lock_recovery_account(account)
+        envelope = (PasswordResetEnvelope.objects.select_for_update().filter(user=user).first()
+                    if user else None)
+        if (user and user.deletion_requested_at is not None
+                or envelope and (envelope.purpose != "reset"
+                    or user.account_restored_at and envelope.requested_at <= user.account_restored_at)):
+            raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
+        return _confirm_context_password_reset(email, code, new_password, context=context,
+                                              makerspace=makerspace, origin=origin, now=now)

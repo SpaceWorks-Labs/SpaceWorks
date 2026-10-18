@@ -92,6 +92,8 @@ MANAGED_RESOURCE_LIMITS = {
     "mattermost": 100,
     "discord": 100,
     "native_push": 500,
+    "sms": 100,
+    "whatsapp": 100,
     "api_clients": 1,
     # Tenant exports retain a long-lived database snapshot while running. This is an
     # active-job ceiling, independent of the byte quota charged when an archive lands.
@@ -200,6 +202,8 @@ MIDDLEWARE = [
     # Binds the per-request correlation id before any layer below can log. The two gates
     # above refuse without logging through it; that is the accepted cost of their position.
     "config.request_id.RequestIdMiddleware",
+    # Clears the per-request native-session marker (accounts.native_session).
+    "apps.accounts.native_session.NativeSessionContextMiddleware",
     "apps.tenant_migration.middleware.SourceMigrationGateMiddleware",
     "apps.makerspaces.middleware.TenantHostValidationMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -293,6 +297,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
+ACCOUNT_DELETION_RETENTION_DAYS = env.int("ACCOUNT_DELETION_RETENTION_DAYS", default=90)
 # PostgreSQL supports 63-character identifiers. The approved Maintenance schema
 # intentionally uses a 32-character descriptive index name.
 SILENCED_SYSTEM_CHECKS = ["models.E034"]
@@ -592,6 +597,8 @@ REMINDER_SWEEP_BATCH_SIZE = env.int("REMINDER_SWEEP_BATCH_SIZE", default=200)
 if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
+# MERGE-RECON(M/P): retain both recovery paths for bootstrap; keep workers and
+# schedulers paused until canonical messaging/push conversion and cutover.
 CELERY_BEAT_SCHEDULE = {
     "missing-payment-bills": {
         "task": "apps.payments.tasks.issue_missing_bills_task",
@@ -600,6 +607,16 @@ CELERY_BEAT_SCHEDULE = {
     "notification-contract-outbox": {
         "task": "apps.integrations.notification_tasks.sweep_notification_outbox",
         "schedule": crontab(minute="*"),
+    },
+    "messaging-credential-wipe": {"task": "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task", "schedule": crontab(hour=2, minute=15)},
+    "inventory-stock-snapshot": {"task": "apps.inventory.tasks.snapshot_stock_task", "schedule": crontab(hour=0, minute=15)},
+    "member-push-recovery": {
+        "task": "apps.notifications.tasks.sweep_member_push",
+        "schedule": crontab(minute="*/5"),
+    },
+    "purge-deleted-accounts": {
+        "task": "apps.accounts.tasks.purge_deleted_accounts_task",
+        "schedule": crontab(hour=3, minute=20),
     },
     "reminder-sweep": {
         "task": "apps.operations.tasks_reminders.run_reminder_sweep_task",
@@ -1146,6 +1163,7 @@ AUTH_COOKIE_SECURE = env.bool("AUTH_COOKIE_SECURE", default=True)
 # provider verifier URL and bearer credential are configured. Verifiers must perform
 # real Apple App Attest / Google Play Integrity validation and return bound claims.
 DEVICE_ATTESTATION_APPS = env.json("DEVICE_ATTESTATION_APPS", default={})
+DEVICE_ATTESTATION_DEV_INSECURE = env.bool("DEVICE_ATTESTATION_DEV_INSECURE", default=False)
 DEVICE_APPLE_ATTESTATION_VERIFY_URL = env("DEVICE_APPLE_ATTESTATION_VERIFY_URL", default="")
 DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN = env("DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN", default="")
 DEVICE_ANDROID_ATTESTATION_VERIFY_URL = env("DEVICE_ANDROID_ATTESTATION_VERIFY_URL", default="")
@@ -1195,6 +1213,13 @@ SPECTACULAR_SETTINGS = {
     # context and the file does not exist inside the container.
     "VERSION": "0.9.2",
     "ENUM_NAME_OVERRIDES": {
+        "DevicePlatformEnum": "apps.accounts.models_devices.DevicePlatform.choices",
+        # Each anyOf proof branch has a `type` discriminator. Without unique names
+        # spectacular extracts all three as DeviceAttestationPayloadTypeEnum and
+        # silently replaces the iOS/development choices with the Android choice.
+        "PlayIntegrityAttestationTypeEnum": ["play_integrity"],
+        "AppAttestAttestationTypeEnum": ["app_attest"],
+        "DevelopmentAttestationTypeEnum": ["development"],
         # Phase 9b: the kiosk evidence-prepare route shares these choices; pin the
         # existing component name so the generated client type does not rename.
         "EvidenceUrlRequestEvidenceTypeEnum": [("issue", "Issue"), ("return", "Return")],
@@ -1317,4 +1342,12 @@ SPECTACULAR_SETTINGS.setdefault("APPEND_COMPONENTS", {}).setdefault("securitySch
     "description": "Tenant-bound server HMAC over METHOD, full path, timestamp, nonce "
                    "(when present), body. X-Client-Id and X-Timestamp also required; "
                    "see API client protocol.",
+}
+
+# Addressed notifications require an operator-owned absolute callback origin.
+MESSAGING_WEBHOOK_BASE_URL = env("MESSAGING_WEBHOOK_BASE_URL", default="").rstrip("/")
+WHATSAPP_GRAPH_VERSION = env("WHATSAPP_GRAPH_VERSION", default="v23.0")
+
+CELERY_BEAT_SCHEDULE["messaging-recovery"] = {
+    "task": "apps.integrations.tasks_messaging.sweep_messaging_task", "schedule": 300.0,
 }

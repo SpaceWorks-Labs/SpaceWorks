@@ -1,12 +1,12 @@
 """Printing-branded lifecycle delivery for kernel 3D-printer requests."""
 
 import logging
-from types import SimpleNamespace
 from urllib.parse import urlencode
 
 from apps.integrations.email_templates import printing_context, render
 from apps.machines.printer_capabilities import is_printer_type
 from apps.makerspaces.website_directory import public_url
+from apps.machines.service_printing_projection import printing_projection as _projection
 
 logger = logging.getLogger(__name__)
 REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed", "failed", "collected", "reprinted"})
@@ -18,21 +18,6 @@ def _request_machine_type(request):
 
 def _is_printer_request(request):
     return is_printer_type(_request_machine_type(request))
-
-
-def _projection(request):
-    payload = request.capability_payload or {}
-    status = "printing" if request.status == request.Status.IN_PROGRESS else request.status
-    makerspace = request.makerspace
-    queue_name = request.queue.name if request.queue_id else request.bucket.name
-    return SimpleNamespace(
-        id=request.pk, status=status, title=request.title, reason=request.reason,
-        material=payload.get("requested_material", ""), color=payload.get("requested_color", ""),
-        quantity=payload.get("quantity", 1), requester_name=request.requester_name,
-        contact_email=request.contact_email, contact_phone=request.contact_phone,
-        reprint_of_id=request.reprint_of_id, requester=request.requester,
-        bucket=SimpleNamespace(name=queue_name, makerspace=makerspace),
-    )
 
 
 def _requester_render(event, request):

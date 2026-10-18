@@ -37,7 +37,10 @@ from apps.admin_api.views_machines_actions import (
 )
 
 
+from .views_machine_usage_candidates import MachineUsageCandidatesView
+
 urlpatterns = [
+    path("machines/<int:pk>/usage-candidates", MachineUsageCandidatesView.as_view(), name="admin-machine-usage-candidates"),
     path(
         'makerspace/<int:makerspace_id>/machines',
         MachineListCreateView.as_view(),

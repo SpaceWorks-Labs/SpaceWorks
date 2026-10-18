@@ -11,6 +11,7 @@ from apps.payments import stripe_client
 from apps.payments.availability import online_payments_enabled_for
 from apps.payments.member_scope import member_payment_queryset
 from apps.payments.models import Payment
+from apps.payments.providers import PaymentsUnavailable as ProviderPaymentsUnavailable
 from apps.payments.serializers_mobile import MobilePaymentIntentResponseSerializer
 from apps.payments.services import PaymentRailConflict
 from apps.payments.services_mobile import create_mobile_intent
@@ -22,6 +23,12 @@ class MemberMobilePaymentIntentView(APIView):
     @extend_schema(
         tags=['Payments'],
         summary='Create or retrieve a native mobile payment intent',
+        description=(
+            'Requires an attested device token and ownership of a pending charge in the '
+            'selected makerspace. Returns vendor=stripe PaymentSheet parameters or '
+            'vendor=razorpay native Order parameters. An existing hosted checkout '
+            'returns payment_rail_conflict (409); unavailable payments return 503.'
+        ),
         request=None,
         responses={
             200: MobilePaymentIntentResponseSerializer,
@@ -67,7 +74,7 @@ class MemberMobilePaymentIntentView(APIView):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
-        except stripe_client.PaymentsUnavailable:
+        except (stripe_client.PaymentsUnavailable, ProviderPaymentsUnavailable):
             return Response(
                 {
                     'detail': 'Payments are temporarily unavailable.',

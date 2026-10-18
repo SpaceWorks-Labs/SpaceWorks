@@ -100,6 +100,7 @@ class GithubBrowserCallbackView(APIView):
             meta=social_audit_meta("github", outcome, claims["sub"]),
         )
         response = Response({"access": tokens["access"],
-                             "user": user_payload(user, request=request), "outcome": outcome})
+                             "user": user_payload(user, request=request, session_authority="member"),
+                             "outcome": outcome})
         set_refresh_cookies(response, tokens["refresh"], request)
         return response

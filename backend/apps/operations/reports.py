@@ -15,6 +15,7 @@ from apps.operations.reports_inventory import (
     _top_borrowers,
 )
 from apps.operations.reports_typed import typed_report_rows, typed_result_rows
+from apps.operations.report_output import project_report_output
 
 
 DEFAULT_REPORT_LIMIT = 100
@@ -23,27 +24,49 @@ MAX_REPORT_LIMIT = 500
 
 def report_data(
     report_key="summary", makerspace_id=None, *, limit=None, date_range=None,
-    report_filters=None, grain="day", actor=None,
+    report_filters=None, grain="day", actor=None, platform_context=None,
 ):
-    definition = report_definition(report_key)
+    definition = report_definition(report_key, platform_context=platform_context)
+    if makerspace_id is None and not definition.deployment_aggregate:
+        raise ReportNotFound()
     subject = _authorize_subject(actor, makerspace_id, definition, report_filters)
     if not definition.previewable:
         # Export-only: the generic JSON analytics path must never become a second list.
         raise ReportNotFound()
     kwargs = dict(limit=_normalized_limit(limit), date_range=date_range, **(report_filters or {}))
-    if report_key in {"member-retention", "membership-revenue"}:
+    if report_key in {"presence-top-visitors", "audit-top-actors"}:
         kwargs["actor"] = actor
+    if report_key == "booking-top-members":
+        kwargs["actor"] = actor
+    if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation"}:
+        kwargs["actor"] = actor
+    from .report_definitions_machines import MACHINE_REPORT_KEYS
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
+        kwargs["actor"] = actor
+    if definition.summary and makerspace_id is None:
+        kwargs["limit"] = None  # Totals must include every eligible tenant.
     if definition.grains:
         kwargs["grain"] = grain
-    result = definition.builder()(makerspace_id, **kwargs)
+    if definition.platform_only:
+        kwargs["platform_context"] = platform_context
+    if report_key == "organization-membership" and makerspace_id is None:
+        kwargs["platform_context"] = platform_context
+    result = project_report_output(definition, definition.builder()(makerspace_id, **kwargs))
     if subject is not None:
         from apps.audit.services import record
         # Previews are GETs, but their disclosure audit is a tenant write.
         with tenant_write(subject.makerspace_id):
             record(actor, "report.previewed", makerspace=subject.makerspace, target=subject,
                    meta={"report_key": definition.key})
-    if definition.summary:
+    if definition.summary and isinstance(result, dict):
         return result
+    if definition.summary and makerspace_id is None and isinstance(result, ReportResult):
+        # The builder keeps per-tenant rows at deployment scope; the summary API has
+        # always answered with deployment totals, summed over every eligible tenant.
+        return {
+            field: sum(row.get(field) or 0 for row in result.records)
+            for field in result.field_order if field != "makerspace_id"
+        }
     if not isinstance(result, ReportResult):
         return {"rows": result, "typed_rows": typed_report_rows(report_key, result)}
     rows = _matrix(result, json=True)
@@ -57,16 +80,29 @@ def report_data(
 
 def report_rows(
     report_key, makerspace_id=None, *, limit=None, date_range=None,
-    report_filters=None, grain="day", actor=None,
+    report_filters=None, grain="day", actor=None, platform_context=None,
 ):
-    definition = report_definition(report_key, for_export=True)
+    definition = report_definition(report_key, for_export=True, platform_context=platform_context)
+    if makerspace_id is None and not definition.deployment_aggregate:
+        raise ReportNotFound()
     _authorize_subject(actor, makerspace_id, definition, report_filters)
     kwargs = dict(limit=limit, date_range=date_range, **(report_filters or {}))
-    if report_key in {"member-retention", "membership-revenue"}:
+    if report_key in {"presence-top-visitors", "audit-top-actors"}:
+        kwargs["actor"] = actor
+    if report_key == "booking-top-members":
+        kwargs["actor"] = actor
+    if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation"}:
+        kwargs["actor"] = actor
+    from .report_definitions_machines import MACHINE_REPORT_KEYS
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
         kwargs["actor"] = actor
     if definition.grains:
         kwargs["grain"] = grain
-    result = definition.builder()(makerspace_id, **kwargs)
+    if definition.platform_only:
+        kwargs["platform_context"] = platform_context
+    if report_key == "organization-membership" and makerspace_id is None:
+        kwargs["platform_context"] = platform_context
+    result = project_report_output(definition, definition.builder()(makerspace_id, **kwargs))
     if isinstance(result, ReportResult):
         return _export_matrix(result, grain)
     return result
@@ -90,9 +126,10 @@ def _authorize_subject(actor, makerspace_id, definition, filters):
     return authorize(actor, space, definition, filters)
 
 
-def validate_report_key(report_key, *, for_export=False, deployment_aggregate=False):
+def validate_report_key(report_key, *, for_export=False, deployment_aggregate=False, platform_context=None):
     return report_definition(
-        report_key, for_export=for_export, deployment_aggregate=deployment_aggregate
+        report_key, for_export=for_export, deployment_aggregate=deployment_aggregate,
+        platform_context=platform_context,
     )
 
 

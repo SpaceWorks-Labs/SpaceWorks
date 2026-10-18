@@ -41,7 +41,8 @@ See the [delivery contract](notification-contract.md#provider-connection-and-dep
 | `DEVICE_ANDROID_ATTESTATION_VERIFY_URL` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_URL` | `''` |  |
-| `DEVICE_ATTESTATION_APPS` | `{}` |  |
+| `DEVICE_ATTESTATION_APPS` | `{}` | Legacy fallback only for approved global native registrations whose signing list is empty; keys map to `signing_identity` and `environments`. New installations enter distribution digests / Apple App ID Prefix and minimum versions on registrations in `/control/`. A system warning lists empty eligible rows. See [mobile integration](mobile-integration.md). |
+| `DEVICE_ATTESTATION_DEV_INSECURE` | `False` | Accept development attestation for development registrations only; requires `DEBUG=True`. External and configured in-process verifiers take priority. |
 | `DEVICE_ATTESTATION_CHALLENGE_TTL_SECONDS` | `180` |  |
 | `DEVICE_ATTESTATION_PROVIDER_TIMEOUT_SECONDS` | `10` |  |
 | `MEMBER_CLAIM_CODE_TTL_SECONDS` | `15 * 60` |  |

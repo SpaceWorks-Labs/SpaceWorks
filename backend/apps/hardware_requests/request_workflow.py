@@ -7,6 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.hardware_requests import notifications
 from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem
 from apps.hardware_requests.workflow_errors import (
@@ -47,7 +48,9 @@ def submit_request(
     require_member_account(requester_principal)
     with transaction.atomic():
         from apps.encryption.write_fence import assert_mapped_write_allowed
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
 
+        assert_write_allowed(makerspace.id)
         assert_mapped_write_allowed(makerspace.id)
         if not contact_snapshot.contact_verified:
             # Serialize the tenant ceiling with creation. A count followed by INSERT
@@ -65,6 +68,7 @@ def submit_request(
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         from apps.makerspaces.guards import require_feature
 
+        requester_principal = lock_obligation_owner(requester_principal)
         require_feature(makerspace, "loans.enabled")
         availability.enforce_submission_borrow_limits(makerspace, requester_principal, items)
         request = HardwareRequest.objects.create(

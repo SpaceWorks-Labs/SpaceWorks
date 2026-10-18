@@ -6,6 +6,9 @@ import { filterTabsByEnabledModules } from "../staffTabs";
 import { DashboardActivity, DashboardDueBack } from "./DashboardWidgets";
 import { DashboardQuickAdd } from "./DashboardQuickAdd";
 import { MACHINE_TILE_KEYS, TILES, type DashboardCounts } from "./DashboardStats";
+import { DashboardAnalyticsWidgets, HandoverQueueHome } from "./DashboardAnalyticsWidgets";
+import type { DashboardAnalytics } from "./analyticsApi";
+import { staffTabPath } from "../staffTabs";
 
 type Props = {
   makerspace: Makerspace; canManageMakerspace: boolean; allowedTabs?: readonly string[];
@@ -15,7 +18,9 @@ type Props = {
 
 export function DashboardPanel({ makerspace, allowedTabs, actions,
   isSuperadmin = false, singleTenantLocked = false, guestOnly = false, progress }: Props) {
-  const dashboard = useStaffGet<DashboardCounts>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
+  const dashboard = useStaffGet<DashboardCounts & DashboardAnalytics>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
+  if (dashboard.isSuccess && dashboard.data.scope_mode === "handover") return <HandoverQueueHome queues={dashboard.data.queue_tiles}
+    slug={makerspace.slug} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />;
   const permitted = TILES.filter(tile => (
     (dashboard.data?.scope_mode !== "machine" || MACHINE_TILE_KEYS.has(tile.key))
     && filterTabsByEnabledModules([dashboardDestination(tile.key).tab], makerspace).length > 0
@@ -57,7 +62,10 @@ export function DashboardPanel({ makerspace, allowedTabs, actions,
           href: href(tile.key) }))}
         callout={alert ? { size: "banner", tone: "warn", lead: alertLead[alert.key],
           action: { label: "Review", href: href(alert.key) } } : undefined}
-        main={main} rail={rail}
+        main={[...main, ...(dashboard.data?.widgets ? [{ title: "Analytics", empty: { message: "No analytics widgets available." },
+          content: <DashboardAnalyticsWidgets widgets={dashboard.data.widgets.filter(widget => widget.required_modules.every(module =>
+            makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes(module)))} makerspaceId={makerspace.id}
+            reportsHref={staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked)} /> }] : [])]} rail={rail}
       />}
     </DashboardQuickAdd>
   );

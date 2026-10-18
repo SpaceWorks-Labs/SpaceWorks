@@ -11,3 +11,4 @@ class OperationsConfig(AppConfig):
         register()
         from .notifications_p2_reports import register as register_report_notifications
         register_report_notifications()
+        from apps.operations import report_validation  # noqa: F401

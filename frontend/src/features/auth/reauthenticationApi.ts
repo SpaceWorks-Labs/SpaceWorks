@@ -7,7 +7,7 @@ export type ReauthenticationStatus = {
   mfa_enabled: boolean;
   providers: string[];
 };
-export type ReauthenticationResult = { verified: boolean; mfa_required?: boolean; expires_in: number };
+export type ReauthenticationResult = { verified: boolean; mfa_required?: boolean; expires_in: number; factor_required?: "totp" | "phone" | "email_code"; factor_token?: string };
 export const reauthenticationKey = ["reauthentication-status"] as const;
 export const reauthenticationSessionKey = () => [...reauthenticationKey, browserSessionIdentity(getAccessToken())] as const;
 export const reauthenticationStatus = () => staffRequest<ReauthenticationStatus>("/auth/reauth");

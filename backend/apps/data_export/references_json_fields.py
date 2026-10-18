@@ -84,3 +84,5 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("tenant_migration.ExternalTenantReference", "snapshot"),
     }
 )
+
+JSON_REFERENCE_FIELDS |= frozenset({("integrations.WhatsAppTemplateBinding", "parameters"), ("integrations.MessagingConsent", "lifted_suppression_id")})

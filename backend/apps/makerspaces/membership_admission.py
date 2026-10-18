@@ -12,6 +12,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts import rbac
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.audit import services as audit
 from apps.makerspaces import role_services
 from apps.makerspaces.membership_admission_forms import encode_answers
@@ -47,8 +48,11 @@ def _prepare(row, user, policy, raw_answers):
 
 def request_membership(user, makerspace, application_answers=None):
     require_member_account(user)
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
     with transaction.atomic():
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        user = lock_obligation_owner(user)
         policy = ensure_join_allowed(makerspace)
         if not policy.configured:
             from apps.makerspaces.membership_legacy import legacy_request_membership
@@ -87,10 +91,13 @@ def request_membership(user, makerspace, application_answers=None):
 
 def claim_invitation(user, request_id, application_answers=None):
     require_member_account(user)
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
     original = MembershipRequest.objects.get(pk=request_id)
     with transaction.atomic():
+        assert_write_allowed(original.makerspace_id)
         makerspace = Makerspace.objects.select_for_update().get(pk=original.makerspace_id)
         row = MembershipRequest.objects.select_for_update().get(pk=request_id, makerspace=makerspace)
+        user = lock_obligation_owner(user)
         require_module_for_request(makerspace, row)
         policy = ensure_join_allowed(makerspace)
         if is_staff_invitation(row) or not policy.configured:
@@ -119,9 +126,12 @@ def claim_invitation(user, request_id, application_answers=None):
 
 
 def approve_request(actor, request, assigned_role, plan=None):
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
     with transaction.atomic():
+        assert_write_allowed(request.makerspace_id)
         makerspace = Makerspace.objects.select_for_update().get(pk=request.makerspace_id)
         row = MembershipRequest.objects.select_for_update().get(pk=request.pk, makerspace=makerspace)
+        row.user = lock_obligation_owner(row.user)
         if not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk):
             raise PermissionDenied()
         require_module_for_request(makerspace, row, outcome_role=assigned_role)
@@ -165,6 +175,7 @@ def approve_request(actor, request, assigned_role, plan=None):
 
 def advance(actor, row, policy):
     """Re-evaluate gates under the makerspace/request locks; never grant staff actions."""
+    row.user = lock_obligation_owner(row.user)
     if row.expires_at and row.expires_at <= timezone.now():
         raise AdmissionError("membership_request_expired", "This membership application has expired.")
     if vouching_on(row.makerspace, policy):

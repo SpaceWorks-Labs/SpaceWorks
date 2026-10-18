@@ -23,6 +23,8 @@ class MemberRetentionReportSerializer(ReportRowsFieldMixin):
 class MembershipRevenueRowSerializer(TypedReportBaseSerializer):
     period = serializers.DateField()
     currency = serializers.CharField()
+    plan_id = serializers.IntegerField()
+    plan_name = serializers.CharField()
     recurring_members = serializers.IntegerField()
     mrr = serializers.DecimalField(max_digits=24, decimal_places=2)
     arr = serializers.DecimalField(max_digits=24, decimal_places=2)
@@ -35,3 +37,15 @@ class MembershipRevenueReportSerializer(ReportRowsFieldMixin):
     typed_rows = MembershipRevenueRowSerializer(many=True)
     meta = serializers.DictField()
     report_key = serializers.CharField()
+
+
+class MembershipGrowthRowSerializer(TypedReportBaseSerializer):
+    period = serializers.DateField()
+    new_members = serializers.IntegerField()
+    activated_members = serializers.IntegerField()
+    revoked_members = serializers.IntegerField()
+    active_members = serializers.IntegerField()
+
+
+class MembershipGrowthReportSerializer(ReportRowsFieldMixin):
+    typed_rows = MembershipGrowthRowSerializer(many=True)

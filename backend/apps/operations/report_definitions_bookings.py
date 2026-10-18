@@ -5,10 +5,14 @@ Keyed to MANAGE_BOOKINGS so the built-in Booking Manager reaches every space's r
 
 from apps.accounts import rbac
 
-from .report_definitions_existing import EXISTING_REPORT_DEFINITIONS
 from .report_types import ReportDefinition
+from .report_charts_remaining import RESOURCE_UTILIZATION_CHART, RESERVATIONS_CHART
 
-UTILIZATION_FIELDS = next(d.fields for d in EXISTING_REPORT_DEFINITIONS if d.key == "booking-utilization")
+UTILIZATION_FIELDS = (
+    "space_id", "space_name", "kind", "is_active", "booked", "completed", "no_show",
+    "cancelled", "upcoming", "reserved_hours", "completed_hours", "window_hours",
+    "reservation_utilization_percent", "no_show_rate_percent",
+)
 ARRIVAL_FIELDS = ("arrived_reservations", "confirmed_without_recorded_arrival")
 RESOURCE_UTILIZATION_FIELDS = (*UTILIZATION_FIELDS, *ARRIVAL_FIELDS)
 RESERVATION_FIELDS = (
@@ -29,12 +33,16 @@ def _definition(key, builder, fields, title, feature, **kwargs):
 
 BOOKING_REPORT_DEFINITIONS = (
     _definition("booking-resource-utilization", "reports_booking_resources.build_resource_utilization",
-                RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "analytics", version=2),
+                RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "analytics", version=2,
+                chart_hint="grouped_bar", chart_spec=RESOURCE_UTILIZATION_CHART),
     _definition("booking-resource-utilization-pdf", "reports_booking_resources.build_resource_utilization_pdf",
                 RESOURCE_UTILIZATION_FIELDS, "Resource reservation utilization", "utilization_pdf", version=2,
+                chart_hint="grouped_bar", chart_spec=RESOURCE_UTILIZATION_CHART,
                 allowed_formats=("pdf",), pdf_renderer_path="apps.operations.reports_booking_pdf.render_pdf"),
     _definition("booking-reservations", "reports_booking_exports.build_reservations",
-                RESERVATION_FIELDS, "Resource reservation export", "exports"),
+                RESERVATION_FIELDS, "Resource reservation export", "exports",
+                chart_spec=RESERVATIONS_CHART),
     _definition("booking-answers", "reports_booking_exports.build_answers",
-                ANSWER_FIELDS, "Resource reservation answers", "exports"),
+                ANSWER_FIELDS, "Resource reservation answers", "exports",
+                chart_spec=RESERVATIONS_CHART),
 )

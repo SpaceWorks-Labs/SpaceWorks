@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { ApiPath, OrganizationReportResponse } from "../../generated/api";
 import { staffRequest } from "../../lib/api";
 import type { ReportKey } from "./panels/operationsReportsConfig";
+import { periodParams, type AnalyticsPeriod } from "./panels/analyticsApi";
+import { organizationReportGrains } from "./organizationReportChoices";
+import type { OrganizationReportResponse } from "../../generated/api";
+export type { OrganizationReportResponse, OrganizationReportRows, OrganizationReportBreakdown } from "../../generated/api";
 
-const ORGANIZATION_ANALYTICS_PATH: ApiPath =
+const ORGANIZATION_ANALYTICS_PATH =
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}";
 
 function organizationAnalyticsPath(organizationId: number, reportKey: ReportKey) {
@@ -13,12 +16,6 @@ function organizationAnalyticsPath(organizationId: number, reportKey: ReportKey)
     .replace("{organization_id}", String(organizationId))
     .replace("{report_key}", reportKey);
 }
-
-export type {
-  OrganizationReportBreakdown,
-  OrganizationReportResponse,
-  OrganizationReportRows,
-} from "../../generated/api";
 
 export const organizationAnalyticsKeys = {
   all: ["organization-analytics"] as const,
@@ -29,15 +26,17 @@ export const organizationAnalyticsKeys = {
 export function useOrganizationAnalytics(
   organizationId: number | null,
   reportKey: ReportKey,
+  period: AnalyticsPeriod = { start: "", end: "", grain: "day" },
 ) {
   return useQuery({
-    queryKey: organizationAnalyticsKeys.report(organizationId, reportKey),
+    queryKey: [...organizationAnalyticsKeys.report(organizationId, reportKey), period],
     queryFn: () => {
       if (organizationId === null) throw new Error("Select an organization first.");
       return staffRequest<OrganizationReportResponse>(
-        organizationAnalyticsPath(organizationId, reportKey),
+        `${organizationAnalyticsPath(organizationId, reportKey)}?${periodParams(period, organizationReportGrains(reportKey))}`,
       );
     },
     enabled: organizationId !== null,
+    retry: false,
   });
 }

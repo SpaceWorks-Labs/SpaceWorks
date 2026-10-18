@@ -182,7 +182,7 @@ class OidcBrowserCallbackView(APIView):
         response = Response(
             {
                 "access": tokens["access"],
-                "user": user_payload(user, request=request),
+                "user": user_payload(user, request=request, session_authority=attempt.surface),
                 "outcome": outcome,
             }
         )

@@ -9,6 +9,14 @@ PUBLIC_SLUG_ROUTES = {"public-presence-now", "presence-start", "presence-current
 
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 
+# Scanner routes carry their tenant inside the scanned QR payload, not the path. The
+# target is the QR's makerspace, so a native staff session cannot scan another space's
+# QR under its selected header. An unknown payload adds no target; the view 404s.
+QR_PAYLOAD_ROUTES = {"qr-resolve", "qr-scan"}
+
+# Only these creation routes take their authoritative tenant from the body.
+BODY_SCOPED_ROUTES = {"qr-boxes", "qr-containers", "qr-tools"}
+
 MAKERSPACE_KWARG_ROUTES = {
     **{name: "makerspace_id" for name in (
         "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
@@ -47,6 +55,10 @@ MAKERSPACE_KWARG_ROUTES = {
 from .origin_scope_routes_7b import PRINTER_MAKERSPACE_ROUTES
 
 MAKERSPACE_KWARG_ROUTES.update(PRINTER_MAKERSPACE_ROUTES)
+MAKERSPACE_KWARG_ROUTES.update({name: "makerspace_id" for name in (
+    "messaging-settings", "messaging-test", "whatsapp-template-list",
+    "whatsapp-template-detail", "whatsapp-template-catalog",
+)})
 from .origin_scope_routes_wp4 import MAKERSPACE_ROUTES as WP4_ROUTES
 MAKERSPACE_KWARG_ROUTES.update(WP4_ROUTES)
 MAKERSPACE_KWARG_ROUTES.update({name: "makerspace_id" for name in (
@@ -58,6 +70,8 @@ MAKERSPACE_KWARG_ROUTES.update({name: "makerspace_id" for name in (
 # These routes have no tenant-bearing path segment by design: each is a listing whose
 # queryset is explicitly narrowed by the named makerspace query parameter.
 QUERY_SCOPED_ROUTES = {
+    "member-messaging",
+    "member-messaging-consent",
     'admin-accessible-events',
     'admin-accessible-booking-spaces',
     'admin-search',                # ?makerspace_id= is mandatory
@@ -186,7 +200,18 @@ def _authoritative_route_targets(request, view=None):
         or (url_name == 'admin-makerspace' and 'pk' in kwargs)
         or url_name in MODEL_LOOKUPS or url_name in TARGET_SET_LOOKUPS
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
-        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES)
+        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES
+        or url_name in QR_PAYLOAD_ROUTES or url_name in BODY_SCOPED_ROUTES)
+    if url_name in BODY_SCOPED_ROUTES:
+        body = getattr(request, "data", {})
+        target = _positive_int(body.get("makerspace_id")) if hasattr(body, "get") else None
+        invalid = target is None
+        if target is not None:
+            targets.add(target)
+    if url_name in QR_PAYLOAD_ROUTES:
+        resolved = _qr_payload_makerspace_id(request)
+        if resolved is not None:
+            targets.add(resolved)
     if url_name in PUBLIC_SLUG_ROUTES:
         from .lookup import get_public_makerspace
         from django.http import Http404
@@ -229,6 +254,19 @@ def _authoritative_route_targets(request, view=None):
         if pk is not None:
             targets.update(_lookup_makerspace_ids(url_name, pk))
     return url_name, targets, invalid, route_recognized
+
+
+def _qr_payload_makerspace_id(request):
+    body = getattr(request, "data", None)
+    payload = body.get("payload") if hasattr(body, "get") else None
+    if not isinstance(payload, str) or not payload:
+        return None
+    from apps.boxes.access import inventory_qr_codes
+    from apps.boxes.models import QrCode
+
+    return inventory_qr_codes().filter(
+        payload=payload, status=QrCode.Status.ACTIVE,
+    ).values_list("makerspace_id", flat=True).first()
 
 
 def _positive_int(value):

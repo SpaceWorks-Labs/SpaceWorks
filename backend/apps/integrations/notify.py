@@ -138,6 +138,7 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
         data = lifecycle_data(payload.data)
         if payload.source:
             data["lifecycle_source"] = payload.source
+        event_key = event_key or uuid4()
         data["occurred_at"] = occurred_at or timezone.now().isoformat()
         enabled = {
             channel: is_notification_enabled(makerspace, feature, channel)
@@ -147,9 +148,17 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
         if enabled[NotificationChannel.IN_APP]:
             try:
                 from apps.notifications.inbox import write_matrix_inbox
-                write_matrix_inbox(makerspace, feature, event, payload, event_key or uuid4())
+                write_matrix_inbox(makerspace, feature, event, payload, event_key)
             except Exception:
                 logger.warning("matrix_inbox_failed", extra={"makerspace_id": makerspace.pk})
+        # MERGE-RECON(M): retain addressed enqueue until canonical producer coverage
+        # and the durable-ingress conversion barrier permit legacy retirement.
+        try:
+            from apps.integrations.messaging.dispatch import enqueue_addressed_messages
+            enqueue_addressed_messages(makerspace, feature=feature, event=event,
+                                       event_key=event_key, payload=payload)
+        except Exception:
+            logger.warning("addressed_messaging_enqueue_failed", extra={"makerspace_id": makerspace.pk})
         payer_receipt = (feature == NotificationFeature.PAYMENTS and event == "payment_received"
                          and receipt_email_default(makerspace))
         mandatory_hardware = feature == "hardware_requests" and event in {"return_reminder", "closed_with_issue"}
@@ -186,10 +195,11 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
                     channel=channel,
                     feature=feature,
                     event=event,
-                    payload=data,
+                    payload=({**data, "event_key": str(event_key)}
+                             if channel == NotificationChannel.NATIVE_PUSH else data),
                     text_body=(
-                        # Native push is not a room: it is the member's own device, and
-                        # it must not inherit a chat body written for a staff channel.
+                        # Staff device push retains the adapter's staff wording rather
+                        # than inheriting the editable room template.
                         payload.text
                         if channel == NotificationChannel.NATIVE_PUSH
                         else chat_text

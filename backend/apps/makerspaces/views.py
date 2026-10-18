@@ -65,6 +65,9 @@ TenantBootstrapSerializer = inline_serializer(
         "theme": serializers.JSONField(),
         "branding": serializers.JSONField(),
         "email_enabled": serializers.BooleanField(),
+        "messaging": inline_serializer(name="TenantMessagingAvailability", fields={
+            "sms": serializers.BooleanField(), "whatsapp": serializers.BooleanField(),
+        }),
         "public_api": inline_serializer(
             name="TenantBootstrapPublicApi",
             fields={

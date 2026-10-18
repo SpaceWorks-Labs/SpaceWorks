@@ -2,6 +2,7 @@ from django.urls import path
 from apps.operations.views_report_views import SavedReportViewDetailView, SavedReportViewListCreateView
 
 from apps.operations import views
+from apps.operations.views_platform_analytics import PlatformAnalyticsMakerspacesView, PlatformAnalyticsView
 from apps.admin_api.search import StaffSearchView
 from apps.operations.views_saved_views import SavedViewDetailView, SavedViewListCreateView
 from apps.operations.views_live import LiveStreamView
@@ -15,6 +16,8 @@ from apps.operations.views_report_schedules import (
 from .views_stocktake_discipline import StocktakePolicyView, StocktakeScheduleListView, StocktakeScheduleDetailView
 
 urlpatterns = [
+    path("admin/platform/analytics/makerspaces", PlatformAnalyticsMakerspacesView.as_view(), name="platform-analytics-makerspaces"),
+    path("admin/platform/analytics/<slug:report_key>", PlatformAnalyticsView.as_view(), name="platform-analytics"),
     path("admin/makerspace/<int:makerspace_id>/stocktake-policy", StocktakePolicyView.as_view(), name="stocktake-policy"),
     path("admin/makerspace/<int:makerspace_id>/stocktake-schedules", StocktakeScheduleListView.as_view(), name="stocktake-schedules"),
     path("admin/makerspace/<int:makerspace_id>/stocktake-schedules/<int:pk>", StocktakeScheduleDetailView.as_view(), name="stocktake-schedule-detail"),

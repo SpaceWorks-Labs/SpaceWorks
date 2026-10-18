@@ -40,11 +40,10 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         # verification and minting so an unenrolled login cannot pick up the new
         # credential's version between these reads without proving its factor.
         from apps.accounts.credential_locks import lock_token_issuance
-        user = lock_token_issuance(user)
-        if getattr(user, "is_tenant_dump_stub", False):
-            from rest_framework.exceptions import AuthenticationFailed
-
-            raise AuthenticationFailed("Account is not available.")
+        from apps.accounts.session_issuance import lock_session_user
+        # MERGE-RECON(A): consolidate fences, retaining the original password/restore snapshot.
+        lock_token_issuance(user)
+        user = lock_session_user(user)
         from apps.accounts.mfa_policy import assert_verified, credential, source_for
         assert_verified(user)
         token = super().for_user(user)

@@ -67,7 +67,6 @@ class LoginSerializer(TokenObtainPairSerializer):
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)
         data["surface"] = surface
-        data["user"] = user_payload(self.user, request=request)
+        data["user"] = user_payload(self.user, request=request, session_authority=surface)
         return data
-
 

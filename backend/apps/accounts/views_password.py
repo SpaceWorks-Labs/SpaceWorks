@@ -142,8 +142,8 @@ class ForgotPasswordView(APIView):
 
     @extend_schema(
         tags=["Auth"],
-        summary="Request a context-bound emailed password reset code",
-        description="Select member, staff (with makerspace slug) or platform. Unknown and unavailable accounts receive the same acknowledgement. Staff/platform require a trusted origin and Platform Email.",
+        summary="Request a context-bound emailed recovery proof",
+        description="Select member, staff (with makerspace slug) or platform. Unknown and unavailable accounts receive the same acknowledgement. Staff/platform require a trusted origin and Platform Email. Eligible archived members receive a single-use, 24-hour restore link instead of a reset code.",
         auth=[],
         request=ForgotPasswordRequestSerializer,
         responses={
@@ -254,6 +254,7 @@ def _verified_legacy_email(user, token, *, expected_email=None):
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
         and not user.is_walk_in
+        and user.deletion_requested_at is None
         and not is_anonymous_requester(user)
     ):
         return None

@@ -27,7 +27,15 @@ class PlatformSmsSettings(models.Model):
     account_sid = models.CharField(max_length=255, blank=True)
     auth_token = models.CharField(max_length=512, blank=True)
     from_number = models.CharField(max_length=32, blank=True)
+    notifications_enabled = models.BooleanField(default=False)
+    notifications_from_number = models.CharField(max_length=32, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(
+            condition=models.Q(notifications_from_number="") | ~models.Q(notifications_from_number=models.F("from_number")),
+            name="messaging_sms_otp_number_isolated",
+        )]
 
     def set_auth_token(self, raw):
         self.auth_token = encrypt_value(raw) if raw else ""

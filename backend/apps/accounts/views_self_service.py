@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from apps.accounts import audit_events
 from apps.accounts.models import User
 from apps.accounts.models_devices import DeviceGrant
+from apps.accounts.native_app_identity import eligible_registration_q
 from apps.accounts.serializers_self_service import (
     AccountProfileSerializer, AccountSessionPageSerializer,
 )
@@ -72,8 +73,8 @@ class AccountSessionListView(APIView):
             "id": f"device:{row.pk}", "kind": "device", "created_at": row.created_at,
             "expires_at": None, "last_used_at": row.last_used_at,
             "current": str(row.pk) == str(token.get("device_grant_id") or ""),
-        } for row in DeviceGrant.objects.filter(user=request.user, status=DeviceGrant.Status.ACTIVE,
-                                               registration__status="approved"))
+        } for row in DeviceGrant.objects.filter(eligible_registration_q("registration__"),
+                                               user=request.user, status=DeviceGrant.Status.ACTIVE))
         rows.sort(key=lambda row: row["created_at"] or timezone.now(), reverse=True)
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(rows, request, view=self)

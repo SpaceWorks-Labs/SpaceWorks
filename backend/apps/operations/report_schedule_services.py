@@ -119,7 +119,7 @@ def _claim(schedule_id, now, force):
 def _skip_reason(schedule, definition):
     if any(key in (schedule.filters or {}) for key in ("subject_kind", "subject_id")):
         return "subject_filter_not_schedulable"
-    if definition is None or not definition.exportable or not definition.schedulable:
+    if definition is None or definition.platform_only or not definition.exportable or not definition.schedulable:
         return "report_unavailable"
     if schedule.format not in definition.allowed_formats:
         return "format_not_allowed"
@@ -140,14 +140,17 @@ def _skip_reason(schedule, definition):
 def schedule_inputs(schedule, now):
     """Translate the stored filters into exactly what the manual export view passes."""
     filters = dict(schedule.filters or {})
+    from .report_definitions_machines import MACHINE_REPORT_KEYS
     window_days = filters.get("window_days")
     if window_days:
         date_range = (now - timedelta(days=int(window_days)), now)
     else:
+        # Keep calendar labels for builders to resolve in the source space,
+        # exactly as the preview/download and organization paths do.
         date_range = date_range_from_dates(
             parse_date(filters.get("start") or "") if filters.get("start") else None,
             parse_date(filters.get("end") or "") if filters.get("end") else None,
-            makerspace=schedule.makerspace if schedule.report_key in {"member-retention", "membership-revenue"} else None,
+            makerspace=schedule.makerspace if schedule.report_key in MACHINE_REPORT_KEYS else None,
         )
     report_filters = {}
     if schedule.report_key in {"payment-reconciliation", "payments-ledger", "revenue-over-time", "cash-book", "accounting-journal"}:

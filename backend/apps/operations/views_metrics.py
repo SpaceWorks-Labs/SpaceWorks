@@ -71,6 +71,8 @@ def _collect():
 
     since = timezone.now() - timedelta(hours=1)
     out = _Exposition()
+    from .metrics_push import push_outcome_samples
+    out.gauge("spaceworks_push_delivery_outcomes", "Current per-device push outcome counts by platform (both ledgers).", push_outcome_samples())
 
     out.gauge(
         "spaceworks_celery_queue_length",

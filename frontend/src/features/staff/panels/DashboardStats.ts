@@ -1,23 +1,7 @@
-export type DashboardCounts = {
-  upcoming_events?: number;
-  pending_event_registrations?: number;
-  pending_bookings?: number;
-  upcoming_bookings?: number;
-  open_booking_issues?: number;
-  scope_mode: "machine" | "full";
-  overdue_loans?: number;
-  pending_requests?: number;
-  awaiting_issue?: number;
-  open_problem_reports?: number;
-  low_stock?: number;
-  pending_prints?: number;
-  active_prints?: number;
-  prints_awaiting_collection?: number;
-  failed_emails?: number;
-  stocktakes_awaiting_approval?: number;
-  warranty_expiring?: number;
-  maintenance_overdue?: number;
-  pending_payments?: number;
+import type { Dashboard } from "../../../generated/api";
+// MERGE-RECON(G): regenerate Dashboard from the union serializer, then remove this scope bridge.
+export type DashboardCounts = Omit<Dashboard, "widgets" | "queue_tiles" | "outstanding_by_currency" | "scope_mode"> & {
+  scope_mode: Dashboard["scope_mode"] | "handover";
 };
 
 // Tiles keep their semantic intent; only emphasis is a filled attention pill.

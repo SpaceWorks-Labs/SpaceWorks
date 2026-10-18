@@ -4,6 +4,7 @@ from datetime import timedelta
 import hashlib
 import json
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
@@ -28,12 +29,29 @@ class RecentAuthenticationRequired(PermissionDenied):
 def binding(request):
     user = request.user
     active(user)
+    if user.deletion_requested_at is not None:
+        raise AuthenticationFailed("Account is not available.")
     token = getattr(request, "auth", None)
     if token is not None:
         from apps.accounts.surface_policy import assert_surface, validate_account_token
         validate_account_token(user, token)
         assert_surface(user, token.get("surface"), request=request)
-        if token.get("device_grant_id") or token.get("surface") not in {"staff", "staff_api", "member", "delegated", "platform"}:
+        if token.get("device_grant_id"):
+            from apps.accounts.models_devices import DeviceRefreshFamily
+            from apps.accounts.native_app_identity import registration_is_eligible
+            try:
+                family = DeviceRefreshFamily.objects.select_related("grant__registration").filter(
+                    pk=token.get("device_family_id"), grant_id=token["device_grant_id"], user=user,
+                    grant__user=user, revoked_at__isnull=True,
+                    grant__status="active", grant__revoked_at__isnull=True).first()
+            except (ValidationError, ValueError, TypeError) as exc:
+                raise PermissionDenied("A current device session is required.") from exc
+            if (family is None or not registration_is_eligible(family.grant.registration)
+                    or token.get("surface") not in {"member", "staff_api"}
+                    or family.grant.authority != user.account_kind):
+                raise PermissionDenied("A current device session is required.")
+            return "device:" + str(family.pk), token["surface"]
+        if token.get("surface") not in {"staff", "staff_api", "member", "delegated", "platform"}:
             raise PermissionDenied("Use a browser session to verify your identity.")
         from apps.accounts.web_sessions import validate_session
         row = validate_session(user, token)
@@ -54,8 +72,9 @@ def versions(user):
     # relink cannot resurrect a proof made before the credential was revoked.
     identities = list(user.social_identities.order_by("pk").values_list("pk", "provider", "provider_sub"))
     identity = (str(user.pk), user.account_kind, str(user.staff_makerspace_id), user.credential_generation)
+    phone = [user.phone_e164, str(user.phone_verified_at or "")]
     fingerprint = hashlib.sha256((credential_fingerprint(user, user.email) + "\0"
-                                  + json.dumps([identity, identities])).encode()).hexdigest()
+                                  + json.dumps([identity, identities, phone, str(user.account_restored_at or "")])).encode()).hexdigest()
     return {"auth_generation": current_auth_generation(),
             "credential_fingerprint": fingerprint,
             "mfa_version": str(row.version) if row else ""}

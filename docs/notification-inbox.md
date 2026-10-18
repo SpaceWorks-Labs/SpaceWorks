@@ -65,8 +65,9 @@ before SENT commits can resend. Send-test cannot name an arbitrary email recipie
 Personal opt-outs are checked both when mail is queued and immediately before send.
 They cannot turn on a channel the makerspace disabled. Existing staff receives-notification
 and recipient rules remain authoritative. Turning off the editor does not discard saved
-opt-outs, including after a deployment tombstones notifications. Email, inbox and existing staff device push preferences are independent;
-this lane does not add member push delivery.
+opt-outs, including after a deployment tombstones notifications. Email, inbox and device
+push preferences are independent. Member push intentionally requires an inbox row, so
+tenant `in_app` and personal `in_app` must allow its creation.
 
 Account recovery, verification, overdue return reminders, custody alarms and loan
 closure-with-issue emails bypass personal opt-outs. Suppression still blocks known bad
@@ -90,6 +91,50 @@ JSON with `List-Unsubscribe=One-Click`; GET has no effect. Forged/expired tokens
 400. The late tenant write gate refuses frozen tenants with 423. No login, cookies or
 CSRF session are required. Configure the SMTP provider to DKIM-sign both unsubscribe
 headers as required by RFC 8058; the application cannot enforce provider signing.
+
+## Member native push
+
+New inbox rows record `audience=staff|member` and a minimal validated subject scope
+(`machine_id`, `machine_type_id`, `category_id`, positive integer IDs only). Existing
+rows backfill as staff. Requester wording wins for dual staff/member recipients and
+sets the audience to member. Creation of a member row queues `deliver_member_push`
+with `transaction.on_commit`, so rolled-back inbox writes cannot send a push.
+
+Delivery rechecks `mobile.push`, the tenant `(feature, native_push)` matrix cell,
+platform push configuration, makerspace servability, source module availability,
+the notifications module and `notifications.member_inbox`. A failed global gate
+returns without marking delivery rows. Recipient checks require `eligible_owner`
+plus an active local membership, `receives_notifications`, requester selection
+re-evaluated using the saved scope, and the personal native-push preference. Account-only
+borrowers can still read their inbox but receive no member push without membership.
+Devices must belong to that recipient and makerspace, be active, and have an active
+grant belonging to that User with an approved deployment-global app registration.
+Recipient/device failures create or mark retryable device deliveries skipped.
+
+The title is the makerspace name clipped to 64 characters. The body is the inbox
+row's member summary read through the normal decryption accessor and clipped to 178
+characters; staff payload text is never used for this path. Staff push keeps its
+existing independent matrix delivery and uses the same one-device provider sender.
+
+`MemberPushDelivery` is unique per inbox row/device. Each attempt atomically claims
+pending/failed work or an expired sending lease, only while attempts < 5, increments
+attempts and sets a new UUID token with a two-minute expiry. Sent/failed completion
+updates require that exact token. Transient errors use exponential backoff; invalid
+tokens deactivate the device and exhaust the five-attempt budget. Every five minutes,
+beat or `run_scheduled_tasks --due-only` re-enqueues retryable work and expired leases,
+skipping frozen/not-restored tenants through their source-gate boundaries. Provider
+I/O runs outside application database transactions. Delivery is **best-effort with
+possible duplicates** if a provider accepted before a worker recorded sent. An enqueue
+failure or exhausted delivery leaves the inbox readable. Delivery telemetry is omitted
+from portable exports and deleted when its inbox row or device is deleted.
+
+Both staff and member pushes carry payload v2: string-valued `v`, `event_id`,
+`makerspace_id`, `feature`, `event`, and member-only `inbox_row_id`. The stable event
+identity is the inbox event UUID for members and the persisted delivery-log event key
+for staff (pre-v2 logs use their stable log ID). Optional links must pass both
+`inbox.safe_link` and `integrations.mobile_link_contract.is_supported_link`;
+without one the app opens the makerspace inbox. APNs groups using `aps.thread-id`
+equal to the makerspace ID. This grouping does not promise collapse or deduplication.
 
 ## Retention and data hygiene
 

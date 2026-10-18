@@ -26,6 +26,8 @@ class MachineUsageEntry(ScopedPiiModelMixin, models.Model):
     machine = models.ForeignKey(
         Machine, on_delete=models.CASCADE, related_name="usage_entries"
     )
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="machine_usage_entries")
+    started_at = models.DateTimeField(null=True, blank=True)
     hours = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     source = models.CharField(
         max_length=16, choices=Source.choices, default=Source.MANUAL

@@ -12,6 +12,7 @@ from apps.payments.models import (
 from apps.payments.resolution import source_for_payment
 from apps.payments.services import PaymentRailConflict
 from apps.payments.services_checkout import _claim_provider
+from apps.payments.services_mobile_razorpay import create_mobile_order
 
 
 def create_mobile_intent(payment_id, *, actor):
@@ -57,13 +58,14 @@ def create_mobile_intent(payment_id, *, actor):
         if payment.provider == Payment.Provider.UNCLAIMED:
             _claim_provider(payment)
         source = source_for_payment(payment)
-        # The native PaymentSheet is Stripe-only. A Razorpay source carries the Razorpay
-        # key secret in `secret_key`, so without the vendor check below this sent that
-        # secret to Stripe as an API key. Raising here also rolls back the claim above.
-        if source is None or source.vendor != Payment.Provider.STRIPE or not source.publishable_key:
+        if source is None or not source.publishable_key:
             raise stripe_client.PaymentsUnavailable(
                 'Mobile payments are not configured.'
             )
+        if source.vendor == Payment.Provider.RAZORPAY:
+            return create_mobile_order(payment, source, actor=actor)
+        if source.vendor != Payment.Provider.STRIPE:
+            raise stripe_client.PaymentsUnavailable('Unsupported mobile payment vendor.')
         _validate_connect_source(payment, merchant)
 
         if payment.stripe_payment_intent_id:
@@ -107,6 +109,7 @@ def create_mobile_intent(payment_id, *, actor):
                 meta={'stripe_provider': payment.stripe_provider},
             )
         return {
+            'vendor': 'stripe',
             'payment_id': payment.pk,
             'client_secret': client_secret,
             'publishable_key': source.publishable_key,

@@ -56,3 +56,14 @@ Portable dumps preserve due dates and refund correction chains, remapping identi
 They reset automatic-mail policy and drop F1 claims; the target must opt in afresh.
 The money fingerprint includes due dates and every refund amendment. The coordinator
 must recompute the merged catalog digest and regenerate the OpenAPI snapshot/client.
+
+Native online payments use the charge's resolved vendor: Stripe returns PaymentSheet
+parameters; Razorpay returns native Checkout Order parameters. Both include `vendor`
+and `payment_id`. Hosted links and native payments cannot be mixed on one charge.
+Razorpay Orders are recovered by exact receipt and charge details before creating;
+waiving or recording an offline payment closes the Order locally because Razorpay
+has no Order cancellation API. A late capture after waiver settles online and retains
+its refund anchor. A different capture on an already settled charge raises one
+`payment.double_paid_refund_required` audit per provider payment ID, including the
+captured amount in minor units and currency. Staff refund that excess in the provider
+dashboard; the original charge and its refund balance remain unchanged.

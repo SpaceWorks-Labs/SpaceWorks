@@ -19,7 +19,7 @@ from apps.makerspaces.serializers_admission import AdmissionAnswersSerializer
 
 
 ERRORS = {400: ErrorSerializer, 401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer,
-          423: ErrorSerializer, 503: ErrorSerializer}
+          409: ErrorSerializer, 423: ErrorSerializer, 503: ErrorSerializer}
 
 
 def _claimable_invitations(user):

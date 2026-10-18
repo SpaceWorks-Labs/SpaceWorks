@@ -42,6 +42,11 @@ from apps.accounts.views_oidc_browser import (
     OidcBrowserStartView,
 )
 from apps.accounts.views_claim import ClaimRedemptionView
+from apps.accounts.views_logout_all import LogoutAllView
+from apps.accounts.views_account_deletion import AccountDeletionView
+from apps.accounts.views_account_restore import (
+    AccountRestoreEmailView, AccountRestorePhoneView, AccountRestoreSocialStartView, AccountRestoreSocialCompleteView,
+)
 from apps.accounts.views_github import GithubBrowserCallbackView, GithubBrowserStartView
 from apps.organizations.views_redeem import OrganizationInvitationRedeemView
 from apps.organizations.views_self_service import OrganizationSelfServiceView
@@ -49,6 +54,11 @@ from apps.organizations.views_self_service import OrganizationSelfServiceView
 from apps.accounts.urls_security import auth_urlpatterns
 
 urlpatterns = [
+    path("account/restore/email", AccountRestoreEmailView.as_view(), name="auth-account-restore-email"),
+    path("account/restore/phone", AccountRestorePhoneView.as_view(), name="auth-account-restore-phone"),
+    path("account/restore/social/start", AccountRestoreSocialStartView.as_view(), name="auth-account-restore-social-start"),
+    path("account/restore/social/complete", AccountRestoreSocialCompleteView.as_view(), name="auth-account-restore-social-complete"),
+    path("account/deletion", AccountDeletionView.as_view(), name="auth-account-deletion"),
     path("organizations/self-service/", OrganizationSelfServiceView.as_view(), name="auth-organizations-self-service"),
     *auth_urlpatterns,
     path("social/nonce", SocialNonceView.as_view(), name="social-nonce"),
@@ -91,6 +101,7 @@ urlpatterns = [
     ),
     path("refresh", RefreshView.as_view(), name="auth-refresh"),
     path("logout", LogoutView.as_view(), name="auth-logout"),
+    path("logout-all", LogoutAllView.as_view(), name="auth-logout-all"),
     path("me", MeView.as_view(), name="auth-me"),
     path("change-password", ChangePasswordView.as_view(), name="auth-change-password"),
     path("forgot-password", ForgotPasswordView.as_view(), name="auth-forgot-password"),

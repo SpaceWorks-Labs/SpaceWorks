@@ -3,6 +3,7 @@
 from django.db import transaction
 from django.db.models import Exists, OuterRef
 from django.utils import timezone
+from apps.accounts.account_obligations import lock_obligation_owner
 
 from apps.makerspaces import limits
 from apps.operations.cancellation_restore import require_exact_restore, require_restorable
@@ -28,6 +29,7 @@ def annotate_restore_history(queryset):
 @transaction.atomic
 def restore_booking(booking, *, actor):
     space, locked = _locked_booking(booking)
+    locked.member = lock_obligation_owner(locked.member)
     booking_authority.require(actor, space, "manage_reservations")
     require_feature(space, "bookings.staff_tools")
     now = timezone.now()

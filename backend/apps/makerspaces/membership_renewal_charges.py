@@ -4,6 +4,7 @@ import logging
 from django.db import IntegrityError, transaction
 
 from apps.accounts import rbac
+from apps.accounts.account_obligations import AccountDeletionPending, lock_obligation_owner
 from apps.audit import services as audit
 from apps.makerspaces.models import MembershipTerm
 
@@ -22,6 +23,11 @@ def raise_renewal(term):
                   subject_id=term.pk)
     try:
         with transaction.atomic():
+            from apps.makerspaces.guards import require_module_locked
+            from apps.tenant_migration.gate_runtime import assert_write_allowed
+            assert_write_allowed(space.pk)
+            require_module_locked(space.pk, "membership")
+            term.membership.user = lock_obligation_owner(term.membership.user)
             # A savepoint contains a uniqueness race; the outer transaction stays usable.
             try:
                 with transaction.atomic():
@@ -42,6 +48,8 @@ def raise_renewal(term):
                          meta={"membership_id": term.membership_id, "term_id": term.pk,
                                "payment_id": payment.pk})
         return "charged"
+    except AccountDeletionPending:
+        return "skipped"
     except Exception:
         logger.warning("membership_renewal_charge_failed", extra={"term_id": term.pk})
         return "failed"

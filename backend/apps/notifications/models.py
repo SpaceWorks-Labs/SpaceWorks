@@ -4,6 +4,7 @@ from .models_preferences import NotificationPreference
 
 from .models_broadcasts import MemberBroadcast
 from .models_inbox import MemberNotificationPreference, NotificationInboxRow
+from .models_push import MemberPushDelivery
 
 
 class Notification(models.Model):

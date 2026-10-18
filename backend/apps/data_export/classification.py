@@ -64,6 +64,14 @@ from apps.tenant_migration.catalog_p2_events import OMITTED_MODELS as P2_EVENT_O
 OMITTED_MODELS.update(P2_EVENT_OMITTED)
 from apps.tenant_migration.catalog_p2_presence import classify as classify_presence
 classify_presence(EXPORTED_MODEL_FIELDS)
+from .classification_m1f1 import EXPORTED_FIELDS as M1F1_FIELDS, FIELD_ADDITIONS as M1F1_ADDITIONS, OMITTED_MODELS as M1F1_OMITTED
+EXPORTED_MODEL_FIELDS.update(M1F1_FIELDS)
+for _label, _fields in M1F1_ADDITIONS.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _fields
+OMITTED_MODELS.update(M1F1_OMITTED)
+from .classification_messaging import EXPORTED_FIELDS as MESSAGING_FIELDS, OMITTED_MODELS as MESSAGING_OMITTED
+EXPORTED_MODEL_FIELDS.update(MESSAGING_FIELDS)
+OMITTED_MODELS.update(MESSAGING_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

@@ -1,17 +1,17 @@
 """Matrix fan-out addressed by User identity, never free-text contact ownership."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from django.db import transaction
 
 from apps.accounts import rbac
-from apps.accounts.models import User
-from apps.integrations.staff_notifications import staff_user_ids_for_feature
-from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.notifications.models_inbox import NotificationInboxRow
+from apps.notifications.inbox_scope import scope_snapshot
 from apps.notifications.preferences import personal_enabled
+from apps.integrations.recipients_addressed import addressed_recipients
+from apps.integrations.recipients_owners import eligible_owner
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +22,6 @@ class InboxDelivery:
     title: str
     summary: str
     link: str = ""
-
-
-def eligible_owner(makerspace, user_id):
-    """Explicit domain owners may be account-only borrowers; revoked members cannot read."""
-    if not user_id or not User.objects.filter(
-        pk=user_id, is_active=True, access_status=User.AccessStatus.ACTIVE,
-        is_tenant_dump_stub=False,
-    ).exists():
-        return False
-    membership = rbac.scope_notification_policy(
-        MakerspaceMembership.objects.all(), makerspace_id=makerspace.pk,
-    ).filter(user_id=user_id).first()
-    return membership is None or (membership.status == "active" and membership.receives_notifications)
 
 
 def safe_link(value):
@@ -57,30 +44,26 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
 
     if not is_servable(makerspace) or not module_enabled(makerspace, "notifications") or not feature_available(makerspace, feature):
         return
+    member_enabled = feature_enabled(makerspace, "notifications.member_inbox")
+    selection_payload = payload if member_enabled else replace(payload, emails=(), inbox=())
+    selected = dict(addressed_recipients(makerspace, feature, event, selection_payload))
     recipients = {}
-    if payload.staff_channels_enabled:
-        for user_id in staff_user_ids_for_feature(makerspace, feature, event, payload.scope):
-            recipients[user_id] = InboxDelivery(
-                user_id, f"{feature.replace('_', ' ').title()}: {event.replace('_', ' ')}",
-                payload.text, f"/m/{makerspace.slug}/admin/notifications",
-            )
-    if feature_enabled(makerspace, "notifications.member_inbox"):
-        from apps.integrations import recipients as selection
-
-        # Mail is a fallback; an adapter's deliberately bounded inbox summary wins.
-        own = [InboxDelivery(
-            mail.user_id, mail.subject, mail.text_body,
-            f"/m/{makerspace.slug}/member",
-        ) for mail in payload.emails if mail.user_id and mail.audience in {"requester", "member"}]
+    member_ids = set()
+    stored_scope = scope_snapshot(payload.scope)
+    for user_id, audience in selected.items():
+        if audience == "staff":
+            recipients[user_id] = InboxDelivery(user_id,
+                f"{feature.replace('_', ' ').title()}: {event.replace('_', ' ')}",
+                payload.text, f"/m/{makerspace.slug}/admin/notifications")
+    if member_enabled:
+        own = [InboxDelivery(mail.user_id, mail.subject, mail.text_body,
+                            f"/m/{makerspace.slug}/member") for mail in payload.emails
+               if mail.user_id and mail.audience in {"requester", "member"}]
         own.extend(payload.inbox)
-        if selection.has_selection(makerspace, feature, event, payload.scope) and not selection.requester_selected(
-            makerspace, feature, event, payload.scope,
-        ):
-            own = []
         for delivery in own:
-            if eligible_owner(makerspace, delivery.user_id):
-                # Requester wording wins when an owner is also staff.
+            if selected.get(delivery.user_id) == "member":
                 recipients[delivery.user_id] = delivery
+                member_ids.add(delivery.user_id)
     for user_id, delivery in recipients.items():
         if not personal_enabled(makerspace, user_id, feature, "in_app", event=event):
             continue
@@ -90,10 +73,15 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
             ).get_or_create(
                 makerspace=makerspace, user_id=user_id, event_key=event_key,
                 defaults={"feature": feature, "event": event, "title": delivery.title[:200],
+                          "audience": "member" if user_id in member_ids else "staff", "scope": stored_scope,
                           "summary": delivery.summary[:12000], "link": safe_link(delivery.link)},
             )
             if created:
                 transaction.on_commit(lambda uid=user_id: _hint(makerspace.pk, uid), robust=True)
+                if row.audience == "member":
+                    from apps.notifications.member_push import enqueue_member_push
+
+                    transaction.on_commit(lambda rid=row.pk: enqueue_member_push(rid), robust=True)
 
 
 def _hint(makerspace_id, user_id):

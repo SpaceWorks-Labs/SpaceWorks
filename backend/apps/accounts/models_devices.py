@@ -30,9 +30,11 @@ class NativeAppRegistration(models.Model):
     app_id = models.CharField(max_length=255)
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     environment = models.CharField(max_length=16, choices=DeviceEnvironment.choices)
-    # Indirection keeps verifier credentials in deployment configuration while the
-    # database row remains the independently approvable and revocable authority.
+    # Only legacy rows with an empty signer list resolve this label in the env map.
+    # New approvals use public app identities stored here; credentials stay encrypted.
     verifier_config_key = models.CharField(max_length=255)
+    signing_identities = models.JSONField(default=list, blank=True)
+    min_supported_version = models.CharField(max_length=64, null=True, blank=True)
     status = models.CharField(
         max_length=16,
         choices=Status.choices,
@@ -78,6 +80,7 @@ class DeviceAttestationChallenge(models.Model):
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     app_id = models.CharField(max_length=255)
     signing_identity = models.CharField(max_length=255)
+    signing_identities = models.JSONField(default=list, blank=True)
     environment = models.CharField(max_length=16, choices=DeviceEnvironment.choices)
     challenge_digest = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()
@@ -89,6 +92,10 @@ class DeviceAttestationChallenge(models.Model):
 
 
 class DeviceGrant(models.Model):
+    class Authority(models.TextChoices):
+        MEMBER = 'member', 'Member'
+        STAFF = 'staff', 'Staff'
+
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
         REVOKED = 'revoked', 'Revoked'
@@ -105,11 +112,14 @@ class DeviceGrant(models.Model):
         related_name='device_grants',
     )
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    authority = models.CharField(max_length=16, choices=Authority.choices, default=Authority.MEMBER)
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     app_id = models.CharField(max_length=255)
     signing_identity = models.CharField(max_length=255)
     environment = models.CharField(max_length=16, choices=DeviceEnvironment.choices)
     attestation_subject_fingerprint = models.CharField(max_length=64)
+    attestation_key_id = models.CharField(max_length=512, null=True, blank=True)
+    attestation_public_key = models.TextField(null=True, blank=True)
     attested_at = models.DateTimeField()
     last_used_at = models.DateTimeField()
     revoked_at = models.DateTimeField(null=True, blank=True)

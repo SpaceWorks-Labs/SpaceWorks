@@ -4,14 +4,28 @@ from .gate_policy_replay import REPLAY_HTTP_PARTICIPANTS
 from .gate_policy_p2_wa_twilio import HTTP_ANONYMOUS_PARTICIPANTS as WA_TWILIO_PARTICIPANTS
 
 
+# MERGE-RECON(M/C): consolidate signed ingress behind the durable cutover gate;
+# retain both provider route families while ordinary tenant writes stay fenced.
 HTTP_EXEMPTIONS = {
     "notification-media": (
         "Single-use GET resolves its tenant from the hashed media grant, then takes "
         "tenant_write for atomic consumption and audit; closed source gates refuse disclosure."
     ),
+    **{name: "Signed provider ingress durably records deployment events; status writes gate their resolved tenant; STOP protection must survive frozen tenants." for name in (
+        "messaging-twilio-platform-status", "messaging-twilio-platform-inbound",
+        "messaging-twilio-status", "messaging-twilio-inbound", "messaging-meta-platform", "messaging-meta",
+    )},
+    "auth-account-restore-email": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-restore-phone": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-restore-social-start": "Global provider recovery intent has no tenant mutation.",
+    "auth-account-restore-social-complete": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-deletion": "Global departure discovers and locks every owned tenant gate inside Stage A.",
     "auth-reauth": "Global browser session proof has no tenant-owned authority.",
     "auth-reauth-social-start": "Global session-bound credential intent.",
     "auth-reauth-social-complete": "Global credential verification and browser proof.",
+    "auth-reauth-social-factor": "Global session-bound provider second-factor proof.",
+    "auth-reauth-phone-start": "Global session-bound phone credential challenge.",
+    "auth-reauth-phone-confirm": "Global phone credential verification and session proof.",
     "auth-reauth-enrollment-email": "Global session-bound MFA enrollment confirmation.",
     "auth-reauth-enrollment-confirm": "Global enrollment-only proof, never a tenant grant.",
     "control-reauthentication": "Global control session proof; existing control MFA gate remains.",
@@ -49,6 +63,7 @@ HTTP_EXEMPTIONS = {
     "control-mfa": "Global MFA credential and control-session state is excluded from tenant quiescence.",
     "auth-refresh": "Global user session state is excluded from tenant quiescence.",
     "auth-logout": "Global user session state is excluded from tenant quiescence.",
+    "auth-logout-all": "Global user session state is excluded from tenant quiescence.",
     "auth-change-password": "Global credential edits are excluded from tenant quiescence.",
     "auth-forgot-password": "Global account recovery is excluded from tenant quiescence.",
     "auth-reset-password": "Global credential edits are excluded from tenant quiescence.",
@@ -107,6 +122,8 @@ HTTP_ANONYMOUS_PARTICIPANTS = {
         "Verified secret and single-use private proof resolve one configuration; endpoint "
         "and audit writes take tenant_write in notification_proofs.verified_callback."
     ),
+    "apps.integrations.views_messaging_webhooks.TwilioMessagingWebhookView.post": "Signed ingress stores a durable event; status uses tenant_write and STOP uses sender-scoped protection.",
+    "apps.integrations.views_messaging_webhooks.MetaMessagingWebhookView.post": "Sender lock precedes event/correlation row locks; tenant status writes use tenant_write independently of module state.",
     "apps.integrations.views_bounce.BounceWebhookView.post": (
         "Verified tenant HMAC resolves one makerspace; suppression and audit commit under tenant_write."
     ),

@@ -12,6 +12,13 @@
 The load-bearing rules, grouped by area. These were established across many shipped batches and matter
 beyond any single module. Read the subsection covering what you are touching.
 
+<!-- MERGE-RECON(G): this bootstrap is nondeployable; finalize these contracts after lane verification. -->
+The mobile reconciliation retains immutable member/staff/platform kinds and the development-only
+`0032_account_context` role reset; no authority-preserving live-data reset is authorized. T's envelopes,
+channel configurations and Twilio/Meta providers own the final delivery pipeline. O's addressed sender,
+consent, STOP, callback, template and analytics protections must be ported before duplicate retirement.
+Workers/schedulers stay stopped until durable ingress, conversion, replay and activation checkpoints pass.
+
 ## Account kinds (member / staff / platform)
 
 These are the account-split owner decisions D1–D12, including approved amendments V1–V12.
@@ -177,15 +184,74 @@ platform operators and never promote an existing member/staff identity.
 
 ## Cross-cutting invariants (from shipped batches)
 
+**Analytics measurement ledgers (mobile 1f-1).** Consumable quantities have one finalized
+source per operation: pooled service requests at completion/failure (including actual =
+reserved, which writes no reconciliation adjustment), manual consume adjustments, and
+every non-pool `ServiceRequestConsumption`, including productless grams. Reservations,
+corrections, reconciliation deltas and retirements are separate measures; manual usage
+grams and printer telemetry must never be added again. Units remain separate.
+`ConsumableCostRecord` freezes the contemporaneous pool/product price in the consumption's
+own measurement unit and currency minor units, with half-up rounding of the total. Current
+prices use major currency units per `cost_unit`; kg/liter/meter prices normalize to
+grams/milliliters/millimeters. There is no procurement fallback or historical backfill.
+Unpriced consumption stays cost-unknown. Pool and inventory-product price triples are
+nullable together. Productless non-pool grams currently have no priced source.
+
+Every runtime machine status writer uses `machines/status_tracking.change_status` under
+the existing machine lock: manual change, service start/release, retirement, maintenance.
+It appends `MachineStatusEvent` and audit in the same transaction only for real changes.
+Before the first observed edge the historical status is unknown. Manual usage may set an
+active local `member` and `started_at` at INSERT only; older rows remain unattributed and
+the existing UPDATE/DELETE trigger is unchanged. The optional member picker is scoped to
+the resolved machine and requires permission to operate it.
+
+Authenticated native activity is unique on `(grant, makerspace-or-NULL, local_day)`, with
+NULLs treated as equal. Only the validated selected membership supplies the tenant and
+its timezone; unselected requests use NULL and the deployment timezone. The short cache
+uses the same triple and is populated after commit. This measures active app sessions
+(grants); platform counts deduplicate grants across tenant and NULL observations.
+
+Staff push uses `integrations.PushDeliveryAttempt`; member push keeps its existing
+`MemberPushDelivery` leases. Both stamp platform/provider source at creation; retries
+update attempts on that row and successful destinations are not resent. Staff attempts
+snapshot the recipient so device reassignment cannot transfer ownership of history.
+Email provider source comes from the actual connection, including platform SMTP fallback;
+older unknown values remain blank. Provider message IDs are retained only when returned.
+Signed bounce ingress deduplicates `(makerspace, event_id)` and correlates timestamps only
+on exact same-tenant message IDs; bounce and complaint timestamps remain independent.
+Uncorrelated events still suppress the address. SMS outcomes contain no phone/body;
+attestation outcomes contain no identifiers, proof or verifier response. Provider errors
+never enter these ledgers as free text.
+
+`InventoryStockSnapshot` is an append-only observation per `(product, local_day)` in the
+tenant timezone. It reads quantity buckets through inventory availability, never rebuilds
+past days, and measures **days observed out of stock**. Beat, the beat-less scheduler and
+the fan-out source-gate registry must all include its daily writer.
+
+Status, cost and stock facts travel in tenant exports; cost source IDs remap to their
+domain sources. Service-module purge deletes costs for the sources it removes, while
+independent manual pool usage and costs survive. Activity, push attempts, SMS/attestation
+outcomes and provider replay events are runtime-only and never travel in tenant dumps.
+Personal archives include a separate `runtime_activity/` section with explicit field
+allowlists for own activity and push outcomes, with no device destinations, tokens,
+leases or message content. Own unselected activity is included; another tenant's selected
+activity is not. Account purge must delete user-linked runtime rows. The 1d contract retains immutable
+usage rows and their member link to the anonymized User stub; it does not update the
+usage row or its started_at. SET_NULL is the declared policy for a future physical User
+delete, not permission to bypass the usage trigger. Anonymous facts survive.
+
 **Recent reauthentication (Lane F).** `accounts.ReauthenticationSession` holds
-server-only browser proof bound to the stable browser session ID, user, surface,
+server-only proof bound to the stable browser session ID or native DeviceRefreshFamily ID, user, surface,
 deployment generation, password/email/linked-identity fingerprint and MFA version.
-Refresh never changes auth_time; proofs expire after ten minutes. Native sessions
-cannot acquire this browser proof. Password verification also requires TOTP when MFA is enrolled;
+Refresh never changes auth_time; proofs expire after ten minutes. Device grants
+skip browser Origin validation only after authentication. Password verification also requires TOTP when MFA is enrolled;
 passwordless MFA holders may use replay-protected TOTP alone. Social intents are
 single-use, session/origin/version bound and five-minute limited: verified linked
-subject and provider auth_time within 60 seconds are required, followed by enrolled
-MFA. A provider unable to prove freshness cannot stamp proof. Passwordless MFA
+subject is required, never a new link. Provider auth_time must be within five minutes.
+Apple requires it; OIDC requests prompt=login and max_age=0; Google requests it through
+claims. GitHub, Google without fresh auth_time and OIDC without auth_time additionally need
+TOTP, else verified-phone OTP, else an intent-bound verified-email code. Email codes
+are single-use, ten-minute limited and attempt-capped. Passwordless MFA
 enrollment instead accepts fresh social proof or a single-use, verified-email,
 session-bound fifteen-minute confirmation; emailed proof never authorizes sensitive
 actions by itself. Existing password checks for other MFA management remain.
@@ -612,6 +678,46 @@ holds canonical `ReportDefinition`s (module-gated, `report_scope.eligible_makers
 contract; **aggregate output groups by `makerspace_id` and never flattens cross-tenant data**. Per-makerspace
 report rows are gated by query-level scope (no per-row Python check → no N+1).
 
+**Every previewable report declares a valid F1 `chart_spec`.** Chart dimensions and values
+reference only its registered output fields. Money charts partition by currency and preserve
+negative corrections; reports without a currency field chart non-money measures. Detail
+loan lists expose `count=1` per row, never sum identifiers. These counts describe the returned
+(possibly limited) rows. Event, booking and audit detail lists retain their export allowlists;
+their table specs use an empty `values` list and no aggregation settings. The audit trail remains
+export-only even though its definition also carries a table spec. The platform analytics
+view returns the definition's typed `chart_spec` beside the existing rows and metadata.
+
+**Role dashboards (analytics 1f-4) reuse those reports.** `dashboard_widgets.WIDGETS`
+declares actions, source modules, report keys, kind and a default 30-local-day period.
+The existing dashboard counters remain compatible; `widgets` adds authorized descriptors
+and the canonical typed `chart_spec`. `data.meta.deferred` supplies tenant-local `start`/`end`
+labels; clients fetch each widget independently through the existing tenant analytics
+endpoint, which rechecks current authority. Dashboard counter requests never invoke report
+builders. Consumption predicates precede source materialization, cost reads match bounded
+batches of selected source identities, and return-history reads stay within selected requests.
+Every widget requires both its declared action
+and its report's action, source modules plus `reports`, and a servable tenant.
+Identity-bearing widgets additionally require `VIEW_AUDIT` and their domain action;
+hard-hidden superadmin access is checked per action. Machine widgets forward the actor
+to the builders' `role_scope.manage_scope_for()` boundary, including consumable pools
+and cost: Inventory Manager alone does not gain machine-report authority.
+Handover-only actors get `scope_mode=handover`, empty `widgets` and `queue_tiles`
+(`ready_to_issue`, `due_returns`, `pickups`) without invoking analytics. Direct loans'
+linked requests are counted once in these queues. Native staff use the same widgets
+under local membership authority; `is_native_session` cuts organization grants in RBAC.
+The dashboard's tenant discovery remains local-membership-based. Organization charts
+use only the existing strategy-backed endpoint, retain the breakdown beside the total,
+and project `chart_spec` onto the strategy's combined fields (no fake tenant dimension).
+
+**Platform-service metering has one anonymous exception to `makerspace_id` grouping.**
+Only `platform-services`, with a server-owned active-superadmin `PlatformContext`, may use
+`operations/platform_scope.hidden_platform_service_bucket`: hidden tenants' platform-provider usage
+is one `hidden_makerspaces` count per allowlisted service and calendar day, without tenant id, name,
+outcome or other breakdown. Own-provider usage is excluded. All other platform analytics (including
+activity, adoption and growth) use `platform_dashboard.platform_spaces()` and omit hidden tenants
+even when the operator has a local membership. Tenant-local reports instead apply
+`superadmin_hidden_block_applies` for the report's own action. `eligible_makerspaces()` is unchanged.
+
 **One narrow, deliberate exception to the no-flattening rule, added 2026-08-20 by owner decision** after a
 Stage-4 review correctly flagged the organization dashboard as a regression of it: **a single
 organization's server-resolved OWNER set may carry a combined total, and that total may only ACCOMPANY —
@@ -623,6 +729,16 @@ client-supplied ids; (2) `relationship = OWNER` only — MANAGER and AFFILIATE l
 per-makerspace breakdown is always present in the same response; (4) `ReportScopeMode.COMBINED` is the only
 mode permitted to flatten, and only for that resolved set. Anything wider is still a regression. Deployment
 -wide aggregates are unchanged: they stay grouped by `makerspace_id`.
+
+**Addressed messaging analytics (1h-C)** uses `MessagingDelivery.progress_rank` for cumulative
+accepted/sent/delivered/read counts (>=1/>=2/>=3/=4) and the derived current `status` for failures.
+Failure observations never erase delivery/read evidence. Only exclusive current outcomes may
+be stacked in charts; cumulative progress and ratios remain lines. Consent counts are labelled
+current snapshots and excluded from organization totals. SMS segment totals prefer recorded
+billed segments (including zero), otherwise labelled estimates. Platform services distinguish
+OTP from notifications for visible tenants; hidden buckets discard that distinction and all
+other breakdowns except service/day/count. Sender keys, phones, message content and credentials
+never enter report rows. Measurement notes: `docs/report-builders-messaging.md`.
 
 
 **Report provenance and scheduled delivery (forward plan phase 6, 2026-09-04).** Every CSV/XLSX export
@@ -642,8 +758,10 @@ DROP like every other live disclosure rule. `recipient_emails` is staff-entered 
 the encryption registry (no existing JSON-list email column to mirror) — an owner call if that should change.
 **Scoped PII encryption (Part H, `apps/encryption/`; dormant unless enabled).** Per-makerspace DEK via a
 key broker (local/AWS-KMS), AAD-authenticated envelope crypto, `ScopedPiiModelMixin` on the 6 PII-holding
-models with a save-boundary that single-INSERTs envelopes + dual-read cache. Blind-index search
-(domain-separated HMAC bloom + exact + event-email hashes) for enabled deployments; disabled deployments
+models with a save-boundary that single-INSERTs envelopes + dual-read cache.
+Strict reads reject persisted legacy plaintext, while fresh in-memory assignments remain readable for
+model normalization before encryption; refreshing a row replaces stale caches with freshly verified values.
+Blind-index search (domain-separated HMAC bloom + exact + event-email hashes) for enabled deployments; disabled deployments
 search plaintext via ORM. Write-fence (`PiiGlobalWriteFence`/`PiiMakerspaceWriteFence` + PG
 `pii_assert_mapped_write_allowed()` triggers with global-then-tenant advisory locks) blocks mapped writes
 during maintenance; mapped services acquire the fence **before** their domain row lock. Enabling is a
@@ -708,7 +826,7 @@ removed, while nonempty role sections are refused. Membership and per-person aut
 in a pack. Tenant imports reduce member memberships to Member; staff retain built-in roles and
 remapped additional roles/type links under D11 (see the account-kinds section above).
 
-**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 35
+**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 37
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
 `requires_modules`, `default_enabled`, `is_core`, `frontend_exposed`, `frontend_workflows`), and the
 lists that used to be hand-kept in parallel now **derive** from it: `models.DEFAULT_ENABLED_MODULES`,
@@ -730,7 +848,7 @@ unregistered, if the derived lists change, or if a migration-referenced callable
 `member_accounts`, `mobile` and `payments` once carried it too and are now opt-in for new
 makerspaces (existing rows kept them through `0057`). Everything else is off in the registry default. Guided setup explicitly installs the chosen
 areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 14 / `lending` 17 /
-`recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 35 — pinned by
+`recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 37 — pinned by
 `tests/modules/test_combo_profiles.py`).
 `ModuleDefinition.default_enabled` defaults to **False** and core must not set it (core is on by
 definition; two sources for one fact is the drift the registry exists to remove). `backup`, whose key
@@ -899,6 +1017,24 @@ the gate — `member_may_see_own_charges` admits an account with no membership t
 here, because a loan deposit is raised against a BORROWER who needs an active account rather than
 a membership. It preserves every account-status clause and still refuses a revoked member, which
 is a deliberate pre-existing contract.
+
+**Personal usage (analytics 1f-4)** is `GET /member/makerspaces/<id>/my-usage`, next to
+activity. It accepts no target member: every source is filtered by `request.user` and
+the server-resolved tenant, without invoking staff reports. An active membership plus
+the `membership` module enables non-payment usage; otherwise an eligible caller receives
+only `payments` with `usage_available=false`. Payments use `member_may_see_own_charges`
+and `member_payment_queryset`, preserving own-charge and collaborative-event routing
+without requiring membership or the online rail module. Revoked/inactive memberships
+are refused here, including the separate rejoining-admission exception. Recovery and
+archived payment surfaces remain in payments; my-usage requires a servable tenant.
+Loan counts represent handovers, deduplicating a direct loan's workflow request; monthly
+returns count ReturnEvents by event time, including partial returns; only legacy direct
+returns without events fall back to `returned_at`, and quantities are never inferred. Machine hours use
+only attributed `MachineUsageEntry.member` rows, never staff/contact identity inference.
+Monthly charts use the tenant timezone; cancelled bookings are excluded; events count
+attended registrations. Paid and outstanding amounts remain partitioned by currency.
+Responses are private/no-store and carry typed chart specs. Web and native member grants
+share this contract; a claim session stays tenant-local through the existing claim policy.
 
 **A pending payment no longer refuses a tenant dump (2026-09-06, owner decision D5).** Both
 refusals are gone — `tenant_dump_cross_tenant` and `_source_row_allowed`. What makes carrying an
@@ -1093,6 +1229,18 @@ charges all create the same immutable `Payment` subject rows. Reconciliation is 
 RBAC, reports/dashboard aggregates never flatten tenants, and offline/waive actions audit the actor and
 best-effort expire live online sessions.
 
+**Per-makerspace provider setup.** Space Managers select Stripe or Razorpay and provision
+their own credentials through the staff payment-settings API/panel (`MANAGE_MAKERSPACE`,
+scoped through RBAC, including `superadmin_access_enabled`). Provider/credential writes require
+recent server-owned session reauthentication. All credential inputs are write-only, including
+public keys; responses contain set booleans and exact per-space webhook URLs. Omission preserves
+a credential, `""` clears it, and secret setters encrypt it. Audits contain field names only.
+Provider selection is checked again under the checkout coordination settings-row lock and
+returns 409 `payment_provider_conflict` if the other vendor has a pending collection with a
+live hosted/native handle (the same handle/expiry rule as tenant-migration preflight).
+Razorpay rotation/clearing likewise refuses pending Razorpay collections. Bare debts do not
+block selection. This does not change charge tracking or the online-payment availability gates.
+
 **Refunds and loan charges (forward plan phase 6, 2026-09-04; owner decision 7 defaulted to "charging
 allowed, off by default").** A `Payment` row never changes for a refund: refunds are `payments.Refund`
 ledger lines on a `paid_online` Payment, the sum of PENDING+SUCCEEDED refunds never exceeds
@@ -1119,9 +1267,24 @@ unpinned; each now has a test under `tests/payments/`:
   closed page, and `live_checkout_url` is the one reader (member list, checkout endpoint, service):
   a link counts only while `stripe_checkout_session_expired_at` is null. `stripe_payment_intent_id`
   is never cleared there — it is the refund anchor.
-- **The native PaymentSheet is Stripe-only and checks the vendor BEFORE any provider call.** A
-  Razorpay source carries the Razorpay key secret in `secret_key`; without the check it was sent to
-  Stripe as an API key.
+- **Native payments dispatch on the Payment's resolved vendor BEFORE any provider call.** Stripe
+  PaymentSheet keeps its PaymentIntent rail; Razorpay native Checkout uses an Order. A Razorpay
+  source carries its key secret in `secret_key` and must never be passed to Stripe. Both response
+  branches carry `vendor` and `payment_id`; hosted checkout and native rails remain mutually exclusive.
+  Razorpay recovery is lookup-first: fetch a stored order, otherwise search by deterministic
+  `sw-pay-<payment.pk>` receipt (at most 40 characters) before creating. Reuse requires an exact
+  receipt, matching payment/makerspace notes, integer minor-unit amount, currency, and
+  `created`/`attempted` state. A duplicate-receipt 400 repeats that lookup; incompatible provider
+  state fails closed with a logged 503. Provider error descriptions stay out of logs and responses.
+  Offline settlement/waiver marks native Orders closed locally; Orders never reach the Payment
+  Link cancellation API, and their IDs remain available for late-capture matching.
+- **Razorpay captures retain the refund anchor and deduplicate excess by provider payment ID.**
+  Pending or waived charges settling online store the capture's `external_payment_id`. Other
+  terminal rows are untouched. A different capture is audited once per provider payment ID as
+  `payment.double_paid_refund_required`, with `provider_payment_id`, `amount_minor` and `currency`.
+  `order.paid` and `payment.captured` for the same capture never flag excess. Staff refund excess
+  collections in the provider dashboard using that audit ID; no in-app refund action or change to
+  `Refund.counted_total` is involved, preserving the original charge's refundable balance.
 - **Provider amounts use the currency's ISO 4217 exponent** (`payments/money.to_minor_units`): zero
   for JPY/KRW and the rest of Stripe's zero-decimal list, three for BHD/JOD/KWD/OMR/TND. Checkout,
   the provider seam, native intents, refunds, the Connect fee and refund-webhook matching all use it;
@@ -1139,10 +1302,54 @@ unpinned; each now has a test under `tests/payments/`:
 **Native clients use attested device grants, never browser-token shortcuts.** Device login starts with a
 short-lived attestation challenge and creates a revocable `DeviceGrant`; access tokens carry
 `device_grant_id`, refresh tokens rotate in a grant family, and replay revokes that family. Native
-makerspace selection uses `X-Makerspace-Id` only with a valid grant and active scoped membership. Push
+staff makerspace selection requires `X-Makerspace-Id`, an attested staff-kind grant, its fixed
+tenant and active local staff membership;
+core own-charge surfaces retain their account-only ownership exception. Push
 tokens are encrypted with an HMAC dedup fingerprint, owned by a device grant, and disabled when a provider
-reports them invalid. Native Stripe PaymentSheet delegates to the same Payment/Connect resolution and
-idempotency rules as web checkout.
+reports them invalid. Native Stripe PaymentSheet and Razorpay Orders delegate to the same
+Payment/provider resolution as web checkout, with rail-specific idempotency/recovery.
+Native staff issuance requires staff kind, password, MFA and attestation. Phone/social/OIDC
+issuance is member-only; platform accounts cannot receive native grants.
+`session_authority=native_staff` still requires current local actions and a selected makerspace
+matching URL/body targets. Refresh cannot promote a member grant, organization grants never
+supply native authority, and both forms of superadmin are refused at device grant issuance.
+
+- **Sign-out follows the credential's scope.** Device logout revokes that grant, its refresh
+  families and its push devices; per-session revoke invalidates the selected browser or device
+  session. Password change/reset revoke every device grant; account deletion signs out everywhere,
+  and restore requires fresh sign-in.
+- **`POST /api/v1/auth/logout-all` is global and always available to authenticated browser and
+  device sessions**, including account-only members, without a makerspace or feature gate. One
+  transaction revokes active browser sessions, legacy refresh sessions, device grants (and their
+  push devices), and blacklists outstanding refresh tokens. It audits `auth.logout_all` with counts
+  per kind and clears the refresh cookie and selected account context. The response counts browser sessions (including legacy)
+  and devices; audit metadata separates modern and legacy browser sessions.
+- **Membership revocation and self-leave invalidate push only in that makerspace.** The shared
+  `_revoke_locked` cleanup deactivates the user's active `PushDevice` rows there and stamps
+  `invalidated_at`; their grants and push subscriptions in other makerspaces remain usable.
+
+**Native app configuration lives on the registration (phase 1e).** All native eligibility checks
+require an approved deployment-global registration (makerspace IS NULL); association files and
+minimum versions additionally require production. Registrations hold 1–5 Android distribution signer
+digests or exactly one Apple App ID Prefix. Challenges snapshot the complete list and retain the
+first scalar for the external verifier; every grant issuer records the matched signer from verified
+metadata, including MFA. Only an empty registration list may consult DEVICE_ATTESTATION_APPS, with
+a warning check; new operator configuration needs no env JSON. External verification supports only
+the first signer. The legacy tenant_restore_target_state.reconcile_native_app_registrations helper
+still rebuilds rows from env declarations, has no caller in this tree, and is a compatibility gap;
+it must not be introduced into a live restore without adapting it to stored identities. These
+platform security models remain omitted from tenant exports. The highest dotted-numeric production
+minimum per platform comes from registrations. Readiness uses one read-only builder for the
+superadmin API and /control/ page, with login separate from optional push/revocation/associations,
+no secret values, persisted readiness state or provider probes. Registration edits use the existing
+control settings audit mixin.
+
+**Mobile associations grant no browser trust.** Exact well-known JSON paths are served only on
+configured primary frontend hosts and verified, servable non-archived custom frontend domains.
+Managed host middleware keeps its 400 refusal; other untrusted hosts receive view-level 404. The
+existing integrations/mobile_link_contract.py supplies all supported components and exclusions.
+Only public application proxy blocks route these paths; control-plane and tunnel snippets, their
+404 fallback and socket-peer allowlists stay unchanged. See docs/mobile-integration.md.
 
 **Generic OIDC providers are configuration, not a second verification path (phase 17).**
 `accounts/models_oidc.OidcProvider` (superadmin-only, platform-scoped) holds `issuer`, `jwks_url`,
@@ -1559,13 +1766,16 @@ integration gaps; `notification-coverage.md` distinguishes converted producers f
   personal completion is gone. Member JWTs full-match exactly the six
   frozen personal route shapes, never a broad integrations prefix; channel settings/tests/installations
   retain staff authority. No typed destination ID establishes identity.
-- WhatsApp is a personal channel (`twilio|meta`), without rooms or a registry module key. Signed
+- WhatsApp is a personal channel (`twilio|meta`), without rooms, behind the independent
+  default-off `whatsapp` module. Signed
   matching inbound codes prove consent; SMS login proof is unrelated. STOP revokes, authenticated
   inbound opens the 24 h service window; outside it an approved event/audience/locale template is
   required. Both providers use `notification_opt_in` (code variable) / `notification_test` (no
   variables), member/en. Both are registered/mounted and share `in_session_window` across provider,
-  resolver and delivery; exactly 24 h and future timestamps refuse free text. Meta's readiness check
-  still asks for an unregistered `whatsapp` module, blocking normal send/start/test despite wiring.
+  resolver and delivery; exactly 24 h and future timestamps refuse free text. The combined registry
+  includes `whatsapp`, resolving the former missing-module readiness blocker. Existing operational
+  T installations require explicit per-tenant conversion preserving enabled state and opt-outs;
+  new installations and platform senders remain default off.
   Neither provider promises exactly-once upstream send.
 - Provider settings are deployment-wide: `TELEGRAM_WEBHOOK_SECRET` is environment-backed.
   OAuth reads `NOTIFICATION_SLACK_REDIRECT_URI`, `NOTIFICATION_MATTERMOST_REDIRECT_URI` and
@@ -1611,6 +1821,45 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   stale rows for an uninstalled module fall back rather than mute. Native push is filtered by the same
   selection, which is why `dispatch_channel` stores the scope on the log — push resolves recipients at
   DELIVERY time and would otherwise match nothing.
+<!-- MERGE-RECON(P): convert every legacy push row to an envelope-delivery parent before retirement.
+The final contract permits push without an inbox/module; terminal rows stay inert, unattempted rows
+are canceled/revalidated, and ambiguous attempted or expired-lease rows are held without blind resend.
+The following describes the retained legacy runtime pending that conversion. -->
+- **Legacy member push is coupled to personal inbox rows.** Only newly created
+  `NotificationInboxRow.audience=member` rows enqueue `deliver_member_push` after commit;
+  the tenant and personal `in_app` switches must therefore have admitted the inbox row.
+  A requester who is also staff gets one member-audience row with requester wording.
+  Existing rows backfill to `staff`. Scope snapshots contain only validated positive
+  `machine_id`, `machine_type_id` and `category_id` values for requester-selection rechecks.
+  Delivery rechecks `mobile.push`, the tenant `(feature, native_push)` matrix cell,
+  platform credentials, tenant servability, source module availability, the notifications
+  module and `notifications.member_inbox`. These global gates leave delivery rows unchanged.
+  Recipient gates recheck `inbox.eligible_owner`, an **active local membership** (account-only
+  inbox readers do not qualify for push), `receives_notifications`, scoped requester
+  selection and personal `native_push`. Each device must be active in that makerspace,
+  owned by the recipient, with an active matching grant and approved global registration.
+  Recipient/device failures create or mark retryable per-device work `skipped`.
+  The title is the makerspace name (64 characters); the body is the normally decrypted
+  row summary (178 characters), never the staff `LifecyclePayload.text`.
+  `MemberPushDelivery` is unique per inbox row/device, omitted from portable exports like
+  inbox telemetry, and cascades with its inbox row/device; it has no direct User FK.
+  Claims atomically admit `pending`/`failed` or **expired `sending`**, require attempts < 5,
+  increment attempts and set a fresh UUID token plus a two-minute lease. Completion is
+  fenced by that token; stale workers cannot overwrite a newer attempt. Transient failures
+  back off; invalid tokens deactivate the device and exhaust the delivery budget. A
+  five-minute sweep recovers retryable and expired work in beat and the beat-less runner,
+  inside per-tenant source-gate boundaries. Provider calls never span an application DB
+  transaction. **Best-effort with possible duplicates**: provider acceptance can precede a
+  worker crash before `sent` is recorded. Enqueue failure or exhausted retries preserve
+  the readable inbox row. Staff retain their independent matrix push path.
+- **Native push payload v2 is shared by staff and member delivery.** String-valued data
+  carries `v=2`, stable `event_id`, `makerspace_id`, `feature`, `event`, and member-only
+  `inbox_row_id`. Member identity is the inbox event UUID; staff logs persist the lifecycle
+  event key in their payload (older logs fall back to their stable log ID). Both titles
+  name the makerspace. A `link` is included only after `inbox.safe_link` **and** the existing
+  `integrations.mobile_link_contract.is_supported_link` accept it; otherwise apps fall
+  back to the makerspace inbox. APNs adds `aps.thread-id=makerspace_id`; there are no
+  collapse semantics. Both paths use the same one-device FCM/APNs sender.
 - **`NotificationDestination` — one row per room, and `[None]` means the legacy column.**
   `destinations.resolve_destinations` returns rows **or the single sentinel `None`**, which every sender
   already handles. No rows for a channel ⇒ `[None]` ⇒ byte-for-byte the old behaviour, which is what makes
@@ -1638,7 +1887,8 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   falling back to `LifecyclePayload.text` when absent, inactive, unknown, empty or broken. **Chat is a
   STAFF surface, enforced in code**: `render_chat_text` raises on a requester audience and resolves only
   STAFF entries — a webhook is a room, so "your booking is confirmed" would expose that member's name to
-  everyone with channel access. Native push takes `payload.text`, not the chat body.
+  everyone with channel access. Staff native push takes `payload.text`; member native push
+  takes the addressed inbox row's member summary.
 - **Recipient object scoping composes as `role_scope AND (rule_scope OR all)` — narrowing only.** Rule
   links reuse the destination shape (`no links ⇒ everything`); the role floor reuses `machines/role_scope`
   via the batch `manage_scopes_for_memberships` (two queries, not an N+1), never a parallel resolver. **The
@@ -2011,6 +2261,190 @@ The identity-only Devices console requires `MANAGE_DEVICES` until 7b/7c adapter 
 bearers live only in local modal state: secret requests return void to TanStack mutations, and closing
 the modal discards them. Shared query keys start with `["devices", makerspaceId]`; mutations invalidate
 both list and detail. Machine/QR-only adapter controls must wait for scoped sibling APIs.
+
+## Account deletion
+
+Self-deletion, archive/restore, the 90-day purge and Apple revocation are member-only. Staff
+lifecycle remains administrator-controlled; platform accounts use their separate recovery surface.
+
+**Comeback restores identity only, inside the archive window.** Under the same User
+row lock used by restore, Stage B commits `purge_started_at` before its first tenant
+scrub. It cannot start before `now >= deletion_purge_after`. Restore refuses when
+that fence is set, at the exact deadline, after global purge, or when deletion is no
+longer requested. The fence survives tenant commits, gated tenants and object-storage
+cleanup; extending the deadline cannot reopen an account whose scrub already started.
+Every purge invocation locks User and skips an account restored since task discovery.
+
+Password-reset **requests remain account-independent**: identical queue work for active,
+archived and unknown addresses. Only the existing drain resolves identity; for an eligible
+archived account it sends a single-use, 24-hour restore link instead of reset mail, with
+five attempts and an identifier/credential fingerprint. Reset confirmation cannot redeem
+a restore proof. Signup does not issue restore mail. Phone login start performs the same
+one lookup and at most one send: an archived **phone-only** account gets a distinct
+restore OTP, with the existing uniform 200, shared login/restore cooldown, attempt cap,
+expiry and exact device-attestation binding. Restore OTPs never mint login sessions.
+
+Accounts with neither email nor phone may use an already-linked provider. Recovery
+intents are single-use, five-minute, nonce/state-bound, and browser-origin or exact
+approved native-app-attestation bound. Apple, Google and OIDC require verified fresh
+`auth_time` within five minutes; OIDC requests `prompt=login` and `max_age=0`, while Google
+requests the authentication-time claim. An `iat` or silent provider response never
+substitutes. This flow never creates or links an identity. Providers unable to prove
+freshness have no second-factor fallback after Stage A deletes those factors. Deletion
+preflight returns `restorable` and `restore_reason`, also shown before web confirmation;
+unverified phones without email and disabled/unconfigured providers are not advertised
+as usable recovery paths. Native-only configured Apple/Google identities can recover
+with their approved app and audience.
+
+Every confirmation rechecks the recovery-path exclusions against locked User: either
+form of superadmin (including promotion after issuance), walk-ins, anonymous principals,
+tenant-dump stubs and restricted accounts are refused. Identifier or linked-identity
+changes invalidate the issuance fingerprint. Email/phone restore requires a new validated
+password; social-only restore requires fresh provider authentication and keeps its password
+unusable. Success clears deletion timestamps and pending, unrun tenant/object purge work,
+sets `is_active=True`, and audits `account.restored`. Memberships, organization grants,
+sessions, device grants and push destinations remain revoked; restore returns no session.
+`account_restored_at` permanently refuses legacy browser JWTs without a revocable `sid`,
+so reactivation cannot revive old access tokens. Recovery issuance and confirmation take
+User before envelope locks, rechecking the proof/generation after locking, consistent
+with Stage A and final purge. Invalid guesses resolve no User and commit their counters.
+
+Stage A archives the member account immediately; Stage B removes mutable identity
+copies after the retention window (90 days by default). The account deletion endpoint
+is a member surface for browser and device sessions. Email enrollment confirmation
+never proves deletion authority. Phone-only accounts use a separate `reauth` OTP
+purpose with uniform start responses and committed failed-attempt accounting.
+
+Deletion requires explicit `DELETE` confirmation and reauthentication within the existing
+ten-minute window. The timestamp is compared again against the locked
+`ReauthenticationSession` row inside the deletion transaction; proof consumption and
+failed attempts commit independently before that transaction. A refusal rolls back all
+domain mutations and records its audit outside the rollback.
+
+Every blocker is global: pending charges/refunds, held deposits (count only effective
+succeeded refunds with `amended_by IS NULL`), outstanding loans/requests, unresolved
+problem reports, restricted access, uncollected service jobs, upcoming active bookings
+and registrations, the last makerspace manager, any last organization governor, gated
+tenants and either form of superadmin. Service-job ownership includes legacy rows with
+`member IS NULL AND requester=user`. The leave-membership and existing
+`assert_governor_remains` rules remain authoritative. Open membership applications are
+cancelled through their applicant service, rather than becoming deletion blockers.
+
+Tenant discovery covers every owned/copied subject-selector path, including account-only
+participation and legacy service jobs. Locks follow source-gate shared locks, ascending
+Makerspace rows, ascending Organization rows, then User. Recompute both tenant and
+organization sets under the User lock and retry any growth, at most three attempts;
+continued changes return `deletion_retry` without a partial deletion.
+The account lock uses `no_key=True`, serializing obligation writers while allowing
+unrelated foreign-key references. Browser and device refresh rotation lock the User
+before token/family rows, so credential revocation cannot invert that lock order.
+All session issuers take User before registration/credential rows too, including
+password, first-device phone/social and MFA completion. Under that lock they recheck
+active/deletion state and the authenticated password/restoration snapshot before
+creating any grant, refresh family or browser session. Phone login discovers its
+challenge without locking, then takes User before locking and revalidating that exact
+challenge; failed attempts and consumption still commit before attestation/issuance.
+
+Membership revocation reuses `_revoke_locked(self_leave=True)`. Organization self-departure
+requires no governor authority, suspends only the subject's membership, preserves the
+last governor and audits `organization.member_departed`. Stage A revokes device grants,
+refresh families, browser sessions, outstanding/API tokens and reauthentication proofs;
+revokes and audits EventStaffGrant and BookingSpaceStaffGrant rows, including accounts
+whose only tenant participation is a resource grant (those tenants join discovery);
+deactivates push destinations; deletes MFA secrets/recovery codes; sets an unusable
+password and `is_active=False`; stamps `deletion_requested_at` and
+`deletion_purge_after` using `ACCOUNT_DELETION_RETENTION_DAYS` (default 90); and audits
+`account.deletion_requested`. Identity copies and immutable history remain at this stage.
+
+Obligation writers lock the owner's User with `select_for_update(no_key=True)` after
+their own tenant/domain locks and refuse a deletion-requested account: hardware request
+submission, staff direct handout, self-checkout, booking/registration creation and
+restoration, service submission/reprint, membership renewal/plan purchase and admission
+approval/acceptance. A late return fee may arrive after deletion through its on-commit
+hook; it still records the debt and audits `account.obligation_after_deletion`. Staff
+refunds remain allowed because they return money.
+
+Stage A records the current email in `User.deletion_email_ciphertext`, encrypted with the
+platform secret key, so subsequent address edits cannot strand address-only EmailLog
+copies. A random `deletion_username` coordinates tenant snapshots before the global
+username changes. These snapshots are never portable and are cleared at final purge. Address-only
+EmailLog ownership is resolved through decrypted model attributes, never SQL equality
+against scoped ciphertext. Blockers carry the owning makerspace slug for web fix links.
+
+**Stage B is resumable per tenant.** The daily `accounts.tasks.purge_deleted_accounts_task`
+is registered in both beat and the beat-less scheduler (1440 minutes), and declared as a
+tenant writer. `AccountPurgeProgress(user, makerspace, done_at)` tracks each tenant.
+Each scrub uses its own transaction under the skip-and-count `boundary_tenant_write`
+adapter. A gated tenant is retried later; completed tenants remain complete. Scoped PII
+is always rewritten row by row through `save()`, including valid nonempty Booking
+placeholders, cleared notes/custom answers, and unique EventRegistration email placeholders.
+Machine-service ownership remains `member=user OR (member IS NULL AND requester=user)`;
+staff authorship alone never erases somebody else's job. MemberCard stays exactly as
+membership revocation already redacted it.
+
+Mutable profile/project rows are deleted only after their public image keys, buckets and
+sizes have been written to `AccountPurgeObject` in the same transaction. Object deletion
+and its `deleted_at` stamp commit first. The ordinary `limits.free_storage` quota decrement
+and `quota_released_at` stamp then commit together in a separate transaction. Missing
+objects count as deleted. A storage failure or gate closure leaves durable pending work;
+tenant progress cannot finish until every quota stamp exists. Purge never substitutes a
+best-effort `release_public_image_on_commit` callback for this journal. Storage
+reconciliation counts each journal's recorded size until `quota_released_at` is
+stamped, even after byte deletion. It holds Makerspace through its snapshot and
+total write, matching the scrub/quota-release lock order.
+
+Only after all tenants finish and every AppleRevocation is terminal are global identity
+fields cleared and `account_purged_at` set. The username becomes `deleted_<uuid hex>` and
+the display name becomes `Deleted member`; social identities and Apple credentials,
+email/phone/MFA challenges, password-reset envelopes, push devices and personal inbox
+rows are removed. Hardware-request identity snapshots, booking contacts/notes/answers,
+registration contacts/answers, owned service-job contacts, recipient/address-matched
+EmailLog content, and MembershipRequest invite addresses/application answers are scrubbed.
+EmailLog scrubbing also clears `provider_message_id`; bounce/complaint timestamps and
+provider outcome fields remain. Member push deliveries are deleted through either the
+user's inbox rows or push devices. Staff push attempts are deleted through their saved
+recipient or the user's push devices, inside the delivery log's tenant boundary.
+`DeviceActivityDay` rows are deleted through `grant.user` in the final global step,
+including NULL-makerspace activity, only after every tenant has finished. A gated
+tenant keeps its push history and defers all activity cleanup until a later sweep.
+Repeated sweeps do not repeat quota release or final-purge auditing.
+
+**Apple authorization is revoked, not merely unlinked.** Verified Apple claims retain
+their `aud`; optional sign-in authorization codes are exchanged using that client ID,
+the original web redirect URI, and an ES256 client-secret JWT. The exchanged id_token
+must verify for that client and match the authenticated subject. Refresh credentials are
+encrypted per `(social_identity, client_id)` and replaced with a new credential version on re-sign-in. Exchange failure
+never prevents verified sign-in. Stage A creates revocation work in its own transaction;
+each work row holds its own encrypted token copy and captured credential ID/version.
+The worker revokes only that snapshot, including after account restore, and deletes the
+current credential row only if its captured ID/version still matches. New sign-ins and
+repeat departures cannot replace old pending work. Terminal work clears its token copy;
+an on-commit task and the daily sweep retry with backoff. No stored credential, or failure
+through day 80, audits `account.apple_revocation_unavailable` and marks the work terminal.
+The confirmation UI always discloses manual removal in Apple Account settings.
+
+Portable and deployment backups preserve deletion timestamps. Portable identity creation
+keeps deletion-requested users inactive with their timestamps and anonymises purged users;
+linking a deleted source to an existing target account is refused rather than changing
+that target's unrelated platform identity. The fixed `global/users.csv` identity projection
+does not grow: PORTABLE carries deletion fences in `global/user_lifecycle.json`, only for
+deleted identities in the approved user closure. The migration envelope hashes this sidecar;
+the importer validates its literal timestamp fields and merges them into identity resolution.
+Subject exports keep the same fixed identity projection. Source cleanup journals and Apple credentials
+never travel in tenant artifacts; target cleanup resumes from the imported timestamps.
+
+**Retained and disclosed:** `AuditLog`; `Payment`/`Refund`/`ManualSettlement`;
+`PaymentDocument.payer_label` (historical username — walk-in usernames embed a name);
+`RequesterAccountability`/`ReturnEvent`; `EvidencePhoto` rows (bytes follow evidence
+retention); `MachineUsageEntry` (including `member` linked to the anonymized User stub
+and unchanged `started_at`), `EventAttendanceCertificate`, `EventFeedbackResponse`
+(immutable triggers); staff-addressed notification emails mentioning the member (kept
+until EmailLog's existing retention); `NotificationDeliveryLog` text (deleted by
+`notifications/retention.py` on its existing windows); staff actor snapshots on other
+people's memberships; anonymous `ConsumableCostRecord`, `InventoryStockSnapshot`,
+`MachineStatusEvent`, `SmsSendLog` and `AttestationVerificationLog` rows. Backups age out
+under their own retention. The operator-facing
+[privacy note](privacy-account-deletion.md) discloses the same list.
 
 ## Handover roles and the retired Guest Admin
 
@@ -4308,8 +4742,10 @@ namespace/key lock is still granted; a runtime that cannot retain the transactio
 Acquisition or transaction setup failure raises the typed `SourceMigrationGateUnavailable` before dispatch;
 HTTP returns 503 and tasks fail, so an unknown or unsupported runtime refuses the write. Release is one
 idempotent rollback/close per acquired reference, and nested boundaries retain independent shared references.
-`assert_write_allowed` therefore supports three shapes: inside an existing `atomic()` it takes the shared
-lock in that transaction, at a request/task boundary it uses the already-held dedicated lock transaction,
+`assert_write_allowed` therefore supports three shapes: at a request/task boundary it reuses the
+already-held dedicated lock transaction, INCLUDING inside nested application `atomic()` blocks (never
+reacquiring on another connection behind a queued exclusive migration lock); without a boundary,
+inside an existing `atomic()` it takes the shared lock in that transaction,
 and a direct non-atomic call takes a temporary dedicated lock transaction. External I/O inside an
 application lock-holding transaction stays banned; the separate lock-only transaction does not contain
 application writes or external I/O.
@@ -5001,3 +5437,136 @@ releases would therefore not just lose history, it would eventually strand that 
   Runner installation defaults to No, supports Linux/systemd only, and requires all external-contributor
   workflow approvals plus repository/workflow restrictions: Docker access is effectively root.
   See `docs/self-hosting.md#security` for the required operator settings.
+
+
+## Addressed messaging channels
+
+<!-- MERGE-RECON(M): port the protections below into canonical envelopes/configuration/providers;
+retain legacy models/history/import helpers until durable compatibility ingress, the shared processing
+barrier, mappings and callback/STOP replay are verified. Do not activate a second send loop. -->
+
+SMS and WhatsApp address a verified person, never a room destination. Their independent
+`sms` and `whatsapp` modules and matrix cells default off. Their availability checks
+must never fall through to `mobile.push`. Consent settings are core account surfaces,
+including when `notifications` is off or tombstoned. Member consent and delivery require
+`integrations.messaging.ties.has_tenant_tie`: a non-revoked local membership or ownership
+of an existing tenant hardware request/direct loan, booking, event registration,
+machine-service request or payment. Identity and owner eligibility are shared in core
+integrations with the inbox; inbox recipient behavior is unchanged. Ties are derived
+from current rows, never consent history or free-text contact fields. Inactive,
+restricted, suspended, deletion-pending and stub accounts and global superadmins are
+excluded from the member audience. A revoked local membership wins over old owned rows.
+Membership `receives_notifications` opt-out still wins at delivery; account-only owners
+use the consent ledger, STOP suppression and optional personal preferences. Staff
+audience still requires active local membership and role authority.
+
+Own sender configuration takes precedence, including incomplete or unreadable credentials
+(which make the channel unavailable). Platform notification sending requires both the
+platform operator switch and the tenant's `use_platform_sender`. Provider ownership is
+reserved by a unique non-secret sender key. Ownership and callback credential versions
+are separate; rotation retires the previous version, callbacks accept retired secrets
+for fourteen days, and the scheduler then wipes secrets while retaining version history.
+Tenant secrets are write-only in the API and absent from /control/. Superadmin's global
+bypass respects `superadmin_access_enabled`; explicit local role authority still applies.
+Control-plane tenant display contains only configuration/effective-source state.
+
+Consent is an append-only per-tenant/channel ledger. Live consent requires the latest
+row by id to be opted_in and its encrypted phone snapshot AND verification timestamp to
+match User. Phone A -> B -> A never resurrects consent after reverification. Opt-in
+requires verification; opt-out does not. Writes lock User, serializing identity changes
+and account departure. Database triggers allow only mapped phone maintenance under the
+existing registered `app.pii_fence_operation`, and DELETE under
+`app.allow_immutable_delete`; the purge flag never authorizes history UPDATEs. Archive
+appends account_archive opted_out rows; purge deletes consent and addressed deliveries.
+Portable consent is inert (opted_out); imported template bindings are inactive/reviewable.
+
+Suppressions are deployment-keyed phone/provider-alias HMACs, scoped to channel + sender,
+never User ids. Suppressions explicitly record phone/alias kind so unmapped alias
+STOPs can be queried without guessing from a digest. Each delivery snapshots the
+addressed phone HMAC for late callbacks, even after User changes phone. Inbound START never grants consent. In-app re-consent lifts the resolved
+sender's phone suppression and every mapped alias suppression and records all lifted ids.
+Shared sender protection survives tenant/channel purge; the other channel and OTP survive.
+
+WhatsApp correlation uses probing/confirmed/blocked and alias_known. A sender/phone may
+submit only one logical probe before verified identity correlation; an ambiguous probe
+outcome is never retried. Other deliveries defer and expire after 72 hours without
+confirmation. A new unmapped alias STOP blocks correlations whose alias is unknown;
+in-app re-consent resets only blocked rows. Every operation affecting whether an alias
+STOP is matchable takes `lock_whatsapp_sender(sender_key)` FIRST, before row locks:
+unmapped STOP, probe claim, verified confirmation and blocked-row re-consent reset. The
+transaction-scoped PostgreSQL advisory lock covers tenants sharing a platform sender.
+This bounds exposure to one logical probe, even with concurrent deliveries or missing callbacks.
+Definitive provider non-acceptance releases a probing reservation so repaired credentials
+or a later delivery can probe again; ambiguous outcomes and confirmed/blocked rows never do.
+
+Only reviewed lifecycle event/audience variables enter delivery context. Contacts, free
+text, notes, remarks and public tokens are excluded; no recipient phone or message body
+is stored on deliveries. Approved Meta templates permit positional text BODY parameters
+only, validated against the current WABA; changing WABA requires binding review. Provider
+errors store codes only. Progress rank is monotonic; delivered/read evidence wins over a
+failure in either arrival order, while failed_at records every observed failure.
+
+OTP remains platform-only on its original bool transport. Notification SMS requires a
+distinct platform notification number; tenants may use neither the OTP AccountSid nor
+its number. The two numbers must not share a Twilio Messaging Service. SMS estimates
+count GSM-7 extension septets and UCS-2 UTF-16 units, use conservative 152/66 multipart
+limits, and cap at three segments using ASCII '...' followed by a recount. Provider
+billed segments remain separate from estimates.
+
+
+The addressed pipeline lives in core integrations, including recipient extraction. Inbox
+imports that selection without changing its own feature/in_app gates or member-wording
+precedence. Disabling or tombstoning notifications must not disable consented SMS/WhatsApp.
+Eligibility is read-only and runs both at enqueue and just before submission: servability,
+channel module, feature/matrix, account/tenant tie, current domain source and scope,
+recipient authority/reach, optional personal preference, verified phone, live consent,
+resolved sender, suppression, and approved audience binding. Deleted/moved sources skip
+as source_changed; absent or revoked tenant ties skip as no_tenant_tie. Historical
+no_membership outcomes remain readable in analytics. Diagnostic
+tests require settings authority and target only the caller's own verified/consented
+phone; settings authority authorizes that test recipient, while the selected event must
+still pass feature/matrix gates, consent and sender protections.
+
+A unique (makerspace, event_key, user, channel) outbox key prevents duplicate lifecycle
+fan-out. reserve_quota runs only in the creating transaction and records quota_reserved_at;
+retries, duplicate enqueue and crash recovery never spend again. Managed sms/whatsapp
+limits count logical messages, including eligible test sends. Claims use one conditional
+UPDATE with attempts < max_attempts and a fresh token/90-second lease. Completion is
+fenced by that token, and acceptance never lowers observed webhook progress. Source-gate
+protection spans provider I/O using a dedicated boundary, not a long SQL transaction.
+
+Tenant mutations acquire the source gate FIRST (reusing any existing boundary), then the
+WhatsApp sender lock, then delivery/correlation rows; callback event rows precede delivery
+rows. Consent uses gate -> sender -> tenant -> User -> suppression/correlation rows;
+recovery and STOP consent annotations follow the same gate-before-sender order.
+Sender-only inbound protection requires no tenant gate. WhatsApp sender locking precedes
+row locks in claim, callback confirmation, unmapped STOP and re-consent. Callback correlation
+uses the submitted phone hash and provider message ID
+or echoed delivery ID, never the user's later phone. Alias confirmation is atomic with its
+mapping; phone-only confirmation requires no unmapped alias suppression. An ambiguous
+probe is never resubmitted, including after a worker crashes with an expired probe lease.
+Only explicit provider rejections may retry a probe. Ordinary correlated sends remain
+at least once. A new unmapped STOP blocks alias-unknown pairs until re-consent. Concurrent
+workers and platform-sharing tenants cannot submit a second probe before confirmation.
+
+Twilio callbacks admit form bodies only and validate every repeated parameter using the
+official validator ordering and URL-port variants, plus AccountSid/sender-number binding.
+StatusCallback includes #rc=5&rp=5xx,ct,rt; its fragment is excluded from verification.
+Meta validates the raw-body HMAC and ignores foreign phone_number_id entries. Verification
+tries active credentials before versions retired within 14 days; old secrets are then wiped.
+Ingress commits a minimal durable event before processing; DB failures return 500. Early
+callbacks retry. Status writes hold the tenant source gate but ignore module switches;
+sender-level STOP/alias protection needs no tenant gate and is never abandoned. Inbound
+START cannot lift suppression. 21610 suppresses provider_opt_out; invalid-number errors
+suppress permanent_failure. Template failures record template_rejected, never provider text.
+Twilio error protection and its server-owned inbox payload marker commit together BEFORE
+the gated status transaction. The hashed status recipient also protects early callbacks
+before delivery correlation. Status retries never replay that protection after re-consent.
+
+Both beat and run_scheduled_tasks run messaging-recovery every five minutes. Recovery
+bounds pending/sending age at seven days, enforces attempts_exhausted, expires waiting
+probes at 72 hours, retries status events for 30 days, and audits abandonment. Retention
+uses derived status: failed deliveries 365 days, other terminal outcomes 90 days from
+creation; processed/abandoned webhook events 30 days after processing/abandonment. Provider
+timestamps are never invented; delivery/read wins in either failure order and billed
+segments remain distinct. Operator setup and exact versioned routes: messaging-channels.md.

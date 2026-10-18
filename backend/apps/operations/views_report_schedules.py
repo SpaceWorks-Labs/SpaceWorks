@@ -40,6 +40,8 @@ def _scoped_schedule(user, pk):
     if report_key is None:
         raise Http404
     definition = REPORT_REGISTRY.get(report_key)
+    if definition is not None and definition.platform_only:
+        raise Http404
     action = definition.required_action if definition else rbac.Action.MANAGE_MAKERSPACE
     queryset = rbac.scope_by_action(
         user, action, ReportSchedule.objects.select_related("makerspace", "destination", "created_by")
@@ -79,7 +81,8 @@ class ReportScheduleListCreateView(generics.ListCreateAPIView):
         # schedule is invisible to a VIEW_AUDIT holder, exactly like the catalog.
         keys = [
             definition.key for definition in REPORT_DEFINITIONS
-            if rbac.can(self.request.user, definition.required_action, makerspace.id)
+            if not definition.platform_only
+            and rbac.can(self.request.user, definition.required_action, makerspace.id)
         ]
         rows = ReportSchedule.objects.none()
         for action in {REPORT_REGISTRY[key].required_action for key in keys}:

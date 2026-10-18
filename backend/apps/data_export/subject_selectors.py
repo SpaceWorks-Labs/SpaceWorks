@@ -18,6 +18,11 @@ SUBJECT_PATHS = {
     "presence.PresencePreference": ("account",),
     "makerspaces.PublicHandle": ("user",),
     "makerspaces.ProfileTimelineEntry": ("profile__membership__user",),
+    "integrations.MessagingConsent": ("user",),
+    "integrations.MessagingDelivery": ("user",),
+    "accounts.DeviceActivityDay": ("grant__user",),
+    "notifications.MemberPushDelivery": ("inbox_row__user",),
+    "integrations.PushDeliveryAttempt": ("recipient",),
     "operations.SavedView": ("owner",),
     "apiclients.ApiKeyRequest": ("requester",),
     "bookings.BookingCheckInEvent": ("booking__member",),
@@ -42,7 +47,7 @@ SUBJECT_PATHS = {
     "integrations.NotificationRecipient": ("user",),
     "machines.MachineOperator": ("user",),
     "machines.MachineServiceRequest": ("member",),
-    "machines.MachineUsageEntry": ("service_request__member",),
+    "machines.MachineUsageEntry": ("service_request__member", "member"),
     "machines.CertificationGrant": ("membership__user",),
     "machines.ServiceRequestFile": ("owner_user",),
     "machines.ServiceRequestConsumption": ("service_request__member",),
@@ -64,6 +69,9 @@ SUBJECT_PATHS.update(_P2_BOOKING_SUBJECTS)
 
 def subject_query(model, user, makerspace_id):
     label = model._meta.label
+    from .subject_runtime import RUNTIME_FIELDS, runtime_subject_query
+    if label in RUNTIME_FIELDS:
+        return runtime_subject_query(model, user, makerspace_id)
     if label == "accounts.User":
         return model.objects.filter(pk=user.pk, retired_at__isnull=True)
     if label == "audit.AuditLog":

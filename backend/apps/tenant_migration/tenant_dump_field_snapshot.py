@@ -78,3 +78,48 @@ from .catalog_notifications_contract import FIELD_NAMES as NOTIFICATION_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(NOTIFICATION_FIELDS)
 from .catalog_p2_events import FIELD_NAMES as P2_EVENT_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(P2_EVENT_FIELDS)
+
+# Mobile-only literal declarations extend the split T snapshot, never replace it.
+FIRST_PARTY_FIELD_NAMES.update({
+    'accounts.AccountPurgeObject': frozenset('attempts bucket deleted_at id last_error makerspace object_key quota_released_at size_bytes user'.split()),
+    'accounts.AccountPurgeProgress': frozenset('done_at id makerspace user'.split()),
+    'accounts.AccountRestoreIntent': frozenset('attestation_challenge client_platform consumed_at credential_fingerprint delivery expires_at id nonce_digest origin pending_secret provider redirect_uri token_digest user'.split()),
+    'accounts.AppleRefreshCredential': frozenset('client_id id social_identity token_ciphertext updated_at version'.split()),
+    'accounts.AppleRevocation': frozenset('attempts client_id created_at credential_id credential_version done_at id last_error next_attempt_at token_ciphertext user'.split()),
+    'accounts.AttestationVerificationLog': frozenset('created_at id mode outcome platform'.split()),
+    'accounts.DeviceActivityDay': frozenset('created_at grant id local_day makerspace platform'.split()),
+    'accounts.PlatformAttestationSettings': frozenset('id play_integrity_service_account updated_at'.split()),
+    'integrations.EmailProviderEvent': frozenset('created_at event_id id makerspace reason'.split()),
+    'integrations.MakerspaceMessagingSettings': frozenset('id makerspace sms_account_sid sms_auth_token sms_from_number sms_sender_key updated_at use_platform_sender whatsapp_access_token whatsapp_app_secret whatsapp_business_account_id whatsapp_phone_number_id whatsapp_sender_key whatsapp_webhook_verify_token'.split()),
+    'integrations.MessagingConsent': frozenset('action channel created_at id lifted_suppression_id makerspace phone_e164 phone_verified_at source user'.split()),
+    'integrations.MessagingDelivery': frozenset('accepted_at attempts audience billed_segments channel context created_at delivered_at error_code estimated_segments event event_key failed_at feature id lease_token lease_until makerspace max_attempts next_attempt_at progress_rank provider provider_message_id provider_source quota_reserved_at read_at recipient_alias_hash recipient_phone_hash scope segments sender_key sent_at skip_reason source_id source_type status template_name user'.split()),
+    'integrations.MessagingRecipientAlias': frozenset('alias_hash channel first_seen_at id phone_hash sender_key'.split()),
+    'integrations.MessagingRecipientCorrelation': frozenset('alias_known channel confirmed_at id phone_hash probe_delivery probe_started_at sender_key state'.split()),
+    'integrations.MessagingSenderCredential': frozenset('created_at id identity retired_at verify_token version webhook_secret wiped_at'.split()),
+    'integrations.MessagingSenderIdentity': frozenset('active channel id makerspace owner retired_at sender_key'.split()),
+    'integrations.MessagingSuppression': frozenset('channel created_at id lifted_at lifted_provider_at provider_at reason recipient_hash recipient_kind sender_key'.split()),
+    'integrations.MessagingWebhookEvent': frozenset('attempts channel dedupe_id id kind makerspace next_attempt_at payload processed_at provider received_at sender_key state'.split()),
+    'integrations.PlatformWhatsAppSettings': frozenset('access_token app_secret business_account_id id is_enabled phone_number_id updated_at webhook_verify_token'.split()),
+    'integrations.PushDeliveryAttempt': frozenset('attempts created_at delivery_log id last_error lease_token lease_until platform provider_source push_device recipient sent_at status'.split()),
+    'integrations.SmsSendLog': frozenset('created_at id makerspace provider_source purpose status'.split()),
+    'integrations.WhatsAppTemplateBinding': frozenset('audience business_account_id event feature id is_active language makerspace needs_review parameters template_name'.split()),
+    'inventory.InventoryStockSnapshot': frozenset('available below_reorder id issued local_day makerspace out_of_stock product total'.split()),
+    'machines.ConsumableCostRecord': frozenset('cost_total_minor currency id makerspace measurement_unit quantity recorded_at source_id source_kind unit_price_minor_per_measurement_unit'.split()),
+    'machines.MachineStatusEvent': frozenset('at from_status id machine makerspace source to_status'.split()),
+    'notifications.MemberPushDelivery': frozenset('attempts created_at id inbox_row last_error lease_token lease_until platform provider_source push_device sent_at status'.split()),
+})
+
+FIRST_PARTY_FIELD_NAMES['accounts.DeviceAttestationChallenge'] |= frozenset('signing_identities'.split())
+FIRST_PARTY_FIELD_NAMES['accounts.DeviceGrant'] |= frozenset('attestation_key_id attestation_public_key authority'.split())
+FIRST_PARTY_FIELD_NAMES['accounts.NativeAppRegistration'] |= frozenset('min_supported_version signing_identities'.split())
+FIRST_PARTY_FIELD_NAMES['accounts.PasswordResetEnvelope'] |= frozenset('purpose'.split())
+FIRST_PARTY_FIELD_NAMES['accounts.PhoneVerificationChallenge'] |= frozenset('attestation_challenge credential_fingerprint'.split())
+FIRST_PARTY_FIELD_NAMES['accounts.User'] |= frozenset('account_purged_at account_restored_at deletion_email_ciphertext deletion_purge_after deletion_requested_at deletion_username purge_started_at'.split())
+FIRST_PARTY_FIELD_NAMES['integrations.EmailLog'] |= frozenset('bounced_at complained_at provider_message_id provider_source'.split())
+FIRST_PARTY_FIELD_NAMES['integrations.PlatformSmsSettings'] |= frozenset('notifications_enabled notifications_from_number'.split())
+FIRST_PARTY_FIELD_NAMES['inventory.InventoryProduct'] |= frozenset('cost_currency cost_unit unit_cost'.split())
+FIRST_PARTY_FIELD_NAMES['machines.MachineConsumablePool'] |= frozenset('cost_currency cost_unit unit_cost'.split())
+FIRST_PARTY_FIELD_NAMES['machines.MachineUsageEntry'] |= frozenset('member started_at'.split())
+FIRST_PARTY_FIELD_NAMES['notifications.NotificationInboxRow'] |= frozenset('audience scope'.split())
+
+# MERGE-RECON(C): revalidate the final catalog/digest after lane A/M/P schema reconciliation.

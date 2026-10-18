@@ -14,18 +14,25 @@ from apps.operations.serializers_reports import (
     BookingUtilizationReportSerializer,
     EventAttendanceReportSerializer,
     FabLabHealthReportSerializer,
-    MachineUsageReportSerializer,
-    MaintenanceActivityReportSerializer,
     MemberActivityReportSerializer,
     PaymentReconciliationReportSerializer,
 )
 from apps.operations.serializers_report_catalog import GenericAnalyticsReportSerializer
+from apps.operations.serializers_reports_messaging import CommunicationsHealthReportSerializer, PlatformServicesReportSerializer
+from .serializers_reports_machine_analytics import (
+    MachineUsageV2ReportSerializer, MachineUsageMembersReportSerializer, MachineUsageHeatmapReportSerializer,
+    MachineDowntimeReportSerializer, MaintenanceActivityV2ReportSerializer, MachineServiceV2ReportSerializer,
+    ServiceQueueTimesReportSerializer, PrinterJobsReportSerializer, MachineErrorsReportSerializer, WarrantyExpiryReportSerializer,
+)
+from .serializers_reports_de import DE_REPORT_SERIALIZERS, BookingUtilizationV2ReportSerializer
 from .serializers_reports_events_detail import EventRegistrationReportSerializer, EventFeedbackReportSerializer
 from .serializers_reports_bookings import (
     BookingResourceUtilizationReportSerializer, BookingReservationReportSerializer, BookingAnswerReportSerializer,
 )
 from apps.operations.serializers_reports_payments import PaymentCashBookSerializer
 from apps.operations.serializers_reports_membership import MemberRetentionReportSerializer, MembershipRevenueReportSerializer
+from apps.operations.serializers_reports_membership import MembershipGrowthReportSerializer
+from apps.operations.serializers_reports_finance import PaymentsAgeingReportSerializer
 from apps.operations.serializers_reports_finance import (
     PaymentsLedgerReportSerializer, RevenueOverTimeReportSerializer,
     CashBookReportSerializer, AccountingJournalReportSerializer,
@@ -44,10 +51,15 @@ ANALYTICS_REPORT_RESPONSE = PolymorphicProxySerializer(
         MostLentReportSerializer,
         TopBorrowersReportSerializer,
         RecentlyAddedReportSerializer,
-        MachineUsageReportSerializer,
+        MachineUsageV2ReportSerializer,
         EventAttendanceReportSerializer,
         BookingUtilizationReportSerializer,
-        MaintenanceActivityReportSerializer,
+        MaintenanceActivityV2ReportSerializer,
+        MachineUsageMembersReportSerializer, MachineUsageHeatmapReportSerializer, MachineDowntimeReportSerializer,
+        MachineServiceV2ReportSerializer, ServiceQueueTimesReportSerializer, PrinterJobsReportSerializer,
+        MachineErrorsReportSerializer, WarrantyExpiryReportSerializer,
+        BookingUtilizationV2ReportSerializer,
+        *DE_REPORT_SERIALIZERS,
         MemberActivityReportSerializer,
         FabLabHealthReportSerializer,
         PaymentReconciliationReportSerializer,
@@ -57,8 +69,12 @@ ANALYTICS_REPORT_RESPONSE = PolymorphicProxySerializer(
         CashBookReportSerializer,
         AccountingJournalReportSerializer,
         GenericAnalyticsReportSerializer,
+        CommunicationsHealthReportSerializer,
+        PlatformServicesReportSerializer,
         MemberRetentionReportSerializer,
         MembershipRevenueReportSerializer,
+        MembershipGrowthReportSerializer,
+        PaymentsAgeingReportSerializer,
         EventRegistrationReportSerializer,
         EventFeedbackReportSerializer,
         BookingResourceUtilizationReportSerializer,

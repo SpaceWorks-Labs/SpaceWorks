@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 
 from apps.integrations.email import email_enabled
 from apps.openapi_errors import errors
+from apps.accounts.services_device_tokens import mobile_grant_creation_enabled
+from apps.makerspaces.config_native import NativeConfigSerializer, native_config
 
 
 class PublicConfigSerializer(serializers.Serializer):
@@ -17,6 +19,7 @@ class PublicConfigSerializer(serializers.Serializer):
     password_login = serializers.DictField(required=False)
     self_registration = serializers.DictField(required=False)
     member_accounts = serializers.DictField(required=False)
+    native = NativeConfigSerializer(required=False)
 
 
 class PublicConfigView(APIView):
@@ -27,6 +30,7 @@ class PublicConfigView(APIView):
     @extend_schema(
         tags=["Platform"],
         summary="Return frontend-safe platform configuration",
+        description="Includes native minimum app versions and public provider settings only while the mobile module permits new grants.",
         responses={200: PublicConfigSerializer, **errors(400, 503)},
     )
     def get(self, request, *args, **kwargs):
@@ -110,4 +114,6 @@ class PublicConfigView(APIView):
             # built-in providers because the STAFF login screen reads the same endpoint;
             # what stops a member-surface login is the check in `SocialLoginView`.
             payload["member_accounts"] = {"enabled": False}
+        if mobile_grant_creation_enabled():
+            payload["native"] = native_config()
         return Response(payload)

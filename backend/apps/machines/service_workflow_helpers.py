@@ -36,11 +36,13 @@ def _locked_submission_machine(target):
 
 def _assert_submission_write_allowed(target):
     from apps.encryption.write_fence import assert_mapped_write_allowed
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
     if isinstance(target, ServiceQueue):
         makerspace_id = ServiceQueue.objects.only("makerspace_id").get(pk=target.pk).makerspace_id
     else:
         machine_id = target.machine_id if isinstance(target, ServiceBucket) else target.pk
         makerspace_id = Machine.objects.only("makerspace_id").get(pk=machine_id).makerspace_id
+    assert_write_allowed(makerspace_id)
     assert_mapped_write_allowed(makerspace_id)
 
 
@@ -60,12 +62,12 @@ def _lock_assigned_machine(service_request):
     return Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
 
 
-def _release_queue_machine(service_request):
+def _release_queue_machine(service_request, actor=None):
     if service_request.assigned_machine_id:
         machine = Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
         if machine.status == Machine.Status.RUNNING:
-            machine.status = Machine.Status.IDLE
-            machine.save(update_fields=["status", "updated_at"])
+            from .status_tracking import change_status
+            change_status(machine, Machine.Status.IDLE, source="service_release", actor=actor)
 
 
 def _require_available(machine):

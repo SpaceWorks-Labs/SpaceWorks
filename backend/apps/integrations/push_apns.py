@@ -30,7 +30,8 @@ def send_apns(settings_row, token, environment, title, body, data):
                     "apns-topic": settings_row.apns_topic,
                     "apns-push-type": "alert",
                 },
-                json={"aps": {"alert": {"title": title, "body": body}}, "data": data},
+                json={"aps": {"alert": {"title": title, "body": body},
+                              "thread-id": str(data["makerspace_id"])}, "data": data},
             )
     except httpx.HTTPError as exc:
         raise PushProviderError("APNs request failed.") from exc

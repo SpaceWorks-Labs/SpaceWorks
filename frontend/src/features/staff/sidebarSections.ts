@@ -66,7 +66,7 @@ export function sidebarSections(moduleAllowedTabs: readonly string[], activeKey:
   flat = false, spaceManager = false): ShellSection[] {
   const labels: Readonly<Record<string, string>> = spaceManager ? { ...SIDEBAR_LABELS, ...SPACE_MANAGER_LABELS } : SIDEBAR_LABELS;
   const item = (key: string): ShellItem => ({ key, label: labels[key] ?? TAB_LABELS[key], href: path(key), icon: ICONS[key], onSelect: () => onSelect?.(key) });
-  if (flat) return [{ key: "desk", items: ["requests", "direct", "handover", "payments", "notifications", "granted"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
+  if (flat) return [{ key: "desk", items: ["dashboard", "requests", "direct", "handover", "payments", "notifications", "granted"].filter(key => moduleAllowedTabs.includes(key)).map(item) }];
   return (spaceManager ? SPACE_MANAGER_SECTIONS : SIDEBAR_SECTIONS).map(section => {
     const items = section.tabs.filter(key => moduleAllowedTabs.includes(key)).map(item);
     const more = section.more?.filter(key => moduleAllowedTabs.includes(key)).map(item);

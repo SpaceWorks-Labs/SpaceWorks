@@ -1,3 +1,4 @@
+import { MemberUsagePanel } from "./MemberUsagePanel";
 import { MemberSectionNavigation } from "./MemberSectionNavigation";
 import { MemberPortalTabs, useMemberTab } from "./MemberPortalTabs";
 import { SupportContact } from "../../components/SupportContact";
@@ -38,6 +39,9 @@ import { admissionKeys, publicAdmission, ownAdmission, type AdmissionRequest } f
 import type { CustomAnswers } from "../forms/customFormTypes";
 import { MemberNotifications } from "../notifications/MemberNotifications";
 import { MemberEventHistoryLink } from "./MemberEventHistoryLink";
+import { MemberMessaging } from "./MemberMessaging";
+import { useMemberMessaging } from "../messaging/messagingApi";
+import { MemberPhoneVerification } from "./MemberPhoneVerification";
 
 type Membership = { makerspace: { slug: string; name: string }; membership_status: string; role: string; waiver_acceptance_required: boolean; can_refer: boolean; can_verify: boolean; verified_at: string | null; referrals_enabled: boolean };
 type Memberships = { memberships: Membership[]; requests: (Partial<AdmissionRequest> & { makerspace: { id?: number; slug: string; name: string }; state: string; kind: string })[] };
@@ -82,7 +86,14 @@ export function MemberArea() {
   // errors -- the dashboard simply does not exist for a space that runs no memberships.
   const activeTab = useMemberTab(bootstrap.data?.modules ?? []);
   const membershipModuleOn = (bootstrap.data?.modules ?? []).includes("membership");
-  const accountSections = ["profile", "card", "certifications", "community", "invitations"].filter(key => key === "certifications"
+  // The server derives ties from owned loans/bookings/events as well as memberships.
+  const messagingEnabled = makerspaceId >= 0 && Boolean(memberAccess) && !restoring && !claimSession;
+  const messaging = useMemberMessaging(makerspaceId, messagingEnabled);
+  const messagingAllowed = messagingEnabled && messaging.isSuccess;
+  const accountSections = ["profile", "card", "certifications", "community", "invitations", "messaging", "phone"].filter(key => key === "messaging"
+    ? messagingAllowed
+    : key === "phone" ? messagingAllowed || membership?.membership_status === "active"
+    : key === "certifications"
     ? membership?.membership_status === "active" && Boolean(bootstrap.data?.modules.includes("machines"))
     : key === "invitations" ? Boolean(memberAccess && resolvedSlug && makerspaceId >= 0)
       : membershipModuleOn && membership?.membership_status === "active");
@@ -153,7 +164,7 @@ export function MemberArea() {
         avatar: spaceLogo ? { kind: "image", src: spaceLogo } : { kind: "avatar", name: bootstrap.data.makerspace.name, seed: resolvedSlug }, locked: true } : undefined}
       // A signed-out visitor gets a way in, not "Your account" and "Sign out".
       user={unauthenticated ? { name: "Not signed in", menu: [{ label: "Sign in", onClick: () => setShowSignIn(true) }] }
-        : { name: profile.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }],
+        : { name: profile.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }, { label: "Delete account", href: `${slug ? `/m/${encodeURIComponent(slug)}` : ""}/member/account?section=deletion` }],
         onSignOut: () => { void logout().catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
     <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
@@ -190,6 +201,9 @@ export function MemberArea() {
       {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history} /> : null}
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
       {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
+    {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberUsagePanel key={makerspaceId} makerspaceId={makerspaceId} /> : null}
+    {activeTab === "account" && section === "messaging" && messagingAllowed ? <MemberMessaging key={makerspaceId} makerspaceId={makerspaceId} verifyPhoneHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=phone`} /> : null}
+    {activeTab === "account" && section === "phone" && (messagingAllowed || membership?.membership_status === "active") ? <MemberPhoneVerification /> : null}
     {activeTab === "overview" && memberships.data ? <MakerspaceDiscovery currentSlug={resolvedSlug} memberships={memberships.data.memberships} requests={memberships.data.requests} /> : null}
     {/* OUTSIDE the membership branch. A loan deposit is raised against a borrower, who
         needs an active account rather than a membership -- nesting this meant the person

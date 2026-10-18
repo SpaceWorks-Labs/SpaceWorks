@@ -5,16 +5,20 @@ from copy import deepcopy
 from django.core.exceptions import ValidationError
 from .conditions import validate_condition
 from .profile_fields import ProfileValueError, compatible_question
+from .money_values import money_schema
+from .file_values import file_schema
+from .itinerary_values import itinerary_schema
+from .sensitive_policy import validate_context, validate_sensitive
 
 QUESTION_TYPES = (
     "short_text", "long_text", "number", "date", "date_of_birth", "single_choice",
     "multi_choice", "yes_no", "email", "phone", "url", "asset_reference",
-    "age_at_event", "emergency_contact",
+    "age_at_event", "emergency_contact", "money", "file", "itinerary",
 )
 CHOICES = {"single_choice", "multi_choice"}
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _KEYS = {"id", "type", "label", "required", "help", "placeholder", "options", "bounds",
-         "show_if", "disclosure", "profile_field_key", "visibility"}
+         "show_if", "disclosure", "profile_field_key", "visibility", "sensitive", "money", "file", "itinerary"}
 _BOUNDS = {"min_length", "max_length", "min", "max", "min_selections", "max_selections", "other_max_length"}
 
 
@@ -90,6 +94,17 @@ def _question(raw, earlier):
     if not isinstance(kind, str) or kind not in QUESTION_TYPES or type(raw["required"]) is not bool:
         fail("Invalid question type or required flag.")
     result = {**deepcopy(raw), "label": label(raw["label"])}
+    if type(raw.get("sensitive", False)) is not bool:
+        fail("sensitive must be boolean.")
+    result["sensitive"] = raw.get("sensitive", False)
+    for compound, normalizer in (("money", money_schema), ("file", file_schema), ("itinerary", itinerary_schema)):
+        if kind == compound:
+            try:
+                result[compound] = normalizer(raw.get(compound))
+            except ProfileValueError as exc:
+                fail(str(exc))
+        elif compound in raw:
+            fail("Compound configuration must match the question type.")
     for key in ("help", "placeholder"):
         if key in raw:
             result[key] = label(raw[key], 1000 if key == "help" else 200, blank=True)
@@ -103,7 +118,7 @@ def _question(raw, earlier):
             fail("Selection count exceeds available options.")
     if "show_if" in raw:
         result["show_if"] = validate_condition(raw["show_if"], earlier)
-    disclosure = raw.get("disclosure", {"organizer": True, "reviewer": False, "judge": False})
+    disclosure = raw.get("disclosure", {"organizer": not result["sensitive"], "reviewer": False, "judge": False})
     if (not isinstance(disclosure, dict) or set(disclosure) != {"organizer", "reviewer", "judge"}
             or any(type(value) is not bool for value in disclosure.values())):
         fail("Use explicit organizer/reviewer/judge disclosure flags.")
@@ -122,7 +137,17 @@ def _question(raw, earlier):
     return result
 
 
-def validate_schema(raw):
+def form_features(schema):
+    """Descriptive compatibility metadata; never authority to upload or read files."""
+    if not isinstance(schema, dict):
+        return []
+    return sorted({q["type"] for q in schema["questions"] if q["type"] in {"money", "file", "itinerary"}}
+                  | ({"sensitive"} if any(q.get("sensitive") for q in schema["questions"]) else set()))
+
+
+def validate_schema(raw, *, context=None):
+    if context == "stage" and isinstance(raw, dict) and isinstance(raw.get("questions"), list):
+        validate_context(raw, context=context)
     if not isinstance(raw, dict) or set(raw) - {"schema_version", "form_id", "revision", "questions", "event_context"}:
         fail("Unknown form keys.")
     if type(raw.get("schema_version")) is not int or raw["schema_version"] != 2:
@@ -139,6 +164,8 @@ def validate_schema(raw):
         canonical = _question(question, earlier)
         earlier[canonical["id"]] = canonical
     result = {**deepcopy(raw), "questions": list(earlier.values())}
+    validate_context(result, context=context)
+    validate_sensitive(result["questions"])
     # event_context is descriptive. Domain providers load and bind current values.
     if "event_context" in raw:
         ctx = raw["event_context"]

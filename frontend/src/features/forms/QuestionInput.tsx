@@ -1,8 +1,15 @@
 import type { Question } from "./types";
+import { MoneyInput } from "./MoneyInput";
+import { ItineraryInput } from "./ItineraryInput";
+import { FileInput } from "./FileInput";
 
 export function QuestionInput({ question: q, value, onChange, invalid, describedBy }: {
   question: Question; value: unknown; onChange: (value: unknown) => void; invalid?: boolean; describedBy?: string;
 }) {
+  const compound = { question: q, value, onChange, invalid, describedBy };
+  if (q.type === "money") return <MoneyInput {...compound} />;
+  if (q.type === "itinerary") return <ItineraryInput {...compound} />;
+  if (q.type === "file") return <FileInput {...compound} />;
   const props = { id: `question-${q.id}`, "aria-label": q.type === "emergency_contact" ? undefined : q.label, "aria-invalid": invalid || undefined, "aria-describedby": describedBy,
     className: "desk-input w-full font-normal", required: q.required };
   const object = value && typeof value === "object" ? value as Record<string, unknown> : {};

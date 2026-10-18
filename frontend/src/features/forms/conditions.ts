@@ -63,7 +63,8 @@ export function visibleQuestions(schema: FormSchemaV2, answers: Answers) {
 export function memberFormInput(schema: FormSchemaV2, state: FormState) {
   const visible = visibleQuestions(schema, state.answers);
   const keys = new Set(visible.filter(q => q.type === "age_at_event" ? state.derivations[q.id] : answered(state.answers[q.id])).map(q => q.type === "age_at_event" ? "date_of_birth" : q.profile_field_key).filter((key): key is string => Boolean(key)));
-  const choices = Object.fromEntries([...keys].map(key => [key, state.save_choices[key] ?? !SENSITIVE_KEYS.has(key)]));
+  const sensitive = new Set(schema.questions.filter(q => q.sensitive).map(q => q.profile_field_key));
+  const choices = Object.fromEntries([...keys].map(key => [key, state.save_choices[key] ?? (!sensitive.has(key) && !SENSITIVE_KEYS.has(key))]));
   return {
     form: { schema_version: 2 as const, form_id: schema.form_id, revision: schema.revision },
     answers: Object.fromEntries(visible.filter(q => q.type !== "age_at_event" && state.answers[q.id] !== undefined).map(q => [q.id, state.answers[q.id]])),

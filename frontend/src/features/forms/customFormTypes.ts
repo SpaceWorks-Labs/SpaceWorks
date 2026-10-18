@@ -40,7 +40,7 @@ export type CustomAnswerSnapshot = {
 };
 export type CustomAnswerSnapshotV2 = {
   version: 2; form_id: string; form_revision: number;
-  answers: { id: string; label: string; type: QuestionType; value?: unknown; derivation_id?: number }[];
+  answers: { id: string; label: string; type: QuestionType; value?: unknown; derivation_id?: number; sensitive?: boolean }[];
 };
 
 export const CHOICE_QUESTION_TYPES = new Set<CustomQuestionType>([

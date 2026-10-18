@@ -34,11 +34,11 @@ function newQuestion(): CustomFormQuestion {
 }
 
 type LegacyBuilderProps = Parameters<typeof LegacyCustomFormBuilder>[0];
-type V2BuilderProps = Omit<LegacyBuilderProps, "value" | "onChange"> & { value: FormSchemaV2; onChange: (schema: FormSchemaV2) => void };
+type V2BuilderProps = Omit<LegacyBuilderProps, "value" | "onChange"> & { value: FormSchemaV2; onChange: (schema: FormSchemaV2) => void; context?: React.ComponentProps<typeof FormBuilderV2>["context"] };
 export function CustomFormBuilder(props: LegacyBuilderProps): React.JSX.Element;
 export function CustomFormBuilder(props: V2BuilderProps): React.JSX.Element;
 export function CustomFormBuilder(props: LegacyBuilderProps | V2BuilderProps) {
-  if (props.value && !Array.isArray(props.value)) return <fieldset disabled={props.disabled}><FormBuilderV2 value={props.value} onChange={props.onChange as (schema: FormSchemaV2) => void} /></fieldset>;
+  if (props.value && !Array.isArray(props.value)) return <fieldset disabled={props.disabled}><FormBuilderV2 value={props.value} context={(props as V2BuilderProps).context} onChange={props.onChange as (schema: FormSchemaV2) => void} /></fieldset>;
   return <LegacyCustomFormBuilder {...props as LegacyBuilderProps} />;
 }
 

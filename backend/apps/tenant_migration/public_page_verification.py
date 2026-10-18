@@ -26,6 +26,10 @@ def verify_event_draft(page):
         if section["type"] == "team":
             section["payload"]["entries"] = [row for row in section["payload"]["entries"]
                 if row["kind"] != "member" or profiles.get(row["member_slot_id"]) is not None]
+    # Drafts saved before speaker order was pinned may hold heap order.
+    for document in (actual, expected):
+        for session in document["sessions"]:
+            session["speakers"] = sorted(session["speakers"])
     encode = lambda value: json.dumps(value, sort_keys=True, default=lambda item: item.isoformat() if isinstance(item, datetime) else str(item))
     if encode(actual) != encode(expected) or revision.source_anchor_start != window(page.event or page.series)[0]:
         raise ImportVerificationError("Current working website and selected draft snapshot disagree.")

@@ -37,12 +37,31 @@ def _upload_asset(target, actor, file, alt_text, replace_id, revision, copies):
                                            size_bytes=size, alt_text=alt_text)
     if old:
         page.sections.filter(asset=old).update(asset=asset)
+        _replace_editorial_asset(page, old.pk, asset.pk)
     from .website_revisions import save_draft
     save_draft(page, actor)
     bump(page)
     if copies.phase == "finalize":
         audit(page, actor, "event.website_asset_saved", revision=page.revision)
     return asset
+
+
+def _replace_editorial_asset(page, old_id, new_id):
+    """The "Replace image" action also swaps typed editorial slots: cover and gallery items."""
+    from copy import deepcopy
+    editorial = deepcopy(page.editorial_document)
+    if not editorial:
+        return
+    if editorial.get("cover_asset_id") == old_id:
+        editorial["cover_asset_id"] = new_id
+    for section in editorial.get("sections", []):
+        if section["type"] == "gallery":
+            for item in section["payload"]["items"]:
+                if item["asset_id"] == old_id:
+                    item["asset_id"] = new_id
+    if editorial != page.editorial_document:
+        page.editorial_document = editorial
+        page.save(update_fields=["editorial_document"])
 
 
 @transaction.atomic

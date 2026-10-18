@@ -2,10 +2,11 @@
 
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+from django.db.models import Prefetch
 from apps.makerspaces.public_page_markdown import rendering_policy
 
 from .models import EventSeries
-from .models_website import EventPage
+from .models_website import EventPage, EventSessionSpeaker
 from .website_content import PAGE_FIELDS, SECTION_FIELDS, SECTION_GROUPS, group_enabled, page_defaults
 from .website_visibility import effective_page, visible_page
 
@@ -50,7 +51,9 @@ def project_page(target, page, *, public=False, image_url=None, snapshot=True, r
                              "body_rendering": rendering_policy(row.body),
                              "image_url": asset_url, "image_alt_text": row.asset.alt_text if row.asset_id else ""})
     session_rows, delays = [], {}
-    sessions = page.sessions.select_related("track", "room").prefetch_related("speaker_links__speaker").order_by("starts_at", "slug")
+    # Speaker links keep authored (insertion) order so draft snapshots are deterministic.
+    speakers = Prefetch("speaker_links", queryset=EventSessionSpeaker.objects.select_related("speaker").order_by("pk"))
+    sessions = page.sessions.select_related("track", "room").prefetch_related(speakers).order_by("starts_at", "slug")
     for row in sessions if not public or group_enabled(page, "SCHEDULE") else []:
         # A hidden session never shifts the released schedule or reveals hidden track data.
         if public and row.visibility != "published":

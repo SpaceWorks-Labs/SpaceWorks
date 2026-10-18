@@ -18,8 +18,23 @@ def _boundary():
     return services
 
 
+def _lock_series_first(event_id):
+    """Occurrence writers take series -> occurrence, the order series edits use.
+
+    A second write to the occurrence row in one transaction makes PostgreSQL
+    re-check its series FK (FOR KEY SHARE) at commit; without the series lock
+    first, that check deadlocks against a concurrent series edit waiting on
+    this occurrence.
+    """
+    from apps.events.models import EventSeries
+    series_id = Event.objects.values_list("series_id", flat=True).get(pk=event_id)
+    if series_id:
+        EventSeries.objects.select_for_update().get(pk=series_id)
+
+
 def _transition(event, actor, expected, new_status, action):
     services = _boundary()
+    _lock_series_first(event.pk)
     locked = services._locked_event(event.pk)
     if locked.status != expected:
         message = f"Cannot transition event from {locked.status} to {new_status}."
@@ -36,6 +51,7 @@ def _transition(event, actor, expected, new_status, action):
 @transaction.atomic
 def publish(event, *, actor, publish_website=False, website_revision=None):
     services = _boundary()
+    _lock_series_first(event.pk)
     locked = services._locked_event(event.pk)
     if locked.status != Event.Status.DRAFT:
         raise EventInvalidTransition("Only draft events can be published.")
@@ -66,6 +82,7 @@ def publish(event, *, actor, publish_website=False, website_revision=None):
 @transaction.atomic
 def cancel(event, *, actor, notify=True):
     services = _boundary()
+    _lock_series_first(event.pk)
     locked = services._locked_event(event.pk)
     if locked.status != Event.Status.PUBLISHED:
         raise EventInvalidTransition(

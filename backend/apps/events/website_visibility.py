@@ -41,7 +41,9 @@ def effective_page(event):
 def visible_page(event):
     from apps.makerspaces.editions import require_public_surface
     require_public_surface("events")
-    if not public_events(event.makerspace).filter(pk=event.pk).exists():
+    # The public-site switch hides the event website (JSON, images, cover share)
+    # as one decision; the core event detail stays governed by its own gate.
+    if not event.makerspace.public_site_enabled or not public_events(event.makerspace).filter(pk=event.pk).exists():
         raise Http404
     page = released_page(event, "events", effective_page(event))
     if page.published_revision_id is None:

@@ -47,7 +47,9 @@ def copy_page(source, target, *, copies, preserve_delays=False, preserve_revisio
             page=page, asset=assets.get(row.asset_id), **copy_fields(row, SECTION_FIELDS))
     anchor = original.series if original.series_id else original.event
     delta = window(target)[0] - window(anchor)[0]
-    for row in bounded_children(original.sessions.prefetch_related("speaker_links__speaker"), maximum=200):
+    from django.db.models import Prefetch
+    ordered_speakers = Prefetch("speaker_links", queryset=EventSessionSpeaker.objects.select_related("speaker").order_by("pk"))
+    for row in bounded_children(original.sessions.prefetch_related(ordered_speakers), maximum=200):
         values = copy_fields(row, SESSION_FIELDS)
         values["starts_at"] += delta
         values["ends_at"] += delta
@@ -67,7 +69,8 @@ def copy_page(source, target, *, copies, preserve_delays=False, preserve_revisio
         page.editorial_document = editorial
         page.save(update_fields=["editorial_document"])
     from .website_revisions import save_draft
-    save_draft(page)
+    # The copy carries the source draft's typed member references forward.
+    save_draft(page, base_revision=original.draft_revision)
     return page
 
 

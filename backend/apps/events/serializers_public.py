@@ -54,10 +54,13 @@ class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSeri
         if self.context.get("omit_website"):
             return None
         from django.http import Http404
+        from rest_framework.exceptions import NotFound
         from .views_website_public import projection
+        # The optional website must never 404 the core event: a scope refusal
+        # (DRF NotFound) or a hidden page (Http404) both just omit it.
         try:
             return PublicWebsiteSerializer(projection(obj, self.context.get("request"))).data
-        except Http404:
+        except (Http404, NotFound):
             return None
 
     public_token = serializers.UUIDField(read_only=True)

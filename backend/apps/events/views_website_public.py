@@ -29,10 +29,14 @@ def projection(event, request=None):
 
 
 def released_image_response(page, asset_id):
-    """Serve only a current public reference after the caller resolves the live page."""
+    """Serve only a current public reference after the caller resolves the live page.
+
+    The public-site switch is applied once, in ``visible_page``, so image bytes and
+    the website JSON share one decision.
+    """
     from django.shortcuts import get_object_or_404
     from .website_revision_projection import visible_asset_ids
-    if not page.makerspace.public_site_enabled or asset_id not in visible_asset_ids(page.published_revision):
+    if asset_id not in visible_asset_ids(page.published_revision):
         raise Http404
     return image_response(get_object_or_404(page.assets, pk=asset_id))
 

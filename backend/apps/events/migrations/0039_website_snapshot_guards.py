@@ -128,7 +128,8 @@ BEGIN
       END IF;
       IF p.series_id IS NOT NULL THEN
         FOR e IN SELECT * FROM events_event WHERE events_event.series_id=p.series_id AND NOT EXISTS (
-          SELECT 1 FROM events_eventpage own WHERE own.event_id=events_event.id) FOR NO KEY UPDATE LOOP
+          SELECT 1 FROM events_eventpage own WHERE own.event_id=events_event.id)
+          ORDER BY events_event.id FOR NO KEY UPDATE LOOP
           IF x-r.source_anchor_start<interval '0' OR y-r.source_anchor_start>e.ends_at-e.starts_at THEN
             RAISE EXCEPTION 'Occurrence window excludes released snapshot' USING ERRCODE='23514';
           END IF;
@@ -142,7 +143,15 @@ END $$;
 
 IMMUTABLE = ("eventpagerevision", "eventpagerevisionasset", "eventpagerevisionmember", "eventsessionidentity", "eventsessionalias")
 FINAL = ("eventpage", "eventpagerevision", "eventpagerevisionasset", "eventpagerevisionmember", "eventsession", "eventsessionalias")
-WINDOWS = ("eventpage", "event", "eventseries")
+# Column-scoped: only window inputs re-check (and lock) publications. A status or
+# image write on one occurrence must not lock its series and sibling occurrences
+# at commit, or concurrent cancels and series edits deadlock.
+WINDOWS = {
+    "eventpage": "INSERT OR UPDATE OR DELETE",
+    "event": "INSERT OR DELETE OR UPDATE OF starts_at, ends_at, series_id",
+    "eventseries": ("INSERT OR DELETE OR UPDATE OF dtstart_local_date, dtstart_local_time, "
+                    "recurrence_timezone, duration_minutes"),
+}
 
 
 class Migration(migrations.Migration):
@@ -159,8 +168,9 @@ class Migration(migrations.Migration):
         f"CREATE CONSTRAINT TRIGGER event_snapshot_final AFTER INSERT OR UPDATE ON events_{table} "
         "DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION event_snapshot_final();" for table in FINAL
     ) + "\n" + "\n".join(
-        f"CREATE CONSTRAINT TRIGGER event_snapshot_windows AFTER INSERT OR UPDATE OR DELETE ON events_{table} "
-        "DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION event_snapshot_windows();" for table in WINDOWS
+        f"CREATE CONSTRAINT TRIGGER event_snapshot_windows AFTER {events} ON events_{table} "
+        "DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION event_snapshot_windows();"
+        for table, events in WINDOWS.items()
     ), "\n".join(
         f"DROP TRIGGER event_snapshot_{name} ON events_{table};" for name, tables in
         (("immutable", IMMUTABLE), ("final", FINAL), ("windows", WINDOWS)) for table in tables

@@ -54,7 +54,7 @@ def verify_working_draft(page):
          "body_rendering": rendering_policy(row.body), "starts_at": row.starts_at, "ends_at": row.ends_at,
          "delay_minutes": row.delay_minutes, "visibility": row.visibility,
          "track": row.track.slug if row.track_id else None, "room": row.room.slug if row.room_id else None,
-         "speakers": [link.speaker.slug for link in row.speaker_links.select_related("speaker")]}
+         "speakers": [link.speaker.slug for link in row.speaker_links.select_related("speaker").order_by("pk")]}
         for row in page.sessions.select_related("track", "room").order_by("starts_at", "slug")
     ]
     expected = deepcopy(revision.document)
@@ -75,6 +75,11 @@ def verify_working_draft(page):
         if section["type"] == "team":
             section["payload"]["entries"] = [row for row in section["payload"]["entries"]
                 if row["kind"] != "member" or profiles.get(row["member_slot_id"]) is not None]
+    # Drafts saved before speaker order was pinned may hold heap order; speaker
+    # membership, not its order, is what a restore must preserve.
+    for document in (actual, expected):
+        for session in document["sessions"]:
+            session["speakers"] = sorted(session["speakers"])
     def encode(value):
         return json.dumps(value, sort_keys=True, default=lambda row: row.isoformat() if isinstance(row, datetime) else str(row))
     if encode(actual) != encode(expected) or revision.source_anchor_start != owner_window(page.event or page.series)[0]:

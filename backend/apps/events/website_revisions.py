@@ -24,7 +24,7 @@ def working_document(page):
     return document
 
 
-def append_snapshot(page, *, actor=None, document=None, anchor=None, source_revision=None):
+def append_snapshot(page, *, actor=None, document=None, anchor=None, source_revision=None, base_revision=None):
     from .website_projection import window
     if document is None:
         document = working_document(page)
@@ -43,9 +43,15 @@ def append_snapshot(page, *, actor=None, document=None, anchor=None, source_revi
         # Member editorial slots use the same typed references as other pages.
         from apps.makerspaces.models_profiles import MemberProfile
         from apps.makerspaces.public_profile_access import profile_is_public
-        profiles = {row.pk: row for row in MemberProfile.objects.filter(pk__in=members.values()).select_related(
+        # Consent gates choosing a member, not re-saving one already chosen: an
+        # unchanged (slot, profile) carries its typed reference forward, so a
+        # reschedule or asset edit never fails because a profile went private.
+        base = base_revision if base_revision is not None else page.draft_revision
+        saved = {str(row.slot): row.profile_id for row in base.member_references.all()} if base else {}
+        chosen = {pk for slot, pk in members.items() if saved.get(slot) != pk}
+        profiles = {row.pk: row for row in MemberProfile.objects.filter(pk__in=chosen).select_related(
             "membership__user", "membership__makerspace")}
-        if any(not profile_is_public(profiles.get(pk)) for pk in members.values()):
+        if any(not profile_is_public(profiles.get(pk)) for pk in chosen):
             raise ValidationError("Choose currently public member profiles.")
         for section in document["editorial_document"]["sections"]:
             if section["type"] == "team":
@@ -65,8 +71,8 @@ def append_snapshot(page, *, actor=None, document=None, anchor=None, source_revi
     return revision
 
 
-def save_draft(page, actor=None):
-    page.draft_revision = append_snapshot(page, actor=actor)
+def save_draft(page, actor=None, base_revision=None):
+    page.draft_revision = append_snapshot(page, actor=actor, base_revision=base_revision)
     page.save(update_fields=["draft_revision"])
     return page.draft_revision
 

@@ -20,6 +20,7 @@ def published_page(event):
     if page is None and event.series_id:
         page = getattr(event.series, "website_page", None)
     if (page and page.released and page.published_revision_id
+            and event.makerspace.public_site_enabled
             and event.is_public and event.status == Event.Status.PUBLISHED
             and event.ends_at >= timezone.now()):
         from apps.makerspaces.capability_eligibility import configuration_feature_enabled

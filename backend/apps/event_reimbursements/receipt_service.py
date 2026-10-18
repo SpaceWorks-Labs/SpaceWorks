@@ -5,17 +5,20 @@ from apps.payments.event_payouts.receipt_models import ReceiptUse, ReceiptAlloca
 from apps.payments.event_payouts.errors import require
 
 
-def pin_receipts_locked(*, claim, lines):
+def pin_receipts_locked(*, claim, lines, predeclared):
     by_hash = defaultdict(list)
     assets = {}
-    for line in lines:
+    for line in sorted(lines, key=lambda item: (item["receipt"]["asset_id"], str(item["line_uuid"]))):
         ref = line["receipt"]
+        require(predeclared.get(ref["asset_id"]) == (ref["generation"], ref["sha256"]), "receipt_set_changed")
         asset = FinanceAttachment.objects.select_for_update().filter(pk=ref["asset_id"],
             makerspace_id=claim.event.makerspace_id, owner_member_id=claim.member_id,
             event_id_snapshot=claim.event_id, binding_kind="claim", binding_uuid=claim.uuid,
             purpose="reimbursement_receipt", generation=ref["generation"], sha256=ref["sha256"],
             state__in=("ready", "attached"), scan_status__in=("clean", "skipped")).first()
         require(asset is not None, "receipt_unavailable", status=404)
+        require(asset.actual_bytes == asset.expected_bytes and asset.actual_bytes is not None and
+            asset.actual_bytes > 0 and bool(asset.canonical_mime), "receipt_unavailable", status=404)
         assets[line["line_uuid"]] = asset
         by_hash[asset.sha256].append(line)
     uses = {}

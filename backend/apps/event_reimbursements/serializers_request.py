@@ -4,6 +4,8 @@ from rest_framework import serializers
 from apps.payments.currencies import normalize_supported_currency
 from apps.payments.event_payouts.validation import MAX_MINOR
 
+ESTIMATE_MAX_MINOR = 10_000_000  # G1 fixed request-form money bound.
+
 
 class ClosedSerializer(serializers.Serializer):
     def to_internal_value(self, data):
@@ -35,7 +37,7 @@ class FormDescriptor(ClosedSerializer):
 
 class Estimate(ClosedSerializer):
     category = serializers.ChoiceField(choices=("rail", "air", "bus", "ground_transport", "lodging"))
-    amount_minor = StrictInteger(min_value=1, max_value=MAX_MINOR)
+    amount_minor = StrictInteger(min_value=1, max_value=ESTIMATE_MAX_MINOR)
     currency = Currency()
 
 
@@ -51,7 +53,7 @@ class ReimbursementRequestSubmissionSerializer(ClosedSerializer):
 
     def to_internal_value(self, data):
         if not isinstance(data, dict) or data.get("submit") is not True:
-            raise serializers.ValidationError({"code": "explicit_consent_required"})
+            raise serializers.ValidationError({"code": "reimbursement_consent_required"})
         return super().to_internal_value(data)
 
     def validate(self, value):

@@ -9,6 +9,20 @@ from .request_form_adapter import recheck_locked
 from .transactions import command, changed, require_outer
 
 
+def reviewed_locked(ctx, row, *, state, reason_code=""):
+    require(state in ("waitlisted", "declined", "awarded"), "invalid_request_decision", status=400)
+    return changed(row, state=state, reviewed_by=ctx.actor, reviewed_at=timezone.now(), reason_code=reason_code)
+
+
+def expire_locked(ctx, row, *, reason_code):
+    if row.state not in ("draft", "requested", "waitlisted"):
+        return False
+    old = row.state
+    changed(row, state="expired", reason_code=reason_code)
+    ctx.audit("event.reimbursement.request_expired", row, old_state=old, new_state=row.state, reason_code=reason_code)
+    return True
+
+
 def subject_locked(*, event, actor, registration=None, application=None, phase):
     require(registration is not None or application is not None, "canonical_participation_required")
     for subject in (registration, application):
@@ -17,23 +31,28 @@ def subject_locked(*, event, actor, registration=None, application=None, phase):
     if application and registration:
         require(application.registration_id == registration.pk, "invalid_subject", status=404)
     if phase == "after_acceptance":
-        require(registration is not None and registration.status in ("registered", "attended"), "participation_not_accepted")
         if application:
-            require(application.state == "confirmed", "participation_not_accepted")
+            require(application.state in ("offered", "confirmed"), "participation_not_accepted")
+            if application.state == "offered":
+                require(application.rsvp_due_at is not None and timezone.now() < application.rsvp_due_at,
+                        "participation_not_accepted")
+        else:
+            require(registration is not None and registration.status in ("registered", "attended"), "participation_not_accepted")
     elif application:
         require(application.state != "draft", "reimbursement_submit_only", status=400)
 
 
 def submit_application_locked(*, event, actor, prepared, registration, application=None, locks):
     require_outer(locks, event)
-    from apps.makerspaces.guards import require_module_locked
-    require_module_locked(event.makerspace, "event_reimbursements")
+    from .transactions import require_reimbursement_locked
+    require_reimbursement_locked(event.makerspace)
     programme = ReimbursementProgramme.objects.select_for_update().get(event=event)
     recheck_locked(prepared, programme=programme, event=event, actor=actor, phase="application")
     subject_locked(event=event, actor=actor, registration=registration, application=application, phase="application")
-    require(not GrantRequest.objects.filter(programme=programme, member=actor).exists(), "reimbursement_request_exists")
+    draft = GrantRequest.objects.select_for_update().filter(programme=programme, member=actor).first()
+    require(draft is None or draft.state == "draft", "reimbursement_request_exists")
     return _create_locked(event=event, actor=actor, prepared=prepared, programme=programme,
-                          registration=registration, application=application, phase="application")
+                          registration=registration, application=application, phase="application", draft=draft)
 
 
 def _create_locked(*, event, actor, prepared, programme, registration, application, phase, draft=None):
@@ -49,6 +68,8 @@ def _create_locked(*, event, actor, prepared, programme, registration, applicati
         "consent": True, "submitted_at": now.isoformat(), "distance_self_reported": True})
     row.distance_km = value.get("distance_km")
     row.category_estimates = value["estimates"]
+    from .eligibility import request_facts
+    row.eligibility_snapshot = json.dumps(request_facts(event=event, owner_id=actor.pk))
     row.estimated_total_minor = sum(item["amount_minor"] for item in value["estimates"])
     row.submitted_at, row.state = now, "requested"
     if draft:
@@ -56,14 +77,22 @@ def _create_locked(*, event, actor, prepared, programme, registration, applicati
     row.save()
     record(actor, "event.reimbursement.requested", makerspace=event.makerspace, target=row,
            meta={"request_id": row.pk, "old_state": "draft", "new_state": row.state})
+    from .notices import enqueue_locked
+    enqueue_locked(row, "requested")
+    from .queue_notices import enqueue_locked as enqueue_queue
+    enqueue_queue(programme, operation_id=prepared.operation_id, kind="requested")
     return row
 
 
-def submit(*, event_id, actor, data, prepared):
-    with command(event_id=event_id, actor=actor, data=data, action="request.submit", owner=True) as ctx:
+def submit(*, event_id, actor, data, prepared=None, request=None):
+    with command(event_id=event_id, actor=actor, request=request, data=data, action="request.submit", owner=True) as ctx:
         if ctx.replay:
             return ctx.replay
         programme = ReimbursementProgramme.objects.select_for_update().get(event=ctx.event)
+        if prepared is None:
+            from .request_form_adapter import prepare
+            prepared = prepare(programme=programme, event=ctx.event, actor=actor,
+                operation_id=data["operation_id"], block=data["reimbursement_request"])
         recheck_locked(prepared, programme=programme, event=ctx.event, actor=ctx.actor, phase="after_acceptance")
         registration = EventRegistration.objects.filter(event=ctx.event, member=actor,
             status__in=("registered", "attended")).first()
@@ -78,8 +107,8 @@ def submit(*, event_id, actor, data, prepared):
         return ctx.finish(row, uuid=str(row.uuid))
 
 
-def withdraw(*, event_id, actor, data):
-    with command(event_id=event_id, actor=actor, data=data, action="request.withdraw", owner=True) as ctx:
+def withdraw(*, event_id, actor, data, request=None):
+    with command(event_id=event_id, actor=actor, request=request, data=data, action="request.withdraw", owner=True) as ctx:
         if ctx.replay:
             return ctx.replay
         row = GrantRequest.objects.select_for_update().get(event=ctx.event, member=actor)
@@ -91,8 +120,8 @@ def withdraw(*, event_id, actor, data):
         return ctx.finish(row)
 
 
-def create_draft(*, event_id, actor, data):
-    with command(event_id=event_id, actor=actor, data=data, action="request.draft", owner=True) as ctx:
+def create_draft(*, event_id, actor, data, request=None):
+    with command(event_id=event_id, actor=actor, request=request, data=data, action="request.draft", owner=True) as ctx:
         if ctx.replay:
             return ctx.replay
         programme = ReimbursementProgramme.objects.select_for_update().get(event=ctx.event, enabled=True)

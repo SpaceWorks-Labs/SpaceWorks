@@ -9,30 +9,7 @@ from .config_models import ReimbursementProgramme
 from .budget_models import ReimbursementBudgetPool
 from .budget_service import fund_locked
 from .transactions import command, changed
-
-
-POLICY_FIELDS = frozenset({"enabled", "request_phase", "request_opens_at", "request_closes_at",
-    "award_mode", "tier_rules", "allowed_categories", "exclusions", "min_distance_km",
-    "eligible_countries", "eligible_cohorts", "award_accept_days", "claim_due_at", "attendance_required",
-    "require_project_submission", "permitted_venue_sources", "category_limits"})
-
-
-def validate_policy(value, *, event):
-    require(isinstance(value, dict) and not set(value) - POLICY_FIELDS, "invalid_programme_settings", status=400)
-    require("claim_due_at" not in value or value["claim_due_at"] > event.ends_at, "claim_due_before_event_end", status=400)
-    require(value.get("request_phase", "both") in ("application", "after_acceptance", "both"), "invalid_request_phase", status=400)
-    require(value.get("award_mode", "need_based") in ("fixed_tier", "route_cap", "percentage", "need_based"),
-            "invalid_award_mode", status=400)
-    if "allowed_categories" in value:
-        categories = value["allowed_categories"]
-        require(isinstance(categories, list) and 1 <= len(categories) <= 5
-            and len(categories) == len(set(categories)) and set(categories) <=
-            {"rail", "air", "bus", "ground_transport", "lodging"}, "invalid_categories", status=400)
-    for key in ("enabled", "attendance_required", "require_project_submission"):
-        require(key not in value or type(value[key]) is bool, "invalid_programme_settings", status=400)
-    for amount in value.get("category_limits", {}).values():
-        minor(amount, zero=True)
-    return value
+from .policy import POLICY_FIELDS, validate_policy
 
 
 def create_or_get(*, request, event_id, data):
@@ -69,6 +46,7 @@ def create_or_get(*, request, event_id, data):
 
 
 def configure(*, request, event_id, data):
+    minor(data["budget_delta_minor"], signed=True)
     with command(event_id=event_id, actor=request.user, request=request, data=data,
                  action="programme.configure", finance=True) as ctx:
         if ctx.replay:
@@ -78,9 +56,20 @@ def configure(*, request, event_id, data):
         pool = ReimbursementBudgetPool.objects.select_for_update().get(pk=data["pool_id"], programme=row)
         ctx.cas(row)
         require(pool.version == data["expected_pool_version"] and row.finance_policy_revision == data["policy_revision"], "stale_version")
-        settings = validate_policy(data["settings"], event=ctx.event)
+        combined = {name: getattr(row, name) for name in POLICY_FIELDS}
+        normalized = validate_policy({**combined, **data["settings"]}, event=ctx.event)
+        settings = {key: normalized[key] for key in data["settings"]}
+        if row.imported_paused:
+            require(data.get("reconciliation_confirmed") is True, "finance_reconciliation_required")
+            from django.db.models import Sum
+            totals = pool.reservations.aggregate(held=Sum("held_minor"), committed=Sum("committed_minor"))
+            require((totals["held"] or 0, totals["committed"] or 0) == (pool.reserved_minor, pool.committed_minor),
+                    "budget_reconciliation_required")
         fund_locked(pool, data["budget_delta_minor"], operation_id=data["operation_id"], actor=ctx.actor,
                     reason_code=data["reason_code"])
-        changed(row, **settings, finance_policy_revision=row.finance_policy_revision + 1)
+        changed(row, **settings, imported_paused=False, finance_policy_revision=row.finance_policy_revision + 1)
         ctx.audit("event.reimbursement.programme_configured", row, pool_id=pool.pk, policy_revision=row.finance_policy_revision)
+        if data["budget_delta_minor"] > 0:
+            from .notices import reviewer_preview_locked
+            reviewer_preview_locked(ctx, pool)
         return ctx.finish(row, pool_id=pool.pk, pool_version=pool.version)

@@ -23,6 +23,7 @@ class CancellationPrefix:
     series_id: int | None
     pool: object = None
     claim: object = None
+    reservation: object = None
 
     def lock_before_obligation(self, *, request, seed):
         if self.series_id:
@@ -38,6 +39,7 @@ class CancellationPrefix:
         grant_request = GrantRequest.objects.select_for_update().get(pk=self.request_id, programme=programme)
         award = GrantAward.objects.select_for_update().get(pk=self.award_id, request=grant_request, pool=self.pool)
         self.claim = ReimbursementClaim.objects.select_for_update().get(pk=self.claim_id, award=award)
+        self.reservation = BudgetReservation.objects.select_for_update().get(award=award, pool=self.pool)
         return space, actor
 
     def recheck_locked(self, *, obligation, expected_pool_version):
@@ -46,8 +48,7 @@ class CancellationPrefix:
         require(self.pool.version == expected_pool_version, "stale_pool_version")
 
     def close_locked(self, *, obligation, revision, actor, operation_id):
-        reservation = BudgetReservation.objects.select_for_update().get(award_id=self.award_id, pool=self.pool)
-        release_locked(self.pool, reservation, operation_id=operation_id, actor=actor,
+        release_locked(self.pool, self.reservation, operation_id=operation_id, actor=actor,
                        reason_code="finance_cancelled", cancel_committed=True)
         from .claim_workflow import close_by_cancellation_locked
         close_by_cancellation_locked(self.claim, cancellation_revision=revision, terminal_at=obligation.terminal_financial_at)

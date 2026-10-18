@@ -32,7 +32,7 @@ class ClaimLineInput(ClosedSerializer):
 
 
 class ClaimDraftInput(ClosedSerializer):
-    lines = ClaimLineInput(many=True, allow_empty=False, max_length=50)
+    lines = ClaimLineInput(many=True, allow_empty=True, max_length=50)
 
     def validate_lines(self, value):
         identities = [row["line_uuid"] for row in value]

@@ -1,9 +1,6 @@
 """Source/fence/host/authority/obligation locks with no removable-app imports."""
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-import hashlib
-import json
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from apps.accounts.models import User
 from apps.encryption.account_write_fence import account_fences
@@ -15,11 +12,16 @@ from .authority import authorize
 from .errors import require
 from .obligation_models import EventPayoutObligation
 from .command_models import EventPayoutCommandReceipt
+from .wire import fingerprint, command_digest
 
 
-def fingerprint(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
-        cls=DjangoJSONEncoder, allow_nan=False).encode()).hexdigest()
+@contextmanager
+def prepared_scope(makerspace_id, *, create=True):
+    """Source lock first; broker/key provisioning before any domain transaction."""
+    with boundary_tenant_write(makerspace_id):
+        key = prepare_tenant_key(makerspace_id, create=create)
+        with tenant_key_context(key):
+            yield
 
 
 def lock_finance_authority(actor, space):
@@ -67,10 +69,10 @@ def command(*, request, obligation_id, data, action, payout=False, owner=False, 
     authorize(request, seed.makerspace, owner_id=seed.owner_member_id, owner=owner,
               payout=payout, mutation=True)
     assert_write_allowed(seed.makerspace_id)
-    key = prepare_tenant_key(seed.makerspace_id)
     accounts = tuple(sorted({request.user.pk, *([seed.owner_member_id] if seed.owner_member_id else [])}))
-    digest = fingerprint({"action": action, "obligation_id": seed.pk, "body": data})
-    with boundary_tenant_write(seed.makerspace_id), tenant_key_context(key), transaction.atomic(), account_fences(
+    require(request.headers.get("Idempotency-Key") == str(data["operation_id"]), "idempotency_key_mismatch", status=400)
+    digest = command_digest(action, seed.pk, data)
+    with prepared_scope(seed.makerspace_id), transaction.atomic(), account_fences(
         accounts, (seed.makerspace_id,),
     ):
         # Attached cancellation supplies an event/domain prefix which acquires

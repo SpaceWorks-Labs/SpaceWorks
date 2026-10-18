@@ -4,13 +4,16 @@ from apps.audit.services import record
 from .errors import require
 from .obligation_models import EventPayoutObligation, EventPayoutObligationRevision
 from .queries import paid
-from .transactions import command, fingerprint
+from .transactions import command
+from .wire import command_digest, cancellation_command
+from .decision_workflow import create_locked, correct_locked
 
 
 def project_settlement_locked(obligation, *, effective_paid, operation_id):
     from .attachment_workflow import close_binding_locked, reopen_locked
     from .payee_workflow import close_locked
     require(0 <= effective_paid <= obligation.approved_minor and obligation.state != "cancelled", "payout_exceeds_approval")
+    old_state = obligation.state
     settled = effective_paid == obligation.approved_minor
     if settled and obligation.terminal_financial_at is None:
         obligation.terminal_financial_at = timezone.now()
@@ -21,12 +24,19 @@ def project_settlement_locked(obligation, *, effective_paid, operation_id):
         obligation.terminal_financial_at = None
         # Purged values stay empty; only future collection can replace them.
         for row in obligation.payee_revisions.select_for_update().exclude(state="purged").order_by("pk"):
+            if row.state != "current" and not row.entries.exists():
+                continue
             row.terminal_financial_at = row.purge_due_at = row.paid_closed_at = None
             row.closure_reason_code, row.version = "", row.version + 1
             row.save()
+            record(None, "finance.event_payout.payee_reopened", makerspace=obligation.makerspace, target=row,
+                   meta={"payee_revision_id": str(row.pk)})
         reopen_locked(obligation)
     obligation.state, obligation.version = ("settled" if settled else "open"), obligation.version + 1
     obligation.save()
+    record(None, "finance.event_payout.settlement_projected", makerspace=obligation.makerspace, target=obligation,
+        meta={"old_state": old_state, "new_state": obligation.state, "effective_paid_minor": effective_paid,
+              "operation_id": str(operation_id)})
 
 
 def cancel_unpaid(*, request, obligation_id, data):
@@ -36,10 +46,12 @@ def cancel_unpaid(*, request, obligation_id, data):
     from .authority import authorize
     from .payout_models import EventPayoutEntry
     from apps.tenant_migration.gate_runtime import assert_write_allowed
+    data = {**data, **cancellation_command(data)}
     seed = EventPayoutObligation.objects.select_related("makerspace").get(pk=obligation_id)
     authorize(request, seed.makerspace, mutation=True)
     assert_write_allowed(seed.makerspace_id)
-    digest = fingerprint({"action": "obligation.cancel", "obligation_id": seed.pk, "body": data})
+    require(request.headers.get("Idempotency-Key") == str(data["operation_id"]), "idempotency_key_mismatch", status=400)
+    digest = command_digest("obligation.cancel", seed.pk, data)
     durable = EventPayoutObligationRevision.objects.filter(operation_id=data["operation_id"]).first()
     if durable:
         require(durable.obligation_id == seed.pk and durable.command_digest == digest
@@ -64,6 +76,8 @@ def cancel_unpaid(*, request, obligation_id, data):
         require(row.domain_coordination_state == seed.domain_coordination_state, "payout_coordination_changed")
         require(row.state != "cancelled", "obligation_cancelled")
         require(row.state == "open" and paid(row) == 0, "obligation_already_paid")
+        # Lock all payee parents before payout tips and attachment children.
+        list(row.payee_revisions.select_for_update().order_by("pk"))
         previous = row.current_revision
         require(previous is not None and previous.sequence == data["expected_revision_sequence"], "stale_decision_sequence")
         require((prefix is not None) == (data["expected_pool_version"] is not None), "invalid_pool_version", status=400)
@@ -86,5 +100,7 @@ def cancel_unpaid(*, request, obligation_id, data):
         record(ctx.actor, "finance.event_payout.cancelled", makerspace=row.makerspace, target=row,
             meta={"obligation_id": str(row.pk), "revision_id": revision.pk, "reason_code": data["reason_code"],
                   "old_state": "open", "new_state": "cancelled"})
+        from .notices import enqueue_locked
+        enqueue_locked(row, "cancelled")
         return ctx.finish(cancellation_revision_id=revision.pk, sequence=revision.sequence,
                           terminal_financial_at=terminal.isoformat())

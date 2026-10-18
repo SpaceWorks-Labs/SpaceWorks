@@ -14,11 +14,11 @@ export function MemberPhoneVerification() {
   }), onSuccess: () => { setSentTo(phone); setCode(""); confirm.reset(); } });
   const confirm = useMutation({ mutationFn: () => memberRequest<{ phone_e164: string; verified: boolean }>("/auth/phone/link/confirm", {
     method: "POST", body: JSON.stringify({ phone: sentTo, code }),
-  }), onSuccess: () => { setPhone(""); setCode(""); setSentTo(""); return client.invalidateQueries({ queryKey: ["member", "messaging"] }); } });
+  }), onSuccess: () => { setPhone(""); setCode(""); setSentTo(""); return client.invalidateQueries({ queryKey: ["notify-contract"] }); } });
   const pending = start.isPending || confirm.isPending;
   return <section id="phone-verification" className="desk-panel grid gap-3 p-5">
     <h2 className="title-panel">Verify your phone</h2>
-    <p className="text-sm text-muted">Link your own number using a verification code. After verification, return to Messaging and choose your consent for each channel.</p>
+    <p className="text-sm text-muted">Link your own number using a verification code, then choose SMS consent under Channels. WhatsApp needs its own connection proof.</p>
     <form className="grid gap-3" onSubmit={event => { event.preventDefault(); start.mutate(); }}>
       <label className="grid gap-1 text-sm font-semibold">Phone number (E.164)<input className="desk-input" type="tel" autoComplete="tel" maxLength={32} value={phone} disabled={pending} required pattern="\+[1-9][0-9]{7,14}"
         onChange={event => { setPhone(event.target.value); setSentTo(""); confirm.reset(); }} /></label>

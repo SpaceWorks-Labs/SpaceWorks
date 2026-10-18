@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass, replace
+from uuid import NAMESPACE_URL, uuid5
 
 from django.db import transaction
 
@@ -26,8 +27,30 @@ class InboxDelivery:
 
 def safe_link(value):
     # Only local application paths; never a javascript URL, external origin or token URL.
+    if not isinstance(value, str):
+        return ""
     return value[:300] if (value.startswith("/") and not value.startswith("//")
                           and "\\" not in value and not any(ord(char) < 32 or ord(char) == 127 for char in value)) else ""
+
+
+def write_envelope_inbox(envelope, rendered):
+    """M's in-app adapter uses the same stable event identity as its push child."""
+    from apps.notifications.inbox_scope import validate_notification_scope
+
+    validate_notification_scope(envelope.scope)
+    audience = "member" if envelope.audience in {"member", "requester"} else "staff"
+    with transaction.atomic():
+        row, created = rbac.scope_notification_policy(
+            NotificationInboxRow.objects.all(), makerspace_id=envelope.makerspace_id,
+        ).get_or_create(makerspace_id=envelope.makerspace_id, user_id=envelope.recipient_id,
+            event_key=uuid5(NAMESPACE_URL, envelope.dedup_key), defaults={
+                "feature": envelope.feature, "event": envelope.event, "audience": audience,
+                "scope": envelope.scope, "title": rendered.get("subject", "Space Works")[:200],
+                "summary": rendered.get("text", "")[:2000], "link": safe_link(rendered.get("link", "")),
+            })
+        if created:
+            transaction.on_commit(lambda: _hint(envelope.makerspace_id, envelope.recipient_id), robust=True)
+    return row
 
 
 def write_matrix_inbox(makerspace, feature, event, payload, event_key):
@@ -78,10 +101,6 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
             )
             if created:
                 transaction.on_commit(lambda uid=user_id: _hint(makerspace.pk, uid), robust=True)
-                if row.audience == "member":
-                    from apps.notifications.member_push import enqueue_member_push
-
-                    transaction.on_commit(lambda rid=row.pk: enqueue_member_push(rid), robust=True)
 
 
 def _hint(makerspace_id, user_id):

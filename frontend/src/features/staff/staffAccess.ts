@@ -1,6 +1,6 @@
 const ALL_TABS = [
   "platform-dashboard", "usage",
-  "dashboard", "notifications", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
+  "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "emailtemplates", "users", "platform", "audit",
   "devices", "email-logs", "payments", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
 ] as const;
@@ -15,6 +15,7 @@ export const TAB_LABELS: Record<string, string> = {
   usage: "Usage & limits",
   dashboard: "Dashboard",
   notifications: "Notifications",
+  channels: "My channels",
   requests: "Requests",
   direct: "Direct handout",
   handover: "Job handover",
@@ -57,7 +58,7 @@ export const TAB_LABELS: Record<string, string> = {
 };
 
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
-  { label: "Operate", tabs: ["dashboard", "notifications", "requests", "direct", "handover", "payments", "ledger", "transfers", "stocktake", "tobuy"] },
+  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "ledger", "transfers", "stocktake", "tobuy"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
   { label: "Machines", tabs: ["machines", "devices"] },
   { label: "Events", tabs: ["events", "organized", "granted"] },
@@ -123,7 +124,7 @@ export function getStaffAccess(
   // finished work over, so a manager needs no separate grant.
   const canCollectServiceRequests = has("collect_service_request") || canManageMachines;
   const printingOnly = canSeePrinting && !canEditInventory && !canManageMakerspace;
-  const baseTabs = handoutOnly ? (["dashboard", "requests", "direct", "handover", "payments", "notifications", "granted"] as const) : ALL_TABS;
+  const baseTabs = handoutOnly ? (["dashboard", "requests", "direct", "handover", "payments", "notifications", "channels", "granted"] as const) : ALL_TABS;
   const grantOnly = !isSuperadmin && actions.length === 0 && hasGrants;
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.
@@ -136,6 +137,7 @@ export function getStaffAccess(
     if (tabName === "dashboard") return handoutOnly || isSuperadmin || canSeeDashboard;
     // Personal rows and read state admit machine-only and handover staff.
     if (tabName === "notifications") return isSuperadmin || actions.length > 0;
+    if (tabName === "channels") return actions.length > 0;
     if (tabName === "tobuy") return canUseToBuy;
     if (tabName === "needsfix") return canEditInventory;
     if (tabName === "categories") return canEditInventory;

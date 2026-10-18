@@ -17,22 +17,23 @@ export function ChannelTestSend({ makerspaceId, channel }: { makerspaceId: numbe
   const endpoints = useEndpoints(makerspaceId);
   const test = useTestChannel(makerspaceId);
   const options = [
+    ...(channel.channel === "sms" && channel.personal_enabled ? [{ value: "sms:self", label: "My verified phone (requires SMS consent)" }] : []),
     ...(channel.room_enabled ? (rooms.data ?? []).filter(room => room.channel === channel.channel && room.is_active)
       .map(room => ({ value: `room:${room.id}`, label: `Room: ${room.label}` })) : []),
     ...(channel.personal_enabled ? (endpoints.data?.results ?? []).filter(row => row.channel === channel.channel
-      && !row.revoked_at && row.integration_generation === channel.generation)
+      && row.effective_valid && !row.revoked_at && row.integration_generation === channel.generation)
       .map(row => ({ value: `endpoint:${row.id}`, label: "My connected account" })) : []),
   ];
   const [target, setTarget] = useState("");
   const chosen = options.some(option => option.value === target) ? target : options[0]?.value ?? "";
-  if (!channel.enabled) return null;
+  if (!channel.enabled || channel.activation_hold) return null;
   if (!options.length) return <p className="text-sm text-muted">To send a test, add a room for this channel or connect your own account under Inbox → My channels.</p>;
   const [kind, id] = chosen.split(":");
   return <div className="grid min-w-0 gap-2 rounded-lg border border-line p-3">
     <Field label="Send a test to"><select className="desk-input" value={chosen} onChange={event => setTarget(event.target.value)}>
       {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>
     <div><button type="button" className="desk-button" disabled={test.isPending}
-      onClick={() => test.mutate({ channel: channel.channel, ...(kind === "room" ? { room_id: Number(id) } : { endpoint_id: Number(id) }) })}>
+      onClick={() => test.mutate({ channel: channel.channel, ...(kind === "sms" ? {} : kind === "room" ? { room_id: Number(id) } : { endpoint_id: Number(id) }) })}>
       {test.isPending ? "Sending…" : "Send test"}</button></div>
     {test.data ? <p role="status" className={`text-sm ${test.data.accepted ? "text-muted" : "text-danger"}`}>
       {test.data.accepted ? "Test accepted by the provider." : `Test failed: ${test.data.sanitized_error || test.data.error_code || "unknown error"}.`}</p> : null}

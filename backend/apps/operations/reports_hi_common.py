@@ -15,6 +15,8 @@ def category(field, allowed):
 
 
 def buckets(queryset, field, space, grain, date_range, dimensions=(), **measures):
+    from .reports_j_common import calendar_range
+    date_range = calendar_range(date_range, space)
     return (apply_range(queryset, field, date_range).order_by()
             .annotate(period=period_expression(field, grain, makerspace=space))
             .values("period", *dimensions).annotate(count=Count("pk"), **measures))

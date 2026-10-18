@@ -1,4 +1,5 @@
 import { staffTabPath } from "../staffTabs";
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 const destinations: Record<string, { tab: string; filters: Record<string, string> }> = {
   upcoming_events: { tab: "events", filters: { status: "published" } },
   pending_event_registrations: { tab: "events", filters: {} },
@@ -26,5 +27,5 @@ export function dashboardHref(key: string, slug: string, single = false, guest =
   if (!destination) return "";
   const filters = { ...destination.filters };
   if (key === "warranty_expiring") { const date = new Date(today); date.setDate(date.getDate() + 30); filters.expires_before = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
-  return `${staffTabPath(destination.tab, guest, slug, single)}?${new URLSearchParams(filters)}`;
+  return consoleSessionHref(`${staffTabPath(destination.tab, guest, slug, single)}?${new URLSearchParams(filters)}`);
 }

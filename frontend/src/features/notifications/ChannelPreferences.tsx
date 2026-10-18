@@ -36,14 +36,14 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
         <legend className="px-1 text-sm font-semibold text-ink">{name}</legend>
         <div className="flex min-w-0 flex-wrap gap-x-4">
           {(row.available_channels ?? []).map(channel => {
-            const needsConnection = CONNECTABLE.includes(channel) && !connected.has(channel);
+            const needsConnection = (CONNECTABLE.includes(channel) || channel === "sms") && !connected.has(channel);
             const checked = row.channels.includes(channel);
             return <label key={channel} className="flex min-h-11 items-center gap-2 text-sm">
               <input className="h-4 w-4" type="checkbox" checked={checked} disabled={save.isPending || (needsConnection && !checked)}
                 aria-label={`${name}: ${CHANNEL_LABELS[channel] ?? channel}`}
                 onChange={event => update(row.category, { channels: event.target.checked
                   ? [...row.channels, channel] : row.channels.filter(item => item !== channel) })} />
-              <span>{CHANNEL_LABELS[channel] ?? channel}{needsConnection ? <span className="text-muted"> (connect first)</span> : null}</span>
+              <span>{CHANNEL_LABELS[channel] ?? channel}{needsConnection ? <span className="text-muted"> ({channel === "sms" ? "allow SMS first" : "connect first"})</span> : null}</span>
             </label>;
           })}
         </div>

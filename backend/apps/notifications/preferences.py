@@ -24,11 +24,32 @@ def personal_enabled(makerspace, user_id, feature, channel, *, stream="", event=
         return True
     if not user_id:
         return True
-    model = apps.get_model("notifications", "MemberNotificationPreference")
+    try:
+        model = apps.get_model("notifications", "MemberNotificationPreference")
+        selection = apps.get_model("notifications", "NotificationPreference")
+    except LookupError:
+        from apps.integrations.notification_saved_policy import opted_out, saved_selection
+        from types import SimpleNamespace
+
+        saved = saved_selection(makerspace, SimpleNamespace(pk=user_id), feature)
+        return (not opted_out(makerspace, user_id, feature, channel)
+                and (saved is None or _selection_allows(saved, channel)))
     # Stored opt-outs remain honoured even if the preference editor is later disabled.
-    return not rbac.scope_notification_policy(model.objects.all(), makerspace_id=makerspace.pk).filter(
+    if rbac.scope_notification_policy(model.objects.all(), makerspace_id=makerspace.pk).filter(
         user_id=user_id, feature=feature, channel=channel, enabled=False,
-    ).exists()
+    ).exists():
+        return False
+    saved = rbac.scope_notification_policy(selection.objects.all(), makerspace_id=makerspace.pk).filter(
+        user_id=user_id, category=feature,
+    ).first()
+    return saved is None or _selection_allows(saved, channel)
+
+
+def _selection_allows(saved, channel):
+    channels = saved.channels
+    if not isinstance(channels, list) or any(not isinstance(value, str) for value in channels):
+        return False
+    return channel in channels or (channel == "email" and saved.email_fallback)
 
 
 def channel_available(makerspace, feature, channel):
@@ -61,7 +82,7 @@ def preference_cells(makerspace, user):
     digest_default = bool(timing and timing.daily_digest_default)
     return [{
         "feature": feature, "channel": channel,
-        "enabled": saved[(feature, channel)].enabled if (feature, channel) in saved else True,
+        "enabled": personal_enabled(makerspace, user.pk, feature, channel),
         "daily_digest": saved[(feature, channel)].daily_digest if (feature, channel) in saved else channel == "email" and digest_default,
         "available": channel_available(makerspace, feature, channel),
         "mandatory_events": [event for event in events if channel == "email" and mandatory_email(

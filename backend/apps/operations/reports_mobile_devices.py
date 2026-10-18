@@ -11,6 +11,7 @@ from apps.makerspaces.platform import module_enabled
 from .report_fields_hi import MOBILE_DEVICE_FIELDS
 from .reports_common import report_spaces
 from .reports_hi_common import buckets, category, result
+from .reports_j_common import calendar_range
 
 
 def build_mobile_devices(makerspace_id, *, limit=None, date_range=None, grain="day"):
@@ -18,6 +19,7 @@ def build_mobile_devices(makerspace_id, *, limit=None, date_range=None, grain="d
     for space in report_spaces(makerspace_id, "mobile"):
         if not module_enabled(space, "mobile"):
             continue
+        local_range = calendar_range(date_range, space)
         devices = PushDevice.objects.filter(makerspace=space).annotate(
             app_platform=category("device_grant__platform", ("apple", "android")),
             app_environment=category("environment", ("development", "production")),
@@ -39,6 +41,7 @@ def build_mobile_devices(makerspace_id, *, limit=None, date_range=None, grain="d
         # A global app's grant belongs here only when validated activity explicitly
         # recorded this tenant. User membership alone is never attribution.
         grants = DeviceGrant.objects.filter(
+            Q(authority="staff", staff_makerspace_id=space.pk) |
             Q(registration__makerspace=space) | Q(pk__in=DeviceActivityDay.objects.filter(
                 makerspace=space).values("grant_id")),
         ).annotate(app_platform=category("platform", ("apple", "android")),
@@ -51,9 +54,9 @@ def build_mobile_devices(makerspace_id, *, limit=None, date_range=None, grain="d
         # Group distinct grants at DAILY grain first. Larger buckets sum observed
         # session-days; they never turn last_used_at into invented historical use.
         activity = DeviceActivityDay.objects.filter(makerspace=space)
-        if date_range:
+        if local_range:
             from zoneinfo import ZoneInfo
-            for bound, lookup in zip(date_range, ("gte", "lt")):
+            for bound, lookup in zip(local_range, ("gte", "lt")):
                 if bound is not None:
                     day = bound.astimezone(ZoneInfo(space.timezone)).date()
                     activity = activity.filter(**{f"local_day__{lookup}": day})

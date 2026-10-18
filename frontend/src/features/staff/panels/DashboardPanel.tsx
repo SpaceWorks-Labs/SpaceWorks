@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { DashboardLayout, type DashboardLayoutProps } from "../../../components/layouts/DashboardLayout";
 import { useStaffGet, type Makerspace } from "./shared";
 import { dashboardDestination, dashboardHref } from "./dashboardLinks";
@@ -65,7 +66,7 @@ export function DashboardPanel({ makerspace, allowedTabs, actions,
         main={[...main, ...(dashboard.data?.widgets ? [{ title: "Analytics", empty: { message: "No analytics widgets available." },
           content: <DashboardAnalyticsWidgets widgets={dashboard.data.widgets.filter(widget => widget.required_modules.every(module =>
             makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes(module)))} makerspaceId={makerspace.id}
-            reportsHref={staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked)} /> }] : [])]} rail={rail}
+            reportsHref={consoleSessionHref(staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked))} /> }] : [])]} rail={rail}
       />}
     </DashboardQuickAdd>
   );

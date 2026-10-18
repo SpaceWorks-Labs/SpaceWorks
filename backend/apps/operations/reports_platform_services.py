@@ -8,9 +8,10 @@ from django.db.models.functions import TruncDay
 from apps.accounts.models_activity import AttestationVerificationLog
 from apps.backup.models import BackupArchive, BackupRun
 from apps.backup.models_runs import BackupRunCoverage
-from apps.integrations.models import EmailLog, MessagingDelivery, NotificationDeliveryLog
-from apps.integrations.models_tracking import PushDeliveryAttempt, SmsSendLog
-from apps.notifications.models_push import MemberPushDelivery
+from apps.integrations.models import EmailLog, NotificationDeliveryLog
+from apps.integrations.models_tracking import SmsSendLog
+from apps.operations.reports_notification_facts import canonical_deliveries, delivery_facts
+from apps.operations.reports_push_facts import push_querysets
 from apps.operations.platform_scope import hidden_platform_service_bucket, platform_analytics_spaces, require_platform_context
 from apps.operations.report_types import ReportNotFound, ReportResult
 from apps.operations.reports_common import apply_range, limited
@@ -35,7 +36,7 @@ def _outcomes(qs, service, *, scope="makerspace_id", outcome="status", provider=
         source = row.get(provider) if provider else "platform"
         status = row["_analytics_outcome"]
         yield {"makerspace_id": row["makerspace_id"], "day": row["day"].date(),
-               "service": service, "status": status if status in ("pending", "sending", "accepted", "sent", "delivered", "read", "failed", "skipped", "suppressed") else "unknown", "count": row["count"],
+               "service": service, "status": status if status in ("pending", "sending", "accepted", "sent", "delivered", "read", "failed", "skipped", "suppressed", "held") else "unknown", "count": row["count"],
                **({"purpose": purpose} if purpose else {}),
                "provider_source": source if source in ("platform", "own") else "unknown"}
 
@@ -77,13 +78,19 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
     ))
     raw = list(_outcomes(email, "email", outcome="analytics_status", date_range=date_range))
     raw.extend(_outcomes(SmsSendLog.objects.filter(permitted), "sms", date_range=date_range, purpose="otp"))
-    for channel in ("sms", "whatsapp"):
-        raw.extend(_outcomes(MessagingDelivery.objects.filter(permitted, channel=channel), channel,
-                             date_range=date_range, purpose="notifications"))
-    raw.extend(_outcomes(PushDeliveryAttempt.objects.filter(delivery_log__makerspace_id__in=visible | hidden), "push",
-                         scope="delivery_log__makerspace_id", date_range=date_range))
-    raw.extend(_outcomes(MemberPushDelivery.objects.filter(inbox_row__makerspace_id__in=visible | hidden), "push",
-                         scope="inbox_row__makerspace_id", date_range=date_range))
+    personal = apply_range(canonical_deliveries().filter(makerspace_id__in=visible | hidden).exclude(
+        channel__in=("email", "native_push", "in_app")), "created_at", date_range)
+    for fact in delivery_facts(personal):
+        channel = fact["channel"]
+        if channel not in ("sms", "whatsapp", "telegram", "slack", "mattermost", "discord", "webhook"):
+            continue
+        raw.append({"makerspace_id": fact["makerspace_id"],
+            "day": fact["created_at"].astimezone(datetime_timezone.utc).date(), "service": channel,
+            "status": fact["status"], "provider_source": fact["provider_source"]
+                if fact["provider_source"] in ("own", "platform") else "unknown", "count": 1,
+            **({"purpose": "notifications"} if channel in ("sms", "whatsapp") else {})})
+    for qs, tenant, _feature, _audience in push_querysets(visible | hidden):
+        raw.extend(_outcomes(qs, "push", scope=tenant, date_range=date_range))
     # Chat providers are tenant-owned; the parent delivery log is never counted
     # again for native push, whose authority is the per-device outcome ledger.
     chat = NotificationDeliveryLog.objects.filter(makerspace_id__in=visible).exclude(channel="native_push")

@@ -39,8 +39,8 @@ import { admissionKeys, publicAdmission, ownAdmission, type AdmissionRequest } f
 import type { CustomAnswers } from "../forms/customFormTypes";
 import { MemberNotifications } from "../notifications/MemberNotifications";
 import { MemberEventHistoryLink } from "./MemberEventHistoryLink";
-import { MemberMessaging } from "./MemberMessaging";
-import { useMemberMessaging } from "../messaging/messagingApi";
+import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
+import { usePreferences } from "../notifications/channelsApi";
 import { MemberPhoneVerification } from "./MemberPhoneVerification";
 
 type Membership = { makerspace: { slug: string; name: string }; membership_status: string; role: string; waiver_acceptance_required: boolean; can_refer: boolean; can_verify: boolean; verified_at: string | null; referrals_enabled: boolean };
@@ -65,7 +65,7 @@ export function MemberArea() {
   const [hasPartnerEvents, setHasPartnerEvents] = useState(false);
   const [claimSession, setClaimSession] = useState(hasClaimSession);
   useEffect(() => {
-    refreshAccessToken().then(() => { setClaimSession(hasClaimSession()); return client.invalidateQueries({ queryKey: ["member"] }); }).finally(() => setRestoring(false));
+    refreshAccessToken("member").then(() => { setClaimSession(hasClaimSession()); return client.invalidateQueries({ queryKey: ["member"] }); }).finally(() => setRestoring(false));
   }, [client]);
   const bootstrap = useQuery({ queryKey: ["member", slug, "bootstrap"], queryFn: () => bootstrapTenant({ slug: slug || undefined }), retry: false });
   const brandStyle = useTenantBranding(bootstrap.data);
@@ -87,17 +87,19 @@ export function MemberArea() {
   const activeTab = useMemberTab(bootstrap.data?.modules ?? []);
   const membershipModuleOn = (bootstrap.data?.modules ?? []).includes("membership");
   // The server derives ties from owned loans/bookings/events as well as memberships.
-  const messagingEnabled = makerspaceId >= 0 && Boolean(memberAccess) && !restoring && !claimSession;
-  const messaging = useMemberMessaging(makerspaceId, messagingEnabled);
+  const messagingEnabled = makerspaceId >= 0 && Boolean(memberAccess) && !restoring && !claimSession
+    && (!membership || membership.membership_status === "active");
+  const messaging = usePreferences(makerspaceId, true, messagingEnabled);
   const messagingAllowed = messagingEnabled && messaging.isSuccess;
-  const accountSections = ["profile", "card", "certifications", "community", "invitations", "messaging", "phone"].filter(key => key === "messaging"
+  const accountSections = ["profile", "card", "certifications", "community", "invitations", "channels", "phone"].filter(key => key === "channels"
     ? messagingAllowed
     : key === "phone" ? messagingAllowed || membership?.membership_status === "active"
     : key === "certifications"
     ? membership?.membership_status === "active" && Boolean(bootstrap.data?.modules.includes("machines"))
     : key === "invitations" ? Boolean(memberAccess && resolvedSlug && makerspaceId >= 0)
       : membershipModuleOn && membership?.membership_status === "active");
-  const requestedSection = search.get("section");
+  // Preserve old links and signed OAuth returns while presenting one settings surface.
+  const requestedSection = search.has("state") || search.get("section") === "messaging" ? "channels" : search.get("section");
   const section = activeTab === "account" ? requestedSection && accountSections.includes(requestedSection) ? requestedSection : accountSections[0] || "access"
     : requestedSection || (activeTab === "loans" ? "current" : activeTab === "events" ? "going" : activeTab === "inbox" ? "notices" : "");
   const accountSelfService = Boolean(membershipModuleOn && membership?.membership_status === "active" && bootstrap.data?.modules.includes("member_accounts") && (bootstrap.data.features?.includes("membership.self_service") || bootstrap.data.features?.includes("membership.self_export")));
@@ -165,7 +167,7 @@ export function MemberArea() {
       // A signed-out visitor gets a way in, not "Your account" and "Sign out".
       user={unauthenticated ? { name: "Not signed in", menu: [{ label: "Sign in", onClick: () => setShowSignIn(true) }] }
         : { name: profile.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }, { label: "Delete account", href: `${slug ? `/m/${encodeURIComponent(slug)}` : ""}/member/account?section=deletion` }],
-        onSignOut: () => { void logout().catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
+        onSignOut: () => { void logout("member").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
     <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
       activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: "Couldn't load your makerspace. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
@@ -202,7 +204,9 @@ export function MemberArea() {
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
       {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
     {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberUsagePanel key={makerspaceId} makerspaceId={makerspaceId} /> : null}
-    {activeTab === "account" && section === "messaging" && messagingAllowed ? <MemberMessaging key={makerspaceId} makerspaceId={makerspaceId} verifyPhoneHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=phone`} /> : null}
+    {activeTab === "account" && section === "channels" && messagingAllowed ? <MyNotificationSettings key={makerspaceId} makerspaceId={makerspaceId} member /> : null}
+    {activeTab === "account" && messagingEnabled && messaging.isLoading ? <p role="status">Checking notification access…</p> : null}
+    {activeTab === "account" && messagingEnabled && messaging.error ? <div role="alert"><p>{message(messaging.error)}</p><button className="desk-button" onClick={() => void messaging.refetch()}>Retry notification access</button></div> : null}
     {activeTab === "account" && section === "phone" && (messagingAllowed || membership?.membership_status === "active") ? <MemberPhoneVerification /> : null}
     {activeTab === "overview" && memberships.data ? <MakerspaceDiscovery currentSlug={resolvedSlug} memberships={memberships.data.memberships} requests={memberships.data.requests} /> : null}
     {/* OUTSIDE the membership branch. A loan deposit is raised against a borrower, who

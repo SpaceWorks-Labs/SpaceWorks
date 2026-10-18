@@ -14,9 +14,9 @@ export function PersonalChannels({ makerspaceId, channels, member = false }: {
   const [connecting, setConnecting] = useState<ChannelKey | null>(null);
   if (endpoints.isLoading) return <p className="text-sm text-muted">Loading your channels…</p>;
   if (endpoints.error) return <ErrorBlock error={endpoints.error} onRetry={() => { void endpoints.refetch(); }} />;
-  if (!channels.length) return <p className="text-sm text-muted">This space has not turned on any chat channels for personal messages yet. You will get email and inbox notifications.</p>;
+  if (!channels.length) return <p className="text-sm text-muted">This space has not turned on any chat channels for personal messages yet.</p>;
   const live = new Map<ChannelKey, Endpoint>();
-  for (const row of endpoints.data?.results ?? []) if (row.effective_valid && !live.has(row.channel)) live.set(row.channel, row);
+  for (const row of endpoints.data?.results ?? []) if (!row.revoked_at && row.verification_state === "verified" && !live.has(row.channel)) live.set(row.channel, row);
   return <ul className="grid min-w-0 gap-3" aria-label="Your connected channels">
     {channels.map(channel => {
       const endpoint = live.get(channel);
@@ -24,13 +24,13 @@ export function PersonalChannels({ makerspaceId, channels, member = false }: {
       return <li key={channel} className="grid min-w-0 gap-3 rounded-lg border border-line p-3">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <span className="min-w-0 flex-1 font-semibold text-ink">{label}</span>
-          <StatusPill label={endpoint ? "Connected" : "Not connected"} tone={endpoint ? "success" : "neutral"} />
+          <StatusPill label={endpoint?.effective_valid ? "Connected" : endpoint ? "Reconnect required" : "Not connected"} tone={endpoint?.effective_valid ? "success" : "neutral"} />
           {endpoint ? <button type="button" className="desk-button" disabled={revoke.isPending}
-            onClick={() => revoke.mutate(endpoint.id)}>Disconnect</button>
-            : connecting !== channel ? <button type="button" className="desk-button" onClick={() => setConnecting(channel)}>Connect</button> : null}
+            onClick={() => revoke.mutate(endpoint.id)}>Disconnect</button> : null}
+          {!endpoint?.effective_valid && connecting !== channel ? <button type="button" className="desk-button" onClick={() => setConnecting(channel)}>Connect</button> : null}
         </div>
         {endpoint?.verified_at ? <p className="text-xs text-muted">Connected {new Date(endpoint.verified_at).toLocaleDateString()}.</p> : null}
-        {connecting === channel && !endpoint ? <ConnectChannel makerspaceId={makerspaceId} channel={channel} member={member}
+        {connecting === channel && !endpoint?.effective_valid ? <ConnectChannel makerspaceId={makerspaceId} channel={channel} member={member}
           onDone={() => setConnecting(null)} /> : null}
       </li>;
     })}

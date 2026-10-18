@@ -10,7 +10,10 @@ def validate_attribution(machine, member=None, started_at=None):
     if member is not None:
         member_id = getattr(member, "pk", member)
         member = User.objects.filter(
-            pk=member_id, is_active=True, access_status="active",
+            pk=member_id, account_kind=User.AccountKind.MEMBER,
+            is_active=True, access_status="active", is_tenant_dump_stub=False,
+            retired_at__isnull=True, deletion_requested_at__isnull=True,
+            account_purged_at__isnull=True,
             makerspace_memberships__makerspace_id=machine.makerspace_id,
             makerspace_memberships__status="active",
         ).first()

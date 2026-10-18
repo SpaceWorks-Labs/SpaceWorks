@@ -56,12 +56,14 @@ def fanout(*, space, feature, stream, event, kind, source, version, subject,
     context = context or {}
     base = intent_key or f"{kind}:{source}:{event}:{version}"
     envelopes = []
+    from .notification_projection import addressed_context
     from apps.accounts.principal_guards import is_anonymous_requester
     if owner is not None and own is not None and not owner.is_tenant_dump_stub and not is_anonymous_requester(owner):
         envelopes.append(emit(makerspace=space, recipient=owner, feature=feature,
             stream=stream, event=event, audience="requester",
             source_kind=kind, source_id=source, revision=version, subject=subject,
-            scope=scope, context=context, rendered=own, timing_policy="immediate",
+            scope=scope, context={**addressed_context(space, feature, event, "requester", staff_context),
+                                  **context}, rendered=own, timing_policy="immediate",
             dedup_key=f"{base}:requester:{owner.pk}"))
         # Compatibility path stays disabled when the shared owner-proof policy is installed.
         from .notifications_p2_contact import notify_owner
@@ -72,7 +74,8 @@ def fanout(*, space, feature, stream, event, kind, source, version, subject,
             envelopes.append(emit(makerspace=space, recipient=user, feature=feature,
                 stream=stream, event=event, audience="staff",
                 source_kind=kind, source_id=source, revision=version, subject=subject,
-                scope=scope, context=context, rendered=staff, timing_policy="immediate",
+                scope=scope, context={**addressed_context(space, feature, event, "staff", staff_context),
+                                      **context}, rendered=staff, timing_policy="immediate",
                 dedup_key=f"{base}:staff:{user.pk}"))
         if rooms:
             from .notifications_p2_rooms import queue_rooms

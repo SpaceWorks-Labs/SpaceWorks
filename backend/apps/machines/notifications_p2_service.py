@@ -51,7 +51,9 @@ def eligible(envelope):
     if envelope.event == "collected":
         permitted = rbac.can(sender, rbac.Action.COLLECT_SERVICE_REQUEST, row.makerspace_id)
     elif envelope.event == "submitted":
-        permitted = sender.is_active and sender.access_status == "active"
+        permitted = (sender.is_active and sender.access_status == "active"
+                     and not sender.is_tenant_dump_stub and not sender.retired_at
+                     and not sender.deletion_requested_at and not sender.account_purged_at)
     else:
         permitted = (access.can_operate_machine(sender, row.assigned_machine)
                      if row.assigned_machine_id else access.can_create_machine(sender, row.makerspace_id, machine_type(row)))

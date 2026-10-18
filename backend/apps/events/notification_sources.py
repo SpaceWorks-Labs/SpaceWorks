@@ -32,10 +32,16 @@ def _current_lifecycle(envelope, event):
         return False, None
     registration_id = envelope.context.get("registration_id")
     if not registration_id:
-        return envelope.revision == lifecycle_revision(event, None), None
+        return (envelope.source_id == f"e{event.pk}"
+                and envelope.revision == lifecycle_revision(event, None)), None
     registration = EventRegistration.objects.filter(pk=registration_id, event=event).first()
-    valid = bool(registration and envelope.revision == lifecycle_revision(event, registration))
+    valid = bool(registration and envelope.source_id == f"r{registration.pk}"
+                 and envelope.revision == lifecycle_revision(event, registration))
     return valid, registration
+
+
+def _owner_space(registration):
+    return registration.registered_via_makerspace_id or registration.event.makerspace_id
 
 
 def lifecycle_eligible(envelope):
@@ -53,6 +59,7 @@ def lifecycle_eligible(envelope):
         from .notifications import _organizer_spaces
         return _organizer_spaces(event.pk, event.makerspace_id).filter(makerspace_id=envelope.makerspace_id).exists()
     return bool(envelope.audience == "requester" and registration
+                and envelope.makerspace_id == _owner_space(registration)
                 and registration.member_id == envelope.recipient_id
                 and _owner_allowed(envelope.makerspace, envelope.event))
 
@@ -60,7 +67,7 @@ def lifecycle_eligible(envelope):
 def grant_eligible(envelope):
     from .grant_recipients import holds_registration_grant
     event = _event(envelope)
-    return bool(event and _current_lifecycle(envelope, event)[0]
+    return bool(event and envelope.audience == "member" and _current_lifecycle(envelope, event)[0]
                 and envelope.makerspace_id == event.makerspace_id
                 and holds_registration_grant(envelope.recipient_id, event))
 
@@ -69,6 +76,7 @@ def reminder_eligible(envelope):
     from django.utils import timezone
     from .models import Event, EventRegistration
     from .notification_envelopes import _owner_allowed
+    from apps.makerspaces.reminder_policy import reminder_offsets
     event = _event(envelope)
     if event is None or event.status != Event.Status.PUBLISHED or event.starts_at <= timezone.now():
         return False
@@ -76,9 +84,14 @@ def reminder_eligible(envelope):
         return False  # rescheduled: the new start gets its own reminder
     if envelope.audience != "requester" or not _owner_allowed(envelope.makerspace, envelope.event):
         return False
-    return EventRegistration.objects.filter(
-        pk=envelope.context.get("registration_id"), event=event, member_id=envelope.recipient_id,
-        status=EventRegistration.Status.REGISTERED).exists()
+    if (type(envelope.context.get("offset_seconds")) is not int
+            or envelope.context["offset_seconds"] not in reminder_offsets(envelope.makerspace, "event")):
+        return False
+    row = EventRegistration.objects.filter(
+        pk=envelope.source_id, event=event, member_id=envelope.recipient_id,
+        status=EventRegistration.Status.REGISTERED).first()
+    return bool(row and row.pk == envelope.context.get("registration_id")
+                and _owner_space(row) == envelope.makerspace_id)
 
 
 def broadcast_eligible(envelope):
@@ -99,9 +112,14 @@ def broadcast_eligible(envelope):
 def certificate_eligible(envelope):
     from .models import EventAttendanceCertificate
     expected = {"certificate_ready": "active", "certificate_revoked": "revoked"}.get(envelope.event)
-    return bool(_event(envelope) and expected and EventAttendanceCertificate.objects.filter(
-        pk=envelope.context.get("certificate_id"), status=expected,
-        registration__member_id=envelope.recipient_id).exists())
+    event = _event(envelope)
+    if not event or not expected or envelope.audience != "requester":
+        return False
+    row = EventAttendanceCertificate.objects.select_related("registration__event").filter(
+        pk=envelope.source_id, status=expected, revision=envelope.revision,
+        registration__event=event, registration__member_id=envelope.recipient_id).first()
+    return bool(row and row.pk == envelope.context.get("certificate_id")
+                and _owner_space(row.registration) == envelope.makerspace_id)
 
 
 SOURCES = {

@@ -14,8 +14,6 @@ import { MakerspaceBookingSettings } from "./MakerspaceBookingSettings";
 import { MakerspaceReminderSettings } from "./MakerspaceReminderSettings";
 import { MakerspaceCustomDomainSettings } from "./MakerspaceCustomDomainSettings";
 import { MakerspaceEmailSettings } from "./MakerspaceEmailSettings";
-import { MakerspaceMessagingSettings } from "./MakerspaceMessagingSettings";
-import { WhatsAppTemplateBindings } from "./WhatsAppTemplateBindings";
 import { MakerspaceFilamentSettings } from "./MakerspaceFilamentSettings";
 import { MakerspaceFeatureSettings } from "./MakerspaceFeatureSettings";
 import { MakerspaceGeofenceSettings } from "./MakerspaceGeofenceSettings";
@@ -208,15 +206,12 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       <NotificationMuteMatrix makerspaceId={makerspace.id} /><NotificationRecipientPicker makerspaceId={makerspace.id} />
       <NotificationDestinations availableChannels={enabledModules} makerspaceId={makerspace.id} />
     </> },
-    ...(canManageMakerspace && enabledModules.includes("notifications") ? [{ id: "channels", title: "Communication channels",
+    ...(canManageMakerspace ? [{ id: "channels", title: "Communication channels",
       description: "Choose the mediums this space uses and set up their credentials. Staff and members can only pick channels you turn on here.",
       rows: <><ChannelSetupPanel key={makerspace.id} makerspaceId={makerspace.id} enabledModules={enabledModules} />
         <div className="py-4"><ChannelDeliveryLog key={makerspace.id} makerspaceId={makerspace.id} /></div></> }] : []),
     { id: "integrations", title: "Email & integrations", rows: <>
       <MakerspaceEmailSettings makerspace={makerspace} /><MakerspaceWebhookSettings makerspace={makerspace} />
-      {canManageMakerspace && enabledModules.some(module => module === "sms" || module === "whatsapp")
-        ? <MakerspaceMessagingSettings key={makerspace.id} makerspaceId={makerspace.id} modules={enabledModules} /> : null}
-      {canManageMakerspace && enabledModules.includes("whatsapp") ? <WhatsAppTemplateBindings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
       {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
       <IntegrationHealthPanel makerspace={makerspace} isSuperadmin={isSuperadmin} />
     </> },

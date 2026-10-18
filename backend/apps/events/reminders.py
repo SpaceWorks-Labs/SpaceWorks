@@ -14,6 +14,7 @@ from apps.makerspaces.reminder_policy import reminder_offsets
 from apps.makerspaces.platform import module_enabled
 from apps.integrations.email_templates import render
 from apps.integrations.notification_outbox import emit
+from apps.hardware_requests.notification_projection import addressed_context
 from apps.operations.reminder_members import occurrence_subject, unfinished_subjects
 from apps.operations.reminder_types import ReminderMessage, ReminderSource, ReminderSubject
 
@@ -66,7 +67,7 @@ def _eligible(makerspace, schedule, now):
 def _recipient(makerspace, member_id):
     from apps.accounts.models import User
     from .notification_envelopes import _owner_allowed
-    from apps.notifications.inbox import eligible_owner
+    from apps.integrations.recipients_owners import eligible_owner
     if not member_id or not eligible_owner(makerspace, member_id):
         return None
     if not _owner_allowed(makerspace, "reminder"):
@@ -97,8 +98,9 @@ def dispatch_event_reminder(makerspace, schedule, message, now, local_tz):
     emit(makerspace=makerspace, recipient=member, feature="events", stream="events", event="reminder",
          audience="requester", dedup_key=f"ev:reminder:{schedule.pk}", source_kind="events.reminder",
          source_id=str(row.pk), revision=schedule.subject[:64], subject=row,
-         context={"event_id": row.event_id, "registration_id": row.pk,
-                  "starts_at": row.event.starts_at.isoformat()},
+         context={**addressed_context(makerspace, "events", "reminder", "requester", context),
+                  "event_id": row.event_id, "registration_id": row.pk,
+                  "starts_at": row.event.starts_at.isoformat(), "offset_seconds": schedule.offset_seconds},
          rendered={"subject": template["subject"], "text": template["text_body"],
                    "html": template.get("html_body", ""),
                    "link": local_link(makerspace, "member", f"events/{row.pk}/ticket")})

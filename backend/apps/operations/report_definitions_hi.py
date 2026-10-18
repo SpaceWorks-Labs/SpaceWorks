@@ -38,9 +38,9 @@ _COMMUNICATION_CHART["values"] = [
 ]
 
 COMMUNICATIONS_REPORT_DEFINITION = ReportDefinition(
-    "communications-health", "apps.integrations.reports_communications.build_communications_health",
+    "communications-health", "apps.operations.reports_communications.build_communications_health",
     COMMUNICATION_FIELDS, required_action=rbac.Action.MANAGE_MAKERSPACE,
-    title="Communications health", chart_hint="multi_line", version=3,
+    title="Communications health", chart_hint="multi_line", version=4,
     grains=("day", "week", "month"),
     section_modules=("notifications", "email", "telegram", "slack", "mattermost", "discord", "webhook", "mobile", "sms", "whatsapp"),
     chart_spec=_COMMUNICATION_CHART,
@@ -50,14 +50,14 @@ HI_REPORT_DEFINITIONS = (
     ReportDefinition(
         "mobile-devices", "apps.operations.reports_mobile_devices.build_mobile_devices",
         MOBILE_DEVICE_FIELDS, ("mobile",), required_action=rbac.Action.MANAGE_MAKERSPACE,
-        title="Mobile devices and app sessions", chart_hint="line", grains=("day", "week", "month"),
+        title="Mobile devices and app sessions", chart_hint="line", version=2, grains=("day", "week", "month"),
         chart_spec=_chart(["metric", "platform", "environment", "authority", "status"],
                           [("count", "observations")], "{metric}: {count} in {period}"),
     ),
     ReportDefinition(
         "mobile-auth", "apps.operations.reports_mobile_auth.build_mobile_auth",
         MOBILE_AUTH_FIELDS, ("mobile",), required_action=rbac.Action.MANAGE_MAKERSPACE,
-        title="Mobile authentication", chart_hint="stacked_bar", grains=("day", "week", "month"),
+        title="Mobile authentication", chart_hint="stacked_bar", version=2, grains=("day", "week", "month"),
         chart_spec=_chart(["metric", "platform", "environment", "outcome", "reason"],
                           [("count", "events")], "{metric}: {count} {outcome} in {period}"),
     ),

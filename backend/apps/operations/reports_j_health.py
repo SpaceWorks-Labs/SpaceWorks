@@ -20,6 +20,12 @@ def build_module_operational_health(makerspace_id, *, limit=None, date_range=Non
         for row in legacy_health(space.pk, date_range=window).records:
             records.append({**row, **({"makerspace_id": space.pk} if makerspace_id is None else {})})
         sources = [("reports", "report_delivery", ReportDelivery.objects.filter(schedule__makerspace=space), "status", {"sent"}, {"failed"})]
+        from apps.integrations.models_contract import NotificationDelivery
+        for channel in ("sms", "whatsapp"):
+            if module_enabled(space, channel):
+                sources.append((channel, "notification_delivery",
+                    NotificationDelivery.objects.filter(makerspace=space, channel=channel), "state",
+                    {"accepted", "sent", "delivered", "read"}, {"failed"}))
         if module_enabled(space, "backup"):
             sources.extend([
                 ("backup", "archive", BackupArchive.objects.filter(makerspace=space, scope="makerspace"), "status", {"available", "expired"}, {"failed"}),

@@ -16,7 +16,7 @@ const SECTION_ENTRIES: HubEntry[] = [
   ["materials", "Machines & materials", "Low-stock threshold for filament.", "machines materials filament low stock threshold 3d printing"],
   ["money", "Money", "Payments, online checkout and billing documents.", "money payments stripe razorpay checkout invoices receipts billing documents fees"],
   ["notifications", "Notifications", "Staff alerts, timing, muting, recipients and rooms.", "notifications staff email timing quiet hours mute recipients rooms destinations alerts"],
-  ["channels", "Communication channels", "Email, Telegram, Slack, Mattermost, Discord, WhatsApp and app push.", "channels medium telegram slack mattermost discord whatsapp twilio meta push email fallback credentials bot token templates test delivery log"],
+  ["channels", "Communication channels", "Email, Telegram, Slack, Mattermost, Discord, SMS, WhatsApp and app push.", "channels medium telegram slack mattermost discord sms whatsapp twilio meta push email fallback credentials bot token templates test delivery log"],
   ["integrations", "Email & integrations", "Outgoing email, webhooks and integration health.", "email smtp sender webhooks integrations health telegram api"],
   ["privacy", "Privacy & evidence", "Superadmin access and evidence photo retention.", "privacy superadmin access evidence photos retention delete"],
 ].map(([id, title, description, keywords]) => ({ id, title, description, keywords, target: { section: id } }));
@@ -67,7 +67,7 @@ export function setupChecklist(space: Makerspace, options: { channelsReady?: boo
     { id: "logo", label: "Upload your logo", done: Boolean(space.logo_url), target: { section: "branding" } },
     { id: "support", label: "Add a support email", done: Boolean(space.branding_config?.support_email), target: { section: "branding" } },
     { id: "features", label: "Turn on the features you use", done: Boolean(space.enabled_features?.length), target: { section: "features" } },
-    ...(options.channelsReady !== undefined && modules.includes("notifications")
+    ...(options.channelsReady !== undefined
       ? [{ id: "channels", label: "Choose how people get notified", done: options.channelsReady, target: { section: "channels" } }] : []),
     ...(modules.includes("membership")
       ? [{ id: "geofence", label: "Set the check-in area", done: Boolean(space.geofence_enabled), target: { section: "membership" } }] : []),

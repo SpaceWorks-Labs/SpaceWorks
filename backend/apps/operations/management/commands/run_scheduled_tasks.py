@@ -37,8 +37,8 @@ SCHEDULED_TASKS = (
     ("missing-payment-bills", "apps.payments.tasks.issue_missing_bills_task", 5),
     PRESENCE_SCHEDULED_ENTRY,
     ("notification-contract-outbox", "apps.integrations.notification_tasks.sweep_notification_outbox", 1),
-    # MERGE-RECON(M/P): consolidate legacy recovery after delivery/push conversion;
-    # schedulers stay stopped throughout the nondeployable bootstrap.
+    # Compatibility recovery journals/replays receipts only; the duplicate legacy
+    # send scanner is inert. Both canonical and push work honor the cutover gate.
     ("messaging-recovery", "apps.integrations.tasks_messaging.sweep_messaging_task", 5),
     ("messaging-credential-wipe", "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task", 24 * 60),
     ("inventory-stock-snapshot", "apps.inventory.tasks.snapshot_stock_task", 24 * 60),
@@ -188,6 +188,8 @@ if "devices" in settings.TOMBSTONED_APPS:
     SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".devices." not in task[1])
 if "presence" in settings.TOMBSTONED_APPS:
     SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".presence." not in task[1])
+if "notifications" in settings.TOMBSTONED_APPS:
+    SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".notifications." not in task[1])
 
 
 def _import_task(dotted_path):

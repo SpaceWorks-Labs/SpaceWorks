@@ -5,7 +5,7 @@ from collections import Counter
 from django.utils import timezone
 
 from apps.accounts import rbac
-from apps.integrations.models import EmailLog, NotificationDeliveryLog
+from apps.integrations.models import EmailLog, NotificationDeliveryLog, NotificationDelivery
 from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
@@ -51,7 +51,9 @@ def build_platform_dashboard(actor=None):
             "email": EmailLog.objects.filter(makerspace_id__in=ids, status="failed").count(),
             "notifications": NotificationDeliveryLog.objects.filter(
                 makerspace_id__in=ids, status="failed",
-            ).count(),
+            ).exclude(channel="native_push").count() + NotificationDelivery.objects.filter(
+                makerspace_id__in=ids, state="failed",
+            ).exclude(channel="email").count(),
         },
     }
 

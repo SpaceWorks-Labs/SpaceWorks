@@ -30,7 +30,7 @@ function Destination({ target, tabHref, children }: { target: HubTarget; tabHref
  */
 export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Props) {
   const [query, setQuery] = useState("");
-  const notifications = (makerspace.enabled_modules ?? []).includes("notifications") && sectionIds.includes("channels");
+  const notifications = sectionIds.includes("channels");
   const channels = useChannels(makerspace.id, notifications);
   const entries = hubEntries(sectionIds, allowedTabs);
   const results = searchHub(entries, query);

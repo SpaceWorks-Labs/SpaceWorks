@@ -16,6 +16,9 @@ export default function App() {
   const { pathname } = useLocation();
   if (ChartTestPage && pathname === "/__test/charts") return <Suspense fallback={<p role="status">Loading chart fixture…</p>}><ChartTestPage /></Suspense>;
   if (pathname === "/reauth/callback" || pathname === "/reauth/confirm") return <ReauthenticationReturn confirmation={pathname === "/reauth/confirm"} />;
+  if (pathname === "/account/restore" || pathname === "/member/archived") {
+    return <><AppRoutes mode={tenant.mode} landing={null} /><ReauthenticationDialog /></>;
+  }
   // Station UUID routes must open their precached shell even when no-store
   // config.js / tenant bootstrap cannot load. Central /kiosk/:slug stays distinct.
   if (/^\/m\/[^/]+\/kiosk\/[^/]+\/?$/.test(pathname)

@@ -8,6 +8,8 @@ import { ChannelDeliveryLog } from "./ChannelDeliveryLog";
 import { ChannelPreferences } from "./ChannelPreferences";
 import { connectedChannels, PersonalChannels } from "./PersonalChannels";
 import { slackInstallKey, useCompleteSlackInstall } from "./SlackInstallation";
+import { SmsConsent } from "./SmsConsent";
+import { useSmsConsent } from "./smsConsentApi";
 
 /** Return parameters an OAuth provider sign-in (Slack, Discord, Mattermost) lands back with. */
 const RETURN_KEYS = ["notify_challenge", "code", "state", "error", "error_description"] as const;
@@ -21,6 +23,7 @@ const RETURN_KEYS = ["notify_challenge", "code", "state", "error", "error_descri
 export function MyNotificationSettings({ makerspaceId, member = false }: { makerspaceId: number; member?: boolean }) {
   const preferences = usePreferences(makerspaceId, member);
   const endpoints = useEndpoints(makerspaceId, member);
+  const smsConsent = useSmsConsent(makerspaceId, member);
   const verify = useVerifyChallenge(makerspaceId, member);
   const install = useCompleteSlackInstall(makerspaceId);
   const [search, setSearch] = useSearchParams();
@@ -45,13 +48,18 @@ export function MyNotificationSettings({ makerspaceId, member = false }: { maker
     onRetry={() => { void preferences.refetch(); }} />;
   const rows = preferences.data.preferences;
   const offered = new Set(rows.flatMap(row => row.available_channels ?? []));
-  const chat = CONNECTABLE.filter(channel => offered.has(channel));
+  const chat = CONNECTABLE.filter(channel => offered.has(channel)
+    || endpoints.data?.results.some(endpoint => endpoint.channel === channel && !endpoint.revoked_at));
+  const connected = connectedChannels(endpoints.error ? [] : endpoints.data?.results);
+  const sms = !smsConsent.error ? smsConsent.data?.sms : undefined;
+  if (sms?.available && sms.consented && sms.phone_verified && !sms.suppressed) connected.add("sms");
   return <div className="grid min-w-0 gap-6">
     {returned.error ? <p role="alert">Couldn't validate the connection return: {returned.error.message}</p> : null}
     {verify.isError ? <p role="alert" className="text-sm text-danger">Couldn't finish connecting: {verify.error.message}</p> : null}
     {verify.isSuccess ? <p role="status" className="text-sm text-muted">Connected.</p> : null}
     {install.isError ? <p role="alert">Couldn't install Slack: {install.error.message}</p> : null}
     {install.isSuccess ? <p role="status">Slack app installed. You can now enable personal messages in channel settings.</p> : null}
+    {member ? <SmsConsent makerspaceId={makerspaceId} /> : null}
     <section aria-label="Connected channels" className="grid min-w-0 gap-3">
       <h3 className="title-section">Your channels</h3>
       <PersonalChannels makerspaceId={makerspaceId} channels={chat} member={member} />
@@ -59,7 +67,7 @@ export function MyNotificationSettings({ makerspaceId, member = false }: { maker
     <section aria-label="Notification choices" className="grid min-w-0 gap-3">
       <h3 className="title-section">What goes where</h3>
       <ChannelPreferences key={JSON.stringify(rows)} makerspaceId={makerspaceId} preferences={rows} member={member}
-        connected={connectedChannels(endpoints.data?.results)} />
+        connected={connected} />
     </section>
     <ChannelDeliveryLog makerspaceId={makerspaceId} member={member} title="Recent deliveries" />
   </div>;

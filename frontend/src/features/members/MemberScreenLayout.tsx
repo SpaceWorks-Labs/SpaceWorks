@@ -6,7 +6,7 @@ import type { MemberActivity } from "./MemberActivity";
 import type { MemberTab } from "./MemberPortalTabs";
 
 const titles: Record<MemberTab, string> = { overview: "Your makerspace access", loans: "Loans", bookings: "Bookings", events: "Events", payments: "Payments", inbox: "Inbox", account: "Profile & card" };
-const accountSections = [["profile", "Profile"], ["card", "Card"], ["certifications", "Certifications"], ["community", "Community"], ["invitations", "Invite a friend"], ["messaging", "Messaging"], ["phone", "Verify phone"]];
+const accountSections = [["profile", "Profile"], ["card", "Card"], ["certifications", "Certifications"], ["community", "Community"], ["invitations", "Invite a friend"], ["channels", "Channels"], ["phone", "Verify phone"]];
 
 /** Presentation only: the portal keeps every permission check and query in MemberArea. */
 export function MemberScreenLayout({ tab, state, children, member, name, slug, activity, primary, section, modules, hasPartnerEvents, accountSections: allowedAccountSections, accountSelfService, canRefer, status, requested }: {

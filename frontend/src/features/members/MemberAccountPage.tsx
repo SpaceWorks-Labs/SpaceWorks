@@ -32,7 +32,7 @@ export function MemberAccountPage() {
     void (async () => {
       await client.cancelQueries({ queryKey: ["member", "account"] });
       client.removeQueries({ queryKey: ["member", "account"] });
-      const token = await refreshAccessToken();
+      const token = await refreshAccessToken("member");
       if (active) { setSignIn(!token); setRestoring(false); }
     })().catch(() => { if (active) { setSignIn(true); setRestoring(false); } });
     return () => { active = false; };
@@ -55,7 +55,7 @@ export function MemberAccountPage() {
   // Organization self-creation is account-wide, so it rides on the first section rather than a gated tab.
   const showSelfCreation = selfCreationVisible && section === (tabs[0]?.key || "profile");
   if (deleted) return <CenteredCardLayout state={{ status: "ready" }} title="Your account" body="Deletion request received." content={<AccountDeletionReceipt result={deleted} />} primary={{ label: "Return home", href: "/" }} />;
-  return <MemberPortalTabs modules={data?.modules ?? []} active="account" user={{ name: "Your account", menu: [{ label: "Member area", href: home }], onSignOut: () => { void logout().catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); setSignIn(true); }); } }}
+  return <MemberPortalTabs modules={data?.modules ?? []} active="account" user={{ name: "Your account", menu: [{ label: "Member area", href: home }], onSignOut: () => { void logout("member").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); setSignIn(true); }); } }}
     workspace={data ? { name: data.makerspace.name || "Space Works", subtitle: "Your account", avatar: data.branding?.logo_url || data.makerspace.logo_url ? { kind: "image", src: data.branding?.logo_url || data.makerspace.logo_url || "" } : { kind: "avatar", name: data.makerspace.name || "Space Works", seed: slug }, locked: true } : undefined}>
     <MemberSectionNavigation><SettingsLayout header={{ title: "Account", subtitle: "Your personal profile and sign-in security.", secondary: { label: "Profile & card →", href: `${home}/account-portal` } }}
       state={restoring || (bootstrap.isLoading && section !== "deletion") ? { status: "loading" } : bootstrap.error && section !== "deletion" ? { status: "error", error: "Couldn't load your account. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}

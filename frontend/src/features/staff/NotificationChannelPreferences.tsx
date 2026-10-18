@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { DELIVERY_SETTINGS_KEY } from "./MakerspaceWebhookSettings";
-import { messagingLabels, useMessagingSettings } from "../messaging/messagingApi";
+import { useChannels } from "../notifications/channelsApi";
+import { CHANNEL_LABELS } from "../notifications/channelCatalog";
 import { MATRIX_TOGGLE_CELL, STICKY_FIRST_COLUMN } from "./matrixColumns";
 import type {
   NotificationPreferenceCell,
@@ -35,7 +36,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
       staffRequest<DeliverySettings>(`/admin/makerspace/${makerspaceId}/api-settings`),
   });
   const hasMessaging = rules.channels.some(channel => channel.key === "sms" || channel.key === "whatsapp");
-  const messaging = useMessagingSettings(makerspaceId, hasMessaging);
+  const messaging = useChannels(makerspaceId, hasMessaging);
 
   const updatePreference = useMutation({
     mutationFn: (change: PreferenceChange) =>
@@ -68,8 +69,10 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
 
   const warnings = deliveryWarnings(rules.preferences, settings.data);
   for (const channel of ["sms", "whatsapp"] as const) {
-    if (messaging.data?.effective_source[channel] === "none" && rules.preferences.some(cell => cell.channel === channel && cell.enabled)) {
-      warnings.push(`${messagingLabels[channel]} is enabled but has no effective sender. Configure it under Email & integrations.`);
+    const config = messaging.data?.results.find(row => row.channel === channel);
+    if (messaging.isSuccess && (!config?.enabled || !config.personal_enabled || config.activation_hold || !config.sender_key)
+      && rules.preferences.some(cell => cell.channel === channel && cell.enabled)) {
+      warnings.push(`${CHANNEL_LABELS[channel]} needs sender setup or review under Communication channels.`);
     }
   }
 
@@ -82,7 +85,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
         Checked = enabled for that feature and channel. The Staff email notifications switch and
         per-member recipient toggles affect staff email only, not Telegram, Slack, or Mattermost.
       </p>
-      {rules.channels.some(channel => channel.key === "whatsapp") ? <p className="mt-2 text-sm text-muted">WhatsApp also requires an approved template binding for each event and audience. Configure bindings under Email & integrations.</p> : null}
+      {rules.channels.some(channel => channel.key === "whatsapp") ? <p className="mt-2 text-sm text-muted">WhatsApp also requires an approved template binding for each event and audience. Configure bindings under Communication channels.</p> : null}
       <SettingsQueryState query={settings} resource="channel setup" />
       {hasMessaging ? <SettingsQueryState query={messaging} resource="messaging channel setup" /> : null}
       <DataTable data={rules.features} getRowId={feature => feature.key} columns={[

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { memberRequest, staffRequest } from "../../lib/api";
 import { personalRecipientKey } from "./personalQueryKeys";
+import { currentSessionContext } from "../../lib/api/sessionContext";
 
 /**
  * Hand-typed shapes of the frozen Phase-1a notification contract
@@ -9,19 +10,20 @@ import { personalRecipientKey } from "./personalQueryKeys";
  * The integrator regenerates `generated/api.ts` after the merge; until then these mirror it.
  * No response ever carries a credential, a destination or a message body.
  */
-export type ChannelKey = "email" | "in_app" | "telegram" | "slack" | "mattermost" | "discord" | "whatsapp" | "native_push" | "webhook";
+export type ChannelKey = "email" | "in_app" | "telegram" | "slack" | "mattermost" | "discord" | "sms" | "whatsapp" | "native_push" | "webhook";
 export type ProviderKey = "telegram" | "slack" | "mattermost" | "discord" | "twilio" | "meta" | "builtin" | "webhook";
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 
-export type WhatsAppTemplate = { event: string; audience: "staff" | "requester" | "member"; locale: string;
-  template_name: string; variables: string[]; approved?: boolean };
+export type WhatsAppTemplate = { feature?: string; event: string; audience: "staff" | "requester" | "member"; locale: string;
+  template_name: string; variables: string[]; approved?: boolean; needs_review?: boolean };
 export type Quotas = { daily_limit?: number; recipient_daily_limit?: number };
 export type Channel = { channel: ChannelKey; enabled: boolean; room_enabled: boolean; personal_enabled: boolean;
   provider: ProviderKey; email_fallback: boolean; integration_identity: string; generation: number;
-  quotas: Quotas; credentials_set: boolean; templates: WhatsAppTemplate[] };
+  quotas: Quotas; credentials_set: boolean; templates: WhatsAppTemplate[];
+  use_platform_sender?: boolean; sender_key?: string; credential_version?: number; activation_hold?: boolean };
 export type ChannelWrite = Partial<Pick<Channel, "enabled" | "room_enabled" | "personal_enabled" | "email_fallback"
-  | "provider" | "integration_identity" | "quotas">> & { credentials?: Record<string, string>;
-  templates?: Omit<WhatsAppTemplate, "approved">[] };
+  | "provider" | "integration_identity" | "quotas" | "use_platform_sender" | "activation_hold">> & { credentials?: Record<string, string>;
+  templates?: Omit<WhatsAppTemplate, "approved" | "needs_review">[] };
 
 export type Endpoint = { id: number; channel: ChannelKey; provider: ProviderKey; integration_generation: number;
   verification_state: "verified" | "revoked"; verified_at: string | null; consented_at: string | null;
@@ -29,7 +31,7 @@ export type Endpoint = { id: number; channel: ChannelKey; provider: ProviderKey;
 export type ChallengeStart = { channel: ChannelKey; consent: true; consent_version: string; phone_number?: string };
 export type Challenge = { challenge_id: number; expires_at: string; connect_url?: string; instructions?: string; oauth_state?: string };
 export type Selection = { category: string; channels: ChannelKey[]; email_fallback: boolean; available_channels?: ChannelKey[] };
-export type Delivery = { id: number; envelope_id: number; channel: ChannelKey; state: "retrying" | "accepted" | "sent"
+export type Delivery = { id: number; envelope_id: number; channel: ChannelKey; state: "held" | "retrying" | "accepted" | "sent"
   | "delivered" | "read" | "failed" | "skipped"; attempt_count: number; next_attempt_at: string | null; last_error: string;
   retryable: boolean; event: string; feature: string; created_at: string; updated_at: string };
 export type TestResult = { accepted: boolean; provider_id: string; retryable: boolean; error_code: string; sanitized_error: string };
@@ -41,8 +43,8 @@ const base = (makerspaceId: number) => `/integrations/makerspace/${makerspaceId}
 const sender = (member: boolean) => member ? memberRequest : staffRequest;
 
 export const channelKeys = {
-  channels: (id: number) => ["notify-contract", id, "channels"] as const,
-  personal: (id: number) => ["notify-contract", id, "personal", personalRecipientKey()] as const,
+  channels: (id: number) => ["notify-contract", id, "channels", currentSessionContext(), personalRecipientKey()] as const,
+  personal: (id: number) => ["notify-contract", id, "personal", currentSessionContext(), personalRecipientKey()] as const,
   endpoints: (id: number) => [...channelKeys.personal(id), "endpoints"] as const,
   preferences: (id: number) => [...channelKeys.personal(id), "preferences"] as const,
   deliveries: (id: number, page: number) => [...channelKeys.personal(id), "deliveries", page] as const,
@@ -74,9 +76,12 @@ export function useSaveChannel(makerspaceId: number, channel: ChannelKey) {
 }
 
 export function useTestChannel(makerspaceId: number) {
+  const client = useQueryClient();
+  const personal = channelKeys.personal(makerspaceId);
   return useMutation({
     mutationFn: (body: { channel: ChannelKey; endpoint_id?: number; room_id?: number }) =>
       staffRequest<TestResult>(`${base(makerspaceId)}/channels-test`, { method: "POST", body: JSON.stringify(body) }),
+    onSettled: () => client.invalidateQueries({ queryKey: personal }),
   });
 }
 
@@ -130,19 +135,24 @@ export function useRevokeEndpoint(makerspaceId: number, member = false) {
   });
 }
 
-export function usePreferences(makerspaceId: number, member = false) {
-  return useQuery({ queryKey: channelKeys.preferences(makerspaceId),
+export function usePreferences(makerspaceId: number, member = false, enabled = true) {
+  return useQuery({ queryKey: channelKeys.preferences(makerspaceId), enabled, retry: false,
     queryFn: () => sender(member)<{ preferences: Selection[] }>(`${base(makerspaceId)}/personal/preferences`) });
 }
 
 export function useSavePreferences(makerspaceId: number, member = false) {
   const client = useQueryClient();
+  const key = channelKeys.preferences(makerspaceId);
   return useMutation({
     // Replace supplied categories; omitted categories keep explicit choices or defaults.
     mutationFn: (preferences: Selection[]) => sender(member)<{ preferences: Selection[] }>(
       `${base(makerspaceId)}/personal/preferences`, { method: "PUT", body: JSON.stringify({
         preferences: preferences.map(({ category, channels, email_fallback }) => ({ category, channels, email_fallback })) }) }),
-    onSuccess: data => client.setQueryData(channelKeys.preferences(makerspaceId), data),
+    onSuccess: data => {
+      if (JSON.stringify(key) !== JSON.stringify(channelKeys.preferences(makerspaceId))) return;
+      client.setQueryData(key, data);
+      return client.invalidateQueries({ queryKey: key.slice(0, -1) });
+    },
   });
 }
 

@@ -9,13 +9,13 @@ from apps.integrations.email_preferences import blocked_reason
 from apps.integrations.notification_catalog import is_notification_enabled
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import is_servable
-from apps.notifications.inbox import eligible_owner
+from apps.integrations.recipients_owners import eligible_owner
 
 
 def notification_account(makerspace, account_id, event):
     """Resolve the owner independently of email availability and preferences."""
     if (not is_servable(makerspace) or not makerspace.superadmin_access_enabled
-            or any(not module_enabled(makerspace, key) for key in ("bookings", "notifications"))
+            or not module_enabled(makerspace, "bookings")
             or not eligible_owner(makerspace, account_id)):
         return None
     if (recipients.has_selection(makerspace, "bookings", event)

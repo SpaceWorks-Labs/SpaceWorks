@@ -4,6 +4,7 @@ import { AnalyticsData } from "./AnalyticsData";
 import { analyticsMeta, analyticsRows, useAnalyticsReport, type DashboardAnalytics, type DashboardWidget } from "./analyticsApi";
 import { DataState } from "./OperationsReportState";
 import { staffTabPath } from "../staffTabs";
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { wireChartSpec } from "./charts/wireChartSpec";
 import type { ChartRecord } from "./charts/chartSpec";
 
@@ -40,7 +41,7 @@ function AnalyticsWidget({ widget, reportsHref, makerspaceId }: {
         <StatCard key={`${index}:${field.field}`} label={`${String(row[spec.x.field] ?? "")} ${field.label ?? field.field}`} value={`${row[field.field] ?? "Unknown"} ${field.unit_field ? row[field.unit_field] ?? "" : field.unit}`} />))}</div> : null}
       <AnalyticsData title={widget.title} rows={rows} spec={spec} meta={analyticsMeta(data)} />
     </DataState>
-    {widget.report_keys[0] ? <a className="desk-button mt-3" href={`${reportsHref}?report=${encodeURIComponent(widget.report_keys[0])}`}>Open in reports</a> : null}
+    {widget.report_keys[0] ? <a className="desk-button mt-3" href={reportHref(reportsHref, widget.report_keys[0])}>Open in reports</a> : null}
   </section>;
 }
 
@@ -54,6 +55,12 @@ export function HandoverQueueHome({ queues, slug, singleTenantLocked = false, gu
   ];
   return <DashboardLayout header={{ title: "Handover", eyebrow: "Physical handovers", subtitle: "Issue ready requests, receive returns and collect completed jobs." }}
     state={{ status: "ready" }} stats={destinations.map(row => ({ label: row.label, value: queues?.[row.key] ?? 0,
-      href: `${staffTabPath(row.tab, guestOnly, slug, singleTenantLocked)}${row.query ? `?${row.query}` : ""}` }))}
+      href: consoleSessionHref(`${staffTabPath(row.tab, guestOnly, slug, singleTenantLocked)}${row.query ? `?${row.query}` : ""}`) }))}
     main={[{ title: "Your handover queues", content: <p>Choose a queue above to continue a physical handover.</p>, empty: { message: "No handovers waiting." } }]} />;
+}
+
+function reportHref(base: string, key: string) {
+  const url = new URL(base, window.location.origin);
+  url.searchParams.set("report", key);
+  return url.pathname + url.search + url.hash;
 }

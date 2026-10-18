@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAnalyticsCatalog } from "./analyticsApi";
 import { ReportChartResult } from "./ReportAreaSections";
 import { staffTabPath } from "../staffTabs";
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import type { Makerspace } from "./shared";
 
 const CONSOLES: Record<string, { modules: string[]; keys: string[] }> = {
@@ -37,7 +38,7 @@ export function ModuleAnalytics({ makerspace, tab, singleTenantLocked = false, g
       </select></label>
       <ReportChartResult report={report} base={`/admin/makerspace/${makerspace.id}/analytics`} makerspaceId={makerspace.id}
         period={{ start: "", end: "", grain: report.grains[0] ?? "day" }} />
-      <a className="desk-button mt-3" href={`${staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked)}?report=${encodeURIComponent(report.key)}`}>Open in reports</a>
+      <a className="desk-button mt-3" href={consoleSessionHref(`${staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked)}?report=${encodeURIComponent(report.key)}`)}>Open in reports</a>
     </> : null}
   </section>;
 }

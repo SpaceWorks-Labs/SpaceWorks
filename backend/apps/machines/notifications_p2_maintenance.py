@@ -43,9 +43,10 @@ def eligible(envelope):
     actor_id = envelope.context.get("actor_id")
     if actor_id:
         from apps.accounts.models import User
-        from .access import can_manage_machine
+        from .access import can_manage_machine, can_operate_machine
         actor = User.objects.filter(pk=actor_id).first()
-        if actor is None or not can_manage_machine(actor, row.machine):
+        permitted = can_manage_machine if envelope.context["schedule"] else can_operate_machine
+        if actor is None or not permitted(actor, row.machine):
             return False
     return staff_allowed(envelope, row.machine.machine_type_id)
 

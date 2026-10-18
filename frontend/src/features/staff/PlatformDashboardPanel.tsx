@@ -64,9 +64,9 @@ export function PlatformDashboardPanel() {
             { label: "Automatic backups", value: <StatusPill label={data.backup.automatic_enabled ? "On" : "Off"} tone={data.backup.automatic_enabled ? "success" : "neutral"} /> },
             ...data.offsite.map(row => ({ label: row.name, value: <><StatusPill label={row.state.replace(/_/g, " ")} tone={row.has_error ? "warn" : "neutral"} />{row.has_error ? " · Needs attention" : ""} … {row.verified_at ? <RelativeTime date={row.verified_at} /> : "No verification recorded"}</> })),
             ...(!data.offsite.length ? [{ label: "Offsite destinations", value: "No offsite destinations configured." }] : []),
-          ]} /><a className="desk-button" href="/admin/backup-restore">Backup settings</a></section> : undefined}
+          ]} /><a className="desk-button" href={consoleSessionHref("/admin/backup-restore", "platform")}>Backup settings</a></section> : undefined}
     rail={data ? { title: "Delivery", items: [
       { key: "emails", actor: "Email", children: `${data.failed_deliveries.email} failed deliveries`, date: data.checked_at },
       { key: "notifications", actor: "Notifications", children: `${data.failed_deliveries.notifications} failed deliveries`, date: data.checked_at },
-    ], seeAll: { label: "Platform settings", href: "/admin/platform" } } : undefined} />;
+    ], seeAll: { label: "Platform settings", href: consoleSessionHref("/admin/platform", "platform") } } : undefined} />;
 }

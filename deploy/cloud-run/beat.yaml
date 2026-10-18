@@ -1,0 +1,80 @@
+{
+  "apiVersion": "run.googleapis.com/v1",
+  "kind": "WorkerPool",
+  "metadata": {
+    "name": "spaceworks-beat",
+    "annotations": {
+      "run.googleapis.com/manualInstanceCount": "1"
+    }
+  },
+  "spec": {
+    "template": {
+      "spec": {
+        "serviceAccountName": "spaceworks-jobs@PROJECT.iam.gserviceaccount.com",
+        "containers": [
+          {
+            "image": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "args": [
+              "--role",
+              "beat",
+              "python",
+              "-m",
+              "scripts.run_cloud_role",
+              "beat"
+            ],
+            "env": [
+              {
+                "name": "SPACEWORKS_DEPLOYMENT_MODE",
+                "value": "managed"
+              },
+              {
+                "name": "SPACEWORKS_DEPLOYMENT_PROFILE",
+                "value": "full"
+              },
+              {
+                "name": "DATABASE_CONNECTION_MODE",
+                "value": "direct"
+              },
+              {
+                "name": "DATABASE_MAINTENANCE_CONNECTION_MODE",
+                "value": "direct"
+              },
+              {
+                "name": "DATABASE_URL",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "spaceworks-runtime-db",
+                    "key": "latest"
+                  }
+                }
+              },
+              {
+                "name": "CLOUD_TASK_PROFILE",
+                "value": "redis"
+              },
+              {
+                "name": "CLOUD_SCHEDULER",
+                "value": "beat"
+              },
+              {
+                "name": "CELERY_BROKER_URL",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "spaceworks-redis",
+                    "key": "latest"
+                  }
+                }
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

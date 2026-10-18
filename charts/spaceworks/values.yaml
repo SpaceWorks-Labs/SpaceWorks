@@ -1,23 +1,27 @@
-# One release per namespace: frontend upstreams use backend/live service names.
+# Preserve existing host installs. The managed wizard selects managed explicitly.
+deploymentMode: host
+deploymentProfile: full
+taskProfile: redis
+scheduler: beat
 backendImage: ghcr.io/spaceworks-hq/spaceworks-backend
+backendDigest: ""
 frontendImage: ghcr.io/spaceworks-hq/spaceworks-frontend
-# Pin a released image tag; no floating default.
+frontendDigest: ""
 imageTag: ""
 imagePullPolicy: IfNotPresent
 replicas: 1
 workers: 3
-# Existing secret: Django keys, Redis/S3 and remaining deployment settings; no DATABASE_URL.
 runtimeSecret: ""
-# Immutable versioned secrets each contain DATABASE_URL + SPACEWORKS_DB_POINTER_GENERATION.
-# Migration URL uses the maintenance role; runtime URL uses least-privilege app role.
+releaseSecret: ""
+# Used only in explicit host-supervised mode; existing prepared authority required.
 databasePointerSecret: ""
 migrationPointerSecret: ""
 hostGate:
-  # Preprovisioned root-owned marker and verification key, shared read-only by all writers.
   existingClaim: ""
-# Bump only after an operator-coordinated, generation-consistent rollout.
 rolloutGeneration: ""
 routeMetricsEnabled: false
+frontend:
+  enabled: true
 frontendEnv:
   TENANT_API_URL: /api
   WEB_ANALYTICS_SCRIPT_URL: ""
@@ -41,7 +45,12 @@ resources:
     memory: 1Gi
 worker:
   enabled: true
+  replicas: 1
+live:
+  enabled: true
 beat:
   enabled: true
-  # Operator-prepared persistent schedule volume owned by uid 10001.
   existingClaim: ""
+scratchSize: 2Gi
+# Provider config file Secrets; filenames are explicit, never shell-expanded.
+configFiles: []

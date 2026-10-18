@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "sequence": [
+    "Explicit finite external release first; Koyeb residents have runtime-only secrets.",
+    "POST each service request individually only after release success.",
+    "Upload every runtime.environment.json setting as a private provider secret/ref, including continuity and file mounts."
+  ],
+  "release_argv": [
+    "--role",
+    "migrate",
+    "python",
+    "-m",
+    "scripts.run_cloud_role",
+    "release"
+  ],
+  "release_environment": "release.environment.json",
+  "source": "https://www.koyeb.com/docs/reference/api"
+}

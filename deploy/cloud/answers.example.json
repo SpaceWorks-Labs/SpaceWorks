@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "provider": "render",
+  "profile": "full",
+  "backend_image": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "database_provider": "generic",
+  "database_connection_mode": "direct",
+  "maintenance_connection_mode": "direct",
+  "database_documentation_url": "https://www.postgresql.org/docs/current/libpq-ssl.html",
+  "connection_limit": 20,
+  "task_profile": "redis",
+  "public_origin": "https://app.example.com",
+  "api_origin": "https://api.example.com",
+  "allowed_hosts": [
+    "api.example.com"
+  ],
+  "email_provider": "resend",
+  "from_email": "hello@example.com",
+  "presign_method": "put",
+  "scan_policy": "none",
+  "storage_capabilities_file": "/etc/secrets/storage-capabilities.json",
+  "environment": {
+    "EMAIL_PROVIDER_CONFIG_FILE": "/etc/secrets/email-provider.json",
+    "AWS_STORAGE_BUCKET_NAME": "PRIVATE_BUCKET_REQUIRED",
+    "AWS_S3_REGION_NAME": "auto",
+    "AWS_S3_ENDPOINT_URL": "https://S3_API_HOST_REQUIRED",
+    "AWS_S3_PUBLIC_ENDPOINT_URL": "https://S3_API_HOST_REQUIRED",
+    "PUBLIC_IMAGE_BUCKET": "PUBLIC_FINAL_BUCKET_REQUIRED",
+    "PUBLIC_IMAGE_BASE_URL": "https://PUBLIC_IMAGE_HOST_REQUIRED"
+  },
+  "setup": {
+    "username": "space-admin",
+    "email": "owner@example.com",
+    "makerspace_name": "My Makerspace",
+    "makerspace_slug": "my-makerspace",
+    "organization_name": "My Organization",
+    "module_profile": "cloud"
+  },
+  "trusted_proxy_count": 1
+}

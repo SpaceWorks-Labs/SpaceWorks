@@ -1,0 +1,216 @@
+{
+  "name": "spaceworks",
+  "region": "sgp",
+  "services": [
+    {
+      "name": "web",
+      "image": {
+        "registry_type": "GHCR",
+        "registry": "spaceworks-hq",
+        "repository": "spaceworks-backend",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "run_command": "--role backend python -m scripts.run_cloud_role web",
+      "instance_size_slug": "apps-s-1vcpu-1gb",
+      "instance_count": 1,
+      "envs": [
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_MODE",
+          "value": "managed",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_PROFILE",
+          "value": "full",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_TASK_PROFILE",
+          "value": "brokerless",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_SCHEDULER",
+          "value": "loop",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "DATABASE_URL",
+          "value": "REPLACE_RUNTIME_URL",
+          "type": "SECRET",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_SECRET_FILE_MODE",
+          "value": "inline",
+          "scope": "RUN_TIME"
+        }
+      ],
+      "http_port": 8000,
+      "health_check": {
+        "http_path": "/api/v1/health/readiness/",
+        "initial_delay_seconds": 15
+      }
+    }
+  ],
+  "workers": [
+    {
+      "name": "worker",
+      "image": {
+        "registry_type": "GHCR",
+        "registry": "spaceworks-hq",
+        "repository": "spaceworks-backend",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "run_command": "--role worker python -m scripts.run_cloud_role worker",
+      "instance_size_slug": "apps-s-1vcpu-1gb",
+      "instance_count": 1,
+      "envs": [
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_MODE",
+          "value": "managed",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_PROFILE",
+          "value": "full",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_TASK_PROFILE",
+          "value": "brokerless",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_SCHEDULER",
+          "value": "loop",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "DATABASE_URL",
+          "value": "REPLACE_RUNTIME_URL",
+          "type": "SECRET",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_SECRET_FILE_MODE",
+          "value": "inline",
+          "scope": "RUN_TIME"
+        }
+      ]
+    },
+    {
+      "name": "scheduler",
+      "image": {
+        "registry_type": "GHCR",
+        "registry": "spaceworks-hq",
+        "repository": "spaceworks-backend",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "run_command": "--role cron python -m scripts.run_cloud_role scheduler",
+      "instance_size_slug": "apps-s-1vcpu-1gb",
+      "instance_count": 1,
+      "envs": [
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_MODE",
+          "value": "managed",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_PROFILE",
+          "value": "full",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_TASK_PROFILE",
+          "value": "brokerless",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_SCHEDULER",
+          "value": "loop",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "DATABASE_URL",
+          "value": "REPLACE_RUNTIME_URL",
+          "type": "SECRET",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_SECRET_FILE_MODE",
+          "value": "inline",
+          "scope": "RUN_TIME"
+        }
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "name": "release",
+      "image": {
+        "registry_type": "GHCR",
+        "registry": "spaceworks-hq",
+        "repository": "spaceworks-backend",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "run_command": "--role migrate python -m scripts.run_cloud_role release",
+      "instance_size_slug": "apps-s-1vcpu-1gb",
+      "instance_count": 1,
+      "envs": [
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_MODE",
+          "value": "managed",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_DEPLOYMENT_PROFILE",
+          "value": "full",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_TASK_PROFILE",
+          "value": "brokerless",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "CLOUD_SCHEDULER",
+          "value": "loop",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "DATABASE_URL",
+          "value": "REPLACE_RUNTIME_URL",
+          "type": "SECRET",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "DATABASE_MAINTENANCE_URL",
+          "value": "REPLACE_MAINTENANCE_URL",
+          "type": "SECRET",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "SPACEWORKS_SECRET_FILE_MODE",
+          "value": "inline",
+          "scope": "RUN_TIME"
+        }
+      ],
+      "kind": "PRE_DEPLOY"
+    }
+  ],
+  "ingress": {
+    "rules": [
+      {
+        "match": {
+          "path": {
+            "prefix": "/"
+          }
+        },
+        "component": {
+          "name": "web"
+        }
+      }
+    ]
+  }
+}

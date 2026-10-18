@@ -46,4 +46,33 @@ class StageFormAsset(ScopedPiiModelMixin, models.Model):
         constraints = [
             models.CheckConstraint(condition=models.Q(purpose="stage_form_file"), name="stage_asset_purpose"),
             models.CheckConstraint(condition=models.Q(expected_bytes__gt=0, expected_bytes__lte=10485760), name="stage_asset_size"),
+            models.CheckConstraint(condition=models.Q(version__gte=1, generation__gte=1), name="stage_asset_versions"),
+            models.CheckConstraint(condition=(~models.Q(state__in=("ready", "attached")) | models.Q(
+                actual_bytes=models.F("expected_bytes"), scan_status__in=("clean", "skipped"),
+                actual_bytes__isnull=False,
+                canonical_mime__in=("application/pdf", "image/jpeg", "image/png", "image/heic"),
+                sha256__regex=r"^[a-f0-9]{64}$")), name="stage_asset_ready_integrity"),
         ]
+
+
+class StageFileCleanup(models.Model):
+    """FK-free, permanent locators survive event/tenant purge and late workers."""
+    source_asset_id = models.PositiveBigIntegerField(unique=True)
+    tenant_id = models.PositiveBigIntegerField(db_index=True)
+    event_id_snapshot = models.PositiveBigIntegerField()
+    bucket = models.CharField(max_length=255)
+    staging_key = models.CharField(max_length=500, unique=True)
+    object_key = models.CharField(max_length=500, unique=True)
+    not_before = models.DateTimeField()
+    next_attempt_at = models.DateTimeField(db_index=True)
+    lease_token = models.UUIDField(null=True)
+    lease_until = models.DateTimeField(null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    last_deleted_at = models.DateTimeField(null=True)
+    last_error_code = models.CharField(max_length=64, blank=True)
+
+    class Meta:
+        app_label = "events"
+
+    def delete(self, *args, **kwargs):
+        raise RuntimeError("Stage cleanup locators are permanent.")

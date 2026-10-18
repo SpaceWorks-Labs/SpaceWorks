@@ -40,7 +40,7 @@ def validate_definition(row, event, actor):
             continue
         if name == "activation_point" and value == "":
             continue
-        model_field.clean(value, row)
+        setattr(row, name, model_field.clean(value, row))
     row.validate_constraints()
     triggered_at = event.starts_at if row.stage == "pre_event" else event.ends_at if row.stage == "post_event" else timezone.now()
     resolved = resolve(triggered_at=triggered_at, event_start=event.starts_at, event_end=event.ends_at,
@@ -110,8 +110,15 @@ def activate_locked(*, definition, subject, locks, due_at=None):
     require_stage_schema(definition.current_revision.schema)
     existing = StageFormAssignment.objects.filter(stage_form=definition, owner_member_id=subject.owner_member_id).first()
     if existing:
+        if existing.state != "cancelled" and not StageFormResponse.objects.filter(assignment=existing).exists():
+            response = StageFormResponse.objects.create(assignment=existing, event=subject.event,
+                owner_member_id=subject.owner_member_id, form_revision=existing.pinned_form_revision,
+                answer_event_date_revision=subject.event.event_date_revision)
+            from apps.audit.services import record
+            record(None, "event.stage_form.response_recovered", makerspace=subject.event.makerspace,
+                   target=response, meta={"assignment_id": existing.pk})
         return existing
-    candidate = applicable(definition, subject)
+    candidate = applicable(definition, subject, include_future=True)
     if due_at is None and candidate is None:
         return None
     triggered = trigger_at(definition, subject)
@@ -119,6 +126,7 @@ def activate_locked(*, definition, subject, locks, due_at=None):
     resolved = candidate[1] if candidate else schedule(definition, subject=subject, triggered_at=triggered)
     opening = timezone.now() if due_at else resolved.opens_at
     due = due_at or resolved.due_at
+    from .lifecycle import reached_rank
     require(due > opening and (due_at is None or due > timezone.now()), "stage_deadline_requires_review")
     row = StageFormAssignment.objects.create(stage_form=definition, event=subject.event,
         owner_member_id=subject.owner_member_id, registration=subject.registration, application=subject.application,
@@ -126,11 +134,22 @@ def activate_locked(*, definition, subject, locks, due_at=None):
         trigger_revision=getattr(subject.application or subject.registration, "version", 1),
         pinned_form_revision=definition.current_revision, triggered_at=triggered,
         opens_at=opening, base_due_at=due, effective_due_at=due,
-        state="open" if timezone.now() < due else "overdue")
+        schedule_event_date_revision=subject.event.event_date_revision,
+        policy_snapshot={**{key: getattr(definition, key) for key in (
+            "stage", "activation_point", "required", "missed_action", "blocked_actions", "lock_on_next_stage",
+            "audience", "opening_mode", "opening_offset_seconds", "due_mode", "due_after_seconds", "due_event_offset_seconds",
+            "reminder_offsets")}, "opens_at": definition.opens_at.isoformat() if definition.opens_at else None,
+            "due_at": definition.due_at.isoformat() if definition.due_at else None,
+            "lock_suppressed_through_rank": reached_rank(subject, timezone.now()) if due_at else -1},
+        state="scheduled" if opening > timezone.now() else "open" if timezone.now() < due else "overdue")
     StageFormResponse.objects.create(assignment=row, event=subject.event, owner_member_id=subject.owner_member_id,
         form_revision=definition.current_revision, answer_event_date_revision=subject.event.event_date_revision)
     from .notices import enqueue_locked
-    enqueue_locked(row, "opened" if row.state == "open" else "overdue")
+    if row.state != "scheduled":
+        enqueue_locked(row, "opened" if row.state == "open" else "overdue")
+    from apps.audit.services import record
+    record(None, "event.stage_form.assigned", makerspace=subject.event.makerspace, target=row,
+           meta={"assignment_id": row.pk, "stage_form_id": definition.pk, "new_state": row.state})
     return row
 
 
@@ -138,14 +157,32 @@ def reconcile_deadlines_locked(*, event, now, locks):
     from .response_workflow import lock_at_deadline_locked
     from .transactions import require_outer
     require_outer(locks, event)
+    from .lifecycle import reconcile_participant_locked
+    from .trigger_service import resolve_participant
+    for owner_id in locks.account_ids:
+        reconcile_participant_locked(subject=resolve_participant(event=event, owner_id=owner_id), locks=locks, now=now)
     for row in StageFormAssignment.objects.select_for_update().filter(event=event,
         owner_member_id__in=locks.account_ids).exclude(state="cancelled").order_by("pk"):
-        response = StageFormResponse.objects.select_for_update().get(assignment=row)
+        response = StageFormResponse.objects.select_for_update().filter(assignment=row).first()
         if now >= row.effective_due_at:
-            lock_at_deadline_locked(response, now=now)
+            if response:
+                lock_at_deadline_locked(response, now=now)
             if row.state in ("scheduled", "open"):
                 row.state, row.version = "overdue", row.version + 1
                 row.save()
+                from apps.audit.services import record
+                from .notices import enqueue_locked
+                record(None, "event.stage_form.overdue", makerspace=event.makerspace, target=row,
+                       meta={"assignment_id": row.pk, "new_state": "overdue"})
+                enqueue_locked(row, "overdue")
+        elif row.state == "scheduled" and row.opens_at <= now:
+            row.state, row.version = "open", row.version + 1
+            row.save()
+            from apps.audit.services import record
+            from .notices import enqueue_locked
+            record(None, "event.stage_form.opened", makerspace=event.makerspace, target=row,
+                   meta={"assignment_id": row.pk, "new_state": "open"})
+            enqueue_locked(row, "opened")
 
 
 def request_activation(*, event_id, actor, stage_form_id, data):
@@ -154,6 +191,8 @@ def request_activation(*, event_id, actor, stage_form_id, data):
     # A preview has no command receipt, audit or activation side effect.
     if data["preview"]:
         event = event_authority.get_event(actor, event_id, "edit_details")
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(event.makerspace_id)
         definition = EventStageForm.objects.get(pk=stage_form_id, event=event)
         require(definition.version == data["expected_version"], "stale_version")
         return {"preview": True, "eligible_participant_ids": [owner_id for owner_id in data["participant_ids"]
@@ -188,13 +227,33 @@ def process_activation_locked(*, job_id, event, locks, limit):
             or job.pinned_form_revision_id != job.stage_form.current_revision_id):
         job.state, job.version = "cancelled", job.version + 1
         job.save()
+        from apps.audit.services import record
+        record(None, "event.stage_form.activation_cancelled", makerspace=event.makerspace, target=job,
+               meta={"job_id": job.pk, "new_state": job.state})
         return
     selected = job.participant_ids[job.cursor:job.cursor + limit]
     require(set(selected) <= set(locks.account_ids), "owner_fence_required")
     for owner_id in selected:
         subject = resolve_participant(event=event, owner_id=owner_id)
-        activate_locked(definition=job.stage_form, subject=subject, locks=locks, due_at=job.effective_due_at)
+        assignment = activate_locked(definition=job.stage_form, subject=subject, locks=locks, due_at=job.effective_due_at)
+        if assignment and assignment.imported_paused:
+            from .assignment_workflow import reactivate_imported_locked
+            assignment = StageFormAssignment.objects.select_for_update().get(pk=assignment.pk)
+            reactivate_imported_locked(assignment, due_at=job.effective_due_at, actor=job.actor)
     job.cursor, job.version = job.cursor + len(selected), job.version + 1
     if job.cursor >= len(job.participant_ids):
         job.state = "completed"
     job.save()
+    from apps.audit.services import record
+    record(None, "event.stage_form.activation_progress", makerspace=event.makerspace, target=job,
+           meta={"job_id": job.pk, "cursor": job.cursor, "new_state": job.state})
+
+
+def cancel_assignment(**kwargs):
+    from .assignment_workflow import manage
+    return manage(action="cancel", **kwargs)
+
+
+def reassign_to_revision(**kwargs):
+    from .assignment_workflow import manage
+    return manage(action="reassign", **kwargs)

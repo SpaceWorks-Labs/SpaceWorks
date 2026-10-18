@@ -1,9 +1,9 @@
 {
   "manifest_version": 1,
-  "lane": "RB-R2",
+  "lane": "RB3-C",
   "module_key": "events",
-  "integration_status": "INCOMPLETE_DO_NOT_ENABLE",
-  "prerequisite": "G1 frozen reimbursement_addon.json absent; fixture test present. PostgreSQL runtime unavailable. See RB-R2-report.md.",
+  "integration_status": "IMPLEMENTED_AWAITING_G_MIGRATIONS_AND_RUNTIME_VERIFICATION",
+  "prerequisite": "Frozen G1 contract reconciled; G must apply the exact additive model/guard migrations, shared hooks and registries in RB3-C-report.md before runtime acceptance.",
   "models": [
     {
       "label": "events.EventStageForm",
@@ -16,6 +16,16 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='stage_forms')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "slug": {
@@ -72,6 +82,16 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "current_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, null=True, related_name='+')",
+          "target": "'events.EventFormRevision'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "opening_mode": {
@@ -189,6 +209,17 @@
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
+        "created_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
         "created_at": {
           "type": "DateTimeField",
           "declaration": "models.DateTimeField(auto_now_add=True)",
@@ -212,45 +243,9 @@
           "encryption_required": false,
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "event": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='stage_forms')",
-          "target": "'events.Event'",
-          "on_delete": "models.CASCADE",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "current_revision": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, null=True, related_name='+')",
-          "target": "'events.EventFormRevision'",
-          "on_delete": "models.PROTECT",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "created_by": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
-          "target": "settings.AUTH_USER_MODEL",
-          "on_delete": "models.SET_NULL",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
-          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
         }
       },
-      "constraints_and_indexes": [
-        {
-          "kind": "constraints",
-          "declaration": "[models.UniqueConstraint(fields=('event', 'slug'), name='stage_form_unique_slug'), models.CheckConstraint(condition=models.Q(version__gte=1), name='stage_form_version_positive'), models.CheckConstraint(condition=models.Q(stage='accepted_rsvp', activation_point__in=('accepted', 'rsvp')) | ~models.Q(stage='accepted_rsvp') & models.Q(activation_point=''), name='stage_activation_shape'), models.CheckConstraint(condition=models.Q(due_mode='absolute', due_at__isnull=False, due_after_seconds__isnull=True, due_event_offset_seconds__isnull=True) | models.Q(due_mode='after_trigger', due_at__isnull=True, due_after_seconds__gt=0, due_after_seconds__lte=31536000, due_event_offset_seconds__isnull=True) | models.Q(due_mode__in=('event_start', 'event_end'), due_at__isnull=True, due_after_seconds__isnull=True, due_event_offset_seconds__gte=-31536000, due_event_offset_seconds__lte=31536000), name='stage_due_shape'), models.CheckConstraint(condition=models.Q(opening_mode='trigger', opens_at__isnull=True, opening_offset_seconds__isnull=True) | models.Q(opening_mode='absolute', opens_at__isnull=False, opening_offset_seconds__isnull=True) | models.Q(opening_mode__in=('event_start', 'event_end'), opens_at__isnull=True, opening_offset_seconds__gte=-31536000, opening_offset_seconds__lte=31536000), name='stage_opening_shape')]"
-        }
-      ],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=('event', 'slug'), name='stage_form_unique_slug'), models.CheckConstraint(condition=models.Q(version__gte=1), name='stage_form_version_positive'), models.CheckConstraint(condition=models.Q(stage='accepted_rsvp', activation_point__in=('accepted', 'rsvp')) | ~models.Q(stage='accepted_rsvp') & models.Q(activation_point=''), name='stage_activation_shape'), models.CheckConstraint(condition=models.Q(due_mode='absolute', due_at__isnull=False, due_after_seconds__isnull=True, due_event_offset_seconds__isnull=True) | models.Q(due_mode='after_trigger', due_at__isnull=True, due_after_seconds__gt=0, due_after_seconds__lte=31536000, due_event_offset_seconds__isnull=True) | models.Q(due_mode__in=('event_start', 'event_end'), due_at__isnull=True, due_after_seconds__isnull=True, due_event_offset_seconds__gte=-31536000, due_event_offset_seconds__lte=31536000), name='stage_due_shape'), models.CheckConstraint(condition=models.Q(opening_mode='trigger', opens_at__isnull=True, opening_offset_seconds__isnull=True) | models.Q(opening_mode='absolute', opens_at__isnull=False, opening_offset_seconds__isnull=True) | models.Q(opening_mode__in=('event_start', 'event_end'), opens_at__isnull=True, opening_offset_seconds__gte=-31536000, opening_offset_seconds__lte=31536000), name='stage_opening_shape')]",
       "lifetime": "domain",
       "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
@@ -262,38 +257,6 @@
         "id": {
           "type": "BigAutoField",
           "declaration": "implicit Django BigAutoField(primary_key=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "kind": {
-          "type": "CharField",
-          "declaration": "models.CharField(max_length=16, default='shortlisted', choices=[('shortlisted', 'shortlisted')])",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "published_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField()",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "withdrawn_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField(null=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "version": {
-          "type": "PositiveBigIntegerField",
-          "declaration": "models.PositiveBigIntegerField(default=1)",
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
@@ -340,6 +303,14 @@
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
           "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
         },
+        "kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=16, default='shortlisted', choices=[('shortlisted', 'shortlisted')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
         "published_by": {
           "type": "ForeignKey",
           "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
@@ -350,14 +321,33 @@
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
           "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "published_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "withdrawn_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         }
       },
-      "constraints_and_indexes": [
-        {
-          "kind": "constraints",
-          "declaration": "[models.CheckConstraint(condition=models.Q(registration__isnull=False, application__isnull=True) | models.Q(registration__isnull=True, application__isnull=False), name='stage_milestone_one_subject'), models.UniqueConstraint(fields=('event', 'member', 'kind'), condition=models.Q(withdrawn_at__isnull=True), name='stage_milestone_active_unique')]"
-        }
-      ],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=models.Q(registration__isnull=False, application__isnull=True) | models.Q(registration__isnull=True, application__isnull=False), name='stage_milestone_one_subject'), models.UniqueConstraint(fields=('event', 'member', 'kind'), condition=models.Q(withdrawn_at__isnull=True), name='stage_milestone_active_unique')]",
       "lifetime": "domain",
       "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
@@ -373,172 +363,6 @@
           "encryption_required": false,
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "creation_operation_id": {
-          "type": "UUIDField",
-          "declaration": "models.UUIDField(null=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "trigger_key": {
-          "type": "CharField",
-          "declaration": "models.CharField(max_length=64)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "trigger_revision": {
-          "type": "PositiveBigIntegerField",
-          "declaration": "models.PositiveBigIntegerField()",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "due_revision": {
-          "type": "PositiveBigIntegerField",
-          "declaration": "models.PositiveBigIntegerField(default=1)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "state": {
-          "type": "CharField",
-          "declaration": "models.CharField(max_length=12, default='scheduled', choices=[(v, v) for v in ('scheduled', 'open', 'completed', 'overdue', 'cancelled')])",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "version": {
-          "type": "PositiveBigIntegerField",
-          "declaration": "models.PositiveBigIntegerField(default=1)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "triggered_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField()",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "opens_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField()",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "base_due_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField()",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "effective_due_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField()",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "extension_reason": {
-          "type": "TextField",
-          "declaration": "models.TextField(blank=True)",
-          "pii": true,
-          "encryption_required": false,
-          "classification": "scoped_pii",
-          "encryption_scope": "event.makerspace_id",
-          "index_kind": "none",
-          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
-        },
-        "extended_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField(null=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "next_stage_locked_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField(null=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "imported_paused": {
-          "type": "BooleanField",
-          "declaration": "models.BooleanField(default=False)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "cancelled_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField(null=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "cancellation_reason_code": {
-          "type": "CharField",
-          "declaration": "models.CharField(max_length=64, blank=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "cancellation_reason": {
-          "type": "TextField",
-          "declaration": "models.TextField(blank=True)",
-          "pii": true,
-          "encryption_required": false,
-          "classification": "scoped_pii",
-          "encryption_scope": "event.makerspace_id",
-          "index_kind": "none",
-          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
-        },
-        "reassigned_at": {
-          "type": "DateTimeField",
-          "declaration": "models.DateTimeField(null=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "reassignment_reason_code": {
-          "type": "CharField",
-          "declaration": "models.CharField(max_length=64, blank=True)",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "reassignment_reason": {
-          "type": "TextField",
-          "declaration": "models.TextField(blank=True)",
-          "pii": true,
-          "encryption_required": false,
-          "classification": "scoped_pii",
-          "encryption_scope": "event.makerspace_id",
-          "index_kind": "none",
-          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
         },
         "stage_form": {
           "type": "ForeignKey",
@@ -591,6 +415,54 @@
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
+        "creation_operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "trigger_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "trigger_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "due_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='scheduled', choices=[(v, v) for v in ('scheduled', 'open', 'completed', 'overdue', 'cancelled')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
         "pinned_form_revision": {
           "type": "ForeignKey",
           "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='+')",
@@ -600,6 +472,48 @@
           "encryption_required": false,
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "triggered_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "opens_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "base_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "effective_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "extension_reason": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
         },
         "extended_by": {
           "type": "ForeignKey",
@@ -612,6 +526,22 @@
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
           "user_edge": "SET_NULL_ACCOUNT_ERASURE"
         },
+        "extended_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "next_stage_locked_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
         "completed_response": {
           "type": "ForeignKey",
           "declaration": "models.ForeignKey('events.StageFormResponse', on_delete=models.SET_NULL, null=True, related_name='+')",
@@ -620,6 +550,30 @@
           "pii": false,
           "encryption_required": false,
           "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "imported_paused": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "policy_snapshot": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "schedule_event_date_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "cancelled_by": {
@@ -633,6 +587,32 @@
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
           "user_edge": "SET_NULL_ACCOUNT_ERASURE"
         },
+        "cancelled_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "cancellation_reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "cancellation_reason": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
         "reassigned_by": {
           "type": "ForeignKey",
           "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
@@ -643,18 +623,35 @@
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
           "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "reassigned_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reassignment_reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reassignment_reason": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
         }
       },
-      "constraints_and_indexes": [
-        {
-          "kind": "indexes",
-          "declaration": "[models.Index(fields=('state', 'opens_at'), name='stage_assignment_open'), models.Index(fields=('state', 'effective_due_at'), name='stage_assignment_due')]"
-        },
-        {
-          "kind": "constraints",
-          "declaration": "[models.UniqueConstraint(fields=('stage_form', 'owner_member'), name='stage_assignment_unique_owner'), models.CheckConstraint(condition=models.Q(registration__isnull=False) | models.Q(application__isnull=False) | models.Q(creation_operation_id__isnull=False), name='stage_assignment_subject'), models.CheckConstraint(condition=models.Q(effective_due_at__gt=models.F('opens_at')), name='stage_assignment_dates'), models.CheckConstraint(condition=models.Q(version__gte=1, due_revision__gte=1), name='stage_assignment_versions')]"
-        }
-      ],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'\n    indexes = [models.Index(fields=('state', 'opens_at'), name='stage_assignment_open'), models.Index(fields=('state', 'effective_due_at'), name='stage_assignment_due')]\n    constraints = [models.UniqueConstraint(fields=('stage_form', 'owner_member'), name='stage_assignment_unique_owner'), models.CheckConstraint(condition=models.Q(registration__isnull=False) | models.Q(application__isnull=False) | models.Q(creation_operation_id__isnull=False), name='stage_assignment_subject'), models.CheckConstraint(condition=models.Q(effective_due_at__gt=models.F('opens_at')), name='stage_assignment_dates'), models.CheckConstraint(condition=models.Q(version__gte=1, due_revision__gte=1), name='stage_assignment_versions')]",
       "lifetime": "domain",
       "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
@@ -681,6 +678,27 @@
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='stage_responses')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "owner_member": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stage_responses')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
+        },
         "state": {
           "type": "CharField",
           "declaration": "models.CharField(max_length=12, default='draft', choices=[(v, v) for v in ('draft', 'submitted', 'locked', 'withdrawn')])",
@@ -697,6 +715,16 @@
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
+        "form_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='+')",
+          "target": "'events.EventFormRevision'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
         "answers_snapshot": {
           "type": "TextField",
           "declaration": "models.TextField(default='{}')",
@@ -706,6 +734,16 @@
           "encryption_scope": "event.makerspace_id",
           "index_kind": "none",
           "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "current_submitted_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.StageFormResponseRevision', on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "'events.StageFormResponseRevision'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "answer_event_date_revision": {
           "type": "PositiveBigIntegerField",
@@ -754,57 +792,11 @@
           "encryption_required": false,
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "event": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='stage_responses')",
-          "target": "'events.Event'",
-          "on_delete": "models.CASCADE",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "owner_member": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stage_responses')",
-          "target": "settings.AUTH_USER_MODEL",
-          "on_delete": "models.CASCADE",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
-          "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
-        },
-        "form_revision": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='+')",
-          "target": "'events.EventFormRevision'",
-          "on_delete": "models.PROTECT",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "current_submitted_revision": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.StageFormResponseRevision', on_delete=models.SET_NULL, null=True, related_name='+')",
-          "target": "'events.StageFormResponseRevision'",
-          "on_delete": "models.SET_NULL",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         }
       },
-      "constraints_and_indexes": [
-        {
-          "kind": "constraints",
-          "declaration": "[models.CheckConstraint(condition=models.Q(version__gte=1), name='stage_response_version_positive')]"
-        }
-      ],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=models.Q(version__gte=1), name='stage_response_version_positive')]",
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G additive migration required; see RB3-C-report.md"
     },
     {
       "label": "events.StageFormResponseRevision",
@@ -819,12 +811,32 @@
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
+        "response": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(StageFormResponse, on_delete=models.CASCADE, related_name='submitted_revisions')",
+          "target": "StageFormResponse",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
         "revision": {
           "type": "PositiveBigIntegerField",
           "declaration": "models.PositiveBigIntegerField()",
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "form_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='+')",
+          "target": "'events.EventFormRevision'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "answers_snapshot": {
@@ -845,34 +857,6 @@
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
-        "date_revision": {
-          "type": "PositiveBigIntegerField",
-          "declaration": "models.PositiveBigIntegerField()",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "canonical_metadata",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "response": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey(StageFormResponse, on_delete=models.CASCADE, related_name='submitted_revisions')",
-          "target": "StageFormResponse",
-          "on_delete": "models.CASCADE",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "form_revision": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='+')",
-          "target": "'events.EventFormRevision'",
-          "on_delete": "models.PROTECT",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
         "submitted_by": {
           "type": "ForeignKey",
           "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
@@ -883,14 +867,17 @@
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
           "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "date_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         }
       },
-      "constraints_and_indexes": [
-        {
-          "kind": "constraints",
-          "declaration": "[models.UniqueConstraint(fields=('response', 'revision'), name='stage_response_revision_unique'), models.CheckConstraint(condition=models.Q(revision__gte=1), name='stage_response_revision_positive')]"
-        }
-      ],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'\n    constraints = [models.UniqueConstraint(fields=('response', 'revision'), name='stage_response_revision_unique'), models.CheckConstraint(condition=models.Q(revision__gte=1), name='stage_response_revision_positive')]",
       "lifetime": "domain",
       "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
     },
@@ -905,6 +892,57 @@
           "pii": false,
           "encryption_required": false,
           "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='stage_assets')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "assignment": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.StageFormAssignment', on_delete=models.CASCADE, related_name='assets')",
+          "target": "'events.StageFormAssignment'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "owner_member": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stage_assets')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
+        },
+        "response": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.StageFormResponse', on_delete=models.SET_NULL, null=True, related_name='assets')",
+          "target": "'events.StageFormResponse'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "form_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='stage_assets')",
+          "target": "'events.EventFormRevision'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
         "question_id": {
@@ -1133,67 +1171,133 @@
           "encryption_required": false,
           "classification": "coordination",
           "portable_disposition": "OMIT_OR_CLEAR"
-        },
-        "event": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='stage_assets')",
-          "target": "'events.Event'",
-          "on_delete": "models.CASCADE",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "assignment": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.StageFormAssignment', on_delete=models.CASCADE, related_name='assets')",
-          "target": "'events.StageFormAssignment'",
-          "on_delete": "models.CASCADE",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "owner_member": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stage_assets')",
-          "target": "settings.AUTH_USER_MODEL",
-          "on_delete": "models.CASCADE",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
-          "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
-        },
-        "response": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.StageFormResponse', on_delete=models.SET_NULL, null=True, related_name='assets')",
-          "target": "'events.StageFormResponse'",
-          "on_delete": "models.SET_NULL",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
-        },
-        "form_revision": {
-          "type": "ForeignKey",
-          "declaration": "models.ForeignKey('events.EventFormRevision', on_delete=models.PROTECT, related_name='stage_assets')",
-          "target": "'events.EventFormRevision'",
-          "on_delete": "models.PROTECT",
-          "pii": false,
-          "encryption_required": false,
-          "classification": "typed_reference",
-          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         }
       },
-      "constraints_and_indexes": [
-        {
-          "kind": "constraints",
-          "declaration": "[models.CheckConstraint(condition=models.Q(purpose='stage_form_file'), name='stage_asset_purpose'), models.CheckConstraint(condition=models.Q(expected_bytes__gt=0, expected_bytes__lte=10485760), name='stage_asset_size')]"
-        }
-      ],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'\n    constraints = [models.CheckConstraint(condition=models.Q(purpose='stage_form_file'), name='stage_asset_purpose'), models.CheckConstraint(condition=models.Q(expected_bytes__gt=0, expected_bytes__lte=10485760), name='stage_asset_size'), models.CheckConstraint(condition=models.Q(version__gte=1, generation__gte=1), name='stage_asset_versions'), models.CheckConstraint(condition=~models.Q(state__in=('ready', 'attached')) | models.Q(actual_bytes=models.F('expected_bytes'), scan_status__in=('clean', 'skipped'), actual_bytes__isnull=False, canonical_mime__in=('application/pdf', 'image/jpeg', 'image/png', 'image/heic'), sha256__regex='^[a-f0-9]{64}$'), name='stage_asset_ready_integrity')]",
       "lifetime": "domain",
-      "database_guards": "Existing fields have G1 migrations; runtime verification not run. New delta guards are listed in RB-R2-report.md."
+      "database_guards": "G additive migration required; see RB3-C-report.md"
+    },
+    {
+      "label": "events.StageFileCleanup",
+      "file": "backend/apps/events/staged_forms/upload_models.py",
+      "scope": "tenant_id snapshot; no FK",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "source_asset_id": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "tenant_id": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(db_index=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "event_id_snapshot": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "bucket": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=255)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "staging_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=500, unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "object_key": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=500, unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "not_before": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "next_attempt_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(db_index=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "lease_token": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "lease_until": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "attempts": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "last_deleted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        },
+        "last_error_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination_metadata",
+          "portable_disposition": "DROP_ON_IMPORT"
+        }
+      },
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'",
+      "lifetime": "PERMANENT_LOCATOR_NO_DELETE",
+      "database_guards": "G additive migration required; see RB3-C-report.md"
     },
     {
       "label": "events.StageReconcileCursor",
@@ -1234,7 +1338,7 @@
           "portable_disposition": "DROP_ON_IMPORT"
         }
       },
-      "constraints_and_indexes": [],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'",
       "lifetime": "coordination",
       "database_guards": "G-owned additive migration and cross-event/scope guards required; see RB-R2-model-deltas.py"
     },
@@ -1356,133 +1460,555 @@
           "portable_disposition": "DROP_ON_IMPORT"
         }
       },
-      "constraints_and_indexes": [],
+      "constraints_and_indexes": "class Meta:\n    app_label = 'events'",
       "lifetime": "coordination",
       "database_guards": "G-owned additive migration and cross-event/scope guards required; see RB-R2-model-deltas.py"
     }
   ],
   "routes": [
     {
-      "suffix": "stage-forms/",
-      "name": "admin-event-stage-form-list",
-      "view": "v.StageDefinitionListView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-forms/<int:stage_form_id>/",
-      "name": "admin-event-stage-form-detail",
-      "view": "v.StageDefinitionDetailView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-forms/<int:stage_form_id>/publish/",
-      "name": "admin-event-stage-form-publish",
-      "view": "v.StageTransitionView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-forms/<int:stage_form_id>/retire/",
-      "name": "admin-event-stage-form-retire",
-      "view": "v.StageTransitionView.as_view(publish=False)",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-forms/<int:stage_form_id>/activate/",
-      "name": "admin-event-stage-form-activate",
-      "view": "v.StageActivateView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-assignments/",
-      "name": "admin-event-stage-assignment-list",
-      "view": "v.StageAssignmentListView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-assignments/<int:assignment_id>/cancel/",
-      "name": "admin-event-stage-assignment-cancel",
-      "view": "v.StageAssignmentCommandView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-assignments/<int:assignment_id>/reassign/",
-      "name": "admin-event-stage-assignment-reassign",
-      "view": "v.StageAssignmentCommandView.as_view(action='reassign', serializer_class=s.ReassignStageAssignmentCommand)",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-assignments/<int:assignment_id>/extend/",
-      "name": "admin-event-stage-assignment-extend",
-      "view": "v.StageAssignmentCommandView.as_view(action='extend', serializer_class=s.ExtendStageAssignmentCommand)",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-assignments/<int:assignment_id>/reopen/",
-      "name": "admin-event-stage-assignment-reopen",
-      "view": "v.StageAssignmentCommandView.as_view(action='reopen', serializer_class=s.ExtendStageAssignmentCommand)",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-milestones/shortlist/",
-      "name": "admin-event-stage-shortlist",
-      "view": "v.StageShortlistView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-responses/<int:response_id>/",
-      "name": "admin-event-stage-response-detail",
-      "view": "v.StageResponseDetailView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-responses/<int:response_id>/finance/",
-      "name": "admin-event-stage-response-finance-detail",
-      "view": "v.StageResponseFinanceDetailView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_admin.py"
-    },
-    {
-      "suffix": "stage-forms/",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/",
       "name": "member-event-stage-form-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/",
       "view": "StageFormListView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 7,
+      "method_requests": {}
     },
     {
-      "suffix": "stage-forms/<int:stage_form_id>/context/",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/context/",
       "name": "member-event-stage-form-context",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/context/",
       "view": "StageFormContextView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 8,
+      "method_requests": {}
     },
     {
-      "suffix": "stage-forms/<int:stage_form_id>/draft/",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/draft/",
       "name": "member-event-stage-draft",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StageDraftCommand",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/draft/",
       "view": "StageDraftView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 9,
+      "method_requests": {
+        "POST": "StageDraftCommand"
+      }
     },
     {
-      "suffix": "stage-responses/<int:response_id>/",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-responses/{response_id}/",
       "name": "member-event-stage-response",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT"
+      ],
+      "serializer": "StageResponseCommand",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-responses/<int:response_id>/",
       "view": "StageResponseView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 10,
+      "method_requests": {
+        "PUT": "StageResponseCommand"
+      }
     },
     {
-      "suffix": "stage-responses/<int:response_id>/submit/",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-responses/{response_id}/submit/",
       "name": "member-event-stage-response-submit",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StageResponseCommand",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-responses/<int:response_id>/submit/",
       "view": "StageResponseSubmitView.as_view()",
-      "url_module": "backend/apps/events/staged_forms/urls_member.py"
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 11,
+      "method_requests": {
+        "POST": "StageResponseCommand"
+      }
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/",
+      "name": "member-event-stage-file-create",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StageFileCreateCommand",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/files/",
+      "view": "StageFileCreateView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 12,
+      "method_requests": {
+        "POST": "StageFileCreateCommand"
+      }
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/{asset_id}/",
+      "name": "member-event-stage-file-detail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "DELETE"
+      ],
+      "serializer": "StageCommand",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/files/<int:asset_id>/",
+      "view": "StageFileDetailView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 13,
+      "method_requests": {
+        "DELETE": "StageCommand"
+      }
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/{asset_id}/complete/",
+      "name": "member-event-stage-file-complete",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StageFileCompleteCommand",
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/files/<int:asset_id>/complete/",
+      "view": "StageFileCompleteView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 14,
+      "method_requests": {
+        "POST": "StageFileCompleteCommand"
+      }
+    },
+    {
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/stage-forms/{stage_form_id}/files/{asset_id}/download/",
+      "name": "member-event-stage-file-download",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "owner",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": false,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/files/<int:asset_id>/download/",
+      "view": "StageFileDownloadView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_member.py",
+      "line": 15,
+      "method_requests": {}
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/",
+      "name": "admin-event-stage-form-list",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "serializer": "StageConfigurationCommand",
+      "authority": "edit_details; blocking policy requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/",
+      "view": "v.StageDefinitionListView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 7,
+      "method_requests": {
+        "POST": "StageConfigurationCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/",
+      "name": "admin-event-stage-form-detail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "serializer": "StageConfigurationCommand",
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/",
+      "view": "v.StageDefinitionDetailView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 8,
+      "method_requests": {
+        "PATCH": "StageConfigurationCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/publish/",
+      "name": "admin-event-stage-form-publish",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StageCommand",
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/publish/",
+      "view": "v.StageTransitionView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 9,
+      "method_requests": {
+        "POST": "StageCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/retire/",
+      "name": "admin-event-stage-form-retire",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StageCommand",
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/retire/",
+      "view": "v.StageTransitionView.as_view(publish=False)",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 10,
+      "method_requests": {
+        "POST": "StageCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-forms/{stage_form_id}/activate/",
+      "name": "admin-event-stage-form-activate",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "StageActivationCommand",
+      "authority": "edit_details",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-forms/<int:stage_form_id>/activate/",
+      "view": "v.StageActivateView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 11,
+      "method_requests": {
+        "POST": "StageActivationCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/",
+      "name": "admin-event-stage-assignment-list",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "manage_registrations OR VIEW_FINANCE; status only",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-assignments/",
+      "view": "v.StageAssignmentListView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 12,
+      "method_requests": {}
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/cancel/",
+      "name": "admin-event-stage-assignment-cancel",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "CancelStageAssignmentCommand",
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-assignments/<int:assignment_id>/cancel/",
+      "view": "v.StageAssignmentCommandView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 13,
+      "method_requests": {
+        "POST": "CancelStageAssignmentCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/reassign/",
+      "name": "admin-event-stage-assignment-reassign",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ReassignStageAssignmentCommand",
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-assignments/<int:assignment_id>/reassign/",
+      "view": "v.StageReassignView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 14,
+      "method_requests": {
+        "POST": "ReassignStageAssignmentCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/extend/",
+      "name": "admin-event-stage-assignment-extend",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ExtendStageAssignmentCommand",
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-assignments/<int:assignment_id>/extend/",
+      "view": "v.StageExtendView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 15,
+      "method_requests": {
+        "POST": "ExtendStageAssignmentCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-assignments/{assignment_id}/reopen/",
+      "name": "admin-event-stage-assignment-reopen",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ExtendStageAssignmentCommand",
+      "authority": "manage_registrations; required blocking assignment requires full manager",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-assignments/<int:assignment_id>/reopen/",
+      "view": "v.StageReopenView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 16,
+      "method_requests": {
+        "POST": "ExtendStageAssignmentCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-milestones/shortlist/",
+      "name": "admin-event-stage-shortlist",
+      "methods": [
+        "POST"
+      ],
+      "serializer": "ShortlistCommand",
+      "authority": "manage_registrations OR hackathon review_applications",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-milestones/shortlist/",
+      "view": "v.StageShortlistView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 17,
+      "method_requests": {
+        "POST": "ShortlistCommand"
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-responses/{response_id}/",
+      "name": "admin-event-stage-response-detail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": "StageResponseDetailSerializer",
+      "authority": "manage_registrations AND VIEW_AUDIT",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-responses/<int:response_id>/",
+      "view": "v.StageResponseDetailView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 18,
+      "method_requests": {}
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-responses/{response_id}/finance/",
+      "name": "admin-event-stage-response-finance-detail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": "StageResponseFinanceDetailSerializer",
+      "authority": "VIEW_FINANCE",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-responses/<int:response_id>/finance/",
+      "view": "v.StageResponseFinanceDetailView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 19,
+      "method_requests": {}
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/stage-files/{asset_id}/download/",
+      "name": "admin-event-stage-file-download",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "serializer": null,
+      "authority": "authorized selected-answer disclosure",
+      "recent_reauth": false,
+      "live_host": true,
+      "session_only": true,
+      "module": "events",
+      "workflow": null,
+      "suffix": "stage-files/<int:asset_id>/download/",
+      "view": "StageStaffFileDownloadView.as_view()",
+      "url_module": "backend/apps/events/staged_forms/urls_admin.py",
+      "line": 20,
+      "method_requests": {}
     }
   ],
-  "audits": [],
-  "notices": [],
+  "audits": [
+    "event.stage_form.configured",
+    "event.stage_form.published",
+    "event.stage_form.retired",
+    "event.stage_form.assigned",
+    "event.stage_form.draft_created",
+    "event.stage_form.draft_saved",
+    "event.stage_form.submitted",
+    "event.stage_form.response_locked",
+    "event.stage_form.response_recovered",
+    "event.stage_form.cancel",
+    "event.stage_form.reassign",
+    "event.stage_form.extend",
+    "event.stage_form.reopen",
+    "event.stage_form.cancelled",
+    "event.stage_form.opened",
+    "event.stage_form.overdue",
+    "event.stage_form.next_stage_locked",
+    "event.stage_form.rescheduled",
+    "event.stage_form.date_context_changed",
+    "event.stage_form.shortlist_published",
+    "event.stage_form.shortlist_withdrawn",
+    "event.stage_form.shortlist_command",
+    "event.stage_form.activation_requested",
+    "event.stage_form.activation_cancelled",
+    "event.stage_form.activation_progress",
+    "event.stage_form.import_reactivated",
+    "event.stage_file.initiated",
+    "event.stage_file.uploaded",
+    "event.stage_file.validating",
+    "event.stage_file.validation_result",
+    "event.stage_file.attached",
+    "event.stage_file.expired",
+    "event.stage_file.deleted"
+  ],
+  "notices": [
+    "stage_form.opened",
+    "stage_form.reminder",
+    "stage_form.extended",
+    "stage_form.overdue",
+    "stage_form.reopened",
+    "stage_form.cancelled",
+    "stage_form.reassigned",
+    "stage_form.rescheduled",
+    "stage_form.shortlisted",
+    "stage_form.incomplete_warning",
+    "rsvp_reminder"
+  ],
   "reminder_sources": [
     "stage_forms",
     "events.rsvp_deadline"
   ],
-  "runtime_registration": "Not enabled. G mounts and provider/route/authority registry integration required.",
-  "retention_registration": "NOT IMPLEMENTED",
+  "runtime_registration": "Query-free R providers implemented; G alone installs providers/dispatchers, mounts and source/authority inventories.",
+  "retention_registration": "apps.events.staged_forms.retention_registration.STAGE_RETENTION_PROVIDER; retain during Events tombstoning; receipts survive module/whole-tenant purge.",
   "source_boundaries": {
     "interactive": "apps.events.staged_forms.transactions.command",
-    "crypto": "prepare_tenant_key outside locks, tenant_key_context around the command",
-    "workers": "staged_forms.tasks.reconcile_event uses source/fences/event; other required retention/domain workers unfinished"
+    "crypto": "Optional tenant key preparation only when PII encryption is enabled; after source lock-only boundary, before transaction/fences; prepared context surrounds writes, with no KMS/key provisioning under domain locks.",
+    "workers": "stage tasks use source -> prepared keys -> global/tenant/account fences -> event -> authority -> sorted stage parents. Retention receipt-only cleanup holds lock-only shared boundary even after MIGRATED_OUT; no frozen domain updates."
   },
   "object_fields": [
     {
@@ -1493,46 +2019,73 @@
         "object_key",
         "final_version_id"
       ]
+    },
+    {
+      "model": "events.StageFileCleanup",
+      "fields": [
+        "bucket",
+        "staging_key",
+        "object_key"
+      ],
+      "lifetime": "permanent; no FK; no portable import"
     }
   ],
-  "portable_status": "FIELD INVENTORY ONLY; typed JSON schemas, registry declarations and preservation adapters unfinished",
-  "tests": "RB-R2-rerun-files.txt: 64 model-free Python tests pass; 7 frontend tests pass; Django/PostgreSQL files not run.",
+  "portable_status": "Implemented typed reference remappers, generic non-sensitive answer projection, coordination DROP, imported-paused assignments, retention-aware object capture and target locator rebuild. G installs in its catalogue.",
+  "tests": "22 model-free stage tests and 12 frozen stdlib checks pass (2 frozen Django checks skipped). Existing frontend stage suite: 3 pass. Django/PostgreSQL suite authored, not run by owner instruction. See RB3-C-rerun-files.txt.",
   "implemented_modules": [
+    "backend/apps/events/staged_forms/__init__.py",
     "backend/apps/events/staged_forms/admission_hooks.py",
     "backend/apps/events/staged_forms/assignment_workflow.py",
+    "backend/apps/events/staged_forms/command_values.py",
     "backend/apps/events/staged_forms/deadlines.py",
     "backend/apps/events/staged_forms/definition_models.py",
+    "backend/apps/events/staged_forms/file_validation.py",
     "backend/apps/events/staged_forms/form_provider.py",
     "backend/apps/events/staged_forms/guards.py",
     "backend/apps/events/staged_forms/http.py",
+    "backend/apps/events/staged_forms/inline_submission.py",
+    "backend/apps/events/staged_forms/lifecycle.py",
     "backend/apps/events/staged_forms/milestone_models.py",
+    "backend/apps/events/staged_forms/milestone_notices.py",
     "backend/apps/events/staged_forms/milestone_workflow.py",
     "backend/apps/events/staged_forms/models.py",
     "backend/apps/events/staged_forms/notices.py",
+    "backend/apps/events/staged_forms/object_capture.py",
     "backend/apps/events/staged_forms/policy.py",
+    "backend/apps/events/staged_forms/portable.py",
     "backend/apps/events/staged_forms/prefill_provider.py",
     "backend/apps/events/staged_forms/projections.py",
+    "backend/apps/events/staged_forms/purge.py",
     "backend/apps/events/staged_forms/registration_hooks.py",
+    "backend/apps/events/staged_forms/reminder_discovery.py",
     "backend/apps/events/staged_forms/reminders.py",
     "backend/apps/events/staged_forms/response_models.py",
     "backend/apps/events/staged_forms/response_workflow.py",
+    "backend/apps/events/staged_forms/retention.py",
+    "backend/apps/events/staged_forms/retention_registration.py",
     "backend/apps/events/staged_forms/rsvp_reminders.py",
     "backend/apps/events/staged_forms/serializers.py",
+    "backend/apps/events/staged_forms/serializers_results.py",
+    "backend/apps/events/staged_forms/serializers_uploads.py",
     "backend/apps/events/staged_forms/stage_workflow.py",
+    "backend/apps/events/staged_forms/storage.py",
     "backend/apps/events/staged_forms/tasks.py",
     "backend/apps/events/staged_forms/transactions.py",
     "backend/apps/events/staged_forms/trigger_service.py",
+    "backend/apps/events/staged_forms/upload_commands.py",
+    "backend/apps/events/staged_forms/upload_jobs.py",
     "backend/apps/events/staged_forms/upload_models.py",
     "backend/apps/events/staged_forms/upload_policy.py",
+    "backend/apps/events/staged_forms/upload_reads.py",
     "backend/apps/events/staged_forms/upload_workflow.py",
     "backend/apps/events/staged_forms/urls_admin.py",
     "backend/apps/events/staged_forms/urls_member.py",
     "backend/apps/events/staged_forms/views_admin.py",
     "backend/apps/events/staged_forms/views_member.py",
-    "backend/apps/events/staged_forms/work_models.py",
-    "backend/apps/events/staged_forms/__init__.py"
+    "backend/apps/events/staged_forms/views_uploads.py",
+    "backend/apps/events/staged_forms/work_models.py"
   ],
-  "remaining": "See exact UNFINISHED in RB-R2-report.md. Do not enable these packages.",
+  "remaining": "No intentionally deferred owned implementation. G cross-lane integration and runtime/independent review acceptance remain unverified; exact blockers in RB3-C-report.md.",
   "runtime_providers": {
     "form": "apps.events.staged_forms.form_provider.STAGE_FORM_PROVIDER",
     "saved_context": "apps.events.staged_forms.prefill_provider.resolve_context",
@@ -1543,8 +2096,16 @@
     ],
     "notification_sources": {
       "event.stage_form": "apps.events.staged_forms.notices.NOTICE_SOURCE",
-      "events.rsvp_deadline": "apps.events.staged_forms.rsvp_reminders.RSVP_NOTICE_SOURCE"
-    }
+      "events.rsvp_deadline": "apps.events.staged_forms.rsvp_reminders.RSVP_NOTICE_SOURCE",
+      "event.stage_warning": "apps.events.staged_forms.notices.WARNING_NOTICE_SOURCE",
+      "event.stage_milestone": "apps.events.staged_forms.milestone_notices.MILESTONE_NOTICE_SOURCE"
+    },
+    "inline_prepare": "apps.events.staged_forms.inline_submission.prepare_inline",
+    "inline_conflicts": "apps.events.staged_forms.inline_submission.validate_conflicts",
+    "inline_bind": "apps.events.staged_forms.inline_submission.bind_locked",
+    "participant_cancel": "apps.events.staged_forms.lifecycle.cancel_participant_locked",
+    "event_cancel": "apps.events.staged_forms.lifecycle.cancel_event_locked",
+    "reschedule": "apps.events.staged_forms.lifecycle.reschedule_event_locked"
   },
   "typed_json_references": {
     "events.StageActivationJob.participant_ids": {
@@ -1554,6 +2115,15 @@
     "events.StageReconcileCursor.last_owner_id": {
       "shape": "opaque scan cursor",
       "disposition": "DROP row on tenant import"
-    }
-  }
+    },
+    "events.EventStageForm.audience": "track_ids[] -> events.HackathonTrack",
+    "events.StageFormAssignment.policy_snapshot": "audience.track_ids[] -> events.HackathonTrack; other fields are frozen policy/date strings, no free-form predicates",
+    "events.StageFormResponse.answers_snapshot": "answers[type=file].value[].asset_id -> events.StageFormAsset; parse decrypted JSON only; never rewrite text",
+    "events.StageFormResponseRevision.answers_snapshot": "answers[type=file].value[].asset_id -> events.StageFormAsset; hashes/generations preserved"
+  },
+  "contract": {
+    "path": "backend/tests/events/programme/contracts/reimbursement_addon.json",
+    "sha256": "e7031f2354b266f657fe37073428eca85a61dbf49ef3d873eedcb81af892c9cd"
+  },
+  "required_shared_changes": "RB3-C-report.md CROSS-LANE: schema/guards/dependency, outer transaction bridges, canonical hooks, registries/schedulers, source boundaries and generated schema after integration."
 }

@@ -1,5 +1,5 @@
 """RSVP deadlines have their own canonical identity, even with no stage forms."""
-from datetime import timezone as utc
+from datetime import timedelta
 from django.utils import timezone
 from apps.events.hackathons.admission_models import HackathonApplication
 from apps.integrations.notification_sources import NotificationSource
@@ -9,19 +9,19 @@ from apps.operations.reminder_types import ReminderSource, ReminderSubject, Remi
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import is_servable
 from apps.notifications.inbox import eligible_owner
-
-
-def identity(row):
-    # ISO encoding deliberately retains +00:00, including fractional seconds.
-    # All equivalent offsets map to one identity. G1's literal fixture remains
-    # required before this adapter can be enabled by the integrator.
-    due = row.rsvp_due_at.astimezone(utc.utc).isoformat()
-    return f"application:{row.pk}:offer:{row.decision_revision}:due:{due}"
+from .command_values import canonical_utc, rsvp_identity as identity
+from .reminder_discovery import undiscovered
+from django.db.models import Value, CharField
+from django.db.models.functions import Cast, Concat
 
 
 def discover(space, now, limit, local_tz):
     rows = HackathonApplication.objects.filter(event__makerspace=space, state="offered",
-        rsvp_due_at__gt=now).order_by("rsvp_due_at", "pk")
+        event__status__in=("published", "completed"), rsvp_due_at__gt=now,
+        rsvp_due_at__lte=now + timedelta(days=1))
+    rows = undiscovered(rows, space=space, source="events.rsvp_deadline", prefix=Concat(Value("application:"),
+        Cast("pk", CharField()), Value(":offer:"), Cast("decision_revision", CharField()), Value(":due:")),
+        due_field="rsvp_due_at").order_by("rsvp_due_at", "pk")
     for row in rows[:min(limit, 100)]:
         yield ReminderSubject(identity(row), "rsvp", row.rsvp_due_at, (-86400,))
 
@@ -32,7 +32,7 @@ def resolve(space, schedule, now):
         return None
     row = HackathonApplication.objects.select_related("event__makerspace", "member").filter(
         pk=int(parts[1]), event__makerspace=space, state="offered", rsvp_due_at__gt=now).first()
-    return row if row and identity(row) == schedule.subject and row.rsvp_due_at == schedule.due_at else None
+    return row if row and row.event.status != "cancelled" and identity(row) == schedule.subject and row.rsvp_due_at == schedule.due_at else None
 
 
 def build(space, schedule, now, local_tz):
@@ -46,7 +46,7 @@ def dispatch(space, schedule, message, now, local_tz):
     emit(makerspace=space, recipient=row.member, feature="events", stream="events", event="rsvp_reminder",
         audience="member", dedup_key=f"event-rsvp:{schedule.pk}", source_kind="events.rsvp_deadline",
         source_id=str(row.pk), revision=str(row.decision_revision), subject=row,
-        context={"rsvp_due_at": row.rsvp_due_at.astimezone(utc.utc).isoformat()},
+        context={"rsvp_due_at": canonical_utc(row.rsvp_due_at)},
         rendered={"subject": "Your event RSVP is due", "text": "Sign in to respond to your current offer.",
                   "link": f"/member/events/{row.event_id}"})
     return NotificationResult(True, {"envelope": 1})
@@ -58,7 +58,7 @@ def eligible(envelope):
     return bool(row and row.rsvp_due_at and timezone.now() < row.rsvp_due_at
         and is_servable(row.event.makerspace) and module_enabled(row.event.makerspace, "events")
         and eligible_owner(row.event.makerspace, row.member_id)
-        and row.rsvp_due_at.astimezone(utc.utc).isoformat() == envelope.context.get("rsvp_due_at")
+        and row.event.status != "cancelled" and canonical_utc(row.rsvp_due_at) == envelope.context.get("rsvp_due_at")
         and str(row.decision_revision) == envelope.revision)
 
 

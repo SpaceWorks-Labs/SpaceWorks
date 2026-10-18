@@ -2,9 +2,12 @@
 
 from django.urls import path
 from apps.separability.registry import runtime_active
-from .public_page_share import PublicPageShareView
+from .public_page_share import PublicPageCoverShareView, PublicPageShareView
 
-urlpatterns = [path("share/pages/<str:handle>/", PublicPageShareView.as_view(), name="public-page-share")]
+urlpatterns = [
+    path("share/pages/<str:handle>/", PublicPageShareView.as_view(), name="public-page-share"),
+    path("share/pages/<str:handle>/cover/", PublicPageCoverShareView.as_view(), name="public-page-cover-share"),
+]
 if runtime_active("events"):
     from apps.events.views_public_codes import PublicEventCodeShareView, PublicEventCoverShareView
     urlpatterns += [

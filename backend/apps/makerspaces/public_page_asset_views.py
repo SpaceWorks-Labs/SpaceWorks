@@ -57,11 +57,16 @@ class PageAssetsView(PageEditorBase):
 
 class PageAssetDetailView(PageEditorBase):
     @extend_schema(tags=["Page editor"], responses={200: OpenApiResponse(bytes, description="Private WebP image; no-store."), **ERRORS})
-    @transaction.atomic
     def get(self, request, pk, asset_id, kind="makerspace"):
-        typed, owner, _, page = lock_state(kind, pk, request.user)
-        asset = get_object_or_404(typed.asset, pk=asset_id, page=page)
-        return image(asset, kind, owner.pk)
+        # Authorize and resolve the key under the page lock, then stream bytes after
+        # the lock is released so a slow object store never blocks page writers.
+        with transaction.atomic():
+            typed, owner, _, page = lock_state(kind, pk, request.user)
+            asset = get_object_or_404(typed.asset, pk=asset_id, page=page)
+            if not assets.owns(asset, kind, owner.pk):
+                raise NotFound()
+            key = asset.object_key
+        return private_image_response(key)
 
     @extend_schema(tags=["Page editor"], request=VersionInput, responses={200: EditorState, **ERRORS})
     def delete(self, request, pk, asset_id, kind="makerspace"):

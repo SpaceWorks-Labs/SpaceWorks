@@ -1,0 +1,3215 @@
+{
+  "contract_version": 3,
+  "lane": "C",
+  "registered": false,
+  "inherited_base_module": "backend/apps/events/contributions/models_base.py",
+  "models": [
+    {
+      "model": "events.EventContributorAdmission",
+      "module": "backend/apps/events/contributions/models_admission.py",
+      "bases": [
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "assignment": {
+          "definition": "models.OneToOneField('events.EventRoleAssignment', on_delete=models.CASCADE)",
+          "type": "OneToOneField",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "registration": {
+          "definition": "models.ForeignKey('events.EventRegistration', on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRegistration'",
+          "user_edge": false
+        },
+        "capacity_policy": {
+          "definition": "models.CharField(max_length=32, choices=[(x, x) for x in ('event_capacity', 'reserved_contributor_capacity')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.EventContributorNotice",
+      "module": "backend/apps/events/contributions/models_notices.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "signup": {
+          "definition": "models.ForeignKey('events.EventShiftSignup', null=True, blank=True, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventShiftSignup'",
+          "user_edge": false
+        },
+        "booking": {
+          "definition": "models.ForeignKey('events.OfficeHoursBooking', null=True, blank=True, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.OfficeHoursBooking'",
+          "user_edge": false
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=24)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "generation": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "available_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "delivered_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "attempts": {
+          "definition": "models.PositiveSmallIntegerField(default=0)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_uuid": {
+          "definition": "models.UUIDField(null=True, blank=True)",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_until": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.CheckConstraint(condition=Q(signup__isnull=False, booking__isnull=True) | Q(signup__isnull=True, booking__isnull=False), name='event_contributor_notice_subject'), models.UniqueConstraint(fields=['signup', 'kind', 'generation'], name='event_signup_notice_generation'), models.UniqueConstraint(fields=['booking', 'kind', 'generation'], name='event_booking_notice_generation')]"
+      ]
+    },
+    {
+      "model": "events.EventRoleAnswerRevision",
+      "module": "backend/apps/events/contributions/models_policy.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.CASCADE, related_name='answer_revisions')",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "answers": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "reason": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "schema_version": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "locked_at": {
+          "definition": "models.DateTimeField(null=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.EventRequirementOverride",
+      "module": "backend/apps/events/contributions/models_policy.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "shift": {
+          "definition": "models.ForeignKey('events.EventShift', null=True, blank=True, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventShift'",
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=8, choices=[('training', 'training'), ('briefing', 'briefing')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "reference_id": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "reason": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.EventRolePosting",
+      "module": "backend/apps/events/contributions/models_roles.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "role": {
+          "definition": "models.CharField(max_length=16, choices=ROLES[1:3])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "title": {
+          "definition": "models.CharField(max_length=200)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "description": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "briefing": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "skills": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "visibility": {
+          "definition": "models.CharField(max_length=24, default='public', choices=[(x, x) for x in ('public', 'members', 'audience_organizations')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "approval_required": {
+          "definition": "models.BooleanField(default=True)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "opens_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "closes_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "requirements": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "permission_preset": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "permission_issuer": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='event_role_posting_presets')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "form_schema": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=8, default='draft', choices=[(x, x) for x in ('draft', 'open', 'closed')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.CheckConstraint(condition=Q(closes_at__gt=models.F('opens_at')), name='event_role_posting_window')]"
+      ]
+    },
+    {
+      "model": "events.EventRoleAssignment",
+      "module": "backend/apps/events/contributions/models_roles.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "member": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "posting": {
+          "definition": "models.ForeignKey(EventRolePosting, null=True, blank=True, on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "EventRolePosting",
+          "user_edge": false
+        },
+        "origin": {
+          "definition": "models.CharField(max_length=8, default='self', choices=[(x, x) for x in ('self', 'invited', 'staff')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "role": {
+          "definition": "models.CharField(max_length=16, choices=ROLES)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "sponsor": {
+          "definition": "models.ForeignKey('events.EventSponsor', null=True, blank=True, on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventSponsor'",
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=12, default='draft', choices=[(x, x) for x in (*ACTIVE, 'declined', 'withdrawn', 'revoked', 'completed')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "approved_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='approved_event_roles')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "approved_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "submitted_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "consent_revision": {
+          "definition": "models.PositiveIntegerField(null=True, blank=True)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "application_notes": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "answers": {
+          "definition": "models.TextField(default='{}')",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "form_schema_version": {
+          "definition": "models.PositiveIntegerField(default=1)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "answer_locked_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "date_review_required": {
+          "definition": "models.BooleanField(default=False)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "display_on_page": {
+          "definition": "models.BooleanField(default=False)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "presentation": {
+          "definition": "models.ForeignKey('events.EventMemberPresentation', null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "'events.EventMemberPresentation'",
+          "user_edge": false
+        },
+        "skills": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "availability": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "imported_inert": {
+          "definition": "models.BooleanField(default=False)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "delegated_permissions": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "track_ids": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['event', 'member', 'role'], condition=Q(state__in=ACTIVE, sponsor__isnull=True), name='event_role_active_null_sponsor'), models.UniqueConstraint(fields=['event', 'member', 'role', 'sponsor'], condition=Q(state__in=ACTIVE, sponsor__isnull=False), name='event_role_active_sponsor'), models.CheckConstraint(condition=Q(role='sponsor_rep', sponsor__isnull=False) | ~Q(role='sponsor_rep') & Q(sponsor__isnull=True), name='event_role_sponsor_shape')]"
+      ]
+    },
+    {
+      "model": "events.EventGrantEntitlement",
+      "module": "backend/apps/events/contributions/models_roles.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "event": {
+          "definition": "models.ForeignKey('events.Event', null=True, blank=True, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.Event'",
+          "user_edge": false
+        },
+        "series": {
+          "definition": "models.ForeignKey('events.EventSeries', null=True, blank=True, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventSeries'",
+          "user_edge": false
+        },
+        "grant": {
+          "definition": "models.ForeignKey('events.EventStaffGrant', on_delete=models.CASCADE, related_name='entitlements')",
+          "type": "ForeignKey",
+          "target": "'events.EventStaffGrant'",
+          "user_edge": false
+        },
+        "source_kind": {
+          "definition": "models.CharField(max_length=8, choices=[(x, x) for x in ('manual', 'role', 'shift')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "role_assignment": {
+          "definition": "models.ForeignKey(EventRoleAssignment, null=True, blank=True, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "EventRoleAssignment",
+          "user_edge": false
+        },
+        "shift_signup": {
+          "definition": "models.ForeignKey('events.EventShiftSignup', null=True, blank=True, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventShiftSignup'",
+          "user_edge": false
+        },
+        "permissions": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "track_ids": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "valid_from": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "valid_until": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='event_entitlements_created')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "revoked_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "revoked_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='event_entitlements_revoked')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.CheckConstraint(condition=Q(event__isnull=False, series__isnull=True) | Q(event__isnull=True, series__isnull=False, source_kind='manual'), name='event_entitlement_one_target'), models.CheckConstraint(condition=Q(source_kind='manual', role_assignment__isnull=True, shift_signup__isnull=True) | Q(source_kind='role', role_assignment__isnull=False, shift_signup__isnull=True) | Q(source_kind='shift', role_assignment__isnull=True, shift_signup__isnull=False), name='event_entitlement_source_shape'), models.UniqueConstraint(fields=['role_assignment'], condition=Q(revoked_at__isnull=True, source_kind='role'), name='event_entitlement_live_role'), models.UniqueConstraint(fields=['shift_signup'], condition=Q(revoked_at__isnull=True, source_kind='shift'), name='event_entitlement_live_shift'), models.UniqueConstraint(fields=['grant'], condition=Q(revoked_at__isnull=True, source_kind='manual'), name='event_entitlement_live_manual'), models.CheckConstraint(condition=Q(valid_from__isnull=True) | Q(valid_until__isnull=True) | Q(valid_until__gt=models.F('valid_from')), name='event_entitlement_window')]"
+      ]
+    },
+    {
+      "model": "events.EventSponsor",
+      "module": "backend/apps/events/contributions/models_roles.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "organization": {
+          "definition": "models.ForeignKey('organizations.Organization', null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "'organizations.Organization'",
+          "user_edge": false
+        },
+        "label": {
+          "definition": "models.CharField(max_length=200)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "logo_reference": {
+          "definition": "models.CharField(max_length=300, blank=True)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "page_reference": {
+          "definition": "models.CharField(max_length=300, blank=True)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "active": {
+          "definition": "models.BooleanField(default=True)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.EventSponsorTrack",
+      "module": "backend/apps/events/contributions/models_roles.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "sponsor": {
+          "definition": "models.ForeignKey(EventSponsor, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "EventSponsor",
+          "user_edge": false
+        },
+        "track": {
+          "definition": "models.ForeignKey('events.HackathonTrack', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTrack'",
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['sponsor', 'track'], name='event_sponsor_track_unique')]"
+      ]
+    },
+    {
+      "model": "events.EventShift",
+      "module": "backend/apps/events/contributions/models_shifts.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "posting": {
+          "definition": "models.ForeignKey('events.EventRolePosting', on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRolePosting'",
+          "user_edge": false
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=12, default='volunteer', choices=[(x, x) for x in ('volunteer', 'office_hours')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "mentor_assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', null=True, blank=True, on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "starts_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "ends_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "zone": {
+          "definition": "models.CharField(max_length=100, blank=True)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "task": {
+          "definition": "models.CharField(max_length=200)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "capacity": {
+          "definition": "models.PositiveIntegerField(default=0)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "signup_deadline": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "waitlist_enabled": {
+          "definition": "models.BooleanField(default=True)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "approval_required": {
+          "definition": "models.BooleanField(default=True)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "requirements": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "permission_preset": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "grace_minutes": {
+          "definition": "models.PositiveSmallIntegerField(default=15)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=8, default='open', choices=[(x, x) for x in ('open', 'closed')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.CheckConstraint(condition=Q(ends_at__gt=F('starts_at')), name='event_shift_window'), models.CheckConstraint(condition=Q(signup_deadline__lte=F('starts_at')), name='event_shift_deadline'), models.CheckConstraint(condition=Q(grace_minutes__lte=60), name='event_shift_grace_bound'), models.CheckConstraint(condition=Q(kind='volunteer', mentor_assignment__isnull=True) | Q(kind='office_hours', mentor_assignment__isnull=False), name='event_shift_kind_shape')]"
+      ]
+    },
+    {
+      "model": "events.EventShiftSignup",
+      "module": "backend/apps/events/contributions/models_shifts.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "shift": {
+          "definition": "models.ForeignKey(EventShift, on_delete=models.CASCADE, related_name='signups')",
+          "type": "ForeignKey",
+          "target": "EventShift",
+          "user_edge": false
+        },
+        "assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "member": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "state": {
+          "definition": "models.CharField(max_length=12, default='applied', choices=[(x, x) for x in ('applied', 'waitlisted', 'approved', 'withdrawn', 'declined')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "queue_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "approved_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "approved_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='approved_event_shift_signups')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['shift', 'member'], name='event_shift_member_unique')]"
+      ]
+    },
+    {
+      "model": "events.EventShiftAttendance",
+      "module": "backend/apps/events/contributions/models_shifts.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "signup": {
+          "definition": "models.OneToOneField(EventShiftSignup, on_delete=models.CASCADE, related_name='attendance')",
+          "type": "OneToOneField",
+          "target": "EventShiftSignup",
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=12, default='scheduled', choices=[(x, x) for x in ('scheduled', 'checked_in', 'checked_out', 'no_show')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "checked_in_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "checked_out_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "break_minutes": {
+          "definition": "models.PositiveIntegerField(default=0)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "source": {
+          "definition": "models.CharField(max_length=16, default='self')",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.CheckConstraint(condition=Q(checked_out_at__isnull=True) | Q(checked_in_at__isnull=False, checked_out_at__gte=F('checked_in_at')), name='event_shift_attendance_order')]"
+      ]
+    },
+    {
+      "model": "events.EventContributionHours",
+      "module": "backend/apps/events/contributions/models_shifts.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "signup": {
+          "definition": "models.OneToOneField(EventShiftSignup, on_delete=models.CASCADE, related_name='hours')",
+          "type": "OneToOneField",
+          "target": "EventShiftSignup",
+          "user_edge": false
+        },
+        "minutes": {
+          "definition": "models.PositiveIntegerField(default=0)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=8, default='pending', choices=[(x, x) for x in ('pending', 'verified', 'adjusted')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.EventContributionHoursEntry",
+      "module": "backend/apps/events/contributions/models_shifts.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "hours": {
+          "definition": "models.ForeignKey(EventContributionHours, on_delete=models.CASCADE, related_name='entries')",
+          "type": "ForeignKey",
+          "target": "EventContributionHours",
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "previous_version": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "minutes": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=8, choices=[(x, x) for x in ('verified', 'adjusted')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "reason": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['hours', 'previous_version'], name='event_hours_revision_unique')]"
+      ]
+    },
+    {
+      "model": "events.EventShiftAttendanceCorrection",
+      "module": "backend/apps/events/contributions/models_shifts.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "attendance": {
+          "definition": "models.ForeignKey(EventShiftAttendance, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "EventShiftAttendance",
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=12)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "occurred_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "reason": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.MentorAssignmentRun",
+      "module": "backend/apps/events/mentoring/models_operations.py",
+      "bases": [
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "run_id": {
+          "definition": "models.UUIDField()",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "mode": {
+          "definition": "models.CharField(max_length=16)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "decisions": {
+          "definition": "models.JSONField(default=list)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "unsatisfied_team_ids": {
+          "definition": "models.JSONField(default=list)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['event', 'created_by', 'run_id'], name='mentor_assignment_actor_run')]"
+      ]
+    },
+    {
+      "model": "events.MentorAttentionPreference",
+      "module": "backend/apps/events/mentoring/models_operations.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "member": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "muted_until": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['event', 'member'], name='mentor_attention_member')]"
+      ]
+    },
+    {
+      "model": "events.MentorProfile",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "assignment": {
+          "definition": "models.OneToOneField('events.EventRoleAssignment', on_delete=models.CASCADE)",
+          "type": "OneToOneField",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "skills": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "affiliation": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "availability": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "max_active_teams": {
+          "definition": "models.PositiveSmallIntegerField(default=4)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.CheckConstraint(condition=Q(max_active_teams__gte=1, max_active_teams__lte=100), name='mentor_profile_capacity_bounds')]"
+      ]
+    },
+    {
+      "model": "events.MentorTeamAssignment",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "mentor_assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTeam'",
+          "user_edge": false
+        },
+        "mode": {
+          "definition": "models.CharField(max_length=16, choices=[(x, x) for x in ('manual', 'round_robin', 'skill_match')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=8, default='active', choices=[(x, x) for x in ('proposed', 'active', 'ended')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "active_from": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "ended_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "run_id": {
+          "definition": "models.UUIDField()",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['mentor_assignment', 'team'], condition=Q(ended_at__isnull=True), name='mentor_team_live_unique'), models.CheckConstraint(condition=Q(state__in=['proposed', 'active'], ended_at__isnull=True) | Q(state='ended', ended_at__isnull=False), name='mentor_assignment_end_shape')]"
+      ]
+    },
+    {
+      "model": "events.EventHelpType",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "key": {
+          "definition": "models.SlugField(max_length=40)",
+          "type": "SlugField",
+          "target": null,
+          "user_edge": false
+        },
+        "label": {
+          "definition": "models.CharField(max_length=100)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "skill_tags": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "priority": {
+          "definition": "models.PositiveSmallIntegerField(default=0)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "open_limit": {
+          "definition": "models.PositiveSmallIntegerField(default=1)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "organizer_contact_action": {
+          "definition": "models.CharField(max_length=300, blank=True)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_minutes": {
+          "definition": "models.PositiveSmallIntegerField(default=10)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "expiry_minutes": {
+          "definition": "models.PositiveSmallIntegerField(default=240)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['event', 'key'], name='event_help_type_key'), models.CheckConstraint(condition=Q(claim_minutes__gte=1, claim_minutes__lte=60, expiry_minutes__gte=15, expiry_minutes__lte=10080, open_limit__gte=1, open_limit__lte=10), name='help_type_policy_bounds')]"
+      ]
+    },
+    {
+      "model": "events.EventHelpRequest",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTeam'",
+          "user_edge": false
+        },
+        "type": {
+          "definition": "models.ForeignKey(EventHelpType, on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "EventHelpType",
+          "user_edge": false
+        },
+        "raised_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='raised_event_help')",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "raised_by_role_assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "origin": {
+          "definition": "models.CharField(max_length=8, choices=[(x, x) for x in ('team', 'mentor', 'round')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "structured_zone": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "summary": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=10, default='open', choices=[(x, x) for x in ('open', 'claimed', 'resolved', 'cancelled', 'expired')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "claimed_by": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', null=True, blank=True, on_delete=models.PROTECT, related_name='claimed_help')",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "priority": {
+          "definition": "models.PositiveSmallIntegerField(default=0)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "last_opened_at": {
+          "definition": "models.DateTimeField(default=timezone.now)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "open_generation": {
+          "definition": "models.PositiveIntegerField(default=1)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "first_claimed_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "last_claimed_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "resolved_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "cancelled_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "exclusive_until": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "dedup_key": {
+          "definition": "models.CharField(max_length=64, blank=True)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "practice_run_id": {
+          "definition": "models.UUIDField(null=True, blank=True)",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_uuid": {
+          "definition": "models.UUIDField(null=True, blank=True)",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_generation": {
+          "definition": "models.PositiveIntegerField(default=0)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_expires_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "expires_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['claimed_by'], condition=Q(state='claimed'), name='mentor_one_claimed_help'), models.CheckConstraint(condition=Q(state='claimed', claimed_by__isnull=False) | ~Q(state='claimed') & Q(claimed_by__isnull=True), name='event_help_claim_shape'), models.CheckConstraint(condition=Q(state='claimed', claim_uuid__isnull=False, claim_expires_at__isnull=False, claim_generation__gte=1) | ~Q(state='claimed') & Q(claim_uuid__isnull=True, claim_expires_at__isnull=True), name='event_help_lease_shape')]",
+        "indexes = [models.Index(fields=['event', 'state', 'priority', 'created_at'], name='event_help_queue_idx')]"
+      ]
+    },
+    {
+      "model": "events.EventHelpAction",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "request": {
+          "definition": "models.ForeignKey(EventHelpRequest, on_delete=models.CASCADE, related_name='actions')",
+          "type": "ForeignKey",
+          "target": "EventHelpRequest",
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=16)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "note": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "rating": {
+          "definition": "models.PositiveSmallIntegerField(null=True, blank=True)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.EventHelpComment",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "request": {
+          "definition": "models.ForeignKey(EventHelpRequest, on_delete=models.CASCADE, related_name='comments')",
+          "type": "ForeignKey",
+          "target": "EventHelpRequest",
+          "user_edge": false
+        },
+        "author": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "origin": {
+          "definition": "models.CharField(max_length=8, choices=[(x, x) for x in ('team', 'mentor')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "body": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.OfficeHoursBooking",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "slot": {
+          "definition": "models.ForeignKey('events.EventShift', on_delete=models.PROTECT, related_name='bookings')",
+          "type": "ForeignKey",
+          "target": "'events.EventShift'",
+          "user_edge": false
+        },
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTeam'",
+          "user_edge": false
+        },
+        "booked_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "mentor_assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=10, default='booked', choices=[(x, x) for x in ('booked', 'cancelled')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "operation_uuid": {
+          "definition": "models.UUIDField()",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "cancelled_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['slot', 'team'], condition=Q(state='booked'), name='office_hours_live_team_slot')]"
+      ]
+    },
+    {
+      "model": "events.OfficeHoursChange",
+      "module": "backend/apps/events/mentoring/models_queue.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "slot": {
+          "definition": "models.ForeignKey('events.EventShift', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventShift'",
+          "user_edge": false
+        },
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "reason": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "old_schedule": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "new_schedule": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.MentorRound",
+      "module": "backend/apps/events/mentoring/models_rounds.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "index": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "key": {
+          "definition": "models.SlugField(max_length=40)",
+          "type": "SlugField",
+          "target": null,
+          "user_edge": false
+        },
+        "label": {
+          "definition": "models.CharField(max_length=100)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "opens_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "closes_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "state": {
+          "definition": "models.CharField(max_length=8, default='draft', choices=[(x, x) for x in ('draft', 'live', 'closed', 'skipped')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "form_schema_version": {
+          "definition": "models.PositiveIntegerField(default=1)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "form_schema": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "note_keys": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "rating_keys": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "help_trigger_rules": {
+          "definition": "models.JSONField(default=list, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "allow_fresh_eyes_override": {
+          "definition": "models.BooleanField(default=False)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "allow_conflict_override": {
+          "definition": "models.BooleanField(default=False)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "practice_run_id": {
+          "definition": "models.UUIDField(null=True, blank=True)",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['event', 'key'], name='mentor_round_event_key'), models.UniqueConstraint(fields=['event'], condition=Q(state='live', practice_run_id__isnull=True), name='mentor_one_live_round'), models.UniqueConstraint(fields=['event', 'practice_run_id'], condition=Q(state='live', practice_run_id__isnull=False), name='mentor_one_live_practice_round'), models.CheckConstraint(condition=Q(closes_at__gt=models.F('opens_at')), name='mentor_round_window')]"
+      ]
+    },
+    {
+      "model": "events.MentorRoundLock",
+      "module": "backend/apps/events/mentoring/models_rounds.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTeam'",
+          "user_edge": false
+        },
+        "round": {
+          "definition": "models.ForeignKey(MentorRound, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "MentorRound",
+          "user_edge": false
+        },
+        "mentor": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "lease_uuid": {
+          "definition": "models.UUIDField()",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "generation": {
+          "definition": "models.PositiveIntegerField(default=1)",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "expires_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "heartbeat_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "started_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "overrides": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['team', 'round'], name='mentor_round_team_lease')]"
+      ]
+    },
+    {
+      "model": "events.MentorRoundCheckin",
+      "module": "backend/apps/events/mentoring/models_rounds.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTeam'",
+          "user_edge": false
+        },
+        "round": {
+          "definition": "models.ForeignKey(MentorRound, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "MentorRound",
+          "user_edge": false
+        },
+        "mentor": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "form_snapshot": {
+          "definition": "models.JSONField(default=dict, blank=True)",
+          "type": "JSONField",
+          "target": null,
+          "user_edge": false
+        },
+        "answers": {
+          "definition": "models.TextField(default='{}')",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "overrides": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "started_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "submitted_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "away": {
+          "definition": "models.BooleanField(default=False)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['team', 'round'], name='mentor_round_team_checkin')]"
+      ]
+    },
+    {
+      "model": "events.MentorConflict",
+      "module": "backend/apps/events/mentoring/models_rounds.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "mentor": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTeam'",
+          "user_edge": false
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=12, choices=[(x, x) for x in ('declared', 'affiliation', 'mentored')])",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "active": {
+          "definition": "models.BooleanField(default=True)",
+          "type": "BooleanField",
+          "target": null,
+          "user_edge": false
+        },
+        "reason": {
+          "definition": "models.TextField(blank=True)",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['mentor', 'team', 'kind'], condition=Q(active=True), name='mentor_conflict_live_kind')]"
+      ]
+    },
+    {
+      "model": "events.MentorNomination",
+      "module": "backend/apps/events/mentoring/models_rounds.py",
+      "bases": [
+        "AppendOnly",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "mentor": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventRoleAssignment'",
+          "user_edge": false
+        },
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.HackathonTeam'",
+          "user_edge": false
+        },
+        "round": {
+          "definition": "models.ForeignKey(MentorRound, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "MentorRound",
+          "user_edge": false
+        },
+        "created_at": {
+          "definition": "models.DateTimeField(auto_now_add=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['mentor', 'team', 'round'], name='mentor_nomination_unique')]"
+      ]
+    },
+    {
+      "model": "events.MentorImportPreview",
+      "module": "backend/apps/events/mentoring/models_rounds.py",
+      "bases": [
+        "ScopedPiiModelMixin",
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "actor": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "settings.AUTH_USER_MODEL",
+          "user_edge": true
+        },
+        "token": {
+          "definition": "models.UUIDField(unique=True)",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "mapping_sha256": {
+          "definition": "models.CharField(max_length=64)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "mapping": {
+          "definition": "models.TextField()",
+          "type": "TextField",
+          "target": null,
+          "user_edge": false
+        },
+        "expires_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "committed_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "practice_run_id": {
+          "definition": "models.UUIDField(null=True, blank=True)",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": []
+    },
+    {
+      "model": "events.MentorNotificationIntent",
+      "module": "backend/apps/events/mentoring/models_rounds.py",
+      "bases": [
+        "EventBound"
+      ],
+      "inherited_fields": [
+        "event: FK events.Event CASCADE (overridden when declared below)",
+        "makerspace: FK makerspaces.Makerspace CASCADE",
+        "version: PositiveInteger default=1"
+      ],
+      "fields": {
+        "request": {
+          "definition": "models.ForeignKey('events.EventHelpRequest', on_delete=models.CASCADE)",
+          "type": "ForeignKey",
+          "target": "'events.EventHelpRequest'",
+          "user_edge": false
+        },
+        "kind": {
+          "definition": "models.CharField(max_length=24)",
+          "type": "CharField",
+          "target": null,
+          "user_edge": false
+        },
+        "generation": {
+          "definition": "models.PositiveIntegerField()",
+          "type": "PositiveIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "available_at": {
+          "definition": "models.DateTimeField()",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "delivered_at": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        },
+        "attempts": {
+          "definition": "models.PositiveSmallIntegerField(default=0)",
+          "type": "PositiveSmallIntegerField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_uuid": {
+          "definition": "models.UUIDField(null=True, blank=True)",
+          "type": "UUIDField",
+          "target": null,
+          "user_edge": false
+        },
+        "claim_until": {
+          "definition": "models.DateTimeField(null=True, blank=True)",
+          "type": "DateTimeField",
+          "target": null,
+          "user_edge": false
+        }
+      },
+      "constraints_and_indexes": [
+        "constraints = [models.UniqueConstraint(fields=['request', 'kind', 'generation'], name='mentor_notice_generation')]"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "name": "events-programme-admin-roles-list",
+      "path": "/api/v1/admin/events/{pk}/roles/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.RolesView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-roles",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.RoleDetailView.as_view()",
+      "methods": [
+        "GET",
+        "PATCH",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-roles-approve",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/approve/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.RoleApproveView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-roles-revoke",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/revoke/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.RoleRevokeView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-volunteer-postings-list",
+      "path": "/api/v1/admin/events/{pk}/volunteer-postings/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.PostingsView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-volunteer-postings-detail",
+      "path": "/api/v1/admin/events/{pk}/volunteer-postings/{posting_id}/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.PostingDetailView.as_view()",
+      "methods": [
+        "GET",
+        "PATCH",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shifts-list",
+      "path": "/api/v1/admin/events/{pk}/shifts/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.ShiftsView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shifts-detail",
+      "path": "/api/v1/admin/events/{pk}/shifts/{shift_id}/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.ShiftDetailView.as_view()",
+      "methods": [
+        "GET",
+        "PATCH",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shift-signup-approve",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/approve/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.SignupApproveView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shift-signup-withdraw",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/withdraw/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.SignupWithdrawView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shift-signup-check-in",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/check-in/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.SignupAttendanceView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shift-signup-check-out",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/check-out/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.SignupCheckOutView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shift-signup-verify-hours",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/verify-hours/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.SignupVerifyHoursView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-shift-signup-adjust-hours",
+      "path": "/api/v1/admin/events/{pk}/shift-signups/{signup_id}/adjust-hours/",
+      "module": "backend/apps/events/contributions/urls_admin.py",
+      "view": "v.SignupAdjustHoursView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-posting-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-postings/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.PostingListView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-posting-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-postings/{posting_id}/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.PostingDetailView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-application-create",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-postings/{posting_id}/application/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.RoleApplicationCreateView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-application-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.RoleApplicationListView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-application-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.RoleApplicationDetailView.as_view()",
+      "methods": [
+        "GET",
+        "PATCH",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-application-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/submit/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.RoleSubmitView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-application-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/withdraw/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.RoleWithdrawView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-role-application-date-review",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/date-review/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.RoleDateReviewView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-shift-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shifts/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.ShiftListView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-shift-apply",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shifts/{shift_id}/apply/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.ShiftApplyView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-shift-signup-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.SignupListView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-shift-signup-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.SignupDetailView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-shift-signup-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/withdraw/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.SignupWithdrawView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-shift-signup-check-in",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/check-in/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.SignupCheckInView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-shift-signup-check-out",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/shift-signups/{signup_id}/check-out/",
+      "module": "backend/apps/events/contributions/urls_member.py",
+      "view": "v.SignupCheckOutView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-public-volunteer-postings",
+      "path": "/api/v1/public/event-programmes/{public_token}/volunteer-postings/",
+      "module": "backend/apps/events/contributions/urls_public.py",
+      "view": "VolunteerPostingPublicView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-collection",
+      "path": "/api/v1/admin/events/{pk}/help/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpCollectionView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-detail",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpDetailView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-comments",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/comments/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpCommentsView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-claim",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/claim/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpClaimView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-release",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/release/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpReleaseView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-resolve",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/resolve/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpResolveView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-reopen",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/reopen/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpReopenView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-help-assign",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/assign/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "h.AdminHelpAssignView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-list",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.AssignmentsView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-preview",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/preview/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.AssignmentPreviewView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-assign",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/assign/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.AssignmentRunView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-list",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundsView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-detail",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundDetailView.as_view()",
+      "methods": [
+        "GET",
+        "PATCH",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-open",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/open/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundOpenView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-close",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/close/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundCloseView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-skip",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/skip/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundSkipView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-claim",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/claim/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundClaimView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-heartbeat",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/heartbeat/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundHeartbeatView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-submit",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/submit/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundSubmitView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-teams-release",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/teams/{team_id}/release/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.RoundReleaseView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-mentor-analytics",
+      "path": "/api/v1/admin/events/{pk}/mentor-analytics/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.AnalyticsView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-admin-teams-import-preview",
+      "path": "/api/v1/admin/events/{pk}/teams-import/preview/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.ImportPreviewView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-admin-teams-import-commit",
+      "path": "/api/v1/admin/events/{pk}/teams-import/commit/",
+      "module": "backend/apps/events/mentoring/urls_admin.py",
+      "view": "o.ImportCommitView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-office-hours-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "o.OfficeHoursListView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-office-hours-booking-list",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/bookings/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "o.OfficeHoursBookingListView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-office-hours-booking-create",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/{slot_id}/bookings/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "o.OfficeHoursBookingCreateView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-office-hours-booking-cancel",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/office-hours/bookings/{booking_id}/cancel/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "o.OfficeHoursBookingCancelView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-help-collection",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "h.HelpCollectionView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-help-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "h.HelpDetailView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-help-comments",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/comments/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "h.HelpCommentsView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    {
+      "name": "events-programme-member-help-cancel",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/cancel/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "h.HelpCancelView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "name": "events-programme-member-help-reopen",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/help/{help_id}/reopen/",
+      "module": "backend/apps/events/mentoring/urls_member.py",
+      "view": "h.HelpReopenView.as_view()",
+      "methods": [
+        "POST"
+      ]
+    }
+  ],
+  "owns_object_bytes": false,
+  "sponsor_consent_model_owner": "D",
+  "migrations_owner": "G",
+  "registry_policies": "apps.events.contributions.manifest",
+  "production_python_files": [
+    "backend/apps/events/contributions/__init__.py",
+    "backend/apps/events/contributions/admission_adapter.py",
+    "backend/apps/events/contributions/allocation.py",
+    "backend/apps/events/contributions/api_common.py",
+    "backend/apps/events/contributions/attendance_workflow.py",
+    "backend/apps/events/contributions/authority.py",
+    "backend/apps/events/contributions/certificate_subjects.py",
+    "backend/apps/events/contributions/commands.py",
+    "backend/apps/events/contributions/errors.py",
+    "backend/apps/events/contributions/form_storage.py",
+    "backend/apps/events/contributions/management_workflow.py",
+    "backend/apps/events/contributions/manifest.py",
+    "backend/apps/events/contributions/models.py",
+    "backend/apps/events/contributions/models_admission.py",
+    "backend/apps/events/contributions/models_base.py",
+    "backend/apps/events/contributions/models_notices.py",
+    "backend/apps/events/contributions/models_policy.py",
+    "backend/apps/events/contributions/models_roles.py",
+    "backend/apps/events/contributions/models_shifts.py",
+    "backend/apps/events/contributions/notifications.py",
+    "backend/apps/events/contributions/ports.py",
+    "backend/apps/events/contributions/projections.py",
+    "backend/apps/events/contributions/requirements_workflow.py",
+    "backend/apps/events/contributions/role_policy.py",
+    "backend/apps/events/contributions/role_workflow.py",
+    "backend/apps/events/contributions/serializers.py",
+    "backend/apps/events/contributions/serializers_management.py",
+    "backend/apps/events/contributions/shift_workflow.py",
+    "backend/apps/events/contributions/sources.py",
+    "backend/apps/events/contributions/subjects.py",
+    "backend/apps/events/contributions/urls_admin.py",
+    "backend/apps/events/contributions/urls_completion.py",
+    "backend/apps/events/contributions/urls_member.py",
+    "backend/apps/events/contributions/urls_public.py",
+    "backend/apps/events/contributions/views_admin.py",
+    "backend/apps/events/contributions/views_completion.py",
+    "backend/apps/events/contributions/views_member.py",
+    "backend/apps/events/contributions/views_public.py",
+    "backend/apps/events/mentoring/__init__.py",
+    "backend/apps/events/mentoring/analytics.py",
+    "backend/apps/events/mentoring/assignment_workflow.py",
+    "backend/apps/events/mentoring/configuration_workflow.py",
+    "backend/apps/events/mentoring/diagnostics.py",
+    "backend/apps/events/mentoring/help_expiry.py",
+    "backend/apps/events/mentoring/help_workflow.py",
+    "backend/apps/events/mentoring/import_export.py",
+    "backend/apps/events/mentoring/import_parser.py",
+    "backend/apps/events/mentoring/import_workflow.py",
+    "backend/apps/events/mentoring/models.py",
+    "backend/apps/events/mentoring/models_operations.py",
+    "backend/apps/events/mentoring/models_queue.py",
+    "backend/apps/events/mentoring/models_rounds.py",
+    "backend/apps/events/mentoring/notifications.py",
+    "backend/apps/events/mentoring/office_hours_workflow.py",
+    "backend/apps/events/mentoring/policy.py",
+    "backend/apps/events/mentoring/projections.py",
+    "backend/apps/events/mentoring/round_board.py",
+    "backend/apps/events/mentoring/round_management.py",
+    "backend/apps/events/mentoring/round_triggers.py",
+    "backend/apps/events/mentoring/round_workflow.py",
+    "backend/apps/events/mentoring/serializers.py",
+    "backend/apps/events/mentoring/serializers_configuration.py",
+    "backend/apps/events/mentoring/serializers_operations.py",
+    "backend/apps/events/mentoring/urls_admin.py",
+    "backend/apps/events/mentoring/urls_completion.py",
+    "backend/apps/events/mentoring/urls_member.py",
+    "backend/apps/events/mentoring/views_completion.py",
+    "backend/apps/events/mentoring/views_configuration.py",
+    "backend/apps/events/mentoring/views_help.py",
+    "backend/apps/events/mentoring/views_office_hours.py",
+    "backend/apps/events/mentoring/views_operations.py"
+  ],
+  "backend_test_files": [
+    "backend/tests/events/programme/contributions/test_contracts.py",
+    "backend/tests/events/programme/contributions/test_contributor_admission_certificates.py",
+    "backend/tests/events/programme/contributions/test_entitlements_subjects.py",
+    "backend/tests/events/programme/contributions/test_form_storage.py",
+    "backend/tests/events/programme/contributions/test_hours.py",
+    "backend/tests/events/programme/contributions/test_requirement_fifo_hours.py",
+    "backend/tests/events/programme/contributions/test_role_date_reopen.py",
+    "backend/tests/events/programme/contributions/test_role_forms.py",
+    "backend/tests/events/programme/contributions/test_role_lifecycle_completion.py",
+    "backend/tests/events/programme/contributions/test_shift_capacity.py",
+    "backend/tests/events/programme/mentoring/test_algorithms_leases.py",
+    "backend/tests/events/programme/mentoring/test_assignment_lifecycle.py",
+    "backend/tests/events/programme/mentoring/test_concurrent_claims.py",
+    "backend/tests/events/programme/mentoring/test_conflict_configuration.py",
+    "backend/tests/events/programme/mentoring/test_help_expiry.py",
+    "backend/tests/events/programme/mentoring/test_help_workflow.py",
+    "backend/tests/events/programme/mentoring/test_import_export.py",
+    "backend/tests/events/programme/mentoring/test_imports_practice.py",
+    "backend/tests/events/programme/mentoring/test_notifications_triggers_diagnostics.py",
+    "backend/tests/events/programme/mentoring/test_office_changes.py",
+    "backend/tests/events/programme/mentoring/test_office_round_races.py"
+  ],
+  "frontend_files": [
+    "frontend/src/features/events/contributions/ContributionsPage.tsx",
+    "frontend/src/features/events/contributions/HelpComposer.tsx",
+    "frontend/src/features/events/contributions/HelpDetail.tsx",
+    "frontend/src/features/events/contributions/HelpQueue.tsx",
+    "frontend/src/features/events/contributions/OfficeHours.tsx",
+    "frontend/src/features/events/contributions/PublicVolunteerCards.tsx",
+    "frontend/src/features/events/contributions/RoleApplicationForm.tsx",
+    "frontend/src/features/events/contributions/RoleOwnerActions.tsx",
+    "frontend/src/features/events/contributions/ShiftBrowser.tsx",
+    "frontend/src/features/events/contributions/api.ts",
+    "frontend/src/features/events/contributions/contributions.test.tsx",
+    "frontend/src/features/events/contributions/types.ts",
+    "frontend/src/features/staff/mentorDesk/ContributorSetupPanel.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorAnalytics.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorAssignmentLifecycle.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorAssignmentsPanel.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorAttentionPanel.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorConflictForm.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorDeskPage.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorRoundSetup.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorRoundsPanel.tsx",
+    "frontend/src/features/staff/mentorDesk/MentorSettingsPanel.tsx",
+    "frontend/src/features/staff/mentorDesk/PostingEditor.tsx",
+    "frontend/src/features/staff/mentorDesk/RoleLifecycleActions.tsx",
+    "frontend/src/features/staff/mentorDesk/RoundHelpTriggers.tsx",
+    "frontend/src/features/staff/mentorDesk/ShiftEditor.tsx",
+    "frontend/src/features/staff/mentorDesk/TeamImportPanel.tsx",
+    "frontend/src/features/staff/mentorDesk/VolunteerManager.tsx",
+    "frontend/src/features/staff/mentorDesk/completion.test.tsx",
+    "frontend/src/features/staff/mentorDesk/mentorDesk.test.tsx",
+    "frontend/src/features/staff/mentorDesk/roundDrafts.ts",
+    "frontend/src/features/staff/mentorDesk/setupFields.tsx"
+  ],
+  "handoff": "backend/apps/events/contributions/HANDOFF.md",
+  "registry_inputs": {
+    "MODEL_MODULES": [
+      "apps.events.contributions.models_roles",
+      "apps.events.contributions.models_shifts",
+      "apps.events.contributions.models_notices",
+      "apps.events.contributions.models_policy",
+      "apps.events.contributions.models_admission",
+      "apps.events.mentoring.models_queue",
+      "apps.events.mentoring.models_rounds",
+      "apps.events.mentoring.models_operations"
+    ],
+    "PII_FIELDS": {
+      "events.EventRoleAssignment": [
+        "application_notes",
+        "answers"
+      ],
+      "events.EventContributionHoursEntry": [
+        "reason"
+      ],
+      "events.EventShiftAttendanceCorrection": [
+        "reason"
+      ],
+      "events.MentorProfile": [
+        "affiliation"
+      ],
+      "events.EventHelpRequest": [
+        "summary"
+      ],
+      "events.EventHelpAction": [
+        "note"
+      ],
+      "events.EventHelpComment": [
+        "body"
+      ],
+      "events.MentorRoundLock": [
+        "overrides"
+      ],
+      "events.MentorRoundCheckin": [
+        "answers",
+        "overrides"
+      ],
+      "events.MentorConflict": [
+        "reason"
+      ],
+      "events.MentorImportPreview": [
+        "mapping"
+      ],
+      "events.OfficeHoursChange": [
+        "reason"
+      ],
+      "events.EventRoleAnswerRevision": [
+        "answers",
+        "reason"
+      ],
+      "events.EventRequirementOverride": [
+        "reason"
+      ]
+    },
+    "TENANT_EXCLUDED": [
+      "events.EventGrantEntitlement",
+      "events.MentorRoundLock",
+      "events.MentorImportPreview",
+      "events.MentorNotificationIntent",
+      "events.EventContributorNotice",
+      "events.MentorAttentionPreference"
+    ],
+    "APPEND_ONLY": [
+      "events.EventContributionHoursEntry",
+      "events.EventShiftAttendanceCorrection",
+      "events.EventHelpAction",
+      "events.EventHelpComment",
+      "events.MentorRoundCheckin",
+      "events.MentorNomination",
+      "events.OfficeHoursChange",
+      "events.EventRoleAnswerRevision",
+      "events.EventRequirementOverride",
+      "events.EventContributorAdmission",
+      "events.MentorAssignmentRun"
+    ],
+    "TASKS": {
+      "contributor_notice_sweep": "apps.events.contributions.notifications.sweep",
+      "mentor_notification_sweep": "apps.events.mentoring.notifications.sweep",
+      "mentor_help_attention": "apps.events.mentoring.notifications.escalate",
+      "mentor_help_expiry": "apps.events.mentoring.help_expiry.expire"
+    },
+    "AUTHORITY_ADAPTERS": {
+      "active_entitlements": "apps.events.contributions.authority.active_entitlements",
+      "grant_ids": "apps.events.contributions.authority.grant_ids",
+      "permissions_for": "apps.events.contributions.authority.permissions_for",
+      "subset_validator": "apps.events.contributions.authority.subset_validator",
+      "sync_role_locked": "apps.events.contributions.sources.sync_role_locked",
+      "sync_shift_locked": "apps.events.contributions.sources.sync_shift_locked",
+      "resolve_role_subject": "apps.events.contributions.subjects.require_owner",
+      "resume_eligibility_only": "apps.events.contributions.subjects.require_resume_eligible",
+      "judging_conflict": "apps.events.mentoring.policy.is_conflicted",
+      "readiness_summary": "apps.events.mentoring.analytics.summary",
+      "contributor_admission": "apps.events.contributions.admission_adapter.admit",
+      "verified_contribution_subject": "apps.events.contributions.certificate_subjects.resolve"
+    },
+    "COMPLETION_ROUTE_PROPOSALS": {
+      "admin": [
+        [
+          "apps.events.contributions.urls_completion",
+          "ADMIN"
+        ],
+        [
+          "apps.events.mentoring.urls_completion",
+          "urlpatterns"
+        ]
+      ],
+      "member": [
+        [
+          "apps.events.contributions.urls_completion",
+          "MEMBER"
+        ]
+      ]
+    }
+  },
+  "backend_test_helpers": [
+    "backend/tests/events/programme/contributions/completion_helpers.py",
+    "backend/tests/events/programme/contributions/helpers.py",
+    "backend/tests/events/programme/mentoring/helpers.py"
+  ],
+  "completion_route_proposals": [
+    {
+      "name": "events-programme-admin-roles-complete",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/complete/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RoleCompletionView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-roles-reject",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/reject/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RoleRejectView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-roles-reopen-answers",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/reopen-answers/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RoleReopenView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-roles-reconfirm",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/reconfirm/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RoleReconfirmView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-roles-requirement-overrides",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/requirement-overrides/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RequirementOverrideView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-roles-admit",
+      "path": "/api/v1/admin/events/{pk}/roles/{assignment_id}/admit/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.ContributorAdmissionView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-member-role-application-decline",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/decline/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RoleDeclineView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-member-role-application-export",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/role-applications/{assignment_id}/export/",
+      "module": "backend/apps/events/contributions/urls_completion.py",
+      "view": "v.RoleOwnerExportView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-mentor-profiles",
+      "path": "/api/v1/admin/events/{pk}/mentor-profiles/{assignment_id}/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "c.MentorProfileView.as_view()",
+      "methods": [
+        "GET",
+        "PATCH",
+        "HEAD"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-help-types-list",
+      "path": "/api/v1/admin/events/{pk}/help-types/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "c.HelpTypesView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-help-types-detail",
+      "path": "/api/v1/admin/events/{pk}/help-types/{type_id}/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "c.HelpTypeDetailView.as_view()",
+      "methods": [
+        "GET",
+        "PATCH",
+        "HEAD"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-mentor-conflicts",
+      "path": "/api/v1/admin/events/{pk}/mentor-conflicts/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "c.ConflictView.as_view()",
+      "methods": [
+        "GET",
+        "POST",
+        "HEAD"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-mentor-attention-mute",
+      "path": "/api/v1/admin/events/{pk}/mentor-attention/mute/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "c.MuteView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-mentor-rounds-nominations",
+      "path": "/api/v1/admin/events/{pk}/mentor-rounds/{round_id}/nominations/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "c.NominationView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-help-renew",
+      "path": "/api/v1/admin/events/{pk}/help/{help_id}/renew/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "c.RenewHelpView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-activate",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/{assignment_id}/activate/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "v.AssignmentActivateView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-mentor-assignments-end",
+      "path": "/api/v1/admin/events/{pk}/mentor-assignments/{assignment_id}/end/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "v.AssignmentEndView.as_view()",
+      "methods": [
+        "POST"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    },
+    {
+      "name": "events-programme-admin-teams-export",
+      "path": "/api/v1/admin/events/{pk}/teams-export/",
+      "module": "backend/apps/events/mentoring/urls_completion.py",
+      "view": "v.TeamExportView.as_view()",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "mounted": false,
+      "requires": "G contract fixture ratification and all shared route policies"
+    }
+  ],
+  "completion_status": "C2 domain implementation; integration acceptance pending G hooks and runtime verification",
+  "typed_remap_additions": {
+    "events.MentorAssignmentRun.decisions": [
+      "id:MentorTeamAssignment",
+      "mentor_assignment_id:EventRoleAssignment",
+      "team_id:HackathonTeam"
+    ],
+    "events.MentorAssignmentRun.unsatisfied_team_ids": "HackathonTeam[]",
+    "events.EventRoleAnswerRevision.answers": "F canonical answer schema; P derivation_id typed references; never computed age",
+    "events.EventHelpRequest.claim_uuid": "ephemeral; reset claims on portable import/deployment recovery"
+  }
+}

@@ -71,6 +71,11 @@ from apps.accounts.models_mfa import UserMFA, MFAChallenge  # noqa: E402
 from apps.accounts.models_reauthentication import ReauthenticationSession  # noqa: E402
 from apps.accounts.models_staff_invitations import StaffInvitation  # noqa: E402
 
+from .saved_details.models import (
+    AccountSavedDetailsExportJob, MemberSavedAsset, MemberSavedDetail,
+    SavedDetailCommandReceipt, SavedDetailsObjectCleanup, SavedDetailUpdateIntent,
+)
+
 __all__ = [
     'ReauthenticationSession',
     'UserMFA',

@@ -1,11 +1,40 @@
-"""G-owned dormant URL barrels. No provider is imported or mounted at checkpoint.
+"""Programme surfaces, mounted through config.urls.separable('events', ...).
 
-G composes the lane urls_member/urls_admin/urls_public lists here only after the
-corresponding origin, claim, delegated, API-client and OpenAPI entries land.
+Views/services retain their tenant module, capability and authority checks.
+One pattern serves every method for a resource; no duplicate method aliases.
 """
+from django.urls import include, path
 
-member_patterns = []
-admin_patterns = []
-public_patterns = []
-series_patterns = []
-tenant_admin_patterns = []
+urlpatterns = [
+    path("member/", include("apps.events.hackathons.urls_member")),
+    path("admin/", include("apps.events.hackathons.urls_admin")),
+    path("public/", include("apps.events.hackathons.urls_public")),
+    path("member/", include("apps.events.submissions.urls_member")),
+    path("admin/", include("apps.events.submissions.urls_admin")),
+    path("public/", include("apps.events.submissions.urls_public")),
+    path("member/", include("apps.events.contributions.urls_member")),
+    path("admin/", include("apps.events.contributions.urls_admin")),
+    path("public/", include("apps.events.contributions.urls_public")),
+    path("member/", include("apps.events.mentoring.urls_member")),
+    path("admin/", include("apps.events.mentoring.urls_admin")),
+    path("", include("apps.events.judging.urls")),
+    path("admin/", include("apps.events.credentials.urls_admin")),
+    path("admin/", include("apps.events.certificates.urls_admin")),
+    path("admin/", include("apps.events.certificates.urls_library")),
+    path("public/", include("apps.events.certificates.urls_public")),
+    path("member/", include("apps.events.profile_photos.urls_member")),
+    path("public/", include("apps.events.profile_photos.urls_public")),
+    path("admin/", include("apps.events.programme.broadcast_urls")),
+]
+
+from .contributions.urls_completion import ADMIN, MEMBER
+from .mentoring.urls_completion import urlpatterns as mentoring_completion
+from .programme.urls import admin_patterns, series_patterns
+
+urlpatterns += [
+    path("admin/", include(ADMIN)),
+    path("member/", include(MEMBER)),
+    path("admin/", include(mentoring_completion)),
+    path("admin/", include(admin_patterns)),
+    path("admin/", include(series_patterns)),
+]

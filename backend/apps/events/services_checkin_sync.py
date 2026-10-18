@@ -104,6 +104,7 @@ def _process(event, item, *, lease, actor, source, session_id, station_version):
     registration = EventRegistration.objects.filter(
         event=event,
         checkin_token=token,
+        credential_mode="legacy",
     ).first()
     if registration is None:
         return {**base, "outcome": "invalid_token"}

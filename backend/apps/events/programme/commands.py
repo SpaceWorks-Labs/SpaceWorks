@@ -8,12 +8,11 @@ from django.apps import apps
 from django.db import transaction
 from rest_framework.exceptions import APIException
 
-from apps.encryption.write_fence import assert_mapped_write_allowed
 from apps.events import event_authority
 from apps.events.models import Event, EventSeries
-from apps.events.staff_grant_locks import lock_authority
+from apps.events.programme_locks import fences, lock_authority
 from apps.makerspaces.guards import require_module_locked
-from apps.tenant_migration.gate_runtime import assert_write_allowed
+from apps.tenant_migration.gate_runtime import boundary_tenant_write
 
 class ProgrammeConflict(APIException):
     status_code = 409
@@ -55,7 +54,6 @@ def receipt_model():
         raise ProgrammeUnavailable("command_receipt_unavailable", "Event command receipt integration is required.") from exc
 
 
-@transaction.atomic
 def execute_command(*, event, actor, command, payload, expected_version, operation_id,
                     execute, permission=None, version_getter=None, authorize=None):
     """Callback performs domain mutation/audit and returns a non-PII receipt.
@@ -65,8 +63,16 @@ def execute_command(*, event, actor, command, payload, expected_version, operati
     Domain callbacks must not perform storage/provider/network I/O under locks.
     """
     event_authority.require(actor, event, permission)
-    assert_write_allowed(event.makerspace_id)
-    assert_mapped_write_allowed(event.makerspace_id)
+    with boundary_tenant_write(event.makerspace_id), transaction.atomic(), fences(
+        tenant_ids=(event.makerspace_id,), account_ids=(actor.pk,),
+    ):
+        return _execute_fenced(event=event, actor=actor, command=command, payload=payload,
+            expected_version=expected_version, operation_id=operation_id, execute=execute,
+            permission=permission, version_getter=version_getter, authorize=authorize)
+
+
+def _execute_fenced(*, event, actor, command, payload, expected_version, operation_id,
+                    execute, permission, version_getter, authorize):
     series_id = Event.objects.values_list("series_id", flat=True).get(pk=event.pk)
     if series_id:
         EventSeries.objects.select_for_update().get(pk=series_id)

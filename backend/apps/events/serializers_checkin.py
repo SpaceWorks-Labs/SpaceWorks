@@ -2,7 +2,15 @@ from rest_framework import serializers
 
 
 class EventCheckInResolveRequestSerializer(serializers.Serializer):
-    checkin_token = serializers.CharField(max_length=80, trim_whitespace=False)
+    checkin_token = serializers.UUIDField(required=False)
+    credential = serializers.CharField(max_length=80, trim_whitespace=False, required=False)
+
+    def validate(self, attrs):
+        if set(self.initial_data) - {"checkin_token", "credential"}:
+            raise serializers.ValidationError("Unknown check-in field.")
+        if ("checkin_token" in attrs) == ("credential" in attrs):
+            raise serializers.ValidationError("Provide exactly one checkin_token or credential.")
+        return attrs
 
 
 class EventCheckInResultSerializer(serializers.Serializer):

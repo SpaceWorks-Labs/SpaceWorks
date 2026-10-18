@@ -82,26 +82,13 @@ def reminder_eligible(envelope):
 
 
 def broadcast_eligible(envelope):
-    from rest_framework.exceptions import APIException
-    from .broadcasts import authorize, registrations
-    from .models_broadcasts import EventBroadcast
-    campaign = EventBroadcast.objects.select_related("event__makerspace", "makerspace", "created_by").filter(
-        pk=envelope.context.get("campaign_id"), makerspace_id=envelope.makerspace_id).first()
-    if campaign is None or campaign.status not in {"queued", "sending", "sent", "failed"}:
-        return False
-    try:
-        authorize(campaign, campaign.created_by)
-    except APIException:
-        return False
-    return registrations(campaign).filter(member_id=envelope.recipient_id).exists()
+    from .broadcast_channels import personal_source_eligible
+    return personal_source_eligible(envelope)
 
 
 def certificate_eligible(envelope):
-    from .models import EventAttendanceCertificate
-    expected = {"certificate_ready": "active", "certificate_revoked": "revoked"}.get(envelope.event)
-    return bool(_event(envelope) and expected and EventAttendanceCertificate.objects.filter(
-        pk=envelope.context.get("certificate_id"), status=expected,
-        registration__member_id=envelope.recipient_id).exists())
+    from .certificates.notifications import eligible
+    return eligible(envelope)
 
 
 SOURCES = {

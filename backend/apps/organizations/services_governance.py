@@ -34,7 +34,8 @@ def assert_governor_remains(organization, *, replaced_id, status=None, actions=N
 def assert_deletable(organization):
     # Enumerate concrete reverse FKs instead of importing separable domains. This
     # protects future references as well as tenant links and event organizers.
-    disposable = {"organizations.OrganizationMembership", "organizations.OrganizationInvitation"}
+    disposable = {"organizations.OrganizationMembership", "organizations.OrganizationInvitation",
+                  "organizations.OrganizationLeaveReceipt"}
     for relation in organization._meta.related_objects:
         if relation.related_model._meta.label in disposable:
             continue

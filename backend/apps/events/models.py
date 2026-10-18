@@ -23,7 +23,7 @@ from .models_invites import EventInvite
 from .models_tickets import EventTicketType
 from .models_promos import EventPromoCode
 from .models_categories import EventCategory
-from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
+from .models_broadcasts import EventBroadcast, EventBroadcastDelivery, EventBroadcastPreview
 from .models_website import EventPage, EventPageAsset, EventPageSection, EventSession, EventSessionSpeaker
 from .speaker_identity_models import EventSpeaker
 
@@ -48,3 +48,35 @@ __all__ = [
     "EventSeriesOrganizer",
     "MemberCalendarFeed",
 ]
+
+from . import models_programme  # noqa: E402,F401 - explicit retained model discovery
+from .models_programme import (
+    EventBroadcastPreview, EventCommandReceipt, EventAnswerDerivation, EventCertificateLibraryTemplate,
+    EventCertificateLibraryArtwork, EventCertificateLibraryRevision, EventCertificateLibraryCommand, EventCertificatePublicationPolicy,
+    CertificateIssueBatch, CertificateIssueBatchItem, EventBadgeTemplateRevision, BadgePrintJob,
+    BadgePrintResource, EventContributorAdmission, EventContributorNotice, EventRoleAnswerRevision,
+    EventRequirementOverride, EventRolePosting, EventRoleAssignment, EventGrantEntitlement,
+    EventSponsor, EventSponsorTrack, EventShift, EventShiftSignup,
+    EventShiftAttendance, EventContributionHours, EventContributionHoursEntry, EventShiftAttendanceCorrection,
+    EventRegistrationCredential, EventCredentialCommand, HackathonConfig, HackathonCocRevision,
+    HackathonApplicationCohort, HackathonApplication, AdmissionWaitlistSweep, HackathonApplicationAnswerRevision,
+    ApplicationReviewAssignment, ApplicationReview, ApplicationReviewConflict, ApplicationDecisionBatch,
+    ApplicationDecision, HackathonTeam, HackathonTeamMember, HackathonTeamInvite,
+    HackathonFinderProfile, TeamComment, HackathonTeamException, ParticipantSponsorResumeConsent,
+    SponsorResumeConsentHistory, HackathonTrack, HackathonPrize, JudgingRound,
+    JudgingCriterion, EventResultRevision, EventResultRound, EventAward,
+    ResultAnnouncement, ResultPublicationState, SponsorWinnerProposal, JudgingNotice,
+    JudgingReason, JudgeAssignment, JudgingRoundProject, JudgeScore,
+    JudgeRankingBallot, JudgeRankingChoice, JudgeConflict, MentorAssignmentRun,
+    MentorAttentionPreference, MentorProfile, MentorTeamAssignment, EventHelpType,
+    EventHelpRequest, EventHelpAction, EventHelpComment, OfficeHoursBooking,
+    OfficeHoursChange, MentorRound, MentorRoundLock, MentorRoundCheckin,
+    MentorConflict, MentorNomination, MentorImportPreview, MentorNotificationIntent,
+    EventMemberPresentation, EventMemberCard, EventPresentationCommand, EventFormRevision,
+    GalleryConsent, GalleryConsentItem, GalleryConsentRevision, GalleryPublication,
+    GalleryEntry, GalleryEntryAsset, GalleryEntryLink, GalleryAmendment,
+    SubmissionAsset, HackathonParticipantAsset, EventAssetUsage, SubmissionAssetWork,
+    HackathonSubmission, SubmissionSnapshot, SubmissionLink, SnapshotAsset,
+    SnapshotLink, SnapshotTrack, SnapshotPrize, SubmissionIntegrityFlag,
+)
+__all__ += models_programme.__all__

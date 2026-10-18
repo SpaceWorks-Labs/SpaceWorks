@@ -12,6 +12,8 @@ from apps.forms_schema.validation import validate_form_schema
 
 
 class Event(models.Model):
+    version = models.PositiveIntegerField(default=1)
+    event_date_revision = models.PositiveIntegerField(default=1)
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         PUBLISHED = "published", "Published"

@@ -25,7 +25,8 @@ def _transition(event, actor, expected, new_status, action):
         message = f"Cannot transition event from {locked.status} to {new_status}."
         raise EventInvalidTransition(message)
     locked.status = new_status
-    locked.save(update_fields=["status", "updated_at"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version", "updated_at"])
     calendar_event_changed(locked)
     meta = {"old_status": expected, "new_status": new_status}
     services._audit(locked, actor, action, locked, meta)
@@ -52,7 +53,8 @@ def publish(event, *, actor, publish_website=False, website_revision=None):
     validate_event_audience(locked)
     limits.check_quota(locked.makerspace, "events", adding=1)
     locked.status = Event.Status.PUBLISHED
-    locked.save(update_fields=["status", "updated_at"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version", "updated_at"])
     if publish_website:
         from .services_website import set_release_locked
         set_release_locked(locked, actor=actor, released=True, revision=website_revision)
@@ -73,7 +75,7 @@ def cancel(event, *, actor, notify=True):
         )
     survey = EventFeedbackSurvey.objects.select_for_update().filter(event=locked).first()
     certificates = list(EventAttendanceCertificate.objects.select_for_update().filter(
-        registration__event=locked, status=EventAttendanceCertificate.Status.ACTIVE,
+        event=locked, status=EventAttendanceCertificate.Status.ACTIVE,
     ))
     now = timezone.now()
     if survey is not None and survey.is_open:
@@ -99,7 +101,8 @@ def cancel(event, *, actor, notify=True):
             {"reason": certificate.revocation_reason, "revision": certificate.revision},
         )
     locked.status = Event.Status.CANCELLED
-    locked.save(update_fields=["status", "updated_at"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version", "updated_at"])
     calendar_event_changed(locked, now=now)
     services._audit(
         locked, actor, "event.cancelled", locked,

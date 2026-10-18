@@ -89,6 +89,9 @@ def scan_pdf(data):
     if scanner is None:
         raise unavailable("scanner_unavailable")
     try:
+        if isinstance(scanner, str):
+            from django.utils.module_loading import import_string
+            scanner = import_string(scanner)
         result = scanner(data)
     except Exception as exc:
         raise unavailable("scanner_unavailable") from exc

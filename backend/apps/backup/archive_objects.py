@@ -12,6 +12,7 @@ OBJECT_FIELD_NAMES = frozenset({
     "logo_key",
     "photo_object_key",
     "branding_logo_key",
+    "staging_key", "verification_key",
 })
 
 NON_OBJECT_KEY_FIELDS = frozenset({
@@ -59,7 +60,6 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     # copy would restore as a pointer to something that must not exist.
     ("tenant_migration.TenantDumpCapture", "unpublished_object_key"),
     ("tenant_migration.TenantImportObject", "source_key"),
-    ("tenant_migration.TenantImportObject", "staging_key"),
     ("tenant_migration.TenantImportObject", "target_key"),
 })
 
@@ -78,10 +78,11 @@ def object_closure():
 def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
     # Share the compound archive's field-specific bucket declarations. A public
     # gallery uses object_key too; field spelling alone cannot select its bucket.
-    from .object_ownership_registry import FIELD_OBJECT_RULES
+    from .object_ownership_registry import FIELD_OBJECT_RULES, ReferencePolicy
 
     buckets = {(rule.model_label, rule.field_name): rule.bucket.value for rule in FIELD_OBJECT_RULES}
-    if model._meta.label == "events.EventCertificateArtwork":
+    rules = {(rule.model_label, rule.field_name): rule for rule in FIELD_OBJECT_RULES}
+    if model._meta.label in {"events.EventCertificateArtwork", "events.EventCertificateLibraryArtwork"}:
         queryset = queryset.filter(promoted_at__isnull=False)
     spec = DATASET_SPECS.get(model._meta.label)
     ownership_paths = spec[1].any_paths if spec else ()
@@ -92,8 +93,14 @@ def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
     for field in model._meta.concrete_fields:
         if field.name not in OBJECT_FIELD_NAMES:
             continue
+        rule = rules[(model._meta.label, field.name)]
+        if rule.policy == ReferencePolicy.COORDINATION_ONLY:
+            continue
         if model._meta.label == "evidence.EvidencePhoto" and field.name == "object_key":
             _collect_evidence_objects(queryset, result, fixed_makerspace_id)
+            continue
+        from .object_reference_legacy import collect_retained
+        if collect_retained(queryset, model, rule, ownership_paths, result, fixed_makerspace_id):
             continue
         if field.name == "copy_key":
             rows = queryset.exclude(copy_key="").values_list(
@@ -159,6 +166,7 @@ def _collect_evidence_objects(queryset, result, fixed_makerspace_id):
 
 
 def capture_objects(root, object_keys, modes):
+    from .object_capture_proof import PROOF_FIELDS, assert_capture_proof
     manifest = []
     buckets = {
         "private": settings.AWS_STORAGE_BUCKET_NAME,
@@ -189,11 +197,15 @@ def capture_objects(root, object_keys, modes):
             item = storage.download_object(
                 buckets[kind], key, destination, versioned=modes[kind] == "versioned"
             )
-            manifest.append({"bucket_kind": kind, **ownership, **item})
+            assert_capture_proof(ownership, item)
+            public_facts = {name: value for name, value in ownership.items() if name not in PROOF_FIELDS}
+            manifest.append({"bucket_kind": kind, **public_facts, **item})
     return manifest
 
 
 def module_for_model(label):
+    if label.startswith("events."):
+        return "events"
     return {
         "events.EventPageAsset": "events",
         "bookings.BookingResourcePageAsset": "bookings",

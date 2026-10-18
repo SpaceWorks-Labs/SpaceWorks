@@ -9,4 +9,4 @@ class TicketEventSerializer(TicketPublicFieldsSerializer):
 class ProgrammeTicketSerializer(MemberEventTicketSerializer):
     event = TicketEventSerializer(read_only=True)
     attended_at = serializers.DateTimeField(allow_null=True, read_only=True)
-    credential_mode = serializers.ChoiceField(choices=("legacy", "v2"), read_only=True)
+    credential_mode = serializers.ChoiceField(choices=("legacy", "v2", "inert"), read_only=True)

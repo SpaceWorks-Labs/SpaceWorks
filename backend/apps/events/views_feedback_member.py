@@ -112,20 +112,8 @@ class MemberEventCertificateDownloadView(APIView):
 
     @extend_schema(tags=["Member events"], description="Private audited certificate download; configurable renders are bounded to 30/hour per account.", responses={200: CertificateDownloadSerializer, 429: ErrorSerializer, 410: OpenApiResponse(ErrorSerializer, description="Certificate revoked."), 503: OpenApiResponse(ErrorSerializer, description="Certificate storage unavailable."), **ERRORS})
     def get(self, request, makerspace_id, pk):
-        membership = active_membership(request.user, makerspace_id)
-        if membership is None:
-            raise MemberPresenceRequired()
-        require_module(membership.makerspace, "events")
-        certificate = get_object_or_404(
-            EventAttendanceCertificate.objects.select_related(
-                "registration__event__makerspace",
-            ).filter(
-                pk=pk,
-                registration__in=registrations_for_space(
-                    membership.makerspace, request.user,
-                ),
-            )
-        )
+        from .certificates.owner_queries import owner_certificate
+        certificate = owner_certificate(request.user, makerspace_id, pk)
         if certificate.status == EventAttendanceCertificate.Status.REVOKED:
             return Response({"detail": "Certificate revoked.", "code": "certificate_revoked"}, status=status.HTTP_410_GONE)
         try:

@@ -71,3 +71,18 @@ def reissue(registration, *, actor):
             raise EventInvalidTransition("A live certificate already exists.")
         # Bulk reissue does not fabricate or require a feedback response.
         return create_for_subject_locked(event, subject_kind="registration", subject_id=registration.pk, actor=actor)
+
+
+def reissue_certificate(certificate, *, actor):
+    """Legacy HTTP adapter preserves the typed subject/kind/award of the old issuance."""
+    with event_command(certificate.event_id, actor=actor) as (event, actor):
+        row = EventAttendanceCertificate.objects.select_for_update().get(pk=certificate.pk, event=event)
+        subject_kind = "registration" if row.registration_id else "role_assignment"
+        subject_id = row.registration_id or row.role_assignment_id
+        filters = {"registration_id" if row.registration_id else "role_assignment_id": subject_id,
+                   "kind": row.kind, "award_id": row.award_id}
+        if EventAttendanceCertificate.objects.filter(**filters).exclude(status="revoked").exists():
+            raise EventInvalidTransition("A live certificate already exists.")
+        return create_for_subject_locked(event, subject_kind=subject_kind, subject_id=subject_id,
+            actor=actor, kind=row.kind, award_id=row.award_id, result_revision_id=row.result_revision_id,
+            public_verification_enabled=row.public_verification_enabled)

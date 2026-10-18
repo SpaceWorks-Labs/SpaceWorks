@@ -23,6 +23,8 @@ class EventsConfig(AppConfig):
             register_broadcasts()
             from .notification_sources import register_event_sources
             register_event_sources()
+            from .programme_runtime import register_programme_runtime
+            register_programme_runtime()
             register_invitations()
             register_subject()
             from apps.makerspaces.resource_grant_sources import ResourceGrantSource, register

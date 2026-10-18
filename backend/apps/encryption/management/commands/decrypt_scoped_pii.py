@@ -21,7 +21,7 @@ from apps.encryption.write_fence import fence_operation
 _FILTERS = {
     "devices.PrinterJob": "makerspace_id",
     "events.EventBroadcast": "makerspace_id",
-    "events.EventAttendanceCertificate": "registration__event__makerspace_id",
+    "events.EventAttendanceCertificate": "event__makerspace_id",
     "events.EventFeedbackResponse": "survey__event__makerspace_id",
     "makerspaces.InvitationRequest": "makerspace_id",
     "makerspaces.MemberCard": "makerspace_id",

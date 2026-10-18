@@ -65,6 +65,15 @@ OMITTED_MODELS.update(P2_EVENT_OMITTED)
 from apps.tenant_migration.catalog_p2_presence import classify as classify_presence
 classify_presence(EXPORTED_MODEL_FIELDS)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
+from apps.tenant_migration.catalog_events_programme import (
+    EXPORTED_FIELDS as PROGRAMME_FIELDS, EXTRA_FIELDS as PROGRAMME_EXTRA,
+    OMITTED_MODELS as PROGRAMME_OMITTED,
+)
+EXPORTED_MODEL_FIELDS.update(PROGRAMME_FIELDS)
+for _label, _names in PROGRAMME_EXTRA.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _names
+OMITTED_MODELS.update(PROGRAMME_OMITTED)
+EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {
     label: NotTenantData(reason) for label, reason in OMITTED_MODELS.items()

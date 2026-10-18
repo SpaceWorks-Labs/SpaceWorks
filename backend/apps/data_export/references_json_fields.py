@@ -1,6 +1,8 @@
 """Reviewed JSON fields whose embedded reference semantics need declarations."""
 
-JSON_REFERENCE_FIELDS = frozenset(
+from apps.tenant_migration.catalog_events_programme_json import JSON_FIELDS as PROGRAMME_JSON_FIELDS
+
+JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | frozenset(
     {
         # Channel enum names carry no destination, endpoint or account identifiers.
         ("notifications.NotificationPreference", "channels"),

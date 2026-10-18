@@ -50,9 +50,14 @@ def own_page(target, copies, asset_map=None):
     return page or EventPage.objects.create(makerspace=target.makerspace, **owner(target))
 
 
-def bump(page):
+def bump(page, target):
     page.revision += 1
     page.save(update_fields=["revision", "released", "updated_at"])
+    if page.event_id:
+        from django.db.models import F
+        Event.objects.filter(pk=page.event_id).update(version=F("version") + 1)
+        if isinstance(target, Event):
+            target.refresh_from_db(fields=("version",))
 
 
 def _validate_content(target, data, assets):
@@ -142,7 +147,7 @@ def save_content(target, *, actor, data):
             setattr(page, key, data[key])
         if changed:
             page.save(update_fields=changed)
-        bump(page)
+        bump(page, target)
         audit(page, actor, "event.website_saved", revision=page.revision)
         return target
 
@@ -156,7 +161,7 @@ def set_release_locked(target, *, actor, released, revision):
     if page is None or page.revision != revision:
         raise ValidationError({"revision": "Save an occurrence page and reload before releasing it."})
     page.released = released
-    bump(page)
+    bump(page, target)
     audit(page, actor, "event.website_released" if released else "event.website_unreleased", revision=page.revision)
     return page
 
@@ -179,6 +184,6 @@ def set_delay(target, slug, *, actor, minutes):
     session = get_object_or_404(page.sessions, slug=slug)
     session.delay_minutes = minutes
     session.save(update_fields=["delay_minutes"])
-    bump(page)
+    bump(page, target)
     audit(page, actor, "event.website_delay_changed", session_slug=slug, delay_minutes=minutes)
     return target

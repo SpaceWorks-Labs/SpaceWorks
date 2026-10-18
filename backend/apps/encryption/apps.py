@@ -10,6 +10,7 @@ class EncryptionConfig(AppConfig):
         # check itself no-ops when PII_ENCRYPTION_ENABLED is False, so importing
         # it here never parses key material in a dormant install.
         from apps.encryption import checks  # noqa: F401
+        from apps.encryption import account_checks  # noqa: F401
         from apps.encryption import signals  # noqa: F401
 
         self._register_pii_fields()

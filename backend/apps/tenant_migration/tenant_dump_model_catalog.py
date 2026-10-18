@@ -145,6 +145,8 @@ def _model_rules():
     return rules
 
 
+from .catalog_events_programme import EXPORTED_FIELDS as PROGRAMME_PROJECTED_FIELDS
+PROJECTED_MODEL_LABELS |= PROGRAMME_PROJECTED_FIELDS.keys()
 FIRST_PARTY_MODEL_RULES = _model_rules()
 
 AUTO_CREATED_TABLE_RULES = {

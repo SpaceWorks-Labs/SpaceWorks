@@ -163,6 +163,10 @@ def _authoritative_route_targets(request, view=None):
     url_name = getattr(match, 'url_name', '')
     kwargs = dict(getattr(match, 'kwargs', {}) or {})
     kwargs.update(getattr(view, 'kwargs', {}) or {})
+    from .origin_scope_programme import programme_route_targets
+    programme = programme_route_targets(url_name, kwargs)
+    if programme is not None:
+        return programme
     from .origin_scope_account_routes import account_route_targets
     account_target = account_route_targets(url_name, kwargs)
     if account_target is not None:

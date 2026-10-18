@@ -88,6 +88,8 @@ SPECIAL_TENANT_TABLES = {
     "makerspaces.PublicHandleRedirect": TenantPredicate(("profile__membership__makerspace",)),
     "encryption.MakerspaceEncryptionKey": TenantPredicate(("makerspace",)),
 }
+from .main_projection_events_programme import extend_special_tenant_tables
+extend_special_tenant_tables(SPECIAL_TENANT_TABLES, TenantPredicate)
 
 from .staff_shells import STAFF_CREDENTIAL_PATHS
 SPECIAL_TENANT_TABLES.update({label: TenantPredicate((path,))

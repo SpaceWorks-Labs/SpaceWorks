@@ -147,6 +147,12 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
             raise ValidationError({"template_revision": "Template belongs to another event."})
 
     def save(self, *args, **kwargs):
+        # Older internal attendance callers provide the immutable registration.
+        # Populate the new direct ownership columns from that exact subject once.
+        if self._state.adding and self.registration_id and not self.event_id:
+            self.event_id = self.registration.event_id
+            self.recipient_member_id = self.registration.member_id
+            self.event_timezone_name = self.registration.event.timezone_name
         if self.pk:
             original = type(self).objects.get(pk=self.pk)
             issuance_fields = (

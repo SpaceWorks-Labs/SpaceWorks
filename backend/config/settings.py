@@ -652,6 +652,22 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.events.tasks.extend_event_series_task",
         "schedule": crontab(minute=10),
     },
+    "event-admission-deadlines": {
+        "task": "apps.events.tasks_programme.sweep_admission_deadlines_task",
+        "schedule": crontab(minute="*/5"),
+    },
+    "event-contributor-maintenance": {
+        "task": "apps.events.tasks_contributions.sweep_contributor_maintenance_task",
+        "schedule": crontab(minute="*"),
+    },
+    "event-scheduled-broadcasts": {
+        "task": "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts",
+        "schedule": crontab(minute="*"),
+    },
+    "account-saved-details": {
+        "task": "apps.accounts.saved_details.tasks.process_saved_details",
+        "schedule": crontab(minute="*/5"),
+    },
     # Spent email/phone verification challenges hold an address or a number and nothing
     # deleted them. Off-peak because it is a pure delete nobody is waiting on.
     "purge-auth-challenges": {
@@ -885,6 +901,18 @@ PII_DEK_CACHE_TTL_SECONDS = env.int("PII_DEK_CACHE_TTL_SECONDS", default=300)
 PII_AWS_KMS_KEY_ID = env("PII_AWS_KMS_KEY_ID", default="")
 PII_AWS_KMS_REGION = env("PII_AWS_KMS_REGION", default="")
 PII_AWS_KMS_ENDPOINT_URL = env("PII_AWS_KMS_ENDPOINT_URL", default="")
+# Independent account custody; Events never receives these wrapping secrets.
+ACCOUNT_SAVED_DETAILS_ENABLED = env.bool("ACCOUNT_SAVED_DETAILS_ENABLED", default=False)
+ACCOUNT_PII_KEY_BROKER = env("ACCOUNT_PII_KEY_BROKER", default="local")
+ACCOUNT_PII_MASTER_KEY = env("ACCOUNT_PII_MASTER_KEY", default="")
+ACCOUNT_PII_MASTER_KEY_PREVIOUS = env("ACCOUNT_PII_MASTER_KEY_PREVIOUS", default="")
+ACCOUNT_PII_AWS_KMS_KEY_ID = env("ACCOUNT_PII_AWS_KMS_KEY_ID", default="")
+ACCOUNT_SAVED_ASSET_BUDGET_BYTES = env.int("ACCOUNT_SAVED_ASSET_BUDGET_BYTES", default=50 * 1024**2)
+ACCOUNT_SAVED_RESUME_SCAN_REQUIRED = env.bool("ACCOUNT_SAVED_RESUME_SCAN_REQUIRED", default=False)
+ACCOUNT_SAVED_RESUME_SCANNER = env("ACCOUNT_SAVED_RESUME_SCANNER", default="")
+EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY = env("EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY", default="")
+EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION = env.int("EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION", default=1)
+EVENT_REGISTRATION_CREDENTIAL_KEYS = env.json("EVENT_REGISTRATION_CREDENTIAL_KEYS", default={})
 # When True, requests to HMAC_PROTECTED_PATH_PREFIXES must carry a valid signed client.
 API_CLIENT_AUTH_REQUIRED = env.bool("API_CLIENT_AUTH_REQUIRED", default=False)
 

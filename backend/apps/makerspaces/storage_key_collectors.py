@@ -22,7 +22,7 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
         (EventPageAsset, {"page__makerspace": makerspace}),
         (BookingResourcePageAsset, {"page__space__makerspace": makerspace}),
         (EvidencePhoto, {"makerspace": makerspace}),
-        (EventAttendanceCertificate, {"registration__event__makerspace": makerspace}),
+        (EventAttendanceCertificate, {"event__makerspace": makerspace}),
         (WarrantyDocument, {"warranty__makerspace": makerspace}),
         (ToBuyReceipt, {"to_buy_item__makerspace": makerspace}),
         (MaintenanceLogDocument, {"log__machine__makerspace": makerspace}),
@@ -31,6 +31,8 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
         for key in model.objects.filter(**lookup).values_list("object_key", flat=True):
             add(key)
     collect_service(makerspace, add)
+    from .storage_keys_events_programme import collect_programme_keys
+    collect_programme_keys(makerspace, add, include_coordination=include_coordination)
     from apps.payments.models import PaymentDocument
     for key in PaymentDocument.objects.filter(makerspace=makerspace).values_list("branding_logo_key", flat=True):
         add(key)

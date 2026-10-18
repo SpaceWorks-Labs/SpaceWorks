@@ -94,7 +94,9 @@ class DetailView(OwnerView):
 
 
 class PrefillView(OwnerView):
-    @extend_schema(request=s.SavedVaultPrefillInput, responses={200: s.SavedVaultPrefillResponse, **ERRORS}, tags=["Saved details"])
+    @extend_schema(request=s.SavedVaultPrefillInput, responses={200: s.SavedVaultPrefillResponse, **ERRORS}, tags=["Saved details"],
+                   description="Owner-only prefill for registration, application, role assignment or a typed stage response. "
+                   "Stage contexts bind an existing response or an owner creation UUID and stage form; they never read DOB or return derivations.")
     def post(self, request):
         return Response(prefill(request.user.pk, self.command(s.SavedVaultPrefillInput, keyed=False)))
 

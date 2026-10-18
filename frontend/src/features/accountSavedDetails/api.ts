@@ -9,7 +9,8 @@ function command<T>(path: string, method: string, body: object, operationId: str
 export const ownSavedDetails = () => memberRequest<SavedDetails>(base).then(parseSavedDetails);
 export const saveDetail = (key: FieldKey, value: SavedValue, cmd: SavedCommand) => command(`${key}/`, "PUT", { ...cmd, value, save_consent: true }, cmd.operation_id).then(parseDetail);
 export const deleteDetail = (key: FieldKey, cmd: SavedCommand) => command(`${key}/`, "DELETE", cmd, cmd.operation_id).then(parseDetail);
-export const prefillDetails = (selector: PrefillSelector) => memberRequest<Prefill>(base + "prefill/", { method: "POST", body: JSON.stringify(selector) }).then(parsePrefill);
+export const prefillDetails = (selector: PrefillSelector) => memberRequest<Prefill>(base + "prefill/", { method: "POST", body: JSON.stringify(selector) })
+  .then(value => parsePrefill(value, selector.context.subject_kind === "stage_response"));
 export const saveIntentStatus = (operationId: string) => memberRequest<SaveIntent>(base + `save-intents/${encodeURIComponent(operationId)}/`).then(parseIntent);
 export const createResume = (file: File, operationId: string) => command<ResumeAsset>("resume-assets/", "POST", { filename: file.name, mime: "application/pdf", bytes: file.size }, operationId).then(parseResume);
 export const resumeStatus = (id: number) => memberRequest<ResumeAsset>(base + `resume-assets/${id}/`).then(parseResume);

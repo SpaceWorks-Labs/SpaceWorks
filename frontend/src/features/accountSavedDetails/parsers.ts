@@ -1,5 +1,5 @@
 import { fields } from "./fieldPresentation";
-import type { ExportJob, FieldKey, Prefill, ResumeAsset, SavedDetails, SavedValue, SaveIntent } from "./types";
+import type { ExportJob, FieldKey, FormSaveIntent, Prefill, ResumeAsset, SavedDetails, SavedValue, SaveIntent } from "./types";
 
 const keys = new Set([...fields.map(field => field.key), "resume"]);
 function requireShape(condition: unknown): asserts condition { if (!condition) throw new Error("Saved details could not be read. Try again."); }
@@ -26,15 +26,20 @@ export function parseSavedDetails(value: unknown): SavedDetails {
   return data as unknown as SavedDetails;
 }
 
-export function parsePrefill(value: unknown): Prefill {
+export function parsePrefill(value: unknown, stage = false): Prefill {
   const data = record(value);
   requireShape(integer(data.form_revision, 1) && integer(data.event_date_revision, 1));
-  record(data.values);
+  for (const key of Object.keys(record(data.values))) requireShape(keys.has(key));
   for (const [key, version] of Object.entries(record(data.saved_detail_versions))) requireShape(keys.has(key) && integer(version));
   for (const [key, choice] of Object.entries(record(data.save_defaults))) requireShape(keys.has(key) && typeof choice === "boolean");
   for (const raw of Object.values(record(data.derivation_inputs))) {
     const derivation = record(raw); const source = record(derivation.source);
     requireShape(source.kind === "saved_detail" && source.field_key === "date_of_birth" && integer(source.version, 1) && integer(derivation.value) && /^\d{4}-\d{2}-\d{2}$/.test(String(derivation.as_of_date)));
+  }
+  if (stage) {
+    for (const name of ["values", "saved_detail_versions", "save_defaults"])
+      requireShape(!("date_of_birth" in record(data[name])) && !("age_at_event" in record(data[name])));
+    requireShape(Object.keys(record(data.derivation_inputs)).length === 0);
   }
   return data as unknown as Prefill;
 }
@@ -61,12 +66,33 @@ export function parseExport(value: unknown): ExportJob {
 export function parseIntent(value: unknown): SaveIntent {
   const data = record(value);
   requireShape(uuid(data.operation_id) && ["pending", "applied", "conflict", "failed"].includes(String(data.state)) && typeof data.retryable === "boolean");
-  for (const [key, raw] of Object.entries(record(data.fields))) {
-    const item = record(raw); requireShape(keys.has(key) && ["applied", "conflict", "failed"].includes(String(item.state)));
+  parseIntentFields(data.fields);
+  return data as unknown as SaveIntent;
+}
+
+function parseIntentFields(value: unknown) {
+  for (const [key, raw] of Object.entries(record(value))) {
+    const item = record(raw); requireShape(keys.has(key) && ["applied", "unchanged", "conflict", "failed"].includes(String(item.state)));
     if (item.version !== undefined) requireShape(integer(item.version, 1));
     if (item.current_version !== undefined) requireShape(integer(item.current_version));
   }
-  return data as unknown as SaveIntent;
+}
+
+/** Parse the canonical response's per-form results before rendering notices. */
+export function parseFormSaveIntents(value: unknown): FormSaveIntent[] {
+  requireShape(Array.isArray(value));
+  const slots = new Set<string>(); const operations = new Set<string>();
+  for (const raw of value) {
+    const item = record(raw); const slot = String(item.slot);
+    requireShape(/^(base|stage:[1-9][0-9]*)$/.test(slot) && !slots.has(slot) && uuid(item.operation_id));
+    const operation = String(item.operation_id).toLowerCase();
+    requireShape(!operations.has(operation)); slots.add(slot); operations.add(operation);
+    parseIntentFields(item.fields);
+    if (item.state === "not_requested") requireShape(item.intent_id === null && item.status_url === null && Object.keys(record(item.fields)).length === 0);
+    else requireShape(uuid(item.intent_id) && ["pending", "applied", "conflict", "failed"].includes(String(item.state)) &&
+      item.status_url === `/api/v1/member/saved-details/save-intents/${item.operation_id}/`);
+  }
+  return value as FormSaveIntent[];
 }
 
 export function parseDetail(value: unknown) {

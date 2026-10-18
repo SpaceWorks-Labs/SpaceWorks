@@ -27,6 +27,25 @@ BOUNDS = obj({**{key: {"type": "integer", "minimum": 0, "maximum": 5000}
     for key in ("min_length", "max_length", "other_max_length")},
     **{key: {"type": "integer", "minimum": 0, "maximum": 50} for key in ("min_selections", "max_selections")},
     "min": {"type": "number"}, "max": {"type": "number"}})
+MONEY = obj({"currencies": {"type": "array", "minItems": 1, "maxItems": 100, "uniqueItems": True,
+    "items": {"type": "string", "pattern": "^[A-Z]{3}$"}},
+    **{key: {"type": "integer", "minimum": 0, "maximum": 9007199254740991}
+       for key in ("min_minor", "max_minor")}}, ("currencies",))
+FILE = obj({"purpose": {"type": "string", "enum": ["stage_form_file", "reimbursement_receipt", "reimbursement_payee_document"]},
+    "max_files": {"type": "integer", "minimum": 1, "maximum": 5},
+    "max_bytes_each": {"type": "integer", "minimum": 1, "maximum": 10485760}},
+    ("purpose", "max_files", "max_bytes_each"))
+ITINERARY = obj({"modes": {"type": "array", "minItems": 1, "maxItems": 5, "uniqueItems": True,
+    "items": {"type": "string", "enum": ["rail", "air", "bus", "car", "other"]}}}, ("modes",))
+MONEY_VALUE = obj({"amount_minor": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+                   "currency": {"type": "string", "pattern": "^[A-Z]{3}$"}}, ("amount_minor", "currency"))
+FILE_VALUE = {"type": "array", "maxItems": 5, "items": obj({
+    "asset_id": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "generation": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, ("asset_id", "generation", "sha256"))}
+ITINERARY_VALUE = obj({"mode": {"type": "string", "enum": ["rail", "air", "bus", "car", "other"]},
+    **{key: {"type": "string", "maxLength": 200, "nullable": True} for key in ("origin", "destination")},
+    **{key: {"type": "string", "format": "date-time", "nullable": True} for key in ("depart_at", "arrive_at")}}, ("mode",))
 QUESTION = obj({
     "id": _ID, "label": {"type": "string", "minLength": 1, "maxLength": 200},
     "type": {"type": "string", "enum": list(QUESTION_TYPES)}, "required": {"type": "boolean"},
@@ -35,6 +54,7 @@ QUESTION = obj({
         "label": {"type": "string", "minLength": 1, "maxLength": 200}, "other": {"type": "boolean"}}, ("id", "label"))},
     "bounds": BOUNDS, "show_if": condition(), "profile_field_key": {"type": "string", "enum": list(PROFILE_FIELDS)},
     "visibility": {"type": "string", "enum": ["member", "server"]},
+    "sensitive": {"type": "boolean", "default": False}, "money": MONEY, "file": FILE, "itinerary": ITINERARY,
     "disclosure": obj({key: {"type": "boolean"} for key in ("organizer", "reviewer", "judge")},
                       ("organizer", "reviewer", "judge")),
 }, ("id", "label", "type", "required"))

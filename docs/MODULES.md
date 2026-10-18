@@ -1,6 +1,6 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **35 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
+Space Works ships **36 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
 default** (`backup`), and the rest opt-in. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
@@ -627,3 +627,24 @@ Turning a website section off also hides its direct public detail and image acce
 another enabled section uses the image. Content editing requires event `edit_details`;
 programme edits and live track delays require `publish_schedule`. These additions use the
 existing `events.website` feature; embedding still additionally requires `events.embed`.
+
+### event_reimbursements
+
+Opt-in, off by default, and dependent only on `events`. Adds support requests,
+finite budget pools, awards and post-event expense claims to ordinary events and
+hackathons. Staged forms belong to Events and work without this module.
+
+Payouts record payments already made by a human; this module never transfers money.
+Core Payments retains obligations, encrypted payee revisions, decision evidence and
+append-only payout corrections independently of Events, this module and the online
+payment rail. Recording/amending requires both `view_finance` and the separate
+`record_reimbursement_payout` action plus recent session reauthentication. Only the
+Space Manager built-in gains that action; `record_payment` grants no payout access.
+Archive pauses finance access until unarchive. Uninstall preserves all rows.
+Destructive module purge must refuse unfinished awards/claims or missing core
+evidence/attachment closure, then preserve the core ledger. Whole-tenant purge
+keeps its existing explicit full-graph behavior. Payee and decision-summary fields
+require the tenant key broker even with optional PII encryption disabled.
+
+G1 installs the additive schema/contracts only; workflows and routes are not yet
+enabled. The incomplete lane manifests must be completed before runtime acceptance.

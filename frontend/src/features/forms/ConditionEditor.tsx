@@ -1,7 +1,7 @@
 import type { Condition, Question } from "./types";
 
 export function ConditionEditor({ value, earlier, onChange }: { value?: Condition; earlier: Question[]; onChange: (value?: Condition) => void }) {
-  const eligible = earlier.filter(q => !["age_at_event", "date_of_birth"].includes(q.type));
+  const eligible = earlier.filter(q => !q.sensitive && !["age_at_event", "date_of_birth"].includes(q.type));
   return <fieldset className="grid gap-2 rounded-xl border border-line p-3"><legend className="text-sm font-semibold">Show this question when</legend>
     {value ? <ConditionNode value={value} earlier={eligible} depth={1} total={countClauses(value)} onChange={onChange} /> : <button className="desk-button justify-self-start" type="button" disabled={!eligible.length} onClick={() => onChange({ all: [{ field_id: eligible[0].id, op: "is_set" }] })}>Add condition</button>}
     {value ? <button className="desk-button justify-self-start" type="button" onClick={() => onChange(undefined)}>Always show</button> : null}

@@ -4,6 +4,7 @@ from apps.events.models_collaborators import EventCollaborator
 from apps.events.models_registration import EventRegistration
 from apps.events.models_attendance import (
     EventCheckInEvent,
+    EventAttendanceCorrection,
 )
 from apps.events.models_station import EventStationBinding
 from apps.events.models_feedback import EventFeedbackResponse, EventFeedbackSurvey
@@ -82,3 +83,12 @@ from .models_programme import (
     SnapshotLink, SnapshotTrack, SnapshotPrize, SubmissionIntegrityFlag,
 )
 __all__ += models_programme.__all__
+
+from .staged_forms.models import (
+    EventStageForm, EventStageMilestone, StageFormAssignment, StageFormResponse,
+    StageFormResponseRevision, StageFormAsset,
+)
+__all__ += [
+    "EventAttendanceCorrection", "EventStageForm", "EventStageMilestone", "StageFormAssignment",
+    "StageFormResponse", "StageFormResponseRevision", "StageFormAsset",
+]

@@ -11,6 +11,7 @@ class PiiField:
     max_length: int | None
     classification: str
     index_kind: str
+    encryption_required: bool = False
 
 
 def _fields(label, names, path, classification, indexes):
@@ -23,8 +24,10 @@ def _fields(label, names, path, classification, indexes):
 from .registry_7b import printer_pii_fields
 from .registry_p2_bookings import booking_departure_pii_fields
 from .registry_events_programme import programme_pii_fields
+from .registry_reimbursements import reimbursement_pii_fields
 
 SOURCE_FIELDS = (
+    *reimbursement_pii_fields(PiiField),
     *programme_pii_fields(PiiField),
     *printer_pii_fields(PiiField),
     *booking_departure_pii_fields(PiiField),
@@ -84,6 +87,16 @@ def all_fields():
 def registered_labels():
     """Accessor for every mapped model label; see ``fields_for_label`` for why."""
     return tuple(BY_MODEL)
+
+
+def register_retained_pii(prefix):
+    """Publish package mappings even when its operational app is tombstoned."""
+    from apps.separability.registry import register_pii_fields, registered_pii_models
+
+    already = registered_pii_models()
+    for label in registered_labels():
+        if label.startswith(prefix) and label not in already:
+            register_pii_fields(label, fields_for_label(label))
 
 
 def fields_for(model_or_instance):

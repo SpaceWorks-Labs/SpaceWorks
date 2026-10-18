@@ -39,6 +39,15 @@ def choice_answer(question, raw):
 
 def normalize_answer(question, value):
     kind, bounds = question["type"], question["bounds"]
+    if kind == "money":
+        from .money_values import normalize_money
+        return normalize_money(question, value)
+    if kind == "file":
+        from .file_values import normalize_files
+        return normalize_files(question, value)
+    if kind == "itinerary":
+        from .itinerary_values import normalize_itinerary
+        return normalize_itinerary(question, value)
     if kind in {"short_text", "long_text", "email", "phone", "url"}:
         maximum = {"short_text": 500, "long_text": 5000, "email": 254, "phone": 32, "url": 2048}[kind]
         value = text(value, min(maximum, bounds.get("max_length", maximum)))

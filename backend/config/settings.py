@@ -171,6 +171,7 @@ INSTALLED_APPS = [
     "apps.backup",
     "apps.machines",
     "apps.events",
+    "apps.event_reimbursements",
     "apps.bookings",
     "apps.maintenance",
     "apps.roadmap",

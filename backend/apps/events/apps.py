@@ -6,6 +6,8 @@ class EventsConfig(AppConfig):
     name = "apps.events"
 
     def ready(self):
+        from apps.encryption.registry import register_retained_pii
+        register_retained_pii("events.StageForm")
         from apps.events import station_auth  # noqa: F401
         from apps.separability.tombstones import register_separable_app
 

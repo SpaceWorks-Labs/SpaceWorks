@@ -53,9 +53,21 @@ class SavedVaultDetailsResponse(serializers.Serializer):
 class SavedVaultPrefillSelector(SavedVaultClosedSerializer):
     event_id = serializers.IntegerField(min_value=1)
     makerspace_id = serializers.IntegerField(min_value=1)
-    subject_kind = serializers.ChoiceField(choices=["registration", "application", "role_assignment"])
+    subject_kind = serializers.ChoiceField(choices=["registration", "application", "role_assignment", "stage_response"])
     subject_id = serializers.IntegerField(min_value=1, required=False)
     posting_id = serializers.IntegerField(min_value=1, required=False)
+    stage_form_id = serializers.IntegerField(min_value=1, required=False)
+    creation_operation_id = serializers.UUIDField(required=False)
+
+    def validate(self, attrs):
+        if attrs["subject_kind"] == "stage_response":
+            if "posting_id" in attrs or ("subject_id" in attrs) == ("creation_operation_id" in attrs):
+                raise serializers.ValidationError("Bind one stage response or one creation operation.")
+            if "creation_operation_id" in attrs and "stage_form_id" not in attrs:
+                raise serializers.ValidationError("Choose the stage form for this creation operation.")
+        elif "stage_form_id" in attrs or "creation_operation_id" in attrs:
+            raise serializers.ValidationError("Stage selectors require a stage response context.")
+        return attrs
 
 
 class SavedVaultPrefillInput(SavedVaultClosedSerializer):
@@ -104,7 +116,7 @@ class SavedVaultResumeResponse(serializers.Serializer):
 
 
 class SavedVaultIntentField(serializers.Serializer):
-    state = serializers.ChoiceField(choices=["applied", "conflict", "failed"])
+    state = serializers.ChoiceField(choices=["applied", "unchanged", "conflict", "failed"])
     version = serializers.IntegerField(required=False)
     current_version = serializers.IntegerField(required=False)
     code = serializers.CharField(required=False)
@@ -116,6 +128,16 @@ class SavedVaultIntentResponse(serializers.Serializer):
     fields = serializers.DictField(child=SavedVaultIntentField())
     retryable = serializers.BooleanField()
     code = serializers.CharField(required=False)
+
+
+class SavedVaultFormIntentResponse(serializers.Serializer):
+    """Embedded by G in canonical submission responses and replay receipts."""
+    slot = serializers.RegexField(r"^(base|stage:[1-9][0-9]*)$")
+    operation_id = serializers.UUIDField()
+    intent_id = serializers.UUIDField(allow_null=True)
+    state = serializers.ChoiceField(choices=["not_requested", "pending", "applied", "conflict", "failed"])
+    fields = serializers.DictField(child=SavedVaultIntentField())
+    status_url = serializers.CharField(allow_null=True)
 
 
 class SavedVaultExportResponse(serializers.Serializer):

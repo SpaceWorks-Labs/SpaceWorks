@@ -8,35 +8,15 @@ from contextlib import ExitStack
 from uuid import UUID
 
 from apps.encryption.crypto import PiiUnavailable, is_envelope
-from apps.encryption.registry import all_fields, fields_for_label, registered_labels
+from apps.encryption.registry import fields_for_label, registered_labels
 from apps.encryption.maintenance_programme import IMMUTABLE_LABELS, MANDATORY_SOURCE_LABEL, encrypt_immutable
+from apps.encryption.write_fence import fence_operation
 
 
 FILTERS = {
-    "devices.PrinterJob": {"makerspace_id": None},
-    "events.EventBroadcast": {"makerspace_id": None},
-    "events.EventAttendanceCertificate": {"event__makerspace_id": None},
-    "events.EventFeedbackResponse": {"survey__event__makerspace_id": None},
-    "makerspaces.InvitationRequest": {"makerspace_id": None},
-    "makerspaces.MemberCard": {"makerspace_id": None},
-    "makerspaces.MembershipRequest": {"makerspace_id": None},
-    "integrations.NotificationEnvelope": {"makerspace_id": None},
-    "integrations.NotificationEndpoint": {"makerspace_id": None},
-    "integrations.NotificationEndpointChallenge": {"makerspace_id": None},
-    "notifications.MemberBroadcast": {"makerspace_id": None},
-    "notifications.NotificationInboxRow": {"makerspace_id": None},
-    "hardware_requests.HardwareRequest": {"makerspace_id": None},
-    "events.EventRegistration": {"event__makerspace_id": None},
-    "bookings.Booking": {"space__makerspace_id": None},
-    "bookings.BookingBroadcast": {"makerspace_id": None},
-    "bookings.BookingDepartureEvent": {"makerspace_id": None},
-    "machines.MachineServiceRequest": {"makerspace_id": None},
-    "machines.MachineUsageEntry": {"machine__makerspace_id": None},
-    "integrations.EmailLog": {"makerspace_id": None},
+    label: {fields_for_label(label)[0].makerspace_path.replace(".", "__"): None}
+    for label in registered_labels()
 }
-
-FILTERS.update({field.model_label: {field.makerspace_path.replace(".", "__"): None}
-                for field in all_fields() if field.makerspace_path})
 
 
 class Command(BaseCommand):
@@ -58,6 +38,8 @@ class Command(BaseCommand):
         if mutate and not settings.PII_ENCRYPTION_ENABLED:
             raise CommandError("PII_ENCRYPTION_ENABLED must be enabled before backfill.")
         label, makerspace_id = options["model"], options["makerspace"]
+        if mutate and any(field.encryption_required for field in fields_for_label(label)):
+            raise CommandError("Mandatory finance fields are encrypted on insertion. Use --verify-only; plaintext repair is forbidden.")
         model = apps.get_model(label)
         filters = FILTERS[label]
         filters = filters.copy()
@@ -71,7 +53,6 @@ class Command(BaseCommand):
                 break
             with ExitStack() as stack:
                 from apps.encryption.preparation import prepare_tenants
-                from apps.encryption.write_fence import fence_operation
                 stack.enter_context(prepare_tenants([makerspace_id]))
                 stack.enter_context(transaction.atomic())
                 if options.get("fence_operation"):

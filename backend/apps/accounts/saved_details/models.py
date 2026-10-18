@@ -80,7 +80,7 @@ class SavedDetailUpdateIntent(AccountPiiModelMixin):
         app_label = "accounts"
         constraints = [
             models.UniqueConstraint(fields=["user", "operation_uuid"], name="saved_intent_owner_operation"),
-            models.CheckConstraint(condition=models.Q(subject_kind__in=["registration", "application", "role_assignment"]), name="saved_intent_subject_kind"),
+            models.CheckConstraint(condition=models.Q(subject_kind__in=["registration", "application", "role_assignment", "stage_response"]), name="saved_intent_subject_kind"),
         ]
 
 

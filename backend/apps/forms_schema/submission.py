@@ -11,6 +11,8 @@ from .answers_v2 import normalize_answer, unanswered
 from .conditions import visible
 from .profile_fields import PROFILE_FIELDS, ProfileValueError, normalize_dob, normalize_profile_value
 from .schema_v2 import validate_schema
+from .sensitive_policy import validate_context
+from .file_values import resolve_files
 
 
 def error(code, fields=None, detail="Invalid answer."):
@@ -90,7 +92,7 @@ def _derivation(value):
     return {**value, "source": source}
 
 
-def _saves(payload, mapped, derivations):
+def _saves(payload, mapped, derivations, sensitive_keys=()):
     choices, versions = payload.get("save_choices", {}), payload.get("saved_detail_versions", {})
     if not isinstance(choices, dict) or not isinstance(versions, dict):
         error("invalid_save_choices")
@@ -108,7 +110,7 @@ def _saves(payload, mapped, derivations):
     if sources and "date_of_birth" not in mapped:
         # This marker is resolved to owner's DOB by P before any intent preparation.
         mapped["date_of_birth"] = sources[0]
-    effective = {key: choices.get(key, PROFILE_FIELDS[key].default_save) for key in mapped}
+    effective = {key: choices.get(key, PROFILE_FIELDS[key].default_save and key not in sensitive_keys) for key in mapped}
     for key, save in choices.items():
         if save and key not in mapped:
             error("invalid_save_choices", {key: ["Only visible answered fields can be saved."]})
@@ -118,15 +120,18 @@ def _saves(payload, mapped, derivations):
     return effective, {key: versions[key] for key in effective if key in versions}
 
 
-def validate_submission(*, schema, payload, subject=None):
+def validate_submission(*, schema, payload, subject=None, context=None, file_resolver=None):
     if not isinstance(payload, dict):
         error("invalid_form_input")
+    if context == "stage" and payload.get("derivations"):
+        error("stage_age_question_unsupported", detail="Stage forms do not support DOB or age derivations.")
     if not isinstance(schema, dict):
         from .legacy import validate_answers
         snapshot = validate_answers(schema, payload.get("answers"))
         return ValidatedForm(schema, snapshot, tuple(q["id"] for q in (schema or [])), (), {}, {}, {}, {}, subject)
     try:
-        schema = validate_schema(schema)
+        schema = validate_schema(schema, context=context)
+        validate_context(schema, context=context, derivations=payload.get("derivations"))
     except SchemaError as exc:
         code = getattr(exc, "code", None) or "invalid_form_schema"
         error(code, detail=" ".join(exc.messages))
@@ -141,6 +146,12 @@ def validate_submission(*, schema, payload, subject=None):
     if "form" in payload and payload["form"] != {"schema_version": 2, "form_id": schema["form_id"], "revision": schema["revision"]}:
         raise FormContextConflict("form_revision_changed", "Review the current form revision.", form={
             "schema_version": 2, "form_id": schema["form_id"], "revision": schema["revision"]})
+    event_context = schema.get("event_context")
+    if (event_context and "event_date_revision" in payload
+            and (type(payload["event_date_revision"]) is not int
+                 or payload["event_date_revision"] != event_context["event_date_revision"])):
+        raise FormContextConflict("event_date_changed", "Review the revised event date.",
+                                  event_date_revision=event_context["event_date_revision"])
     raw, sources = payload.get("answers"), payload.get("derivations", {})
     if raw is None:
         raw = {}
@@ -174,10 +185,12 @@ def validate_submission(*, schema, payload, subject=None):
             continue
         try:
             value = normalize_answer(question, value)
-            if value is None or value == {"option_ids": []}:
+            if value is None or value == {"option_ids": []} or value == []:
                 if question["required"]:
                     errors[qid] = ["This question is required."]
                 continue
+            if kind == "file":
+                resolve_files(question, value, file_resolver)
             key = question.get("profile_field_key")
             if key:
                 profile_value = value.get("option_id", value.get("option_ids")) if kind in {"single_choice", "multi_choice"} else value
@@ -189,7 +202,8 @@ def validate_submission(*, schema, payload, subject=None):
             errors[qid] = exc.fields if exc.fields is not None else [str(exc)]
             continue
         values[qid] = value
-        answers.append({"id": qid, "label": question["label"], "type": kind, "value": value})
+        answers.append({"id": qid, "label": question["label"], "type": kind, "value": value,
+                        **({"sensitive": True} if question.get("sensitive") else {})})
     if errors:
         error("invalid_answer", errors)
     context = schema.get("event_context")
@@ -207,6 +221,7 @@ def validate_submission(*, schema, payload, subject=None):
                    if item["source"]["kind"] == "inline_dob"}
     if len(explicit_dobs | inline_dobs) > 1:
         error("dob_source_mismatch")
-    effective, versions = _saves(payload, mapped, derivations)
+    sensitive_keys = {q.get("profile_field_key") for q in schema["questions"] if q.get("sensitive")}
+    effective, versions = _saves(payload, mapped, derivations, sensitive_keys)
     snapshot = {"version": 2, "form_id": schema["form_id"], "form_revision": schema["revision"], "answers": answers}
     return ValidatedForm(schema, snapshot, tuple(shown), tuple(omitted), mapped, effective, versions, derivations, subject)

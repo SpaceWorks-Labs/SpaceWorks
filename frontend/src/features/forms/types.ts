@@ -1,4 +1,12 @@
-export const QUESTION_TYPES = ["short_text", "long_text", "number", "date", "date_of_birth", "single_choice", "multi_choice", "yes_no", "email", "phone", "url", "asset_reference", "age_at_event", "emergency_contact"] as const;
+export const QUESTION_TYPES = ["short_text", "long_text", "number", "date", "date_of_birth", "single_choice", "multi_choice", "yes_no", "email", "phone", "url", "asset_reference", "age_at_event", "emergency_contact", "money", "file", "itinerary"] as const;
+export type FormContext = "stage" | "claim" | "payee";
+export type FilePurpose = "stage_form_file" | "reimbursement_receipt" | "reimbursement_payee_document";
+export const FILE_PURPOSES: Record<FormContext, FilePurpose> = { stage: "stage_form_file", claim: "reimbursement_receipt", payee: "reimbursement_payee_document" };
+export type MoneyValue = { amount_minor: number; currency: string };
+export type FileReference = { asset_id: number; generation: number; sha256: string };
+export const TRAVEL_MODES = ["rail", "air", "bus", "car", "other"] as const;
+export type ItineraryValue = { mode: typeof TRAVEL_MODES[number]; origin?: string | null; destination?: string | null; depart_at?: string | null; arrive_at?: string | null };
+export type CompoundInputProps = { question: Question; value: unknown; onChange: (value: unknown) => void; invalid?: boolean; describedBy?: string };
 export type QuestionType = typeof QUESTION_TYPES[number];
 export type Condition = { all: Condition[] } | { any: Condition[] } | {
   field_id: string; op: "eq" | "ne" | "in" | "contains" | "is_set"; value?: unknown;
@@ -7,6 +15,10 @@ export interface Question {
   id: string; type: QuestionType; label: string; required?: boolean; help?: string; placeholder?: string;
   profile_field_key?: string; show_if?: Condition;
   visibility?: "member" | "server";
+  sensitive?: boolean;
+  money?: { currencies: string[]; min_minor?: number; max_minor?: number };
+  file?: { purpose: FilePurpose; max_files: number; max_bytes_each: number };
+  itinerary?: { modes: ItineraryValue["mode"][] };
   options?: { id: string; label: string; other?: boolean }[];
   bounds?: { min?: number; max?: number; min_length?: number; max_length?: number; min_selections?: number; max_selections?: number; other_max_length?: number };
   disclosure?: { organizer: boolean; reviewer: boolean; judge: boolean };

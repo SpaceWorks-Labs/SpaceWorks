@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Mapping, Protocol
 from uuid import UUID
 
-from .subjects import AnswerSubject
+from .subjects import AnswerSubject, StageResponseSubject
 
 
 class ReadPurpose(StrEnum):
@@ -28,6 +28,8 @@ class ReadPurpose(StrEnum):
     PRINT_RESOURCE = "print_resource"
     TEMPLATE_ARTWORK = "template_artwork"
     PROVIDER_PDF = "provider_pdf"
+    FINANCE_REIMBURSEMENT_RECEIPT = "finance_reimbursement_receipt"
+    FINANCE_PAYEE_DOCUMENT = "finance_payee_document"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -45,7 +47,7 @@ class PreparedIntent:
 
     intent_id: UUID
     operation_id: UUID
-    subject: AnswerSubject
+    subject: AnswerSubject | StageResponseSubject
     ciphertext: bytes = field(repr=False)
     key_version: int = field(repr=False)
     key_epoch: int = field(repr=False)
@@ -66,14 +68,15 @@ class PhotoSelection:
 
 class SavedDetailPreparation(Protocol):
     def prepare_saved_detail_intent(
-        self, *, actor_id: int, subject: AnswerSubject, validated_form: object,
+        self, *, actor_id: int, subject: AnswerSubject | StageResponseSubject, validated_form: object,
         choices: Mapping[str, bool], base_versions: Mapping[str, int], operation_id: UUID,
+        outer_operation_id: UUID | None = None, form_slot: str | None = None,
     ) -> PreparedIntent | None:
         """Outside domain transactions; no true choices means no vault intent."""
         ...
 
     def insert_prepared_locked(
-        self, prepared: PreparedIntent, *, subject: AnswerSubject, locks: LockedContext,
+        self, prepared: PreparedIntent, *, subject: AnswerSubject | StageResponseSubject, locks: LockedContext,
     ) -> UUID:
         """Recheck deadline/epoch/owner/form/hash under predeclared fences; no KMS."""
         ...

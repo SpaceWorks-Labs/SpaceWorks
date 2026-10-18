@@ -121,7 +121,8 @@ def expire_intents_and_receipts():
                 continue
             row.state, row.failure_code = "failed", "save_intent_expired"
             row.encrypted_payload, row.completed_at = "", timezone.now()
-            row.save(update_fields=["state", "failure_code", "encrypted_payload", "completed_at"])
+            row.field_status = {name: {"state": "failed", "code": row.failure_code} for name in row.chosen_fields}
+            row.save(update_fields=["state", "failure_code", "encrypted_payload", "completed_at", "field_status"])
             record(actor, "account.saved_detail_intent_expired", target=row)
     # Completed payloads are erased on completion, earlier than the 24h ceiling.
     stale_receipt_owners = SavedDetailCommandReceipt.objects.filter(created_at__lt=timezone.now() - timedelta(days=30)).values_list("user_id", flat=True)

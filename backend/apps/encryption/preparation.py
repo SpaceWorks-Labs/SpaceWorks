@@ -76,12 +76,25 @@ def tenant_key_change(function):
 
 
 def require_prepared_for_programme(tenant_id):
-    """Cache hits never bypass a prepared epoch; no locked cache refill exists."""
+    """Cache hits never bypass a prepared epoch; no locked cache refill exists.
+
+    A tenant key prepared through ``tenant_preparation`` (the staged-form and
+    reimbursement boundaries) also satisfies the locked-domain rule: it was
+    resolved before the domain transaction, exactly like a programme epoch.
+    """
     if active_preparation():
         return prepared_keys(tenant_id)
-    if connection.in_atomic_block and _domain_locked.get():
-        raise PiiKeyUnavailable()
+    if connection.in_atomic_block and domain_locked():
+        from .tenant_preparation import holds_tenant_key
+        if not holds_tenant_key(tenant_id):
+            raise PiiKeyUnavailable()
     return None
+
+
+def domain_locked():
+    # Preparation is a no-op with optional PII off, so the lock rule is too;
+    # mandatory finance envelopes enforce their own preparation rule.
+    return settings.PII_ENCRYPTION_ENABLED and _domain_locked.get()
 
 
 @contextmanager

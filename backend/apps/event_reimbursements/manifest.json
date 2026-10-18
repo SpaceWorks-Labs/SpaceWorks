@@ -1,0 +1,2722 @@
+{
+  "manifest_version": 2,
+  "lane": "RB3-A",
+  "module_key": "event_reimbursements",
+  "integration_status": "IMPLEMENTED_PENDING_CROSS_LANE_INTEGRATION_DO_NOT_ENABLE",
+  "prerequisite": "Frozen G1 fixture e7031f2354b266f657fe37073428eca85a61dbf49ef3d873eedcb81af892c9cd read and stdlib checks passed. Core sibling callable contracts, G-owned migrations/mounts/registries and PostgreSQL QA are required before enablement.",
+  "models": [
+    {
+      "label": "event_reimbursements.GrantAward",
+      "file": "backend/apps/event_reimbursements/award_models.py",
+      "scope": "request.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "updated_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(default=uuid4, unique=True, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "request": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('event_reimbursements.GrantRequest', on_delete=models.CASCADE, related_name='award')",
+          "target": "'event_reimbursements.GrantRequest'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='offered', choices=[(v, v) for v in ('offered', 'accepted', 'forfeited', 'expired', 'closed')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "due_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "amount_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "rule_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "calculation_snapshot": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "accept_by": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "offered_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "accepted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "closed_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "request.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "pool": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ReimbursementBudgetPool', on_delete=models.CASCADE, related_name='awards')",
+          "target": "'event_reimbursements.ReimbursementBudgetPool'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "issued_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=models.Q(amount_minor__gt=0), name='reimb_award_positive')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.GrantAwardRevision",
+      "file": "backend/apps/event_reimbursements/award_models.py",
+      "scope": "award.request.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "amount_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "rule_snapshot": {
+          "type": "JSONField",
+          "declaration": "models.JSONField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "award": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(GrantAward, on_delete=models.CASCADE, related_name='revisions')",
+          "target": "GrantAward",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('award', 'revision'), name='reimb_award_revision_unique'), models.CheckConstraint(condition=models.Q(amount_minor__gt=0, revision__gte=1), name='reimb_award_revision_bounds')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ReimbursementBudgetPool",
+      "file": "backend/apps/event_reimbursements/budget_models.py",
+      "scope": "programme.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "updated_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "total_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reserved_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "committed_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "programme": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ReimbursementProgramme', on_delete=models.CASCADE, related_name='pools')",
+          "target": "'event_reimbursements.ReimbursementProgramme'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('programme', 'currency'), name='reimb_unique_pool_currency'), models.CheckConstraint(condition=models.Q(total_minor__gte=models.F('reserved_minor') + models.F('committed_minor')), name='reimb_budget_never_overdrawn'), models.CheckConstraint(condition=models.Q(version__gte=1), name='reimb_pool_version_positive')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.BudgetReservation",
+      "file": "backend/apps/event_reimbursements/budget_models.py",
+      "scope": "pool.programme.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "updated_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "award": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('event_reimbursements.GrantAward', on_delete=models.CASCADE, related_name='reservation')",
+          "target": "'event_reimbursements.GrantAward'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='held', choices=[(v, v) for v in ('held', 'committed', 'released')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "held_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "committed_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "released_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "pool": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ReimbursementBudgetPool, on_delete=models.CASCADE, related_name='reservations')",
+          "target": "ReimbursementBudgetPool",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "decision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ClaimDecision', on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "'event_reimbursements.ClaimDecision'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=~models.Q(state='released') | models.Q(held_minor=0, committed_minor=0), name='reimb_released_reservation_empty')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.BudgetEntry",
+      "file": "backend/apps/event_reimbursements/budget_models.py",
+      "scope": "pool.programme.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=20, choices=[(v, v) for v in ('fund', 'reserve', 'release', 'commit', 'adjust_commitment')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "amount_minor": {
+          "type": "BigIntegerField",
+          "declaration": "models.BigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "pool": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ReimbursementBudgetPool, on_delete=models.CASCADE, related_name='entries')",
+          "target": "ReimbursementBudgetPool",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reservation": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(BudgetReservation, on_delete=models.CASCADE, null=True, related_name='entries')",
+          "target": "BudgetReservation",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "decision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ClaimDecision', on_delete=models.CASCADE, null=True, related_name='budget_entries')",
+          "target": "'event_reimbursements.ClaimDecision'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('pool', 'operation_id', 'kind', 'reservation'), nulls_distinct=False, name='reimb_budget_entry_operation'), models.CheckConstraint(condition=models.Q(kind='fund', reservation__isnull=True, decision__isnull=True) | models.Q(kind__in=('reserve', 'release'), reservation__isnull=False, decision__isnull=True) | models.Q(kind__in=('commit', 'adjust_commitment'), reservation__isnull=False), name='reimb_budget_entry_shape')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ClaimDecision",
+      "file": "backend/apps/event_reimbursements/claim_decision_models.py",
+      "scope": "claim.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(default=uuid4, unique=True, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "sequence": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "outcome": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=20, choices=[(v, v) for v in ('approved', 'partially_approved', 'rejected', 'returned_for_info')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "approved_total_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "award_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "attendance_checkin_event_id": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "attendance_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "project_snapshot_ref": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "decided_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "core_obligation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "core_decision_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "claim": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ReimbursementClaim', on_delete=models.CASCADE, related_name='decisions')",
+          "target": "'event_reimbursements.ReimbursementClaim'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ClaimRevision', on_delete=models.CASCADE, related_name='decisions')",
+          "target": "'event_reimbursements.ClaimRevision'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('claim', 'sequence'), name='reimb_decision_sequence_unique'), models.CheckConstraint(condition=models.Q(approved_total_minor__lte=models.F('award_minor')), name='reimb_decision_award_bound')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ClaimLineDecision",
+      "file": "backend/apps/event_reimbursements/claim_decision_models.py",
+      "scope": "decision.claim.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "approved_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "decision.claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "decision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ClaimDecision, on_delete=models.CASCADE, related_name='line_decisions')",
+          "target": "ClaimDecision",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "line": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ClaimLine', on_delete=models.CASCADE, related_name='decisions')",
+          "target": "'event_reimbursements.ClaimLine'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('decision', 'line'), name='reimb_line_decision_unique')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ClaimAppeal",
+      "file": "backend/apps/event_reimbursements/claim_decision_models.py",
+      "scope": "claim.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "claim": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('event_reimbursements.ReimbursementClaim', on_delete=models.CASCADE, related_name='appeal')",
+          "target": "'event_reimbursements.ReimbursementClaim'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "submitted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "statement": {
+          "type": "TextField",
+          "declaration": "models.TextField()",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "resolved_by_cancellation_revision_id": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "resolution_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "submitted_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        },
+        "original_decision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ClaimDecision, on_delete=models.CASCADE, related_name='appeals')",
+          "target": "ClaimDecision",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "resolved_decision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ClaimDecision, on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "ClaimDecision",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ClaimScreeningReview",
+      "file": "backend/apps/event_reimbursements/claim_decision_models.py",
+      "scope": "claim.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "submitted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "recommendation": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=20)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "claim": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ReimbursementClaim', on_delete=models.CASCADE, related_name='reviews')",
+          "target": "'event_reimbursements.ReimbursementClaim'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ClaimRevision', on_delete=models.CASCADE, related_name='reviews')",
+          "target": "'event_reimbursements.ClaimRevision'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reviewer": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('claim', 'revision', 'reviewer'), name='reimb_screening_unique')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ClaimAttendanceAttestation",
+      "file": "backend/apps/event_reimbursements/claim_decision_models.py",
+      "scope": "claim.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(default=uuid4, unique=True, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "attendance_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "attended_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "venue_evidence_refs": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=list)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "claim": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ReimbursementClaim', on_delete=models.CASCADE, related_name='attestations')",
+          "target": "'event_reimbursements.ReimbursementClaim'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "registration": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventRegistration', on_delete=models.CASCADE, related_name='+')",
+          "target": "'events.EventRegistration'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "owner_member": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
+        },
+        "actor": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ReimbursementClaim",
+      "file": "backend/apps/event_reimbursements/claim_models.py",
+      "scope": "event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "updated_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(default=uuid4, unique=True, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "award": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('event_reimbursements.GrantAward', on_delete=models.CASCADE, related_name='claim')",
+          "target": "'event_reimbursements.GrantAward'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=20, default='draft', choices=[(v, v) for v in ('draft', 'open', 'submitted', 'returned_for_info', 'approved', 'partially_approved', 'rejected', 'withdrawn', 'expired', 'under_review')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "draft_payload": {
+          "type": "TextField",
+          "declaration": "models.TextField(default='{}')",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "submitted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "effective_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "due_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "extension_reason": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "domain_closed_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "domain_closure_reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "appeal_used": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "info_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "appeal_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='reimbursement_claims')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "member": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reimbursement_claims')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
+        },
+        "current_revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ClaimRevision', on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "'event_reimbursements.ClaimRevision'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "current_decision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ClaimDecision', on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "'event_reimbursements.ClaimDecision'",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ReimbursementWorkItem",
+      "file": "backend/apps/event_reimbursements/claim_models.py",
+      "scope": "event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=24)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(db_index=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='pending')",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT"
+        },
+        "lease_token": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT_OR_CLEAR"
+        },
+        "lease_until": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT_OR_CLEAR"
+        },
+        "attempts": {
+          "type": "PositiveIntegerField",
+          "declaration": "models.PositiveIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "coordination",
+          "portable_disposition": "OMIT_OR_CLEAR"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='reimbursement_work')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT"
+        },
+        "award": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.GrantAward', on_delete=models.CASCADE, null=True, related_name='work_items')",
+          "target": "'event_reimbursements.GrantAward'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT"
+        },
+        "claim": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ReimbursementClaim, on_delete=models.CASCADE, null=True, related_name='work_items')",
+          "target": "ReimbursementClaim",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "OMIT"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=models.Q(award__isnull=False, claim__isnull=True) | models.Q(award__isnull=True, claim__isnull=False), name='reimb_work_one_subject')]"
+        }
+      ],
+      "lifetime": "coordination",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ClaimRevision",
+      "file": "backend/apps/event_reimbursements/claim_revision_models.py",
+      "scope": "claim.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "submitted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "total_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "claim": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ReimbursementClaim', on_delete=models.CASCADE, related_name='revisions')",
+          "target": "'event_reimbursements.ReimbursementClaim'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "submitted_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('claim', 'revision'), name='reimb_claim_revision_unique')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ClaimLine",
+      "file": "backend/apps/event_reimbursements/claim_revision_models.py",
+      "scope": "revision.claim.event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "line_uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "category": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=24)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "vendor": {
+          "type": "TextField",
+          "declaration": "models.TextField()",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "revision.claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "description": {
+          "type": "TextField",
+          "declaration": "models.TextField()",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "revision.claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "traveller": {
+          "type": "TextField",
+          "declaration": "models.TextField()",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "revision.claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "expense_date": {
+          "type": "DateField",
+          "declaration": "models.DateField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "original_amount_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "original_currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "fx_rate": {
+          "type": "DecimalField",
+          "declaration": "models.DecimalField(max_digits=24, decimal_places=12)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "rate_date": {
+          "type": "DateField",
+          "declaration": "models.DateField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "rate_source": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=8, choices=[('manual', 'manual'), ('receipt', 'receipt')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "source_note": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "revision.claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "converted_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "receipt_hash": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "route": {
+          "type": "TextField",
+          "declaration": "models.TextField(default='{}')",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "revision.claim.event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "lodging_starts_on": {
+          "type": "DateField",
+          "declaration": "models.DateField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "lodging_ends_on": {
+          "type": "DateField",
+          "declaration": "models.DateField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "lodging_nights": {
+          "type": "PositiveSmallIntegerField",
+          "declaration": "models.PositiveSmallIntegerField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "revision": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(ClaimRevision, on_delete=models.CASCADE, related_name='lines')",
+          "target": "ClaimRevision",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "finance_asset": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('payments.FinanceAttachment', on_delete=models.PROTECT, related_name='claim_lines')",
+          "target": "'payments.FinanceAttachment'",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('revision', 'line_uuid'), name='reimb_claim_line_unique'), models.CheckConstraint(condition=models.Q(original_amount_minor__gt=0, fx_rate__gt=0), name='reimb_claim_line_positive')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.ReimbursementProgramme",
+      "file": "backend/apps/event_reimbursements/config_models.py",
+      "scope": "event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "updated_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event": {
+          "type": "OneToOneField",
+          "declaration": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='reimbursement_programme')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "enabled": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "request_phase": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=16, default='both', choices=[(v, v) for v in ('application', 'after_acceptance', 'both')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "request_opens_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "request_closes_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "award_mode": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=16, default='need_based', choices=[(v, v) for v in ('fixed_tier', 'route_cap', 'percentage', 'need_based')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "tier_rules": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "allowed_categories": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=categories)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "exclusions": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=exclusions)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "min_distance_km": {
+          "type": "DecimalField",
+          "declaration": "models.DecimalField(max_digits=8, decimal_places=3, null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "eligible_countries": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=list)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "eligible_cohorts": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=list)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "award_accept_days": {
+          "type": "PositiveSmallIntegerField",
+          "declaration": "models.PositiveSmallIntegerField(default=4)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "claim_due_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField()",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "attendance_required": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "require_project_submission": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "permitted_venue_sources": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=list)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "category_limits": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=dict)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "finance_policy_revision": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "initialization_operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(unique=True, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "initialization_digest": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "approved_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.PROTECT",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "RETAIN_ATTRIBUTION_SHELL"
+        },
+        "imported_paused": {
+          "type": "BooleanField",
+          "declaration": "models.BooleanField(default=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "target_runtime_state",
+          "portable_disposition": "SET_TRUE; enabled=false; explicit finance reconciliation required; deployment backup preserves actual state"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.CheckConstraint(condition=models.Q(version__gte=1), name='reimb_programme_version_positive'), models.CheckConstraint(condition=models.Q(min_distance_km__isnull=True) | models.Q(min_distance_km__gte=0, min_distance_km__lte=40075), name='reimb_distance_bounds'), models.CheckConstraint(condition=models.Q(request_opens_at__isnull=True) | models.Q(request_closes_at__isnull=True) | models.Q(request_closes_at__gt=models.F('request_opens_at')), name='reimb_request_window')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    },
+    {
+      "label": "event_reimbursements.GrantRequest",
+      "file": "backend/apps/event_reimbursements/request_models.py",
+      "scope": "event.makerspace_id",
+      "fields": {
+        "id": {
+          "type": "BigAutoField",
+          "declaration": "implicit Django BigAutoField(primary_key=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "created_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now_add=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "updated_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(auto_now=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "uuid": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(default=uuid4, unique=True, editable=False)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "creation_operation_id": {
+          "type": "UUIDField",
+          "declaration": "models.UUIDField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "request_phase": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=16, choices=[(v, v) for v in ('application', 'after_acceptance')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "state": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='draft', choices=[(v, v) for v in ('draft', 'requested', 'waitlisted', 'awarded', 'declined', 'withdrawn', 'expired')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "origin": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "destination": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "mode": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=8)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "need_statement": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "itinerary": {
+          "type": "TextField",
+          "declaration": "models.TextField(default='{}')",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "estimated_cost": {
+          "type": "TextField",
+          "declaration": "models.TextField(default='{}')",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "distance_km": {
+          "type": "DecimalField",
+          "declaration": "models.DecimalField(max_digits=8, decimal_places=3, null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "category_estimates": {
+          "type": "JSONField",
+          "declaration": "models.JSONField(default=list)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "schema_status": "Validated closed domain values; see policy.py, serializers_request.py, claim_inputs.py, portable.JSON_REFERENCES and the typed_json_references below.",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "estimated_total_minor": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=0)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "currency": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=3)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "submitted_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reviewed_at": {
+          "type": "DateTimeField",
+          "declaration": "models.DateTimeField(null=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason_code": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=64, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "reason": {
+          "type": "TextField",
+          "declaration": "models.TextField(blank=True)",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "eligibility_snapshot": {
+          "type": "TextField",
+          "declaration": "models.TextField(default='{}')",
+          "pii": true,
+          "encryption_required": false,
+          "classification": "scoped_pii",
+          "encryption_scope": "event.makerspace_id",
+          "index_kind": "none",
+          "portable_disposition": "REENCRYPT_FULL_REDACT_IDENTIFYING_VALUES"
+        },
+        "eligibility_version": {
+          "type": "PositiveBigIntegerField",
+          "declaration": "models.PositiveBigIntegerField(default=1)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "programme": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('event_reimbursements.ReimbursementProgramme', on_delete=models.CASCADE, related_name='requests')",
+          "target": "'event_reimbursements.ReimbursementProgramme'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "event": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='grant_requests')",
+          "target": "'events.Event'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "member": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='grant_requests')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "DOMAIN_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"
+        },
+        "registration": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.EventRegistration', on_delete=models.CASCADE, null=True, related_name='+')",
+          "target": "'events.EventRegistration'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "application": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey('events.HackathonApplication', on_delete=models.CASCADE, null=True, related_name='+')",
+          "target": "'events.HackathonApplication'",
+          "on_delete": "models.CASCADE",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "distance_verified_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        },
+        "reviewed_by": {
+          "type": "ForeignKey",
+          "declaration": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')",
+          "target": "settings.AUTH_USER_MODEL",
+          "on_delete": "models.SET_NULL",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "typed_reference",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP",
+          "user_edge": "SET_NULL_ACCOUNT_ERASURE"
+        }
+      },
+      "constraints_and_indexes": [
+        {
+          "kind": "constraints",
+          "declaration": "[models.UniqueConstraint(fields=('programme', 'member'), name='reimb_request_unique_owner'), models.CheckConstraint(condition=models.Q(state='draft') | models.Q(registration__isnull=False) | models.Q(application__isnull=False), name='reimb_request_canonical_subject'), models.CheckConstraint(condition=models.Q(distance_km__isnull=True) | models.Q(distance_km__gte=0, distance_km__lte=40075), name='reimb_request_distance')]"
+        }
+      ],
+      "lifetime": "domain",
+      "database_guards": "G1 retained guards plus the additive RB3-A migration corrections in RB3-A-CROSS-LANE.md; no existing migration edited."
+    }
+  ],
+  "routes": [
+    {
+      "name": "member-event-reimbursement",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.ReimbursementView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-request-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/request/submit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.RequestSubmitView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-request-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/request/withdraw/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.RequestWithdrawView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-award-accept",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/award/accept/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.AwardAcceptView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-award-decline",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/award/decline/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.AwardDeclineView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-claim",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT"
+      ],
+      "view": "apps.event_reimbursements.views_member.ClaimView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-claim-submit",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/submit/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.ClaimSubmitView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-reimbursement-claim-appeal",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/claim/appeal/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_member.ClaimAppealView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-receipt-file-create",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_receipts.ReceiptCreateView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-receipt-file-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/<int:asset_id>/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "DELETE"
+      ],
+      "view": "apps.event_reimbursements.views_receipts.ReceiptDetailView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "member-event-receipt-file-complete",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/reimbursement/receipt-files/<int:asset_id>/complete/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_receipts.ReceiptCompleteView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "owner member"
+    },
+    {
+      "name": "admin-event-reimbursement-programme",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/programme/",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PATCH"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ProgrammeView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-request-list",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.event_reimbursements.views_admin.RequestListView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-request-decide",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/<int:request_id>/decide/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.AwardDecisionView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-list",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimListView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-detail",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimDetailView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-review",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/review/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimReviewView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-extend",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/extend/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ClaimExtendView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-attendance-attest",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/attendance-attestations/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.AttendanceAttestView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-receipt-override",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/receipt-allocation-overrides/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.ReceiptOverrideView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-claim-correct-decision",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/claims/<int:claim_id>/correct-decision/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.CorrectDecisionView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    }
+  ],
+  "audits": [
+    "event.reimbursement.appeal_expired",
+    "event.reimbursement.attendance_attested",
+    "event.reimbursement.award_accepted",
+    "event.reimbursement.claim_appealed",
+    "event.reimbursement.claim_cancelled",
+    "event.reimbursement.claim_decided",
+    "event.reimbursement.claim_decision_corrected",
+    "event.reimbursement.claim_draft_saved",
+    "event.reimbursement.claim_expired",
+    "event.reimbursement.claim_extended",
+    "event.reimbursement.claim_finalized",
+    "event.reimbursement.claim_opened",
+    "event.reimbursement.claim_screened",
+    "event.reimbursement.claim_submitted",
+    "event.reimbursement.claim_withdrawn",
+    "event.reimbursement.forfeited",
+    "event.reimbursement.module_purge_no_liability",
+    "event.reimbursement.programme_configured",
+    "event.reimbursement.programme_initialized",
+    "event.reimbursement.receipt_override",
+    "event.reimbursement.request_decided",
+    "event.reimbursement.request_draft_created",
+    "event.reimbursement.request_expired",
+    "event.reimbursement.request_withdrawn",
+    "event.reimbursement.requested",
+    "event.reimbursement.waitlist_preview_available"
+  ],
+  "notices": {
+    "sources": [
+      "event.reimbursement",
+      "event.reimbursement.queue"
+    ],
+    "feature": "events",
+    "stream": "events",
+    "events": [
+      "reimbursement.requested",
+      "reimbursement.awarded",
+      "reimbursement.award_reminder",
+      "reimbursement.award_accepted",
+      "reimbursement.forfeited",
+      "reimbursement.claim_open",
+      "reimbursement.claim_reminder",
+      "reimbursement.returned_for_info",
+      "reimbursement.decision",
+      "reimbursement.queue"
+    ],
+    "payload": "Only IDs, enums, money/currency and UTC deadlines. No need text, vendor, traveller, payee or receipt bytes."
+  },
+  "reminder_sources": [
+    {
+      "key": "event_reimbursements.award_accept",
+      "provider": "reminders.AWARD_REMINDER_SOURCE",
+      "identity": "award:{id}:offer:{due_revision}:due:{UTC seconds/fraction Z}"
+    },
+    {
+      "key": "event_reimbursements.claim_due",
+      "provider": "reminders.CLAIM_REMINDER_SOURCE",
+      "identity": "claim:{id}:due:{due_revision}"
+    }
+  ],
+  "runtime_registration": {
+    "ready": "Owned AppConfig registers two notification sources and canonical frozen-project reader only when Events/R runtimes are active. G installs reminder sources, optional request port, live payout preflight, cancellation and upload binding adapters, and literal routes."
+  },
+  "retention_registration": {
+    "provider": "apps.event_reimbursements.retention_registration.RETENTION_PROVIDER",
+    "purge_plan_factory": "module_purge_plan",
+    "lifetime": "Always importable, including tombstoned runtime; exposed on AppConfig.retention_provider. G composes into its literal PLANS/BY_KEY/catalogue/object dispatches."
+  },
+  "source_boundaries": {
+    "interactive": "apps.event_reimbursements.transactions.command",
+    "crypto": "prepared_boundary holds lock-only source gate during prepare_tenant_key before domain transaction/row locks; shared tenant_key_context only",
+    "workers": "tasks.sweep_one and defer_failed_work source/fences/event/host; source-frozen discovery excluded and rechecked",
+    "lock_order": "source -> prepared tenant crypto -> global/tenant/account fences -> series/event -> sorted host/collaborator tenants -> authority -> programme -> pool -> request -> award -> claim -> obligation -> sorted children",
+    "receipt_override": "Pre-discover affected events/series/owners/trusted hash; sorted event/programme/pool/request/award/claim/core obligation locks before ReceiptUse. Changed unpaid allocations are held before append; paid allocations cannot be reassigned."
+  },
+  "object_fields": {
+    "owned": [],
+    "finance_receipts": "Core FinanceAttachment staging_key/object_key + version/generation/retention locators; selected by object_capture.attachments; never deleted by module purge",
+    "capture": "object_capture.capture full custodial only; redacted omits bytes; core capture_attachment is authoritative"
+  },
+  "portable_status": "Implemented portable.transform/remap_structured; preserve amounts, commitments, accepted caps and immutable history; drop work coordination; pause imported programme until explicit checked finance reconciliation; target envelopes through in-memory custody callback.",
+  "tests": "RB3-A-rerun-files.txt; 25 owned model-free tests + 12 frozen G1 tests passed; two Django compatibility checks skipped. PostgreSQL/API/storage/concurrency/crypto/purge suites authored, not executed per owner restriction.",
+  "implemented_modules": [
+    "backend/apps/event_reimbursements/__init__.py",
+    "backend/apps/event_reimbursements/accepted_policy.py",
+    "backend/apps/event_reimbursements/api_schema.py",
+    "backend/apps/event_reimbursements/apps.py",
+    "backend/apps/event_reimbursements/attendance.py",
+    "backend/apps/event_reimbursements/award_models.py",
+    "backend/apps/event_reimbursements/award_workflow.py",
+    "backend/apps/event_reimbursements/budget_math.py",
+    "backend/apps/event_reimbursements/budget_models.py",
+    "backend/apps/event_reimbursements/budget_service.py",
+    "backend/apps/event_reimbursements/calculations.py",
+    "backend/apps/event_reimbursements/cancellation_coordination.py",
+    "backend/apps/event_reimbursements/claim_commands.py",
+    "backend/apps/event_reimbursements/claim_decision_models.py",
+    "backend/apps/event_reimbursements/claim_decisions.py",
+    "backend/apps/event_reimbursements/claim_finality.py",
+    "backend/apps/event_reimbursements/claim_form_adapter.py",
+    "backend/apps/event_reimbursements/claim_inputs.py",
+    "backend/apps/event_reimbursements/claim_models.py",
+    "backend/apps/event_reimbursements/claim_policy.py",
+    "backend/apps/event_reimbursements/claim_revision_models.py",
+    "backend/apps/event_reimbursements/claim_workflow.py",
+    "backend/apps/event_reimbursements/config_models.py",
+    "backend/apps/event_reimbursements/deadlines.py",
+    "backend/apps/event_reimbursements/decision_summary.py",
+    "backend/apps/event_reimbursements/eligibility.py",
+    "backend/apps/event_reimbursements/http.py",
+    "backend/apps/event_reimbursements/ledger_bridge.py",
+    "backend/apps/event_reimbursements/lifecycle_hooks.py",
+    "backend/apps/event_reimbursements/model_base.py",
+    "backend/apps/event_reimbursements/models.py",
+    "backend/apps/event_reimbursements/notices.py",
+    "backend/apps/event_reimbursements/object_capture.py",
+    "backend/apps/event_reimbursements/payout_preflight.py",
+    "backend/apps/event_reimbursements/policy.py",
+    "backend/apps/event_reimbursements/portable.py",
+    "backend/apps/event_reimbursements/programme_workflow.py",
+    "backend/apps/event_reimbursements/projections.py",
+    "backend/apps/event_reimbursements/purge.py",
+    "backend/apps/event_reimbursements/queue_notices.py",
+    "backend/apps/event_reimbursements/receipt_service.py",
+    "backend/apps/event_reimbursements/receipt_uploads.py",
+    "backend/apps/event_reimbursements/reminders.py",
+    "backend/apps/event_reimbursements/request_form_adapter.py",
+    "backend/apps/event_reimbursements/request_models.py",
+    "backend/apps/event_reimbursements/request_workflow.py",
+    "backend/apps/event_reimbursements/retention_registration.py",
+    "backend/apps/event_reimbursements/serializers.py",
+    "backend/apps/event_reimbursements/serializers_finance.py",
+    "backend/apps/event_reimbursements/serializers_read.py",
+    "backend/apps/event_reimbursements/serializers_request.py",
+    "backend/apps/event_reimbursements/tasks.py",
+    "backend/apps/event_reimbursements/transactions.py",
+    "backend/apps/event_reimbursements/urls_admin.py",
+    "backend/apps/event_reimbursements/urls_member.py",
+    "backend/apps/event_reimbursements/views_admin.py",
+    "backend/apps/event_reimbursements/views_member.py",
+    "backend/apps/event_reimbursements/views_receipts.py",
+    "backend/apps/event_reimbursements/work_items.py"
+  ],
+  "remaining": "Cross-lane core providers, additive migrations/shared registrations/mounts, Postgres acceptance and independent review. No enablement claim.",
+  "typed_json_references": {
+    "ClaimAttendanceAttestation.venue_evidence_refs": "opaque evidence labels; preserve, no inferred PKs",
+    "ReimbursementClaim.draft_payload.lines[].receipt.asset_id": "payments.FinanceAttachment",
+    "GrantRequest.estimated_cost.form.form_id": "reimbursement-request-{programme_id}",
+    "GrantRequest.estimated_cost.snapshot.form_id": "reimbursement-request-{programme_id}",
+    "GrantRequest.eligibility_snapshot.cohort": "events.HackathonApplicationCohort, decimal-string ID",
+    "ReimbursementProgramme.eligible_cohorts[]": "events.HackathonApplicationCohort, decimal-string ID"
+  },
+  "logical_references": {
+    "ClaimDecision.attendance_checkin_event_id": "events.EventCheckInEvent PK",
+    "ClaimDecision.project_snapshot_ref": "UUIDv5(NAMESPACE_URL, spaceworks:submission-snapshot:{event_id}:{snapshot_id}); G builds source->target map from included B snapshots; no invented age subject",
+    "ClaimDecision.core_obligation_id": "payments.EventPayoutObligation UUID",
+    "ClaimDecision.core_decision_revision": "obligation-local sequence, preserve",
+    "ClaimAppeal.resolved_by_cancellation_revision_id": "payments.EventPayoutObligationRevision PK"
+  },
+  "cross_lane_callable_contracts": "scratchpad/build/RB3-A-CROSS-LANE.md (exact core signatures and G files); imports are lazy where runtime-only",
+  "accepted_policy": "GrantAward.calculation_snapshot pins caps/categories/exclusions/attendance/project/venue policy and UTC claim_due_at; accepted_policy.py reads it. Later programme edits never rewrite accepted terms.",
+  "json_shapes": {
+    "ReimbursementProgramme.tier_rules": "policy.rules: percentage {basis_points:int 0..10000,cap_minor}; need_based {cap_minor?}; fixed_tier map of {amount_minor}; route_cap map of {amount_minor,priority,origin_country?,destination_country?,region?,mode?}; deterministic distinct priorities",
+    "ReimbursementProgramme.category_limits": "closed CATEGORIES->nonnegative minor integer",
+    "ReimbursementProgramme.eligible_countries": "unique supported ISO alpha-2 codes",
+    "ReimbursementProgramme.eligible_cohorts": "unique canonical HackathonApplicationCohort decimal-string IDs; remap on import",
+    "GrantRequest.category_estimates": "serializers_request.Estimate[]; unique categories, positive selected estimates <=10_000_000 (G1 fixed schema); omitted categories map to required zero-valued form answers.",
+    "GrantRequest.estimated_cost": "{form:FormDescriptor,snapshot:F canonical v2,consent:true,submitted_at:UTC,distance_self_reported:true}",
+    "GrantRequest.eligibility_snapshot": "{country?,cohort?,origin_country?,destination_country?,region?,mode?}; canonical/registered reader; encrypted; cohort reference typed",
+    "GrantAward.calculation_snapshot": "{mode,tier,rules,policy_revision,category_caps,allowed_categories,exclusions,attendance_required,require_project_submission,permitted_venue_sources,claim_due_at}; no member facts",
+    "GrantAwardRevision.rule_snapshot": "same accepted calculation snapshot shape",
+    "ReimbursementClaim.draft_payload": "{lines:claim_inputs.ClaimLineInput[0..50]}; submit requires >=1. F canonical money/file/itinerary validator; pre-discovered trusted attachment hashes rechecked under locks.",
+    "ClaimAttendanceAttestation.venue_evidence_refs": "bounded opaque evidence labels, not inferred FK IDs"
+  }
+}

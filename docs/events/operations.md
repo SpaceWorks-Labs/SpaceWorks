@@ -30,6 +30,10 @@ The authored graph is:
 | `events/0044_gf4_print_custody` | events 0043 | Permanent print cleanup custody/key reuse guards and closed programme section options |
 | `events/0045_gf4_event_accent` | events 0044 | Palette-only event accent with database constraint |
 | `events/0046_gf4_pii_maintenance` | events 0045 | Fixed mapped-column representation maintenance only under matching closed global/tenant operation fences |
+| `events/0047_reimbursement_tables_1` | events 0046 | Staged-form/milestone tables, stage selector, registration attendance revision (authored as 0040, renumbered at integration) |
+| `events/0048_reimbursement_relations_1` | events 0047 | Staged-form relations |
+| `events/0049_reimbursement_guards` | events 0048, encryption 0010 | Staged-form scope, write-fence and append-only guards |
+| `events/0050_stage_selector_ownership` | events 0049 | Stage selector ownership and attendance-correction watermark guards |
 
 Before upgrade, take a deployment backup with required recipient/key custody. Inspect actual
 leaves and the merged sibling-lane graph; parallel follow-up migrations may be renumbered.
